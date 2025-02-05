@@ -1,0 +1,9 @@
+{
+    "jest.coverageFormatter": "GutterFormatter",
+    "jest.runMode": "on-demand",
+    "terminal.integrated.enableVisualBell": true,
+    "accessibility.signals.terminalBell": {
+        "sound": "on",
+        "announcement": "auto"
+    },
+}
