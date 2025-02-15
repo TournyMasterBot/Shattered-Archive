@@ -1,0 +1,17 @@
+{
+  "name": "shattered-archive-game-server",
+  "version": "1.0.0",
+  "main": "app.ts",
+  "scripts": {
+    "start:dev": "npx nodemon --exec ts-node app.ts --port 8081 --execEnv dev",
+    "start:prod": "npx nodemon --exec ts-node app.ts --port 8081 --execEnv prod",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "ts-node": "^10.9.2"
+  }
+}

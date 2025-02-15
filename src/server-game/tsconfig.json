@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2024",
+    "lib": ["ES2024"],               
+    "module": "CommonJS",                
+    "strict": true,                      
+    "noEmit": true,            // Prevent emitting compiled files
+    "esModuleInterop": true,             
+    "skipLibCheck": true,                
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["**/*"],
+  "exclude": ["node_modules"]
+}
