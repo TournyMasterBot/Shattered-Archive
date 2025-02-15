@@ -1,14 +1,19 @@
 {
   "compilerOptions": {
     "target": "ES2024",
-    "lib": ["ES2024"],               
+    "lib": ["ES2024"],
     "module": "CommonJS",                
     "strict": true,                      
     "noEmit": true,            // Prevent emitting compiled files
     "esModuleInterop": true,             
     "skipLibCheck": true,                
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "rootDirs": ["src", "../shared"],
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["../shared/*"]
+    }
   },
-  "include": ["**/*"],
+  "include": ["**/*", "../shared"],
   "exclude": ["node_modules"]
 }

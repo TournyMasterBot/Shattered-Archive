@@ -106,6 +106,21 @@
 
     /* Completeness */
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
-    "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
+    "skipLibCheck": true,                                 /* Skip type checking all .d.ts files. */
+    "rootDirs": [
+      "./src/web-server",
+      "./src/web-client",
+      "./src/game-server",
+      "./src/game-client",
+      "./src/shared",
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@web-server/*": ["./src/web-server"],
+      "@web-client/*": ["./src/web-client"],
+      "@game-server/*": ["./src/game-server"],
+      "@game-client/*": ["./src/game-client"],
+      "@shared/*": ["./src/shared/*"]
+    }
   }
 }

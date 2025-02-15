@@ -1,0 +1,75 @@
+/* Styles for the "Select Continent" field */
+
+/* Container for each form element */
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Label styling */
+.label {
+  font-size: 14px;
+  color: #bbb;
+}
+
+/* Dropdown styling for React‑Select (applied via the .dropdown class) */
+.dropdown {
+  /* React‑Select control */
+  .react-select__control {
+    background-color: #222;
+    border: 1px solid #555;
+    color: white;
+    border-radius: 4px;
+    box-shadow: none;
+    width: 100%;
+
+    &:hover {
+      border-color: #44ff44;
+    }
+  }
+
+  /* Container for the selected value */
+  .react-select__value-container {
+    padding: 6px;
+  }
+
+  /* The single selected value */
+  .react-select__single-value {
+    color: #fff;
+  }
+
+  /* Dropdown menu */
+  .react-select__menu {
+    background-color: #222;
+    border: 1px solid #555;
+    border-radius: 4px;
+  }
+
+  /* Options within the dropdown */
+  .react-select__option {
+    background-color: #222;
+    color: #fff;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #555;
+    }
+
+    &--is-selected {
+      background-color: #0f0;
+      color: #222;
+    }
+
+    &--is-focused {
+      background-color: #444;
+      color: #fff;
+    }
+  }
+
+  /* Placeholder text styling */
+  .react-select__placeholder {
+    color: #aaa;
+  }
+}

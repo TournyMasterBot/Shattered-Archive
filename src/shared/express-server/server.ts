@@ -1,5 +1,9 @@
-import express from 'express';
+import express, { Application } from 'express';
 import cors from 'cors';
+
+export interface IShatteredServerProps {
+    port: number;
+}
 
 export interface IShatteredServer {
     port: number
@@ -7,11 +11,11 @@ export interface IShatteredServer {
     GetServer(): Express.Application;
 }
 
-class ShatteredServer implements IShatteredServer {
+export class ShatteredServer implements IShatteredServer {
     public port: number;
-    private server: Express.Application;
+    private server: Application;
 
-    constructor(config: IShatteredServer) {
+    constructor(config: IShatteredServerProps) {
         this.port = config.port;
         const app = express();
         app.use(express.json());
@@ -19,7 +23,7 @@ class ShatteredServer implements IShatteredServer {
         this.server = app;
     }
 
-    public GetServer(): Express.Application {
+    public GetServer(): Application {
         return this.server;
     }
 }

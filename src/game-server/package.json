@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "app.ts",
   "scripts": {
-    "start:dev": "npx nodemon --exec ts-node app.ts --port 8081 --execEnv dev",
-    "start:prod": "npx nodemon --exec ts-node app.ts --port 8081 --execEnv prod",
+    "start:dev": "npx nodemon --exec ts-node -r tsconfig-paths/register app.ts --port 8481 --execEnv dev",
+    "start:prod": "npx nodemon --exec ts-node -r tsconfig-paths/register app.ts --port 8481 --execEnv prod",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -12,6 +12,10 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "ts-node": "^10.9.2"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
   }
 }

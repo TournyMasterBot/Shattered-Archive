@@ -7,8 +7,8 @@ function App() {
   
   return (
     <>
-     <div>
-        <h1>Game Client</h1>
+      <div>
+        <h1>Web Client</h1>
         <a href={gameServerEndpoint} target="_blank">{gameServerEndpoint}</a>
         <br />
         <a href={webServerEndpoint} target="_blank">{webServerEndpoint}</a>

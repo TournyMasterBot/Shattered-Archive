@@ -1,12 +1,12 @@
 {
-  "name": "game-client",
+  "name": "web-client",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "start:dev": "vite --mode development --port 8480",
-    "start:prod": "vite build && vite preview --mode production --port 8480",
+    "start:dev": "vite --mode development --port 8080",
+    "start:prod": "vite build && vite preview --mode production --port 8080",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

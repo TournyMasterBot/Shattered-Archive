@@ -1,6 +1,7 @@
 import http from 'http';
+import ShatteredServer from '@shared/express-server/server';
 
-let port = 8080;
+let port = 3001;
 let execEnv = 'dev';
 
 // Log all command-line arguments
@@ -22,15 +23,15 @@ if (execEnvFlagIndex !== -1 && process.argv[execEnvFlagIndex + 1]) {
   execEnv = process.argv[execEnvFlagIndex + 1];
 }
 
-console.log(`Server starting in ${execEnv} mode on port: ${port}`);
+const shatteredServer = new ShatteredServer({
+  port: port
+})
+const app = shatteredServer.GetServer();
 
-const requestListener = (req: http.IncomingMessage, res: http.ServerResponse) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Hello, Web!');
-};
+app.get('/', (req, res) => {
+  res.send('Hello, Game Server!');
+});
 
-const server = http.createServer(requestListener);
-
-server.listen(port, () => {
-  console.log(`Shattered Archive Web Server is running in ${execEnv} mode on http://localhost:${port}`);
+app.listen(port, () => {
+  console.log(`Shattered Archive Game Server is running in ${execEnv} mode on http://localhost:${port}`);
 });

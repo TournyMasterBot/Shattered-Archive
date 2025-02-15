@@ -7,12 +7,14 @@
   "scripts": {
     "build": "tsc",
     "clean": "tsc --build --clean",
-    "start": "concurrently \"npm run start:web:dev\" \"npm run start:game-server:dev\" \"npm run start:game-client:dev\"",
-    "start:prod": "concurrently \"npm run start:web:prod\" \"npm run start:game-server:prod\" \"npm run start:game-client:prod\"",
-    "start:web:dev": "npm --prefix ./src/server-web run start:dev",
-    "start:web:prod": "npm --prefix ./src/server-web run start:prod",
-    "start:game-server:dev": "npm --prefix ./src/server-game run start:dev",
-    "start:game-server:prod": "npm --prefix ./src/server-game run start:prod",
+    "start": "concurrently \"npm run start:web-server:dev\" \"npm run start:web-client:dev\" \"npm run start:game-server:dev\" \"npm run start:game-client:dev\"",
+    "start:prod": "concurrently \"npm run start:web-server:prod\"  \"npm run start:web-client:prod\" \"npm run start:game-server:prod\" \"npm run start:game-client:prod\"",
+    "start:web-server:dev": "npm --prefix ./src/web-server run start:dev",
+    "start:web-server:prod": "npm --prefix ./src/web-server run start:prod",
+    "start:web-client:dev": "npm --prefix ./src/web-client run start:dev",
+    "start:web-client:prod": "npm --prefix ./src/web-client run start:prod",
+    "start:game-server:dev": "npm --prefix ./src/game-server run start:dev",
+    "start:game-server:prod": "npm --prefix ./src/game-server run start:prod",
     "start:game-client:dev": "npm --prefix ./src/game-client run start:dev",
     "start:game-client:prod": "npm --prefix ./src/game-client run start:prod",
     "test": "npx jest --config jest.config.js"
@@ -26,11 +28,15 @@
     "@types/jest": "^29.5.14",
     "@types/react": "^19.0.8",
     "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3"
   },
   "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5"
   }
