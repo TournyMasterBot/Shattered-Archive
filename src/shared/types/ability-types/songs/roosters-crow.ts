@@ -26,8 +26,7 @@ The Rooster's Crow - The tune of this song resembles that of the
 rooster's crow marking the sunrise, enabling the bard to wake up anyone in
 sleep spell.
 `;
-    this.manualDescription =
-      "* Wake all sleeping in room, including sleep/strangle";
+    this.manualDescription = "* Wake all sleeping in room, including sleep/strangle";
 
     if (RoostersCrow.instance === undefined) {
       RoostersCrow.instance = this;

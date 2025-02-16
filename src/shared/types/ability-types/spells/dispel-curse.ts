@@ -20,8 +20,7 @@ Syntax: c 'dispel curse' <object>
 Dispel curse allows the priest to permanently remove a curse from a given
 object.
 `;
-    this.manualDescription =
-      "Often confused with 'remove curse' which will temporarily remove the curse, this one is the permanent version.";
+    this.manualDescription = "Often confused with 'remove curse' which will temporarily remove the curse, this one is the permanent version.";
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
 

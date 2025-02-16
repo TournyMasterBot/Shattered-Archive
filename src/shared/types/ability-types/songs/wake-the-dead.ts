@@ -27,8 +27,7 @@ charmed being, a spirit that will follow the bard and assist in battle.
 Unlike other classes that have the ability to call upon charmed beings 
 to assist them, this song can be sung in the thick of combat.
 `;
-    this.manualDescription =
-      "Create a charmed spirit to protect you during battle";
+    this.manualDescription = "Create a charmed spirit to protect you during battle";
 
     if (WakeTheDead.instance === undefined) {
       WakeTheDead.instance = this;

@@ -15,11 +15,7 @@ export class MasterySword implements IAbilityGroup {
   constructor() {
     this.abilityGroup = AbilityGroup.MasterySword;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [
-      Florentine.GetInstance().Get(),
-      Flurry.GetInstance().Get(),
-      Cross.GetInstance().Get(),
-    ];
+    this.abilities = [Florentine.GetInstance().Get(), Flurry.GetInstance().Get(), Cross.GetInstance().Get()];
   }
 
   // Method to get the single instance of the class

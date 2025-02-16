@@ -26,8 +26,7 @@ Reveal All - As they are sung, the high pitched notes of this song will
 force any that hear its tune to twitch, causing any that are hidden nearby 
 to reveal themselves.
 `;
-    this.manualDescription =
-      "* Similar to faerie fog, but no fail, and -everyone- twitches";
+    this.manualDescription = "* Similar to faerie fog, but no fail, and -everyone- twitches";
 
     if (RevealAll.instance === undefined) {
       RevealAll.instance = this;

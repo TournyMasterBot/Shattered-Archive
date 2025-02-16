@@ -18,14 +18,7 @@ export class BrewmasterDefault implements IAbilityGroup {
   constructor() {
     this.abilityGroup = AbilityGroup.BrewmasterDefault;
     this.abilityGroupType = AbilityGroupType.Default;
-    this.abilities = [
-      new SecondAttack(),
-      new KegToss(),
-      new Dodge(),
-      new SuckerPunch(),
-      new Haymaker(),
-      new FireBreather(),
-    ];
+    this.abilities = [new SecondAttack(), new KegToss(), new Dodge(), new SuckerPunch(), new Haymaker(), new FireBreather()];
   }
 
   // Method to get the single instance of the class

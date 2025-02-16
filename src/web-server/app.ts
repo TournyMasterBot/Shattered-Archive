@@ -30,15 +30,16 @@ import path from "path";
   await ServerCache.Initialize();
 
   // Start the server
-  const shatteredServer = new ShatteredServer({ port });
+  const shatteredServer = new ShatteredServer({ 
+    port,
+    stage: execEnv
+  });
   const app = shatteredServer.GetServer();
 
   const routesDirectory = path.join(__dirname, "routes");
   LoadRoutes(app, routesDirectory);
 
   app.listen(port, () => {
-    console.log(
-      `Shattered Archive Web Server is running in ${execEnv} mode on http://localhost:${port}`,
-    );
+    console.log(`Shattered Archive Web Server is running in ${execEnv} mode on http://localhost:${port}`);
   });
 })();

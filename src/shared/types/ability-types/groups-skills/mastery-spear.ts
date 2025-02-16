@@ -15,11 +15,7 @@ export class MasterySpear implements IAbilityGroup {
   constructor() {
     this.abilityGroup = AbilityGroup.MasterySpear;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [
-      Spin.GetInstance().Get(),
-      Impale.GetInstance().Get(),
-      Legsweep.GetInstance().Get(),
-    ];
+    this.abilities = [Spin.GetInstance().Get(), Impale.GetInstance().Get(), Legsweep.GetInstance().Get()];
   }
 
   // Method to get the single instance of the class

@@ -14,10 +14,7 @@ export class ArmsmanBasics implements IAbilityGroup {
   constructor() {
     this.abilityGroup = AbilityGroup.ArmsmanBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
-    this.abilities = [
-      Sword.GetInstance().Get<Sword>(),
-      SecondAttack.GetInstance().Get<SecondAttack>(),
-    ];
+    this.abilities = [Sword.GetInstance().Get<Sword>(), SecondAttack.GetInstance().Get<SecondAttack>()];
   }
 
   // Method to get the single instance of the class

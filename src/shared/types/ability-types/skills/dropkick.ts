@@ -26,8 +26,7 @@ DROPKICK
 Syntax: dropkick <target>
 Run at your enemy and kick them in the chest with both feet, causing stun.`;
 
-    this.manualDescription =
-      "Run at your enemy and kick them in the chest with both feet, causing stun.";
+    this.manualDescription = "Run at your enemy and kick them in the chest with both feet, causing stun.";
 
     if (Dropkick.instance === undefined) {
       Dropkick.instance = this;

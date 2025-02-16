@@ -32,8 +32,7 @@ gear from the effects of acid and flame for a short period of time.
 
 Groups containing this skill: BARBARIAN DEFAULT
 `;
-    this.manualDescription =
-      "Mudcoat acts as both bless and fireproof for items";
+    this.manualDescription = "Mudcoat acts as both bless and fireproof for items";
 
     if (Mudcoat.instance === undefined) {
       Mudcoat.instance = this;

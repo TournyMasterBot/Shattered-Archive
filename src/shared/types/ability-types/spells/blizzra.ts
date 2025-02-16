@@ -40,8 +40,7 @@ to direct the damage over ranges against opponents.
 See also - COMBAT 
 `;
 
-    this.manualDescription =
-      "At level 15 you will be able to range this spell.";
+    this.manualDescription = "At level 15 you will be able to range this spell.";
 
     if (Blizzra.instance === undefined) {
       Blizzra.instance = this;

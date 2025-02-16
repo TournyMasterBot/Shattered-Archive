@@ -4,7 +4,7 @@ module.exports = [
     files: ["**/*.ts"],
     languageOptions: {
       parser: require("@typescript-eslint/parser"),
-      ecmaVersion: 2021,
+      ecmaVersion: 2024,
       sourceType: "module",
     },
     plugins: {

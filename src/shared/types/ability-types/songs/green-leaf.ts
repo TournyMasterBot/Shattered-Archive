@@ -26,8 +26,7 @@ Green Leaf - A song of haphazard whimsy that distracts the mind of the
 target and able to cause amusing effects such as blurred vision and
 hallucinations as well as the inability to pick up or wear items.
 `;
-    this.manualDescription =
-      "Have you ever wanted to make your enemies insane? Well, try some green leaf.";
+    this.manualDescription = "Have you ever wanted to make your enemies insane? Well, try some green leaf.";
 
     if (GreenLeaf.instance === undefined) {
       GreenLeaf.instance = this;

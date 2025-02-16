@@ -16,12 +16,7 @@ export class Earth implements IAbilityGroup {
   constructor() {
     this.abilityGroup = AbilityGroup.Earth;
     this.abilityGroupType = AbilityGroupType.Spells;
-    this.abilities = [
-      Chasm.GetInstance().Get(),
-      FlamingSoul.GetInstance().Get(),
-      SummonMonster.GetInstance().Get(),
-      Stalagmite.GetInstance().Get(),
-    ];
+    this.abilities = [Chasm.GetInstance().Get(), FlamingSoul.GetInstance().Get(), SummonMonster.GetInstance().Get(), Stalagmite.GetInstance().Get()];
   }
 
   Get<T>(): T {

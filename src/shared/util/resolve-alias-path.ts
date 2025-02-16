@@ -14,8 +14,7 @@ async function ResolveAlias(aliasPath: string): Promise<string> {
   const tsconfig = parse(tsconfigContent);
 
   const baseUrl: string = tsconfig.compilerOptions.baseUrl || ".";
-  const pathsMapping: Record<string, string[]> =
-    tsconfig.compilerOptions.paths || {};
+  const pathsMapping: Record<string, string[]> = tsconfig.compilerOptions.paths || {};
 
   // Loop through each alias pattern in the mapping
   for (const alias in pathsMapping) {

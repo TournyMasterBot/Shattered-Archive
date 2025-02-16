@@ -22,8 +22,7 @@ export class NineLives implements IAbility {
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = ``;
-    this.manualDescription =
-      "When you die, come back again! Nine times. Does not replenish unless you retrain / reclass.";
+    this.manualDescription = "When you die, come back again! Nine times. Does not replenish unless you retrain / reclass.";
 
     if (NineLives.instance === undefined) {
       NineLives.instance = this;

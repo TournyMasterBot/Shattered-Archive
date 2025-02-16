@@ -16,12 +16,7 @@ export class Fire implements IAbilityGroup {
   constructor() {
     this.abilityGroup = AbilityGroup.Fire;
     this.abilityGroupType = AbilityGroupType.Spells;
-    this.abilities = [
-      FlameWall.GetInstance().Get(),
-      FlamingSoul.GetInstance().Get(),
-      Ignite.GetInstance().Get(),
-      ScorchingWinds.GetInstance().Get(),
-    ];
+    this.abilities = [FlameWall.GetInstance().Get(), FlamingSoul.GetInstance().Get(), Ignite.GetInstance().Get(), ScorchingWinds.GetInstance().Get()];
   }
 
   // Method to get the single instance of the class

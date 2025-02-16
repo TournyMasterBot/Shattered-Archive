@@ -15,11 +15,7 @@ export class PirateBasics implements IAbilityGroup {
   constructor() {
     this.abilityGroup = AbilityGroup.PirateBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
-    this.abilities = [
-      Sword.GetInstance().Get(),
-      Dagger.GetInstance().Get(),
-      Dodge.GetInstance().Get(),
-    ];
+    this.abilities = [Sword.GetInstance().Get(), Dagger.GetInstance().Get(), Dodge.GetInstance().Get()];
   }
 
   // Method to get the single instance of the class

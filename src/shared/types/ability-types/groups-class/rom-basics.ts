@@ -20,15 +20,7 @@ export class RomBasics implements IAbilityGroup {
   constructor() {
     this.abilityGroup = AbilityGroup.RomBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
-    this.abilities = [
-      new Scrolls(),
-      new Recall(),
-      new Dig(),
-      new Staves(),
-      new Swim(),
-      new Wands(),
-      new Age(),
-    ];
+    this.abilities = [new Scrolls(), new Recall(), new Dig(), new Staves(), new Swim(), new Wands(), new Age()];
   }
 
   // Method to get the single instance of the class

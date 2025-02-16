@@ -7,5 +7,4 @@ export const damageCategoryType = {
 export const DslDamageCategoryType = {
   ...damageCategoryType,
 } as const;
-export type DslDamageCategoryType =
-  (typeof DslDamageCategoryType)[keyof typeof DslDamageCategoryType];
+export type DslDamageCategoryType = (typeof DslDamageCategoryType)[keyof typeof DslDamageCategoryType];

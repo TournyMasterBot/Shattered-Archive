@@ -15,11 +15,7 @@ export class Elemental implements IAbilityGroup {
   constructor() {
     this.abilityGroup = AbilityGroup.Elemental;
     this.abilityGroupType = AbilityGroupType.Spells;
-    this.abilities = [
-      Blizzard.GetInstance().Get(),
-      Firestorm.GetInstance().Get(),
-      SummonElemental.GetInstance().Get(),
-    ];
+    this.abilities = [Blizzard.GetInstance().Get(), Firestorm.GetInstance().Get(), SummonElemental.GetInstance().Get()];
   }
 
   // Method to get the single instance of the class

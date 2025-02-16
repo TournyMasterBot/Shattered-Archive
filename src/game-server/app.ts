@@ -27,6 +27,7 @@ if (execEnvFlagIndex !== -1 && process.argv[execEnvFlagIndex + 1]) {
 
 const shatteredServer = new ShatteredServer({
   port: port,
+  stage: execEnv
 });
 const app = shatteredServer.GetServer();
 
@@ -34,7 +35,5 @@ const routesDirectory = path.join(__dirname, "routes");
 LoadRoutes(app, routesDirectory);
 
 app.listen(port, () => {
-  console.log(
-    `Shattered Archive Game Server is running in ${execEnv} mode on http://localhost:${port}`,
-  );
+  console.log(`Shattered Archive Game Server is running in ${execEnv} mode on http://localhost:${port}`);
 });

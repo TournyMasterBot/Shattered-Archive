@@ -30,8 +30,7 @@ extensive studies allows a mage to strengthen the power of his casting, most
 evident in his damage causing spells.  Another benefit of the spellcraft
 skill is that a mage learns the efficient use of mana during his practice of
 casting.`;
-    this.manualDescription =
-      "More explicitly, spellcraft refunds the mana cost if you fail to cast the spell. Take it.";
+    this.manualDescription = "More explicitly, spellcraft refunds the mana cost if you fail to cast the spell. Take it.";
 
     if (Spellcraft.instance === undefined) {
       Spellcraft.instance = this;

@@ -15,11 +15,7 @@ export class MasteryPolearm implements IAbilityGroup {
   constructor() {
     this.abilityGroup = AbilityGroup.MasteryPolearm;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [
-      Distance.GetInstance().Get(),
-      Entrap.GetInstance().Get(),
-      Chargeset.GetInstance().Get(),
-    ];
+    this.abilities = [Distance.GetInstance().Get(), Entrap.GetInstance().Get(), Chargeset.GetInstance().Get()];
   }
 
   // Method to get the single instance of the class

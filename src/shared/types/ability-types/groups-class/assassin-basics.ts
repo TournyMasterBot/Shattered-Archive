@@ -15,11 +15,7 @@ export class AssassinBasics implements IAbilityGroup {
   constructor() {
     this.abilityGroup = AbilityGroup.AssassinBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
-    this.abilities = [
-      Dagger.GetInstance().Get(),
-      SecondAttack.GetInstance().Get(),
-      Assassinate.GetInstance().Get(),
-    ];
+    this.abilities = [Dagger.GetInstance().Get(), SecondAttack.GetInstance().Get(), Assassinate.GetInstance().Get()];
   }
 
   // Method to get the single instance of the class

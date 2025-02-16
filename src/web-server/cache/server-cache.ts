@@ -28,28 +28,19 @@ const ServerCache = {
   async InitializeAbilities(): Promise<void> {
     const abilities: IAbility[] = [];
     // Initialize Skills, Spells, Songs
-    const skillsPath = path.join(
-      this.baseSharedDir,
-      "/types/ability-types/skills",
-    );
+    const skillsPath = path.join(this.baseSharedDir, "/types/ability-types/skills");
     console.debug("Fetching skills for cache", {
       skillsPath: skillsPath,
     });
     const skills = await this.filesystem.importModules(skillsPath);
     abilities.push(...skills);
-    const spellsPath = path.join(
-      this.baseSharedDir,
-      "/types/ability-types/spells",
-    );
+    const spellsPath = path.join(this.baseSharedDir, "/types/ability-types/spells");
     console.debug("Fetching spells for cache", {
       spellsPath: spellsPath,
     });
     const spells = await this.filesystem.importModules(spellsPath);
     abilities.push(...spells);
-    const songsPath = path.join(
-      this.baseSharedDir,
-      "/types/ability-types/songs",
-    );
+    const songsPath = path.join(this.baseSharedDir, "/types/ability-types/songs");
     console.debug("Fetching songs for cache", {
       songsPath: songsPath,
     });
@@ -65,54 +56,36 @@ const ServerCache = {
     }
 
     // DEBUG ONLY :: console.log(JSON.stringify(skills, null, 2));
-    console.log(
-      `Ability count: ${abilities.length}, Skills: ${skills.length}, Spells: ${spells.length}, Songs: ${songs.length}`,
-    );
+    console.log(`Ability count: ${abilities.length}, Skills: ${skills.length}, Spells: ${spells.length}, Songs: ${songs.length}`);
   },
   async InitializeAbilityGroups(): Promise<void> {
     const abilityGroups: IAbilityGroup[] = [];
 
     // Initialize Skills, Spells, Songs
-    const skillsPath = path.join(
-      this.baseSharedDir,
-      "/types/ability-types/groups-skills",
-    );
+    const skillsPath = path.join(this.baseSharedDir, "/types/ability-types/groups-skills");
     const skills = await this.filesystem.importModules(skillsPath);
     abilityGroups.push(...skills);
-    const spellsPath = path.join(
-      this.baseSharedDir,
-      "/types/ability-types/groups-spells",
-    );
+    const spellsPath = path.join(this.baseSharedDir, "/types/ability-types/groups-spells");
     const spells = await this.filesystem.importModules(spellsPath);
     abilityGroups.push(...spells);
-    const songsPath = path.join(
-      this.baseSharedDir,
-      "/types/ability-types/groups-songs",
-    );
+    const songsPath = path.join(this.baseSharedDir, "/types/ability-types/groups-songs");
     const songs = await this.filesystem.importModules(songsPath);
     abilityGroups.push(...songs);
 
     // Load the server cache
     for (const group of abilityGroups) {
-      const checkGroup = ServerCache.AbilityGroups[
-        group.abilityGroup
-      ] as IAbilityGroup;
+      const checkGroup = ServerCache.AbilityGroups[group.abilityGroup] as IAbilityGroup;
       if (checkGroup === undefined) {
         ServerCache.AbilityGroups[group.abilityGroup] = group;
       }
     }
 
     // DEBUG ONLY :: console.log(JSON.stringify(skills, null, 2));
-    console.log(
-      `Ability Group count: ${abilityGroups.length}, Skills: ${skills.length}, Spells: ${spells.length}, Songs: ${songs.length}`,
-    );
+    console.log(`Ability Group count: ${abilityGroups.length}, Skills: ${skills.length}, Spells: ${spells.length}, Songs: ${songs.length}`);
   },
   async InitializeDamageTypes(): Promise<void> {
     const damageTypes: IDamageType[] = [];
-    const damageTypesPath = path.join(
-      this.baseSharedDir,
-      "/types/damage-types/damage-type-models",
-    );
+    const damageTypesPath = path.join(this.baseSharedDir, "/types/damage-types/damage-type-models");
     const types = await this.filesystem.importModules(damageTypesPath);
     damageTypes.push(...types);
     for (const damageType of damageTypes) {
@@ -132,11 +105,7 @@ const ServerCache = {
       }
       const areaData = await this.filesystem.readFile(`${file}`);
       const area = JSON.parse(areaData) as IArea;
-      if (
-        area !== undefined &&
-        area.area_id !== undefined &&
-        area.area_name !== undefined
-      ) {
+      if (area !== undefined && area.area_id !== undefined && area.area_name !== undefined) {
         const checkArea = ServerCache.Areas[area.area_id];
         if (checkArea === undefined) {
           ServerCache.Areas[area.area_id] = area;

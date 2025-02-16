@@ -29,8 +29,7 @@ for a specificed period of time.  It tends to be quite useful, as the lack
 of available air under water tends to cause great pain to most people.  
 
 See also - ENHANCEMENT`;
-    this.manualDescription =
-      "This allows a character to breath underwater, but you can still drown on the surface of the ocean";
+    this.manualDescription = "This allows a character to breath underwater, but you can still drown on the surface of the ocean";
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
 

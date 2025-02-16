@@ -15,11 +15,7 @@ export class MasteryFlail implements IAbilityGroup {
   constructor() {
     this.abilityGroup = AbilityGroup.MasteryFlail;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [
-      Entwine.GetInstance().Get(),
-      Sting.GetInstance().Get(),
-      Strip.GetInstance().Get(),
-    ];
+    this.abilities = [Entwine.GetInstance().Get(), Sting.GetInstance().Get(), Strip.GetInstance().Get()];
   }
 
   // Method to get the single instance of the class

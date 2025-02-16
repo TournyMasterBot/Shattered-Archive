@@ -59,8 +59,7 @@ export class DamageType implements IDamageType {
     this.id = input.id!;
     this.name = input.name!;
     this.type = input.type ?? DslDamageType.Unknown;
-    this.damageCategoryType =
-      input.damageCategoryType ?? DslDamageCategoryType.Unknown;
+    this.damageCategoryType = input.damageCategoryType ?? DslDamageCategoryType.Unknown;
     this.resistanceCategories = input.resistanceCategories ?? [];
   }
 

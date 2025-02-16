@@ -15,11 +15,7 @@ export class MasteryWhip implements IAbilityGroup {
   constructor() {
     this.abilityGroup = AbilityGroup.MasteryWhip;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [
-      Lash.GetInstance().Get(),
-      Yank.GetInstance().Get(),
-      Choke.GetInstance().Get(),
-    ];
+    this.abilities = [Lash.GetInstance().Get(), Yank.GetInstance().Get(), Choke.GetInstance().Get()];
   }
 
   // Method to get the single instance of the class

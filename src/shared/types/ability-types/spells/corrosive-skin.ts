@@ -16,8 +16,7 @@ export class CorrosiveSkin implements IAbility {
     this.helpFile = "";
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
-    this.manualDescription =
-      "Causes damage when you are hit by physical skills, including those like ground control.";
+    this.manualDescription = "Causes damage when you are hit by physical skills, including those like ground control.";
 
     if (CorrosiveSkin.instance === undefined) {
       CorrosiveSkin.instance = this;

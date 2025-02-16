@@ -16,8 +16,7 @@ export class CreateTree implements IAbility {
     this.manualDescription = `
 Creates a tree
 `;
-    this.recommendedHelpFileChanges =
-      "Include in 'help creation' and 'create tree'";
+    this.recommendedHelpFileChanges = "Include in 'help creation' and 'create tree'";
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
 

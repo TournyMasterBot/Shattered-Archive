@@ -20,8 +20,7 @@ This skill is learned by those who are well acquainted to bar room
 brawls. It is a wild, looping punch designed to stun and daze the opponent.
 Due to the wild nature of the swing, it is somewhat unreliable.
 `;
-    this.manualDescription =
-      "In addition to stunning your opponent, this can also force them into a resting position.";
+    this.manualDescription = "In addition to stunning your opponent, this can also force them into a resting position.";
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
 

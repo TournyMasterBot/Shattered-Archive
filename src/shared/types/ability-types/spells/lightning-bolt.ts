@@ -31,8 +31,7 @@ rooms.
 
 See also - WEATHER
         `;
-    this.manualDescription =
-      "At level 15 you will be able to range this spell.";
+    this.manualDescription = "At level 15 you will be able to range this spell.";
     this.abilityGroupType = AbilityGroupType.Spells; // Set to 'Spells'
     this.abilityUsage = AbilityUsage.Active;
 

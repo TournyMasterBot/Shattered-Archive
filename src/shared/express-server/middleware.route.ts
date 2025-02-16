@@ -9,11 +9,7 @@ import path from "path";
  * @param dir - The directory to search for route files.
  * @param baseRoute - The accumulated base route (derived from the folder structure).
  */
-function LoadRoutes(
-  app: Application,
-  dir: string,
-  baseRoute: string = "",
-): void {
+function LoadRoutes(app: Application, dir: string, baseRoute: string = ""): void {
   // Read all items (files and directories) in the current directory.
   const items = fs.readdirSync(dir);
   items.forEach((item) => {

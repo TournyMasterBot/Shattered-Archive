@@ -14,10 +14,7 @@ export class PaladinBasics implements IAbilityGroup {
   constructor() {
     this.abilityGroup = AbilityGroup.PaladinBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
-    this.abilities = [
-      Sword.GetInstance().Get(),
-      SecondAttack.GetInstance().Get(),
-    ];
+    this.abilities = [Sword.GetInstance().Get(), SecondAttack.GetInstance().Get()];
   }
 
   // Method to get the single instance of the class

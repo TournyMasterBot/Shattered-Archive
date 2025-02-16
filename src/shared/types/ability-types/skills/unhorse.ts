@@ -22,8 +22,7 @@ export class Unhorse implements IAbility {
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = "";
-    this.manualDescription =
-      "While riding, the crusader uses a polearm to attempt to unseat their opponent."; // Manual description as specified
+    this.manualDescription = "While riding, the crusader uses a polearm to attempt to unseat their opponent."; // Manual description as specified
   }
 
   // Method to get the single instance of the class

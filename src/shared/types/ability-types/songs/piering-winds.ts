@@ -26,8 +26,7 @@ The Piercing Winds - Another powerful song that when sung, will summon
 savage winds and slash at all foes within the area. It can also provoke
 people that are hidden within the room into action.
 `;
-    this.manualDescription =
-      "* AoE damage to all in room who are not in your group";
+    this.manualDescription = "* AoE damage to all in room who are not in your group";
 
     if (PiercingWinds.instance === undefined) {
       PiercingWinds.instance = this;

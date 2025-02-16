@@ -25,8 +25,7 @@ export class ChantOfAccuracy implements IAbility {
 This chant increases the hit roll of everyone in 
 the skald's group as long as they are also in the same room as the skald.
 `;
-    this.manualDescription =
-      "This song is a chant that gives +hit, which reduces the chance to 'miss' on attacks";
+    this.manualDescription = "This song is a chant that gives +hit, which reduces the chance to 'miss' on attacks";
 
     if (ChantOfAccuracy.instance === undefined) {
       ChantOfAccuracy.instance = this;

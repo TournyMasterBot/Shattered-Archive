@@ -16,11 +16,7 @@ export class MasteryAxe implements IAbilityGroup {
   private constructor() {
     this.abilityGroup = AbilityGroup.MasteryAxe;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [
-      ShieldCleave.GetInstance().Get(),
-      Whirl.GetInstance().Get(),
-      Disembowel.GetInstance().Get(),
-    ];
+    this.abilities = [ShieldCleave.GetInstance().Get(), Whirl.GetInstance().Get(), Disembowel.GetInstance().Get()];
   }
 
   // Method to get the single instance of the class

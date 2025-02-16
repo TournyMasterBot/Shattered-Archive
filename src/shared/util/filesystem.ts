@@ -54,10 +54,7 @@ export class FileSystem implements IFileSystem {
     }
   }
 
-  public async getAllFiles(
-    directoryPath: string,
-    includeSubdirectories: boolean = false,
-  ): Promise<string[]> {
+  public async getAllFiles(directoryPath: string, includeSubdirectories: boolean = false): Promise<string[]> {
     try {
       let files: string[] = [];
 
@@ -103,10 +100,7 @@ export class FileSystem implements IFileSystem {
     }
   }
 
-  public async createDirectory(
-    directoryPath: string,
-    createIfParentDoesNotExist: boolean,
-  ): Promise<void> {
+  public async createDirectory(directoryPath: string, createIfParentDoesNotExist: boolean): Promise<void> {
     try {
       await fs.mkdir(directoryPath, { recursive: createIfParentDoesNotExist });
     } catch (err: any) {
@@ -137,8 +131,7 @@ export class FileSystem implements IFileSystem {
 
             // Allow .js and .ts files, but skip declaration files.
             const ext = path.extname(filePath);
-            if (ext === ".d.ts" || (ext !== ".js" && ext !== ".ts"))
-              return null;
+            if (ext === ".d.ts" || (ext !== ".js" && ext !== ".ts")) return null;
 
             // Dynamically require the module (ts-node handles .ts files)
             const mod = require(filePath);

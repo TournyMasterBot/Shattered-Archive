@@ -15,11 +15,7 @@ export class MasteryMace implements IAbilityGroup {
   constructor() {
     this.abilityGroup = AbilityGroup.MasteryMace;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [
-      Backhand.GetInstance().Get(),
-      Drum.GetInstance().Get(),
-      Boneshatter.GetInstance().Get(),
-    ];
+    this.abilities = [Backhand.GetInstance().Get(), Drum.GetInstance().Get(), Boneshatter.GetInstance().Get()];
   }
 
   // Method to get the single instance of the class
