@@ -1,0 +1,12 @@
+{
+  "continent_id": "Icewall",
+  "area_id": "ForbiddenForest",
+  "area_name": "Forbidden Forest",
+  "starting_location": "Main Port of Icewall",
+  "alignment": "Unknown",
+  "recommended_min_level": "30",
+  "recommended_max_level": "51",
+  "directions": "ne; e; ne; n; n; ne; n; n; n; n; n; w;",
+  "autopilot_level": "{\"ForbiddenForest\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,12 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "ThiefsStronghold",
+  "area_name": "Thief's Stronghold",
+  "starting_location": "The Arkania Port",
+  "alignment": "Good",
+  "recommended_min_level": "15",
+  "recommended_max_level": "35",
+  "directions": "e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; d; e; e; e; e; s; d;",
+  "autopilot_level": "{\"ThiefsStronghold\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

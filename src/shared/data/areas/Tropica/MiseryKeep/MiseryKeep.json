@@ -1,0 +1,12 @@
+{
+  "continent_id": "Tropica",
+  "area_id": "MiseryKeep",
+  "area_name": "Misery Keep",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Unknown",
+  "recommended_min_level": "43",
+  "recommended_max_level": "51",
+  "directions": "sw; w; nw; w; nw; w; s; s; se; se; se; se; sw; se; se; se; w; nw; w; s; w; w; w; w; s; w; s; s; w; enter stone; e; e; e; e; s; s; d; e; e; s; s; w; w; n; d; s; s; s; e; e; e; enter portal;",
+  "autopilot_level": "{\"MiseryKeep\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

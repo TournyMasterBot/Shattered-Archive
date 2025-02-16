@@ -1,0 +1,38 @@
+import IAbility from "@shared/types/ability-types/ability";
+import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
+import AbilityUsage from "@shared/types/ability-types/ability-usage";
+
+export class MoonShadow implements IAbility {
+    private static instance: MoonShadow;
+
+    name: string;
+    helpFile: string;
+    abilityGroupType: AbilityGroupType;
+    abilityUsage: AbilityUsage;
+
+    constructor() {
+        this.name = "Moon Shadow";
+        this.helpFile = "";
+        this.abilityGroupType = AbilityGroupType.Spells;
+        this.abilityUsage = AbilityUsage.Active;
+
+        if (MoonShadow.instance === undefined) {
+            MoonShadow.instance = this;
+        }
+    }
+
+    // Method to get the single instance of the class
+    public static GetInstance(): MoonShadow {
+        if (!MoonShadow.instance) {
+            MoonShadow.instance = new MoonShadow();
+        }
+        return MoonShadow.instance;
+    }
+
+    // Method to get the class instance, used in the context of IAbility
+    public Get<T>(): T {
+        return MoonShadow.GetInstance() as T;
+    }
+}
+
+export default MoonShadow;

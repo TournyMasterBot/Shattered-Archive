@@ -1,0 +1,12 @@
+{
+  "continent_id": "Shokono",
+  "area_id": "ShrineOfWater",
+  "area_name": "Shrine of Water",
+  "starting_location": "The Port of Shokono",
+  "alignment": "Unknown",
+  "recommended_min_level": "12",
+  "recommended_max_level": "35",
+  "directions": "w; w; w; w; w; w; s; s; s; s; s; s; w; w; w; s; s; se; ne; n; e; n; n; n;",
+  "autopilot_level": "{\"ShrineOfWater\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

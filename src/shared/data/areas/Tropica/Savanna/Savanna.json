@@ -1,0 +1,12 @@
+{
+  "continent_id": "Tropica",
+  "area_id": "Savanna",
+  "area_name": "Savanna",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Mixed",
+  "recommended_min_level": "35",
+  "recommended_max_level": "45",
+  "directions": "s; sw; s; w; sw; w; w; sw; sw; w;",
+  "autopilot_level": "{\"Savanna\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

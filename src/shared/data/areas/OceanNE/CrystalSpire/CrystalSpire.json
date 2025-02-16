@@ -1,0 +1,12 @@
+{
+  "continent_id": "OceanNE",
+  "area_id": "CrystalSpire",
+  "area_name": "Crystal Spire",
+  "starting_location": "Main Port of Icewall",
+  "alignment": "Unknown",
+  "recommended_min_level": "15",
+  "recommended_max_level": "40",
+  "directions": "ne; e; ne; n; n; ne; n; n; n; n; n; ne; n; se; se; se; s; se; w;",
+  "autopilot_level": "{\"CrystalSpire\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

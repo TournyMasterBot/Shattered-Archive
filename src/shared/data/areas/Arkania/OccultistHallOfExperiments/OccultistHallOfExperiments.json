@@ -1,0 +1,12 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "OccultistHallOfExperiments",
+  "area_name": "Occultist Hall of Experiments",
+  "starting_location": "The Arkania Port",
+  "alignment": "",
+  "recommended_min_level": "15",
+  "recommended_max_level": "30",
+  "directions": "e; e; e; e; e; e; e; e; e; e; e; e; e; e; n; n; n; n; n; n; n; n; n; n; n; n; n; e; n; w; se;",
+  "autopilot_level": "{\"OccultistHallOfExperiments\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

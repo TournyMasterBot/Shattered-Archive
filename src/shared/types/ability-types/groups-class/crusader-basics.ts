@@ -1,0 +1,37 @@
+import IAbility from "@shared/types/ability-types/ability";
+import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
+import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
+import AbilityGroup from "@shared/types/ability-types/ability-group";
+import Mace from "@shared/types/ability-types/skills/mace";
+import Flail from "@shared/types/ability-types/skills/flail";
+
+export class CrusaderBasics implements IAbilityGroup {
+    static instance: CrusaderBasics;
+    public abilityGroup: AbilityGroup;
+    public abilityGroupType: AbilityGroupType;
+    public abilities: IAbility[];
+
+    constructor() {
+        this.abilityGroup = AbilityGroup.CrusaderBasics;
+        this.abilityGroupType = AbilityGroupType.Basics;
+        this.abilities = [
+            new Mace(),
+            new Flail()
+        ];
+    }
+
+    // Method to get the single instance of the class
+    public static GetInstance(): CrusaderBasics {
+        if (!CrusaderBasics.instance) {
+            CrusaderBasics.instance = new CrusaderBasics();
+        }
+        return CrusaderBasics.instance;
+    }
+
+    // Method to get the class instance, used in the context of IAbility
+    public Get<T>(): T {
+        return CrusaderBasics.GetInstance() as T;
+    }
+}
+
+export default CrusaderBasics;

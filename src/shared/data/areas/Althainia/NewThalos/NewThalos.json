@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "NewThalos",
+  "area_name": "New Thalos",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Neutral",
+  "recommended_min_level": "10",
+  "recommended_max_level": "35",
+  "directions": "w; s; s; w; w; w; w; w;",
+  "autopilot_level": "{\"NewThalos\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[{\"name\":\"A proud stallion\",\"race\":\"horse\",\"continent\":1,\"area_id\":\"NewThalos\",\"alignment\":4,\"gender\":\"male\",\"level\":10,\"damage_dice\":\"2d4\",\"damage_min\":2,\"damage_max\":8,\"damage_avg\":4.0,\"damage_type\":3,\"damage_type_string\":\"bite\",\"gold\":0,\"silver\":0,\"CreatureType\":0}]"
+}

@@ -1,0 +1,2518 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "ArkaniaRoadway",
+  "area_name": "Arkania Roadway",
+  "starting_location": "The Arkania Port",
+  "alignment": "Unknown",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "autopilot_level": "{\"ArkaniaRoadway\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]",
+  "areaRooms": {
+    "7.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 7,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "Port",
+      "rawName": "The Arkania Port",
+      "rawDesc": "Fishermen carry their catches from ship to barrow.  The strong cleansing\r\nsmell of the sea engulfs all who come near.  Many different boats enter the\r\nport while many others leave.  A few business owners have set up a few shops\r\nhere to take advantage of the incoming sailors and tourists.  A large sign\r\nfull of information is attracting some attention.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        }
+      }
+    },
+    "8.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 8,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A Clearing",
+      "rawDesc": "You see the vast open sea to the west.  Seagulls fly all about and waves\r\nslowly invade the sand.  A port stands to the west where large and small\r\nboats alike enter and leave.  To the east you see a forest.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        }
+      }
+    },
+    "9.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 9,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A Trail from Roully Bab Binb to Arkane",
+      "rawDesc": "You stand on a trail amid a small, green forest.  You can hear the sounds\r\nof woodland creatures and a warm, salty breeze from the west rustling\r\nthrough the trees and your hair.  Far to the east, you think you can see a\r\ncity and to the west, the ocean of Roully Bab Binb lines the horizon.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "10.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 10,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Path to the Port",
+      "rawDesc": "Far to the east you can see the gates of the mighty city of Arkane.  To\r\nthe west you can still smell the sea breeze.  The forest has dwindled down\r\ninto a field that appears to be man made.  Perhaps the trees that once stood\r\nhere are what built Arkane.  To the North lie the ruins of the Pirate's\r\nHideout.  There is nothing left but a pile of rubble.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "11.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 11,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A Field in the Middle of a Forest",
+      "rawDesc": "You stand in the middle of a field that seems to be surrounded by forest\r\non both sides.  The salt air of the sea is beginning to diminish here and\r\nthe sound of what appears to be children giggling reaches you from the edges\r\nof the forest.  To the north lies a huge crater.  To the south lies a very\r\nlarge tree, but roots and branches to the tree make the journey almost\r\nimpossible.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "12.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 12,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "Justice Bindstone",
+      "rawName": "Middle of a Huge Field",
+      "rawDesc": "From the middle of the field, you can just make out the tips of the sails\r\nin the port to the west, but Arkane's city gates are looming to the east. \r\nPerpetual giggling invades the would-be silence, apparently coming from the\r\nforests to the north and south.  The trees all around you seem young and\r\nfresh, fragile as the breeze sends another wave of leaves down at the edges\r\nof the field.  A battlefield can be seen to the northwest.  A path upwards\r\nleads to The Academy.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "up": {
+          "isEnabled": true,
+          "rawString": "up"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        }
+      }
+    },
+    "21.-6.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -6,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A trail going north",
+      "rawDesc": "You see the gates of Arkane to the south.  To the north is a dirt trail\r\nleading into a forest.  A dark church has been built off the path to the\r\nwest.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "20.-6.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 20,
+            "Y": -6,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Hall of Onyx",
+      "rawDesc": "Unfolding before you is a vast passage of the purest onyx, styled and crafted\r\ninto smooth, unmarred walls.  A natural glow radiates from its surface from\r\nillumination further away.  The passage spans a great, uncountable height and\r\nlength, and the polished surface lends even more to that illusion.  The cool,\r\ndark interior echos noises that sound off randomly, as they envelope the passage,\r\nthen dissipate.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "19.-6.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 19,
+            "Y": -6,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Obsidian Altar",
+      "rawDesc": "The altar room stands wide and tall, with great expanses made for\r\ngathering.  Deep black obsidian covers the ceiling, floor, and walls, cut\r\nand polished to a tedious perfection.  It contrasts slightly in the joining\r\nof onyx and jet, creating a small swirl of chaos along the room's edges, yet\r\nthe different stones seem to lock into each other perfectly.  Dark sconces\r\nadorn the wall about the altar room, their firelight bounding shadows and\r\nglints of light off the polished obsidian surfaces.  A large sacrificial\r\naltar stands in middle-front of the room, as the obsidian floor rises\r\nfluidly towards it.  The altar itself is carved from the same obsidian, and\r\nis seemingly a part of the rising dias.  A carved hole within the altar\r\nitself shows its purpose as sacrificial in nature, while the ornate carvings\r\nabout the construction calls forth all powers of Necrucifer's lineage alike.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        }
+      }
+    },
+    "19.-5.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 19,
+            "Y": -5,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Chamber of Shadows",
+      "rawDesc": "Only a very few sconces light this chamber, leaving a dim hue of orange\r\nlazily bounding from the pure jet stone of the walls, ceiling, and floor. \r\nThe chamber should rightly be cool and full of echoes, however, it instead\r\nradiates a comfortable warmth, and is mysterious quiet.  The general lull of\r\nthis room is somewhat soothing.  Slabs of jet extend from the walls, and\r\nseem to be used for resting or sleeping.  From the floor in the middle of\r\nthe room extends a jet fountain, brushed with silver.  It bubbles quietly,\r\nalmost unheard.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        }
+      }
+    },
+    "21.-7.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -7,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "Black Robes Bindstone",
+      "rawName": "A trail going north",
+      "rawDesc": "From all around you hear the giggling on hidden kender.  The forest here\r\nis very green and full of wildlife.  The trail continues north.  A path\r\nupwards leads to The Academy.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "up": {
+          "isEnabled": true,
+          "rawString": "up"
+        }
+      }
+    },
+    "21.-8.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -8,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The tall trees",
+      "rawDesc": "Up above you notice that the trees are extremely tall and funny shaped. \r\nIt's almost as though the trees were shaped by magic.  At the very top, you\r\ncan see a birds nest.  It looks like it must be a rather large bird.  There\r\nis something carved into one of the trees.  Colorful flowers can be seen\r\nthrough the trees to the west.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "up": {
+          "isEnabled": true,
+          "rawString": "up"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "21.-9.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -9,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "\u001b[0;33mA Surging Flow of \u001b[1;30mViscid Muck\u001b[0m",
+      "rawDesc": "\u001b[0;37mWarm, oozing mud streaks the terrain, imbedding itself into every nook\r\nand hole as the \u001b[1;30mg\u001b[0;37mra\u001b[1;37my\u001b[0;37mis\u001b[1;30mh \u001b[0;35mpurple\u001b[0;37m mass rolls to and fro, claiming loose dirt,\r\npebbles and other matter as its own as it slides along to cover all in its\r\npath.  It's depth is hard to determine and those daring to trudge across\r\nfind that their footsteps are squelched by the sticky, thick sludge even\r\nbefore they begin to form.  \u001b[0m\n\r\n\r\n\u001b[0;33mSeveral slightly warped and different length logs have been tossed over the\r\nmass of muck, bark still covering the top of the logs while the underside of\r\neach, seems to have been cleanly stripped from the wood.  Knots and some\r\ntiny branches stick out over the edge and thick rope binds them all\r\ntogether.  While it is serviceable, it does not seem to be overly sturdy... \r\n\u001b[0m",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        }
+      }
+    },
+    "21.-10.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -10,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "On a North/South Trail",
+      "rawDesc": "Despite how dense the forest is here, blocking any travel to the east or\r\nwest, the north/south trail seems quite well established.  This path must be\r\none travelled regularly by many.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        }
+      }
+    },
+    "21.-11.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -11,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "On the Path",
+      "rawDesc": "\u001b[0;37mThis well-travelled trail through the forest continues to the north and\r\nsouth.  The depth and darkness of the forest are pervasive here, perhaps\r\nsomething other than just the forces of nature are keeping things dark here.\r\n \r\n\u001b[0;37mJust off the path, many fresh \u001b[0;33mcut logs\u001b[0;37m have been piled with the scent of\r\nwood filling the air.  Nearby, a raft trader and his apprentice work his\r\ncraft with several axes leaning against a grindstone for sharpening while\r\nothers stand ready to chop lumber to the sizing he needs.  His finished\r\nproducts are neatly stacked near the trail for those wishing to make a\r\npurchase.\u001b[0m",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "21.-12.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -12,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Path Through the Thick Forest",
+      "rawDesc": "The path continues through the forest here.  Although you can see the\r\npath continuing north and south from here, your views to the east and west\r\nare limited by the presence of extremely dense trees and brush.  This must\r\nbe a very well-travelled trail, otherwise the brush would surely have\r\novertaken the path.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        }
+      }
+    },
+    "21.-13.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -13,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "End of a Trail Through the Forest",
+      "rawDesc": "The trail seems to end here and you notice that you are surrounded by\r\nforest on three sides.  Despite how well traveled the path seems to the\r\nsouth of you, there doesn't seem to be any way to get here from any other\r\ndirection.  Looking more closely at the dense forest around you, you notice\r\nsomething unusual about the brush to the east.  The brush to the north has\r\nbeen cleared away, and a large gray stone church can be seen through the\r\ntrees.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "21.-14.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -14,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "Gray Church",
+      "rawName": "Entrance to the Temple of the Gray Order",
+      "rawDesc": "You stand in the entrance to the Temple of the Gray Order, a refuge for\r\nthose who are weary in body and spirit.  Built by the Order to help all the\r\npeople of Algoron, this stone Temple conveys a sense of peace.  Delicate\r\nstone and iron lattice work provides curving frames for colorful stained\r\nglass windows depicting religious stories of all the pantheon of Algoron.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        }
+      }
+    },
+    "21.-15.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "subAreaName": "Gray Church",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -15,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "Gray Church",
+      "terrain": "inside",
+      "rawName": "The Altar Room",
+      "rawDesc": "The altar room in the Temple of the Gray Order is dedicated to all the\r\ngods and goddesses of Algoron.  Welcoming to all, an unassuming altar stands\r\nawaiting the prayers of any who wish, to whomever they wish to pray.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        }
+      }
+    },
+    "22.-15.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "subAreaName": "Gray Church",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": -15,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "Gray Church",
+      "terrain": "inside",
+      "rawName": "The Meditation Room",
+      "rawDesc": "This room is cast with warm golden and red hues from the windows.  You\r\nseem to feel healthier and stronger each moment you remain.  Pillows,\r\nblankets and rugs have been placed about the room for weary visitors to rest\r\nand meditate on.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "22.-13.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": -13,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Hidden Trail Through a Thick Forest",
+      "rawDesc": "You have stumbled onto a hidden trail in the thick undergrowth of a\r\nforest.  The trail appears to have been deliberately made to be overlooked\r\neasily.  Looking to the north, the forest is quite thick and in deep shadow\r\nmaking it hard to see more than a few yards in any one direction.  To the\r\nNortheast you see the ruins of the Gypsy wagons.  There is nothing left but\r\nsome charred remains.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "22.-14.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": -14,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Hidden Trail Through a Thick Forest",
+      "rawDesc": "The forest struggles to close quietly around this trail in shadow, and\r\nunder ordinary circumstances there would be barely enough light to find the\r\nway.  The trail, though well hidden, is well taken care of as it cuts a path\r\nthrough the dense forest.  \n\r\n\r\nHigh overhead the lucent threads of an \u001b[1;33mAurora\u001b[0m shine a harsh and blinding\r\nlight down upon the forest below.  The once shadowy embrace of the canopy is\r\npierced by scouring rays that illuminate even the darkest recesses of the\r\ndense wood.  What first appears to be a trick of the light, becomes clear\r\nthat the brush, trees, and ancient trees themselves have been turned subtle\r\nshades of \u001b[1;37mpristine alabaster, \u001b[0m transformed by the aurora and \u001b[1;37mpillars\u001b[0m which\r\nmoor it.  \u001b[0m",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "29.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 29,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "\u001b[0;33mRutted Hill\u001b[0m",
+      "rawDesc": "Deep ruts mar the ground, created by carts pulled up the muddy hill to\r\nsupply Arkane with the needed goods to support it's population.  Some of the\r\nruts are very wide and filled with water and muck.  \n\r\n\r\nUp the muddy hill to the west is the kingdom of Arkane, while off to the\r\neast is the Great Forest and the Crystal Fields can be seen in the distance.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "up": {
+          "isEnabled": true,
+          "rawString": "up"
+        },
+        "down": {
+          "isEnabled": true,
+          "rawString": "down"
+        }
+      }
+    },
+    "30.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 30,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "\u001b[0;33mA Surging Flow of \u001b[1;30mViscid Muck\u001b[0m",
+      "rawDesc": "\u001b[0;37mWarm, oozing mud streaks the terrain, imbedding itself into every nook\r\nand hole as the \u001b[1;30mg\u001b[0;37mra\u001b[1;37my\u001b[0;37mis\u001b[1;30mh \u001b[0;35mpurple\u001b[0;37m mass rolls to and fro, claiming loose dirt,\r\npebbles and other matter as its own as it slides along to cover all in its\r\npath.  It's depth is hard to determine and those daring to trudge across\r\nfind that their footsteps are squelched by the sticky, thick sludge even\r\nbefore they begin to form.  \u001b[0m\n\r\n\r\n\u001b[0;33mSeveral slightly warped and different length logs have been tossed over the\r\nmass of muck, bark still covering the top of the logs while the underside of\r\neach, seems to have been cleanly stripped from the wood.  Knots and some\r\ntiny branches stick out over the edge and thick rope binds them all\r\ntogether.  While it is serviceable, it does not seem to be overly sturdy... \r\n\u001b[0m",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "31.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 31,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Before the rutted hill",
+      "rawDesc": "To the west is the \"Great mudslide\" as it is known throughout Algoron,\r\nthe trade route to the west gate of Arkane.  To the east lie the Crystal\r\nfields.  The ground here is somewhat muddy with small ruts creating a swath\r\nof crisscrossing lines.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "down": {
+          "isEnabled": true,
+          "rawString": "down"
+        }
+      }
+    },
+    "32.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 32,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "Bloodlust Bindstone",
+      "rawName": "A small dirt road",
+      "rawDesc": "To the west of you, the frontier town of Arkane can be seen.  While, off\r\nto the north, far in the distance, you can see a vast mountain range, with\r\npeaks that seem to be snowcapped year round.  To the northwest, the Great\r\nForest can be seen.  To the Southeast, a small village can be seen.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "33.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 33,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A small dirt road",
+      "rawDesc": "The road you are on continues off interminably to the east, while back to\r\nthe west Arkane's chapel can be seen glimmering in the light.  Huge trees,\r\nand lots of them, line the horizon to the northwest, their gentle leaves\r\nswaying in the light breeze.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "34.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 34,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A small road",
+      "rawDesc": "Leaves drift by on the wind from the trees to the north.  You're sure the\r\nentrance to the Forest is around here somewhere.  Smells from the kitchen's\r\nin Arkane are apparent as you glance back towards the town, to the west. \r\nThe road you are on continues off to the east, losing itself on the horizon.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "35.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 35,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A small dirt road",
+      "rawDesc": "The mighty trees of the Great Forest rise before you to the north, their\r\nmassive trunks twisting towards the sky in savage grace.  To the west, the\r\nsounds and smells of Arkane are barely present, while off to the east, the\r\nroad continues indiscernably.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "36.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 36,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A small dirt road",
+      "rawDesc": "The road you are traveling on, continues off to the east into the\r\nhorizon.  Trees line your vision to the north and the sounds of a river can\r\nbe heard in the distance.  The flash of white stone can be seen through the\r\ntrees to the north.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "37.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 37,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Highroad",
+      "rawDesc": "The road opens up past the temple into a large route.  Horse drawn wagons\r\nhaul supplies to the different cities for trade.  That however is the only\r\nlingering evidence of nearby city life.  The bulk of the travelers are\r\ncomposed of gypsies and vagrants.  Along the northern horizon you can only\r\nmake out the tallest of treetops from the Great Forest.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "44.1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 44,
+            "Y": 1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Overlooking the Pillar of \u001b[1;31mFire\u001b[0;36m Canyon\u001b[0m",
+      "rawDesc": "The Arkania Highroad takes a winding course along the rim of the Pillar of\r\n\u001b[1;31mFire\u001b[0m Canyon.  The Canyon is the location of phoenix nesting grounds.  A\r\nlarge column of fire can be seen endlessly burning and filling the air with\r\nfalling ash.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        }
+      }
+    },
+    "45.1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 45,
+            "Y": 1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Overlooking the Pillar of \u001b[1;31mFire\u001b[0;36m Canyon\u001b[0m",
+      "rawDesc": "The Arkania Highroad skirts along the rim of the Pillar of \u001b[1;31mFire\u001b[0m Canyon. \r\nAsh falls all around you and you smell the strong odor of sulfur.  High\r\noverhead you see a smoke trail from a burning phoenix.",
+      "rawExits": {
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        }
+      }
+    },
+    "46.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 46,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Overlooking the Pillar of \u001b[1;31mFire\u001b[0;36m Canyon\u001b[0m",
+      "rawDesc": "The Arkania Highroad skirts along the rim of the Pillar of \u001b[1;31mFire\u001b[0m Canyon. \r\nAsh falls all around you and you smell the strong odor of sulfur.  High\r\noverhead you see a smoke trail from a burning phoenix.",
+      "rawExits": {
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        }
+      }
+    },
+    "47.-1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 47,
+            "Y": -1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Between the Sulfur Mines",
+      "rawDesc": "On either side of the Highroad you can see dotted along the hillsides\r\nsulfur mines.  The odor is almost overwhelming when the wind doesn't carry\r\nit away.  Just west from the mines you can see a large Canyon with a massive\r\nflame spewing forth.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        }
+      }
+    },
+    "48.-1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 48,
+            "Y": -1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A Fork in the Highroad",
+      "rawDesc": "Along the Highroad here you can see approaching to the west a collection\r\nof sulfur mines.  To the southern horizon you see a beautiful set of\r\nrainbows.  Though when you turn north you can see a small swamp land area. \r\nThe Highroad forks here.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "49.-1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 49,
+            "Y": -1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Highroad",
+      "rawDesc": "North of the road the swamp lands appear to give way to a long stretch of\r\nplains.  Large oak trees line either side of the Highroad here nearly\r\nclosing out the view of the sky above as their large low branches meet above\r\nyour head.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "50.-1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 50,
+            "Y": -1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Highroad",
+      "rawDesc": "North of the road is a vast beautiful plain, home to a few wandering\r\nleonine and wild elven tribes.  The Highroad has been paved along the side\r\nof a growing hill that blocks the view southward.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "51.-1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 51,
+            "Y": -1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Floating Archway",
+      "rawDesc": "You have arrived at the Floating Archway.  It makes a good landmark for\r\nthe Highroad.  The archway is a stone formation of boulders that hover\r\nprecariously above your head.  The several tons of rock even move an inch\r\nor two in any direction.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "52.-1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 52,
+            "Y": -1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Highroad",
+      "rawDesc": "The landscape flows in from a vast northern plains to the Highroad above\r\non steps of an equally impressive plateau.  Dotting the land below are ponds\r\nand a small creek making for a relaxing expanse of terrain.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "53.-1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 53,
+            "Y": -1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Highroad",
+      "rawDesc": "The elevation of the Highroad raises yet again as it climbs a steep\r\nplateau.  A few lonely trees are up here but it's mostly open space.  A herd\r\ntrail leads from the plateau to the plains and grasslands to the north.",
+      "rawExits": {
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "53.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 53,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Near a Watering Hole",
+      "rawDesc": "To the side of the Highroad on the plateau is nestled a large watering\r\nhole.  It might be a good idea for travelers to rest here if they've still a\r\nlong way to go.  A few silk trees line the far shoreline of the large pond.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        }
+      }
+    },
+    "53.1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 53,
+            "Y": 1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "At the Base of Windmill Butte",
+      "rawDesc": "The Highroad passes around the base of Windmill Butte.  The Windmill has\r\nlong been abandoned but still spins in the occassional gust.  The colors of\r\na long forgotten kingdom flag, flay faded and worn, high above the mill.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "54.2.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 54,
+            "Y": 2,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A Fork in the Highroad",
+      "rawDesc": "A plateau rises up from the savanna to the south here.  The road forks to\r\nthe north up the plateau and to the southwest, leading to a peaceful trail\r\nalong the cliff side.  A few animal herds are the only other scenery on this\r\nstretch of the Highroad.",
+      "rawExits": {
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        }
+      }
+    },
+    "53.3.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 53,
+            "Y": 3,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkanian Highroad South",
+      "rawDesc": "The road cuts through and over a series of peaceful rolling hills.  From\r\nhere you can see a large savanna to the south and to the north is a large\r\ncliff face of a plateau.  The South Highroad merges with the main Highroad\r\njust to the northeast.",
+      "rawExits": {
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        }
+      }
+    },
+    "54.3.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 54,
+            "Y": 3,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Lowroad",
+      "rawDesc": "The road here changes levels.  To the north it climbs up hills leading\r\ntowards a large plateau, and to the south it cuts through a vast savanna. \r\nYou can see the road curving back to the east as it follows a large river.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        }
+      }
+    },
+    "55.3.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 55,
+            "Y": 3,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Lowroad",
+      "rawDesc": "The Lowroad twist lazily along a wide river to the south as you travel\r\nthrough the savanna.  The sounds of wildlife can be heard all around you. \r\nOtters swim in the river in search of shellfish.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "56.3.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 56,
+            "Y": 3,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Lowroad",
+      "rawDesc": "The Lowroad cuts through the tall grass of the savanna.  Creatively\r\nstrung up along the road are firefly powered lanterns.  Tiny bowls inside\r\nthe lanterns hold some sugar water and appear to be well maintained.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "57.3.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 57,
+            "Y": 3,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Lowroad",
+      "rawDesc": "The Lowroad cuts through the tall grass of the savanna.  Creatively\r\nstrung up along the road are firefly powered lanterns.  Tiny bowls inside\r\nthe lanterns hold some sugar water and appear to be well maintained.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "58.3.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 58,
+            "Y": 3,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Near the Tar Pit",
+      "rawDesc": "Along the side of the Lowroad here bubbles a tar pit.  Post and ropes\r\nhave been set up to partially baracade any travelers from accidently falling\r\noff the road and into the sticky hot tar.  From time to time a large bubble\r\nwill burst and send tar flying onto the road.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "59.3.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 59,
+            "Y": 3,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Lowroad",
+      "rawDesc": "The Lowroad cuts through the tall grass of the savanna.  Creatively\r\nstrung up along the road are firefly powered lanterns.  Tiny bowls inside\r\nthe lanterns hold some sugar water and appear to be well maintained.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "60.3.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 60,
+            "Y": 3,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Lowroad",
+      "rawDesc": "The Lowroad cuts through the tall grass of the savanna.  Creatively\r\nstrung up along the road are firefly powered lanterns.  Tiny bowls inside\r\nthe lanterns hold some sugar water and appear to be well maintained.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "61.3.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 61,
+            "Y": 3,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Lowroad",
+      "rawDesc": "The Lowroad cuts through the tall grass of the savanna.  Creatively\r\nstrung up along the road are firefly powered lanterns.  Tiny bowls inside\r\nthe lanterns hold some sugar water and appear to be well maintained.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "62.3.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 62,
+            "Y": 3,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Lowroad",
+      "rawDesc": "The Lowroad cuts through the tall grass of the savanna.  Creatively\r\nstrung up along the road are firefly powered lanterns.  Tiny bowls inside\r\nthe lanterns hold some sugar water and appear to be well maintained.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "63.3.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 63,
+            "Y": 3,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Arth-ethile Valley",
+      "rawDesc": "The Arkane Lowroad runs between two narrow cliffs that mark the west\r\nentrance to Arth-ethile Valley.  A grove of banana trees have grown in the\r\nwilderness here, along with a few berry plants and shrubs along the road.",
+      "rawExits": {
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        }
+      }
+    },
+    "64.2.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 64,
+            "Y": 2,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Lowroad through the Valley",
+      "rawDesc": "Deep inbetween two cliffs you travel along the Arkanian Lowroad.  The\r\nforces of nature are strong here and the dense wilderness of the Valley has\r\nbegun to grow onto the road in several places.",
+      "rawExits": {
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        }
+      }
+    },
+    "65.1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 65,
+            "Y": 1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Lowroad through the Valley",
+      "rawDesc": "Deep inbetween two cliffs you travel along the Arkanian Lowroad.  The\r\nforces of nature are strong here and the dense wilderness of the Valley has\r\nbegun to grow onto the road in several places.",
+      "rawExits": {
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        }
+      }
+    },
+    "66.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 66,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Lowroad through the Valley",
+      "rawDesc": "Deep inbetween two cliffs you travel along the Arkanian Lowroad.  The\r\nforces of nature are strong here and the dense wilderness of the Valley has\r\nbegun to grow onto the road in several places.",
+      "rawExits": {
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        }
+      }
+    },
+    "67.-1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 67,
+            "Y": -1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Lowroad through the Valley",
+      "rawDesc": "You can see a large fenced plantation to the north.  Bananas and spices\r\ncan be seen being harvested by busy workers.  Other than the plantation the\r\nroad continues through the Valley.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        }
+      }
+    },
+    "68.-1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 68,
+            "Y": -1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Lowroad through the Valley",
+      "rawDesc": "Deep inbetween two cliffs you travel along the Arkanian Lowroad.  The\r\nforces of nature are strong here and the dense wilderness of the Valley has\r\nbegun to grow onto the road in several places.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "69.-1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 69,
+            "Y": -1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Arth-ethile Valley",
+      "rawDesc": "You have arrived at the eastern entrance of Arth-ethile Valley.  A few\r\nbanana trees grow near the road.  Just to the east the valley gives way to a\r\nlarge dusty basin.  To the west a dense jungle grows within the valley.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "70.-1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 70,
+            "Y": -1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Lowroad",
+      "rawDesc": "You travel along the Lowroad across a flat near barren basin.  A few fig\r\ntrees along the roadside are the only source of food within sight.  Looking\r\neast you can see some tall mountain peek on the horizon, and to the west you\r\nsee a valley approaching.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "71.-1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 71,
+            "Y": -1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Tunnel",
+      "rawDesc": "You are at the western entrance to the Arkania Tunnel.  The air in the\r\ntunnel is damp and cold.  Enchanted stones glow with light as they sense you\r\nmove near, and then dim and go out as you pass.",
+      "rawExits": {
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "71.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 71,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Tunnel",
+      "rawDesc": "Deep inside the Arkania Tunnel Road you travel underneath the Gryphon\r\nMountains.  The road is lonely and the enchanting lights offer little\r\ncomfort from the damp air.  It's absolutely miserable and depressing here.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "72.1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 72,
+            "Y": 1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Tunnel",
+      "rawDesc": "Deep inside the Arkania Tunnel Road you travel underneath the Gryphon\r\nMountains.  The road is lonely and the enchanting lights offer little\r\ncomfort from the damp air.  It's absolutely miserable and depressing here.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        }
+      }
+    },
+    "73.1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 73,
+            "Y": 1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Tunnel",
+      "rawDesc": "Deep inside the Arkania Tunnel Road you travel underneath the Gryphon\r\nMountains.  The road is lonely and the enchanting lights offer little\r\ncomfort from the damp air.  It's absolutely miserable and depressing here.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "74.1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 74,
+            "Y": 1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Tunnel",
+      "rawDesc": "Deep inside the Arkania Tunnel Road you travel underneath the Gryphon\r\nMountains.  The road is lonely and the enchanting lights offer little\r\ncomfort from the damp air.  It's absolutely miserable and depressing here.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "75.1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 75,
+            "Y": 1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Tunnel",
+      "rawDesc": "A series of abandon rail carts litter the tunnel.  They have been cleared\r\naway from the main road.  As the walls are illuminated you can see deep\r\nscars in the earth where veins of ore have been mined.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "76.1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 76,
+            "Y": 1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Tunnel",
+      "rawDesc": "A series of abandon rail carts litter the tunnel.  They have been cleared\r\naway from the main road.  As the walls are illuminated you can see deep\r\nscars in the earth where veins of ore have been mined.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "77.1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 77,
+            "Y": 1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Tunnel",
+      "rawDesc": "You feel fresh air against your skin.  It is carried from a light sea\r\nbreeze blowing in from the eastern entrance of the Arkania Tunnel.  The last\r\nbit of natural light ends and enchanted stones embedded into the tunnel wall\r\nlight up as you approach them and dim as you walk away.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "78.1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 78,
+            "Y": 1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Sea Trail",
+      "rawDesc": "The trail twist and turns through the foothills of the Gyphon mountain\r\nrange.  Along the eastern horizon you can see the ocean and the shoreline. \r\nThe occassional flock of sheep that populate the foothills bah at you as you\r\npass.",
+      "rawExits": {
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "79.2.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 79,
+            "Y": 2,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Sea Trail",
+      "rawDesc": "The trail twist and turns through the foothills of the Gyphon mountain\r\nrange.  Along the eastern horizon you can see the ocean and the shoreline. \r\nThe occassional flock of sheep that populate the foothills bah at you as you\r\npass.",
+      "rawExits": {
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        }
+      }
+    },
+    "80.1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 80,
+            "Y": 1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Sea Trail",
+      "rawDesc": "The trail twist and turns through the foothills of the Gyphon mountain\r\nrange.  Along the eastern horizon you can see the ocean and the shoreline. \r\nThe occassional flock of sheep that populate the foothills bah at you as you\r\npass.",
+      "rawExits": {
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "81.2.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 81,
+            "Y": 2,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Sea Trail",
+      "rawDesc": "The trail twist and turns through the foothills of the Gyphon mountain\r\nrange.  Along the eastern horizon you can see the ocean and the shoreline. \r\nThe occassional flock of sheep that populate the foothills bah at you as you\r\npass.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        }
+      }
+    },
+    "82.2.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "ArkaniaRoadway",
+        "mapCoord": {
+          "global": {
+            "X": 82,
+            "Y": 2,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Arkania Sea Trail",
+      "rawDesc": "The trail twist and turns through the foothills of the Gyphon mountain\r\nrange.  Along the eastern horizon you can see the ocean and the shoreline. \r\nThe occassional flock of sheep that populate the foothills bah at you as you\r\npass.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    }
+  }
+}

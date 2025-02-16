@@ -1,0 +1,12 @@
+{
+  "continent_id": "OceanSE",
+  "area_id": "RuinsOfArethVa",
+  "area_name": "Ruins of Areth-Va",
+  "starting_location": "The Beach",
+  "alignment": "Unknown",
+  "recommended_min_level": "25",
+  "recommended_max_level": "35",
+  "directions": "s; s; e; s; s; s; s; s; s; s;",
+  "autopilot_level": "{\"RuinsOfArethVa\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,12 @@
+{
+  "continent_id": "Shokono",
+  "area_id": "ShokonoImperialPalace",
+  "area_name": "Shokono Imperial Palace",
+  "starting_location": "The Port of Shokono",
+  "alignment": "Good",
+  "recommended_min_level": "43",
+  "recommended_max_level": "51",
+  "directions": "w; w; w; w; w; w; w; w; n; n; n; n; w; w; n; n; n; n; n; w;",
+  "autopilot_level": "{\"ShokonoImperialPalace\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

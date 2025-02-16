@@ -1,0 +1,12 @@
+{
+  "continent_id": "Icewall",
+  "area_id": "BreAmathdai",
+  "area_name": "Bre Amathdai",
+  "starting_location": "Main Port of Icewall",
+  "alignment": "Unknown",
+  "recommended_min_level": "1",
+  "recommended_max_level": "15",
+  "directions": "n; n; n; n; n; n; u; w; n; nw; nw; n; nw; u; n;",
+  "autopilot_level": "{\"BreAmathdai\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

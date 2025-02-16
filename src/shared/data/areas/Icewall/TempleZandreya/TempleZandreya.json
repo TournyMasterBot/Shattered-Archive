@@ -1,0 +1,11 @@
+{
+  "continent_id": "Icewall",
+  "area_id": "TempleZandreya",
+  "area_name": "Zandreya Temple",
+  "starting_location": "Main Port of Icewall",
+  "alignment": "Neutral",
+  "recommended_min_level": "1",
+  "recommended_max_level": "51",
+  "autopilot_level": "{\"TempleZandreya\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

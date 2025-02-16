@@ -1,0 +1,12 @@
+{
+  "continent_id": "Limbo",
+  "area_id": "RipInTheSky",
+  "area_name": "Rip In The Sky",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Evil",
+  "recommended_min_level": "51",
+  "recommended_max_level": "51",
+  "directions": "w; s; s; w; w; w; w; w; w; w; enter rip;",
+  "autopilot_level": "{\"RipInTheSky\":{\"autopilot_start_room\":\"On a hill\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[\"c fly\"],\"dirs\":[\"n\",\"w\",\"w\",\"w\",\"e\",\"up\",\"e\",\"e\",\"u\",\"w\",\"w\",\"e\",\"u\",\"e\",\"w\",\"u\",\"e\",\"u\",\"d\",\"e\",\"d\",\"w\",\"e\",\"d\",\"e\",\"w\",\"w\",\"d\",\"e\",\"e\",\"d\",\"e\",\"w\",\"w\",\"w\",\"s\",\"d\"],\"allowed_mobs\":{\"diablerie\":\"A slender figure dances to an unheard reverie.\"}}}",
+  "beastiary": "[]"
+}

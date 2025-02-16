@@ -1,0 +1,70 @@
+{
+  "continent_id": "Icewall",
+  "area_id": "Icewall",
+  "area_name": "Icewall",
+  "starting_location": "Main Port of Icewall",
+  "alignment": "Unknown",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "autopilot_level": "{\"Icewall\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]",
+  "areaRooms": {
+    "0.-3.0": {
+      "worldCoords": {
+        "continentId": "Icewall",
+        "areaId": "Icewall",
+        "subAreaName": "Port",
+        "mapCoord": {
+          "global": {
+            "X": 0,
+            "Y": -3,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "Port",
+      "terrain": "inside",
+      "rawName": "Main Port of Icewall",
+      "rawDesc": "Here stands the mighty port of Icewall.  Despite the snow on the ground,\r\nseveral people of all races, mostly minotaur, scurry about to do their\r\nbusiness.  There seems to be little life north of this port, but a sign\r\npoints out that there is a trail here heading north.  With all of the snow,\r\nit is impossible to see.  A large sign stands out from the background hustle\r\nand bustle.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    }
+  }
+}

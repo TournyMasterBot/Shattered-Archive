@@ -1,0 +1,11 @@
+{
+  "continent_id": "Tropica",
+  "area_id": "MagmaPits",
+  "area_name": "Magma Pits",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Unknown",
+  "recommended_min_level": "1",
+  "recommended_max_level": "51",
+  "autopilot_level": "{\"MagmaPits\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

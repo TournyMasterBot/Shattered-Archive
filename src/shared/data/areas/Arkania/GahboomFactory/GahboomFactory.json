@@ -1,0 +1,12 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "GahboomFactory",
+  "area_name": "Gahboom Factory",
+  "starting_location": "The Arkania Port",
+  "alignment": "Good",
+  "recommended_min_level": "43",
+  "recommended_max_level": "51",
+  "directions": "e; e; e; e; e; s; s; s; e; s; s; w; w; s; s; s; s; e; s; e; n; n; n; n; n; w; w; w; s; s; se; e; n; n; n; w; nw; n; e; e; e; u; n; n; d; d; n;",
+  "autopilot_level": "{\"GahboomFactory\":{\"autopilot_start_room\":\"A Stone Slab Platform in Fling-fall Cavern\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[\"open north\",\"n\",\"n\",\"se\",\"se\",\"e\",\"nw\",\"nw\",\"e\",\"e\",\"s\",\"s\",\"e\",\"w\",\"n\",\"n\",\"w\",\"w\",\"se\",\"se\",\"w\",\"nw\",\"nw\",\"s\",\"s\",\"pull flinger\",\"open south\",\"south\",\"e\",\"s\",\"w\",\"w\",\"s\",\"e\",\"e\",\"n\",\"w\",\"w\",\"n\",\"e\",\"open north\",\"quaff fly\",\"north\",\"d\",\"open e\",\"e\",\"e\",\"n\",\"e\",\"quaff fly\",\"e\",\"e\",\"s\",\"w\",\"w\",\"w\",\"w\",\"open w\",\"w\",\"d\"],\"allowed_mobs\":[{\"scanTarget\":\"a gnome in a protective heat suit\",\"killCommand\":\"gnome\"},{\"scanTarget\":\"a gnome stone excavator\",\"killCommand\":\"excavator\"},{\"scanTarget\":\"a gnome student\",\"killCommand\":\"student\"},{\"scanTarget\":\"a gnome philosophy instructor\",\"killCommand\":\"gnome\"},{\"scanTarget\":\"a tinker gnome janitor\",\"killCommand\":\"janitor\"}]}}",
+  "beastiary": "[]"
+}

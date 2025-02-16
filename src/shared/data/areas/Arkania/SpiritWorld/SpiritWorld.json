@@ -1,0 +1,12 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "SpiritWorld",
+  "area_name": "Spirit World",
+  "starting_location": "The Arkania Port",
+  "alignment": "Mixed",
+  "recommended_min_level": "45",
+  "recommended_max_level": "51",
+  "directions": "e; e; e; e; e; s; s; s; e; s; s; w; w; s; s; s; s; e; s; e; n; n; n; n; n; n; n; w; w; w; n; n; n; n; n; n; nw; n; e; n; n; ne; n; e; s; ne; n; n; n; open east; e; open up; u; enter portal;",
+  "autopilot_level": "{\"SpiritWorld\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

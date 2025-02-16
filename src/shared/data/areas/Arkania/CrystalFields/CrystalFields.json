@@ -1,0 +1,259 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "CrystalFields",
+  "area_name": "Crystal Fields",
+  "starting_location": "The Arkania Port",
+  "alignment": "Good",
+  "recommended_min_level": "6",
+  "recommended_max_level": "15",
+  "directions": "e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; d; e; e; e; e; e; e; e; e; e; e; e;",
+  "autopilot_level": "{\"CrystalFields\":{\"autopilot_start_room\":\"The Arkania Highroad\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[\"e\",\"e\",\"e\",\"e\",\"n\",\"n\",\"n\",\"n\",\"se\",\"w\",\"u\",\"nw\",\"w\",\"w\",\"n\",\"n\",\"e\",\"s\",\"n\",\"e\",\"s\",\"s\",\"se\",\"ne\",\"n\",\"n\",\"e\",\"s\",\"n\",\"e\",\"s\",\"s\",\"w\",\"w\",\"sw\",\"sw\",\"w\",\"w\",\"s\",\"e\",\"w\",\"s\",\"e\",\"e\",\"n\",\"n\",\"ne\",\"se\",\"e\",\"e\",\"s\",\"w\",\"e\",\"s\",\"w\",\"w\",\"n\",\"n\",\"nw\",\"d\",\"w\",\"w\",\"w\",\"w\",\"w\"],\"allowed_mobs\":[]}}",
+  "beastiary": "[{\"name\":\"a crystal gopher\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"male\",\"level\":10,\"damage_dice\":\"2d4\",\"damage_min\":2,\"damage_max\":8,\"damage_avg\":4.0,\"damage_type\":21,\"damage_type_string\":\"pound\",\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a crystal scarecrow\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":8,\"gender\":\"female\",\"level\":10,\"damage_dice\":\"2d6\",\"damage_min\":2,\"damage_max\":12,\"damage_avg\":6.0,\"damage_type\":27,\"damage_type_string\":\"slash\",\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"an angry crystal hornet\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":8,\"gender\":\"male\",\"level\":10,\"damage_dice\":\"2d4\",\"damage_min\":2,\"damage_max\":8,\"damage_avg\":4.0,\"damage_type\":21,\"damage_type_string\":\"pound\",\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a crystal flamingo\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":8,\"gender\":\"female\",\"level\":13,\"damage_dice\":\"2d5\",\"damage_min\":2,\"damage_max\":10,\"damage_avg\":6.0,\"damage_type\":27,\"damage_type_string\":\"slash\",\"immunities\":[],\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a faerie mystic\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":8,\"gender\":\"female\",\"level\":10,\"damage_dice\":\"2d6\",\"damage_min\":2,\"damage_max\":12,\"damage_avg\":6.0,\"damage_type\":20,\"damage_type_string\":\"pierce\",\"immunities\":[],\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a keeper of the yellow crystal\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":8,\"gender\":\"male\",\"level\":15,\"damage_dice\":\"2d6\",\"damage_min\":2,\"damage_max\":12,\"damage_avg\":6.0,\"damage_type\":27,\"damage_type_string\":\"slash\",\"inventory\":[\"Nothing.\"],\"equipment\":[\"Shield: (Glowing) a yellow crystal shield\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a yellow crystal centipede\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":8,\"gender\":\"male\",\"level\":10,\"damage_dice\":\"2d4\",\"damage_min\":2,\"damage_max\":8,\"damage_avg\":4.0,\"damage_type\":27,\"damage_type_string\":\"slash\",\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a yellow crystal unicorn\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":8,\"gender\":\"male\",\"level\":15,\"damage_dice\":\"2d6\",\"damage_min\":2,\"damage_max\":12,\"damage_avg\":6.0,\"damage_type\":21,\"damage_type_string\":\"pound\",\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a crystal hummingbird\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"female\",\"level\":13,\"damage_dice\":\"2d5\",\"damage_min\":2,\"damage_max\":10,\"damage_avg\":6.0,\"damage_type\":21,\"damage_type_string\":\"pound\",\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a faerie mystic\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"female\",\"level\":15,\"damage_dice\":\"2d6\",\"damage_min\":2,\"damage_max\":12,\"damage_avg\":6.0,\"damage_type\":27,\"damage_type_string\":\"slash\",\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a giant crystal grasshopper\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"male\",\"level\":15,\"damage_dice\":\"2d6\",\"damage_min\":2,\"damage_max\":12,\"damage_avg\":6.0,\"damage_type\":21,\"damage_type_string\":\"pound\",\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a keeper of the red crystal\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":4,\"gender\":\"none\",\"level\":15,\"damage_dice\":\"2d6\",\"damage_min\":2,\"damage_max\":12,\"damage_avg\":6.0,\"damage_type\":27,\"damage_type_string\":\"slash\",\"immunities\":[],\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a mystic crystal snake\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"male\",\"level\":10,\"damage_dice\":\"2d4\",\"damage_min\":2,\"damage_max\":8,\"damage_avg\":4.0,\"damage_type\":27,\"damage_type_string\":\"slash\",\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a red crystalline mantis\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"female\",\"level\":10,\"damage_dice\":\"2d4\",\"damage_min\":2,\"damage_max\":8,\"damage_avg\":4.0,\"damage_type\":21,\"damage_type_string\":\"pound\",\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a crystalline troll\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"male\",\"level\":13,\"damage_dice\":\"2d5\",\"damage_min\":2,\"damage_max\":10,\"damage_avg\":6.0,\"damage_type\":21,\"damage_type_string\":\"pound\",\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a faerie mystic\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"female\",\"level\":15,\"damage_dice\":\"2d6\",\"damage_min\":2,\"damage_max\":12,\"damage_avg\":6.0,\"damage_type\":20,\"damage_type_string\":\"pierce\",\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a green crystal beetle\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"female\",\"level\":10,\"damage_dice\":\"2d4\",\"damage_min\":2,\"damage_max\":8,\"damage_avg\":4.0,\"damage_type\":27,\"damage_type_string\":\"slash\",\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a green crystal bison\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"none\",\"level\":10,\"damage_dice\":\"2d4\",\"damage_min\":2,\"damage_max\":8,\"damage_avg\":4.0,\"damage_type\":27,\"damage_type_string\":\"slash\",\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a keeper of the green crystal\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"male\",\"level\":15,\"damage_dice\":\"2d6\",\"damage_min\":2,\"damage_max\":12,\"damage_avg\":6.0,\"damage_type\":20,\"damage_type_string\":\"pierce\",\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a squishy crystal flan\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"male\",\"level\":13,\"damage_dice\":\"2d5\",\"damage_min\":2,\"damage_max\":10,\"damage_avg\":6.0,\"damage_type\":27,\"damage_type_string\":\"slash\",\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a blue crystal falcon\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"female\",\"level\":10,\"damage_dice\":\"2d4\",\"damage_min\":2,\"damage_max\":8,\"damage_avg\":4.0,\"damage_type\":27,\"damage_type_string\":\"slash\",\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a blue crystalline water buffalo\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"female\",\"level\":10,\"damage_dice\":\"2d4\",\"damage_min\":2,\"damage_max\":8,\"damage_avg\":4.0,\"damage_type\":20,\"damage_type_string\":\"pierce\",\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a crystalline kangaroo\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"male\",\"level\":15,\"damage_dice\":\"2d6\",\"damage_min\":2,\"damage_max\":12,\"damage_avg\":6.0,\"damage_type\":21,\"damage_type_string\":\"pound\",\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a crystalline pegasus\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"female\",\"level\":13,\"damage_dice\":\"2d5\",\"damage_min\":2,\"damage_max\":10,\"damage_avg\":6.0,\"damage_type\":20,\"damage_type_string\":\"pierce\",\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a faerie mystic\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"female\",\"level\":15,\"damage_dice\":\"2d6\",\"damage_min\":2,\"damage_max\":12,\"damage_avg\":6.0,\"damage_type\":20,\"damage_type_string\":\"pierce\",\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a keeper of the blue crystal\",\"race\":\"unique\",\"continent\":2,\"area_id\":\"CrystalFields\",\"alignment\":2,\"gender\":\"female\",\"level\":15,\"damage_dice\":\"2d6\",\"damage_min\":2,\"damage_max\":12,\"damage_avg\":6.0,\"damage_type\":27,\"damage_type_string\":\"slash\",\"inventory\":[\"Nothing.\"],\"gold\":0,\"silver\":0,\"CreatureType\":0}]",
+  "areaRooms": {
+    "38.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "CrystalFields",
+        "mapCoord": {
+          "global": {
+            "X": 38,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "At the Glow Bridge",
+      "rawDesc": "The church of Siccara is in the distance to the west as you arrive at the\r\nbeginning of a large wooden bridge.  By some odd mystic force the foot boards\r\nand hand rails of this bridge glow while below the soft sounds of a shallow\r\nstream can be heard.  On either side of the face of the bridge covering are\r\nthe words \"The Glow Bridge\".",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "39.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "CrystalFields",
+        "mapCoord": {
+          "global": {
+            "X": 39,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "West Mystic Crystal Fields",
+      "rawDesc": "Here the highroad runs through the Mystic Crystal Fields.  Fields of tall\r\ngrass are divided right down the middle.  The grass gleams, reflecting the\r\nlight to give it the appearance of pale green crystal.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "40.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "CrystalFields",
+        "mapCoord": {
+          "global": {
+            "X": 40,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "West Mystic Crystal Fields",
+      "rawDesc": "Here the highroad runs through the Mystic Crystal Fields.  Fields of tall\r\ngrass are divided right down the middle.  The grass gleams, reflecting the\r\nlight to give it the appearance of pale green crystal.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        }
+      }
+    },
+    "41.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "CrystalFields",
+        "mapCoord": {
+          "global": {
+            "X": 41,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A Path To The Mystic Crystal Fields",
+      "rawDesc": "A quiet pathway has been cleared through the tall crystal grasses that\r\nconnect the highroad to a hill in the center of the fields.  Ironically enough\r\nit is a wooden fence that borders the path and circles the perimeter of the\r\nMystic Crystal Fields.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "up": {
+          "isEnabled": true,
+          "rawString": "up"
+        }
+      }
+    },
+    "41.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "CrystalFields",
+        "mapCoord": {
+          "global": {
+            "X": 41,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "The Hill",
+      "rawDesc": "This hill is in the center of a beautiful field of tall crystal grasses.\r\nThe blades of grass are segmented and allows the grass to sway so that in a\r\nbreeze the delicate crystal does not shatter.  There are a few gopher holes\r\non the hillside.",
+      "rawExits": {
+        "down": {
+          "isEnabled": true,
+          "rawString": "down"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "42.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "CrystalFields",
+        "mapCoord": {
+          "global": {
+            "X": 42,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "East Mystic Crystal Feilds",
+      "rawDesc": "Here the highroad runs through the Mystic Crystal Fields.  Fields of tall\r\ngrass are divided right down the middle.  The grass gleams, reflecting the\r\nlight to give it the appearance of pale green crystal.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        }
+      }
+    },
+    "43.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "CrystalFields",
+        "mapCoord": {
+          "global": {
+            "X": 43,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "East Mystic Crystal Feilds",
+      "rawDesc": "Here the highroad runs through the Mystic Crystal Fields.  Fields of tall\r\ngrass are divided right down the middle.  The grass gleams, reflecting the\r\nlight to give it the appearance of pale green crystal.",
+      "rawExits": {
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    }
+  }
+}

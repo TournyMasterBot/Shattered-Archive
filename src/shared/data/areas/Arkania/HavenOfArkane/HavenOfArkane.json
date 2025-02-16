@@ -1,0 +1,267 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "HavenOfArkane",
+  "area_name": "Haven of Arkane",
+  "starting_location": "The Arkania Port",
+  "alignment": "",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "autopilot_level": "{\"HavenOfArkane\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]",
+  "areaRooms": {
+    "83.2.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "HavenOfArkane",
+        "mapCoord": {
+          "global": {
+            "X": 83,
+            "Y": 2,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A trail around Smuggler's Bay",
+      "rawDesc": "A small beach extends northwards, trailing away into nothingness towards\r\nthe east.  The path is much more difficult to travel to the east as the land\r\nbecomes rocky.  The forest to the south and west is thick and threatening,\r\ngreat ancient trees reaching out, almost as if they were reaching for you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        }
+      }
+    },
+    "84.2.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "HavenOfArkane",
+        "mapCoord": {
+          "global": {
+            "X": 84,
+            "Y": 2,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A trail around Smuggler's Bay",
+      "rawDesc": "The trail here is not level and your footing is uneven as you attempt to\r\ntravel along it.  The land to the west is much lower, and a small beach can\r\nbe seen as you look west.  The path is much more difficult to the east, as\r\nit rises atop a small cliff.  The forest to the south does not help, the\r\nshadows from the huge trees making it difficult to watch your step.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        }
+      }
+    },
+    "85.2.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "HavenOfArkane",
+        "mapCoord": {
+          "global": {
+            "X": 85,
+            "Y": 2,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Atop a small cliff overlooking Smuggler's Bay",
+      "rawDesc": "The waves are somewhat choppy as they hit the rocks just below the trail\r\nyou walk on.  The wind gusts in from the Dragon Sea setting the trees of the\r\nforest rustling.  A few birds chirp but the forest seems rather menacing\r\ndespite their cheerful songs.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "83.1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "HavenOfArkane",
+        "mapCoord": {
+          "global": {
+            "X": 83,
+            "Y": 1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A trail around Smuggler's Bay",
+      "rawDesc": "You now stand at the furthest point west on Smuggler's Bay, a pleasant\r\nspot, sheltered from the wind and waves of the ocean.  The forest to the\r\nwest is thick and dark, overcrowding the small beach upon which you stand,\r\nand casting gloomy shadows over an otherwise very romantic spot.  You aren't\r\nsure if smuggler's actually use this bay, but you could understand why they\r\nwould choose it.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        }
+      }
+    },
+    "84.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "HavenOfArkane",
+        "mapCoord": {
+          "global": {
+            "X": 84,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A trail around Smuggler's Bay",
+      "rawDesc": "The forest looms over you, menacing and dark in contrast with the\r\nopenness of Smuggler's Bay.  The calm waves gently waft up the small beach,\r\nbringing small fish and other creatures to flop about.  Other waves pull the\r\ncreatures back to safety.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "85.-1.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "HavenOfArkane",
+        "mapCoord": {
+          "global": {
+            "X": 85,
+            "Y": -1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Northern point of Smuggler's Bay",
+      "rawDesc": "A small beach from the southwest comes to an end here as the shoreline\r\nbecomes much more rocky.  The waves roll in, larger than in the bay now that\r\nthe land is no longer sheltered from the force of the ocean.  The trees\r\nlean slightly inward, years of winds from the sea responsible for their\r\ncurious slant.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    }
+  }
+}

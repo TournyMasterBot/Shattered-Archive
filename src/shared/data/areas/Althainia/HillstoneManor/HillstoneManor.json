@@ -1,0 +1,11 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "HillstoneManor",
+  "area_name": "Hillstone Manor",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Unknown",
+  "recommended_min_level": "25",
+  "recommended_max_level": "30",
+  "autopilot_level": "{\"HillstoneManor\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

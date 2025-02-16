@@ -1,0 +1,12 @@
+{
+  "continent_id": "Tropica",
+  "area_id": "ForgottenVillage",
+  "area_name": "Forgotten Village",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Evil",
+  "recommended_min_level": "1",
+  "recommended_max_level": "51",
+  "directions": "se; se; s; s; s; sw; sw; w; sw; s; s; s; sw; w; w; w; n; n; d; n; n; d; n; n; w; w; w; n; n; n; n; n; n; sw; w; nw; e;",
+  "autopilot_level": "{\"ForgottenVillage\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

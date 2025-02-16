@@ -1,0 +1,76 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "AmethystFalls",
+  "area_name": "Amethyst Falls",
+  "starting_location": "The Arkania Port",
+  "alignment": "Mixed",
+  "recommended_min_level": "32",
+  "recommended_max_level": "36",
+  "directions": "e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; d; e; e; e; e; e; e; e; e; e; e; e; e; e; e; se; e; ne; ne; e; se; e; e; n;",
+  "autopilot_level": "{\"AmethystFalls\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[\"n\",\"e\",\"e\",\"n\",\"nw\",\"n\",\"n\",\"n\",\"e\",\"e\",\"s\",\"s\",\"w\",\"w\",\"s\",\"quaff breath,d\",\"n\",\"n\",\"w\",\"w\",\"s\",\"s\",\"w\",\"e\",\"u\",\"w\",\"w\",\"e\",\"e\",\"e\",\"e\",\"sw\",\"w\",\"w\",\"s\",\"e\",\"e\",\"n\",\"w\",\"n\",\"quaff breath,d\",\"e\",\"nw\",\"n\",\"e\",\"e\",\"s\",\"s\",\"u\",\"buy 2*breathe\",\"se\",\"s\",\"w\",\"w\",\"s\"],\"allowed_mobs\":[]}}",
+  "beastiary": "[]",
+  "areaRooms": {
+    "49.0.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "AmethystFalls",
+        "mapCoord": {
+          "global": {
+            "X": 49,
+            "Y": 0,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Trail Along Amethyst Falls",
+      "rawDesc": "The road here becomes a rope bridge that dangles far above a lake fed by\r\nmultiple small waterfalls from the plateau cliff face just above you. \r\nWithin your reach the mist created by the falling water has created\r\nrainbows.  The water is tinted a beautiful \u001b[1;35ma\u001b[0;35mmethyst\u001b[0m color.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        }
+      }
+    },
+    "52.4.-1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "AmethystFalls",
+        "mapCoord": {
+          "global": {
+            "X": 52,
+            "Y": 4,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Trail Along Amethyst Falls",
+      "rawDesc": "The road here becomes a rope bridge that dangles far above a lake fed by\r\nmultiple small waterfalls from the plateau cliff face just above you. \r\nWithin your reach the mist created by the falling water has created\r\nrainbows.  The water is tinted a beautiful \u001b[1;35ma\u001b[0;35mmethyst\u001b[0m color.",
+      "rawExits": {
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        }
+      }
+    }
+  }
+}

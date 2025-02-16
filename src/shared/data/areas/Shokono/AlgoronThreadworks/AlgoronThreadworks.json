@@ -1,0 +1,12 @@
+{
+  "continent_id": "Shokono",
+  "area_id": "AlgoronThreadworks",
+  "area_name": "Algoron Threadworks",
+  "starting_location": "The Port of Shokono",
+  "alignment": "Good",
+  "recommended_min_level": "43",
+  "recommended_max_level": "51",
+  "directions": "w; w; w; w; w; w; s; s; s; s; s; s; w; w; w; s; s; se; ne; e; e; se; e; se; e; e; e; se; se; e; e; ne; ne;",
+  "autopilot_level": "{\"AlgoronThreadworks\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[\"e\",\"se\",\"e\",\"se\",\"e\",\"e\",\"e\",\"se\",\"se\",\"e\",\"e\",\"ne\",\"ne\",\"n\",\"nw\",\"n\",\"n\",\"n\",\"n\",\"ne\",\"e\",\"e\",\"se\",\"s\",\"s\",\"s\",\"s\",\"sw\",\"s\",\"sw\",\"sw\",\"w\",\"w\",\"nw\",\"nw\",\"w\",\"w\",\"w\",\"nw\",\"w\",\"nw\",\"w\"],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,12 @@
+{
+  "continent_id": "OceanNE",
+  "area_id": "GlonnoilFjord",
+  "area_name": "Glonnoil Fjord",
+  "starting_location": "Main Port of Icewall",
+  "alignment": "Mixed",
+  "recommended_min_level": "45",
+  "recommended_max_level": "51",
+  "directions": "ne; e; ne; n; n; ne; n; n; n; n; n; ne; n; se; se; se; s;",
+  "autopilot_level": "{\"GlonnoilFjord\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

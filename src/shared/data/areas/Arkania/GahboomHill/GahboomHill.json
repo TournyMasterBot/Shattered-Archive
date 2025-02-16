@@ -1,0 +1,12 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "GahboomHill",
+  "area_name": "Gahboom Hill",
+  "starting_location": "The Arkania Port",
+  "alignment": "Good",
+  "recommended_min_level": "43",
+  "recommended_max_level": "51",
+  "directions": "e; e; e; e; e; s; s; s; e; s; s; w; w; s; s; s; s; e; s; e; n; n; n; n; n; w; w; w; s; s; se; e; n;",
+  "autopilot_level": "{\"GahboomHill\":{\"autopilot_start_room\":\"The Arkania Port\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

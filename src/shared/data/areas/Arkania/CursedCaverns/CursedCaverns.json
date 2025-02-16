@@ -1,0 +1,12 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "CursedCaverns",
+  "area_name": "Cursed Caverns",
+  "starting_location": "The Arkania Port",
+  "alignment": "Evil",
+  "recommended_min_level": "43",
+  "recommended_max_level": "51",
+  "directions": "e; e; e; e; e; e; e; e; e; e; e; e; e; e; n; n; n; n; n; n; n; n; n; n; n; n; n; e; n; n; n; n; n; n; n; n; w; w; n; n; d;",
+  "autopilot_level": "{\"CursedCaverns\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

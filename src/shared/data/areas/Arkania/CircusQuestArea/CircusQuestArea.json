@@ -1,0 +1,12 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "CircusQuestArea",
+  "area_name": "Circus Quest Area",
+  "starting_location": "The Arkania Port",
+  "alignment": "Neutral",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "directions": "e; e; e; e; e; n; n; nw;",
+  "autopilot_level": "{\"CircusQuestArea\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

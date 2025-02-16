@@ -1,0 +1,12 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "AncientForest",
+  "area_name": "Ancient Forest",
+  "starting_location": "The Arkania Port",
+  "alignment": "Good",
+  "recommended_min_level": "43",
+  "recommended_max_level": "51",
+  "directions": "e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; d; e; e; e; e; e; e; n; n; n; n; n; n; n; n; n; n; n; n; n; n; n; n; n; n; n; n; n; n; w;",
+  "autopilot_level": "{\"AncientForest\":{\"autopilot_start_room\":\"Lost in the fog\",\"speedwalk_to_start_room\":\"e\",\"area_required_actions\":[\"c pass\",\"c 'detect hidden\"],\"dirs\":[\"open west\",\"west\",\"west\",\"north\",\"west\",\"west\",\"west\",\"northwest\",\"east\",\"east\",\"east\",\"north\",\"west\",\"west\",\"west\",\"northeast\",\"east\",\"east\",\"east\",\"north\",\"west\",\"west\",\"west\",\"northwest\",\"north\",\"northeast\",\"east\",\"east\",\"southeast\",\"west\",\"west\",\"west\",\"south\",\"east\",\"east\",\"east\",\"east\",\"east\",\"northeast\",\"northeast\",\"east\",\"southeast\",\"west\",\"west\",\"southwest\",\"east\",\"east\",\"east\",\"east\",\"southwest\",\"southwest\",\"west\",\"northwest\",\"west\",\"east\",\"east\",\"east\",\"north\",\"west\",\"west\",\"west\",\"west\",\"west\",\"west\",\"south\",\"south\",\"south\",\"south\",\"south\",\"east\",\"south\",\"east\",\"open east\",\"east\"],\"allowed_mobs\":[{\"scanTarget\":\"A sasquatch\",\"killCommand\":\"sasquatch\"}],\"init_actions\":[\"kill\"],\"fight_actions\":[],\"post_kill_actions\":[],\"buff_actions\":[]}}",
+  "beastiary": "[]"
+}

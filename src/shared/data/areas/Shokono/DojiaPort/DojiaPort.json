@@ -1,0 +1,12 @@
+{
+  "continent_id": "Shokono",
+  "area_id": "DojiaPort",
+  "area_name": "Dojia Port",
+  "starting_location": "The Port of Shokono",
+  "alignment": "Unknown",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "directions": "sw; sw; sw; s; s; sw; s; s; s; s; se; s; s; se; se; s; se; se; s; s; nw; w; w;",
+  "autopilot_level": "{\"DojiaPort\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

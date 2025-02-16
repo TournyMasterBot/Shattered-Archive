@@ -1,0 +1,12 @@
+{
+  "continent_id": "Limbo",
+  "area_id": "RealmOfTerror",
+  "area_name": "Realm of Terror",
+  "starting_location": "The Arkania Port",
+  "alignment": "Evil",
+  "recommended_min_level": "30",
+  "recommended_max_level": "51",
+  "directions": "e; e; e; e; e; e; e; e; s; s; s; s; e; e; e; e; e; e; s; s; s; s; s; e; n; n; n; n; n; kill kayaka; s; s; w; u; u; e; e; e; e; e; s; kill prophet; n; w; w; w; w; w; d; d; s; s; e; ne; se; sw; s; se; s; enter gate;",
+  "autopilot_level": "{\"RealmOfTerror\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

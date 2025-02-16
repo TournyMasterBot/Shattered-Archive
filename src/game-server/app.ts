@@ -1,5 +1,7 @@
 import http from 'http';
 import ShatteredServer from '@shared/express-server/server';
+import path from 'path';
+import LoadRoutes from '@shared/express-server/middleware.route';
 
 let port = 3001;
 let execEnv = 'dev';
@@ -28,9 +30,8 @@ const shatteredServer = new ShatteredServer({
 })
 const app = shatteredServer.GetServer();
 
-app.get('/', (req, res) => {
-  res.send('Hello, Game Server!');
-});
+const routesDirectory = path.join(__dirname, 'routes');
+LoadRoutes(app, routesDirectory);
 
 app.listen(port, () => {
   console.log(`Shattered Archive Game Server is running in ${execEnv} mode on http://localhost:${port}`);

@@ -1,0 +1,12 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "CoralReef",
+  "area_name": "Coral Reef",
+  "starting_location": "The Arkania Port",
+  "alignment": "",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "directions": "s; s; s; se; s; se; s; se; se; e; e; ne; se; se; se; se; se; e; e; e; enter reef;",
+  "autopilot_level": "{\"CoralReef\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

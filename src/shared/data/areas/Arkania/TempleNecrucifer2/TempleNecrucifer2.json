@@ -1,0 +1,12 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "TempleNecrucifer2",
+  "area_name": "Necrucifer Temple - Chamber of Contrition",
+  "starting_location": "The Arkania Port",
+  "alignment": "Evil",
+  "recommended_min_level": "1",
+  "recommended_max_level": "51",
+  "directions": "e; e; e; e; e; e; e; e; e; e; e; e; e; e; n; n; n; n; n; n; n; n; n; n; n; n; n; e; n; n; n; n; n; n; n; n; s;",
+  "autopilot_level": "{\"TempleNecrucifer2\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,11 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "VermKingdomOnly",
+  "area_name": "Verm Kingdom Only",
+  "starting_location": "The Arkania Port",
+  "alignment": "",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "autopilot_level": "{\"VermKingdomOnly\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

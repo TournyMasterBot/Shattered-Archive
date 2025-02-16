@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "Garrison",
+  "area_name": "Garrison",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Mixed",
+  "recommended_min_level": "1",
+  "recommended_max_level": "15",
+  "directions": "w; s; s; w; w; w; w; nw; n; n; w; w; w; w; s; s; sw; w; w; w; w; w; w; w; w; w; u; w; w; d; n; n; n; w; ne;",
+  "autopilot_level": "{\"Garrison\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

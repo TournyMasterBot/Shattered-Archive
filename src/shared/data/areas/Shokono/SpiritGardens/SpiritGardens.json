@@ -1,0 +1,12 @@
+{
+  "continent_id": "Shokono",
+  "area_id": "SpiritGardens",
+  "area_name": "Spirit Gardens",
+  "starting_location": "The Port of Shokono",
+  "alignment": "Unknown",
+  "recommended_min_level": "5",
+  "recommended_max_level": "10",
+  "directions": "w; w; w; w; w; w; s; s; s; s; s; s; w; w; w; s; s; se; e;",
+  "autopilot_level": "{\"SpiritGardens\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

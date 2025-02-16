@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "TheatreMacabre",
+  "area_name": "Theatre Macabre",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Evil",
+  "recommended_min_level": "15",
+  "recommended_max_level": "30",
+  "directions": "w; s; s; w; w; w; w; nw; n; n; w; w; w; w; s; s; sw; w; w; w; w; w; w; w; w; w; u; w; w; d; w; s; s; w; w; s; s; w; w; w; w; w; w; n; w; s; s; sw; se; s; sw; se; s; se; e; se; e; s; s; s; s; s; s; w;",
+  "autopilot_level": "{\"TheatreMacabre\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,11 @@
+{
+  "continent_id": "Limbo",
+  "area_id": "Taverns3",
+  "area_name": "Taverns 3",
+  "starting_location": "Unknown",
+  "alignment": "Unknown",
+  "recommended_min_level": "0",
+  "recommended_max_level": "51",
+  "autopilot_level": "{\"Taverns3\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

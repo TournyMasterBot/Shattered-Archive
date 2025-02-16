@@ -1,0 +1,12 @@
+{
+  "continent_id": "Tropica",
+  "area_id": "LostCatacomb",
+  "area_name": "Lost Catacomb",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Mixed",
+  "recommended_min_level": "40",
+  "recommended_max_level": "51",
+  "directions": "sw; w; nw; w; nw; w; s; s; se; se; se; se; sw; se; se; se; w; nw; w; s; w; w; w; w; s; w; s; s; w; enter stone;",
+  "autopilot_level": "{\"LostCatacomb\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

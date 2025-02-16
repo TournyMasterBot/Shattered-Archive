@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "EnchantedBakery",
+  "area_name": "Enchanted Bakery",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Good",
+  "recommended_min_level": "10",
+  "recommended_max_level": "30",
+  "directions": "w; s; s; w; w; w; w; nw; n; n; w; w; w; w; s; s; sw; w; w; w; w; w; w; w; w; w; u; w; w; d; n; n; n; w; w; w; w; s; s; sw; w; w; w; w; w; w; w; w; n; n; n; n;",
+  "autopilot_level": "{\"EnchantedBakery\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

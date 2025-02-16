@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "Hedgemaze",
+  "area_name": "Hedgemaze",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Mixed",
+  "recommended_min_level": "15",
+  "recommended_max_level": "30",
+  "directions": "w; s; s; w; w; w; w; nw; n; n; w; w; w; w; s; s; sw; w; w; w; w; w; w; w; w; w; u; w; w; d; n; n; n; w; w; w; w; s; s; sw; w; w; w; w; w; w; w; w; n; n; e; n; n; w; n; u; n;",
+  "autopilot_level": "{\"Hedgemaze\":{\"autopilot_start_room\":\"In a foreboding forest\",\"speedwalk_to_start_room\":\"s;d;s;\",\"area_required_actions\":[],\"dirs\":[\"n\",\"u\",\"n\",\"n\",\"e\",\"e\",\"e\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"n\",\"n\",\"n\",\"e\",\"n\",\"w\",\"n\",\"n\",\"n\",\"e\",\"e\",\"e\",\"e\",\"e\",\"w\",\"w\",\"s\",\"w\",\"s\",\"s\",\"s\",\"s\",\"s\",\"e\",\"n\",\"n\",\"n\",\"e\",\"s\",\"s\",\"e\",\"e\",\"w\",\"w\",\"n\",\"n\",\"n\",\"w\",\"w\",\"s\",\"w\",\"n\",\"n\",\"e\",\"n\",\"e\",\"s\",\"w\",\"s\",\"s\",\"s\",\"s\",\"w\",\"s\",\"s\",\"e\",\"e\",\"e\",\"n\",\"w\",\"w\",\"e\",\"n\",\"e\",\"e\",\"n\",\"n\",\"w\",\"s\",\"n\",\"w\",\"s\",\"n\",\"n\",\"e\",\"w\",\"w\",\"n\",\"n\",\"n\",\"e\",\"s\",\"w\",\"s\",\"s\",\"n\",\"n\",\"e\",\"s\",\"e\",\"e\",\"n\",\"w\",\"e\",\"e\",\"n\",\"w\",\"w\",\"n\",\"e\",\"e\",\"w\",\"n\",\"e\",\"e\",\"e\",\"n\",\"w\",\"e\",\"s\",\"w\",\"w\",\"w\",\"w\",\"w\",\"n\",\"e\",\"w\",\"s\",\"e\",\"e\",\"s\",\"s\",\"s\",\"s\",\"w\",\"w\",\"n\",\"n\",\"w\",\"s\",\"s\",\"s\",\"e\",\"e\",\"s\",\"s\",\"s\",\"w\",\"w\",\"s\",\"e\",\"s\",\"w\",\"w\",\"w\",\"n\",\"n\",\"e\",\"n\",\"n\",\"n\",\"n\",\"e\",\"n\",\"w\",\"w\",\"w\",\"s\",\"s\",\"s\",\"e\",\"s\",\"w\",\"s\",\"s\",\"s\",\"e\",\"e\",\"e\",\"s\",\"s\",\"d\",\"s\"],\"allowed_mobs\":[{\"scanTarget\":\"a Zandreyan follower\",\"killCommand\":\"follower\"},{\"scanTarget\":\"a bluebird\",\"killCommand\":\"bluebird\"},{\"scanTarget\":\"a confused man\",\"killCommand\":\"man\"},{\"scanTarget\":\"a lost woman\",\"killCommand\":\"woman\"}]}}",
+  "beastiary": "[]"
+}

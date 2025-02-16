@@ -1,0 +1,12 @@
+{
+  "continent_id": "Icewall",
+  "area_id": "YinnEncampment",
+  "area_name": "Yinn Encampment",
+  "starting_location": "Main Port of Icewall",
+  "alignment": "Unknown",
+  "recommended_min_level": "1",
+  "recommended_max_level": "15",
+  "directions": "n; n; n; n; n; n; nw; nw; w; n; n; nw; w; w; nw; w; w; n; n; w;",
+  "autopilot_level": "{\"YinnEncampment\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

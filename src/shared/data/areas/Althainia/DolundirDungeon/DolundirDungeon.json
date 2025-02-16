@@ -1,0 +1,11 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "DolundirDungeon",
+  "area_name": "Dolund'ir Dungeon",
+  "starting_location": "The Port of Althainia",
+  "alignment": "",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "autopilot_level": "{\"DolundirDungeon\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

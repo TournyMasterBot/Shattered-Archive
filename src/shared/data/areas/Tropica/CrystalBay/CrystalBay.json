@@ -1,0 +1,12 @@
+{
+  "continent_id": "Tropica",
+  "area_id": "CrystalBay",
+  "area_name": "Crystal Bay",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Evil",
+  "recommended_min_level": "40",
+  "recommended_max_level": "51",
+  "directions": "sw; w; nw; w; nw; w; s;",
+  "autopilot_level": "{\"CrystalBay\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

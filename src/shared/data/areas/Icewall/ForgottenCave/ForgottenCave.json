@@ -1,0 +1,12 @@
+{
+  "continent_id": "Icewall",
+  "area_id": "ForgottenCave",
+  "area_name": "Forgotten Cave",
+  "starting_location": "Main Port of Icewall",
+  "alignment": "Unknown",
+  "recommended_min_level": "10",
+  "recommended_max_level": "20",
+  "directions": "nw; nw; w; w; nw; n; ne;",
+  "autopilot_level": "{\"ForgottenCave\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

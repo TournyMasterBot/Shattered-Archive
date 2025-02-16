@@ -1,0 +1,12 @@
+{
+  "continent_id": "Tropica",
+  "area_id": "TrativeMountains",
+  "area_name": "Trative Mountains",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Mixed",
+  "recommended_min_level": "15",
+  "recommended_max_level": "25",
+  "directions": "se; se; s; s; s; sw; sw; w; w; s; s; s; s; sw; w; w; w; w; w; nw; e;",
+  "autopilot_level": "{\"TrativeMountains\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

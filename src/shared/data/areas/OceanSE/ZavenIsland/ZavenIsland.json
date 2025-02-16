@@ -1,0 +1,12 @@
+{
+  "continent_id": "OceanSE",
+  "area_id": "ZavenIsland",
+  "area_name": "Zaven Island",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Unknown",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "directions": "se; se; s; s; s; e; e; e; e; s; s;",
+  "autopilot_level": "{\"ZavenIsland\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

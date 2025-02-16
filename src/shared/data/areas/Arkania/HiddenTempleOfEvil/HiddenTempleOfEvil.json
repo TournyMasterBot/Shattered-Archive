@@ -1,0 +1,45 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "HiddenTempleOfEvil",
+  "area_name": "Hidden Temple of Evil",
+  "starting_location": "The Arkania Port",
+  "alignment": "Evil",
+  "recommended_min_level": "17",
+  "recommended_max_level": "40",
+  "directions": "e; e; e; e; e; e; e; e; e; e; e; e; e; e; n; n; n; n; n; n; n; n; n; n; n; w;",
+  "autopilot_level": "{\"HiddenTempleOfEvil\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]",
+  "areaRooms": {
+    "20.-11.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "HiddenTempleOfEvil",
+        "mapCoord": {
+          "global": {
+            "X": 20,
+            "Y": -11,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Steps up to the Temple",
+      "rawDesc": "Mounting the steps to the Temple, you feel a sense of overpowering evil\r\nemanating from the north.  Looking about, you notice that you are not the\r\nonly one here.  Many dark figures climb the steps, searching for unknown\r\nthings, that you would never dream of.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "up": {
+          "isEnabled": true,
+          "rawString": "up"
+        }
+      }
+    }
+  }
+}

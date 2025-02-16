@@ -1,0 +1,11 @@
+{
+  "continent_id": "OceanSE",
+  "area_id": "LostClouds",
+  "area_name": "Lost Clouds",
+  "starting_location": "Unknown",
+  "alignment": "Unknown",
+  "recommended_min_level": "1",
+  "recommended_max_level": "51",
+  "autopilot_level": "{\"LostClouds\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

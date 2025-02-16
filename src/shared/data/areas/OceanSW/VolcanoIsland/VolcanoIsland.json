@@ -1,0 +1,12 @@
+{
+  "continent_id": "OceanSW",
+  "area_id": "VolcanoIsland",
+  "area_name": "Volcano Island",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Good",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "directions": "w; s; s; sw; w; sw; w; w; s; d;",
+  "autopilot_level": "{\"VolcanoIsland\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "UniversityOfAlthainia",
+  "area_name": "University of Althainia",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Evil",
+  "recommended_min_level": "5",
+  "recommended_max_level": "15",
+  "directions": "w; s; s; sw; w; sw; w; w; w; n; n; w; w; n; n; n; e; s; e; e; e; e; e; e; s; s; w; w; w; n; n; e;",
+  "autopilot_level": "{\"UniversityOfAlthainia\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

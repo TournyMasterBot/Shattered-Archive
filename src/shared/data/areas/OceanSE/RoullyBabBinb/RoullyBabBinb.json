@@ -1,0 +1,179 @@
+{
+  "continent_id": "OceanSE",
+  "area_id": "RoullyBabBinb",
+  "area_name": "Roully Bab Binb",
+  "starting_location": "The Arkania Port",
+  "alignment": "Unknown",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "directions": "w;",
+  "autopilot_level": "{\"RoullyBabBinb\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[{\"name\":\"a crystal sea dragon\",\"race\":\"crystal dragon\",\"continent\":256,\"area_id\":\"RoullyBabBinb\",\"alignment\":4,\"gender\":\"male\",\"level\":40,\"damage_dice\":\"4d8\",\"damage_min\":4,\"damage_max\":32,\"damage_avg\":16.0,\"damage_type\":8,\"damage_type_string\":\"claw\",\"resistances\":[\"charm\",\"mental\",\"disease\"],\"vulnerabilities\":[\"summon\",\"fire\",\"negative\"],\"affects\":[\"infrared\",\"flying\",\"haste\"],\"offensive_tactics\":[\"bash\",\"berserk\",\"disarm\",\"dodge\",\"fast\",\"parry\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a giant sea turtle\",\"race\":\"reptile\",\"continent\":256,\"area_id\":\"RoullyBabBinb\",\"alignment\":4,\"gender\":\"female\",\"level\":45,\"damage_dice\":\"8d4\",\"damage_min\":8,\"damage_max\":32,\"damage_avg\":16.0,\"damage_type\":4,\"damage_type_string\":\"blast\",\"resistances\":[\"slashing\"],\"offensive_tactics\":[\"bash\",\"berserk\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a horned narwhal\",\"race\":\"whale\",\"continent\":256,\"area_id\":\"RoullyBabBinb\",\"alignment\":8,\"gender\":\"female\",\"level\":25,\"damage_dice\":\"2d10\",\"damage_min\":2,\"damage_max\":20,\"damage_avg\":10.0,\"damage_type\":20,\"damage_type_string\":\"pierce\",\"vulnerabilities\":[\"summon\",\"charm\",\"drowning\"],\"affects\":[\"haste\"],\"offensive_tactics\":[\"bash\",\"berserk\",\"disarm\",\"dodge\",\"assist_vnum\"],\"inventory\":[\"a unicorn horn\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a scared glowing fish\",\"race\":\"fish\",\"continent\":256,\"area_id\":\"RoullyBabBinb\",\"alignment\":8,\"gender\":\"female\",\"level\":8,\"damage_dice\":\"1d7\",\"damage_min\":1,\"damage_max\":7,\"damage_avg\":4.0,\"damage_type\":33,\"damage_type_string\":\"suction\",\"immunities\":[\"drowning\"],\"resistances\":[\"drowning\",\"mental\"],\"affects\":[\"pass door\"],\"offensive_tactics\":[\"bash\",\"berserk\",\"dodge\",\"assist_race\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a singing siren\",\"race\":\"unique\",\"continent\":256,\"area_id\":\"RoullyBabBinb\",\"alignment\":8,\"gender\":\"female\",\"level\":53,\"damage_dice\":\"5d8\",\"damage_min\":5,\"damage_max\":40,\"damage_avg\":20.0,\"damage_type\":26,\"damage_type_string\":\"slap\",\"immunities\":[\"summon\",\"charm\",\"tornado\",\"drowning\"],\"resistances\":[\"lightning\",\"mental\"],\"offensive_tactics\":[\"area attack\",\"berserk\",\"dodge\"],\"gold\":0,\"silver\":0,\"CreatureType\":0}]",
+  "areaRooms": {
+    "4.0.0": {
+      "worldCoords": {
+        "continentId": "OceanSE",
+        "areaId": "RoullyBabBinb",
+        "mapCoord": {
+          "global": {
+            "X": 4,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Roully Bab Binb",
+      "rawDesc": "The deep, blue ocean of Roully Bab Binb or Really Big Pond in the kender\r\ntongue was named by the kender of Arkane to the north.  Seemingly having the\r\n'happy-go-lucky' persona itself, the waters are generally pleasant with good\r\ntrade-winds and good weather.  The waves dance about, and appear happy to\r\ncarry your ship.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "5.0.0": {
+      "worldCoords": {
+        "continentId": "OceanSE",
+        "areaId": "RoullyBabBinb",
+        "mapCoord": {
+          "global": {
+            "X": 5,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Roully Bab Binb",
+      "rawDesc": "The deep, blue ocean of Roully Bab Binb or Really Big Pond in the kender\r\ntongue was named by the kender of Arkane to the north.  Seemingly having the\r\n'happy-go-lucky' persona itself, the waters are generally pleasant with good\r\ntrade-winds and good weather.  The waves dance about, and appear happy to\r\ncarry your ship.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "6.0.0": {
+      "worldCoords": {
+        "continentId": "OceanSE",
+        "areaId": "RoullyBabBinb",
+        "mapCoord": {
+          "global": {
+            "X": 6,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Roully Bab Binb",
+      "rawDesc": "The deep, blue ocean of Roully Bab Binb or Really Big Pond in the kender\r\ntongue was named by the kender of Arkane to the north.  Seemingly having the\r\n'happy-go-lucky' persona itself, the waters are generally pleasant with good\r\ntrade-winds and good weather.  The waves dance about, and appear happy to\r\ncarry your ship.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    }
+  }
+}

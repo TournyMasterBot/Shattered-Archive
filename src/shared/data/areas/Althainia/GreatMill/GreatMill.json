@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "GreatMill",
+  "area_name": "Great Mill",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Mixed",
+  "recommended_min_level": "36",
+  "recommended_max_level": "45",
+  "directions": "w; s; s; w; w; w; w; sw; s; s; s; w; w; w; w; n; d; w; w; w; w; s;",
+  "autopilot_level": "{\"GreatMill\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

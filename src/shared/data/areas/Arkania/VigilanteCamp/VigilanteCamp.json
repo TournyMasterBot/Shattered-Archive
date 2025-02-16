@@ -1,0 +1,12 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "VigilanteCamp",
+  "area_name": "Vigilante Camp",
+  "starting_location": "The Arkania Port",
+  "alignment": "Good",
+  "recommended_min_level": "20",
+  "recommended_max_level": "30",
+  "directions": "e; e; e; e; e; e; e; e; e; e; e; e; e; e; n; n; n; n; n; n; n; n; n; n; n; n; n; e; n; n; n; n; n; n; n; n; n; n; e; e; e; e; e; n; n; n; n; n; ne; s;",
+  "autopilot_level": "{\"VigilanteCamp\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

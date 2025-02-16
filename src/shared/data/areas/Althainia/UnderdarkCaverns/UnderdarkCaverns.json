@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "UnderdarkCaverns",
+  "area_name": "Underdark Caverns",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Mixed",
+  "recommended_min_level": "15",
+  "recommended_max_level": "40",
+  "directions": "w; s; s; w; w; w; w; nw; n; n; w; w; w; w; s; s; sw; w; w; w; w; w; w; w; w; n; n; n; e; e; n; n; n; e; e; d; d; w; w; d; s; sw; s; se; s; s; s; d; e; e; s; s; s;",
+  "autopilot_level": "{\"UnderdarkCaverns\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

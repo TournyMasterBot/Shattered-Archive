@@ -1,0 +1,337 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "AlthainiaCoastline",
+  "area_name": "Althainia Coastline",
+  "starting_location": "The Port of Althainia",
+  "alignment": "",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "directions": "w;",
+  "autopilot_level": "{\"AlthainiaCoastline\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]",
+  "areaRooms": {
+    "-5.-2.0": {
+      "worldCoords": {
+        "continentId": "Althainia",
+        "areaId": "AlthainiaCoastline",
+        "subAreaName": "Port",
+        "mapCoord": {
+          "global": {
+            "X": -5,
+            "Y": -2,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "Port",
+      "terrain": "inside",
+      "rawName": "The Port of Althainia",
+      "rawDesc": "The is the main port of the Althainian continent.  All around you is the\r\nnormality of chaos that abounds in the ports of the world.  You see\r\nmerchants and mercenaries and all manner of persons inbetween.  Humans and\r\nelves are the prevailing races, but you spy the odd dwarf cursing and\r\nmuttering into their beards.  You notice a long line of people on one dock,\r\nthey seem to be waiting for a ship to pick them up and whisk them to far\r\nflung reaches of Algoron.  There is a large sign posted here.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-6.-1.0": {
+      "worldCoords": {
+        "continentId": "Althainia",
+        "areaId": "AlthainiaCoastline",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -6,
+            "Y": -1,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "inside",
+      "rawName": "East Coast",
+      "rawDesc": "Perhaps the smallest section of the Althainian coastline, the east coast\r\nis abustle with activity, as it is a part of the major trade route from the\r\ngreat kingdom of New Thalos to the Althainian marina to the north.  In the\r\ndistance, you see several merchant vessels heading into port.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-6.0.0": {
+      "worldCoords": {
+        "continentId": "Althainia",
+        "areaId": "AlthainiaCoastline",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -6,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "tundra",
+      "rawName": "Near the shore",
+      "rawDesc": "This road is a heavilly travelled path leading north to the main port for\r\nthe entire Althainian continent.  To the east you can see an old abandoned\r\ndock where dockworkers mill about, talking about old times.  A small path\r\naround the coastline leads off to the southwest.  The route into New Thalos\r\nand points farther inland lies to your west.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        }
+      }
+    },
+    "-7.1.0": {
+      "worldCoords": {
+        "continentId": "Althainia",
+        "areaId": "AlthainiaCoastline",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -7,
+            "Y": 1,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "inside",
+      "rawName": "Southeast Coast",
+      "rawDesc": "You notice that this beach is well traveled.  There are very few sea\r\nshells here, save for broken fragments scattered along the waterline.  A\r\nwell traveled trail heads northeast and west, following the coast in both\r\ndirections.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-8.1.0": {
+      "worldCoords": {
+        "continentId": "Althainia",
+        "areaId": "AlthainiaCoastline",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -8,
+            "Y": 1,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "inside",
+      "rawName": "Southeast Coast",
+      "rawDesc": "You are standing on the southeastern coast of the Althainian continent. \r\nThe white sands of the beach extend as far as the eye can see in either\r\ndirection.  Broken seashells, sand crabs, and washed up seaweed litter the\r\nbeach.  A trail above the beachhead runs east and grows fainter towards the\r\nsouthwest.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.3.0": {
+      "worldCoords": {
+        "continentId": "Althainia",
+        "areaId": "AlthainiaCoastline",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": 3,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "inside",
+      "rawName": "South Coast",
+      "rawDesc": "Standing atop the highest of the dunes, you can see nothing but blue\r\nocean water in the distance.  To the east, you can make out a marsh, and to\r\nthe west, more dunes.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-20.0.0": {
+      "worldCoords": {
+        "continentId": "Althainia",
+        "areaId": "AlthainiaCoastline",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -20,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "inside",
+      "rawName": "West Coast",
+      "rawDesc": "The rocks are slowly giving way to a sandy, gentle shore.  There are few\r\npuddles containing life here.  As you hop off the last of the rocks and walk\r\nalong the smooth sand, you notice the waves are calmer here.  The beach is\r\nwide and beds to the southeast.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    }
+  }
+}

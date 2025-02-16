@@ -33,15 +33,17 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       host: '0.0.0.0',
-      port: 8081,
+      port: 8080,
       proxy: {
         '/game-server': {
           target: `${env.VITE_GAME_SERVER_SCHEMA}${env.VITE_GAME_SERVER_HOST}:${env.VITE_GAME_SERVER_PORT}`,
           changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/game-server/, ''),
         },
         '/web-server': {
           target: `${env.VITE_WEB_SERVER_SCHEMA}${env.VITE_WEB_SERVER_HOST}:${env.VITE_WEB_SERVER_PORT}`,
           changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/web-server/, ''),
         },
       },
       allowedHosts: ['dsl.shatteredarchive.com'],

@@ -1,0 +1,12 @@
+{
+  "continent_id": "Shokono",
+  "area_id": "ShonokoCoast",
+  "area_name": "Shokono Coast",
+  "starting_location": "The Port of Shokono",
+  "alignment": "Unknown",
+  "recommended_min_level": "3",
+  "recommended_max_level": "7",
+  "directions": "n;",
+  "autopilot_level": "{\"ShonokoCoast\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,12 @@
+{
+  "continent_id": "OceanSW",
+  "area_id": "WhiteMoonIsle",
+  "area_name": "White Moon Isle",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Good",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "directions": "sw; w; nw; w; nw; w; w; w; w; sw; w; sw; sw; s; s; s; se; se; e; e; e; e; sw; sw; sw;",
+  "autopilot_level": "{\"WhiteMoonIsle\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

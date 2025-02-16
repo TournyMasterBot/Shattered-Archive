@@ -1,0 +1,12 @@
+{
+  "continent_id": "Icewall",
+  "area_id": "Jovar",
+  "area_name": "Jovar",
+  "starting_location": "Main Port of Icewall",
+  "alignment": "Good",
+  "recommended_min_level": "43",
+  "recommended_max_level": "51",
+  "directions": "nw; nw; w; w; nw; n; nw; e; n; u; u; w; u; u;",
+  "autopilot_level": "{\"Jovar\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

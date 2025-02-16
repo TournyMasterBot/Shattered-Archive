@@ -1,0 +1,12 @@
+{
+  "continent_id": "Tropica",
+  "area_id": "Haven",
+  "area_name": "Haven",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Mixed",
+  "recommended_min_level": "10",
+  "recommended_max_level": "51",
+  "directions": "s; w; w; w; nw; w; u; u; w; w; nw; u; s; w; w; w; w; d; e; s; w; w; nw; s; w; w; n; e; d; d; ne; se; e; e; e; e; ne; e; e; s; open east; e; say friend; e;",
+  "autopilot_level": "{\"Haven\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

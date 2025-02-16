@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "SunkenTempleOfAra",
+  "area_name": "Sunken Temple of Ara",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Unknown",
+  "recommended_min_level": "20",
+  "recommended_max_level": "30",
+  "directions": "w; w; w; w; w; nw; w; nw; nw; sw; w; n; e; n; se; s; ne;",
+  "autopilot_level": "{\"SunkenTempleOfAra\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "BaewarDistrict",
+  "area_name": "Baewar District",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Evil",
+  "recommended_min_level": "25",
+  "recommended_max_level": "40",
+  "directions": "w; w; w; w; w; nw; w; nw; w; w; w; w; s; s; s; s; s; s; e; e; se; ne; e; e; e; e; s; s; s; s; s; w; s; sw; u; sw; u; s; s; s; e; e; s; s; w;",
+  "autopilot_level": "{\"BaewarDistrict\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

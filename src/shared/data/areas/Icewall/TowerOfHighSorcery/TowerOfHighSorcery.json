@@ -1,0 +1,11 @@
+{
+  "continent_id": "Icewall",
+  "area_id": "TowerOfHighSorcery",
+  "area_name": "Tower of High Sorcery",
+  "starting_location": "Main Port of Icewall",
+  "alignment": "Unknown",
+  "recommended_min_level": "5",
+  "recommended_max_level": "51",
+  "autopilot_level": "{\"TowerOfHighSorcery\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

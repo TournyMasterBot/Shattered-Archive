@@ -1,0 +1,2004 @@
+{
+  "continent_id": "OceanSW",
+  "area_id": "LutsaRusul",
+  "area_name": "Lutsa Rusul",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Unknown",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "autopilot_level": "{\"LutsaRusul\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]",
+  "areaRooms": {
+    "-8.2.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -8,
+            "Y": 2,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "swim",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.  To the northwest, you spot a large coastal fortress with\r\na dock extending into the sea.  A few ships are docked here, with merchants\r\nand deckhands scurrying about to check their merchandise.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-8.3.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -8,
+            "Y": 3,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-9.3.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -9,
+            "Y": 3,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-10.3.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -10,
+            "Y": 3,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-11.3.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -11,
+            "Y": 3,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "down": {
+          "isEnabled": true,
+          "rawString": "down"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-12.3.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -12,
+            "Y": 3,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-12.4.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -12,
+            "Y": 4,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-13.4.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -13,
+            "Y": 4,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-14.4.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -14,
+            "Y": 4,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.4.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": 4,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-16.4.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -16,
+            "Y": 4,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-17.4.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -17,
+            "Y": 4,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-17.3.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -17,
+            "Y": 3,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-18.3.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -18,
+            "Y": 3,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-19.3.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -19,
+            "Y": 3,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-19.2.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "Archangel (Ship) NE",
+        "mapCoord": {
+          "global": {
+            "X": -19,
+            "Y": 2,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "Archangel (Ship) NE",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-20.2.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -20,
+            "Y": 2,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-20.1.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -20,
+            "Y": 1,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-21.1.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -21,
+            "Y": 1,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-21.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -21,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-22.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -22,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-23.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -23,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-24.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -24,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-25.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -25,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-26.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -26,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-27.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -27,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-28.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -28,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-29.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -29,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-30.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -30,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-31.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -31,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-32.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -32,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-33.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -33,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-14.-34.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -14,
+            "Y": -34,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-13.-35.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -13,
+            "Y": -35,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Lutsa Rusul",
+      "rawDesc": "Lutsa Rusul, which is goblin for Salty Water, extends all around you. \r\nThe vicious storms and thick mists that frequent this ocean make travelling\r\nit less than comforting at times.  However, the warm, salty breeze and the\r\nsound of the waves upon the hull your ship awaken the adventurous sailor's\r\nspirit within you.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "down": {
+          "isEnabled": true,
+          "rawString": "down"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-13.-36.0": {
+      "worldCoords": {
+        "continentId": "OceanSW",
+        "areaId": "LutsaRusul",
+        "subAreaName": "In a Hurricane",
+        "mapCoord": {
+          "global": {
+            "X": -13,
+            "Y": -36,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "In a Hurricane",
+      "terrain": "swim",
+      "rawName": "In a Hurricane",
+      "rawDesc": "You are surrounded by a inky blackness.  The freezing \u001b[1;36mcold\u001b[0m mist\r\nprevents you from seeing two feet in front of your face, roar of waves\r\ncrashing in the background make you wish for dry land.  \r\nThere is a dock here that Ships can dock at.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "up": {
+          "isEnabled": true,
+          "rawString": "up"
+        },
+        "down": {
+          "isEnabled": true,
+          "rawString": "down"
+        }
+      }
+    }
+  }
+}

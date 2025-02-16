@@ -1,0 +1,1019 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "Arkane",
+  "area_name": "Arkane",
+  "starting_location": "The Arkania Port",
+  "alignment": "Neutral",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "directions": "e; e; e; e; e; e; e; e;",
+  "autopilot_level": "{\"Arkane\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]",
+  "areaRooms": {
+    "13.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 13,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Edge of a Field, Near the Gates of Arkane",
+      "rawDesc": "As you stand at the eastern edge of the field, surrounded on the north\r\nand south by forest, the incessant giggling continues.  From here you must\r\ndecide whether to investigate the giggling, head west toward the coast, or\r\ntread eastward to the city of Arkane.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "14.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 14,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Outside Arkane's west gate",
+      "rawDesc": "The shiny gates of Arkane lie before you, tall and imposing.  You can see\r\nguards on the other side of the gates, milling about silently, waiting for\r\nsomething to happen.  A road trails off to the west, to the horizon, while a\r\nsmall paved path leads into the frontier city of Arkane.  To the north and\r\nsouth is an extended clearing which provides excellent visibility for the\r\nguards.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        }
+      }
+    },
+    "15.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 15,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Inside Arkane's west gate",
+      "rawDesc": "The path intersects here to the north, south, east and west.  The paths to \r\nthe north and south run along the city walls, while off to the east you can\r\nsee the heart of the city.  The gentle sound of conversation buzzes your \r\nears, none of it discernible as it all drowns together in a myriad of \r\nsound.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "16.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 16,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Main Street",
+      "rawDesc": "The path you are on continues to the east and west from here, cobbled and \r\nstable.  The sounds of indescriminant conversation float about on the \r\ngentle breeze.  The smells of food drift in from the south.  Small \r\nbuildings can be seen to the north and south.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "17.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 17,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Main Street",
+      "rawDesc": "Main Street continues to the east and west along a cobbled path.  The path \r\nveers off to the north from here, along a shadowy alley where you can \r\nfaintly see the sign for a tavern, swinging lackadaisically in the breeze.  \r\nThe sounds of blacksmith also drift in from the north, barely audible over \r\nthe other sounds of the city.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "18.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 18,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Main Street",
+      "rawDesc": "The cobbled street you are on continues to the east and west.  Small \r\nbuildings seem to blend into one another to the north, each of them \r\nindescriminant from the next.  Arkane's finest restaurant blocks your \r\nvision to the south as the smells of fine food drift over Main Street \r\ncarried on the gentle breeze.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "19.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 19,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Main Street",
+      "rawDesc": "Main Street continues off to the east and west from here, along its\r\ncobbled path.  Buildings sit off to the north and south, but no entrance can\r\nbe seen from here.  The center of town can be seen off to the east down the\r\nroad a ways.  Off to the west, the town entrance is visible with a\r\nshimmering doorway appearing to the south, with a sign up above.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "20.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 20,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Main Street",
+      "rawDesc": "The small cobbled road continues to the east and west.  Buildings rise to \r\nthe north and south, yet no doors are visible, only windows.  To the north \r\nyou see a tavern, dimly lit, the ceiling of the first floor covered in \r\nsmoke.  To the south you see people dining in a nice restaurant, talking \r\nidly, their voiced not audible through the glass panes.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "21.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Arkane's Town Center",
+      "rawDesc": "From the center of Arkane, you can go to the north, east and west.  The\r\nporch of the Fellowship Saloon is accessable to the south.  Off in the other\r\ndirections, the town gates can be seen, tall and imposing.  An arena rises\r\nup to the northwest.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "up": {
+          "isEnabled": true,
+          "rawString": "up"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "21.1.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": 1,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "On the Porch of the Fellowship Saloon",
+      "rawDesc": "The porch is made of wood, and smells of old beer and sweat.  There are a\r\ncouple elves sitting around on old wooden stools, sipping wine and smoking\r\nlong curving pipes.  There are a few dirty windows which peer into the large\r\nbuilding to the south, from which flickering light can be seen.  Laughing and\r\nsome singing can be heard from within the large doorway.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        }
+      }
+    },
+    "21.2.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": 2,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "In the Main Gathering Room of the Fellowship Saloon",
+      "rawDesc": "The room is large, loud, and filled with smoke.  To the north a rectangle\r\nof light can be seen where the door stands.  In the center of the room,\r\nthere is a long bar, where a large plump lady stands serving drinks.  She\r\noften smacks some of the more rowdy drunks on the head as she bustles around\r\nserving her drinks.  There is a group of Minotaurs arm wrestling some ogres\r\nat one table near what looks to be pieces of a few more tables.  Over in the\r\ncorner, you see a kender giving a speach about some adventure to a large\r\ngroup of humans who are mainly ignoring him.  You can see an doorway into a\r\ndimly lit room to the east, another doorway to the west, and a stairway\r\nleading upstairs.  \n\r\n\r\nYou can read a large sign hanging above the bar, written in common, with\r\nabout 30 other languages translated in small letters below it.  It reads\r\n\"Welcome Friend\".",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "up": {
+          "isEnabled": true,
+          "rawString": "up"
+        }
+      }
+    },
+    "20.2.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 20,
+            "Y": 2,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A Meeting Room",
+      "rawDesc": "The meeting room is a gathering place, where people can discuss things\r\nranging from the latest gossip, to important political matters.  A large\r\nwooden table occupies the room, with room enough to seat more than twenty\r\npeople.  A large fire burns in a fireplace nearby, and there is a serving\r\nwoman nearby, ready to serve all the drinks needed for those who meet within\r\nthe room.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        }
+      }
+    },
+    "22.2.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": 2,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A Small Side Room of the Fellowship Saloon",
+      "rawDesc": "This room is made for smaller gatherings of people, meetings, or just\r\nfriendly conversation.  There are some bar stools scattered around, and a\r\nwaitress stands here serving drinks to people.  The walls are covered with\r\npaintings and portraits with signatures from famous people all through\r\nAlgoron.  You can see a portrait of Solestri and another of Mito adorning\r\nthe walls.",
+      "rawExits": {
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "21.2.1": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": 2,
+            "Z": 1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A Short Hallway ",
+      "rawDesc": "Smooth wooden walls line the passage, glistening with a dull sheen.  The\r\nsmell of oil and wax further enhance the cleanliness of the often-washed\r\nsurfaces, yet faint stains still show their marks in the wood, common in any\r\ntavern amongst the small dents and chips.  Brightly painted doors surround\r\nyou, each emitting a soft light that matches the color of the door, casting\r\nan eerie glow in the hallway.  To the north a light blue door is accented\r\nwith white clouds that move slowly across the painted surface.  To the east\r\nstands a bright red door with a animted image of a luxurious carriage.  To\r\nthe south, another blue door, this one darker and moving like the others,\r\nsmall pieces of seaweed quickly growing until they reach halfway up the door\r\nonly to disappear and begin anew as tiny fish swim amongst them.  The dark\r\nblack door to the west appears void of any designs, and instead it emits a\r\nrhythmic pulsing sensation.  Each door has a set of runes carved into the\r\ncenter, a soft hum created by the magic held therein.  \n\r\n\r\nA delicate, narrow staircase ascends upwards to a plain wooden door on the\r\nthird story of the building.  A small sign near the base of the polished,\r\nwooden steps reads: \u001b[0;36mPlease place the purchased runes in the corresponding\r\ndoor.  Wait until they glow bright \u001b[0;37msilver\u001b[0;36m and then lightly push against the\r\ndoor.  If you experience any trouble with the doors (or the gully dwarf),\r\nplease contact the management at the top of these stairs.  \u001b[0m",
+      "rawExits": {
+        "down": {
+          "isEnabled": true,
+          "rawString": "down"
+        }
+      }
+    },
+    "21.-1.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -1,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "An alleyway",
+      "rawDesc": "A sign to the east indicates the Arkanian Bakery.  Children fill up this\r\nsection of the alley in an attempt to get into the bakery which smells of\r\ndelicious and wonderful baked goods and pastries.  To the south you can see\r\nArkane's Town Center.  A small lottery store has been opened to the west.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "21.-2.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -2,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "An alleyway",
+      "rawDesc": "From the smells of it, the town florist resides to the east as you glance over\r\nher floral display in the window.  The backside of the tavern lies off to the \r\nwest, while Main Street dances with activity to the south.  Also to the south \r\nyou see a horde of children trying to get into a store.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        }
+      }
+    },
+    "21.-3.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -3,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "An alleyway",
+      "rawDesc": "A sign hanging on the building to the east indicates it as the utility\r\nshop of Arkane.  From the south you can hear the sounds of Main Street while\r\noff to the north you can see the north gate of Arkane.  More stores line the\r\nalley to the southeast.  To the west lies \"Arkane Fur Importers\".",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "21.-4.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -4,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Inside Arkane's north gate",
+      "rawDesc": "The north gate of Arkane rises before you, shiny and tall.  You watch as \r\npeople go in and out of the town freely, walking on a road that carries them \r\noff into the distance.  To the east and west Echelon Way continues, while back \r\nto the south is an alley.\r\n \r\nA church rises up from the southwest.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "21.-5.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -5,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Outside Arkane's northern gate",
+      "rawDesc": "To the south you can enter Arkane.  The wilderness of the continent lies off \r\nin all the other directions.  A soft breeze carries the smells of the city's \r\nbakery.  Inside the gate you can see the people of the town and travelers \r\nfrom distant lands.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "22.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Main Street",
+      "rawDesc": "Off to your west, the sounds of the busy Town Center can be heard as\r\npeople rush about, sometimes brushing up against you in order to get by.  An\r\nimposing building lies off to the south, casting a dark shadow at its base\r\nthat extends out to the street.  To the north lies \"Grokk's Leather\r\nCrafting\" and to the south lies \"Whitetail Leather Goods\".",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "23.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 23,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Main Street",
+      "rawDesc": "Main street continues to run to the east and west of here, each to their \r\nown prospective gates.  An alley runs to the north, drowned in shadow as \r\nthe large buildings to the east and west of the alley stand tall.  Smells \r\nof baked bread fill the air off to the north or northwest, it is hard to \r\ndiscern.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "24.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 24,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Main Street",
+      "rawDesc": "Large buildings rise to the north and south of you while Main Street \r\ncontinues off to the east and west.  A temple lies off to the north, \r\nperhaps the tallest building in the town, while Arkane's finest restaurant \r\nstands proudly to the south.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "25.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 25,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Main Street",
+      "rawDesc": "Guild Row has been built up to the south of Main Street here.  The newly\r\nlaid cobblestones look quite even, and the various guild houses well-kept. \r\nA small well rests at the end of the cul-de-sac to the south, and Main\r\nStreet continues to the east and west here.  To the north lies the\r\nOrphanage.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "26.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 26,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Main Street",
+      "rawDesc": "The large eastern gate of Arkane lies off to the east as you notice guards \r\ntaking their posts.  Way off to the west the western gates can be seen \r\nvaguely shimmering in the light.  Various scents float about the air each \r\nof them distinctive from one another: food, flowers, dust.  People mill about \r\ncasually watching you with sidelong glances. \r\n \r\nThe smell of bacon wafts from the south where a Cafe can be seen.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "27.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 27,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Inside the eastern gate",
+      "rawDesc": "Main Street continues to the west, while a small alley runs to the north and \r\nsouth of here, along the perimeter of the city.  People filter in and out of \r\nthe city through the gate to the east, which is guarded by the protectors of \r\nthe town.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "28.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 28,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Outside Arkane's eastern gate",
+      "rawDesc": "The city of Arkane lies off to the west of you, through massive gates. \r\nTo the northeast, you can see the Great Forest, the largest forest on the\r\ncontinent.  Inside the city, you can see the people of the town, and\r\nespecially imposing is the temple of Arkane, who's spires dwarf the other\r\nbuildings in the city.  A game trail leads off to the southeast away from\r\nthe city and into the woods.  To the north and south is an extended clearing\r\nwhich provides excellent visibility for the guards.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "29.0.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Arkane",
+        "mapCoord": {
+          "global": {
+            "X": 29,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Before the gates of Arkane",
+      "rawDesc": "Towering gates loom to the west, allowing entry into Arkane.  Ambient\r\nnoise murmurs over the gates from the bustling city.  The ornate and well\r\nkempt ground quickly fades into a rough road heading east.  Ruts from supply\r\ncarts scar the ground and widen down the slope eastward.",
+      "rawExits": {
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "down": {
+          "isEnabled": true,
+          "rawString": "down"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        }
+      }
+    }
+  }
+}

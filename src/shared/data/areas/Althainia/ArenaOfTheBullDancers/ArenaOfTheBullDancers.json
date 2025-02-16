@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "ArenaOfTheBullDancers",
+  "area_name": "Arena of the Bull Dancers",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Mixed",
+  "recommended_min_level": "25",
+  "recommended_max_level": "35",
+  "directions": "w; s; s; w; w; w; w; nw; n; n; w; w; w; w; s; s; sw; w; w; w; w; w; w; w; w; w; u; w; w; d; n; n; n; w; w; w; w; s; s; sw; w; w; w; w; w; w; w; w; n; n; e; n; n; e;",
+  "autopilot_level": "{\"ArenaOfTheBullDancers\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"u\",\"n\",\"n\",\"n\",\"n\",\"n\",\"sw\",\"n\",\"w\",\"w\",\"w\",\"w\",\"se\",\"w\",\"s\",\"s\",\"s\",\"s\",\"ne\",\"s\",\"e\",\"e\",\"e\",\"e\",\"d\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\"],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

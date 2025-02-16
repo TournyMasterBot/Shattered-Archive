@@ -1,0 +1,12 @@
+{
+  "continent_id": "Icewall",
+  "area_id": "VenerableForest",
+  "area_name": "Venerable Forest",
+  "starting_location": "Main Port of Icewall",
+  "alignment": "Evil",
+  "recommended_min_level": "30",
+  "recommended_max_level": "40",
+  "directions": "n; n; open e; e;",
+  "autopilot_level": "{\"VenerableForest\":{\"autopilot_start_room\":\"The road to Ganth\",\"speedwalk_to_start_room\":\"w\",\"area_required_actions\":[\"c pass\"],\"dirs\":[\"open east\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"s\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"s\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"s\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"s\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"s\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"s\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"s\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"w\",\"s\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"e\",\"nw\",\"nw\",\"nw\",\"nw\",\"nw\",\"nw\",\"nw\",\"nw\",\"w\",\"open west;w\"],\"allowed_mobs\":{\"yeti\":\"A large Yeti stands here trying to blend into its surroundings.\"}}}",
+  "beastiary": "[]"
+}

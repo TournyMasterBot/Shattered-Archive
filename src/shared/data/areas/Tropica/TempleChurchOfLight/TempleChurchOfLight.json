@@ -1,0 +1,12 @@
+{
+  "continent_id": "Tropica",
+  "area_id": "TempleChurchOfLight",
+  "area_name": "Church of Light",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Good",
+  "recommended_min_level": "1",
+  "recommended_max_level": "51",
+  "directions": "sw; w; s;",
+  "autopilot_level": "{\"TempleChurchOfLight\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

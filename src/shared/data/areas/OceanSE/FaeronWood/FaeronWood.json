@@ -1,0 +1,12 @@
+{
+  "continent_id": "OceanSE",
+  "area_id": "FaeronWood",
+  "area_name": "Faeron Wood",
+  "starting_location": "The Beach",
+  "alignment": "Unknown",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "directions": "s; s; e; s; s; s; s; s; s; s; s; s; s; s; s; s; s; s; s; s; e; s; w; s; e; s; e; n; e; e; e; e; e; e; e;",
+  "autopilot_level": "{\"FaeronWood\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

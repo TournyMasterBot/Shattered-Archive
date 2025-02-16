@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "AbaddonPrison",
+  "area_name": "Abaddon Prison",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Evil",
+  "recommended_min_level": "5",
+  "recommended_max_level": "30",
+  "directions": "w; s; s; sw; w; sw; w; w; w; n; n; w; w; n; sw; se; s; sw; se; s; se; e; se; e; s; s; s; s; s; s; s; s; w; w; n; w;",
+  "autopilot_level": "{\"AbaddonPrison\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

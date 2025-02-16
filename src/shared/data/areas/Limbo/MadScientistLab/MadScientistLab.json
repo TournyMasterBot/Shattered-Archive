@@ -1,0 +1,12 @@
+{
+  "continent_id": "Limbo",
+  "area_id": "MadScientistLab",
+  "area_name": "Mad Scientist Lab",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Evil",
+  "recommended_min_level": "35",
+  "recommended_max_level": "45",
+  "directions": "w; s; s; w; w; w; w; w; w; w; w; w; w; w; w; s; s; s; s; s; s; s; s; s; s; s; w; sw; s; sw; w; nw; n; n; n; n; n; n; n; e; enter gate; w; w; w; w; w; d; d; e; s; e; e; n; e; e; s; e; e; n; e; d; d; s; w; w; n; w; s; w; w; w; w; n; w; w; d; d; e; e; s; e; e; e; n; e; s; e; e; e; n; e; s; s; d; d; d; s;",
+  "autopilot_level": "{\"MadScientistLab\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,47 @@
+import IAbility from "@shared/types/ability-types/ability";
+import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
+import AbilityUsage from "@shared/types/ability-types/ability-usage";
+
+export class Bloodthirst implements IAbility {
+    private static instance: Bloodthirst;
+
+    name: string;
+    helpFile: string;
+    abilityGroupType: AbilityGroupType;
+    abilityUsage: AbilityUsage;
+
+    constructor() {
+        this.name = "Bloodthirst";
+        this.helpFile = `
+bloodthirst
+BLOODTHIRST
+
+Passive Skill
+
+When pirates group together, especially those with a higher reputation, the
+damage they can cause is greatly increased.
+        `;
+
+        this.abilityGroupType = AbilityGroupType.Skills;
+        this.abilityUsage = AbilityUsage.Active;
+
+        if (Bloodthirst.instance === undefined) {
+            Bloodthirst.instance = this;
+        }
+    }
+
+    // Method to get the single instance of the class
+    public static GetInstance(): Bloodthirst {
+        if (!Bloodthirst.instance) {
+            Bloodthirst.instance = new Bloodthirst();
+        }
+        return Bloodthirst.instance;
+    }
+
+    // Method to get the class instance, used in the context of IAbility
+    public Get<T>(): T {
+        return Bloodthirst.GetInstance() as T;
+    }
+}
+
+export default Bloodthirst;

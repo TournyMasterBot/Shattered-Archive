@@ -1,0 +1,12 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "GroveOfPenumbra",
+  "area_name": "Temple Drakkara - Grove of Penumbra - Followers Only",
+  "starting_location": "The Arkania Port",
+  "alignment": "Unknown",
+  "recommended_min_level": "1",
+  "recommended_max_level": "51",
+  "directions": "e; e; e; e; e; e; e; nw;",
+  "autopilot_level": "{\"GroveOfPenumbra\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

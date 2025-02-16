@@ -1,0 +1,12 @@
+{
+  "continent_id": "Shokono",
+  "area_id": "ThornKeep",
+  "area_name": "Thorn Keep",
+  "starting_location": "The Port of Shokono",
+  "alignment": "Unknown",
+  "recommended_min_level": "43",
+  "recommended_max_level": "51",
+  "directions": "sw; sw; sw; s; s; sw; s; w; s; s; w; w; w; w; w; w; w; n; n;",
+  "autopilot_level": "{\"ThornKeep\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

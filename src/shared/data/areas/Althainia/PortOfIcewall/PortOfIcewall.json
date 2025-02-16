@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "PortOfIcewall",
+  "area_name": "Port of Icewall",
+  "starting_location": "The Port of Althainia",
+  "alignment": "",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "directions": "ne; ne; ne; se; se;",
+  "autopilot_level": "{\"PortOfIcewall\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

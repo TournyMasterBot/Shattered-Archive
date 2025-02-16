@@ -1,0 +1,12 @@
+{
+  "continent_id": "Tropica",
+  "area_id": "DuinTol",
+  "area_name": "Duin Tol",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Mixed",
+  "recommended_min_level": "35",
+  "recommended_max_level": "45",
+  "directions": "sw; w; nw; w; nw; w; w; w; w; sw; w; sw; sw; s; s; s; se; n; n; n; n; n; n;",
+  "autopilot_level": "{\"DuinTol\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

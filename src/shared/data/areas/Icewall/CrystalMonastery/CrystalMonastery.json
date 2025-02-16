@@ -1,0 +1,12 @@
+{
+  "continent_id": "Icewall",
+  "area_id": "CrystalMonastery",
+  "area_name": "Crystal Monastery",
+  "starting_location": "Main Port of Icewall",
+  "alignment": "Good",
+  "recommended_min_level": "45",
+  "recommended_max_level": "51",
+  "directions": "nw; nw; w; w; nw; n; nw; e; n; u; u; n; n; u; u; n; n; n; ne; e; ne; nw; n; kill golem; get delicate silver key; n; n;",
+  "autopilot_level": "{\"CrystalMonastery\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

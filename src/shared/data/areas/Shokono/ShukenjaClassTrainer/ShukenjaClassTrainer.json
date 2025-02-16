@@ -1,0 +1,12 @@
+{
+  "continent_id": "Shokono",
+  "area_id": "ShukenjaClassTrainer",
+  "area_name": "Shukenja Class Trainer",
+  "starting_location": "The Port of Shokono",
+  "alignment": "Unknown",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "directions": "w; w; w; w; w; w; w; w; n; n; s; s; s; s; s; s; s; s; w; w; w; w; sw; s;",
+  "autopilot_level": "{\"ShukenjaClassTrainer\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "MountAxpvjib",
+  "area_name": "Mount Axpvjib",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Neutral",
+  "recommended_min_level": "5",
+  "recommended_max_level": "20",
+  "directions": "w; w; w; w; w; nw; w; nw; nw; w; w; w; w; s; s; s; s; s; s; e; e; se; ne; e; e; e; e; e; e; s; s; se; se; s; w; n;",
+  "autopilot_level": "{\"MountAxpvjib\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

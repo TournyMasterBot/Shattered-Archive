@@ -1,0 +1,12 @@
+{
+  "continent_id": "OceanSE",
+  "area_id": "CrimsonDefiant",
+  "area_name": "Crimson Defiant",
+  "starting_location": "The Arkania Port",
+  "alignment": "Unknown",
+  "recommended_min_level": "45",
+  "recommended_max_level": "51",
+  "directions": "s; s; s; se; s; se; s; se; sw; sw; s; s; s; s; e; s; s; s; s; s; s; s; s; s; s; s; s; s; s; s; s; s; e; s; w; s; e; s; e; n; e; e; e; e; e; e; e; s; e; s; s; s; s; s; s; s; enter gangplank;",
+  "autopilot_level": "{\"CrimsonDefiant\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

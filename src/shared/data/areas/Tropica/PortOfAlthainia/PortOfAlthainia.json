@@ -1,0 +1,12 @@
+{
+  "continent_id": "Tropica",
+  "area_id": "PortOfAlthainia",
+  "area_name": "Port of Althainia",
+  "starting_location": "The Arkania Port",
+  "alignment": "",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "directions": "nw; nw; nw; nw; nw; nw; nw;",
+  "autopilot_level": "{\"PortOfAlthainia\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

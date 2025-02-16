@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "StonyBarrens",
+  "area_name": "Stony Barrens",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Mixed",
+  "recommended_min_level": "1",
+  "recommended_max_level": "15",
+  "directions": "w; s; s; w; w; w; w; nw; n; n; w; w; w; w; n;",
+  "autopilot_level": "{\"StonyBarrens\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,12 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "BlindPrincesCourt",
+  "area_name": "Blind Princes Court",
+  "starting_location": "The Arkania Port",
+  "alignment": "Evil",
+  "recommended_min_level": "51",
+  "recommended_max_level": "51",
+  "directions": "find This area is secret! Find out about it in game!;",
+  "autopilot_level": "{\"BlindPrincesCourt\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

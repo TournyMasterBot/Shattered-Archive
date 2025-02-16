@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "ChamberOfPronouncement",
+  "area_name": "Chamber Of Pronouncement",
+  "starting_location": "The Port of Althainia",
+  "alignment": "",
+  "recommended_min_level": "1",
+  "recommended_max_level": "51",
+  "directions": "w; s; s; w; w; w; w; w; w; w; enter rip; n; e; e; u; w; w; u; e; u; u; w; u; e; d;",
+  "autopilot_level": "{\"ChamberOfPronouncement\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

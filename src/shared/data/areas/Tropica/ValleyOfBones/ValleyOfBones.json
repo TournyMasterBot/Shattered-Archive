@@ -1,0 +1,12 @@
+{
+  "continent_id": "Tropica",
+  "area_id": "ValleyOfBones",
+  "area_name": "Valley of Bones",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Good",
+  "recommended_min_level": "10",
+  "recommended_max_level": "20",
+  "directions": "sw; w; w; se; s; sw; w; w; sw; sw; s;",
+  "autopilot_level": "{\"ValleyOfBones\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,12 @@
+{
+  "continent_id": "Shokono",
+  "area_id": "BambooTempleMaze",
+  "area_name": "Bamboo Temple Maze",
+  "starting_location": "The Port of Shokono",
+  "alignment": "Neutral",
+  "recommended_min_level": "40",
+  "recommended_max_level": "51",
+  "directions": "w; w; w; w; w; w; s; s; s; s; s; s; w; w; w; s; s; se; sw; d; s; sw; d; s; sw; s; se; se; u; sw; n; n; n; n; n; n; n; w; n; n; e; ne; n; nw; n; n;",
+  "autopilot_level": "{\"BambooTempleMaze\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

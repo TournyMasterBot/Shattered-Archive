@@ -1,0 +1,12 @@
+{
+  "continent_id": "Tropica",
+  "area_id": "NevinostGardens",
+  "area_name": "Nevinost Gardens",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Neutral",
+  "recommended_min_level": "20",
+  "recommended_max_level": "25",
+  "directions": "s; sw; s; w; sw; s; s; s; se; s; sw; w;",
+  "autopilot_level": "{\"NevinostGardens\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,12 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "BlazingAurora",
+  "area_name": "Blazing Aurora",
+  "starting_location": "The Arkania Port",
+  "alignment": "Good",
+  "recommended_min_level": "43",
+  "recommended_max_level": "51",
+  "directions": "e; e; e; e; e; e; e; e; e; e; e; e; e; e; n; n; n; n; n; n; n; n; n; n; n; n; n; e; n; enter Aurora;",
+  "autopilot_level": "{\"BlazingAurora\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[{\"id\":\"AugurOfTheInnocent\",\"name\":\"Augur of the Innocent\",\"race\":\"subangel\",\"continent\":2,\"area_id\":\"BlazingAurora\",\"sub_area\":\"\",\"alignment\":2,\"gender\":\"none\",\"level\":57,\"damage_dice\":\"10d4\",\"damage_min\":10,\"damage_max\":40,\"damage_avg\":20.0,\"damage_type\":37,\"damage_type_string\":\"wrath\",\"immunities\":[\"charm\",\"fire\",\"cold\",\"lightning\",\"holy\",\"mental\",\"drowning\"],\"resistances\":[\"magic\",\"energy\"],\"vulnerabilities\":[\"negative\"],\"affects\":[\"sanctuary\",\"prot_evil\",\"flying\",\"haste\"],\"offensive_tactics\":[\"area attack\",\"disarm\",\"dodge\",\"parry\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"an ivory opinicus\",\"race\":\"song bird\",\"continent\":2,\"area_id\":\"BlazingAurora\",\"alignment\":2,\"gender\":\"none\",\"level\":30,\"damage_dice\":\"4d6\",\"damage_min\":4,\"damage_max\":24,\"damage_avg\":12.0,\"damage_type\":8,\"damage_type_string\":\"claw\",\"immunities\":[\"summon\",\"charm\",\"holy\",\"disease\"],\"vulnerabilities\":[\"negative\"],\"affects\":[\"flying\"],\"offensive_tactics\":[\"dodge\",\"fast\"],\"gold\":0,\"silver\":0,\"CreatureType\":0},{\"name\":\"a seraphic witness\",\"race\":\"subangel\",\"continent\":2,\"area_id\":\"BlazingAurora\",\"alignment\":2,\"gender\":\"none\",\"level\":50,\"damage_dice\":\"5d8\",\"damage_min\":5,\"damage_max\":40,\"damage_avg\":20.0,\"damage_type\":37,\"damage_type_string\":\"wrath\",\"immunities\":[\"charm\",\"fire\",\"cold\",\"lightning\",\"poison\",\"holy\",\"mental\",\"disease\",\"drowning\"],\"resistances\":[\"energy\"],\"vulnerabilities\":[\"negative\"],\"affects\":[\"invisible\",\"infrared\",\"flying\"],\"gold\":0,\"silver\":0,\"CreatureType\":0}]"
+}

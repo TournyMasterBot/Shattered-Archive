@@ -1,0 +1,12 @@
+{
+  "continent_id": "OceanSE",
+  "area_id": "GrellHunters",
+  "area_name": "Grell Hunters",
+  "starting_location": "The Beach",
+  "alignment": "Good",
+  "recommended_min_level": "20",
+  "recommended_max_level": "30",
+  "directions": "e; e; e; s; s; e; s; e; s; s; s; e; e; n; e; se;",
+  "autopilot_level": "{\"GrellHunters\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

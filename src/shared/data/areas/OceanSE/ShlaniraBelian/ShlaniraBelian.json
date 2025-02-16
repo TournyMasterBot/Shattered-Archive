@@ -1,0 +1,12 @@
+{
+  "continent_id": "OceanSE",
+  "area_id": "ShlaniraBelian",
+  "area_name": "Sh'lanira Belian",
+  "starting_location": "The Arkania Port",
+  "alignment": "Good",
+  "recommended_min_level": "30",
+  "recommended_max_level": "51",
+  "directions": "sw; sw; d;",
+  "autopilot_level": "{\"ShlaniraBelian\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

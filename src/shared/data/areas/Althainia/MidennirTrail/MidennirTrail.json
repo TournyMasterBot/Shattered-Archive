@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "MidennirTrail",
+  "area_name": "Miden'nir Trail",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Unknown",
+  "recommended_min_level": "15",
+  "recommended_max_level": "20",
+  "directions": "w; s; s; sw; w; sw; w; w; w; n; n; w; w; n; sw; se; s; sw; se; s; se; e; ne; e; e; se; se;",
+  "autopilot_level": "{\"MidennirTrail\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,1157 @@
+{
+  "continent_id": "OceanCtr",
+  "area_id": "ArsatawYaa",
+  "area_name": "Arsataw Yaa",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Unknown",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "directions": "n;",
+  "autopilot_level": "{\"ArsatawYaa\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]",
+  "areaRooms": {
+    "0.0.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "World Center",
+        "mapCoord": {
+          "global": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "World Center",
+      "terrain": "ocean",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "up": {
+          "isEnabled": true,
+          "rawString": "up"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "1.0.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "mapCoord": {
+          "global": {
+            "X": 1,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "2.0.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "mapCoord": {
+          "global": {
+            "X": 2,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "3.0.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "mapCoord": {
+          "global": {
+            "X": 3,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "0.-1.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": 0,
+            "Y": -1,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "0.-2.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": 0,
+            "Y": -2,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-4.-2.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -4,
+            "Y": -2,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-4.-1.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -4,
+            "Y": -1,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-5.-1.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -5,
+            "Y": -1,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "down": {
+          "isEnabled": true,
+          "rawString": "down"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-5.-1.-1": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -5,
+            "Y": -1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "noswim",
+      "rawName": "Under the dock",
+      "rawDesc": "You are swimming underneath the dock. You can see the four wooden\r\npylons that support the structure. The murky water clouds your vision\r\nas you gaze westward, but you think you can make out an iron grating in\r\nthat direction.",
+      "rawExits": {
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "up": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mup\u001b[0;32m"
+        }
+      }
+    },
+    "-6.-1.-1": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -6,
+            "Y": -1,
+            "Z": -1
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "noswim",
+      "rawName": "Lair of the Ixitxachitl",
+      "rawDesc": "Blood swirls around in the water as the Ixitxachitl devours the\r\nlast of its meal. Swirling around quickly as you intrude upon\r\nits meal the large sting ray attacks!",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        }
+      }
+    },
+    "-6.1.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -6,
+            "Y": 1,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-7.-2.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -7,
+            "Y": -2,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "-1.-3.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -1,
+            "Y": -3,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-2.-3.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -2,
+            "Y": -3,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-2.-4.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -2,
+            "Y": -4,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-3.-4.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -3,
+            "Y": -4,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-4.-4.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -4,
+            "Y": -4,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-5.-4.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -5,
+            "Y": -4,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-6.-4.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -6,
+            "Y": -4,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-6.-5.0": {
+      "worldCoords": {
+        "continentId": "OceanCtr",
+        "areaId": "ArsatawYaa",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -6,
+            "Y": -5,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Arsataw Yaa",
+      "rawDesc": "Surrounded by the seemingly endless blue waters of Arsataw Yaa, it can be\r\nsomewhat overwhelming to those who are inexperienced with sailing its\r\nwaters.  As you look around, you feel comforted knowing that there are four\r\ncontinents around you, so you're bound to reach dry land no matter which\r\ndirection you sail.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    }
+  }
+}

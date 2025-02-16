@@ -1,0 +1,12 @@
+{
+  "continent_id": "Shokono",
+  "area_id": "OgreMagi",
+  "area_name": "Ogre Magi",
+  "starting_location": "The Port of Shokono",
+  "alignment": "Unknown",
+  "recommended_min_level": "43",
+  "recommended_max_level": "51",
+  "directions": "sw; sw; sw; s; s; sw; s; w; s; s; w; w; w; w; w; w; w; s; s; w; nw; sw; sw; d; s; se; d; e; ne; ne; s; se;",
+  "autopilot_level": "{\"OgreMagi\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,12 @@
+{
+  "continent_id": "Tropica",
+  "area_id": "Warp",
+  "area_name": "Warp",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Unknown",
+  "recommended_min_level": "1",
+  "recommended_max_level": "51",
+  "directions": "s; sw; s; s; sw; s; se; se; s; s; d; s; s;",
+  "autopilot_level": "{\"Warp\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

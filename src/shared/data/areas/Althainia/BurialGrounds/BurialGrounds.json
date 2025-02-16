@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "BurialGrounds",
+  "area_name": "Burial Grounds",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Mixed",
+  "recommended_min_level": "25",
+  "recommended_max_level": "30",
+  "directions": "w; s; s; w; w; w; w; nw; n; n; w; w; w; w; s; s; sw; w; w; w; w; w; w; w; w; w; u; w; w; d; s; s; se;",
+  "autopilot_level": "{\"BurialGrounds\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

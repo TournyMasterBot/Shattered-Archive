@@ -1,0 +1,40 @@
+import IAbility from "@shared/types/ability-types/ability";
+import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
+import AbilityUsage from "@shared/types/ability-types/ability-usage";
+
+export class HolySmite implements IAbility {
+    private static instance: HolySmite;
+
+    name: string;
+    helpFile: string;
+    abilityGroupType: AbilityGroupType;
+    abilityUsage: AbilityUsage;
+    manualDescription: string;
+
+    constructor() {
+        this.name = "Holy Smite";
+        this.helpFile = "";
+        this.manualDescription = "Holy Smite is the Cleric bounty skill. This spell halves spell damage, including physical spells like snakebite. The effect of halving damage goes through AMS.";
+        this.abilityGroupType = AbilityGroupType.Spells;
+        this.abilityUsage = AbilityUsage.Active;
+
+        if (HolySmite.instance === undefined) {
+            HolySmite.instance = this;
+        }
+    }
+
+    // Method to get the single instance of the class
+    public static GetInstance(): HolySmite {
+        if (!HolySmite.instance) {
+            HolySmite.instance = new HolySmite();
+        }
+        return HolySmite.instance;
+    }
+
+    // Method to get the class instance, used in the context of IAbility
+    public Get<T>(): T {
+        return HolySmite.GetInstance() as T;
+    }
+}
+
+export default HolySmite;

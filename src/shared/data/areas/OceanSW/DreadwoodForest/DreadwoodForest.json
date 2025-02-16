@@ -1,0 +1,11 @@
+{
+  "continent_id": "OceanSW",
+  "area_id": "DreadwoodForest",
+  "area_name": "Dreadwood Forest",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Good",
+  "recommended_min_level": "45",
+  "recommended_max_level": "51",
+  "autopilot_level": "{\"DreadwoodForest\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

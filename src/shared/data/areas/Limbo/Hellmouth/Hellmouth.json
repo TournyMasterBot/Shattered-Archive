@@ -1,0 +1,12 @@
+{
+  "continent_id": "Limbo",
+  "area_id": "Hellmouth",
+  "area_name": "Hellmouth",
+  "starting_location": "Main Port of Icewall",
+  "alignment": "Evil",
+  "recommended_min_level": "25",
+  "recommended_max_level": "50",
+  "directions": "n; n; n; n; n; n; u; w; n; nw; nw; n; nw; u; ne; ne; ne; ne; e; u; n; ne; ne; u; nw; nw; u; sw; s; se; u; dig ; enter crevice;",
+  "autopilot_level": "{\"Hellmouth\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

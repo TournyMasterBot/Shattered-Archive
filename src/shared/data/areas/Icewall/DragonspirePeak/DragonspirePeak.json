@@ -1,0 +1,12 @@
+{
+  "continent_id": "Icewall",
+  "area_id": "DragonspirePeak",
+  "area_name": "Dragonspire Peak",
+  "starting_location": "Main Port of Icewall",
+  "alignment": "Unknown",
+  "recommended_min_level": "14",
+  "recommended_max_level": "25",
+  "directions": "nw; nw; w; w; nw; n; nw; e; n; u; u; n; n; u; enter trail;",
+  "autopilot_level": "{\"DragonspirePeak\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,12 @@
+{
+  "continent_id": "Tropica",
+  "area_id": "TempleOfGood",
+  "area_name": "Temple of Good",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Good",
+  "recommended_min_level": "10",
+  "recommended_max_level": "30",
+  "directions": "se; se; s; s; s; sw; sw; w; sw; s; s; s; sw; w; w; w; n; n; d;",
+  "autopilot_level": "{\"TempleOfGood\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[\"n\",\"n\",\"d\",\"n\",\"n\",\"unlock north\",\"open north\",\"north\",\"w\",\"w\",\"n\",\"n\",\"n\",\"n\",\"e\",\"e\",\"e\",\"e\",\"s\",\"s\",\"s\",\"s\",\"w\",\"w\",\"n\",\"n\",\"w\",\"e\",\"e\",\"w\",\"n\",\"s\",\"s\",\"s\",\"s\",\"s\",\"s\",\"u\",\"s\",\"s\"],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

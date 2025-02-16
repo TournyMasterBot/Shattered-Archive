@@ -1,0 +1,12 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "Bastille",
+  "area_name": "Bastille",
+  "starting_location": "The Arkania Port",
+  "alignment": "Mixed",
+  "recommended_min_level": "15",
+  "recommended_max_level": "20",
+  "directions": "e; e; e; e; e; s; s; w;",
+  "autopilot_level": "{\"Bastille\":{\"autopilot_start_room\":\"Unknown\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[\"w\",\"w\",\"open north;n\",\"s\",\"open south;s\",\"w\",\"w\",\"w\",\"s\",\"ne\",\"n\",\"ne\",\"unlock down;open down;d\",\"unlock north;open north;n\",\"unlock east;open east;e\",\"w\",\"unlock west;open west;w\",\"e\",\"unlock north;open north;n\",\"s\",\"s\",\"e\",\"unlock down;open down;d\",\"u\",\"w\",\"u\",\"sw\",\"s\",\"e\",\"e\",\"n\",\"open northeast;ne\",\"u\",\"d\",\"sw\",\"unlock southeast;open southeast;se\",\"u\",\"d\",\"nw\",\"e\",\"e\",\"drop 10 cross;drop 10 halberd;drop 10 scourge\"],\"allowed_mobs\":{\"woman\":\"A servant woman wanders around here.\",\"cook\":\"A fairly large woman stands here.\",\"gua\":\"A Marauder guard stands on duty here.\",\"guar\":\"A Marauder guard is sitting here.\",\"guard\":\"A fairly large Marauder guard sits here playing cards.\",\"marauder\":\"A fairly large Marauder guard is sleeping here.\",\"mara\":\"A Marauder Sergeant is here.\",\"liber\":\"A Sons of Liberty soldier is tied to the rack.\",\"liberty\":\"A Son of Liberty soldier is shackled here.\",\"tortur\":\"The torturer of the Marauders stands here.\",\"wom\":\"A young woman lies here shackled.\",\"boy\":\"A small boy sits here weeping.\",\"man\":\"An old man sits here shackled.\"}}}",
+  "beastiary": "[]"
+}

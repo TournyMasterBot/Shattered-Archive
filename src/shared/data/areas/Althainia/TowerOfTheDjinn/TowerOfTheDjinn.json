@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "TowerOfTheDjinn",
+  "area_name": "Tower of the Djinn",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Unknown",
+  "recommended_min_level": "43",
+  "recommended_max_level": "51",
+  "directions": "w; s; s; w; w; w; w; w; w; w; w; w; s; e; s; s; e; e; n;",
+  "autopilot_level": "{\"TowerOfTheDjinn\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

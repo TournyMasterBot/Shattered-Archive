@@ -1,0 +1,12 @@
+{
+  "continent_id": "Limbo",
+  "area_id": "RealmOfTheDead",
+  "area_name": "Realm of the Dead",
+  "starting_location": "Unknown",
+  "alignment": "",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "directions": "say something naughty;",
+  "autopilot_level": "{\"RealmOfTheDead\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

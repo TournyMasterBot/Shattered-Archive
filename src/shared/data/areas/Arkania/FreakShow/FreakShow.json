@@ -1,0 +1,12 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "FreakShow",
+  "area_name": "Freak Show",
+  "starting_location": "The Arkania Port",
+  "alignment": "",
+  "recommended_min_level": "25",
+  "recommended_max_level": "40",
+  "directions": "e; e; e; e; e; n; n; nw; w; n; ne; ne;",
+  "autopilot_level": "{\"FreakShow\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

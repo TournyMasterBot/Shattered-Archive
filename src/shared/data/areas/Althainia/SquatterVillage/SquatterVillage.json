@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "SquatterVillage",
+  "area_name": "Squatter Village",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Good",
+  "recommended_min_level": "20",
+  "recommended_max_level": "51",
+  "directions": "w; s; s; w; w; w; w; nw; n; n; w; w; w; w; s; s; sw; w; w; w; w; w; w; w; w; n; n; n; e; e; s;",
+  "autopilot_level": "{\"SquatterVillage\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,70 @@
+{
+  "continent_id": "Tropica",
+  "area_id": "Tropica",
+  "area_name": "Tropica",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Unknown",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "autopilot_level": "{\"Tropica\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]",
+  "areaRooms": {
+    "2.5.0": {
+      "worldCoords": {
+        "continentId": "Tropica",
+        "areaId": "Tropica",
+        "subAreaName": "Port",
+        "mapCoord": {
+          "global": {
+            "X": 2,
+            "Y": 5,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "Port",
+      "terrain": "inside",
+      "rawName": "The Tropica Dock",
+      "rawDesc": "This is the port of Tropica.  Around you people are unloading exotic\r\nplants, animals and spices, all for trade on the other continents.  Foolish\r\nvisitors from other continents gawk at the sights, exclaiming on this wonder\r\nand that wonder.  There are more humans here than any other race.  Those\r\nother races you see come from around Algoron, the odd elf and even a ship of\r\nburly, hulking minotaurs!  It is not as hot out on the docks as it is\r\nfurther inland, and you bask in the cool breeze brought in from the ocean. \r\nThere is a line of passengers here waiting for a ship to take them to other\r\ncontinents, with other sights to be seen.  A large sign catches your eye.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    }
+  }
+}

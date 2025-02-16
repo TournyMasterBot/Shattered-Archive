@@ -1,0 +1,942 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "Verminasia",
+  "area_name": "Verminasia",
+  "starting_location": "The Arkania Port",
+  "alignment": "Evil",
+  "recommended_min_level": "0",
+  "recommended_max_level": "35",
+  "directions": "e; e; e; e; e; e; e; e; e; e; e; e; e; e; n; n; n; n; n; n; n; n; n; n; n; n; n; e; n; n; n;",
+  "autopilot_level": "{\"Verminasia\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[{\"name\":\"a Verminasian gateguard\",\"race\":\"human\",\"continent\":2,\"area_id\":\"Verminasia\",\"alignment\":8,\"gender\":\"male\",\"level\":45,\"damage_dice\":\"5d4\",\"damage_min\":5,\"damage_max\":20,\"damage_avg\":10.0,\"damage_type\":20,\"damage_type_string\":\"pierce\",\"immunities\":[\"summon\",\"charm\",\"mental\"],\"resistances\":[\"magic\",\"weapon\",\"fire\",\"cold\"],\"affects\":[\"detect_evil\",\"detect_good\",\"haste\",\"dark vision\"],\"offensive_tactics\":[\"area attack\",\"bash\",\"berserk\",\"disarm\",\"dodge\",\"fast\",\"kick\",\"parry\",\"rescue\",\"trip\",\"crush\",\"assist_guard\"],\"gold\":0,\"silver\":0,\"CreatureType\":0}]",
+  "areaRooms": {
+    "22.-16.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": -16,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Entrance to the City of Verminasia",
+      "rawDesc": "You stand before a huge stone wall surrounding a city. On each corner\r\nand above the gate are guard towers. The stone wall is massive and strong\r\nto keep out unwanted visitors. The place is a virtual fortress, well\r\nguarded by the alert sentries you see walking high in the towers. Massive\r\nwooden gates, to the north, are currently open. It is odd you see no guards\r\nat the gate.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "22.-17.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": -17,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Southern Gates of Verminasia",
+      "rawDesc": "You are standing inside the massive gates of the city of Verminasia. You\r\nsee a very busy city, but it looks like a slum from here. Hopefully it will  \r\nget better further inside the city. Many unsavoury looking characters are \r\nwalking around this area. Better watch your money closely.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "up": {
+          "isEnabled": true,
+          "rawString": "up"
+        }
+      }
+    },
+    "22.-18.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": -18,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Thieves Row",
+      "rawDesc": "You are on the southern end of Thieves Row. Looking around you can see this\r\npart of Verminasia is a slum. Unsavoury people of the worst kind wander the \r\nstreets, day and night. It would be a good idea to keep your weapons and\r\ngold close to your body, or better yet, well hidden.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "22.-19.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": -19,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Thieves Row",
+      "rawDesc": "This is the northern end of Thieves Row.  To the north is a bridge\r\ncrossing a swift river that divides the two areas of Verminasia.  To the\r\nsouth is more Thieves Row and the well guarded southern gates to the city. \r\nTo the west is a small building with a sign that reads  \u001b[1;32mM\u001b[0;32muju's \u001b[1;32mM\u001b[0;32mojo \u001b[1;32mS\u001b[0;32mhop\u001b[0m.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "22.-20.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": -20,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Drakkara Bridge",
+      "rawDesc": "Drakkara bridge, named after the evil goddess of magic herself, is a proud\r\nlandmark of the city. It is a massive bridge of stone and wood, and is very\r\nwell maintained throughout the year. The slight arch of the bridge gives a\r\ngood view of the city on both sides. The fast flowing river rumbles below\r\nas you gaze at the city.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        }
+      }
+    },
+    "22.-21.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": -21,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Southern Square",
+      "rawDesc": "You are standing at an intersection called Southern Square. North is Royal\r\nAvenue. Sabre Street is west and Esquire Parkway is east. To the south is\r\nthe famous bridge landmark, Drakkara Bridge.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "22.-22.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": -22,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Royal Avenue",
+      "rawDesc": "This is the south end of Royal Avenue. The tree-lined street is a short walk\r\nnorth, to the busier section of town, or south, to the park area. A few \r\nstores are nestled among the trees.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "22.-23.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": -23,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Guillotine Square",
+      "rawDesc": "As the well-maintained roads direct the way into the the heart of\r\nVerminasia they open into an expansive, octagonal square just south of the\r\nfortress-like temple and palace of Verminasia.  Framed on all sides by\r\nelegant covered walkways, Guillotine square occupies the rise of a hill\r\nwithin the city center, bisected by Guillotine Road to the east and west and\r\nthe Royal Avenue travelling north and south.  The focal point of the square\r\nis it's namesake guillotine, an instrument of grim reprisal that stands atop\r\na broad dreadwood platform, giving all within the square ample view of these\r\nspecial occasions.  The square functions as the civic center of the city, a\r\nplace where both the noble; families and low-born congregate or travel\r\nthrough to the city's many religious and historic sites.  The iconic\r\nlanguage of the dark city's history is told through use of \u001b[1;30mstatuaries\u001b[0m and\r\n\u001b[1;30mcarving\u001b[0m beneath the porticoes and by the inlaid granite \u001b[1;30mmosaic\u001b[0m of the\r\nsquare.  The towering Karecus arena rises up to the southeast of the square,\r\nbeckoning combatants and spectators alike with promises of bloodshed and\r\nglory.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "22.-24.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": -24,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Royal Avenue",
+      "rawDesc": "You are walking on a tree lined street.  To the south, is Guillotine\r\nSquare and Royal Avenue continues southward.  To the north, is the Temple\r\nand Unholy Grounds of the City of Verminasia.  Looking east is the side of\r\nthe Royal Arms Inn building.  To the west lies \"The Toy Box Shop\" and to the\r\neast lies \"Dark Forge Armory\".",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "22.-25.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": -25,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Temple Courtyard",
+      "rawDesc": "You are in a beautiful courtyard that is surrounded by greenery and has a\r\nlarge fountain in its center.  Before you is a massive, black temple made\r\nentirely of obsidian, its size imposing and awe-inspiring.  Evil eminates\r\nfrom the temple, and you are certain of one thing - you have entered the\r\nholy grounds of the city of Verminasia.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "22.-26.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": -26,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Temple Entrance",
+      "rawDesc": "You are standing at the entrance to the temple. Enormous black obsidian\r\npillars stand on each side of the entrance. Dramatic carvings of dark\r\ngods cover the pillars. Above the doorway are carvings of famous battles\r\nand victories of Verminasia.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        }
+      }
+    },
+    "22.-27.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": -27,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Temple of Darkness",
+      "rawDesc": "You are in a huge cavernous room that leads to all other rooms in the temple.\r\nA massive black altar sits in the middle of the room to worship the dark and\r\nevil gods. The altar is carved from a mysterious black stone that's cold as\r\nice to the touch. At the base of the altar is a black slab covered with the\r\nblood of a recent sacrifice. The altar also holds various gifts and offerings\r\nfrom true followers to assist those less fortunate on their way to glorify\r\nand further the cause of the truely great gods.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        }
+      }
+    },
+    "21.-27.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -27,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Room of Healing & Contemplation",
+      "rawDesc": "The king himself had this room built for the powerful priestess Zerrella.\r\nA faithful servant to the king and a strong believer in the evil gods, she\r\nuses her powers of healing to all who enter her domain wounded and injured.\r\nThe room has statues and wall decorations honoring heros and knights that\r\nhave been touched by Zerrella's hands.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "21.-28.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -28,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Room of Holy Ceremony",
+      "rawDesc": "You are in a huge room filled with benches for a large mass of people. On the\r\nnorth wall is a massive statue of the God of all Evil, Necrucifer. Surrounding\r\nhim are smaller statues of the lesser evil gods who have their own followers.\r\nThis room is used for special, momentous occasions, such as the acceptance or\r\nhonoring of a knight in the service of the King, or a couple wishing the bond\r\nof holy matrimony, blessed by Necrucifer himself. All of Verminasia believes\r\nif you make a vow, or honor someone in this room, that Necrucifer himself\r\nwill bless and acknowledge that honor and vow. It is also believed that any\r\nwho try to break that blessing would have punishment of unheard horror to haunt\r\nthem the rest of their days.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "22.-28.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 22,
+            "Y": -28,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Room of Holy Wars",
+      "rawDesc": "The room of Holy Wars has a special place in the history of Verminasia.\r\nKnights and warriors come here to be blessed and protected on their way\r\nto avenge and defend the honor of their fallen heroes. The king himself and\r\nthe leader of Eclipse, as well as many powerful Knights of Eclipse have been\r\nseen here. Those lucky enough to have been present at these times are awed by\r\nthe powerful clan who give their life to the king and promote evil as the\r\ntruly honorable way of life.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "23.-28.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 23,
+            "Y": -28,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Entrance to the Holy Guilds",
+      "rawDesc": "A small unassuming room to welcome visitors. A good place for a cleric to\r\nrelax from the rigorous training, and visit family and friends.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "down": {
+          "isEnabled": true,
+          "rawString": "down"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        }
+      }
+    },
+    "23.-27.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 23,
+            "Y": -27,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Room of Prayer",
+      "rawDesc": "The room of prayer is open to all to come to worship the evil ones, but to\r\nalso worship a particular god, the one they chose to worship as their own\r\npersonal guide to help them along in their mortal life. Some come here to\r\nask for favors of a particular god, during a crisis in their life, or a vow\r\nof revenge, or honor, and want the help of that god. You see clanners and\r\ntownspeople alike kneeling and bowed before the statue of the God of their\r\nchoice.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "21.-23.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 21,
+            "Y": -23,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Guillotine Road",
+      "rawDesc": "Guillotine Road continues east and west. Eastward is the famous Guillotine \r\nSquare where the town gathers for executions of their enemies. North is a\r\ngem store. To the south is an exclusive ladies shop catering to the wealthy.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "20.-23.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 20,
+            "Y": -23,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Guillotine Road",
+      "rawDesc": "Guillotine Road is a busy main street. North you see a high class dining\r\nestablishment. High ranking couples from the palace are seen going in and\r\nout of there. East and west Guillotine Road continues. Sweet smells come\r\nfrom the south.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "19.-23.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 19,
+            "Y": -23,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Guillotine Road",
+      "rawDesc": "East and west Guillotine Road continues. North is the entrance to the Mage's\r\nGuild. South is a shop of selling magical items. You see knights, and nobles\r\nstrolling along this street. Ladies in waiting, loaded down with packages,\r\nfollow their mistresses from shop to shop.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "18.-23.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 18,
+            "Y": -23,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Guillotine Road",
+      "rawDesc": "You are on the west end of Guillotine Road. To the west is the tower city\r\ngates. Eastward Guillotine Road continues. A small shop to the north has\r\nno name and looks oddly different from the busy stores on the rest of the\r\nstreet. To the south is a potion and herbal shop. Looking farther east, you\r\nsee a large Guillotine overshadowing a town square.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "17.-23.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 17,
+            "Y": -23,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "West Gate Entrance",
+      "rawDesc": "This is the western tower gate entrance to the city of Verminasia. \r\nGuards are permanantly stationed here checking people going in and out of\r\nthe city.  East is Guillotine Road, a very busy main street by the looks of\r\nthe people strolling from shop to shop.  South is a back alley.  \n\r\n\r\nTo the north, a magnificently round architectural construct stands, built in\r\na striking combination of black and deep red marble, A series of smaller\r\narchways encircle the building, each one framed by wrought iron gates that\r\nstand open to allow entrance in or exit out.  At its center, stands the\r\ngrandest archway of all with intricate designs inlaid with gold.  The\r\namphitheater is an impressive show of elegant beauty and extreme wealth - a\r\ntrue dark jewel.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "up": {
+          "isEnabled": true,
+          "rawString": "up"
+        }
+      }
+    },
+    "16.-23.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 16,
+            "Y": -23,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A Dusty Trail Leading to the West Gates of a City",
+      "rawDesc": "You stand before a huge stone wall that circles a city. On each corner\r\nand above the gates are guard towers. The stone wall is massive and strong\r\nto keep out unwanted visitors. The city is a virtual fortress, well guarded\r\nby the alert sentries you see walking high in the towers. Massive wooden\r\ngates to the east are currently open. Several guards patrol the gates\r\nchecking visitors going in and out of the city. A dusty trail continues\r\nnorth and south, following the wall and leading into a dark forest.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    },
+    "15.-23.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "Verminasia",
+        "mapCoord": {
+          "global": {
+            "X": 15,
+            "Y": -23,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "A Dusty Trail near a Stone Wall",
+      "rawDesc": "You are walking on a small trail that is near a massive stone wall\r\nsurrounding a large city.  The western gates lie toward the east.  The trail\r\ncontinues northward and southward.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    }
+  }
+}

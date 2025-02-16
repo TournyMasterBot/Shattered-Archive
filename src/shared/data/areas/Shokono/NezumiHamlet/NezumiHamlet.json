@@ -1,0 +1,12 @@
+{
+  "continent_id": "Shokono",
+  "area_id": "NezumiHamlet",
+  "area_name": "Nezumi Hamlet",
+  "starting_location": "The Port of Shokono",
+  "alignment": "Unknown",
+  "recommended_min_level": "0",
+  "recommended_max_level": "0",
+  "directions": "w; w; w; w; w; w; s; s; s; s; s; s; w; w; w; s; s; se; sw; d; s; se; s; s; w; w; w; n;",
+  "autopilot_level": "{\"NezumiHamlet\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

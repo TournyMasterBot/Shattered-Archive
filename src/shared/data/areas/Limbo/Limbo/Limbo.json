@@ -1,0 +1,12 @@
+{
+  "continent_id": "Limbo",
+  "area_id": "Limbo",
+  "area_name": "Limbo",
+  "starting_location": "Unknown",
+  "alignment": "Unknown",
+  "recommended_min_level": "52",
+  "recommended_max_level": "60",
+  "directions": "say afk (Be afk for a period of time);",
+  "autopilot_level": "{\"Limbo\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

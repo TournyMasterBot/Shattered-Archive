@@ -1,0 +1,3275 @@
+{
+  "continent_id": "OceanNW",
+  "area_id": "BelegluinAelin",
+  "area_name": "Beleg'luin Aelin",
+  "starting_location": "Unknown",
+  "alignment": "Unknown",
+  "recommended_min_level": "15",
+  "recommended_max_level": "40",
+  "autopilot_level": "{\"BelegluinAelin\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]",
+  "areaRooms": {
+    "-21.0.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -21,
+            "Y": 0,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-21.-1.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -21,
+            "Y": -1,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "-21.-2.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -21,
+            "Y": -2,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "-20.-2.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -20,
+            "Y": -2,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "-20.-3.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -20,
+            "Y": -3,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "-20.-4.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -20,
+            "Y": -4,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "-19.-4.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -19,
+            "Y": -4,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "-19.-5.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -19,
+            "Y": -5,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "-18.-5.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -18,
+            "Y": -5,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "-17.-5.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -17,
+            "Y": -5,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "-16.-5.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -16,
+            "Y": -5,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "-15.-5.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -5,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "-14.-5.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -14,
+            "Y": -5,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-13.-5.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -13,
+            "Y": -5,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-13.-4.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -13,
+            "Y": -4,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-12.-4.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -12,
+            "Y": -4,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-12.-3.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -12,
+            "Y": -3,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "-11.-3.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -11,
+            "Y": -3,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-10.-3.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -10,
+            "Y": -3,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-10.-2.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -10,
+            "Y": -2,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "-9.-2.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -9,
+            "Y": -2,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "-8.-2.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -8,
+            "Y": -2,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "southeast"
+        }
+      }
+    },
+    "-6.-6.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -6,
+            "Y": -6,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-6.-7.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "Shipyard Northeast",
+        "mapCoord": {
+          "global": {
+            "X": -6,
+            "Y": -7,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "Shipyard Northeast",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        }
+      }
+    },
+    "-7.-6.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -7,
+            "Y": -6,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-7.-7.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -7,
+            "Y": -7,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-7.-8.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -7,
+            "Y": -8,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-7.-9.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -7,
+            "Y": -9,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        }
+      }
+    },
+    "-8.-9.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -8,
+            "Y": -9,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-8.-10.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -8,
+            "Y": -10,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-8.-11.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -8,
+            "Y": -11,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.  To the east,\r\nthe massive glaciers of Icewall rise.  A sparkling waterfall runs into the\r\nocean off of one of the glaciers.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        }
+      }
+    },
+    "-9.-11.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -9,
+            "Y": -11,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.  To the east,\r\nthe massive glaciers of Icewall rise.  A sparkling waterfall runs into the\r\nocean off of one of the glaciers.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        }
+      }
+    },
+    "-9.-12.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -9,
+            "Y": -12,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "tundra",
+      "rawName": "Western Coastline",
+      "rawDesc": "Many an iceberg bobs upon the Dragon sea.  Wind whips the crests of the\r\nwaves to almost froth, taking with it a damp mist.  This wind, on land\r\nreleases the mist, generously coating the landscape with rime.  Snow piles\r\nyet deeper, forming the glacier.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "northwest"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-10.-12.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -10,
+            "Y": -12,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "north"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-11.-13.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -11,
+            "Y": -13,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "northeast"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-12.-13.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -12,
+            "Y": -13,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-13.-13.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -13,
+            "Y": -13,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-13.-12.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -13,
+            "Y": -12,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-13.-11.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -13,
+            "Y": -11,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-13.-10.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -13,
+            "Y": -10,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-13.-9.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -13,
+            "Y": -9,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-13.-8.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -13,
+            "Y": -8,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-13.-7.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -13,
+            "Y": -7,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-13.-6.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -13,
+            "Y": -6,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-14.-6.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -14,
+            "Y": -6,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "southwest"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-7.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -7,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-8.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -8,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-9.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -9,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-10.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -10,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-11.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -11,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-13.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -13,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-14.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -14,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-15.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -15,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-16.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -16,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-17.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -17,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-18.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -18,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-19.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -19,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    },
+    "-15.-20.0": {
+      "worldCoords": {
+        "continentId": "OceanNW",
+        "areaId": "BelegluinAelin",
+        "subAreaName": "",
+        "mapCoord": {
+          "global": {
+            "X": -15,
+            "Y": -20,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "terrain": "ocean",
+      "rawName": "Beleg'luin Aelin",
+      "rawDesc": "The crystal-blue waters of Beleg'luin Aelin stretch out onto the horizon\r\nin all directions.  Dancing with life, this ocean with its elven name and\r\nmild waves inspires you with a sense of adventure and hope.",
+      "rawExits": {
+        "north": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorth\u001b[0;32m"
+        },
+        "east": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36meast\u001b[0;32m"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouth\u001b[0;32m"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mwest\u001b[0;32m"
+        },
+        "northwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnorthwest\u001b[0;32m"
+        },
+        "northeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36mnortheast\u001b[0;32m"
+        },
+        "southwest": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msouthwest\u001b[0;32m"
+        },
+        "southeast": {
+          "isEnabled": true,
+          "rawString": "\u001b[0;36msoutheast\u001b[0;32m"
+        }
+      }
+    }
+  }
+}

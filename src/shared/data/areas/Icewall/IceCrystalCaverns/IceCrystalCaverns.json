@@ -1,0 +1,12 @@
+{
+  "continent_id": "Icewall",
+  "area_id": "IceCrystalCaverns",
+  "area_name": "Ice Crystal Caverns",
+  "starting_location": "Main Port of Icewall",
+  "alignment": "Unknown",
+  "recommended_min_level": "1",
+  "recommended_max_level": "15",
+  "directions": "ne; e; ne; n; n; w; w; w; w; w; w; w; u; e; d;",
+  "autopilot_level": "{\"IceCrystalCaverns\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

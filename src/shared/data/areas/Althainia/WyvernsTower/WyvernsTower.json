@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "WyvernsTower",
+  "area_name": "Wyverns Tower",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Evil",
+  "recommended_min_level": "5",
+  "recommended_max_level": "30",
+  "directions": "w; s; s; w; w; w; w; nw; n; n; w; w; w; w; s; s; sw; w; w; w; w; w; w; w; w; s; s; s; s; e; e; s; e; e; d; e; e; e; e; e; e; e; e; e;",
+  "autopilot_level": "{\"WyvernsTower\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

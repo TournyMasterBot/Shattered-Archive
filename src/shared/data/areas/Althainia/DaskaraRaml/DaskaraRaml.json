@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "DaskaraRaml",
+  "area_name": "Daskara Raml",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Good",
+  "recommended_min_level": "43",
+  "recommended_max_level": "51",
+  "directions": "w; w; w; w; w; nw; w; nw; nw; sw; w; nw; w; w; w; sw; w; s; w; w; s; nw; w; s; enter crevice; n; n; n; se; e; n;",
+  "autopilot_level": "{\"DaskaraRaml\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

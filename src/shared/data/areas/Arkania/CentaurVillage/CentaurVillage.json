@@ -1,0 +1,12 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "CentaurVillage",
+  "area_name": "Centaur Village",
+  "starting_location": "The Arkania Port",
+  "alignment": "Good",
+  "recommended_min_level": "10",
+  "recommended_max_level": "20",
+  "directions": "e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; e; d; e; e; e; e; e; e; e; e; n;",
+  "autopilot_level": "{\"CentaurVillage\":{\"autopilot_start_room\":\"The Arkania Highroad\",\"speedwalk_to_start_room\":\"s\",\"area_required_actions\":[],\"dirs\":[\"n\",\"n\",\"w\",\"e\",\"e\",\"n\",\"w\",\"w\",\"n\",\"n\",\"n\",\"n\",\"open north\",\"north\",\"n\",\"n\",\"n\",\"s\",\"s\",\"s\",\"s\",\"s\",\"e\",\"open east\",\"east\",\"w\",\"w\",\"w\",\"s\",\"e\",\"s\",\"s\",\"e\",\"e\",\"s\",\"w\",\"s\",\"s\"],\"allowed_mobs\":[{\"scanTarget\":\"a small prickly weed\",\"killCommand\":\"weed\"}]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,11 @@
+{
+  "continent_id": "Limbo",
+  "area_id": "DemonSpawningPits",
+  "area_name": "Demon Spawning Pits",
+  "starting_location": "Unknown",
+  "alignment": "Unknown",
+  "recommended_min_level": "50",
+  "recommended_max_level": "51",
+  "autopilot_level": "{\"DemonSpawningPits\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

@@ -1,0 +1,49 @@
+{
+  "continent_id": "Arkania",
+  "area_id": "MiredBanks",
+  "area_name": "Mired Banks",
+  "starting_location": "The Arkania Port",
+  "alignment": "Evil",
+  "recommended_min_level": "1",
+  "recommended_max_level": "15",
+  "directions": "e; e; e; e; e; e; e; e; e; e; e; e; e; e; n; n; n; n; n; n; n; n; n; n; n; n; n; e; n; n; n; n; n; n; n; n; n; n; w; w; w; w; w; w; w; w;",
+  "autopilot_level": "{\"MiredBanks\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]",
+  "areaRooms": {
+    "14.-23.0": {
+      "worldCoords": {
+        "continentId": "Arkania",
+        "areaId": "MiredBanks",
+        "mapCoord": {
+          "global": {
+            "X": 14,
+            "Y": -23,
+            "Z": 0
+          },
+          "area": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      "subAreaName": "",
+      "rawName": "Entering the Mired Banks",
+      "rawDesc": "As you start westward on a barely noticeable trail, the trees grow closer\r\ntogether, their spreading canopy blocking out most of the light from the sun\r\non even a good day.  This particular forest looks to be sorely in need of a\r\ngreen thumb, with the browns and grays of decay extending on the ground as\r\nfar as the eye can see.  Roaming amongst the detritus are various creatures.\n\r\n\r\nA stone archway lies to the south, where a large decrepit temple looms over\r\nthe landscape.  The smell of rotting flesh is strong here.",
+      "rawExits": {
+        "east": {
+          "isEnabled": true,
+          "rawString": "east"
+        },
+        "south": {
+          "isEnabled": true,
+          "rawString": "south"
+        },
+        "west": {
+          "isEnabled": true,
+          "rawString": "west"
+        }
+      }
+    }
+  }
+}

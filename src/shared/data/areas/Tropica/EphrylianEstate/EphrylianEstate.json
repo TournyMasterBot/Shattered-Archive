@@ -1,0 +1,12 @@
+{
+  "continent_id": "Tropica",
+  "area_id": "EphrylianEstate",
+  "area_name": "Ephrylian Estate",
+  "starting_location": "The Tropica Dock",
+  "alignment": "Unknown",
+  "recommended_min_level": "20",
+  "recommended_max_level": "30",
+  "directions": "se; se; s; s; s; sw; nw;",
+  "autopilot_level": "{\"EphrylianEstate\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

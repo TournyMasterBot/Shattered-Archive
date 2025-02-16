@@ -1,0 +1,11 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "TempleNadrik2",
+  "area_name": "Nadrik Temple2",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Good",
+  "recommended_min_level": "1",
+  "recommended_max_level": "51",
+  "autopilot_level": "{\"TempleNadrik2\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

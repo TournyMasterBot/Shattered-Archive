@@ -1,0 +1,12 @@
+{
+  "continent_id": "OceanSE",
+  "area_id": "LostLandsOfKazaxda",
+  "area_name": "Lost Lands of Kazaxda",
+  "starting_location": "The Beach",
+  "alignment": "Evil",
+  "recommended_min_level": "45",
+  "recommended_max_level": "51",
+  "directions": "s; s; e; s; s; s; s; s; s; s; s; s; s; s; s; s; s; w; nw; n; n; w; w; w; w; w;",
+  "autopilot_level": "{\"LostLandsOfKazaxda\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}

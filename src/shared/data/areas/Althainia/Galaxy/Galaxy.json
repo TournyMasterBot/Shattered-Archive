@@ -1,0 +1,12 @@
+{
+  "continent_id": "Althainia",
+  "area_id": "Galaxy",
+  "area_name": "Galaxy",
+  "starting_location": "The Port of Althainia",
+  "alignment": "Mixed",
+  "recommended_min_level": "20",
+  "recommended_max_level": "30",
+  "directions": "w; s; s; w; w; w; w; nw; n; n; w; w; w; w; s; s; sw; w; w; w; w; w; w; w; w; w; u; w; w; d; w; s; s; w; w; s; s; w; w; w; w; w; w; n; w; n; w; w; w; n; w; n; n; find swirling vortex in Shadow Grove;",
+  "autopilot_level": "{\"Galaxy\":{\"autopilot_start_room\":\"Undefined Start Room\",\"speedwalk_to_start_room\":\"\",\"area_required_actions\":[],\"dirs\":[],\"allowed_mobs\":[]}}",
+  "beastiary": "[]"
+}
