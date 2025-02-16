@@ -3,17 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Choke implements IAbility {
-    private static instance: Choke;
+  private static instance: Choke;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Choke";
-        this.helpFile = `
+  constructor() {
+    this.name = "Choke";
+    this.helpFile = `
 help choke
 mastery whip lash yank choke
 Mastery of the Whip 
@@ -31,27 +31,27 @@ choke          Entangles an unaware victim's neck with a whip, causing them
  
 This group is available to the following classes: ARMSMAN 
 `;
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Passive;
-        this.manualDescription = "";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Passive;
+    this.manualDescription = "";
 
-        if (Choke.instance === undefined) {
-            Choke.instance = this;
-        }
+    if (Choke.instance === undefined) {
+      Choke.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Choke {
-        if (!Choke.instance) {
-            Choke.instance = new Choke();
-        }
-        return Choke.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Choke {
+    if (!Choke.instance) {
+      Choke.instance = new Choke();
     }
+    return Choke.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Choke.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Choke.GetInstance() as T;
+  }
 }
 
 export default Choke;

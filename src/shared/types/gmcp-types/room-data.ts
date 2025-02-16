@@ -1,7 +1,7 @@
 interface RoomData {
-    room: string;
-    sector: string;
-    exits: string[];
+  room: string;
+  sector: string;
+  exits: string[];
 }
 
 export default RoomData;

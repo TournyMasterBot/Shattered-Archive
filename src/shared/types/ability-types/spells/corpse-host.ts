@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class CorpseHost implements IAbility {
-    private static instance: CorpseHost;
+  private static instance: CorpseHost;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Corpse Host";
-        this.helpFile = `
+  constructor() {
+    this.name = "Corpse Host";
+    this.helpFile = `
 CORPSE HOST
 
 Syntax: c 'corpse host' corpse
@@ -29,26 +29,26 @@ To return from a corpse you are hosting, you must 'incorporate'.
 
 See also - NECROMANCY NECROMANCER
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (CorpseHost.instance === undefined) {
-            CorpseHost.instance = this;
-        }
+    if (CorpseHost.instance === undefined) {
+      CorpseHost.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): CorpseHost {
-        if (!CorpseHost.instance) {
-            CorpseHost.instance = new CorpseHost();
-        }
-        return CorpseHost.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): CorpseHost {
+    if (!CorpseHost.instance) {
+      CorpseHost.instance = new CorpseHost();
     }
+    return CorpseHost.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return CorpseHost.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return CorpseHost.GetInstance() as T;
+  }
 }
 
 export default CorpseHost;

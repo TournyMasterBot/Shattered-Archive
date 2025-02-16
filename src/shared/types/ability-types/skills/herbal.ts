@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Herbal implements IAbility {
-    private static instance: Herbal;
+  private static instance: Herbal;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Herbal";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help Herbal
+  constructor() {
+    this.name = "Herbal";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help Herbal
 HERBS
 
 Syntax: Herbs
@@ -34,23 +34,23 @@ those who are in tune with nature, they know where to look for them.
 
 SEE ALSO: DRUID, RANGER, SHAMAN`;
 
-        if (Herbal.instance === undefined) {
-            Herbal.instance = this;
-        }
+    if (Herbal.instance === undefined) {
+      Herbal.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Herbal {
-        if (!Herbal.instance) {
-            Herbal.instance = new Herbal();
-        }
-        return Herbal.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Herbal {
+    if (!Herbal.instance) {
+      Herbal.instance = new Herbal();
     }
+    return Herbal.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Herbal.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Herbal.GetInstance() as T;
+  }
 }
 
 export default Herbal;

@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class SecondWind implements IAbility {
-    private static instance: SecondWind;
+  private static instance: SecondWind;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "SecondWind";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Passive;
-        this.helpFile = `
+  constructor() {
+    this.name = "SecondWind";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Passive;
+    this.helpFile = `
 help second wind
 SECOND WIND
 
@@ -35,25 +35,25 @@ gaining a second wind is minimal.
 
 Groups containing this skill: BARBARIAN DEFAULT 
             `;
-        this.manualDescription = `When second wind triggers it will go on cooldown for a period of time`;
+    this.manualDescription = `When second wind triggers it will go on cooldown for a period of time`;
 
-        if (SecondWind.instance === undefined) {
-            SecondWind.instance = this;
-        }
+    if (SecondWind.instance === undefined) {
+      SecondWind.instance = this;
     }
-    
-    // Method to get the single instance of the class
-    public static GetInstance(): SecondWind {
-        if (!SecondWind.instance) {
-            SecondWind.instance = new SecondWind();
-        }
-        return SecondWind.instance;
-    }
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return SecondWind.GetInstance() as T;
+  // Method to get the single instance of the class
+  public static GetInstance(): SecondWind {
+    if (!SecondWind.instance) {
+      SecondWind.instance = new SecondWind();
     }
+    return SecondWind.instance;
+  }
+
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return SecondWind.GetInstance() as T;
+  }
 }
 
 export default SecondWind;

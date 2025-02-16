@@ -21,47 +21,47 @@ import Trip from "@shared/types/ability-types/skills/trip";
 import Turncoat from "@shared/types/ability-types/skills/turncoat";
 
 export class CharlatanDefault implements IAbilityGroup {
-    static instance: CharlatanDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: CharlatanDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.CharlatanDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            new DirtKicking(),
-            new Sneak(),
-            new Lore(),
-            new Swindle(),
-            new Instigate(),
-            new DangerSense(),
-            new Dodge(),
-            new Trip(),
-            new Hide(),
-            new Rack(),
-            new Turncoat(),
-            new Pretend(),
-            new Parry(),
-            new Peek(),
-            new Fake(),
-            new Sap(),
-            new EyeGouge()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.CharlatanDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      new DirtKicking(),
+      new Sneak(),
+      new Lore(),
+      new Swindle(),
+      new Instigate(),
+      new DangerSense(),
+      new Dodge(),
+      new Trip(),
+      new Hide(),
+      new Rack(),
+      new Turncoat(),
+      new Pretend(),
+      new Parry(),
+      new Peek(),
+      new Fake(),
+      new Sap(),
+      new EyeGouge(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): CharlatanDefault {
-        if (!CharlatanDefault.instance) {
-            CharlatanDefault.instance = new CharlatanDefault();
-        }
-        return CharlatanDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): CharlatanDefault {
+    if (!CharlatanDefault.instance) {
+      CharlatanDefault.instance = new CharlatanDefault();
     }
+    return CharlatanDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return CharlatanDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return CharlatanDefault.GetInstance() as T;
+  }
 }
 
 export default CharlatanDefault;

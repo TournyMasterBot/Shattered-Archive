@@ -10,36 +10,36 @@ import CureSerious from "@shared/types/ability-types/spells/cure-serious";
 import Refresh from "@shared/types/ability-types/spells/refresh";
 
 export class Healing implements IAbilityGroup {
-    static instance: Healing;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Healing;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Healing;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            CureCritical.GetInstance().Get(),
-            Heal.GetInstance().Get(),
-            CureLight.GetInstance().Get(),
-            MassHealing.GetInstance().Get(),
-            CureSerious.GetInstance().Get(),
-            Refresh.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Healing;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      CureCritical.GetInstance().Get(),
+      Heal.GetInstance().Get(),
+      CureLight.GetInstance().Get(),
+      MassHealing.GetInstance().Get(),
+      CureSerious.GetInstance().Get(),
+      Refresh.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Healing {
-        if (!Healing.instance) {
-            Healing.instance = new Healing();
-        }
-        return Healing.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Healing {
+    if (!Healing.instance) {
+      Healing.instance = new Healing();
     }
+    return Healing.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Healing.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Healing.GetInstance() as T;
+  }
 }
 
 export default Healing;

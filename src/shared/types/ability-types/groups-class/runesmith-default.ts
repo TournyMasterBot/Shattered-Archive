@@ -15,41 +15,41 @@ import Transportation from "../groups-spells/transportation";
 import Weather from "../groups-spells/weather";
 
 export class RunesmithDefault implements IAbilityGroup {
-    static instance: RunesmithDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: RunesmithDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.RunesmithDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            ...Enhancement.GetInstance().Get<Enhancement>().abilities,
-            ...Weather.GetInstance().Get<Weather>().abilities,
-            ...Protective.GetInstance().Get<Protective>().abilities,
-            ...Runesmithing.GetInstance().Get<Runesmithing>().abilities,
-            ...Transportation.GetInstance().Get<Transportation>().abilities,
-            ...Benedictions.GetInstance().Get<Benedictions>().abilities,
-            Parry.GetInstance().Get(),
-            Runehammer.GetInstance().Get(),
-            Meditation.GetInstance().Get(),
-            ShieldBlock.GetInstance().Get(),
-            Runestaff.GetInstance().Get()            
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.RunesmithDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      ...Enhancement.GetInstance().Get<Enhancement>().abilities,
+      ...Weather.GetInstance().Get<Weather>().abilities,
+      ...Protective.GetInstance().Get<Protective>().abilities,
+      ...Runesmithing.GetInstance().Get<Runesmithing>().abilities,
+      ...Transportation.GetInstance().Get<Transportation>().abilities,
+      ...Benedictions.GetInstance().Get<Benedictions>().abilities,
+      Parry.GetInstance().Get(),
+      Runehammer.GetInstance().Get(),
+      Meditation.GetInstance().Get(),
+      ShieldBlock.GetInstance().Get(),
+      Runestaff.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): RunesmithDefault {
-        if (!RunesmithDefault.instance) {
-            RunesmithDefault.instance = new RunesmithDefault();
-        }
-        return RunesmithDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): RunesmithDefault {
+    if (!RunesmithDefault.instance) {
+      RunesmithDefault.instance = new RunesmithDefault();
     }
+    return RunesmithDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return RunesmithDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return RunesmithDefault.GetInstance() as T;
+  }
 }
 
 export default RunesmithDefault;

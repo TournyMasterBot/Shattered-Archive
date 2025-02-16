@@ -1,10 +1,10 @@
-import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-import sass from 'sass';
+import { defineConfig, loadEnv } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+import sass from "sass";
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
+  const env = loadEnv(mode, process.cwd(), "");
 
   return {
     plugins: [react()],
@@ -12,15 +12,15 @@ export default defineConfig(({ mode }) => {
       preprocessorOptions: {
         scss: {
           implementation: sass,
-          api: 'modern', // Forces Vite to use the modern Sass API
+          api: "modern", // Forces Vite to use the modern Sass API
         },
       },
     },
     optimizeDeps: {
-      include: ['sass'], // Forces Vite to use modern Sass
+      include: ["sass"], // Forces Vite to use modern Sass
     },
     build: {
-      outDir: path.resolve(__dirname, 'dist'),
+      outDir: path.resolve(__dirname, "dist"),
     },
     define: {
       __VITE_ENV__: JSON.stringify({
@@ -32,19 +32,19 @@ export default defineConfig(({ mode }) => {
       alias: {},
     },
     server: {
-      host: '0.0.0.0',
+      host: "0.0.0.0",
       port: 8081,
       proxy: {
-        '/game-server': {
+        "/game-server": {
           target: `${env.VITE_GAME_SERVER_SCHEMA}${env.VITE_GAME_SERVER_HOST}:${env.VITE_GAME_SERVER_PORT}`,
           changeOrigin: true,
         },
-        '/web-server': {
+        "/web-server": {
           target: `${env.VITE_WEB_SERVER_SCHEMA}${env.VITE_WEB_SERVER_HOST}:${env.VITE_WEB_SERVER_PORT}`,
           changeOrigin: true,
         },
       },
-      allowedHosts: ['dsl.shatteredarchive.com'],
+      allowedHosts: ["dsl.shatteredarchive.com"],
       watch: {},
     },
   };

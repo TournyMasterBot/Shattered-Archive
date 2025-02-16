@@ -12,38 +12,38 @@ import Transportation from "../groups-spells/transportation";
 import Astrology from "@shared/types/ability-types/skills/astrology";
 
 export class MentalistDefault implements IAbilityGroup {
-    static instance: MentalistDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: MentalistDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.MentalistDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            ...Beguiling.GetInstance().Get<Beguiling>().abilities,
-            ...Enhancement.GetInstance().Get<Enhancement>().abilities,
-            ...Transportation.GetInstance().Get<Transportation>().abilities,
-            ...Combat.GetInstance().Get<Combat>().abilities,
-            ...Illusion.GetInstance().Get<Illusion>().abilities,
-            ...Detection.GetInstance().Get<Detection>().abilities,
-            ...Mentalism.GetInstance().Get<Mentalism>().abilities,
-            Astrology.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.MentalistDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      ...Beguiling.GetInstance().Get<Beguiling>().abilities,
+      ...Enhancement.GetInstance().Get<Enhancement>().abilities,
+      ...Transportation.GetInstance().Get<Transportation>().abilities,
+      ...Combat.GetInstance().Get<Combat>().abilities,
+      ...Illusion.GetInstance().Get<Illusion>().abilities,
+      ...Detection.GetInstance().Get<Detection>().abilities,
+      ...Mentalism.GetInstance().Get<Mentalism>().abilities,
+      Astrology.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): MentalistDefault {
-        if (!MentalistDefault.instance) {
-            MentalistDefault.instance = new MentalistDefault();
-        }
-        return MentalistDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): MentalistDefault {
+    if (!MentalistDefault.instance) {
+      MentalistDefault.instance = new MentalistDefault();
     }
+    return MentalistDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return MentalistDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return MentalistDefault.GetInstance() as T;
+  }
 }
 
 export default MentalistDefault;

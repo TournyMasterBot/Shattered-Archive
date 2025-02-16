@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class DispelGood implements IAbility {
-    private static instance: DispelGood;
+  private static instance: DispelGood;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Dispel Good";
-        this.helpFile = `
+  constructor() {
+    this.name = "Dispel Good";
+    this.helpFile = `
 help 'Dispel Good'
 'DISPEL GOOD'
 DISPEL GOOD
@@ -24,26 +24,26 @@ pure of heart. Good-aligned characters use this dark magic at their peril.
 
 See also - ATTACK
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (DispelGood.instance === undefined) {
-            DispelGood.instance = this;
-        }
+    if (DispelGood.instance === undefined) {
+      DispelGood.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): DispelGood {
-        if (!DispelGood.instance) {
-            DispelGood.instance = new DispelGood();
-        }
-        return DispelGood.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): DispelGood {
+    if (!DispelGood.instance) {
+      DispelGood.instance = new DispelGood();
     }
+    return DispelGood.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return DispelGood.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return DispelGood.GetInstance() as T;
+  }
 }
 
 export default DispelGood;

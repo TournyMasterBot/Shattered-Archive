@@ -3,17 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class HolyWord implements IAbility {
-    private static instance: HolyWord;
+  private static instance: HolyWord;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Holy Word";
-        this.helpFile = `
+  constructor() {
+    this.name = "Holy Word";
+    this.helpFile = `
 help 'Holy Word'
 'HOLY WORD'
 'HOLY WORD'
@@ -32,27 +32,27 @@ to move and drained of vitality. Experience loss is no longer associated
 with the spell.
 
 See also - BENEDICTIONS`;
-        this.manualDescription = "";
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.manualDescription = "";
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (HolyWord.instance === undefined) {
-            HolyWord.instance = this;
-        }
+    if (HolyWord.instance === undefined) {
+      HolyWord.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): HolyWord {
-        if (!HolyWord.instance) {
-            HolyWord.instance = new HolyWord();
-        }
-        return HolyWord.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): HolyWord {
+    if (!HolyWord.instance) {
+      HolyWord.instance = new HolyWord();
     }
+    return HolyWord.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return HolyWord.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return HolyWord.GetInstance() as T;
+  }
 }
 
 export default HolyWord;

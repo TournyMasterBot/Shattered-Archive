@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Lash implements IAbility {
-    private static instance: Lash;
+  private static instance: Lash;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Lash";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help Lash
+  constructor() {
+    this.name = "Lash";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help Lash
 mastery whip lash yank choke
 Mastery of the Whip 
 
@@ -38,23 +38,23 @@ choke          Entangles an unaware victim's neck with a whip, causing them
 
 This group is available to the following classes: ARMSMAN`;
 
-        if (Lash.instance === undefined) {
-            Lash.instance = this;
-        }
+    if (Lash.instance === undefined) {
+      Lash.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Lash {
-        if (!Lash.instance) {
-            Lash.instance = new Lash();
-        }
-        return Lash.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Lash {
+    if (!Lash.instance) {
+      Lash.instance = new Lash();
     }
+    return Lash.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Lash.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Lash.GetInstance() as T;
+  }
 }
 
 export default Lash;

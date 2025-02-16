@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class CureCritical implements IAbility {
-    private static instance: CureCritical;
+  private static instance: CureCritical;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Cure Critical";
-        this.helpFile = `
+  constructor() {
+    this.name = "Cure Critical";
+    this.helpFile = `
 help 'Cure Critical'
 'CURE LIGHT' 'CURE SERIOUS' 'CURE CRITICAL' HEAL
 'CURE LIGHT' 'CURE SERIOUS' 'CURE CRITICAL' HEAL
@@ -24,26 +24,26 @@ These spells cure damage on the target character. The higher-level spells
 heal more damage.
 (see 'help healer' for details on the heal command)
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (CureCritical.instance === undefined) {
-            CureCritical.instance = this;
-        }
+    if (CureCritical.instance === undefined) {
+      CureCritical.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): CureCritical {
-        if (!CureCritical.instance) {
-            CureCritical.instance = new CureCritical();
-        }
-        return CureCritical.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): CureCritical {
+    if (!CureCritical.instance) {
+      CureCritical.instance = new CureCritical();
     }
+    return CureCritical.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return CureCritical.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return CureCritical.GetInstance() as T;
+  }
 }
 
 export default CureCritical;

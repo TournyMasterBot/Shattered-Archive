@@ -4,46 +4,46 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Flare implements IAbility {
-    private static instance: Flare;
+  private static instance: Flare;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Flare";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `
+  constructor() {
+    this.name = "Flare";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `
 flare
 A single target blind skill. A nightshade may temporarily blind an
 opponent with this skill.
 `;
 
-        if (Flare.instance === undefined) {
-            Flare.instance = this;
-        }
+    if (Flare.instance === undefined) {
+      Flare.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Flare {
-        if (!Flare.instance) {
-            Flare.instance = new Flare();
-        }
-        return Flare.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Flare {
+    if (!Flare.instance) {
+      Flare.instance = new Flare();
     }
+    return Flare.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Flare.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Flare.GetInstance() as T;
+  }
 }
 
 export default Flare;

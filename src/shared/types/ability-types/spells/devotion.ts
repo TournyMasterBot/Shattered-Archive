@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Devotion implements IAbility {
-    private static instance: Devotion;
+  private static instance: Devotion;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Devotion";
-        this.helpFile = `
+  constructor() {
+    this.name = "Devotion";
+    this.helpFile = `
 DEVOTION
 
 By showing your devotion to your deity, you vow to fight to the death. By
@@ -24,26 +24,26 @@ cast 'devotion'
 
 Please note this cannot be cast upon others.
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (Devotion.instance === undefined) {
-            Devotion.instance = this;
-        }
+    if (Devotion.instance === undefined) {
+      Devotion.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Devotion {
-        if (!Devotion.instance) {
-            Devotion.instance = new Devotion();
-        }
-        return Devotion.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Devotion {
+    if (!Devotion.instance) {
+      Devotion.instance = new Devotion();
     }
+    return Devotion.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Devotion.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Devotion.GetInstance() as T;
+  }
 }
 
 export default Devotion;

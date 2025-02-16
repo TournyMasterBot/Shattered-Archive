@@ -3,38 +3,38 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class SummonNightmare implements IAbility {
-    private static instance: SummonNightmare;
+  private static instance: SummonNightmare;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Summon Nightmare";
-        this.helpFile = ``;
-        this.manualDescription = ``;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+  constructor() {
+    this.name = "Summon Nightmare";
+    this.helpFile = ``;
+    this.manualDescription = ``;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (SummonNightmare.instance === undefined) {
-            SummonNightmare.instance = this;
-        }
+    if (SummonNightmare.instance === undefined) {
+      SummonNightmare.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): SummonNightmare {
-        if (!SummonNightmare.instance) {
-            SummonNightmare.instance = new SummonNightmare();
-        }
-        return SummonNightmare.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): SummonNightmare {
+    if (!SummonNightmare.instance) {
+      SummonNightmare.instance = new SummonNightmare();
     }
+    return SummonNightmare.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return SummonNightmare.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return SummonNightmare.GetInstance() as T;
+  }
 }
 
 export default SummonNightmare;

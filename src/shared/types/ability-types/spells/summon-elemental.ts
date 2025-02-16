@@ -3,18 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class SummonElemental implements IAbility {
-    private static instance: SummonElemental;
+  private static instance: SummonElemental;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Summon Elemental";
-        this.helpFile =
-`help 'Summon Elemental'
+  constructor() {
+    this.name = "Summon Elemental";
+    this.helpFile = `help 'Summon Elemental'
 'SUMMON ELEMENTAL'
 'SUMMON ELEMENTAL'
 Syntax:  cast 'summon elemental' fire
@@ -25,8 +24,7 @@ This spell allows clerics to summon the elemental forces of nature into
 the form of a creature which will aid the caster until dismissed, dispelled,
 or otherwise destroyed.
 See also:  DISMISS CLERICS`;
-        this.manualDescription = 
-`Earth Elemental
+    this.manualDescription = `Earth Elemental
 Creature: an earth elemental Race: unique
 an earth elemental appears to be a more neutral soul.
 Their wealth appears to be 0 gold and 0 silver
@@ -89,26 +87,26 @@ Immunities: charm drowning
 Resistances: blunt cold mental
 Vulnerbilities: fire
 This creature is affected by detect_invis detect_hidden charm flying pass_door`;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (SummonElemental.instance === undefined) {
-            SummonElemental.instance = this;
-        }
+    if (SummonElemental.instance === undefined) {
+      SummonElemental.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): SummonElemental {
-        if (!SummonElemental.instance) {
-            SummonElemental.instance = new SummonElemental();
-        }
-        return SummonElemental.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): SummonElemental {
+    if (!SummonElemental.instance) {
+      SummonElemental.instance = new SummonElemental();
     }
+    return SummonElemental.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return SummonElemental.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return SummonElemental.GetInstance() as T;
+  }
 }
 
 export default SummonElemental;

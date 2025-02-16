@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class BindGolem implements IAbility {
-    private static instance: BindGolem;
+  private static instance: BindGolem;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Bind Golem";
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `
+  constructor() {
+    this.name = "Bind Golem";
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `
 BIND GOLEM
 
 Syntax: cast 'bind golem' <object>
@@ -32,23 +32,23 @@ that can be used to bring a golem to life from, ranging from the cheap woods
 in the realm to the most expensive eggs available.
 `;
 
-        if (BindGolem.instance === undefined) {
-            BindGolem.instance = this;
-        }
+    if (BindGolem.instance === undefined) {
+      BindGolem.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): BindGolem {
-        if (!BindGolem.instance) {
-            BindGolem.instance = new BindGolem();
-        }
-        return BindGolem.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): BindGolem {
+    if (!BindGolem.instance) {
+      BindGolem.instance = new BindGolem();
     }
+    return BindGolem.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return BindGolem.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return BindGolem.GetInstance() as T;
+  }
 }
 
 export default BindGolem;

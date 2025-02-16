@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Scrolls implements IAbility {
-    private static instance: Scrolls;
+  private static instance: Scrolls;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Scrolls";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help scroll
+  constructor() {
+    this.name = "Scrolls";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help scroll
 BRANDISH QUAFF RECITE ZAP WAND STAFF SCROLL POTION
 BRANDISH QUAFF RECITE ZAP WAND STAFF SCROLL POTION
 Syntax: brandish <target>
@@ -48,22 +48,22 @@ Syntax: scroll <number>
 This command changes the number of lines the mud sends you in a page (the 
 default is 24 lines).  Change this to a higher number for larger screen
 sizes, or to 0 to disabling paging.`;
-        if (Scrolls.instance === undefined) {
-            Scrolls.instance = this;
-        }
+    if (Scrolls.instance === undefined) {
+      Scrolls.instance = this;
     }
-    // Method to get the single instance of the class
-    public static GetInstance(): Scrolls {
-        if (!Scrolls.instance) {
-            Scrolls.instance = new Scrolls();
-        }
-        return Scrolls.instance;
+  }
+  // Method to get the single instance of the class
+  public static GetInstance(): Scrolls {
+    if (!Scrolls.instance) {
+      Scrolls.instance = new Scrolls();
     }
+    return Scrolls.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Scrolls.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Scrolls.GetInstance() as T;
+  }
 }
 
 export default Scrolls;

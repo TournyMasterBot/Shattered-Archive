@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class KillingRage implements IAbility {
-    private static instance: KillingRage;
+  private static instance: KillingRage;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Killing Rage";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `KILLING RAGE
+  constructor() {
+    this.name = "Killing Rage";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `KILLING RAGE
 
 Syntax: Rage
 
@@ -39,23 +39,23 @@ focused on damaging their opponent, they lose a bit of dexterity.
 
 SEE ALSO: BATTLERAGERS, WARGAR, THAXANOS`;
 
-        if (KillingRage.instance === undefined) {
-            KillingRage.instance = this;
-        }
+    if (KillingRage.instance === undefined) {
+      KillingRage.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): KillingRage {
-        if (!KillingRage.instance) {
-            KillingRage.instance = new KillingRage();
-        }
-        return KillingRage.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): KillingRage {
+    if (!KillingRage.instance) {
+      KillingRage.instance = new KillingRage();
     }
+    return KillingRage.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return KillingRage.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return KillingRage.GetInstance() as T;
+  }
 }
 
 export default KillingRage;

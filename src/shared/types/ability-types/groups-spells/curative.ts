@@ -9,35 +9,35 @@ import CureFatigue from "@shared/types/ability-types/spells/cure-fatigue";
 import CurePoison from "@shared/types/ability-types/spells/cure-poison";
 
 export class Curative implements IAbilityGroup {
-    static instance: Curative;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Curative;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Curative;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            CureBlindness.GetInstance().Get(),
-            CureBugbearBite.GetInstance().Get(),
-            CureDisease.GetInstance().Get(),
-            CureFatigue.GetInstance().Get(),
-            CurePoison.GetInstance().Get(),
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Curative;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      CureBlindness.GetInstance().Get(),
+      CureBugbearBite.GetInstance().Get(),
+      CureDisease.GetInstance().Get(),
+      CureFatigue.GetInstance().Get(),
+      CurePoison.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Curative {
-        if (!Curative.instance) {
-            Curative.instance = new Curative();
-        }
-        return Curative.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Curative {
+    if (!Curative.instance) {
+      Curative.instance = new Curative();
     }
+    return Curative.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Curative.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Curative.GetInstance() as T;
+  }
 }
 
 export default Curative;

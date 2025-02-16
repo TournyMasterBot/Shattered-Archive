@@ -3,17 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Astrology implements IAbility {
-    private static instance: Astrology;
+  private static instance: Astrology;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Astrology";
-        this.helpFile =
-`help astrology
+  constructor() {
+    this.name = "Astrology";
+    this.helpFile = `help astrology
 ASTROLOGY
 ASTROLOGY
 Syntax: automatic use
@@ -27,26 +26,26 @@ effects of the moons when using the 'lunar' command.
 to mages and clerics. Dragons may eventually learn it.
 see also: MOONS PHASES`;
 
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Passive;
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Passive;
 
-        if (Astrology.instance === undefined) {
-            Astrology.instance = this;
-        }
+    if (Astrology.instance === undefined) {
+      Astrology.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Astrology {
-        if (!Astrology.instance) {
-            Astrology.instance = new Astrology();
-        }
-        return Astrology.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Astrology {
+    if (!Astrology.instance) {
+      Astrology.instance = new Astrology();
     }
+    return Astrology.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Astrology.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Astrology.GetInstance() as T;
+  }
 }
 
 export default Astrology;

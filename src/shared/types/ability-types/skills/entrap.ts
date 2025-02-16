@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Entrap implements IAbility {
-    private static instance: Entrap;
+  private static instance: Entrap;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Entrap";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help entrap
+  constructor() {
+    this.name = "Entrap";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help entrap
 mastery polearm distance entrap chargeset
 Mastery of the Polearm 
 
@@ -38,23 +38,23 @@ chargeset       An instinctive reaction when you are attacked to swing your pole
 
 This group is available to the following classes: ARMSMAN`;
 
-        if (Entrap.instance === undefined) {
-            Entrap.instance = this;
-        }
+    if (Entrap.instance === undefined) {
+      Entrap.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Entrap {
-        if (!Entrap.instance) {
-            Entrap.instance = new Entrap();
-        }
-        return Entrap.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Entrap {
+    if (!Entrap.instance) {
+      Entrap.instance = new Entrap();
     }
+    return Entrap.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Entrap.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Entrap.GetInstance() as T;
+  }
 }
 
 export default Entrap;

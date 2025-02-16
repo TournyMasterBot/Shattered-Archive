@@ -9,35 +9,35 @@ import Betray from "@shared/types/ability-types/spells/betray";
 import Sleep from "@shared/types/ability-types/spells/sleep";
 
 export class Beguiling implements IAbilityGroup {
-    static instance: Beguiling;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Beguiling;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Beguiling;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            Calm.GetInstance().Get(),
-            RestoreMind.GetInstance().Get(),
-            CharmPerson.GetInstance().Get(),
-            Betray.GetInstance().Get(),
-            Sleep.GetInstance().Get(),
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Beguiling;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      Calm.GetInstance().Get(),
+      RestoreMind.GetInstance().Get(),
+      CharmPerson.GetInstance().Get(),
+      Betray.GetInstance().Get(),
+      Sleep.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Beguiling {
-        if (!Beguiling.instance) {
-            Beguiling.instance = new Beguiling();
-        }
-        return Beguiling.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Beguiling {
+    if (!Beguiling.instance) {
+      Beguiling.instance = new Beguiling();
     }
+    return Beguiling.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Beguiling.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Beguiling.GetInstance() as T;
+  }
 }
 
 export default Beguiling;

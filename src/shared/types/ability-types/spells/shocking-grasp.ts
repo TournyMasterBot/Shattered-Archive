@@ -3,17 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class ShockingGrasp implements IAbility {
-    private static instance: ShockingGrasp;
+  private static instance: ShockingGrasp;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Shocking Grasp";
-        this.helpFile = `
+  constructor() {
+    this.name = "Shocking Grasp";
+    this.helpFile = `
 help 'Shocking Grasp'
 'SHOCKING GRASP'
 'SHOCKING GRASP'
@@ -29,27 +29,27 @@ damaging, and in most cases, more specialized spells of combat.
 
 See also - COMBAT
         `;
-        this.manualDescription = "";
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.manualDescription = "";
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (ShockingGrasp.instance === undefined) {
-            ShockingGrasp.instance = this;
-        }
+    if (ShockingGrasp.instance === undefined) {
+      ShockingGrasp.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): ShockingGrasp {
-        if (!ShockingGrasp.instance) {
-            ShockingGrasp.instance = new ShockingGrasp();
-        }
-        return ShockingGrasp.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): ShockingGrasp {
+    if (!ShockingGrasp.instance) {
+      ShockingGrasp.instance = new ShockingGrasp();
     }
+    return ShockingGrasp.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return ShockingGrasp.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return ShockingGrasp.GetInstance() as T;
+  }
 }
 
 export default ShockingGrasp;

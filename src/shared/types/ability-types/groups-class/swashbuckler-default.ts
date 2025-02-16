@@ -20,46 +20,46 @@ import Disarm from "@shared/types/ability-types/skills/disarm";
 import Dropkick from "@shared/types/ability-types/skills/dropkick";
 
 export class SwashbucklerDefault implements IAbilityGroup {
-    static instance: SwashbucklerDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: SwashbucklerDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.SwashbucklerDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            Evasion.GetInstance().Get(),
-            Mask.GetInstance().Get(),
-            Target.GetInstance().Get(),
-            SecondAttack.GetInstance().Get(),
-            Hide.GetInstance().Get(),
-            Banter.GetInstance().Get(),
-            Mimic.GetInstance().Get(),
-            RetainWeapon.GetInstance().Get(),
-            OceanCall.GetInstance().Get(),
-            ThirdAttack.GetInstance().Get(),
-            Sneak.GetInstance().Get(),
-            Boarding.GetInstance().Get(),
-            ViolentDispossession.GetInstance().Get(),
-            Rescue.GetInstance().Get(),
-            Disarm.GetInstance().Get(),
-            Dropkick.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.SwashbucklerDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      Evasion.GetInstance().Get(),
+      Mask.GetInstance().Get(),
+      Target.GetInstance().Get(),
+      SecondAttack.GetInstance().Get(),
+      Hide.GetInstance().Get(),
+      Banter.GetInstance().Get(),
+      Mimic.GetInstance().Get(),
+      RetainWeapon.GetInstance().Get(),
+      OceanCall.GetInstance().Get(),
+      ThirdAttack.GetInstance().Get(),
+      Sneak.GetInstance().Get(),
+      Boarding.GetInstance().Get(),
+      ViolentDispossession.GetInstance().Get(),
+      Rescue.GetInstance().Get(),
+      Disarm.GetInstance().Get(),
+      Dropkick.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): SwashbucklerDefault {
-        if (!SwashbucklerDefault.instance) {
-            SwashbucklerDefault.instance = new SwashbucklerDefault();
-        }
-        return SwashbucklerDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): SwashbucklerDefault {
+    if (!SwashbucklerDefault.instance) {
+      SwashbucklerDefault.instance = new SwashbucklerDefault();
     }
+    return SwashbucklerDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return SwashbucklerDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return SwashbucklerDefault.GetInstance() as T;
+  }
 }
 
 export default SwashbucklerDefault;

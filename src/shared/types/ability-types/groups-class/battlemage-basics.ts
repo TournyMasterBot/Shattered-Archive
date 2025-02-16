@@ -5,31 +5,29 @@ import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Dagger from "@shared/types/ability-types/skills/dagger";
 
 export class BattlemageBasics implements IAbilityGroup {
-    static instance: BattlemageBasics;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: BattlemageBasics;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.BattlemageBasics;
-        this.abilityGroupType = AbilityGroupType.Basics;
-        this.abilities = [
-            new Dagger()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.BattlemageBasics;
+    this.abilityGroupType = AbilityGroupType.Basics;
+    this.abilities = [new Dagger()];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): BattlemageBasics {
-        if (!BattlemageBasics.instance) {
-            BattlemageBasics.instance = new BattlemageBasics();
-        }
-        return BattlemageBasics.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): BattlemageBasics {
+    if (!BattlemageBasics.instance) {
+      BattlemageBasics.instance = new BattlemageBasics();
     }
+    return BattlemageBasics.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return BattlemageBasics.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return BattlemageBasics.GetInstance() as T;
+  }
 }
 
 export default BattlemageBasics;

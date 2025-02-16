@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Kakute implements IAbility {
-    private static instance: Kakute;
+  private static instance: Kakute;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Kakute";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `KAKUTE
+  constructor() {
+    this.name = "Kakute";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `KAKUTE
 
 Syntax: Kakute <target>
 
@@ -33,23 +33,23 @@ swift one, meant to be used in the heat of battle to gain the upper hand.
 
 SEE ALSO:  NINJA`;
 
-        if (Kakute.instance === undefined) {
-            Kakute.instance = this;
-        }
+    if (Kakute.instance === undefined) {
+      Kakute.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Kakute {
-        if (!Kakute.instance) {
-            Kakute.instance = new Kakute();
-        }
-        return Kakute.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Kakute {
+    if (!Kakute.instance) {
+      Kakute.instance = new Kakute();
     }
+    return Kakute.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Kakute.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Kakute.GetInstance() as T;
+  }
 }
 
 export default Kakute;

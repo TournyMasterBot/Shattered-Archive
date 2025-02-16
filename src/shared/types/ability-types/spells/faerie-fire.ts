@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class FaerieFire implements IAbility {
-    private static instance: FaerieFire;
+  private static instance: FaerieFire;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Faerie Fire";
-        this.helpFile = `'FAERIE FIRE'
+  constructor() {
+    this.name = "Faerie Fire";
+    this.helpFile = `'FAERIE FIRE'
 'FAERIE FIRE'
 
 Syntax: cast 'faerie fire' <victim>
@@ -21,26 +21,26 @@ This spell increases (makes worse) the armor class of its victim.  For each
 level of the caster, the victim's armor class is increased by one point.  
 
 See also - WEATHER `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (FaerieFire.instance === undefined) {
-            FaerieFire.instance = this;
-        }
+    if (FaerieFire.instance === undefined) {
+      FaerieFire.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): FaerieFire {
-        if (!FaerieFire.instance) {
-            FaerieFire.instance = new FaerieFire();
-        }
-        return FaerieFire.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): FaerieFire {
+    if (!FaerieFire.instance) {
+      FaerieFire.instance = new FaerieFire();
     }
+    return FaerieFire.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return FaerieFire.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return FaerieFire.GetInstance() as T;
+  }
 }
 
 export default FaerieFire;

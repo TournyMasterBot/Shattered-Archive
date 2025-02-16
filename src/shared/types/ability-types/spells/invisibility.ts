@@ -3,17 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Invisibility implements IAbility {
-    private static instance: Invisibility;
+  private static instance: Invisibility;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Invisibility";
-        this.helpFile = `
+  constructor() {
+    this.name = "Invisibility";
+    this.helpFile = `
 help invis
 INVIS 'MASS INVIS' INVISIBILITY
 INVIS 'MASS INVIS' INVISIBILITY
@@ -31,27 +31,27 @@ invisible, including the caster.
 
 See also - ILLUSION
 `;
-        this.manualDescription = "";
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.manualDescription = "";
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (Invisibility.instance === undefined) {
-            Invisibility.instance = this;
-        }
+    if (Invisibility.instance === undefined) {
+      Invisibility.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Invisibility {
-        if (!Invisibility.instance) {
-            Invisibility.instance = new Invisibility();
-        }
-        return Invisibility.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Invisibility {
+    if (!Invisibility.instance) {
+      Invisibility.instance = new Invisibility();
     }
+    return Invisibility.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Invisibility.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Invisibility.GetInstance() as T;
+  }
 }
 
 export default Invisibility;

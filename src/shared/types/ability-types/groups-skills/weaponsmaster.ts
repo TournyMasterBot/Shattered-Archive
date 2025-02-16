@@ -13,39 +13,39 @@ import Spear from "@shared/types/ability-types/skills/spear";
 import Staff from "@shared/types/ability-types/skills/staff";
 
 export class Weaponsmaster implements IAbilityGroup {
-    static instance: Weaponsmaster;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Weaponsmaster;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Weaponsmaster;
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilities = [
-            Axe.GetInstance().Get(),
-            Mace.GetInstance().Get(),
-            Sword.GetInstance().Get(),
-            Dagger.GetInstance().Get(),
-            Polearm.GetInstance().Get(),
-            Whip.GetInstance().Get(),
-            Flail.GetInstance().Get(),
-            Spear.GetInstance().Get(),
-            Staff.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Weaponsmaster;
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilities = [
+      Axe.GetInstance().Get(),
+      Mace.GetInstance().Get(),
+      Sword.GetInstance().Get(),
+      Dagger.GetInstance().Get(),
+      Polearm.GetInstance().Get(),
+      Whip.GetInstance().Get(),
+      Flail.GetInstance().Get(),
+      Spear.GetInstance().Get(),
+      Staff.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Weaponsmaster {
-        if (!Weaponsmaster.instance) {
-            Weaponsmaster.instance = new Weaponsmaster();
-        }
-        return Weaponsmaster.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Weaponsmaster {
+    if (!Weaponsmaster.instance) {
+      Weaponsmaster.instance = new Weaponsmaster();
     }
+    return Weaponsmaster.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Weaponsmaster.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Weaponsmaster.GetInstance() as T;
+  }
 }
 
 export default Weaponsmaster;

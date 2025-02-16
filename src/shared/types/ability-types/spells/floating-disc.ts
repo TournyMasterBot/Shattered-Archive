@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class FloatingDisc implements IAbility {
-    private static instance: FloatingDisc;
+  private static instance: FloatingDisc;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Floating Disc";
-        this.helpFile = `
+  constructor() {
+    this.name = "Floating Disc";
+    this.helpFile = `
 'FLOATING DISC'
 
 Syntax: cast 'floating disc'
@@ -30,26 +30,26 @@ to remove the disc is to die or allow it to run out of energy.
 
 See also - CREATION 
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (FloatingDisc.instance === undefined) {
-            FloatingDisc.instance = this;
-        }
+    if (FloatingDisc.instance === undefined) {
+      FloatingDisc.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): FloatingDisc {
-        if (!FloatingDisc.instance) {
-            FloatingDisc.instance = new FloatingDisc();
-        }
-        return FloatingDisc.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): FloatingDisc {
+    if (!FloatingDisc.instance) {
+      FloatingDisc.instance = new FloatingDisc();
     }
+    return FloatingDisc.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return FloatingDisc.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return FloatingDisc.GetInstance() as T;
+  }
 }
 
 export default FloatingDisc;

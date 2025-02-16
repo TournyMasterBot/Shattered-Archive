@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Blindness implements IAbility {
-    private static instance: Blindness;
+  private static instance: Blindness;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Blindness";
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `
+  constructor() {
+    this.name = "Blindness";
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `
 help Blindness
 BLINDNESS
 BLINDNESS
@@ -29,23 +29,23 @@ Syntax: cast blindness <victim>
 This spell renders the target character blind.
 `;
 
-        if (Blindness.instance === undefined) {
-            Blindness.instance = this;
-        }
+    if (Blindness.instance === undefined) {
+      Blindness.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Blindness {
-        if (!Blindness.instance) {
-            Blindness.instance = new Blindness();
-        }
-        return Blindness.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Blindness {
+    if (!Blindness.instance) {
+      Blindness.instance = new Blindness();
     }
+    return Blindness.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Blindness.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Blindness.GetInstance() as T;
+  }
 }
 
 export default Blindness;

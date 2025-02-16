@@ -19,45 +19,45 @@ import Sword from "@shared/types/ability-types/skills/sword";
 import WeaponSlip from "@shared/types/ability-types/skills/weapon-slip";
 
 export class NightshadeDefault implements IAbilityGroup {
-    static instance: NightshadeDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: NightshadeDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.NightshadeDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            Stalk.GetInstance().Get(),
-            Misdirection.GetInstance().Get(),
-            Nightmeld.GetInstance().Get(),
-            Lifebane.GetInstance().Get(),
-            Sneak.GetInstance().Get(),
-            WeaponSlip.GetInstance().Get(),
-            Escape.GetInstance().Get(),
-            SheathCut.GetInstance().Get(),
-            Sword.GetInstance().Get(),
-            Hide.GetInstance().Get(),
-            Rend.GetInstance().Get(),
-            CutThroat.GetInstance().Get(),
-            Flare.GetInstance().Get(),
-            Backstab.GetInstance().Get(),
-            Parry.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.NightshadeDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      Stalk.GetInstance().Get(),
+      Misdirection.GetInstance().Get(),
+      Nightmeld.GetInstance().Get(),
+      Lifebane.GetInstance().Get(),
+      Sneak.GetInstance().Get(),
+      WeaponSlip.GetInstance().Get(),
+      Escape.GetInstance().Get(),
+      SheathCut.GetInstance().Get(),
+      Sword.GetInstance().Get(),
+      Hide.GetInstance().Get(),
+      Rend.GetInstance().Get(),
+      CutThroat.GetInstance().Get(),
+      Flare.GetInstance().Get(),
+      Backstab.GetInstance().Get(),
+      Parry.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): NightshadeDefault {
-        if (!NightshadeDefault.instance) {
-            NightshadeDefault.instance = new NightshadeDefault();
-        }
-        return NightshadeDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): NightshadeDefault {
+    if (!NightshadeDefault.instance) {
+      NightshadeDefault.instance = new NightshadeDefault();
     }
+    return NightshadeDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return NightshadeDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return NightshadeDefault.GetInstance() as T;
+  }
 }
 
 export default NightshadeDefault;

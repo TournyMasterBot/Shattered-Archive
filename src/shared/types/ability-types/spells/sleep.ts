@@ -3,18 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Sleep implements IAbility {
-    private static instance: Sleep;
+  private static instance: Sleep;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Sleep";
-        this.helpFile =
-`help sleep
+  constructor() {
+    this.name = "Sleep";
+    this.helpFile = `help sleep
 REST SLEEP STAND WAKE
 REST SLEEP STAND WAKE
 Syntax: rest
@@ -36,27 +35,27 @@ Syntax: cast sleep <victim>
 This spell puts its victim to sleep.  
 
 See also - BEGUILING`;
-        this.manualDescription = "";
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.manualDescription = "";
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (Sleep.instance === undefined) {
-            Sleep.instance = this;
-        }
+    if (Sleep.instance === undefined) {
+      Sleep.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Sleep {
-        if (!Sleep.instance) {
-            Sleep.instance = new Sleep();
-        }
-        return Sleep.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Sleep {
+    if (!Sleep.instance) {
+      Sleep.instance = new Sleep();
     }
+    return Sleep.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Sleep.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Sleep.GetInstance() as T;
+  }
 }
 
 export default Sleep;

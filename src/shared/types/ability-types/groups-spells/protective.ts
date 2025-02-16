@@ -17,43 +17,43 @@ import StoneSkin from "@shared/types/ability-types/spells/stone-skin";
 import ProtectionNeutral from "@shared/types/ability-types/spells/protection-neutral";
 
 export class Protective implements IAbilityGroup {
-    static instance: Protective;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Protective;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Protective;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            Armor.GetInstance().Get(),
-            Fireproof.GetInstance().Get(),
-            Sanctuary.GetInstance().Get(),
-            ProtectionFire.GetInstance().Get(),
-            ProximityDispel.GetInstance().Get(),
-            Cancellation.GetInstance().Get(),
-            ProtectionEvil.GetInstance().Get(),
-            Shield.GetInstance().Get(),
-            ProtectionCold.GetInstance().Get(),
-            DispelMagic.GetInstance().Get(),
-            ProtectionGood.GetInstance().Get(),
-            StoneSkin.GetInstance().Get(),
-            ProtectionNeutral.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Protective;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      Armor.GetInstance().Get(),
+      Fireproof.GetInstance().Get(),
+      Sanctuary.GetInstance().Get(),
+      ProtectionFire.GetInstance().Get(),
+      ProximityDispel.GetInstance().Get(),
+      Cancellation.GetInstance().Get(),
+      ProtectionEvil.GetInstance().Get(),
+      Shield.GetInstance().Get(),
+      ProtectionCold.GetInstance().Get(),
+      DispelMagic.GetInstance().Get(),
+      ProtectionGood.GetInstance().Get(),
+      StoneSkin.GetInstance().Get(),
+      ProtectionNeutral.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Protective {
-        if (!Protective.instance) {
-            Protective.instance = new Protective();
-        }
-        return Protective.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Protective {
+    if (!Protective.instance) {
+      Protective.instance = new Protective();
     }
+    return Protective.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Protective.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Protective.GetInstance() as T;
+  }
 }
 
 export default Protective;

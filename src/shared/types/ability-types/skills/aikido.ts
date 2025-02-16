@@ -3,17 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Aikido implements IAbility {
-    private static instance: Aikido;
+  private static instance: Aikido;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Aikido";
-        this.helpFile =
-`help Aikido
+  constructor() {
+    this.name = "Aikido";
+    this.helpFile = `help Aikido
 AIKIDO
 AIKIDO
 
@@ -29,26 +28,26 @@ in rank.
 
 SEE ALSO: SAMURAI`;
 
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Passive;
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Passive;
 
-        if (Aikido.instance === undefined) {
-            Aikido.instance = this;
-        }
+    if (Aikido.instance === undefined) {
+      Aikido.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Aikido {
-        if (!Aikido.instance) {
-            Aikido.instance = new Aikido();
-        }
-        return Aikido.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Aikido {
+    if (!Aikido.instance) {
+      Aikido.instance = new Aikido();
     }
+    return Aikido.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Aikido.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Aikido.GetInstance() as T;
+  }
 }
 
 export default Aikido;

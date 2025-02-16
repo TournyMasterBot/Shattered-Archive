@@ -13,39 +13,39 @@ import Fireball from "@shared/types/ability-types/spells/fireball";
 import Blizzra from "@shared/types/ability-types/spells/blizzra";
 
 export class Combat implements IAbilityGroup {
-    static instance: Combat;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Combat;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Combat;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            AcidBlast.GetInstance().Get(),
-            ChillTouch.GetInstance().Get(),
-            MagicMissile.GetInstance().Get(),
-            BurningHands.GetInstance().Get(),
-            ColorSpray.GetInstance().Get(),
-            ShockingGrasp.GetInstance().Get(),
-            ChainLightning.GetInstance().Get(),
-            Fireball.GetInstance().Get(),
-            Blizzra.GetInstance().Get(),
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Combat;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      AcidBlast.GetInstance().Get(),
+      ChillTouch.GetInstance().Get(),
+      MagicMissile.GetInstance().Get(),
+      BurningHands.GetInstance().Get(),
+      ColorSpray.GetInstance().Get(),
+      ShockingGrasp.GetInstance().Get(),
+      ChainLightning.GetInstance().Get(),
+      Fireball.GetInstance().Get(),
+      Blizzra.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Combat {
-        if (!Combat.instance) {
-            Combat.instance = new Combat();
-        }
-        return Combat.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Combat {
+    if (!Combat.instance) {
+      Combat.instance = new Combat();
     }
+    return Combat.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Combat.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Combat.GetInstance() as T;
+  }
 }
 
 export default Combat;

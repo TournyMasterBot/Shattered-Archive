@@ -4,44 +4,44 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Focus implements IAbility {
-    private static instance: Focus;
+  private static instance: Focus;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Focus";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help focus
+  constructor() {
+    this.name = "Focus";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help focus
 FOCUS
 This skill allows the character to concentrate their mind to improve their abilities temporarily.`;
 
-        if (Focus.instance === undefined) {
-            Focus.instance = this;
-        }
+    if (Focus.instance === undefined) {
+      Focus.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Focus {
-        if (!Focus.instance) {
-            Focus.instance = new Focus();
-        }
-        return Focus.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Focus {
+    if (!Focus.instance) {
+      Focus.instance = new Focus();
     }
+    return Focus.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Focus.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Focus.GetInstance() as T;
+  }
 }
 
 export default Focus;

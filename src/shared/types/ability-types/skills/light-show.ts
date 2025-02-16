@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class LightShow implements IAbility {
-    private static instance: LightShow;
+  private static instance: LightShow;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Light Show";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `LIGHT SHOW
+  constructor() {
+    this.name = "Light Show";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `LIGHT SHOW
 Syntax: cast ‘light show’
 
 In the Jongleur’s bag of tricks there is an illumination spellbook called
@@ -31,23 +31,23 @@ time.
 
 Groups containing this skill: JONGLEUR DEFAULT`;
 
-        if (LightShow.instance === undefined) {
-            LightShow.instance = this;
-        }
+    if (LightShow.instance === undefined) {
+      LightShow.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): LightShow {
-        if (!LightShow.instance) {
-            LightShow.instance = new LightShow();
-        }
-        return LightShow.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): LightShow {
+    if (!LightShow.instance) {
+      LightShow.instance = new LightShow();
     }
+    return LightShow.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return LightShow.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return LightShow.GetInstance() as T;
+  }
 }
 
 export default LightShow;

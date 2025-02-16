@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Disembowel implements IAbility {
-    private static instance: Disembowel;
+  private static instance: Disembowel;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Disembowel";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help disembowel
+  constructor() {
+    this.name = "Disembowel";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help disembowel
 mastery axe shield cleave scleave whirl disembowel
 Mastery of the Axe 
  
@@ -39,23 +39,23 @@ disembowel      A massive gut shot to an opponent, usable when an opponent is to
                 hurt to block it. 
   
 This group is available to the following classes: ARMSMAN`;
-        if (Disembowel.instance === undefined) {
-            Disembowel.instance = this;
-        }
+    if (Disembowel.instance === undefined) {
+      Disembowel.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Disembowel {
-        if (!Disembowel.instance) {
-            Disembowel.instance = new Disembowel();
-        }
-        return Disembowel.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Disembowel {
+    if (!Disembowel.instance) {
+      Disembowel.instance = new Disembowel();
     }
+    return Disembowel.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Disembowel.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Disembowel.GetInstance() as T;
+  }
 }
 
 export default Disembowel;

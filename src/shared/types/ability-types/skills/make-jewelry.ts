@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class MakeJewelry implements IAbility {
-    private static instance: MakeJewelry;
+  private static instance: MakeJewelry;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Make Jewelry";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `makejewelry
+  constructor() {
+    this.name = "Make Jewelry";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `makejewelry
 Syntax: makejewelry ear (or scalp, eyeball, nose or hand)
 
 Makejewelry is known only to those of the barbarian guild.
@@ -42,23 +42,23 @@ enemies as a trophy of their conquest.
 
 See also: "BARBARIAN" and "BUTCHER"`;
 
-        if (MakeJewelry.instance === undefined) {
-            MakeJewelry.instance = this;
-        }
+    if (MakeJewelry.instance === undefined) {
+      MakeJewelry.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): MakeJewelry {
-        if (!MakeJewelry.instance) {
-            MakeJewelry.instance = new MakeJewelry();
-        }
-        return MakeJewelry.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): MakeJewelry {
+    if (!MakeJewelry.instance) {
+      MakeJewelry.instance = new MakeJewelry();
     }
+    return MakeJewelry.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return MakeJewelry.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return MakeJewelry.GetInstance() as T;
+  }
 }
 
 export default MakeJewelry;

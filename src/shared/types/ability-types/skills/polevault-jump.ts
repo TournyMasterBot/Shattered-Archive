@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class PolevaultJump implements IAbility {
-    private static instance: PolevaultJump;
+  private static instance: PolevaultJump;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Polevault Jump";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `
+  constructor() {
+    this.name = "Polevault Jump";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `
 polevault jump
 Syntax: pvjump <direction>
 
@@ -31,23 +31,23 @@ than just walking but it is a very proven way to avoid a room full of people
 wanting to wear your blood.
 `;
 
-        if (PolevaultJump.instance === undefined) {
-            PolevaultJump.instance = this;
-        }
+    if (PolevaultJump.instance === undefined) {
+      PolevaultJump.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): PolevaultJump {
-        if (!PolevaultJump.instance) {
-            PolevaultJump.instance = new PolevaultJump();
-        }
-        return PolevaultJump.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): PolevaultJump {
+    if (!PolevaultJump.instance) {
+      PolevaultJump.instance = new PolevaultJump();
     }
+    return PolevaultJump.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return PolevaultJump.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return PolevaultJump.GetInstance() as T;
+  }
 }
 
 export default PolevaultJump;

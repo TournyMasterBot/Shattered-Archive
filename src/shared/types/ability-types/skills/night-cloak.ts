@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class NightCloak implements IAbility {
-    private static instance: NightCloak;
+  private static instance: NightCloak;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Night Cloak";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `
+  constructor() {
+    this.name = "Night Cloak";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `
 NIGHT CLOAK
 
 Syntax: Nightcloak
@@ -36,23 +36,23 @@ ninja to forego their light source in order to succeed.
 SEE ALSO:  NINJA
 `;
 
-        if (NightCloak.instance === undefined) {
-            NightCloak.instance = this;
-        }
+    if (NightCloak.instance === undefined) {
+      NightCloak.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): NightCloak {
-        if (!NightCloak.instance) {
-            NightCloak.instance = new NightCloak();
-        }
-        return NightCloak.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): NightCloak {
+    if (!NightCloak.instance) {
+      NightCloak.instance = new NightCloak();
     }
+    return NightCloak.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return NightCloak.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return NightCloak.GetInstance() as T;
+  }
 }
 
 export default NightCloak;

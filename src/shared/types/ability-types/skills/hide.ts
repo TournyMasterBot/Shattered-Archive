@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Hide implements IAbility {
-    private static instance: Hide;
+  private static instance: Hide;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Hide";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help Hide
+  constructor() {
+    this.name = "Hide";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help Hide
 HIDE SNEAK
 Hide and sneak are similar skills, both related to remaining undetected.
 Hide has a very high chance of success, but only works for as long as the
@@ -32,23 +32,23 @@ Sneak may be used when moving (including to sneak by monsters), but has a
 lower chance of success. Warriors, thieves, druids, paladins, assassins,
 barbarians may learn these skills.`;
 
-        if (Hide.instance === undefined) {
-            Hide.instance = this;
-        }
+    if (Hide.instance === undefined) {
+      Hide.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Hide {
-        if (!Hide.instance) {
-            Hide.instance = new Hide();
-        }
-        return Hide.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Hide {
+    if (!Hide.instance) {
+      Hide.instance = new Hide();
     }
+    return Hide.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Hide.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Hide.GetInstance() as T;
+  }
 }
 
 export default Hide;

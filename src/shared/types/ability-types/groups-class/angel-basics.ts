@@ -20,49 +20,49 @@ import ThirdAttack from "@shared/types/ability-types/skills/third-attack";
 import RomBasics from "@shared/types/ability-types/groups-class/rom-basics";
 
 export class AngelBasics implements IAbilityGroup {
-    private static instance: AngelBasics;
+  private static instance: AngelBasics;
 
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        const abilityGroups = [
-            ...RomBasics.GetInstance().Get<RomBasics>().abilities,
-            new BlindFighting(),
-            new Spear(),
-            new Parry(),
-            new Dodge(),
-            new Riding(),
-            new Rescue(),
-            new Flail(),
-            new Staff(),
-            new SecondAttack(),
-            new Meditation(),
-            new Sword(),
-            new ShieldBlock(),
-            new EnhancedDamage(),
-            new ThirdAttack(),
-            new FastHealing()
-        ];
+  constructor() {
+    const abilityGroups = [
+      ...RomBasics.GetInstance().Get<RomBasics>().abilities,
+      new BlindFighting(),
+      new Spear(),
+      new Parry(),
+      new Dodge(),
+      new Riding(),
+      new Rescue(),
+      new Flail(),
+      new Staff(),
+      new SecondAttack(),
+      new Meditation(),
+      new Sword(),
+      new ShieldBlock(),
+      new EnhancedDamage(),
+      new ThirdAttack(),
+      new FastHealing(),
+    ];
 
-        this.abilityGroup = AbilityGroup.AngelBasics;
-        this.abilityGroupType = AbilityGroupType.Basics;
-        this.abilities = abilityGroups;
+    this.abilityGroup = AbilityGroup.AngelBasics;
+    this.abilityGroupType = AbilityGroupType.Basics;
+    this.abilities = abilityGroups;
+  }
+
+  // Method to get the single instance of the class
+  public static GetInstance(): AngelBasics {
+    if (!AngelBasics.instance) {
+      AngelBasics.instance = new AngelBasics();
     }
+    return AngelBasics.instance;
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): AngelBasics {
-        if (!AngelBasics.instance) {
-            AngelBasics.instance = new AngelBasics();
-        }
-        return AngelBasics.instance;
-    }
-
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return AngelBasics.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return AngelBasics.GetInstance() as T;
+  }
 }
 
 export default AngelBasics;

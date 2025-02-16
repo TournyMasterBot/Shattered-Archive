@@ -3,17 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Broadswing implements IAbility {
-    private static instance: Broadswing;
+  private static instance: Broadswing;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Broadswing";
-        this.helpFile = `
+  constructor() {
+    this.name = "Broadswing";
+    this.helpFile = `
 BROADSWING
 
 Syntax: broadswing <target>
@@ -26,27 +26,27 @@ simply move out of the way or, worse yet, the knight may find himself in the
 dirt looking the fool.
         `;
 
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.manualDescription = "";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.manualDescription = "";
 
-        if (Broadswing.instance === undefined) {
-            Broadswing.instance = this;
-        }
+    if (Broadswing.instance === undefined) {
+      Broadswing.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Broadswing {
-        if (!Broadswing.instance) {
-            Broadswing.instance = new Broadswing();
-        }
-        return Broadswing.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Broadswing {
+    if (!Broadswing.instance) {
+      Broadswing.instance = new Broadswing();
     }
+    return Broadswing.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Broadswing.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Broadswing.GetInstance() as T;
+  }
 }
 
 export default Broadswing;

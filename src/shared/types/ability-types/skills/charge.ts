@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Charge implements IAbility {
-    private static instance: Charge;
+  private static instance: Charge;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Charge";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help charge
+  constructor() {
+    this.name = "Charge";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help charge
 CHARGE
 Syntax:  charge <direction> <target>
          charge <target>
@@ -35,23 +35,23 @@ underway.  You can also charge from a adjacent room.
  
 See also:  RIDING, POLEARM`;
 
-        if (Charge.instance === undefined) {
-            Charge.instance = this;
-        }
+    if (Charge.instance === undefined) {
+      Charge.instance = this;
     }
-    
-    // Method to get the single instance of the class
-    public static GetInstance(): Charge {
-        if (!Charge.instance) {
-            Charge.instance = new Charge();
-        }
-        return Charge.instance;
-    }
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Charge.GetInstance() as T;
+  // Method to get the single instance of the class
+  public static GetInstance(): Charge {
+    if (!Charge.instance) {
+      Charge.instance = new Charge();
     }
+    return Charge.instance;
+  }
+
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Charge.GetInstance() as T;
+  }
 }
 
 export default Charge;

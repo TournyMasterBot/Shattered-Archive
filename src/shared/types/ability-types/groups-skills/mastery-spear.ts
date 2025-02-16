@@ -7,33 +7,33 @@ import Impale from "@shared/types/ability-types/skills/impale";
 import Legsweep from "@shared/types/ability-types/skills/legsweep";
 
 export class MasterySpear implements IAbilityGroup {
-    static instance: MasterySpear;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: MasterySpear;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.MasterySpear;
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilities = [
-            Spin.GetInstance().Get(),
-            Impale.GetInstance().Get(),
-            Legsweep.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.MasterySpear;
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilities = [
+      Spin.GetInstance().Get(),
+      Impale.GetInstance().Get(),
+      Legsweep.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): MasterySpear {
-        if (!MasterySpear.instance) {
-            MasterySpear.instance = new MasterySpear();
-        }
-        return MasterySpear.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): MasterySpear {
+    if (!MasterySpear.instance) {
+      MasterySpear.instance = new MasterySpear();
     }
+    return MasterySpear.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return MasterySpear.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return MasterySpear.GetInstance() as T;
+  }
 }
 
 export default MasterySpear;

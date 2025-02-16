@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Legsweep implements IAbility {
-    private static instance: Legsweep;
+  private static instance: Legsweep;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Legsweep";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help Legsweep
+  constructor() {
+    this.name = "Legsweep";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help Legsweep
 mastery spear spin impale legsweep
 Mastery of the Spear
  
@@ -37,23 +37,23 @@ legsweep       A knock-down attack with a spear to damage and take the legs
  
 This group is available to the following classes: ARMSMAN`;
 
-        if (Legsweep.instance === undefined) {
-            Legsweep.instance = this;
-        }
+    if (Legsweep.instance === undefined) {
+      Legsweep.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Legsweep {
-        if (!Legsweep.instance) {
-            Legsweep.instance = new Legsweep();
-        }
-        return Legsweep.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Legsweep {
+    if (!Legsweep.instance) {
+      Legsweep.instance = new Legsweep();
     }
+    return Legsweep.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Legsweep.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Legsweep.GetInstance() as T;
+  }
 }
 
 export default Legsweep;

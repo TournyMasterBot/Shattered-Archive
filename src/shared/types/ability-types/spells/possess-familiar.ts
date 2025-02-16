@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class PossessFamiliar implements IAbility {
-    private static instance: PossessFamiliar;
+  private static instance: PossessFamiliar;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Possess Familiar";
-        this.helpFile = `POSSESS FAMILIAR
+  constructor() {
+    this.name = "Possess Familiar";
+    this.helpFile = `POSSESS FAMILIAR
 POSSESS FAMILIAR
 
 Syntax: cast 'possess familiar' cat
@@ -28,26 +28,26 @@ Naturally, the witch or warlock must have a familiar already for this spell
 to work.  
 
 See also - WITCHCRAFT`;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (PossessFamiliar.instance === undefined) {
-            PossessFamiliar.instance = this;
-        }
+    if (PossessFamiliar.instance === undefined) {
+      PossessFamiliar.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): PossessFamiliar {
-        if (!PossessFamiliar.instance) {
-            PossessFamiliar.instance = new PossessFamiliar();
-        }
-        return PossessFamiliar.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): PossessFamiliar {
+    if (!PossessFamiliar.instance) {
+      PossessFamiliar.instance = new PossessFamiliar();
     }
+    return PossessFamiliar.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return PossessFamiliar.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return PossessFamiliar.GetInstance() as T;
+  }
 }
 
 export default PossessFamiliar;

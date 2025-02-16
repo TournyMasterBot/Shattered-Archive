@@ -10,36 +10,36 @@ import Fear from "@shared/types/ability-types/spells/fear";
 import Splinter from "@shared/types/ability-types/spells/splinter";
 
 export class Witchcraft implements IAbilityGroup {
-    static instance: Witchcraft;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Witchcraft;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Witchcraft;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            CreateCauldron.GetInstance().Get(),
-            FindFamiliar.GetInstance().Get(),
-            Silence.GetInstance().Get(),
-            PossessFamiliar.GetInstance().Get(),
-            Fear.GetInstance().Get(),
-            Splinter.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Witchcraft;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      CreateCauldron.GetInstance().Get(),
+      FindFamiliar.GetInstance().Get(),
+      Silence.GetInstance().Get(),
+      PossessFamiliar.GetInstance().Get(),
+      Fear.GetInstance().Get(),
+      Splinter.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Witchcraft {
-        if (!Witchcraft.instance) {
-            Witchcraft.instance = new Witchcraft();
-        }
-        return Witchcraft.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Witchcraft {
+    if (!Witchcraft.instance) {
+      Witchcraft.instance = new Witchcraft();
     }
+    return Witchcraft.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Witchcraft.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Witchcraft.GetInstance() as T;
+  }
 }
 
 export default Witchcraft;

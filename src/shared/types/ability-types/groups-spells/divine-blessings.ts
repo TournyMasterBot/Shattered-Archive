@@ -19,45 +19,45 @@ import FaerieFlames from "@shared/types/ability-types/spells/faerie-flames";
 import HolyFlame from "@shared/types/ability-types/spells/holy-flames";
 
 export class DivineBlessings implements IAbilityGroup {
-    static instance: DivineBlessings;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: DivineBlessings;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.DivineBlessings;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            HolyFlame.GetInstance().Get(),
-            Nurishment.GetInstance().Get(),
-            MentalDrain.GetInstance().Get(),
-            FaerieFlames.GetInstance().Get(),
-            DivineIntervention.GetInstance().Get(),
-            HolyPresence.GetInstance().Get(),
-            EnhancedRecovery.GetInstance().Get(),
-            BindSoul.GetInstance().Get(),
-            MendWounds.GetInstance().Get(),
-            Meteo.GetInstance().Get(),
-            Displacement.GetInstance().Get(),
-            Endurance.GetInstance().Get(),
-            CureDeafness.GetInstance().Get(),
-            DispelCurse.GetInstance().Get(),
-            Cornucopia.GetInstance().Get(),
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.DivineBlessings;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      HolyFlame.GetInstance().Get(),
+      Nurishment.GetInstance().Get(),
+      MentalDrain.GetInstance().Get(),
+      FaerieFlames.GetInstance().Get(),
+      DivineIntervention.GetInstance().Get(),
+      HolyPresence.GetInstance().Get(),
+      EnhancedRecovery.GetInstance().Get(),
+      BindSoul.GetInstance().Get(),
+      MendWounds.GetInstance().Get(),
+      Meteo.GetInstance().Get(),
+      Displacement.GetInstance().Get(),
+      Endurance.GetInstance().Get(),
+      CureDeafness.GetInstance().Get(),
+      DispelCurse.GetInstance().Get(),
+      Cornucopia.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): DivineBlessings {
-        if (!DivineBlessings.instance) {
-            DivineBlessings.instance = new DivineBlessings();
-        }
-        return DivineBlessings.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): DivineBlessings {
+    if (!DivineBlessings.instance) {
+      DivineBlessings.instance = new DivineBlessings();
     }
+    return DivineBlessings.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return DivineBlessings.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return DivineBlessings.GetInstance() as T;
+  }
 }
 
 export default DivineBlessings;

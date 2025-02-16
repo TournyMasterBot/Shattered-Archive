@@ -22,46 +22,46 @@ import Martyr from "@shared/types/ability-types/skills/martyr";
 import Rear from "@shared/types/ability-types/skills/rear";
 
 export class CrusaderDefault implements IAbilityGroup {
-    static instance: CrusaderDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: CrusaderDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.CrusaderDefault;
-        this.abilityGroupType = AbilityGroupType.Basics;
-        this.abilities = [
-            ...Curative.GetInstance().Get<Curative>().abilities,
-            ...Healing.GetInstance().Get<Healing>().abilities,
-            ...Transportation.GetInstance().Get<Transportation>().abilities,
-            ...Benedictions.GetInstance().Get<Benedictions>().abilities,
-            ...Maladictions.GetInstance().Get<Maladictions>().abilities,
-            ...Weather.GetInstance().Get<Weather>().abilities,
-            ...Worship.GetInstance().Get<Worship>().abilities,
-            ...Detection.GetInstance().Get<Detection>().abilities,
-            ...Protective.GetInstance().Get<Protective>().abilities,
-            DualWield.GetInstance().Get(),
-            Unhorse.GetInstance().Get(),
-            Riding.GetInstance().Get(),
-            ShieldBlock.GetInstance().Get(),
-            Parry.GetInstance().Get(),
-            Martyr.GetInstance().Get(),
-            Rear.GetInstance().Get(),
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.CrusaderDefault;
+    this.abilityGroupType = AbilityGroupType.Basics;
+    this.abilities = [
+      ...Curative.GetInstance().Get<Curative>().abilities,
+      ...Healing.GetInstance().Get<Healing>().abilities,
+      ...Transportation.GetInstance().Get<Transportation>().abilities,
+      ...Benedictions.GetInstance().Get<Benedictions>().abilities,
+      ...Maladictions.GetInstance().Get<Maladictions>().abilities,
+      ...Weather.GetInstance().Get<Weather>().abilities,
+      ...Worship.GetInstance().Get<Worship>().abilities,
+      ...Detection.GetInstance().Get<Detection>().abilities,
+      ...Protective.GetInstance().Get<Protective>().abilities,
+      DualWield.GetInstance().Get(),
+      Unhorse.GetInstance().Get(),
+      Riding.GetInstance().Get(),
+      ShieldBlock.GetInstance().Get(),
+      Parry.GetInstance().Get(),
+      Martyr.GetInstance().Get(),
+      Rear.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): CrusaderDefault {
-        if (!CrusaderDefault.instance) {
-            CrusaderDefault.instance = new CrusaderDefault();
-        }
-        return CrusaderDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): CrusaderDefault {
+    if (!CrusaderDefault.instance) {
+      CrusaderDefault.instance = new CrusaderDefault();
     }
+    return CrusaderDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return CrusaderDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return CrusaderDefault.GetInstance() as T;
+  }
 }
 
 export default CrusaderDefault;

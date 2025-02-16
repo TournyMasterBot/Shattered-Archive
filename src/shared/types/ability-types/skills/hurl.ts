@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Hurl implements IAbility {
-    private static instance: Hurl;
+  private static instance: Hurl;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Hurl";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help Hurl
+  constructor() {
+    this.name = "Hurl";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help Hurl
 mastery dagger stab hurl concealed attack
 Mastery of the Dagger
  
@@ -37,22 +37,22 @@ concealed attack An innate, reflexive reaction to being attacked that damages
                  the assailant in turn.
  
 This group is available to the following classes: ARMSMAN`;
-        if (Hurl.instance === undefined) {
-            Hurl.instance = this;
-        }
+    if (Hurl.instance === undefined) {
+      Hurl.instance = this;
     }
-    // Method to get the single instance of the class
-    public static GetInstance(): Hurl {
-        if (!Hurl.instance) {
-            Hurl.instance = new Hurl();
-        }
-        return Hurl.instance;
+  }
+  // Method to get the single instance of the class
+  public static GetInstance(): Hurl {
+    if (!Hurl.instance) {
+      Hurl.instance = new Hurl();
     }
+    return Hurl.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Hurl.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Hurl.GetInstance() as T;
+  }
 }
 
 export default Hurl;

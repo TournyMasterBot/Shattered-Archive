@@ -17,7 +17,9 @@
     "start:game-server:prod": "npm --prefix ./src/game-server run start:prod",
     "start:game-client:dev": "npm --prefix ./src/game-client run start:dev",
     "start:game-client:prod": "npm --prefix ./src/game-client run start:prod",
-    "test": "npx jest --config jest.config.js"
+    "test": "npx jest --config jest.config.js",
+    "lint": "eslint \"**/*.ts\"",
+    "lint:fix": "eslint \"**/*.ts\" --fix"
   },
   "author": "",
   "license": "ISC",
@@ -27,9 +29,14 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
     "@types/react": "^19.0.8",
+    "@typescript-eslint/eslint-plugin": "^8.24.0",
+    "@typescript-eslint/parser": "^8.24.0",
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.3",
     "nodemon": "^3.1.9",
+    "prettier": "^3.5.1",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3"

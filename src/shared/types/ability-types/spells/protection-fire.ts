@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class ProtectionFire implements IAbility {
-    private static instance: ProtectionFire;
+  private static instance: ProtectionFire;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Protection Fire";
-        this.helpFile = `
+  constructor() {
+    this.name = "Protection Fire";
+    this.helpFile = `
 help 'Protection Fire'
 'PROTECTION COLD' 'PROTECTION FIRE'
 'PROTECTION COLD' 'PROTECTION FIRE'
@@ -26,26 +26,26 @@ spells reduce the damage taken from said attacks.
 
 See also - NATURE
         `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (ProtectionFire.instance === undefined) {
-            ProtectionFire.instance = this;
-        }
+    if (ProtectionFire.instance === undefined) {
+      ProtectionFire.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): ProtectionFire {
-        if (!ProtectionFire.instance) {
-            ProtectionFire.instance = new ProtectionFire();
-        }
-        return ProtectionFire.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): ProtectionFire {
+    if (!ProtectionFire.instance) {
+      ProtectionFire.instance = new ProtectionFire();
     }
+    return ProtectionFire.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return ProtectionFire.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return ProtectionFire.GetInstance() as T;
+  }
 }
 
 export default ProtectionFire;

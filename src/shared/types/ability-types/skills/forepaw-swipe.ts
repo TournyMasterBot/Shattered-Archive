@@ -4,44 +4,44 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class ForepawSwipe implements IAbility {
-    private static instance: ForepawSwipe;
+  private static instance: ForepawSwipe;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Forepaw Swipe";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help forepaw swipe
+  constructor() {
+    this.name = "Forepaw Swipe";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help forepaw swipe
 FOREPAW SWIPE
 A swift attack using the character's forepaw to strike at opponents.`;
 
-        if (ForepawSwipe.instance === undefined) {
-            ForepawSwipe.instance = this;
-        }
+    if (ForepawSwipe.instance === undefined) {
+      ForepawSwipe.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): ForepawSwipe {
-        if (!ForepawSwipe.instance) {
-            ForepawSwipe.instance = new ForepawSwipe();
-        }
-        return ForepawSwipe.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): ForepawSwipe {
+    if (!ForepawSwipe.instance) {
+      ForepawSwipe.instance = new ForepawSwipe();
     }
+    return ForepawSwipe.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return ForepawSwipe.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return ForepawSwipe.GetInstance() as T;
+  }
 }
 
 export default ForepawSwipe;

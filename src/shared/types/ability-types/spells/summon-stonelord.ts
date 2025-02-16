@@ -3,18 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class SummonStonelord implements IAbility {
-    private static instance: SummonStonelord;
+  private static instance: SummonStonelord;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Summon Stonelord";
-        this.helpFile =
-`SUMMON STONELORD
+  constructor() {
+    this.name = "Summon Stonelord";
+    this.helpFile = `SUMMON STONELORD
 
 Syntax:  cast 'summon stonelord'
  
@@ -23,27 +22,27 @@ Stonelord to fight by their side, using its great power to crush any foe
 before them.  
 
 Groups containing this spell: ELDRITCH`;
-        this.manualDescription = ``;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.manualDescription = ``;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (SummonStonelord.instance === undefined) {
-            SummonStonelord.instance = this;
-        }
+    if (SummonStonelord.instance === undefined) {
+      SummonStonelord.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): SummonStonelord {
-        if (!SummonStonelord.instance) {
-            SummonStonelord.instance = new SummonStonelord();
-        }
-        return SummonStonelord.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): SummonStonelord {
+    if (!SummonStonelord.instance) {
+      SummonStonelord.instance = new SummonStonelord();
     }
+    return SummonStonelord.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return SummonStonelord.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return SummonStonelord.GetInstance() as T;
+  }
 }
 
 export default SummonStonelord;

@@ -3,17 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Alchemy implements IAbility {
-    private static instance: Alchemy;
+  private static instance: Alchemy;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Alchemy";
-        this.helpFile =
-`ALCHEMY
+  constructor() {
+    this.name = "Alchemy";
+    this.helpFile = `ALCHEMY
 
 The alchemist attempts to change one thing to another, and when applied
 to magical potions, he is able to modify the very tendrils of magic emanating
@@ -26,26 +25,26 @@ the resulting one.
 
 Syntax: Alchemy <spellname>`;
 
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (Alchemy.instance === undefined) {
-            Alchemy.instance = this;
-        }
+    if (Alchemy.instance === undefined) {
+      Alchemy.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Alchemy {
-        if (!Alchemy.instance) {
-            Alchemy.instance = new Alchemy();
-        }
-        return Alchemy.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Alchemy {
+    if (!Alchemy.instance) {
+      Alchemy.instance = new Alchemy();
     }
+    return Alchemy.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Alchemy.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Alchemy.GetInstance() as T;
+  }
 }
 
 export default Alchemy;

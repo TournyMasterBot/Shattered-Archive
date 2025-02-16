@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Distortion implements IAbility {
-    private static instance: Distortion;
+  private static instance: Distortion;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Distortion";
-        this.helpFile = `
+  constructor() {
+    this.name = "Distortion";
+    this.helpFile = `
 DISTORTION
 
 Casting this spell, the Mentalist will distort the vision of their enemy,
@@ -22,26 +22,26 @@ difficult to cure.
 
 Syntax: cast 'distortion' <target>
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (Distortion.instance === undefined) {
-            Distortion.instance = this;
-        }
+    if (Distortion.instance === undefined) {
+      Distortion.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Distortion {
-        if (!Distortion.instance) {
-            Distortion.instance = new Distortion();
-        }
-        return Distortion.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Distortion {
+    if (!Distortion.instance) {
+      Distortion.instance = new Distortion();
     }
+    return Distortion.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Distortion.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Distortion.GetInstance() as T;
+  }
 }
 
 export default Distortion;

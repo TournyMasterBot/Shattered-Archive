@@ -7,33 +7,33 @@ import Drum from "@shared/types/ability-types/skills/drum";
 import Boneshatter from "@shared/types/ability-types/skills/boneshatter";
 
 export class MasteryMace implements IAbilityGroup {
-    static instance: MasteryMace;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: MasteryMace;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.MasteryMace;
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilities = [
-            Backhand.GetInstance().Get(),
-            Drum.GetInstance().Get(),
-            Boneshatter.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.MasteryMace;
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilities = [
+      Backhand.GetInstance().Get(),
+      Drum.GetInstance().Get(),
+      Boneshatter.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): MasteryMace {
-        if (!MasteryMace.instance) {
-            MasteryMace.instance = new MasteryMace();
-        }
-        return MasteryMace.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): MasteryMace {
+    if (!MasteryMace.instance) {
+      MasteryMace.instance = new MasteryMace();
     }
+    return MasteryMace.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return MasteryMace.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return MasteryMace.GetInstance() as T;
+  }
 }
 
 export default MasteryMace;

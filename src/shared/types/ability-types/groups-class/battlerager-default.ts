@@ -18,44 +18,44 @@ import ShieldKick from "@shared/types/ability-types/skills/shield-kick";
 import ThirdAttack from "@shared/types/ability-types/skills/third-attack";
 
 export class BattleragerDefault implements IAbilityGroup {
-    static instance: BattleragerDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: BattleragerDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.BattleragerDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            ...Detection.GetInstance().Get<Detection>().abilities,
-            new SecondAttack(),
-            new Disarm(),
-            new Dagger(),
-            new Headbutt(),
-            new Possession(),
-            new ThirdAttack(),
-            new ShieldBlock(),
-            new Rescue(),
-            new ShieldKick(),
-            new Bash(),
-            new Parry(),
-            new EnhancedDamage(),
-            new RagerCharge()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.BattleragerDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      ...Detection.GetInstance().Get<Detection>().abilities,
+      new SecondAttack(),
+      new Disarm(),
+      new Dagger(),
+      new Headbutt(),
+      new Possession(),
+      new ThirdAttack(),
+      new ShieldBlock(),
+      new Rescue(),
+      new ShieldKick(),
+      new Bash(),
+      new Parry(),
+      new EnhancedDamage(),
+      new RagerCharge(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): BattleragerDefault {
-        if (!BattleragerDefault.instance) {
-            BattleragerDefault.instance = new BattleragerDefault();
-        }
-        return BattleragerDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): BattleragerDefault {
+    if (!BattleragerDefault.instance) {
+      BattleragerDefault.instance = new BattleragerDefault();
     }
+    return BattleragerDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return BattleragerDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return BattleragerDefault.GetInstance() as T;
+  }
 }
 
 export default BattleragerDefault;

@@ -13,40 +13,40 @@ import NatureGrowth from "@shared/types/ability-types/spells/nature-growth";
 import EnhanceSeed from "@shared/types/ability-types/spells/enhance-seed";
 
 export class Nature implements IAbilityGroup {
-    static instance: Nature;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Nature;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Nature;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            CallWild.GetInstance().Get(),
-            Entangle.GetInstance().Get(),
-            Swarm.GetInstance().Get(),
-            BarkSkin.GetInstance().Get(),
-            CreateRangerStaff.GetInstance().Get(),
-            WrathOfNature.GetInstance().Get(),
-            ProtectionCold.GetInstance().Get(),
-            NatureGrowth.GetInstance().Get(),
-            EnhanceSeed.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Nature;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      CallWild.GetInstance().Get(),
+      Entangle.GetInstance().Get(),
+      Swarm.GetInstance().Get(),
+      BarkSkin.GetInstance().Get(),
+      CreateRangerStaff.GetInstance().Get(),
+      WrathOfNature.GetInstance().Get(),
+      ProtectionCold.GetInstance().Get(),
+      NatureGrowth.GetInstance().Get(),
+      EnhanceSeed.GetInstance().Get(),
+    ];
+  }
 
-    public static GetInstance(): Nature {
-        if (!Nature.instance) {
-            Nature.instance = new Nature();
-        }
-        return Nature.instance;
+  public static GetInstance(): Nature {
+    if (!Nature.instance) {
+      Nature.instance = new Nature();
     }
+    return Nature.instance;
+  }
 
-    public Get<T>(): T {
-        if (!Nature.instance) {
-            Nature.instance = new Nature();
-        }
-        return Nature.instance as T;
+  public Get<T>(): T {
+    if (!Nature.instance) {
+      Nature.instance = new Nature();
     }
+    return Nature.instance as T;
+  }
 }
 
 export default Nature;

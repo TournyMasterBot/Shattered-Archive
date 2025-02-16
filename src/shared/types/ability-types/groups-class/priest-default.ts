@@ -14,40 +14,40 @@ import Flail from "@shared/types/ability-types/skills/flail";
 import ShieldBlock from "@shared/types/ability-types/skills/shield-block";
 
 export class PriestDefault implements IAbilityGroup {
-    static instance: PriestDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: PriestDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.PriestDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            ...Transportation.GetInstance().Get<Transportation>().abilities,
-            ...Protective.GetInstance().Get<Protective>().abilities,
-            ...DivineBlessings.GetInstance().Get<DivineBlessings>().abilities,
-            ...Maladictions.GetInstance().Get<Maladictions>().abilities,
-            ...Healing.GetInstance().Get<Healing>().abilities,
-            ...Curative.GetInstance().Get<Curative>().abilities,
-            ...Benedictions.GetInstance().Get<Benedictions>().abilities,
-            ...Elemental.GetInstance().Get<Elemental>().abilities,
-            Flail.GetInstance().Get(),
-            ShieldBlock.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.PriestDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      ...Transportation.GetInstance().Get<Transportation>().abilities,
+      ...Protective.GetInstance().Get<Protective>().abilities,
+      ...DivineBlessings.GetInstance().Get<DivineBlessings>().abilities,
+      ...Maladictions.GetInstance().Get<Maladictions>().abilities,
+      ...Healing.GetInstance().Get<Healing>().abilities,
+      ...Curative.GetInstance().Get<Curative>().abilities,
+      ...Benedictions.GetInstance().Get<Benedictions>().abilities,
+      ...Elemental.GetInstance().Get<Elemental>().abilities,
+      Flail.GetInstance().Get(),
+      ShieldBlock.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): PriestDefault {
-        if (!PriestDefault.instance) {
-            PriestDefault.instance = new PriestDefault();
-        }
-        return PriestDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): PriestDefault {
+    if (!PriestDefault.instance) {
+      PriestDefault.instance = new PriestDefault();
     }
+    return PriestDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return PriestDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return PriestDefault.GetInstance() as T;
+  }
 }
 
 export default PriestDefault;

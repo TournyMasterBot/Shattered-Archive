@@ -3,18 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class VoodooDoll implements IAbility {
-    private static instance: VoodooDoll;
+  private static instance: VoodooDoll;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Voodoo Doll";
-        this.helpFile =
-`VOODOO DOLL
+  constructor() {
+    this.name = "Voodoo Doll";
+    this.helpFile = `VOODOO DOLL
 
 Syntax: c 'voodoo doll' <target>
 Syntax: Dollshake
@@ -27,27 +26,27 @@ focused concentration with voodoo magic, the doll cannot be used in the
 thick of battle.
 
 Groups containing this skill: SHAMAN DEFAULT`;
-        this.manualDescription = ``;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.manualDescription = ``;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (VoodooDoll.instance === undefined) {
-            VoodooDoll.instance = this;
-        }
+    if (VoodooDoll.instance === undefined) {
+      VoodooDoll.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): VoodooDoll {
-        if (!VoodooDoll.instance) {
-            VoodooDoll.instance = new VoodooDoll();
-        }
-        return VoodooDoll.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): VoodooDoll {
+    if (!VoodooDoll.instance) {
+      VoodooDoll.instance = new VoodooDoll();
     }
+    return VoodooDoll.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return VoodooDoll.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return VoodooDoll.GetInstance() as T;
+  }
 }
 
 export default VoodooDoll;

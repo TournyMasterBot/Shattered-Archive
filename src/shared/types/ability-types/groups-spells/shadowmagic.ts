@@ -22,48 +22,48 @@ import CreateCauldron from "@shared/types/ability-types/spells/create-cauldron";
 import NightShield from "@shared/types/ability-types/spells/nightshield";
 
 export class Shadowmagic implements IAbilityGroup {
-    static instance: Shadowmagic;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Shadowmagic;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Shadowmagic;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            Umbra.GetInstance().Get(),
-            NightShield.GetInstance().Get(),
-            KayensShield.GetInstance().Get(),
-            ShadowVision.GetInstance().Get(),
-            Shadowcloak.GetInstance().Get(),
-            StealMagic.GetInstance().Get(),
-            Shadowbolt.GetInstance().Get(),
-            SummonShadow.GetInstance().Get(),
-            HostOfGargoyles.GetInstance().Get(),
-            AcuteEvasion.GetInstance().Get(),
-            NightTerror.GetInstance().Get(),
-            Shadowlord.GetInstance().Get(),
-            PraiseTheProphecy.GetInstance().Get(),
-            RedirectSkill.GetInstance().Get(),
-            Deflection.GetInstance().Get(),
-            ShadowWhisper.GetInstance().Get(),
-            ShadowVortex.GetInstance().Get(),
-            CreateCauldron.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Shadowmagic;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      Umbra.GetInstance().Get(),
+      NightShield.GetInstance().Get(),
+      KayensShield.GetInstance().Get(),
+      ShadowVision.GetInstance().Get(),
+      Shadowcloak.GetInstance().Get(),
+      StealMagic.GetInstance().Get(),
+      Shadowbolt.GetInstance().Get(),
+      SummonShadow.GetInstance().Get(),
+      HostOfGargoyles.GetInstance().Get(),
+      AcuteEvasion.GetInstance().Get(),
+      NightTerror.GetInstance().Get(),
+      Shadowlord.GetInstance().Get(),
+      PraiseTheProphecy.GetInstance().Get(),
+      RedirectSkill.GetInstance().Get(),
+      Deflection.GetInstance().Get(),
+      ShadowWhisper.GetInstance().Get(),
+      ShadowVortex.GetInstance().Get(),
+      CreateCauldron.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Shadowmagic {
-        if (!Shadowmagic.instance) {
-            Shadowmagic.instance = new Shadowmagic();
-        }
-        return Shadowmagic.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Shadowmagic {
+    if (!Shadowmagic.instance) {
+      Shadowmagic.instance = new Shadowmagic();
     }
+    return Shadowmagic.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Shadowmagic.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Shadowmagic.GetInstance() as T;
+  }
 }
 
 export default Shadowmagic;

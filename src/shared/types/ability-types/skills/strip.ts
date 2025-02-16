@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Strip implements IAbility {
-    private static instance: Strip;
+  private static instance: Strip;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Strip";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `
+  constructor() {
+    this.name = "Strip";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `
 help Strip
 mastery flail entwine sting strip
 Mastery of the Flail
@@ -39,23 +39,23 @@ strip           Owing to innate skill with a flail, an armsman may have a
 This group is available to the following classes: ARMSMAN
 `;
 
-        if (Strip.instance === undefined) {
-            Strip.instance = this;
-        }
+    if (Strip.instance === undefined) {
+      Strip.instance = this;
     }
-    
-    // Method to get the single instance of the class
-    public static GetInstance(): Strip {
-        if (!Strip.instance) {
-            Strip.instance = new Strip();
-        }
-        return Strip.instance;
-    }
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Strip.GetInstance() as T;
+  // Method to get the single instance of the class
+  public static GetInstance(): Strip {
+    if (!Strip.instance) {
+      Strip.instance = new Strip();
     }
+    return Strip.instance;
+  }
+
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Strip.GetInstance() as T;
+  }
 }
 
 export default Strip;

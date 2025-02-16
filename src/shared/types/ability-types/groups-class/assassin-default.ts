@@ -20,46 +20,46 @@ import Detection from "../groups-spells/detection";
 import FlashBomb from "@shared/types/ability-types/skills/flashbomb";
 
 export class AssassinDefault implements IAbilityGroup {
-    static instance: AssassinDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: AssassinDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.AssassinDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            ...Detection.GetInstance().Get<Detection>().abilities,
-            Sneak.GetInstance().Get(),
-            Caltraps.GetInstance().Get(),
-            PoisonSmoke.GetInstance().Get(),
-            FlashBomb.GetInstance().Get(),
-            GroundControl.GetInstance().Get(),
-            Disarm.GetInstance().Get(),
-            Hide.GetInstance().Get(),
-            Strangle.GetInstance().Get(),
-            Vanish.GetInstance().Get(),
-            Kurijitsu.GetInstance().Get(),
-            Dodge.GetInstance().Get(),
-            PoisonDagger.GetInstance().Get(),
-            Nerve.GetInstance().Get(),
-            HandToHand.GetInstance().Get(),
-            Backstab.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.AssassinDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      ...Detection.GetInstance().Get<Detection>().abilities,
+      Sneak.GetInstance().Get(),
+      Caltraps.GetInstance().Get(),
+      PoisonSmoke.GetInstance().Get(),
+      FlashBomb.GetInstance().Get(),
+      GroundControl.GetInstance().Get(),
+      Disarm.GetInstance().Get(),
+      Hide.GetInstance().Get(),
+      Strangle.GetInstance().Get(),
+      Vanish.GetInstance().Get(),
+      Kurijitsu.GetInstance().Get(),
+      Dodge.GetInstance().Get(),
+      PoisonDagger.GetInstance().Get(),
+      Nerve.GetInstance().Get(),
+      HandToHand.GetInstance().Get(),
+      Backstab.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): AssassinDefault {
-        if (!AssassinDefault.instance) {
-            AssassinDefault.instance = new AssassinDefault();
-        }
-        return AssassinDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): AssassinDefault {
+    if (!AssassinDefault.instance) {
+      AssassinDefault.instance = new AssassinDefault();
     }
+    return AssassinDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return AssassinDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return AssassinDefault.GetInstance() as T;
+  }
 }
 
 export default AssassinDefault;

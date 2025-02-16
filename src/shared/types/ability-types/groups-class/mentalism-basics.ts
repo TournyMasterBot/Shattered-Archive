@@ -6,32 +6,29 @@ import Dagger from "@shared/types/ability-types/skills/dagger";
 import Staff from "@shared/types/ability-types/skills/staff";
 
 export class MentalistBasics implements IAbilityGroup {
-    static instance: MentalistBasics;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: MentalistBasics;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.MentalistBasics;
-        this.abilityGroupType = AbilityGroupType.Basics;
-        this.abilities = [
-            Dagger.GetInstance().Get(),
-            Staff.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.MentalistBasics;
+    this.abilityGroupType = AbilityGroupType.Basics;
+    this.abilities = [Dagger.GetInstance().Get(), Staff.GetInstance().Get()];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): MentalistBasics {
-        if (!MentalistBasics.instance) {
-            MentalistBasics.instance = new MentalistBasics();
-        }
-        return MentalistBasics.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): MentalistBasics {
+    if (!MentalistBasics.instance) {
+      MentalistBasics.instance = new MentalistBasics();
     }
+    return MentalistBasics.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return MentalistBasics.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return MentalistBasics.GetInstance() as T;
+  }
 }
 
 export default MentalistBasics;

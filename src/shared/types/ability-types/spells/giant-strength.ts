@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class GiantStrength implements IAbility {
-    private static instance: GiantStrength;
+  private static instance: GiantStrength;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Giant Strength";
-        this.helpFile = `
+  constructor() {
+    this.name = "Giant Strength";
+    this.helpFile = `
 help 'Giant Strength'
 'GIANT STRENGTH'
 'GIANT STRENGTH'
@@ -25,26 +25,26 @@ giant.
 
 See also - ENHANCEMENT 
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (GiantStrength.instance === undefined) {
-            GiantStrength.instance = this;
-        }
+    if (GiantStrength.instance === undefined) {
+      GiantStrength.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): GiantStrength {
-        if (!GiantStrength.instance) {
-            GiantStrength.instance = new GiantStrength();
-        }
-        return GiantStrength.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): GiantStrength {
+    if (!GiantStrength.instance) {
+      GiantStrength.instance = new GiantStrength();
     }
+    return GiantStrength.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return GiantStrength.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return GiantStrength.GetInstance() as T;
+  }
 }
 
 export default GiantStrength;

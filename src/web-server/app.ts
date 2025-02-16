@@ -1,17 +1,17 @@
-import LoadRoutes from '@shared/express-server/middleware.route';
-import ShatteredServer from '@shared/express-server/server';
-import ServerCache from 'cache/server-cache';
-import path from 'path';
+import LoadRoutes from "@shared/express-server/middleware.route";
+import ShatteredServer from "@shared/express-server/server";
+import ServerCache from "cache/server-cache";
+import path from "path";
 
 (async function main() {
   let port = 8080;
-  let execEnv = 'dev';
+  let execEnv = "dev";
 
   // Log all command-line arguments
   console.log("Process arguments:", process.argv);
 
   // Parse the '--port' flag
-  const portFlagIndex = process.argv.indexOf('--port');
+  const portFlagIndex = process.argv.indexOf("--port");
   if (portFlagIndex !== -1 && process.argv[portFlagIndex + 1]) {
     port = parseInt(process.argv[portFlagIndex + 1], 10);
     if (isNaN(port)) {
@@ -21,7 +21,7 @@ import path from 'path';
   }
 
   // Parse the '--execEnv' flag
-  const execEnvFlagIndex = process.argv.indexOf('--execEnv');
+  const execEnvFlagIndex = process.argv.indexOf("--execEnv");
   if (execEnvFlagIndex !== -1 && process.argv[execEnvFlagIndex + 1]) {
     execEnv = process.argv[execEnvFlagIndex + 1];
   }
@@ -33,10 +33,12 @@ import path from 'path';
   const shatteredServer = new ShatteredServer({ port });
   const app = shatteredServer.GetServer();
 
-  const routesDirectory = path.join(__dirname, 'routes');
+  const routesDirectory = path.join(__dirname, "routes");
   LoadRoutes(app, routesDirectory);
 
   app.listen(port, () => {
-    console.log(`Shattered Archive Web Server is running in ${execEnv} mode on http://localhost:${port}`);
+    console.log(
+      `Shattered Archive Web Server is running in ${execEnv} mode on http://localhost:${port}`,
+    );
   });
 })();

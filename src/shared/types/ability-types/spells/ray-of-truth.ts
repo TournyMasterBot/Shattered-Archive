@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class RayOfTruth implements IAbility {
-    private static instance: RayOfTruth;
+  private static instance: RayOfTruth;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Ray of Truth";
-        this.helpFile = `
+  constructor() {
+    this.name = "Ray of Truth";
+    this.helpFile = `
 help 'Ray of Truth'
 'RAY OF TRUTH'
 RAY OF TRUTH
@@ -26,26 +26,26 @@ who are tainted by evil.
 
 See also - ATTACK
         `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (RayOfTruth.instance === undefined) {
-            RayOfTruth.instance = this;
-        }
+    if (RayOfTruth.instance === undefined) {
+      RayOfTruth.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): RayOfTruth {
-        if (!RayOfTruth.instance) {
-            RayOfTruth.instance = new RayOfTruth();
-        }
-        return RayOfTruth.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): RayOfTruth {
+    if (!RayOfTruth.instance) {
+      RayOfTruth.instance = new RayOfTruth();
     }
+    return RayOfTruth.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return RayOfTruth.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return RayOfTruth.GetInstance() as T;
+  }
 }
 
 export default RayOfTruth;

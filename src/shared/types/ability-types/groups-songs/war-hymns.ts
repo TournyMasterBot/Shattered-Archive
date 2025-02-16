@@ -15,41 +15,41 @@ import RunRiot from "../songs/run-riot";
 import PiercingWinds from "../songs/piering-winds";
 
 export class WarHymns implements IAbilityGroup {
-    static instance: WarHymns;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: WarHymns;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.WarHymns;
-        this.abilityGroupType = AbilityGroupType.Songs;
-        this.abilities = [
-            SongOfWar.GetInstance().Get(),
-            Lullaby.GetInstance().Get(),
-            SongOfCharm.GetInstance().Get(),
-            GreenLeaf.GetInstance().Get(),
-            PiercingWinds.GetInstance().Get(),
-            WeaknessWithin.GetInstance().Get(),
-            Nightmare.GetInstance().Get(),
-            ScreechingBanshee.GetInstance().Get(),
-            WeCome.GetInstance().Get(),
-            ReleaseMe.GetInstance().Get(),
-            RunRiot.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.WarHymns;
+    this.abilityGroupType = AbilityGroupType.Songs;
+    this.abilities = [
+      SongOfWar.GetInstance().Get(),
+      Lullaby.GetInstance().Get(),
+      SongOfCharm.GetInstance().Get(),
+      GreenLeaf.GetInstance().Get(),
+      PiercingWinds.GetInstance().Get(),
+      WeaknessWithin.GetInstance().Get(),
+      Nightmare.GetInstance().Get(),
+      ScreechingBanshee.GetInstance().Get(),
+      WeCome.GetInstance().Get(),
+      ReleaseMe.GetInstance().Get(),
+      RunRiot.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): WarHymns {
-        if (!WarHymns.instance) {
-            WarHymns.instance = new WarHymns();
-        }
-        return WarHymns.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): WarHymns {
+    if (!WarHymns.instance) {
+      WarHymns.instance = new WarHymns();
     }
+    return WarHymns.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return WarHymns.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return WarHymns.GetInstance() as T;
+  }
 }
 
 export default WarHymns;

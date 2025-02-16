@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class HiltThrust implements IAbility {
-    private static instance: HiltThrust;
+  private static instance: HiltThrust;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Hilt Thrust";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `HILT HILTTHRUST 'HILT THRUST'
+  constructor() {
+    this.name = "Hilt Thrust";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `HILT HILTTHRUST 'HILT THRUST'
 HILT THRUST
 
 Syntax: hiltthrust
@@ -36,23 +36,23 @@ Groups containing this skill: Barbarian
 
 SEE ALSO:  BARBARIAN`;
 
-        if (HiltThrust.instance === undefined) {
-            HiltThrust.instance = this;
-        }
+    if (HiltThrust.instance === undefined) {
+      HiltThrust.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): HiltThrust {
-        if (!HiltThrust.instance) {
-            HiltThrust.instance = new HiltThrust();
-        }
-        return HiltThrust.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): HiltThrust {
+    if (!HiltThrust.instance) {
+      HiltThrust.instance = new HiltThrust();
     }
+    return HiltThrust.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return HiltThrust.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return HiltThrust.GetInstance() as T;
+  }
 }
 
 export default HiltThrust;

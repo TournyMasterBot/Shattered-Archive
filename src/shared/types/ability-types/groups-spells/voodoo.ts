@@ -22,48 +22,48 @@ import ContinualLight from "@shared/types/ability-types/spells/continual-light";
 import Beastform from "@shared/types/ability-types/spells/beast-form";
 
 export class Voodoo implements IAbilityGroup {
-    static instance: Voodoo;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Voodoo;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Voodoo;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            Leprosy.GetInstance().Get(),
-            Spiritwalk.GetInstance().Get(),
-            Snakebite.GetInstance().Get(),
-            Hex.GetInstance().Get(),
-            BrainFever.GetInstance().Get(),
-            VoodooDoll.GetInstance().Get(),
-            Wither.GetInstance().Get(),
-            Beastform.GetInstance().Get(),
-            Poultice.GetInstance().Get(),
-            AnimalSpirit.GetInstance().Get(),
-            CorrosiveSkin.GetInstance().Get(),
-            Embalm.GetInstance().Get(),
-            Soulsight.GetInstance().Get(),
-            Thunderclap.GetInstance().Get(),
-            ShrinkHead.GetInstance().Get(),
-            ShrinkSkull.GetInstance().Get(),
-            Haunt.GetInstance().Get(),
-            ContinualLight.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Voodoo;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      Leprosy.GetInstance().Get(),
+      Spiritwalk.GetInstance().Get(),
+      Snakebite.GetInstance().Get(),
+      Hex.GetInstance().Get(),
+      BrainFever.GetInstance().Get(),
+      VoodooDoll.GetInstance().Get(),
+      Wither.GetInstance().Get(),
+      Beastform.GetInstance().Get(),
+      Poultice.GetInstance().Get(),
+      AnimalSpirit.GetInstance().Get(),
+      CorrosiveSkin.GetInstance().Get(),
+      Embalm.GetInstance().Get(),
+      Soulsight.GetInstance().Get(),
+      Thunderclap.GetInstance().Get(),
+      ShrinkHead.GetInstance().Get(),
+      ShrinkSkull.GetInstance().Get(),
+      Haunt.GetInstance().Get(),
+      ContinualLight.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Voodoo {
-        if (!Voodoo.instance) {
-            Voodoo.instance = new Voodoo();
-        }
-        return Voodoo.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Voodoo {
+    if (!Voodoo.instance) {
+      Voodoo.instance = new Voodoo();
     }
+    return Voodoo.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Voodoo.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Voodoo.GetInstance() as T;
+  }
 }
 
 export default Voodoo;

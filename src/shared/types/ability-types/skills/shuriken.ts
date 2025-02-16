@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Shuriken implements IAbility {
-    private static instance: Shuriken;
+  private static instance: Shuriken;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Shuriken";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `SHURIKEN
+  constructor() {
+    this.name = "Shuriken";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `SHURIKEN
 Syntax: Craftshuriken
 
 Syntax: Toss Shuriken <target>
@@ -34,23 +34,23 @@ in the same room as the ninja.
 
 SEE ALSO:  NINJA`;
 
-        if (Shuriken.instance === undefined) {
-            Shuriken.instance = this;
-        }
+    if (Shuriken.instance === undefined) {
+      Shuriken.instance = this;
     }
-    
-    // Method to get the single instance of the class
-    public static GetInstance(): Shuriken {
-        if (!Shuriken.instance) {
-            Shuriken.instance = new Shuriken();
-        }
-        return Shuriken.instance;
-    }
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Shuriken.GetInstance() as T;
+  // Method to get the single instance of the class
+  public static GetInstance(): Shuriken {
+    if (!Shuriken.instance) {
+      Shuriken.instance = new Shuriken();
     }
+    return Shuriken.instance;
+  }
+
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Shuriken.GetInstance() as T;
+  }
 }
 
 export default Shuriken;

@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Haze implements IAbility {
-    private static instance: Haze;
+  private static instance: Haze;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Haze";
-        this.helpFile = `
+  constructor() {
+    this.name = "Haze";
+    this.helpFile = `
 HAZE
 
 As Masters of the Mind, the Mentalist can cast a haze over their enemy
@@ -21,26 +21,26 @@ thinking. This spell gains power as the mentalist rises in levels.
 
 Syntax: cast 'haze' <target>
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (Haze.instance === undefined) {
-            Haze.instance = this;
-        }
+    if (Haze.instance === undefined) {
+      Haze.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Haze {
-        if (!Haze.instance) {
-            Haze.instance = new Haze();
-        }
-        return Haze.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Haze {
+    if (!Haze.instance) {
+      Haze.instance = new Haze();
     }
+    return Haze.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Haze.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Haze.GetInstance() as T;
+  }
 }
 
 export default Haze;

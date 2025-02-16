@@ -4,46 +4,46 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class DoorBash implements IAbility {
-    private static instance: DoorBash;
+  private static instance: DoorBash;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Door Bash";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help doorbash
+  constructor() {
+    this.name = "Door Bash";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help doorbash
 DOOR BASH
 A powerful technique for breaking down doors or obstacles.`;
 
-        this.manualDescription = "";
+    this.manualDescription = "";
 
-        if (DoorBash.instance === undefined) {
-            DoorBash.instance = this;
-        }
+    if (DoorBash.instance === undefined) {
+      DoorBash.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): DoorBash {
-        if (!DoorBash.instance) {
-            DoorBash.instance = new DoorBash();
-        }
-        return DoorBash.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): DoorBash {
+    if (!DoorBash.instance) {
+      DoorBash.instance = new DoorBash();
     }
+    return DoorBash.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return DoorBash.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return DoorBash.GetInstance() as T;
+  }
 }
 
 export default DoorBash;

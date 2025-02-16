@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Envenom implements IAbility {
-    private static instance: Envenom;
+  private static instance: Envenom;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Envenom";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `'ENVENOM'
+  constructor() {
+    this.name = "Envenom";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `'ENVENOM'
 
 Syntax: Envenom <item>
 
@@ -39,23 +39,23 @@ the poison burns through his bloodstream. But be careful, blade venom
 evaporates quickly and is rendered almost powerless by repeated blows in
 combat. Weapons that already possess a flag cannot be envenomed.`;
 
-        if (Envenom.instance === undefined) {
-            Envenom.instance = this;
-        }
+    if (Envenom.instance === undefined) {
+      Envenom.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Envenom {
-        if (!Envenom.instance) {
-            Envenom.instance = new Envenom();
-        }
-        return Envenom.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Envenom {
+    if (!Envenom.instance) {
+      Envenom.instance = new Envenom();
     }
+    return Envenom.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Envenom.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Envenom.GetInstance() as T;
+  }
 }
 
 export default Envenom;

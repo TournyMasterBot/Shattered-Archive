@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class HeatMetal implements IAbility {
-    private static instance: HeatMetal;
+  private static instance: HeatMetal;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Heat Metal";
-        this.helpFile = `
+  constructor() {
+    this.name = "Heat Metal";
+    this.helpFile = `
 help 'Heat Metal'
 'HEAT METAL'
 HEAT METAL
@@ -30,26 +30,26 @@ spell when you are EQless is illegal.
 
 See also - ATTACK
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (HeatMetal.instance === undefined) {
-            HeatMetal.instance = this;
-        }
+    if (HeatMetal.instance === undefined) {
+      HeatMetal.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): HeatMetal {
-        if (!HeatMetal.instance) {
-            HeatMetal.instance = new HeatMetal();
-        }
-        return HeatMetal.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): HeatMetal {
+    if (!HeatMetal.instance) {
+      HeatMetal.instance = new HeatMetal();
     }
+    return HeatMetal.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return HeatMetal.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return HeatMetal.GetInstance() as T;
+  }
 }
 
 export default HeatMetal;

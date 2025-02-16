@@ -17,43 +17,43 @@ import Jest from "@shared/types/ability-types/spells/jest";
 import ContinualLight from "@shared/types/ability-types/spells/continual-light";
 
 export class EnhancedEnchantment implements IAbilityGroup {
-    static instance: EnhancedEnchantment;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: EnhancedEnchantment;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.EnhancedEnchantment;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            Disenchant.GetInstance().Get(),
-            RestoreArmor.GetInstance().Get(),
-            AnimateObject.GetInstance().Get(),
-            InvoluntaryWizardry.GetInstance().Get(),
-            Sequestor.GetInstance().Get(),
-            WitheringEnchant.GetInstance().Get(),
-            InterlaceSpirit.GetInstance().Get(),
-            WavesOfWeariness.GetInstance().Get(),
-            EnchantingTouch.GetInstance().Get(),
-            RestoreWeapon.GetInstance().Get(),
-            EnchantGem.GetInstance().Get(),
-            Jest.GetInstance().Get(),
-            ContinualLight.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.EnhancedEnchantment;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      Disenchant.GetInstance().Get(),
+      RestoreArmor.GetInstance().Get(),
+      AnimateObject.GetInstance().Get(),
+      InvoluntaryWizardry.GetInstance().Get(),
+      Sequestor.GetInstance().Get(),
+      WitheringEnchant.GetInstance().Get(),
+      InterlaceSpirit.GetInstance().Get(),
+      WavesOfWeariness.GetInstance().Get(),
+      EnchantingTouch.GetInstance().Get(),
+      RestoreWeapon.GetInstance().Get(),
+      EnchantGem.GetInstance().Get(),
+      Jest.GetInstance().Get(),
+      ContinualLight.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): EnhancedEnchantment {
-        if (!EnhancedEnchantment.instance) {
-            EnhancedEnchantment.instance = new EnhancedEnchantment();
-        }
-        return EnhancedEnchantment.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): EnhancedEnchantment {
+    if (!EnhancedEnchantment.instance) {
+      EnhancedEnchantment.instance = new EnhancedEnchantment();
     }
+    return EnhancedEnchantment.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return EnhancedEnchantment.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return EnhancedEnchantment.GetInstance() as T;
+  }
 }
 
 export default EnhancedEnchantment;

@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Ninjato implements IAbility {
-    private static instance: Ninjato;
+  private static instance: Ninjato;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Ninjato";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Passive;
-        this.helpFile = `NINJATO
+  constructor() {
+    this.name = "Ninjato";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Passive;
+    this.helpFile = `NINJATO
 
 Syntax: Passive Skill
 
@@ -34,23 +34,23 @@ passive skill, born of diligent training and keen awareness.
 
 SEE ALSO:  NINJA`;
 
-        if (Ninjato.instance === undefined) {
-            Ninjato.instance = this;
-        }
+    if (Ninjato.instance === undefined) {
+      Ninjato.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Ninjato {
-        if (!Ninjato.instance) {
-            Ninjato.instance = new Ninjato();
-        }
-        return Ninjato.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Ninjato {
+    if (!Ninjato.instance) {
+      Ninjato.instance = new Ninjato();
     }
+    return Ninjato.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Ninjato.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Ninjato.GetInstance() as T;
+  }
 }
 
 export default Ninjato;

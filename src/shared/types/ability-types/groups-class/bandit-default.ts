@@ -15,41 +15,41 @@ import PotionSmash from "@shared/types/ability-types/skills/potion-smash";
 import Riot from "@shared/types/ability-types/skills/riot";
 
 export class BanditDefault implements IAbilityGroup {
-    static instance: BanditDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: BanditDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.BanditDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            new PanicEnemy(),
-            new Waylay(),
-            new Stealth(),
-            new Peek(),
-            new SecondAttack(),
-            new Inspect(),
-            new Backstab(),
-            new Steal(),
-            new Halt(),
-            new PotionSmash(),
-            new Riot()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.BanditDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      new PanicEnemy(),
+      new Waylay(),
+      new Stealth(),
+      new Peek(),
+      new SecondAttack(),
+      new Inspect(),
+      new Backstab(),
+      new Steal(),
+      new Halt(),
+      new PotionSmash(),
+      new Riot(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): BanditDefault {
-        if (!BanditDefault.instance) {
-            BanditDefault.instance = new BanditDefault();
-        }
-        return BanditDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): BanditDefault {
+    if (!BanditDefault.instance) {
+      BanditDefault.instance = new BanditDefault();
     }
+    return BanditDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return BanditDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return BanditDefault.GetInstance() as T;
+  }
 }
 
 export default BanditDefault;

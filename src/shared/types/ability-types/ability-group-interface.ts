@@ -3,11 +3,11 @@ import AbilityGroup from "./ability-group";
 import AbilityGroupType from "./ability-group-type";
 
 interface IAbilityGroup {
-    abilityGroup: AbilityGroup;
-    abilityGroupType: AbilityGroupType;
-    abilities: IAbility[];
+  abilityGroup: AbilityGroup;
+  abilityGroupType: AbilityGroupType;
+  abilities: IAbility[];
 
-    Get<T>(): T;
+  Get<T>(): T;
 }
 
 export default IAbilityGroup;

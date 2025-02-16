@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Gate implements IAbility {
-    private static instance: Gate;
+  private static instance: Gate;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Gate";
-        this.helpFile = `
+  constructor() {
+    this.name = "Gate";
+    this.helpFile = `
 help Gate
 GATE
 GATE
@@ -28,26 +28,26 @@ immune to gate, as well as any player who has no summon set.  Clan members
 may not be gated to except by their fellow Clan members. Gate is not powerful
 enough to cross the vast oceans to another continent.
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (Gate.instance === undefined) {
-            Gate.instance = this;
-        }
+    if (Gate.instance === undefined) {
+      Gate.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Gate {
-        if (!Gate.instance) {
-            Gate.instance = new Gate();
-        }
-        return Gate.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Gate {
+    if (!Gate.instance) {
+      Gate.instance = new Gate();
     }
+    return Gate.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Gate.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Gate.GetInstance() as T;
+  }
 }
 
 export default Gate;
