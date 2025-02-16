@@ -15,41 +15,41 @@ import ShieldOfWords from "../songs/shield-of-words";
 import RoostersCrow from "../songs/roosters-crow";
 
 export class HymnsOfLife implements IAbilityGroup {
-    static instance: HymnsOfLife;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: HymnsOfLife;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.HymnsOfLife;
-        this.abilityGroupType = AbilityGroupType.Songs;
-        this.abilities = [
-            SongOfHealing.GetInstance().Get(),
-            TorchBurns.GetInstance().Get(),
-            WakeTheDead.GetInstance().Get(),
-            MarriageSong.GetInstance().Get(),
-            TravelTune.GetInstance().Get(),
-            BottlesOfBeer.GetInstance().Get(),
-            RevealAll.GetInstance().Get(),
-            SongOfPeace.GetInstance().Get(),
-            StoneFountain.GetInstance().Get(),
-            ShieldOfWords.GetInstance().Get(),
-            RoostersCrow.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.HymnsOfLife;
+    this.abilityGroupType = AbilityGroupType.Songs;
+    this.abilities = [
+      SongOfHealing.GetInstance().Get(),
+      TorchBurns.GetInstance().Get(),
+      WakeTheDead.GetInstance().Get(),
+      MarriageSong.GetInstance().Get(),
+      TravelTune.GetInstance().Get(),
+      BottlesOfBeer.GetInstance().Get(),
+      RevealAll.GetInstance().Get(),
+      SongOfPeace.GetInstance().Get(),
+      StoneFountain.GetInstance().Get(),
+      ShieldOfWords.GetInstance().Get(),
+      RoostersCrow.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): HymnsOfLife {
-        if (!HymnsOfLife.instance) {
-            HymnsOfLife.instance = new HymnsOfLife();
-        }
-        return HymnsOfLife.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): HymnsOfLife {
+    if (!HymnsOfLife.instance) {
+      HymnsOfLife.instance = new HymnsOfLife();
     }
+    return HymnsOfLife.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return HymnsOfLife.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return HymnsOfLife.GetInstance() as T;
+  }
 }
 
 export default HymnsOfLife;

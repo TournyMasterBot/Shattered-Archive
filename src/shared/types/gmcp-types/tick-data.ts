@@ -1,5 +1,5 @@
 interface TickData {
-    time: string;
+  time: string;
 }
 
 export default TickData;

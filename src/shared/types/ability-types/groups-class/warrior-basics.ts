@@ -6,32 +6,32 @@ import Sword from "@shared/types/ability-types/skills/sword";
 import SecondAttack from "@shared/types/ability-types/skills/second-attack";
 
 export class WarriorBasics implements IAbilityGroup {
-    static instance: WarriorBasics;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: WarriorBasics;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.WarriorBasics;
-        this.abilityGroupType = AbilityGroupType.Basics;
-        this.abilities = [
-            Sword.GetInstance().Get(),
-            SecondAttack.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.WarriorBasics;
+    this.abilityGroupType = AbilityGroupType.Basics;
+    this.abilities = [
+      Sword.GetInstance().Get(),
+      SecondAttack.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): WarriorBasics {
-        if (!WarriorBasics.instance) {
-            WarriorBasics.instance = new WarriorBasics();
-        }
-        return WarriorBasics.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): WarriorBasics {
+    if (!WarriorBasics.instance) {
+      WarriorBasics.instance = new WarriorBasics();
     }
+    return WarriorBasics.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return WarriorBasics.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return WarriorBasics.GetInstance() as T;
+  }
 }
 
 export default WarriorBasics;

@@ -14,40 +14,40 @@ import SummonTree from "@shared/types/ability-types/spells/summon-tree";
 import SunBlast from "@shared/types/ability-types/spells/sun-blast";
 
 export class Eldritch implements IAbilityGroup {
-    static instance: Eldritch;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Eldritch;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Eldritch;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            Scorch.GetInstance().Get(),
-            Firebolt.GetInstance().Get(),
-            HasteCrater.GetInstance().Get(),
-            NaturesGrip.GetInstance().Get(),
-            SummonTree.GetInstance().Get(),
-            ShieldCrater.GetInstance().Get(),
-            SunBlast.GetInstance().Get(),
-            Root.GetInstance().Get(),
-            SummonStonelord.GetInstance().Get(),
-            SummonMountainbeast.GetInstance().Get(),
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Eldritch;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      Scorch.GetInstance().Get(),
+      Firebolt.GetInstance().Get(),
+      HasteCrater.GetInstance().Get(),
+      NaturesGrip.GetInstance().Get(),
+      SummonTree.GetInstance().Get(),
+      ShieldCrater.GetInstance().Get(),
+      SunBlast.GetInstance().Get(),
+      Root.GetInstance().Get(),
+      SummonStonelord.GetInstance().Get(),
+      SummonMountainbeast.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Eldritch {
-        if (!Eldritch.instance) {
-            Eldritch.instance = new Eldritch();
-        }
-        return Eldritch.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Eldritch {
+    if (!Eldritch.instance) {
+      Eldritch.instance = new Eldritch();
     }
+    return Eldritch.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Eldritch.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Eldritch.GetInstance() as T;
+  }
 }
 
 export default Eldritch;

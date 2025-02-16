@@ -15,41 +15,41 @@ import Whip from "@shared/types/ability-types/skills/whip";
 import Staff from "@shared/types/ability-types/skills/staff";
 
 export class ConfessorDefault implements IAbilityGroup {
-    static instance: ConfessorDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: ConfessorDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.ConfessorDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            ...Purification.GetInstance().Get<Purification>().abilities,
-            ...Creation.GetInstance().Get<Creation>().abilities,
-            ...Protective.GetInstance().Get<Protective>().abilities,
-            ...Detection.GetInstance().Get<Detection>().abilities,
-            ...Weather.GetInstance().Get<Weather>().abilities,
-            ...Curative.GetInstance().Get<Curative>().abilities,
-            ...Benedictions.GetInstance().Get<Benedictions>().abilities,
-            ...Transportation.GetInstance().Get<Transportation>().abilities,
-            ...Healing.GetInstance().Get<Healing>().abilities,
-            new Whip(),
-            new Staff()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.ConfessorDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      ...Purification.GetInstance().Get<Purification>().abilities,
+      ...Creation.GetInstance().Get<Creation>().abilities,
+      ...Protective.GetInstance().Get<Protective>().abilities,
+      ...Detection.GetInstance().Get<Detection>().abilities,
+      ...Weather.GetInstance().Get<Weather>().abilities,
+      ...Curative.GetInstance().Get<Curative>().abilities,
+      ...Benedictions.GetInstance().Get<Benedictions>().abilities,
+      ...Transportation.GetInstance().Get<Transportation>().abilities,
+      ...Healing.GetInstance().Get<Healing>().abilities,
+      new Whip(),
+      new Staff(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): ConfessorDefault {
-        if (!ConfessorDefault.instance) {
-            ConfessorDefault.instance = new ConfessorDefault();
-        }
-        return ConfessorDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): ConfessorDefault {
+    if (!ConfessorDefault.instance) {
+      ConfessorDefault.instance = new ConfessorDefault();
     }
+    return ConfessorDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return ConfessorDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return ConfessorDefault.GetInstance() as T;
+  }
 }
 
 export default ConfessorDefault;

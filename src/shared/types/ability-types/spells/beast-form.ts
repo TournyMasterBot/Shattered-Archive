@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Beastform implements IAbility {
-    private static instance: Beastform;
+  private static instance: Beastform;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Beastform";
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `
+  constructor() {
+    this.name = "Beastform";
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `
 help beastform
 beastform
 Syntax: cast beastform <bear, moose, coyote>
@@ -33,23 +33,23 @@ shaman and allow him to change his form into that of the beast.
 Revert returns the shaman to his/her normal form.
 `;
 
-        if (Beastform.instance === undefined) {
-            Beastform.instance = this;
-        }
+    if (Beastform.instance === undefined) {
+      Beastform.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Beastform {
-        if (!Beastform.instance) {
-            Beastform.instance = new Beastform();
-        }
-        return Beastform.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Beastform {
+    if (!Beastform.instance) {
+      Beastform.instance = new Beastform();
     }
+    return Beastform.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Beastform.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Beastform.GetInstance() as T;
+  }
 }
 
 export default Beastform;

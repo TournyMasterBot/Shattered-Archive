@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class AbandonHope implements IAbility {
-    private static instance: AbandonHope;
+  private static instance: AbandonHope;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Abandon Hope";
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `
+  constructor() {
+    this.name = "Abandon Hope";
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `
 ABANDON HOPE
 
 Syntax: cast 'abandon hope' target 
@@ -35,23 +35,23 @@ Groups containing this spell: Mentalism
 SEE ALSO:  MENTALIST, MENTALISM
 `;
 
-        if (AbandonHope.instance === undefined) {
-            AbandonHope.instance = this;
-        }
+    if (AbandonHope.instance === undefined) {
+      AbandonHope.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): AbandonHope {
-        if (!AbandonHope.instance) {
-            AbandonHope.instance = new AbandonHope();
-        }
-        return AbandonHope.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): AbandonHope {
+    if (!AbandonHope.instance) {
+      AbandonHope.instance = new AbandonHope();
     }
+    return AbandonHope.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return AbandonHope.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return AbandonHope.GetInstance() as T;
+  }
 }
 
 export default AbandonHope;

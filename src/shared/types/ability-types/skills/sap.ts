@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Sap implements IAbility {
-    private static instance: Sap;
+  private static instance: Sap;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Sap";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `
+  constructor() {
+    this.name = "Sap";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `
 SAP
 
 A charlatan, being the trickster that they are, tends to be well versed in
@@ -36,23 +36,23 @@ charlatan is in regard to their opponent.
 See also : Help Charlatan
 `;
 
-        if (Sap.instance === undefined) {
-            Sap.instance = this;
-        }
+    if (Sap.instance === undefined) {
+      Sap.instance = this;
     }
-    
-    // Method to get the single instance of the class
-    public static GetInstance(): Sap {
-        if (!Sap.instance) {
-            Sap.instance = new Sap();
-        }
-        return Sap.instance;
-    }
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Sap.GetInstance() as T;
+  // Method to get the single instance of the class
+  public static GetInstance(): Sap {
+    if (!Sap.instance) {
+      Sap.instance = new Sap();
     }
+    return Sap.instance;
+  }
+
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Sap.GetInstance() as T;
+  }
 }
 
 export default Sap;

@@ -4,16 +4,16 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class ChainLightning implements IAbility {
-    private static instance: ChainLightning;
+  private static instance: ChainLightning;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Chain Lightning";
-        this.helpFile = `
+  constructor() {
+    this.name = "Chain Lightning";
+    this.helpFile = `
 help 'Chain Lightning'
 'CHAIN LIGHTNING'
 'CHAIN LIGHTNING'
@@ -30,26 +30,26 @@ Chain lightning is most effective when used on groups of creatures.
 
 See also - COMBAT 
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (ChainLightning.instance === undefined) {
-            ChainLightning.instance = this;
-        }
+    if (ChainLightning.instance === undefined) {
+      ChainLightning.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): ChainLightning {
-        if (!ChainLightning.instance) {
-            ChainLightning.instance = new ChainLightning();
-        }
-        return ChainLightning.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): ChainLightning {
+    if (!ChainLightning.instance) {
+      ChainLightning.instance = new ChainLightning();
     }
+    return ChainLightning.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return ChainLightning.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return ChainLightning.GetInstance() as T;
+  }
 }
 
 export default ChainLightning;

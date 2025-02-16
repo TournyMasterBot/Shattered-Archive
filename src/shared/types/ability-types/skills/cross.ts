@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Cross implements IAbility {
-    private static instance: Cross;
+  private static instance: Cross;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Cross";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `
+  constructor() {
+    this.name = "Cross";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `
 help Cross
 mastery sword florentine flurry cross
 Mastery of the Sword
@@ -41,23 +41,23 @@ cross          While using two swords, the armsman may push down their
 This group is available to the following classes: ARMSMAN
 `;
 
-        if (Cross.instance === undefined) {
-            Cross.instance = this;
-        }
+    if (Cross.instance === undefined) {
+      Cross.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Cross {
-        if (!Cross.instance) {
-            Cross.instance = new Cross();
-        }
-        return Cross.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Cross {
+    if (!Cross.instance) {
+      Cross.instance = new Cross();
     }
+    return Cross.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Cross.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Cross.GetInstance() as T;
+  }
 }
 
 export default Cross;

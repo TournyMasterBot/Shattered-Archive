@@ -10,36 +10,36 @@ import SecondAttack from "@shared/types/ability-types/skills/second-attack";
 import SuckerPunch from "@shared/types/ability-types/skills/sucker-punch";
 
 export class BrewmasterDefault implements IAbilityGroup {
-    static instance: BrewmasterDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: BrewmasterDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.BrewmasterDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            new SecondAttack(),
-            new KegToss(),
-            new Dodge(),
-            new SuckerPunch(),
-            new Haymaker(),
-            new FireBreather()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.BrewmasterDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      new SecondAttack(),
+      new KegToss(),
+      new Dodge(),
+      new SuckerPunch(),
+      new Haymaker(),
+      new FireBreather(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): BrewmasterDefault {
-        if (!BrewmasterDefault.instance) {
-            BrewmasterDefault.instance = new BrewmasterDefault();
-        }
-        return BrewmasterDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): BrewmasterDefault {
+    if (!BrewmasterDefault.instance) {
+      BrewmasterDefault.instance = new BrewmasterDefault();
     }
+    return BrewmasterDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return BrewmasterDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return BrewmasterDefault.GetInstance() as T;
+  }
 }
 
 export default BrewmasterDefault;

@@ -13,39 +13,39 @@ import Healing from "../groups-spells/healing";
 import Unholy from "../groups-spells/unholy";
 
 export class ShadowknightDefault implements IAbilityGroup {
-    static instance: ShadowknightDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: ShadowknightDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.ShadowknightDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            ...Healing.GetInstance().Get<Healing>().abilities,
-            ...Curative.GetInstance().Get<Curative>().abilities,
-            ...Unholy.GetInstance().Get<Unholy>().abilities,
-            ...Benedictions.GetInstance().Get<Benedictions>().abilities,
-            Riding.GetInstance().Get(),
-            Broadswing.GetInstance().Get(),
-            Polearm.GetInstance().Get(),
-            UnholyRapture.GetInstance().Get(),
-            ShieldDisarm.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.ShadowknightDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      ...Healing.GetInstance().Get<Healing>().abilities,
+      ...Curative.GetInstance().Get<Curative>().abilities,
+      ...Unholy.GetInstance().Get<Unholy>().abilities,
+      ...Benedictions.GetInstance().Get<Benedictions>().abilities,
+      Riding.GetInstance().Get(),
+      Broadswing.GetInstance().Get(),
+      Polearm.GetInstance().Get(),
+      UnholyRapture.GetInstance().Get(),
+      ShieldDisarm.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): ShadowknightDefault {
-        if (!ShadowknightDefault.instance) {
-            ShadowknightDefault.instance = new ShadowknightDefault();
-        }
-        return ShadowknightDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): ShadowknightDefault {
+    if (!ShadowknightDefault.instance) {
+      ShadowknightDefault.instance = new ShadowknightDefault();
     }
+    return ShadowknightDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return ShadowknightDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return ShadowknightDefault.GetInstance() as T;
+  }
 }
 
 export default ShadowknightDefault;

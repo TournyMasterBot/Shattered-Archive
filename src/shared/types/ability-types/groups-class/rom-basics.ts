@@ -11,38 +11,38 @@ import Swim from "@shared/types/ability-types/skills/swim";
 import Wands from "@shared/types/ability-types/skills/wands";
 
 export class RomBasics implements IAbilityGroup {
-    private static instance: RomBasics;
+  private static instance: RomBasics;
 
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.RomBasics;
-        this.abilityGroupType = AbilityGroupType.Basics;
-        this.abilities = [
-            new Scrolls(),
-            new Recall(),
-            new Dig(),
-            new Staves(),
-            new Swim(),
-            new Wands(),
-            new Age()
-        ];
+  constructor() {
+    this.abilityGroup = AbilityGroup.RomBasics;
+    this.abilityGroupType = AbilityGroupType.Basics;
+    this.abilities = [
+      new Scrolls(),
+      new Recall(),
+      new Dig(),
+      new Staves(),
+      new Swim(),
+      new Wands(),
+      new Age(),
+    ];
+  }
+
+  // Method to get the single instance of the class
+  public static GetInstance(): RomBasics {
+    if (!RomBasics.instance) {
+      RomBasics.instance = new RomBasics();
     }
+    return RomBasics.instance;
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): RomBasics {
-        if (!RomBasics.instance) {
-            RomBasics.instance = new RomBasics();
-        }
-        return RomBasics.instance;
-    }
-
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return RomBasics.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return RomBasics.GetInstance() as T;
+  }
 }
 
 export default RomBasics;

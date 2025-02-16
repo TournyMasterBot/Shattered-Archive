@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Bladesong implements IAbility {
-    private static instance: Bladesong;
+  private static instance: Bladesong;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Bladesong";
-        this.helpFile = `BLADESONG
+  constructor() {
+    this.name = "Bladesong";
+    this.helpFile = `BLADESONG
 The Bladesong grants an elf extra hitting potential, greater damage on
 successful hits, and occasionally an extra attack in a single combat round. 
 Because of the quick movements required while using the Bladesong, the
@@ -26,26 +26,26 @@ the Bladesong have claimed that a Bladesinger can disarm a weapon in a
 manner that sends it flying through the air, and amazingly into the elf's
 hands.  This rumor has not been substantiated.`;
 
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (Bladesong.instance === undefined) {
-            Bladesong.instance = this;
-        }
+    if (Bladesong.instance === undefined) {
+      Bladesong.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Bladesong {
-        if (!Bladesong.instance) {
-            Bladesong.instance = new Bladesong();
-        }
-        return Bladesong.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Bladesong {
+    if (!Bladesong.instance) {
+      Bladesong.instance = new Bladesong();
     }
+    return Bladesong.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Bladesong.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Bladesong.GetInstance() as T;
+  }
 }
 
 export default Bladesong;

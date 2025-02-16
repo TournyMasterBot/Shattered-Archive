@@ -15,41 +15,41 @@ import Transportation from "../groups-spells/transportation";
 import Witchcraft from "../groups-spells/witchcraft";
 
 export class WarlockDefault implements IAbilityGroup {
-    static instance: WarlockDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: WarlockDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.WarlockDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            ...Detection.GetInstance().Get<Detection>().abilities,
-            ...Protective.GetInstance().Get<Protective>().abilities,
-            ...Enhancement.GetInstance().Get<Enhancement>().abilities,
-            ...Illusion.GetInstance().Get<Illusion>().abilities,
-            ...Transportation.GetInstance().Get<Transportation>().abilities,
-            ...Witchcraft.GetInstance().Get<Witchcraft>().abilities,
-            ...Maladictions.GetInstance().Get<Maladictions>().abilities,
-            Toss.GetInstance().Get(),
-            ApplyPotion.GetInstance().Get(),
-            Astrology.GetInstance().Get(),
-            Brew.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.WarlockDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      ...Detection.GetInstance().Get<Detection>().abilities,
+      ...Protective.GetInstance().Get<Protective>().abilities,
+      ...Enhancement.GetInstance().Get<Enhancement>().abilities,
+      ...Illusion.GetInstance().Get<Illusion>().abilities,
+      ...Transportation.GetInstance().Get<Transportation>().abilities,
+      ...Witchcraft.GetInstance().Get<Witchcraft>().abilities,
+      ...Maladictions.GetInstance().Get<Maladictions>().abilities,
+      Toss.GetInstance().Get(),
+      ApplyPotion.GetInstance().Get(),
+      Astrology.GetInstance().Get(),
+      Brew.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): WarlockDefault {
-        if (!WarlockDefault.instance) {
-            WarlockDefault.instance = new WarlockDefault();
-        }
-        return WarlockDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): WarlockDefault {
+    if (!WarlockDefault.instance) {
+      WarlockDefault.instance = new WarlockDefault();
     }
+    return WarlockDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return WarlockDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return WarlockDefault.GetInstance() as T;
+  }
 }
 
 export default WarlockDefault;

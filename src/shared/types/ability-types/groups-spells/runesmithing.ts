@@ -16,42 +16,42 @@ import Destruction from "@shared/types/ability-types/spells/destruction";
 import CreateRunehammer from "@shared/types/ability-types/spells/create-runehammer";
 
 export class Runesmithing implements IAbilityGroup {
-    static instance: Runesmithing;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Runesmithing;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Runesmithing;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            CreateRunestaff.GetInstance().Get(),
-            SpellEating.GetInstance().Get(),
-            Furnace.GetInstance().Get(),
-            CliathsHammer.GetInstance().Get(),
-            Courage.GetInstance().Get(),
-            Fortitude.GetInstance().Get(),
-            SureStriking.GetInstance().Get(),
-            IronGrip.GetInstance().Get(),
-            Damned.GetInstance().Get(),
-            Breaking.GetInstance().Get(),
-            Destruction.GetInstance().Get(),
-            CreateRunehammer.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Runesmithing;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      CreateRunestaff.GetInstance().Get(),
+      SpellEating.GetInstance().Get(),
+      Furnace.GetInstance().Get(),
+      CliathsHammer.GetInstance().Get(),
+      Courage.GetInstance().Get(),
+      Fortitude.GetInstance().Get(),
+      SureStriking.GetInstance().Get(),
+      IronGrip.GetInstance().Get(),
+      Damned.GetInstance().Get(),
+      Breaking.GetInstance().Get(),
+      Destruction.GetInstance().Get(),
+      CreateRunehammer.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Runesmithing {
-        if (!Runesmithing.instance) {
-            Runesmithing.instance = new Runesmithing();
-        }
-        return Runesmithing.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Runesmithing {
+    if (!Runesmithing.instance) {
+      Runesmithing.instance = new Runesmithing();
     }
+    return Runesmithing.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Runesmithing.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Runesmithing.GetInstance() as T;
+  }
 }
 
 export default Runesmithing;

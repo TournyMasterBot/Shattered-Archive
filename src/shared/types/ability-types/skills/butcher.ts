@@ -3,17 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Butcher implements IAbility {
-    private static instance: Butcher;
+  private static instance: Butcher;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Butcher";
-        this.helpFile = `
+  constructor() {
+    this.name = "Butcher";
+    this.helpFile = `
 BUTCHER
 BUTCHER
 Syntax: butcher corpse
@@ -24,27 +24,27 @@ there is more than one corpse in a room, you can use the second syntax
 Corpses must be empty of all equipment before they can be butchered.  
 see also: 'RANGER' 'BARBARIAN' 'SHAMAN'
 `;
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.manualDescription = "";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.manualDescription = "";
 
-        if (Butcher.instance === undefined) {
-            Butcher.instance = this;
-        }
+    if (Butcher.instance === undefined) {
+      Butcher.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Butcher {
-        if (!Butcher.instance) {
-            Butcher.instance = new Butcher();
-        }
-        return Butcher.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Butcher {
+    if (!Butcher.instance) {
+      Butcher.instance = new Butcher();
     }
+    return Butcher.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Butcher.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Butcher.GetInstance() as T;
+  }
 }
 
 export default Butcher;

@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Blackstaff implements IAbility {
-    private static instance: Blackstaff;
+  private static instance: Blackstaff;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Blackstaff";
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `
+  constructor() {
+    this.name = "Blackstaff";
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `
 BLACKSTAFF
 
 Syntax:  cast 'blackstaff'
@@ -44,23 +44,23 @@ Groups containing this spell: Alteration
 SEE ALSO:  ALTERATION, TRANSMUTER
 `;
 
-        if (Blackstaff.instance === undefined) {
-            Blackstaff.instance = this;
-        }
+    if (Blackstaff.instance === undefined) {
+      Blackstaff.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Blackstaff {
-        if (!Blackstaff.instance) {
-            Blackstaff.instance = new Blackstaff();
-        }
-        return Blackstaff.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Blackstaff {
+    if (!Blackstaff.instance) {
+      Blackstaff.instance = new Blackstaff();
     }
+    return Blackstaff.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Blackstaff.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Blackstaff.GetInstance() as T;
+  }
 }
 
 export default Blackstaff;

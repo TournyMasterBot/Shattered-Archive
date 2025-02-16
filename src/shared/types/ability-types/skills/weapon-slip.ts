@@ -4,44 +4,43 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class WeaponSlip implements IAbility {
-    private static instance: WeaponSlip;
+  private static instance: WeaponSlip;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Weapon Slip";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile =
-`
+  constructor() {
+    this.name = "Weapon Slip";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `
 weapon slip
 Weapon Slip is a 10 tick buff that gives the Nightshade a 20% chance to
 counter any parry. However, the Nightshade also takes a 25% penalty to
 their own ability to parry.
 `;
-    }
-    
-    // Method to get the single instance of the class
-    public static GetInstance(): WeaponSlip {
-        if (!WeaponSlip.instance) {
-            WeaponSlip.instance = new WeaponSlip();
-        }
-        return WeaponSlip.instance;
-    }
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return WeaponSlip.GetInstance() as T;
+  // Method to get the single instance of the class
+  public static GetInstance(): WeaponSlip {
+    if (!WeaponSlip.instance) {
+      WeaponSlip.instance = new WeaponSlip();
     }
+    return WeaponSlip.instance;
+  }
+
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return WeaponSlip.GetInstance() as T;
+  }
 }
 
 export default WeaponSlip;

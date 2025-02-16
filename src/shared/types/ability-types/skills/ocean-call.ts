@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class OceanCall implements IAbility {
-    private static instance: OceanCall;
+  private static instance: OceanCall;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Ocean Call";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `OCEAN CALL
+  constructor() {
+    this.name = "Ocean Call";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `OCEAN CALL
 
 Syntax:  Ocean
 
@@ -33,23 +33,23 @@ Groups containing this skill:  Swashbuckler
 
 SEE ALSO:  SWASHBUCKLER`;
 
-        if (OceanCall.instance === undefined) {
-            OceanCall.instance = this;
-        }
+    if (OceanCall.instance === undefined) {
+      OceanCall.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): OceanCall {
-        if (!OceanCall.instance) {
-            OceanCall.instance = new OceanCall();
-        }
-        return OceanCall.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): OceanCall {
+    if (!OceanCall.instance) {
+      OceanCall.instance = new OceanCall();
     }
+    return OceanCall.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return OceanCall.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return OceanCall.GetInstance() as T;
+  }
 }
 
 export default OceanCall;

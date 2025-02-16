@@ -4,47 +4,48 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Dropkick implements IAbility {
-    private static instance: Dropkick;
+  private static instance: Dropkick;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Dropkick";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help dropkick
+  constructor() {
+    this.name = "Dropkick";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help dropkick
 DROPKICK
 Syntax: dropkick <target>
 Run at your enemy and kick them in the chest with both feet, causing stun.`;
 
-        this.manualDescription = "Run at your enemy and kick them in the chest with both feet, causing stun.";
+    this.manualDescription =
+      "Run at your enemy and kick them in the chest with both feet, causing stun.";
 
-        if (Dropkick.instance === undefined) {
-            Dropkick.instance = this;
-        }
+    if (Dropkick.instance === undefined) {
+      Dropkick.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Dropkick {
-        if (!Dropkick.instance) {
-            Dropkick.instance = new Dropkick();
-        }
-        return Dropkick.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Dropkick {
+    if (!Dropkick.instance) {
+      Dropkick.instance = new Dropkick();
     }
+    return Dropkick.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Dropkick.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Dropkick.GetInstance() as T;
+  }
 }
 
 export default Dropkick;

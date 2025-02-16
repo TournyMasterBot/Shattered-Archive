@@ -4,43 +4,43 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class PixieDust implements IAbility {
-    private static instance: PixieDust;
+  private static instance: PixieDust;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Pixie Dust";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = "";
-        this.manualDescription = "";
+  constructor() {
+    this.name = "Pixie Dust";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = "";
+    this.manualDescription = "";
 
-        if (PixieDust.instance === undefined) {
-            PixieDust.instance = this;
-        }
+    if (PixieDust.instance === undefined) {
+      PixieDust.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): PixieDust {
-        if (!PixieDust.instance) {
-            PixieDust.instance = new PixieDust();
-        }
-        return PixieDust.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): PixieDust {
+    if (!PixieDust.instance) {
+      PixieDust.instance = new PixieDust();
     }
+    return PixieDust.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return PixieDust.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return PixieDust.GetInstance() as T;
+  }
 }
 
 export default PixieDust;

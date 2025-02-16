@@ -15,41 +15,41 @@ import WarHymns from "../groups-songs/war-hymns";
 import HymnsOfLife from "../groups-songs/hymns-of-life";
 
 export class JongleurDefault implements IAbilityGroup {
-    static instance: JongleurDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: JongleurDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.JongleurDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            ...WarHymns.GetInstance().Get<WarHymns>().abilities,
-            ...HymnsOfLife.GetInstance().Get<HymnsOfLife>().abilities,
-            Dodge.GetInstance().Get(),
-            EnhancedDamage.GetInstance().Get(),
-            LightShow.GetInstance().Get(),
-            Tumbling.GetInstance().Get(),
-            PolevaultKick.GetInstance().Get(),
-            DangerSense.GetInstance().Get(),
-            SecondAttack.GetInstance().Get(),
-            Parry.GetInstance().Get(),
-            EntertainCrowd.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.JongleurDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      ...WarHymns.GetInstance().Get<WarHymns>().abilities,
+      ...HymnsOfLife.GetInstance().Get<HymnsOfLife>().abilities,
+      Dodge.GetInstance().Get(),
+      EnhancedDamage.GetInstance().Get(),
+      LightShow.GetInstance().Get(),
+      Tumbling.GetInstance().Get(),
+      PolevaultKick.GetInstance().Get(),
+      DangerSense.GetInstance().Get(),
+      SecondAttack.GetInstance().Get(),
+      Parry.GetInstance().Get(),
+      EntertainCrowd.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): JongleurDefault {
-        if (!JongleurDefault.instance) {
-            JongleurDefault.instance = new JongleurDefault();
-        }
-        return JongleurDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): JongleurDefault {
+    if (!JongleurDefault.instance) {
+      JongleurDefault.instance = new JongleurDefault();
     }
+    return JongleurDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return JongleurDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return JongleurDefault.GetInstance() as T;
+  }
 }
 
 export default JongleurDefault;

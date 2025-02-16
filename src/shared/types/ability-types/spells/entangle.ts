@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Entangle implements IAbility {
-    private static instance: Entangle;
+  private static instance: Entangle;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Entangle";
-        this.helpFile = `
+  constructor() {
+    this.name = "Entangle";
+    this.helpFile = `
 help Entangle
 ENTANGLE
 ENTANGLE
@@ -28,26 +28,26 @@ entangle a victim, the spell will only be successful in certain sectors.
 
 See also - NATURE RANGER DRUID 
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (Entangle.instance === undefined) {
-            Entangle.instance = this;
-        }
+    if (Entangle.instance === undefined) {
+      Entangle.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Entangle {
-        if (!Entangle.instance) {
-            Entangle.instance = new Entangle();
-        }
-        return Entangle.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Entangle {
+    if (!Entangle.instance) {
+      Entangle.instance = new Entangle();
     }
+    return Entangle.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Entangle.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Entangle.GetInstance() as T;
+  }
 }
 
 export default Entangle;

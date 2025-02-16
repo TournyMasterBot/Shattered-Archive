@@ -24,50 +24,50 @@ import BalanxBasics from "./balanx-basics";
 import View from "@shared/types/ability-types/spells/view";
 
 export class BalanxDefault implements IAbilityGroup {
-    static instance: BalanxDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: BalanxDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.BalanxDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            ...BalanxBasics.GetInstance().Get<BalanxBasics>().abilities,
-            ...Enhancement.GetInstance().Get<Enhancement>().abilities,
-            ...Detection.GetInstance().Get<Detection>().abilities,
-            ...Healing.GetInstance().Get<Healing>().abilities,
-            ...Benedictions.GetInstance().Get<Benedictions>().abilities,
-            ...Maladictions.GetInstance().Get<Maladictions>().abilities,
-            ...Curative.GetInstance().Get<Curative>().abilities,
-            ...Illusion.GetInstance().Get<Illusion>().abilities,
-            ...Protective.GetInstance().Get<Protective>().abilities,
-            ...Transportation.GetInstance().Get<Transportation>().abilities,
-            ...Creation.GetInstance().Get<Creation>().abilities,
-            ...Weather.GetInstance().Get<Weather>().abilities,
-            SecondAttack.GetInstance().Get(),
-            HandToHand.GetInstance().Get(),
-            Focus.GetInstance().Get(),
-            ThirdAttack.GetInstance().Get(),
-            TimeStop.GetInstance().Get(),
-            Swim.GetInstance().Get(),
-            FourthAttack.GetInstance().Get(),
-            View.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.BalanxDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      ...BalanxBasics.GetInstance().Get<BalanxBasics>().abilities,
+      ...Enhancement.GetInstance().Get<Enhancement>().abilities,
+      ...Detection.GetInstance().Get<Detection>().abilities,
+      ...Healing.GetInstance().Get<Healing>().abilities,
+      ...Benedictions.GetInstance().Get<Benedictions>().abilities,
+      ...Maladictions.GetInstance().Get<Maladictions>().abilities,
+      ...Curative.GetInstance().Get<Curative>().abilities,
+      ...Illusion.GetInstance().Get<Illusion>().abilities,
+      ...Protective.GetInstance().Get<Protective>().abilities,
+      ...Transportation.GetInstance().Get<Transportation>().abilities,
+      ...Creation.GetInstance().Get<Creation>().abilities,
+      ...Weather.GetInstance().Get<Weather>().abilities,
+      SecondAttack.GetInstance().Get(),
+      HandToHand.GetInstance().Get(),
+      Focus.GetInstance().Get(),
+      ThirdAttack.GetInstance().Get(),
+      TimeStop.GetInstance().Get(),
+      Swim.GetInstance().Get(),
+      FourthAttack.GetInstance().Get(),
+      View.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): BalanxDefault {
-        if (!BalanxDefault.instance) {
-            BalanxDefault.instance = new BalanxDefault();
-        }
-        return BalanxDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): BalanxDefault {
+    if (!BalanxDefault.instance) {
+      BalanxDefault.instance = new BalanxDefault();
     }
+    return BalanxDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return BalanxDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return BalanxDefault.GetInstance() as T;
+  }
 }
 
 export default BalanxDefault;

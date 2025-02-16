@@ -15,41 +15,41 @@ import SecondAttack from "@shared/types/ability-types/skills/second-attack";
 import Peek from "@shared/types/ability-types/skills/peek";
 
 export class ThiefDefault implements IAbilityGroup {
-    static instance: ThiefDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: ThiefDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.ThiefDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            Mace.GetInstance().Get(),
-            Disarm.GetInstance().Get(),
-            Trip.GetInstance().Get(),
-            PickLock.GetInstance().Get(),
-            Sword.GetInstance().Get(),
-            Dodge.GetInstance().Get(),
-            Hide.GetInstance().Get(),
-            Sneak.GetInstance().Get(),
-            Backstab.GetInstance().Get(),
-            SecondAttack.GetInstance().Get(),
-            Peek.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.ThiefDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      Mace.GetInstance().Get(),
+      Disarm.GetInstance().Get(),
+      Trip.GetInstance().Get(),
+      PickLock.GetInstance().Get(),
+      Sword.GetInstance().Get(),
+      Dodge.GetInstance().Get(),
+      Hide.GetInstance().Get(),
+      Sneak.GetInstance().Get(),
+      Backstab.GetInstance().Get(),
+      SecondAttack.GetInstance().Get(),
+      Peek.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): ThiefDefault {
-        if (!ThiefDefault.instance) {
-            ThiefDefault.instance = new ThiefDefault();
-        }
-        return ThiefDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): ThiefDefault {
+    if (!ThiefDefault.instance) {
+      ThiefDefault.instance = new ThiefDefault();
     }
+    return ThiefDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return ThiefDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return ThiefDefault.GetInstance() as T;
+  }
 }
 
 export default ThiefDefault;

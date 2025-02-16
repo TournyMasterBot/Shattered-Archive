@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class DispelProtection implements IAbility {
-    private static instance: DispelProtection;
+  private static instance: DispelProtection;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Dispel Protection";
-        this.helpFile = `
+  constructor() {
+    this.name = "Dispel Protection";
+    this.helpFile = `
 'DISPEL PROTECTION'
 DISPEL PROTECTION
 
@@ -24,26 +24,26 @@ strip the target of their protections against various alignments.
 
 See also - INVOCATION INVOKER
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (DispelProtection.instance === undefined) {
-            DispelProtection.instance = this;
-        }
+    if (DispelProtection.instance === undefined) {
+      DispelProtection.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): DispelProtection {
-        if (!DispelProtection.instance) {
-            DispelProtection.instance = new DispelProtection();
-        }
-        return DispelProtection.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): DispelProtection {
+    if (!DispelProtection.instance) {
+      DispelProtection.instance = new DispelProtection();
     }
+    return DispelProtection.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return DispelProtection.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return DispelProtection.GetInstance() as T;
+  }
 }
 
 export default DispelProtection;

@@ -3,17 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class CriticalShotFour implements IAbility {
-    private static instance: CriticalShotFour;
+  private static instance: CriticalShotFour;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Critical Shot Four";
-        this.helpFile = `
+  constructor() {
+    this.name = "Critical Shot Four";
+    this.helpFile = `
 help critical4
 BOWS ARROWS SHOOT CRITICAL1 CRITICAL2 CRITICAL3 CRITICAL4
 
@@ -40,27 +40,27 @@ aim, and fire away (shoot <direction> <target>). Obviously, should you wish
 to attempt the more damaging critical hits, you may exchange the command
 shoot with any of the critical commands.
 `;
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.manualDescription = "";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.manualDescription = "";
 
-        if (CriticalShotFour.instance === undefined) {
-            CriticalShotFour.instance = this;
-        }
+    if (CriticalShotFour.instance === undefined) {
+      CriticalShotFour.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): CriticalShotFour {
-        if (!CriticalShotFour.instance) {
-            CriticalShotFour.instance = new CriticalShotFour();
-        }
-        return CriticalShotFour.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): CriticalShotFour {
+    if (!CriticalShotFour.instance) {
+      CriticalShotFour.instance = new CriticalShotFour();
     }
+    return CriticalShotFour.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return CriticalShotFour.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return CriticalShotFour.GetInstance() as T;
+  }
 }
 
 export default CriticalShotFour;

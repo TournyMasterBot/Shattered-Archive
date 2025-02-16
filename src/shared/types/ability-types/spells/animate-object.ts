@@ -4,16 +4,16 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class AnimateObject implements IAbility {
-    private static instance: AnimateObject;
+  private static instance: AnimateObject;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Animate Object";
-        this.helpFile = `
+  constructor() {
+    this.name = "Animate Object";
+    this.helpFile = `
 ANIMATE OBJECT
 
 Syntax: cast 'animate object' <object>
@@ -24,28 +24,28 @@ the usefulness of an animation.
 
 When the enchantor is done with an animation he/she can DISMISS them.
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
-    }
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    
-    // Method to get the single instance of the class
-    public static GetInstance(): AnimateObject {
-        if (!AnimateObject.instance) {
-            AnimateObject.instance = new AnimateObject();
-        }
-        return AnimateObject.instance;
-    }
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
+  }
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return AnimateObject.GetInstance() as T;
+  // Method to get the single instance of the class
+  public static GetInstance(): AnimateObject {
+    if (!AnimateObject.instance) {
+      AnimateObject.instance = new AnimateObject();
     }
+    return AnimateObject.instance;
+  }
+
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return AnimateObject.GetInstance() as T;
+  }
 }
 
 export default AnimateObject;

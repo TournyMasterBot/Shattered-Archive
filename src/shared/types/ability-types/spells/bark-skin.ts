@@ -4,27 +4,27 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class BarkSkin implements IAbility {
-    private static instance: BarkSkin;
+  private static instance: BarkSkin;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    abilityBuffCommand?: string | undefined;
-    abilityBuffVariable?: string | undefined;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  abilityBuffCommand?: string | undefined;
+  abilityBuffVariable?: string | undefined;
 
-    constructor() {
-        this.name = "Bark Skin";
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
-        this.abilityBuffCommand = "c 'bark skin'";
-        this.helpFile = `
+  constructor() {
+    this.name = "Bark Skin";
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
+    this.abilityBuffCommand = "c 'bark skin'";
+    this.helpFile = `
 help 'Bark Skin'
 'BARK SKIN'
 BARK SKIN
@@ -41,23 +41,23 @@ quite as effective as the stone skin spell.
 See also - NATURE RANGER ARMOR STONE SKIN
 `;
 
-        if (BarkSkin.instance === undefined) {
-            BarkSkin.instance = this;
-        }
+    if (BarkSkin.instance === undefined) {
+      BarkSkin.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): BarkSkin {
-        if (!BarkSkin.instance) {
-            BarkSkin.instance = new BarkSkin();
-        }
-        return BarkSkin.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): BarkSkin {
+    if (!BarkSkin.instance) {
+      BarkSkin.instance = new BarkSkin();
     }
+    return BarkSkin.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return BarkSkin.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return BarkSkin.GetInstance() as T;
+  }
 }
 
 export default BarkSkin;

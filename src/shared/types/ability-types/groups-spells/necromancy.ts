@@ -22,49 +22,49 @@ import PreventRecovery from "@shared/types/ability-types/spells/prevent-recovery
 import BodrumsBoils from "@shared/types/ability-types/spells/bodrums-boils";
 
 export class Necromancy implements IAbilityGroup {
-    private static instance: Necromancy;
+  private static instance: Necromancy;
 
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Necromancy;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            BoneBlight.GetInstance().Get(),
-            AnimateDead.GetInstance().Get(),
-            Embalm.GetInstance().Get(),
-            DeathShroud.GetInstance().Get(),
-            BlackCurse.GetInstance().Get(),
-            Regenerate.GetInstance().Get(),
-            Scourge.GetInstance().Get(),
-            FeignDeath.GetInstance().Get(),
-            GraftFlesh.GetInstance().Get(),
-            WithstandDeath.GetInstance().Get(),
-            SoulHarvest.GetInstance().Get(),
-            Solidify.GetInstance().Get(),
-            Shadowform.GetInstance().Get(),
-            Empath.GetInstance().Get(),
-            LocateRemains.GetInstance().Get(),
-            CorpseHost.GetInstance().Get(),
-            PreventRecovery.GetInstance().Get(),
-            BodrumsBoils.GetInstance().Get()
-        ];
+  constructor() {
+    this.abilityGroup = AbilityGroup.Necromancy;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      BoneBlight.GetInstance().Get(),
+      AnimateDead.GetInstance().Get(),
+      Embalm.GetInstance().Get(),
+      DeathShroud.GetInstance().Get(),
+      BlackCurse.GetInstance().Get(),
+      Regenerate.GetInstance().Get(),
+      Scourge.GetInstance().Get(),
+      FeignDeath.GetInstance().Get(),
+      GraftFlesh.GetInstance().Get(),
+      WithstandDeath.GetInstance().Get(),
+      SoulHarvest.GetInstance().Get(),
+      Solidify.GetInstance().Get(),
+      Shadowform.GetInstance().Get(),
+      Empath.GetInstance().Get(),
+      LocateRemains.GetInstance().Get(),
+      CorpseHost.GetInstance().Get(),
+      PreventRecovery.GetInstance().Get(),
+      BodrumsBoils.GetInstance().Get(),
+    ];
+  }
+
+  // Method to get the single instance of the class
+  public static GetInstance(): Necromancy {
+    if (!Necromancy.instance) {
+      Necromancy.instance = new Necromancy();
     }
+    return Necromancy.instance;
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Necromancy {
-        if (!Necromancy.instance) {
-            Necromancy.instance = new Necromancy();
-        }
-        return Necromancy.instance;
-    }
-
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Necromancy.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Necromancy.GetInstance() as T;
+  }
 }
 
 export default Necromancy;

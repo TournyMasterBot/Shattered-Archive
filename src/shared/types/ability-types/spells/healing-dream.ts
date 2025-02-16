@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class HealingDream implements IAbility {
-    private static instance: HealingDream;
+  private static instance: HealingDream;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Healing Dream";
-        this.helpFile = `
+  constructor() {
+    this.name = "Healing Dream";
+    this.helpFile = `
 HEALING DREAM
 
 Being a master of the mind, mentalists are able to cast a spell upon a
@@ -24,26 +24,26 @@ someone who is not asleep may result in some strange brain tingling.
 
 Syntax : cast 'healing dream' target
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (HealingDream.instance === undefined) {
-            HealingDream.instance = this;
-        }
+    if (HealingDream.instance === undefined) {
+      HealingDream.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): HealingDream {
-        if (!HealingDream.instance) {
-            HealingDream.instance = new HealingDream();
-        }
-        return HealingDream.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): HealingDream {
+    if (!HealingDream.instance) {
+      HealingDream.instance = new HealingDream();
     }
+    return HealingDream.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return HealingDream.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return HealingDream.GetInstance() as T;
+  }
 }
 
 export default HealingDream;

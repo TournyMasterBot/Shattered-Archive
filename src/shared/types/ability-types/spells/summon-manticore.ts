@@ -3,18 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class SummonManticore implements IAbility {
-    private static instance: SummonManticore;
+  private static instance: SummonManticore;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Summon Manticore";
-        this.helpFile =
-`SUMMON MANTICORE
+  constructor() {
+    this.name = "Summon Manticore";
+    this.helpFile = `SUMMON MANTICORE
 
 Syntax: cast 'summon manticore'
 
@@ -32,27 +31,27 @@ mount.
 SEE ALSO: ALTERATION, CONCLAVE, CSR, RECLASS, TRANSMUTER
 
 Created 12.03.2023`;
-        this.manualDescription = ``;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.manualDescription = ``;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (SummonManticore.instance === undefined) {
-            SummonManticore.instance = this;
-        }
+    if (SummonManticore.instance === undefined) {
+      SummonManticore.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): SummonManticore {
-        if (!SummonManticore.instance) {
-            SummonManticore.instance = new SummonManticore();
-        }
-        return SummonManticore.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): SummonManticore {
+    if (!SummonManticore.instance) {
+      SummonManticore.instance = new SummonManticore();
     }
+    return SummonManticore.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return SummonManticore.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return SummonManticore.GetInstance() as T;
+  }
 }
 
 export default SummonManticore;

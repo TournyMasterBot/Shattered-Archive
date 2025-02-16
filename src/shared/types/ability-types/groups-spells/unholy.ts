@@ -15,41 +15,41 @@ import Fasting from "@shared/types/ability-types/spells/fasting";
 import DarkImmunity from "@shared/types/ability-types/spells/dark-immunity";
 
 export class Unholy implements IAbilityGroup {
-    static instance: Unholy;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Unholy;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Unholy;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            DarkEssence.GetInstance().Get(),
-            SummonNightmare.GetInstance().Get(),
-            Intimidate.GetInstance().Get(),
-            SummonDeathknight.GetInstance().Get(),
-            DarkHeal.GetInstance().Get(),
-            DarkEmpower.GetInstance().Get(),
-            DarkEnergy.GetInstance().Get(),
-            SummonFelbeast.GetInstance().Get(),
-            DarkBolt.GetInstance().Get(),
-            Fasting.GetInstance().Get(),
-            DarkImmunity.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Unholy;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      DarkEssence.GetInstance().Get(),
+      SummonNightmare.GetInstance().Get(),
+      Intimidate.GetInstance().Get(),
+      SummonDeathknight.GetInstance().Get(),
+      DarkHeal.GetInstance().Get(),
+      DarkEmpower.GetInstance().Get(),
+      DarkEnergy.GetInstance().Get(),
+      SummonFelbeast.GetInstance().Get(),
+      DarkBolt.GetInstance().Get(),
+      Fasting.GetInstance().Get(),
+      DarkImmunity.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Unholy {
-        if (!Unholy.instance) {
-            Unholy.instance = new Unholy();
-        }
-        return Unholy.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Unholy {
+    if (!Unholy.instance) {
+      Unholy.instance = new Unholy();
     }
+    return Unholy.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Unholy.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Unholy.GetInstance() as T;
+  }
 }
 
 export default Unholy;

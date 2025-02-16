@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class CharmPerson implements IAbility {
-    private static instance: CharmPerson;
+  private static instance: CharmPerson;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Charm Person";
-        this.helpFile = `
+  constructor() {
+    this.name = "Charm Person";
+    this.helpFile = `
 help charm person
 'CHARM PERSON'
 CHARM PERSON
@@ -59,26 +59,26 @@ actions are illegal to order players and charmies to do:
  
 See also - BEGUILING
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (CharmPerson.instance === undefined) {
-            CharmPerson.instance = this;
-        }
+    if (CharmPerson.instance === undefined) {
+      CharmPerson.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): CharmPerson {
-        if (!CharmPerson.instance) {
-            CharmPerson.instance = new CharmPerson();
-        }
-        return CharmPerson.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): CharmPerson {
+    if (!CharmPerson.instance) {
+      CharmPerson.instance = new CharmPerson();
     }
+    return CharmPerson.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return CharmPerson.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return CharmPerson.GetInstance() as T;
+  }
 }
 
 export default CharmPerson;

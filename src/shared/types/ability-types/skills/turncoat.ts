@@ -4,25 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Turncoat implements IAbility {
-    private static instance: Turncoat;
+  private static instance: Turncoat;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Turncoat";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile =
-`
+  constructor() {
+    this.name = "Turncoat";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `
 TURNCOAT
 
 Syntax: Turncoat <victim>
@@ -41,20 +40,20 @@ command of a rider.
 
 SEE ALSO:  Charlatan
 `;
-    }
-    
-    // Method to get the single instance of the class
-    public static GetInstance(): Turncoat {
-        if (!Turncoat.instance) {
-            Turncoat.instance = new Turncoat();
-        }
-        return Turncoat.instance;
-    }
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Turncoat.GetInstance() as T;
+  // Method to get the single instance of the class
+  public static GetInstance(): Turncoat {
+    if (!Turncoat.instance) {
+      Turncoat.instance = new Turncoat();
     }
+    return Turncoat.instance;
+  }
+
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Turncoat.GetInstance() as T;
+  }
 }
 
 export default Turncoat;

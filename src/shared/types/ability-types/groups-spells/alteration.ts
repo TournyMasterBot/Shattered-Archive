@@ -18,17 +18,17 @@ import SummonManticore from "@shared/types/ability-types/spells/summon-manticore
 import WizardMark from "@shared/types/ability-types/spells/wizard-mark";
 
 export class Alteration implements IAbilityGroup {
-    private static instance: Alteration;
+  private static instance: Alteration;
 
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Alteration;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            /*
+  constructor() {
+    this.abilityGroup = AbilityGroup.Alteration;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      /*
             new Forget(),
             new AlterSelf(),
             new Reduce(),
@@ -44,21 +44,21 @@ export class Alteration implements IAbilityGroup {
             new AlterElements(),
             new Solidify()
             */
-        ];
-    }
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Alteration {
-        if (!Alteration.instance) {
-            Alteration.instance = new Alteration();
-        }
-        return Alteration.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Alteration {
+    if (!Alteration.instance) {
+      Alteration.instance = new Alteration();
     }
+    return Alteration.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Alteration.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Alteration.GetInstance() as T;
+  }
 }
 
 export default Alteration;

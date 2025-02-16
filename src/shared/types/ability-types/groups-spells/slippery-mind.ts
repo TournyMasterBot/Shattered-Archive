@@ -5,25 +5,23 @@ import AbilityGroup from "@shared/types/ability-types/ability-group";
 import { SlipperyMind as sm } from "@shared/types/ability-types/skills/slippery-mind";
 
 export class SlipperyMind implements IAbilityGroup {
-    static instance: SlipperyMind;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: SlipperyMind;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.SlipperyMind;
-        this.abilityGroupType = AbilityGroupType.Class;
-        this.abilities = [
-            sm.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.SlipperyMind;
+    this.abilityGroupType = AbilityGroupType.Class;
+    this.abilities = [sm.GetInstance().Get()];
+  }
 
-    public Get<T>(): T {
-        if (!SlipperyMind.instance) {
-            SlipperyMind.instance = new SlipperyMind();
-        }
-        return SlipperyMind.instance as T;
+  public Get<T>(): T {
+    if (!SlipperyMind.instance) {
+      SlipperyMind.instance = new SlipperyMind();
     }
+    return SlipperyMind.instance as T;
+  }
 }
 
 export default SlipperyMind;

@@ -3,38 +3,38 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class ChangeSex implements IAbility {
-    private static instance: ChangeSex;
+  private static instance: ChangeSex;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Change Sex";
-        this.helpFile = `'CHANGE SEX'
+  constructor() {
+    this.name = "Change Sex";
+    this.helpFile = `'CHANGE SEX'
 Syntax: cast 'change sex' <victim>
 This spell changes the sex of the victim (temporarily).`;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (ChangeSex.instance === undefined) {
-            ChangeSex.instance = this;
-        }
+    if (ChangeSex.instance === undefined) {
+      ChangeSex.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): ChangeSex {
-        if (!ChangeSex.instance) {
-            ChangeSex.instance = new ChangeSex();
-        }
-        return ChangeSex.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): ChangeSex {
+    if (!ChangeSex.instance) {
+      ChangeSex.instance = new ChangeSex();
     }
+    return ChangeSex.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return ChangeSex.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return ChangeSex.GetInstance() as T;
+  }
 }
 
 export default ChangeSex;

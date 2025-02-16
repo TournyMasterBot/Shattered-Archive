@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Yank implements IAbility {
-    private static instance: Yank;
+  private static instance: Yank;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Yank";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help yank
+  constructor() {
+    this.name = "Yank";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help yank
 mastery whip lash yank choke
 Mastery of the Whip 
  
@@ -37,22 +37,22 @@ choke          Entangles an unaware victim's neck with a whip, causing them
                to pass out due to lack of air.  
  
 This group is available to the following classes: ARMSMAN `;
-        if (Yank.instance === undefined) {
-            Yank.instance = this;
-        }
+    if (Yank.instance === undefined) {
+      Yank.instance = this;
     }
-    // Method to get the single instance of the class
-    public static GetInstance(): Yank {
-        if (!Yank.instance) {
-            Yank.instance = new Yank();
-        }
-        return Yank.instance;
+  }
+  // Method to get the single instance of the class
+  public static GetInstance(): Yank {
+    if (!Yank.instance) {
+      Yank.instance = new Yank();
     }
+    return Yank.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Yank.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Yank.GetInstance() as T;
+  }
 }
 
 export default Yank;

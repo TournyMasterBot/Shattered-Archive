@@ -22,48 +22,48 @@ import Butcher from "@shared/types/ability-types/skills/butcher";
 import Weaponsmaster from "../groups-skills/weaponsmaster";
 
 export class BarbarianDefault implements IAbilityGroup {
-    static instance: BarbarianDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: BarbarianDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.BarbarianDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            ...Weaponsmaster.GetInstance().Get<Weaponsmaster>().abilities,
-            ShieldBlock.GetInstance().Get(),
-            Disarm.GetInstance().Get(),
-            ThirdAttack.GetInstance().Get(),
-            PowerSwing.GetInstance().Get(),
-            PrayRecall.GetInstance().Get(),
-            Offering.GetInstance().Get(),
-            EnhancedDamage.GetInstance().Get(),
-            FourthAttack.GetInstance().Get(),
-            ShieldKick.GetInstance().Get(),
-            Mudcoat.GetInstance().Get(),
-            MakeJewelry.GetInstance().Get(),
-            Bash.GetInstance().Get(),
-            Parry.GetInstance().Get(),
-            Warcry.GetInstance().Get(),
-            Cleanse.GetInstance().Get(),
-            SecondWind.GetInstance().Get(),
-            Butcher.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.BarbarianDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      ...Weaponsmaster.GetInstance().Get<Weaponsmaster>().abilities,
+      ShieldBlock.GetInstance().Get(),
+      Disarm.GetInstance().Get(),
+      ThirdAttack.GetInstance().Get(),
+      PowerSwing.GetInstance().Get(),
+      PrayRecall.GetInstance().Get(),
+      Offering.GetInstance().Get(),
+      EnhancedDamage.GetInstance().Get(),
+      FourthAttack.GetInstance().Get(),
+      ShieldKick.GetInstance().Get(),
+      Mudcoat.GetInstance().Get(),
+      MakeJewelry.GetInstance().Get(),
+      Bash.GetInstance().Get(),
+      Parry.GetInstance().Get(),
+      Warcry.GetInstance().Get(),
+      Cleanse.GetInstance().Get(),
+      SecondWind.GetInstance().Get(),
+      Butcher.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): BarbarianDefault {
-        if (!BarbarianDefault.instance) {
-            BarbarianDefault.instance = new BarbarianDefault();
-        }
-        return BarbarianDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): BarbarianDefault {
+    if (!BarbarianDefault.instance) {
+      BarbarianDefault.instance = new BarbarianDefault();
     }
+    return BarbarianDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return BarbarianDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return BarbarianDefault.GetInstance() as T;
+  }
 }
 
 export default BarbarianDefault;

@@ -6,32 +6,32 @@ import Sword from "@shared/types/ability-types/skills/sword";
 import SecondAttack from "@shared/types/ability-types/skills/second-attack";
 
 export class SamuraiBasics implements IAbilityGroup {
-    static instance: SamuraiBasics;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: SamuraiBasics;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.SamuraiBasics;
-        this.abilityGroupType = AbilityGroupType.Basics;
-        this.abilities = [
-            Sword.GetInstance().Get(),
-            SecondAttack.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.SamuraiBasics;
+    this.abilityGroupType = AbilityGroupType.Basics;
+    this.abilities = [
+      Sword.GetInstance().Get(),
+      SecondAttack.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): SamuraiBasics {
-        if (!SamuraiBasics.instance) {
-            SamuraiBasics.instance = new SamuraiBasics();
-        }
-        return SamuraiBasics.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): SamuraiBasics {
+    if (!SamuraiBasics.instance) {
+      SamuraiBasics.instance = new SamuraiBasics();
     }
+    return SamuraiBasics.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return SamuraiBasics.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return SamuraiBasics.GetInstance() as T;
+  }
 }
 
 export default SamuraiBasics;

@@ -19,45 +19,45 @@ import Sneak from "@shared/types/ability-types/skills/sneak";
 import Parry from "@shared/types/ability-types/skills/parry";
 
 export class PirateDefault implements IAbilityGroup {
-    static instance: PirateDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: PirateDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.PirateDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            ConcealedDagger.GetInstance().Get(),
-            Intimidation.GetInstance().Get(),
-            Dropkick.GetInstance().Get(),
-            Disarm.GetInstance().Get(),
-            DualWield.GetInstance().Get(),
-            Balance.GetInstance().Get(),
-            MortalShield.GetInstance().Get(),
-            DoubleParry.GetInstance().Get(),
-            Hide.GetInstance().Get(),
-            GrenadeToss.GetInstance().Get(),
-            Pistol.GetInstance().Get(),
-            Maingauche.GetInstance().Get(),
-            SecondAttack.GetInstance().Get(),
-            Sneak.GetInstance().Get(),
-            Parry.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.PirateDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      ConcealedDagger.GetInstance().Get(),
+      Intimidation.GetInstance().Get(),
+      Dropkick.GetInstance().Get(),
+      Disarm.GetInstance().Get(),
+      DualWield.GetInstance().Get(),
+      Balance.GetInstance().Get(),
+      MortalShield.GetInstance().Get(),
+      DoubleParry.GetInstance().Get(),
+      Hide.GetInstance().Get(),
+      GrenadeToss.GetInstance().Get(),
+      Pistol.GetInstance().Get(),
+      Maingauche.GetInstance().Get(),
+      SecondAttack.GetInstance().Get(),
+      Sneak.GetInstance().Get(),
+      Parry.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): PirateDefault {
-        if (!PirateDefault.instance) {
-            PirateDefault.instance = new PirateDefault();
-        }
-        return PirateDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): PirateDefault {
+    if (!PirateDefault.instance) {
+      PirateDefault.instance = new PirateDefault();
     }
+    return PirateDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return PirateDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return PirateDefault.GetInstance() as T;
+  }
 }
 
 export default PirateDefault;

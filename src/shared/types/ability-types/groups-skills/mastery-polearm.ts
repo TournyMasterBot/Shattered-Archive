@@ -7,33 +7,33 @@ import Entrap from "@shared/types/ability-types/skills/entrap";
 import Chargeset from "@shared/types/ability-types/skills/chargeset";
 
 export class MasteryPolearm implements IAbilityGroup {
-    static instance: MasteryPolearm;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: MasteryPolearm;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.MasteryPolearm;
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilities = [
-            Distance.GetInstance().Get(),
-            Entrap.GetInstance().Get(),
-            Chargeset.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.MasteryPolearm;
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilities = [
+      Distance.GetInstance().Get(),
+      Entrap.GetInstance().Get(),
+      Chargeset.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): MasteryPolearm {
-        if (!MasteryPolearm.instance) {
-            MasteryPolearm.instance = new MasteryPolearm();
-        }
-        return MasteryPolearm.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): MasteryPolearm {
+    if (!MasteryPolearm.instance) {
+      MasteryPolearm.instance = new MasteryPolearm();
     }
+    return MasteryPolearm.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return MasteryPolearm.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return MasteryPolearm.GetInstance() as T;
+  }
 }
 
 export default MasteryPolearm;

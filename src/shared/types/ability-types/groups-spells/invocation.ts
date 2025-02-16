@@ -16,42 +16,42 @@ import Web from "@shared/types/ability-types/spells/web";
 import Solidify from "@shared/types/ability-types/spells/solidify";
 
 export class Invocation implements IAbilityGroup {
-    private static instance: Invocation;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  private static instance: Invocation;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Invocation;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            Alarm.GetInstance().Get(),
-            ConeOfFire.GetInstance().Get(),
-            Darkness.GetInstance().Get(),
-            DispelProtection.GetInstance().Get(),
-            AntimagicShell.GetInstance().Get(),
-            ConeOfLightning.GetInstance().Get(),
-            Nondetection.GetInstance().Get(),
-            Regenerate.GetInstance().Get(),
-            ConeOfCold.GetInstance().Get(),
-            BindGolem.GetInstance().Get(),
-            Web.GetInstance().Get(),
-            Solidify.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Invocation;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      Alarm.GetInstance().Get(),
+      ConeOfFire.GetInstance().Get(),
+      Darkness.GetInstance().Get(),
+      DispelProtection.GetInstance().Get(),
+      AntimagicShell.GetInstance().Get(),
+      ConeOfLightning.GetInstance().Get(),
+      Nondetection.GetInstance().Get(),
+      Regenerate.GetInstance().Get(),
+      ConeOfCold.GetInstance().Get(),
+      BindGolem.GetInstance().Get(),
+      Web.GetInstance().Get(),
+      Solidify.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Invocation {
-        if (!Invocation.instance) {
-            Invocation.instance = new Invocation();
-        }
-        return Invocation.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Invocation {
+    if (!Invocation.instance) {
+      Invocation.instance = new Invocation();
     }
+    return Invocation.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Invocation.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Invocation.GetInstance() as T;
+  }
 }
 
 export default Invocation;

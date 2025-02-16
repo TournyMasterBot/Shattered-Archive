@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class DualWield implements IAbility {
-    private static instance: DualWield;
+  private static instance: DualWield;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "DualWield";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Passive;
-        this.helpFile = `help 'dual wield'
+  constructor() {
+    this.name = "DualWield";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Passive;
+    this.helpFile = `help 'dual wield'
 dual wield
 DUAL WIELD
 syntax: hold <primary weapon>
@@ -42,23 +42,23 @@ there are some known classes out there that might be able to wield two
 weapons of the same weight as well as be able to dual wield two handed
 weapons.`;
 
-        if (DualWield.instance === undefined) {
-            DualWield.instance = this;
-        }
+    if (DualWield.instance === undefined) {
+      DualWield.instance = this;
     }
-    
-    // Method to get the single instance of the class
-    public static GetInstance(): DualWield {
-        if (!DualWield.instance) {
-            DualWield.instance = new DualWield();
-        }
-        return DualWield.instance;
-    }
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return DualWield.GetInstance() as T;
+  // Method to get the single instance of the class
+  public static GetInstance(): DualWield {
+    if (!DualWield.instance) {
+      DualWield.instance = new DualWield();
     }
+    return DualWield.instance;
+  }
+
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return DualWield.GetInstance() as T;
+  }
 }
 
 export default DualWield;

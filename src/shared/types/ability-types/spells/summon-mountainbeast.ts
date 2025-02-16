@@ -3,18 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class SummonMountainbeast implements IAbility {
-    private static instance: SummonMountainbeast;
+  private static instance: SummonMountainbeast;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Summon Mountainbeast";
-        this.helpFile =
-`SUMMON MOUNTAINBEAST
+  constructor() {
+    this.name = "Summon Mountainbeast";
+    this.helpFile = `SUMMON MOUNTAINBEAST
 
 Syntax:  cast 'summon mountainbeast'
  
@@ -25,27 +24,27 @@ are random, sometimes appearing with claws for slashing, fangs for
 piercing or even fists for pounding.  
 
 Groups containing this spell: ELDRITCH`;
-        this.manualDescription = ``;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.manualDescription = ``;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (SummonMountainbeast.instance === undefined) {
-            SummonMountainbeast.instance = this;
-        }
+    if (SummonMountainbeast.instance === undefined) {
+      SummonMountainbeast.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): SummonMountainbeast {
-        if (!SummonMountainbeast.instance) {
-            SummonMountainbeast.instance = new SummonMountainbeast();
-        }
-        return SummonMountainbeast.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): SummonMountainbeast {
+    if (!SummonMountainbeast.instance) {
+      SummonMountainbeast.instance = new SummonMountainbeast();
     }
+    return SummonMountainbeast.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return SummonMountainbeast.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return SummonMountainbeast.GetInstance() as T;
+  }
 }
 
 export default SummonMountainbeast;

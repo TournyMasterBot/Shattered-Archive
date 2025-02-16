@@ -14,40 +14,40 @@ import WindBreath from "@shared/types/ability-types/spells/wind-breath";
 import Regenerate from "@shared/types/ability-types/spells/regenerate";
 
 export class Battlemagic implements IAbilityGroup {
-    static instance: Battlemagic;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Battlemagic;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Battlemagic;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            new Absorption(),
-            new InstantRegeneration(),
-            new EnhancedConstitution(),
-            new Solidify(),
-            new AlterBeast(),
-            new Infuriate(),
-            new AuraOfPain(),
-            new AncientVow(),
-            new WindBreath(),
-            new Regenerate()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Battlemagic;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      new Absorption(),
+      new InstantRegeneration(),
+      new EnhancedConstitution(),
+      new Solidify(),
+      new AlterBeast(),
+      new Infuriate(),
+      new AuraOfPain(),
+      new AncientVow(),
+      new WindBreath(),
+      new Regenerate(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Battlemagic {
-        if (!Battlemagic.instance) {
-            Battlemagic.instance = new Battlemagic();
-        }
-        return Battlemagic.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Battlemagic {
+    if (!Battlemagic.instance) {
+      Battlemagic.instance = new Battlemagic();
     }
+    return Battlemagic.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Battlemagic.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Battlemagic.GetInstance() as T;
+  }
 }
 
 export default Battlemagic;

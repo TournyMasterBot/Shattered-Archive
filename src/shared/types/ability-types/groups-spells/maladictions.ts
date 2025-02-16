@@ -13,39 +13,39 @@ import Poison from "@shared/types/ability-types/spells/poison";
 import HeartBlight from "@shared/types/ability-types/spells/heart-blight";
 
 export class Maladictions implements IAbilityGroup {
-    static instance: Maladictions;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Maladictions;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Maladictions;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            Blindness.GetInstance().Get(),
-            EnergyDrain.GetInstance().Get(),
-            Slow.GetInstance().Get(),
-            ChangeSex.GetInstance().Get(),
-            Plague.GetInstance().Get(),
-            Weaken.GetInstance().Get(),
-            Curse.GetInstance().Get(),
-            Poison.GetInstance().Get(),
-            HeartBlight.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Maladictions;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      Blindness.GetInstance().Get(),
+      EnergyDrain.GetInstance().Get(),
+      Slow.GetInstance().Get(),
+      ChangeSex.GetInstance().Get(),
+      Plague.GetInstance().Get(),
+      Weaken.GetInstance().Get(),
+      Curse.GetInstance().Get(),
+      Poison.GetInstance().Get(),
+      HeartBlight.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Maladictions {
-        if (!Maladictions.instance) {
-            Maladictions.instance = new Maladictions();
-        }
-        return Maladictions.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Maladictions {
+    if (!Maladictions.instance) {
+      Maladictions.instance = new Maladictions();
     }
+    return Maladictions.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Maladictions.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Maladictions.GetInstance() as T;
+  }
 }
 
 export default Maladictions;

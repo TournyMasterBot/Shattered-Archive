@@ -3,17 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class CircleStab implements IAbility {
-    private static instance: CircleStab;
+  private static instance: CircleStab;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Circle Stab";
-        this.helpFile = `
+  constructor() {
+    this.name = "Circle Stab";
+    this.helpFile = `
 circle stab
 Syntax: circlestab <victim>
 
@@ -25,27 +25,27 @@ to time been able to knock loose a victim's shield, however, from time to
 time their sheathed weapon has also been known to get stuck in the victim's
 shield. 
 `;
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Passive;
-        this.manualDescription = "";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Passive;
+    this.manualDescription = "";
 
-        if (CircleStab.instance === undefined) {
-            CircleStab.instance = this;
-        }
+    if (CircleStab.instance === undefined) {
+      CircleStab.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): CircleStab {
-        if (!CircleStab.instance) {
-            CircleStab.instance = new CircleStab();
-        }
-        return CircleStab.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): CircleStab {
+    if (!CircleStab.instance) {
+      CircleStab.instance = new CircleStab();
     }
+    return CircleStab.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return CircleStab.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return CircleStab.GetInstance() as T;
+  }
 }
 
 export default CircleStab;

@@ -16,42 +16,42 @@ import Excommunicate from "@shared/types/ability-types/spells/excommunicate";
 import DivineStaff from "@shared/types/ability-types/spells/divine-staff";
 
 export class Purification implements IAbilityGroup {
-    static instance: Purification;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Purification;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Purification;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            Purity.GetInstance().Get(),
-            EnduringWrath.GetInstance().Get(),
-            DetectVampire.GetInstance().Get(),
-            RighteousJudgement.GetInstance().Get(),
-            CompelledRepentance.GetInstance().Get(),
-            InsightfulGaze.GetInstance().Get(),
-            RecantBlasphemy.GetInstance().Get(),
-            Fervor.GetInstance().Get(),
-            ShakeResolve.GetInstance().Get(),
-            SacredBond.GetInstance().Get(),
-            Excommunicate.GetInstance().Get(),
-            DivineStaff.GetInstance().Get()
-        ];
-    }
-    
-    // Method to get the single instance of the class
-    public static GetInstance(): Purification {
-        if (!Purification.instance) {
-            Purification.instance = new Purification();
-        }
-        return Purification.instance;
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Purification;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      Purity.GetInstance().Get(),
+      EnduringWrath.GetInstance().Get(),
+      DetectVampire.GetInstance().Get(),
+      RighteousJudgement.GetInstance().Get(),
+      CompelledRepentance.GetInstance().Get(),
+      InsightfulGaze.GetInstance().Get(),
+      RecantBlasphemy.GetInstance().Get(),
+      Fervor.GetInstance().Get(),
+      ShakeResolve.GetInstance().Get(),
+      SacredBond.GetInstance().Get(),
+      Excommunicate.GetInstance().Get(),
+      DivineStaff.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Purification.GetInstance() as T;
+  // Method to get the single instance of the class
+  public static GetInstance(): Purification {
+    if (!Purification.instance) {
+      Purification.instance = new Purification();
     }
+    return Purification.instance;
+  }
+
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Purification.GetInstance() as T;
+  }
 }
 
 export default Purification;

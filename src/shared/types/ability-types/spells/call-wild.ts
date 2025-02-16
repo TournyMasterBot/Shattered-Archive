@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class CallWild implements IAbility {
-    private static instance: CallWild;
+  private static instance: CallWild;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Call Wild";
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `
+  constructor() {
+    this.name = "Call Wild";
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `
 help 'Call Wild'
 'CALL WILD'
 'CALL WILD'
@@ -38,7 +38,7 @@ purpose, they may be dismissed.
 
 See also - NATURE RANGER DRUID DISMISS
 `;
-        this.manualDescription = `
+    this.manualDescription = `
 Most people agree that bear is the best summon.
 
 Wild Bear
@@ -113,24 +113,24 @@ Offensive Tactics:dodge fast
 Immunities: charm
 This creature is affected by charm dark vision
 `;
-        
-        if (CallWild.instance === undefined) {
-            CallWild.instance = this;
-        }
-    }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): CallWild {
-        if (!CallWild.instance) {
-            CallWild.instance = new CallWild();
-        }
-        return CallWild.instance;
+    if (CallWild.instance === undefined) {
+      CallWild.instance = this;
     }
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return CallWild.GetInstance() as T;
+  // Method to get the single instance of the class
+  public static GetInstance(): CallWild {
+    if (!CallWild.instance) {
+      CallWild.instance = new CallWild();
     }
+    return CallWild.instance;
+  }
+
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return CallWild.GetInstance() as T;
+  }
 }
 
 export default CallWild;

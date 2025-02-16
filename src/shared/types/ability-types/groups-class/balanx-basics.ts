@@ -23,49 +23,49 @@ import Peek from "@shared/types/ability-types/skills/peek";
 import RomBasics from "./rom-basics";
 
 export class BalanxBasics implements IAbilityGroup {
-    static instance: BalanxBasics;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: BalanxBasics;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.BalanxBasics;
-        this.abilityGroupType = AbilityGroupType.Basics;
-        this.abilities = [
-            ...RomBasics.GetInstance().Get<RomBasics>().abilities,
-            new Parry(),
-            new Riding(),
-            new Mountaineering(),
-            new Disarm(),
-            new Spellcraft(),
-            new Herbal(),
-            new BlindFighting(),
-            new Dodge(),
-            new Climbing(),
-            new Meditation(),
-            new Astrology(),
-            new Lore(),
-            new EnhancedDamage(),
-            new FastHealing(),
-            new Kick(),
-            new RemoveTrap(),
-            new Alchemy(),
-            new Peek()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.BalanxBasics;
+    this.abilityGroupType = AbilityGroupType.Basics;
+    this.abilities = [
+      ...RomBasics.GetInstance().Get<RomBasics>().abilities,
+      new Parry(),
+      new Riding(),
+      new Mountaineering(),
+      new Disarm(),
+      new Spellcraft(),
+      new Herbal(),
+      new BlindFighting(),
+      new Dodge(),
+      new Climbing(),
+      new Meditation(),
+      new Astrology(),
+      new Lore(),
+      new EnhancedDamage(),
+      new FastHealing(),
+      new Kick(),
+      new RemoveTrap(),
+      new Alchemy(),
+      new Peek(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): BalanxBasics {
-        if (!BalanxBasics.instance) {
-            BalanxBasics.instance = new BalanxBasics();
-        }
-        return BalanxBasics.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): BalanxBasics {
+    if (!BalanxBasics.instance) {
+      BalanxBasics.instance = new BalanxBasics();
     }
+    return BalanxBasics.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return BalanxBasics.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return BalanxBasics.GetInstance() as T;
+  }
 }
 
 export default BalanxBasics;

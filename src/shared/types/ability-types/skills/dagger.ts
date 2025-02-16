@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Dagger implements IAbility {
-    private static instance: Dagger;
+  private static instance: Dagger;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Dagger";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Passive;
-        this.helpFile = `
+  constructor() {
+    this.name = "Dagger";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Passive;
+    this.helpFile = `
 help dagger
 EXOTIC WEAPONS WEAPON WEAPONSMASTER AXE DAGGER FLAIL MACE POLEARM SPEAR STAFF SWORD WHIP
 Each weapon skill applies to a specific group of armaments, and determines how
@@ -41,23 +41,23 @@ whip            the use of whips, chains, and bullwhips
 exotic          the use of strange magical weapons
 The exotic skill cannot be purchased, and is dependent solely upon level.
 `;
-        if (Dagger.instance === undefined) {
-            Dagger.instance = this;
-        }
+    if (Dagger.instance === undefined) {
+      Dagger.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Dagger {
-        if (!Dagger.instance) {
-            Dagger.instance = new Dagger();
-        }
-        return Dagger.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Dagger {
+    if (!Dagger.instance) {
+      Dagger.instance = new Dagger();
     }
+    return Dagger.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Dagger.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Dagger.GetInstance() as T;
+  }
 }
 
 export default Dagger;

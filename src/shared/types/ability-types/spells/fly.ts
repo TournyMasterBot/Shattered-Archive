@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Fly implements IAbility {
-    private static instance: Fly;
+  private static instance: Fly;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Fly";
-        this.helpFile = `
+  constructor() {
+    this.name = "Fly";
+    this.helpFile = `
 help fly
 FLY
 FLY
@@ -24,26 +24,26 @@ sleep or ride a mount while flying.
 
 See also 'LAND'
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (Fly.instance === undefined) {
-            Fly.instance = this;
-        }
+    if (Fly.instance === undefined) {
+      Fly.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Fly {
-        if (!Fly.instance) {
-            Fly.instance = new Fly();
-        }
-        return Fly.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Fly {
+    if (!Fly.instance) {
+      Fly.instance = new Fly();
     }
+    return Fly.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Fly.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Fly.GetInstance() as T;
+  }
 }
 
 export default Fly;

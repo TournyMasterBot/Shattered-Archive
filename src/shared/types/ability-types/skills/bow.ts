@@ -3,17 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Bow implements IAbility {
-    private static instance: Bow;
+  private static instance: Bow;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Bow";
-        this.helpFile = `
+  constructor() {
+    this.name = "Bow";
+    this.helpFile = `
 HELP BOW
 BOWS ARROWS SHOOT CRITICAL1 CRITICAL2 CRITICAL3 CRITICAL4
 
@@ -41,27 +41,27 @@ to attempt the more damaging critical hits, you may exchange the command
 shoot with any of the critical commands.
         `;
 
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Passive;
-        this.manualDescription = "";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Passive;
+    this.manualDescription = "";
 
-        if (Bow.instance === undefined) {
-            Bow.instance = this;
-        }
+    if (Bow.instance === undefined) {
+      Bow.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Bow {
-        if (!Bow.instance) {
-            Bow.instance = new Bow();
-        }
-        return Bow.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Bow {
+    if (!Bow.instance) {
+      Bow.instance = new Bow();
     }
+    return Bow.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Bow.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Bow.GetInstance() as T;
+  }
 }
 
 export default Bow;

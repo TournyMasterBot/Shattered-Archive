@@ -13,39 +13,39 @@ import WarHymns from "../groups-songs/war-hymns";
 import HymnsOfLife from "../groups-songs/hymns-of-life";
 
 export class BardDefault implements IAbilityGroup {
-    static instance: BardDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: BardDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.BardDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            ...WarHymns.GetInstance().Get<WarHymns>().abilities,
-            ...HymnsOfLife.GetInstance().Get<HymnsOfLife>().abilities,
-            new Dodge(),
-            new Pugil(),
-            new Roundhouse(),
-            new EnhancedDamage(),
-            new SecondAttack(),
-            new Parry(),
-            new DangerSense()            
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.BardDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      ...WarHymns.GetInstance().Get<WarHymns>().abilities,
+      ...HymnsOfLife.GetInstance().Get<HymnsOfLife>().abilities,
+      new Dodge(),
+      new Pugil(),
+      new Roundhouse(),
+      new EnhancedDamage(),
+      new SecondAttack(),
+      new Parry(),
+      new DangerSense(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): BardDefault {
-        if (!BardDefault.instance) {
-            BardDefault.instance = new BardDefault();
-        }
-        return BardDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): BardDefault {
+    if (!BardDefault.instance) {
+      BardDefault.instance = new BardDefault();
     }
+    return BardDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return BardDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return BardDefault.GetInstance() as T;
+  }
 }
 
 export default BardDefault;

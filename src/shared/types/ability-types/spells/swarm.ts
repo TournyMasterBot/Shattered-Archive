@@ -3,18 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Swarm implements IAbility {
-    private static instance: Swarm;
+  private static instance: Swarm;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Swarm";
-        this.helpFile =
-`help swarm
+  constructor() {
+    this.name = "Swarm";
+    this.helpFile = `help swarm
 SWARM
 SWARM
 
@@ -25,27 +24,27 @@ before dissipating.
 
 See also - NATURE 
 `;
-        this.manualDescription = ``;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.manualDescription = ``;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (Swarm.instance === undefined) {
-            Swarm.instance = this;
-        }
+    if (Swarm.instance === undefined) {
+      Swarm.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Swarm {
-        if (!Swarm.instance) {
-            Swarm.instance = new Swarm();
-        }
-        return Swarm.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Swarm {
+    if (!Swarm.instance) {
+      Swarm.instance = new Swarm();
     }
+    return Swarm.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Swarm.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Swarm.GetInstance() as T;
+  }
 }
 
 export default Swarm;

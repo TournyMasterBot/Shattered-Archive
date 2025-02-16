@@ -3,17 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Cleanse implements IAbility {
-    private static instance: Cleanse;
+  private static instance: Cleanse;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Cleanse";
-        this.helpFile = `
+  constructor() {
+    this.name = "Cleanse";
+    this.helpFile = `
 help cleanse
 CLEANSE
 CLEANSE
@@ -31,27 +31,27 @@ barbarian may find themselves too exhausted to even move.
 
 Groups containing this skill: BARBARIAN DEFAULT 
 `;
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.manualDescription = "";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.manualDescription = "";
 
-        if (Cleanse.instance === undefined) {
-            Cleanse.instance = this;
-        }
+    if (Cleanse.instance === undefined) {
+      Cleanse.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Cleanse {
-        if (!Cleanse.instance) {
-            Cleanse.instance = new Cleanse();
-        }
-        return Cleanse.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Cleanse {
+    if (!Cleanse.instance) {
+      Cleanse.instance = new Cleanse();
     }
+    return Cleanse.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Cleanse.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Cleanse.GetInstance() as T;
+  }
 }
 
 export default Cleanse;

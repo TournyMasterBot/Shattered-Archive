@@ -12,38 +12,38 @@ import Illusion from "../groups-spells/illusion";
 import Protective from "../groups-spells/protective";
 
 export class InvokerDefault implements IAbilityGroup {
-    static instance: InvokerDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: InvokerDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.InvokerDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            ...Combat.GetInstance().Get<Combat>().abilities,
-            ...Invocation.GetInstance().Get<Invocation>().abilities,
-            ...Detection.GetInstance().Get<Detection>().abilities,
-            ...Transportation.GetInstance().Get<Transportation>().abilities,
-            ...Enhancement.GetInstance().Get<Enhancement>().abilities,
-            ...Illusion.GetInstance().Get<Illusion>().abilities,
-            ...Protective.GetInstance().Get<Protective>().abilities,
-            Astrology.GetInstance().Get(),
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.InvokerDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      ...Combat.GetInstance().Get<Combat>().abilities,
+      ...Invocation.GetInstance().Get<Invocation>().abilities,
+      ...Detection.GetInstance().Get<Detection>().abilities,
+      ...Transportation.GetInstance().Get<Transportation>().abilities,
+      ...Enhancement.GetInstance().Get<Enhancement>().abilities,
+      ...Illusion.GetInstance().Get<Illusion>().abilities,
+      ...Protective.GetInstance().Get<Protective>().abilities,
+      Astrology.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): InvokerDefault {
-        if (!InvokerDefault.instance) {
-            InvokerDefault.instance = new InvokerDefault();
-        }
-        return InvokerDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): InvokerDefault {
+    if (!InvokerDefault.instance) {
+      InvokerDefault.instance = new InvokerDefault();
     }
+    return InvokerDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return InvokerDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return InvokerDefault.GetInstance() as T;
+  }
 }
 
 export default InvokerDefault;

@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Drum implements IAbility {
-    private static instance: Drum;
+  private static instance: Drum;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Drum";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `
+  constructor() {
+    this.name = "Drum";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `
 help drum
 mastery mace backhand drum boneshatter
 Mastery of the Mace
@@ -38,23 +38,23 @@ boneshatter    A powerful mace attack intended to hamper an opponent's agility.
 
 This group is available to the following classes: ARMSMAN
 `;
-        if (Drum.instance === undefined) {
-            Drum.instance = this;
-        }
+    if (Drum.instance === undefined) {
+      Drum.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Drum {
-        if (!Drum.instance) {
-            Drum.instance = new Drum();
-        }
-        return Drum.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Drum {
+    if (!Drum.instance) {
+      Drum.instance = new Drum();
     }
+    return Drum.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Drum.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Drum.GetInstance() as T;
+  }
 }
 
 export default Drum;

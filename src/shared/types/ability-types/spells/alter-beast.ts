@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class AlterBeast implements IAbility {
-    private static instance: AlterBeast;
+  private static instance: AlterBeast;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Alter Beast";
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `
+  constructor() {
+    this.name = "Alter Beast";
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `
 ALTER BEAST
 
 Syntax: cast 'alter beast'
@@ -39,23 +39,23 @@ SEE ALSO:  BATTLEMAGE, BATTLEMAGIC
 Updated 03.19.2021
 `;
 
-        if (AlterBeast.instance === undefined) {
-            AlterBeast.instance = this;
-        }
+    if (AlterBeast.instance === undefined) {
+      AlterBeast.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): AlterBeast {
-        if (!AlterBeast.instance) {
-            AlterBeast.instance = new AlterBeast();
-        }
-        return AlterBeast.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): AlterBeast {
+    if (!AlterBeast.instance) {
+      AlterBeast.instance = new AlterBeast();
     }
+    return AlterBeast.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return AlterBeast.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return AlterBeast.GetInstance() as T;
+  }
 }
 
 export default AlterBeast;

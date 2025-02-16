@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Forget implements IAbility {
-    private static instance: Forget;
+  private static instance: Forget;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Forget";
-        this.helpFile = `
+  constructor() {
+    this.name = "Forget";
+    this.helpFile = `
 FORGET
 
 Syntax:  cast 'forget' <target>
@@ -24,26 +24,26 @@ will default to the current foe if the caster is engaged in combat.
 
 See also - ALTERATION TRANSMUTER
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (Forget.instance === undefined) {
-            Forget.instance = this;
-        }
+    if (Forget.instance === undefined) {
+      Forget.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Forget {
-        if (!Forget.instance) {
-            Forget.instance = new Forget();
-        }
-        return Forget.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Forget {
+    if (!Forget.instance) {
+      Forget.instance = new Forget();
     }
+    return Forget.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Forget.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Forget.GetInstance() as T;
+  }
 }
 
 export default Forget;

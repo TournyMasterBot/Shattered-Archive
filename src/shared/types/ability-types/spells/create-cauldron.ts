@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class CreateCauldron implements IAbility {
-    private static instance: CreateCauldron;
+  private static instance: CreateCauldron;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Create Cauldron";
-        this.helpFile = `
+  constructor() {
+    this.name = "Create Cauldron";
+    this.helpFile = `
 CREATE CAULDRON
 CREATE CAULDRON
 
@@ -24,26 +24,26 @@ huge iron cauldron into being from which gourds can be created.
 
 See also - WITCHCRAFT
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (CreateCauldron.instance === undefined) {
-            CreateCauldron.instance = this;
-        }
+    if (CreateCauldron.instance === undefined) {
+      CreateCauldron.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): CreateCauldron {
-        if (!CreateCauldron.instance) {
-            CreateCauldron.instance = new CreateCauldron();
-        }
-        return CreateCauldron.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): CreateCauldron {
+    if (!CreateCauldron.instance) {
+      CreateCauldron.instance = new CreateCauldron();
     }
+    return CreateCauldron.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return CreateCauldron.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return CreateCauldron.GetInstance() as T;
+  }
 }
 
 export default CreateCauldron;

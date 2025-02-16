@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Wands implements IAbility {
-    private static instance: Wands;
+  private static instance: Wands;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Wands";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help wand
+  constructor() {
+    this.name = "Wands";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help wand
 BRANDISH QUAFF RECITE ZAP WAND STAFF SCROLL POTION
 BRANDISH QUAFF RECITE ZAP WAND STAFF SCROLL POTION
 Syntax: brandish <target>
@@ -40,22 +40,22 @@ charge.  Wands and staves have multiple charges.  When a magical object has no
 more charges, it will be consumed.
 These commands may require an item skill to be successful, see the help entries
 on the skills scrolls, staves, and wands for more information.`;
-        if (Wands.instance === undefined) {
-            Wands.instance = this;
-        }
+    if (Wands.instance === undefined) {
+      Wands.instance = this;
     }
-    // Method to get the single instance of the class
-    public static GetInstance(): Wands {
-        if (!Wands.instance) {
-            Wands.instance = new Wands();
-        }
-        return Wands.instance;
+  }
+  // Method to get the single instance of the class
+  public static GetInstance(): Wands {
+    if (!Wands.instance) {
+      Wands.instance = new Wands();
     }
+    return Wands.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Wands.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Wands.GetInstance() as T;
+  }
 }
 
 export default Wands;

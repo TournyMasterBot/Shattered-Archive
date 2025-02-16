@@ -15,7 +15,7 @@ import GroupTypeDescriptions from "@shared/types/ability-types/group-type-descri
     ```
  */
 function GetGroupTypeDescription(type: AbilityGroupType): string {
-    return GroupTypeDescriptions[type];
+  return GroupTypeDescriptions[type];
 }
 
 export default GetGroupTypeDescription;

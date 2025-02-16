@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Plague implements IAbility {
-    private static instance: Plague;
+  private static instance: Plague;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Plague";
-        this.helpFile = `help 'Plague'
+  constructor() {
+    this.name = "Plague";
+    this.helpFile = `help 'Plague'
 PLAGUE
 PLAGUE
 
@@ -21,26 +21,26 @@ The plague spell infests the target with a magical disease of great virulence,
 sapping its strength and causing horrific suffering, possibly leading to
 death. It is a risky spell to use, as the contagion can spread like
 wildfire if the victim makes it to a populated area.`;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (Plague.instance === undefined) {
-            Plague.instance = this;
-        }
+    if (Plague.instance === undefined) {
+      Plague.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Plague {
-        if (!Plague.instance) {
-            Plague.instance = new Plague();
-        }
-        return Plague.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Plague {
+    if (!Plague.instance) {
+      Plague.instance = new Plague();
     }
+    return Plague.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Plague.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Plague.GetInstance() as T;
+  }
 }
 
 export default Plague;

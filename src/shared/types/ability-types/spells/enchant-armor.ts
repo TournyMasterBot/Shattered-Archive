@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class EnchantArmor implements IAbility {
-    private static instance: EnchantArmor;
+  private static instance: EnchantArmor;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Enchant Armor";
-        this.helpFile = `
+  constructor() {
+    this.name = "Enchant Armor";
+    this.helpFile = `
 help enchant armor
 'ENCHANT ARMOR'
 Syntax: cast 'enchant armor' <object>
@@ -20,26 +20,26 @@ The enchant armor spell imbues armor with powerful protective magics. It is
 not nearly as reliable as enchant weapon, being far more prone to destructive
 effects. Each successful enchant increases the plus of the armor by 1 or 2
 points, and raises its level by one.`;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (EnchantArmor.instance === undefined) {
-            EnchantArmor.instance = this;
-        }
+    if (EnchantArmor.instance === undefined) {
+      EnchantArmor.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): EnchantArmor {
-        if (!EnchantArmor.instance) {
-            EnchantArmor.instance = new EnchantArmor();
-        }
-        return EnchantArmor.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): EnchantArmor {
+    if (!EnchantArmor.instance) {
+      EnchantArmor.instance = new EnchantArmor();
     }
+    return EnchantArmor.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return EnchantArmor.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return EnchantArmor.GetInstance() as T;
+  }
 }
 
 export default EnchantArmor;

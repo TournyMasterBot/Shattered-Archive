@@ -15,41 +15,41 @@ import DetectPoison from "@shared/types/ability-types/spells/detect-poison";
 import KnowAlignment from "@shared/types/ability-types/spells/know-alignment";
 
 export class Detection implements IAbilityGroup {
-    static instance: Detection;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Detection;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Detection;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            DetectEvil.GetInstance().Get(),
-            DetectInvis.GetInstance().Get(),
-            Farsight.GetInstance().Get(),
-            LocateObject.GetInstance().Get(),
-            DetectGood.GetInstance().Get(),
-            DetectMagic.GetInstance().Get(),
-            Identify.GetInstance().Get(),
-            KnowLanguages.GetInstance().Get(),
-            DetectHidden.GetInstance().Get(),
-            DetectPoison.GetInstance().Get(),
-            KnowAlignment.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Detection;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      DetectEvil.GetInstance().Get(),
+      DetectInvis.GetInstance().Get(),
+      Farsight.GetInstance().Get(),
+      LocateObject.GetInstance().Get(),
+      DetectGood.GetInstance().Get(),
+      DetectMagic.GetInstance().Get(),
+      Identify.GetInstance().Get(),
+      KnowLanguages.GetInstance().Get(),
+      DetectHidden.GetInstance().Get(),
+      DetectPoison.GetInstance().Get(),
+      KnowAlignment.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Detection {
-        if (!Detection.instance) {
-            Detection.instance = new Detection();
-        }
-        return Detection.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Detection {
+    if (!Detection.instance) {
+      Detection.instance = new Detection();
     }
+    return Detection.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Detection.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Detection.GetInstance() as T;
+  }
 }
 
 export default Detection;

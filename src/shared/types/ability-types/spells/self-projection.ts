@@ -3,17 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class SelfProjection implements IAbility {
-    private static instance: SelfProjection;
+  private static instance: SelfProjection;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Self Projection";
-        this.helpFile = `
+  constructor() {
+    this.name = "Self Projection";
+    this.helpFile = `
 SELF PROJECTION
 SELF PROJECTION
 
@@ -28,27 +28,27 @@ have better chances with it.
 
 See also - ILLUSION
 `;
-        this.manualDescription = "";
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.manualDescription = "";
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (SelfProjection.instance === undefined) {
-            SelfProjection.instance = this;
-        }
+    if (SelfProjection.instance === undefined) {
+      SelfProjection.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): SelfProjection {
-        if (!SelfProjection.instance) {
-            SelfProjection.instance = new SelfProjection();
-        }
-        return SelfProjection.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): SelfProjection {
+    if (!SelfProjection.instance) {
+      SelfProjection.instance = new SelfProjection();
     }
+    return SelfProjection.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return SelfProjection.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return SelfProjection.GetInstance() as T;
+  }
 }
 
 export default SelfProjection;

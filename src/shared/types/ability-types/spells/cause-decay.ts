@@ -4,42 +4,43 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class CauseDecay implements IAbility {
-    private static instance: CauseDecay;
+  private static instance: CauseDecay;
 
-    name: string;
-    manualDescription?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  manualDescription?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Cause Decay";
-        this.manualDescription = `
+  constructor() {
+    this.name = "Cause Decay";
+    this.manualDescription = `
 A spell that causes moderate damage and has a chance to apply debilitating maledictions to the target.
 `;
-        this.alternateKeyword = "harmful";
-        this.recommendedHelpFileChanges = "add 'cause decay' to 'help cause' for improved discoverability. I believe* this should auto wire up into 'help harm' as well";
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.alternateKeyword = "harmful";
+    this.recommendedHelpFileChanges =
+      "add 'cause decay' to 'help cause' for improved discoverability. I believe* this should auto wire up into 'help harm' as well";
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (CauseDecay.instance === undefined) {
-            CauseDecay.instance = this;
-        }
+    if (CauseDecay.instance === undefined) {
+      CauseDecay.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): CauseDecay {
-        if (!CauseDecay.instance) {
-            CauseDecay.instance = new CauseDecay();
-        }
-        return CauseDecay.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): CauseDecay {
+    if (!CauseDecay.instance) {
+      CauseDecay.instance = new CauseDecay();
     }
+    return CauseDecay.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return CauseDecay.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return CauseDecay.GetInstance() as T;
+  }
 }
 
 export default CauseDecay;

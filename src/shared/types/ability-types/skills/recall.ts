@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Recall implements IAbility {
-    private static instance: Recall;
+  private static instance: Recall;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Recall";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help recall
+  constructor() {
+    this.name = "Recall";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help recall
 RECALL /
 RECALL /
 Syntax: RECALL
@@ -34,22 +34,22 @@ insure success.
 RECALL costs half of your movement points.
 RECALL doesn't work in certain god-forsaken rooms.  Characters afflicted by a
 curse may not recall at all.`;
-        if (Recall.instance === undefined) {
-            Recall.instance = this;
-        }
+    if (Recall.instance === undefined) {
+      Recall.instance = this;
     }
-    // Method to get the single instance of the class
-    public static GetInstance(): Recall {
-        if (!Recall.instance) {
-            Recall.instance = new Recall();
-        }
-        return Recall.instance;
+  }
+  // Method to get the single instance of the class
+  public static GetInstance(): Recall {
+    if (!Recall.instance) {
+      Recall.instance = new Recall();
     }
+    return Recall.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Recall.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Recall.GetInstance() as T;
+  }
 }
 
 export default Recall;

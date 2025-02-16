@@ -4,25 +4,25 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class ShieldCleave implements IAbility {
-    private static instance: ShieldCleave;
+  private static instance: ShieldCleave;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    // Private constructor to prevent direct instantiation
-    private constructor() {
-        this.name = "Shield Cleave";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help 'Shield Cleave'
+  // Private constructor to prevent direct instantiation
+  private constructor() {
+    this.name = "Shield Cleave";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help 'Shield Cleave'
 mastery axe shield cleave scleave whirl disembowel
 Mastery of the Axe 
  
@@ -40,20 +40,20 @@ disembowel      A massive gut shot to an opponent, usable when an opponent is to
                 hurt to block it. 
   
 This group is available to the following classes: ARMSMAN`;
-    }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): ShieldCleave {
-        if (!ShieldCleave.instance) {
-            ShieldCleave.instance = new ShieldCleave();
-        }
-        return ShieldCleave.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): ShieldCleave {
+    if (!ShieldCleave.instance) {
+      ShieldCleave.instance = new ShieldCleave();
     }
+    return ShieldCleave.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return ShieldCleave.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return ShieldCleave.GetInstance() as T;
+  }
 }
 
 export default ShieldCleave;

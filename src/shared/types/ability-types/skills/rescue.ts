@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Rescue implements IAbility {
-    private static instance: Rescue;
+  private static instance: Rescue;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Rescue";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `help rescue
+  constructor() {
+    this.name = "Rescue";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `help rescue
 FLEE RESCUE
 FLEE RESCUE
 Syntax: flee
@@ -41,22 +41,22 @@ in combat, protecting weaker characters from bodily harm. Hopefully the
 favor will be returned.  Success in rescuing depends on the skill rating, as
 well as a comparison of level, dexterity, and speed between the character and
 the target. (note: you rescue a friend, not the monster)`;
-        if (Rescue.instance === undefined) {
-            Rescue.instance = this;
-        }
+    if (Rescue.instance === undefined) {
+      Rescue.instance = this;
     }
-    // Method to get the single instance of the class
-    public static GetInstance(): Rescue {
-        if (!Rescue.instance) {
-            Rescue.instance = new Rescue();
-        }
-        return Rescue.instance;
+  }
+  // Method to get the single instance of the class
+  public static GetInstance(): Rescue {
+    if (!Rescue.instance) {
+      Rescue.instance = new Rescue();
     }
+    return Rescue.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Rescue.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Rescue.GetInstance() as T;
+  }
 }
 
 export default Rescue;

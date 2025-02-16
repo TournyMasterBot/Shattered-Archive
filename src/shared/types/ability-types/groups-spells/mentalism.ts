@@ -13,39 +13,39 @@ import Amnesia from "@shared/types/ability-types/spells/amnesia";
 import Distortion from "@shared/types/ability-types/spells/distortion";
 
 export class Mentalism implements IAbilityGroup {
-    static instance: Mentalism;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: Mentalism;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.Mentalism;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            HealingDream.GetInstance().Get(),
-            Haze.GetInstance().Get(),
-            Recover.GetInstance().Get(),
-            FocusedAggression.GetInstance().Get(),
-            FakeIllness.GetInstance().Get(),
-            AbandonHope.GetInstance().Get(),
-            InfluenceConfidence.GetInstance().Get(),
-            Amnesia.GetInstance().Get(),
-            Distortion.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.Mentalism;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      HealingDream.GetInstance().Get(),
+      Haze.GetInstance().Get(),
+      Recover.GetInstance().Get(),
+      FocusedAggression.GetInstance().Get(),
+      FakeIllness.GetInstance().Get(),
+      AbandonHope.GetInstance().Get(),
+      InfluenceConfidence.GetInstance().Get(),
+      Amnesia.GetInstance().Get(),
+      Distortion.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Mentalism {
-        if (!Mentalism.instance) {
-            Mentalism.instance = new Mentalism();
-        }
-        return Mentalism.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Mentalism {
+    if (!Mentalism.instance) {
+      Mentalism.instance = new Mentalism();
     }
+    return Mentalism.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Mentalism.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Mentalism.GetInstance() as T;
+  }
 }
 
 export default Mentalism;

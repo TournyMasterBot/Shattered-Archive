@@ -3,38 +3,38 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class SpellEating implements IAbility {
-    private static instance: SpellEating;
+  private static instance: SpellEating;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Spell Eating";
-        this.helpFile = "";
-        this.manualDescription = "";
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+  constructor() {
+    this.name = "Spell Eating";
+    this.helpFile = "";
+    this.manualDescription = "";
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (SpellEating.instance === undefined) {
-            SpellEating.instance = this;
-        }
+    if (SpellEating.instance === undefined) {
+      SpellEating.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): SpellEating {
-        if (!SpellEating.instance) {
-            SpellEating.instance = new SpellEating();
-        }
-        return SpellEating.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): SpellEating {
+    if (!SpellEating.instance) {
+      SpellEating.instance = new SpellEating();
     }
+    return SpellEating.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return SpellEating.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return SpellEating.GetInstance() as T;
+  }
 }
 
 export default SpellEating;

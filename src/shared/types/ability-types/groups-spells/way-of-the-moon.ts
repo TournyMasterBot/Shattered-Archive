@@ -9,29 +9,29 @@ import MoonShadow from "@shared/types/ability-types/spells/moon-shadow";
 import MindCrater from "@shared/types/ability-types/spells/mind-crater";
 
 export class WayOfTheMoon implements IAbilityGroup {
-    static instance: WayOfTheMoon;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: WayOfTheMoon;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.WayOfTheMoon;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilities = [
-            MoonGaze.GetInstance().Get(),
-            MoonPull.GetInstance().Get(),
-            EclipseBeing.GetInstance().Get(),
-            MoonShadow.GetInstance().Get(),
-            MindCrater.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.WayOfTheMoon;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilities = [
+      MoonGaze.GetInstance().Get(),
+      MoonPull.GetInstance().Get(),
+      EclipseBeing.GetInstance().Get(),
+      MoonShadow.GetInstance().Get(),
+      MindCrater.GetInstance().Get(),
+    ];
+  }
 
-    public Get<T>(): T {
-        if (!WayOfTheMoon.instance) {
-            WayOfTheMoon.instance = new WayOfTheMoon();
-        }
-        return WayOfTheMoon.instance as T;
+  public Get<T>(): T {
+    if (!WayOfTheMoon.instance) {
+      WayOfTheMoon.instance = new WayOfTheMoon();
     }
+    return WayOfTheMoon.instance as T;
+  }
 }
 
 export default WayOfTheMoon;

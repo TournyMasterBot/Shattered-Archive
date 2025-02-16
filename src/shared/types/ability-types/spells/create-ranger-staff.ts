@@ -3,16 +3,16 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class CreateRangerStaff implements IAbility {
-    private static instance: CreateRangerStaff;
+  private static instance: CreateRangerStaff;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Create Ranger Staff";
-        this.helpFile = `
+  constructor() {
+    this.name = "Create Ranger Staff";
+    this.helpFile = `
 help 'Create Ranger Staff'
 'CREATE RANGER STAFF'
 'CREATE RANGER STAFF'
@@ -28,26 +28,26 @@ level and skill of the ranger who creates it.
 
 See also - NATURE RANGER 
 `;
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (CreateRangerStaff.instance === undefined) {
-            CreateRangerStaff.instance = this;
-        }
+    if (CreateRangerStaff.instance === undefined) {
+      CreateRangerStaff.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): CreateRangerStaff {
-        if (!CreateRangerStaff.instance) {
-            CreateRangerStaff.instance = new CreateRangerStaff();
-        }
-        return CreateRangerStaff.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): CreateRangerStaff {
+    if (!CreateRangerStaff.instance) {
+      CreateRangerStaff.instance = new CreateRangerStaff();
     }
+    return CreateRangerStaff.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return CreateRangerStaff.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return CreateRangerStaff.GetInstance() as T;
+  }
 }
 
 export default CreateRangerStaff;

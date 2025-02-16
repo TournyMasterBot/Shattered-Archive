@@ -11,37 +11,37 @@ import Rescue from "@shared/types/ability-types/skills/rescue";
 import SkaldChants from "../groups-songs/skald-chants";
 
 export class SkaldDefault implements IAbilityGroup {
-    static instance: SkaldDefault;
-    public abilityGroup: AbilityGroup;
-    public abilityGroupType: AbilityGroupType;
-    public abilities: IAbility[];
+  static instance: SkaldDefault;
+  public abilityGroup: AbilityGroup;
+  public abilityGroupType: AbilityGroupType;
+  public abilities: IAbility[];
 
-    constructor() {
-        this.abilityGroup = AbilityGroup.SkaldDefault;
-        this.abilityGroupType = AbilityGroupType.Default;
-        this.abilities = [
-            ...SkaldChants.GetInstance().Get<SkaldChants>().abilities,
-            Dodge.GetInstance().Get(),
-            SecondAttack.GetInstance().Get(),
-            Parry.GetInstance().Get(),
-            ThirdAttack.GetInstance().Get(),
-            ShieldBlock.GetInstance().Get(),
-            Rescue.GetInstance().Get()
-        ];
-    }
+  constructor() {
+    this.abilityGroup = AbilityGroup.SkaldDefault;
+    this.abilityGroupType = AbilityGroupType.Default;
+    this.abilities = [
+      ...SkaldChants.GetInstance().Get<SkaldChants>().abilities,
+      Dodge.GetInstance().Get(),
+      SecondAttack.GetInstance().Get(),
+      Parry.GetInstance().Get(),
+      ThirdAttack.GetInstance().Get(),
+      ShieldBlock.GetInstance().Get(),
+      Rescue.GetInstance().Get(),
+    ];
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): SkaldDefault {
-        if (!SkaldDefault.instance) {
-            SkaldDefault.instance = new SkaldDefault();
-        }
-        return SkaldDefault.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): SkaldDefault {
+    if (!SkaldDefault.instance) {
+      SkaldDefault.instance = new SkaldDefault();
     }
+    return SkaldDefault.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return SkaldDefault.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return SkaldDefault.GetInstance() as T;
+  }
 }
 
 export default SkaldDefault;

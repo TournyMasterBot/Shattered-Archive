@@ -3,17 +3,17 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
 export class Scourge implements IAbility {
-    private static instance: Scourge;
+  private static instance: Scourge;
 
-    name: string;
-    helpFile: string;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
-    manualDescription: string;
+  name: string;
+  helpFile: string;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
+  manualDescription: string;
 
-    constructor() {
-        this.name = "Scourge";
-        this.helpFile = `
+  constructor() {
+    this.name = "Scourge";
+    this.helpFile = `
 SCOURGE
 
 Syntax: cast scourge <target>
@@ -28,27 +28,27 @@ be used responsibly.
 
 See also - NECROMANCY NECROMANCER
 `;
-        this.manualDescription = "";
-        this.abilityGroupType = AbilityGroupType.Spells;
-        this.abilityUsage = AbilityUsage.Active;
+    this.manualDescription = "";
+    this.abilityGroupType = AbilityGroupType.Spells;
+    this.abilityUsage = AbilityUsage.Active;
 
-        if (Scourge.instance === undefined) {
-            Scourge.instance = this;
-        }
+    if (Scourge.instance === undefined) {
+      Scourge.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): Scourge {
-        if (!Scourge.instance) {
-            Scourge.instance = new Scourge();
-        }
-        return Scourge.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): Scourge {
+    if (!Scourge.instance) {
+      Scourge.instance = new Scourge();
     }
+    return Scourge.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Scourge.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Scourge.GetInstance() as T;
+  }
 }
 
 export default Scourge;

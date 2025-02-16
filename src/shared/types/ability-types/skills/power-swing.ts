@@ -4,24 +4,24 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class PowerSwing implements IAbility {
-    private static instance: PowerSwing;
+  private static instance: PowerSwing;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "PowerSwing";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Active;
-        this.helpFile = `
+  constructor() {
+    this.name = "PowerSwing";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Active;
+    this.helpFile = `
 help powerswing
 POWERSWING
 POWERSWING
@@ -36,25 +36,25 @@ that even the largest dragons can be dazed by the hit.
 
 Groups containing this skill: BARBARIAN DEFAULT 
         `;
-        this.manualDescription = "Powerswing can be used when you reach 80% hp";
+    this.manualDescription = "Powerswing can be used when you reach 80% hp";
 
-        if (PowerSwing.instance === undefined) {
-            PowerSwing.instance = this;
-        }
+    if (PowerSwing.instance === undefined) {
+      PowerSwing.instance = this;
     }
+  }
 
-    // Method to get the single instance of the class
-    public static GetInstance(): PowerSwing {
-        if (!PowerSwing.instance) {
-            PowerSwing.instance = new PowerSwing();
-        }
-        return PowerSwing.instance;
+  // Method to get the single instance of the class
+  public static GetInstance(): PowerSwing {
+    if (!PowerSwing.instance) {
+      PowerSwing.instance = new PowerSwing();
     }
+    return PowerSwing.instance;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return PowerSwing.GetInstance() as T;
-    }
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return PowerSwing.GetInstance() as T;
+  }
 }
 
 export default PowerSwing;

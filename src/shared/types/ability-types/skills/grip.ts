@@ -4,47 +4,47 @@ import AbilityUsage from "@shared/types/ability-types/ability-usage";
 import SkillSpellEffects from "@shared/types/ability-types/effects";
 
 export class Grip implements IAbility {
-    private static instance: Grip;
+  private static instance: Grip;
 
-    name: string;
-    helpFile: string;
-    manualDescription?: string | undefined;
-    duration?: number | undefined;
-    effects?: SkillSpellEffects | undefined;
-    group?: string | undefined;
-    alternateKeyword?: string | undefined;
-    recommendedHelpFileChanges?: string | undefined;
-    abilityGroupType: AbilityGroupType;
-    abilityUsage: AbilityUsage;
+  name: string;
+  helpFile: string;
+  manualDescription?: string | undefined;
+  duration?: number | undefined;
+  effects?: SkillSpellEffects | undefined;
+  group?: string | undefined;
+  alternateKeyword?: string | undefined;
+  recommendedHelpFileChanges?: string | undefined;
+  abilityGroupType: AbilityGroupType;
+  abilityUsage: AbilityUsage;
 
-    constructor() {
-        this.name = "Grip";
-        this.abilityGroupType = AbilityGroupType.Skills;
-        this.abilityUsage = AbilityUsage.Passive;
-        this.helpFile = `help Grip
+  constructor() {
+    this.name = "Grip";
+    this.abilityGroupType = AbilityGroupType.Skills;
+    this.abilityUsage = AbilityUsage.Passive;
+    this.helpFile = `help Grip
 grip
 Few are so proficient with weapons as an armsman, hence through 
 intense training armsmen develop an instinctive sense as to when 
 they are about to be disarmed. This innate ability lends to being 
 disarmed less frequently.`;
 
-        if (Grip.instance === undefined) {
-            Grip.instance = this;
-        }
+    if (Grip.instance === undefined) {
+      Grip.instance = this;
     }
-    
-    // Method to get the single instance of the class
-    public static GetInstance(): Grip {
-        if (!Grip.instance) {
-            Grip.instance = new Grip();
-        }
-        return Grip.instance;
-    }
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Grip.GetInstance() as T;
+  // Method to get the single instance of the class
+  public static GetInstance(): Grip {
+    if (!Grip.instance) {
+      Grip.instance = new Grip();
     }
+    return Grip.instance;
+  }
+
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Grip.GetInstance() as T;
+  }
 }
 
 export default Grip;
