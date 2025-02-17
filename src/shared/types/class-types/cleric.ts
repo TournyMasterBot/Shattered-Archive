@@ -1,0 +1,526 @@
+// #region imports
+import Axe from "@shared/types/ability-types/skills/axe";
+import Dagger from "@shared/types/ability-types/skills/dagger";
+import Flail from "@shared/types/ability-types/skills/flail";
+import Mace from "@shared/types/ability-types/skills/mace";
+import Polearm from "@shared/types/ability-types/skills/polearm";
+import ShieldBlock from "@shared/types/ability-types/skills/shield-block";
+import Spear from "@shared/types/ability-types/skills/spear";
+import Sword from "@shared/types/ability-types/skills/sword";
+import Staff from "@shared/types/ability-types/skills/staff";
+import Whip from "@shared/types/ability-types/skills/whip";
+import Swim from "@shared/types/ability-types/skills/swim";
+import Scrolls from "@shared/types/ability-types/skills/scrolls";
+import Staves from "@shared/types/ability-types/skills/staves";
+import Wands from "@shared/types/ability-types/skills/wands";
+import Recall from "@shared/types/ability-types/skills/recall";
+import Dig from "@shared/types/ability-types/skills/dig";
+import Age from "@shared/types/ability-types/skills/age";
+import Riding from "@shared/types/ability-types/skills/riding";
+import Meditation from "@shared/types/ability-types/skills/meditation";
+import FastHealing from "@shared/types/ability-types/skills/fast-healing";
+import HandToHand from "@shared/types/ability-types/skills/hand-to-hand";
+import Lore from "@shared/types/ability-types/skills/lore";
+import Kick from "@shared/types/ability-types/skills/kick";
+import Haggle from "@shared/types/ability-types/skills/haggle";
+import Parry from "@shared/types/ability-types/skills/parry";
+import Astrology from "@shared/types/ability-types/skills/astrology";
+import Peek from "@shared/types/ability-types/skills/peek";
+import Dodge from "@shared/types/ability-types/skills/dodge";
+import SecondAttack from "@shared/types/ability-types/skills/second-attack";
+import PickLock from "@shared/types/ability-types/skills/pick-lock";
+import BlindFighting from "@shared/types/ability-types/skills/blind-fighting";
+
+import CauseLight from "@shared/types/ability-types/spells/cause-light";
+import CureLight from "@shared/types/ability-types/spells/cure-light";
+import ArmorSpell from "@shared/types/ability-types/spells/armor";
+import CreateWater from "@shared/types/ability-types/spells/create-water";
+import FaerieFire from "@shared/types/ability-types/spells/faerie-fire";
+import ContinualLight from "@shared/types/ability-types/spells/continual-light";
+import DetectEvil from "@shared/types/ability-types/spells/detect-evil";
+import DetectGood from "@shared/types/ability-types/spells/detect-good";
+import CreateFood from "@shared/types/ability-types/spells/create-food";
+import Refresh from "@shared/types/ability-types/spells/refresh";
+import WordOfRecall from "@shared/types/ability-types/spells/word-of-recall";
+import CureBlindness from "@shared/types/ability-types/spells/cure-blindness";
+import DetectMagic from "@shared/types/ability-types/spells/detect-magic";
+import Bless from "@shared/types/ability-types/spells/bless";
+import CauseSerious from "@shared/types/ability-types/spells/cause-serious";
+import CureSerious from "@shared/types/ability-types/spells/cure-serious";
+import DetectPoison from "@shared/types/ability-types/spells/detect-poison";
+import Blindness from "@shared/types/ability-types/spells/blindness";
+import DetectInvis from "@shared/types/ability-types/spells/detect-invis";
+import Illumination from "@shared/types/ability-types/spells/illumination";
+import KnowAlignment from "@shared/types/ability-types/spells/know-alignment";
+import ProtectionEvil from "@shared/types/ability-types/spells/protection-evil";
+import ProtectionNeutral from "@shared/types/ability-types/spells/protection-neutral";
+import ProtectionGood from "@shared/types/ability-types/spells/protection-good";
+import Earthquake from "@shared/types/ability-types/spells/earthquake";
+import FloatingDisc from "@shared/types/ability-types/spells/floating-disc";
+import CreateTree from "@shared/types/ability-types/spells/create-tree";
+import CreateRose from "@shared/types/ability-types/spells/create-rose";
+import DetectHidden from "@shared/types/ability-types/spells/detect-hidden";
+import Fireproof from "@shared/types/ability-types/spells/fireproof";
+import Poison from "@shared/types/ability-types/spells/poison";
+import Summon from "@shared/types/ability-types/spells/summon";
+import CauseCritical from "@shared/types/ability-types/spells/cause-critical";
+import CureCritical from "@shared/types/ability-types/spells/cure-critical";
+import CureDisease from "@shared/types/ability-types/spells/cure-disease";
+import CurePoison from "@shared/types/ability-types/spells/cure-poison";
+import Weaken from "@shared/types/ability-types/spells/weaken";
+import DispelEvil from "@shared/types/ability-types/spells/dispel-evil";
+import DispelNeutral from "@shared/types/ability-types/spells/dispel-neutral";
+import DispelGood from "@shared/types/ability-types/spells/dispel-good";
+import LocateObject from "@shared/types/ability-types/spells/locate-object";
+import SummonElemental from "@shared/types/ability-types/spells/summon-elemental";
+import Calm from "@shared/types/ability-types/spells/calm";
+import Farsight from "@shared/types/ability-types/spells/farsight";
+import HeatMetal from "@shared/types/ability-types/spells/heat-metal";
+import Identify from "@shared/types/ability-types/spells/identify";
+import CreateSpring from "@shared/types/ability-types/spells/create-spring";
+import Gate from "@shared/types/ability-types/spells/gate";
+import Plague from "@shared/types/ability-types/spells/plague";
+import CallLightning from "@shared/types/ability-types/spells/call-lightning";
+import Curse from "@shared/types/ability-types/spells/curse";
+import Fly from "@shared/types/ability-types/spells/fly";
+import RemoveCurse from "@shared/types/ability-types/spells/remove-curse";
+import ControlWeather from "@shared/types/ability-types/spells/control-weather";
+import Flamestrike from "@shared/types/ability-types/spells/flamestrike";
+import Sanctuary from "@shared/types/ability-types/spells/sanctuary";
+import FaerieFog from "@shared/types/ability-types/spells/faerie-fog";
+import Heal from "@shared/types/ability-types/spells/heal";
+import EnergyDrain from "@shared/types/ability-types/spells/energy-drain";
+import Teleport from "@shared/types/ability-types/spells/teleport";
+import Harm from "@shared/types/ability-types/spells/harm";
+import LightningBolt from "@shared/types/ability-types/spells/lightning-bolt";
+import DispelMagic from "@shared/types/ability-types/spells/dispel-magic";
+import Frenzy from "@shared/types/ability-types/spells/frenzy";
+import Waypoint from "@shared/types/ability-types/spells/waypoint";
+import ProximityDispel from "@shared/types/ability-types/spells/proximity-dispel";
+import Cancellation from "@shared/types/ability-types/spells/cancellation";
+import CreateHolySymbol from "@shared/types/ability-types/spells/create-holy-symbol";
+import Portal from "@shared/types/ability-types/spells/portal";
+import ProtectionCold from "@shared/types/ability-types/spells/protection-cold";
+import ProtectionFire from "@shared/types/ability-types/spells/protection-fire";
+import Firestorm from "@shared/types/ability-types/spells/firestorm";
+import PassDoor from "@shared/types/ability-types/spells/pass-door";
+import Crucify from "@shared/types/ability-types/spells/crucify";
+import Demonfire from "@shared/types/ability-types/spells/demonfire";
+import Nexus from "@shared/types/ability-types/spells/nexus";
+import RayOfTruth from "@shared/types/ability-types/spells/ray-of-truth";
+import CauseFatality from "@shared/types/ability-types/spells/cause-fatality";
+
+import ClericBasics from "@shared/types/ability-types/groups-class/cleric-basics";
+import ClericDefault from "@shared/types/ability-types/groups-class/cleric-default";
+import Benedictions from "@shared/types/ability-types/groups-spells/benedictions";
+import Curative from "@shared/types/ability-types/groups-spells/curative";
+import Harmful from "@shared/types/ability-types/groups-spells/harmful";
+import Protective from "@shared/types/ability-types/groups-spells/protective";
+import Worship from "@shared/types/ability-types/groups-spells/worship";
+import Detection from "@shared/types/ability-types/groups-spells/detection";
+import Healing from "@shared/types/ability-types/groups-spells/healing";
+import Transportation from "@shared/types/ability-types/groups-spells/transportation";
+import Attack from "@shared/types/ability-types/groups-spells/attack";
+import Creation from "@shared/types/ability-types/groups-spells/creation";
+import Elemental from "@shared/types/ability-types/groups-spells/elemental";
+import Maladictions from "@shared/types/ability-types/groups-spells/maladictions";
+import Weather from "@shared/types/ability-types/groups-spells/weather";
+
+import IAbility from "@shared/types/ability-types/ability";
+import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
+import { IMortalClass, IClassType, MortalClass } from "@shared/types/character-types/class-type";
+import IDslClass from "@shared/types/character-types/dslClass";
+import IRace from "@shared/types/character-types/race-interface";
+import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
+import DslArmorType from "@shared/types/item-types/armor-type";
+import IDslArmorType from "@shared/types/item-types/armor-type-interface";
+
+import Ogre from "@shared/types/race-types/ogre";
+import GiantOgre from "@shared/types/race-types/giant-ogre";
+import Bugbear from "@shared/types/race-types/bugbear";
+import Wemic from "@shared/types/race-types/wemic";
+import Arboren from "@shared/types/race-types/arboren";
+import Troll from "@shared/types/race-types/troll";
+import Orc from "@shared/types/race-types/orc";
+import Bakali from "@shared/types/race-types/bakali";
+import GullyDwarf from "@shared/types/race-types/gully-dwarf";
+import Pixie from "@shared/types/race-types/pixie";
+import Human from "@shared/types/race-types/human";
+import HalfElf from "@shared/types/race-types/half-elf";
+import WildElf from "@shared/types/race-types/wild-elf";
+import ShalonestiElf from "@shared/types/race-types/shalonesti-elf";
+import SeaElf from "@shared/types/race-types/sea-elf";
+import DarkElf from "@shared/types/race-types/dark-elf";
+import HillDwarf from "@shared/types/race-types/hill-dwarf";
+import MountainDwarf from "@shared/types/race-types/mountain-dwarf";
+import DarkDwarf from "@shared/types/race-types/dark-dwarf";
+import Mul from "@shared/types/race-types/mul";
+import HalfOgre from "@shared/types/race-types/half-ogre";
+import Goblin from "@shared/types/race-types/goblin";
+import HobGoblin from "@shared/types/race-types/hobgoblin";
+import Kender from "@shared/types/race-types/kender";
+import Yinn from "@shared/types/race-types/yinn";
+import Alchemy from "@shared/types/ability-types/skills/alchemy";
+import Backstab from "@shared/types/ability-types/skills/backstab";
+import Bash from "@shared/types/ability-types/skills/bash";
+import Berserk from "@shared/types/ability-types/skills/berserk";
+import DirtKicking from "@shared/types/ability-types/skills/dirt-kicking";
+import Disarm from "@shared/types/ability-types/skills/disarm";
+import DualWield from "@shared/types/ability-types/skills/dual-wield";
+import EnhancedDamage from "@shared/types/ability-types/skills/enhanced-damage";
+import Hide from "@shared/types/ability-types/skills/hide";
+import Scribe from "@shared/types/ability-types/skills/scribe";
+import ThirdAttack from "@shared/types/ability-types/skills/third-attack";
+import Trip from "@shared/types/ability-types/skills/trip";
+import Blizzard from "@shared/types/ability-types/spells/blizzard";
+import CauseDecay from "@shared/types/ability-types/spells/cause-decay";
+import CureBugbearBite from "@shared/types/ability-types/spells/cure-bugbear-bite";
+import CureFatigue from "@shared/types/ability-types/spells/cure-fatigue";
+import DispelFog from "@shared/types/ability-types/spells/dispel-fog";
+import Fog from "@shared/types/ability-types/spells/fog";
+import HeartBlight from "@shared/types/ability-types/spells/heart-blight";
+import HolyWord from "@shared/types/ability-types/spells/holy-word";
+import Imbue from "@shared/types/ability-types/spells/imbue";
+import KnowReligion from "@shared/types/ability-types/spells/know-religion";
+import MassHealing from "@shared/types/ability-types/spells/mass-healing";
+import Slow from "@shared/types/ability-types/spells/slow";
+import StoneSkin from "@shared/types/ability-types/spells/stone-skin";
+import Tornado from "@shared/types/ability-types/spells/tornado";
+import Shield from "@shared/types/ability-types/spells/shield";
+import DeepGnome from "@shared/types/race-types/deep-gnome";
+import Felar from "@shared/types/race-types/felar";
+import Minotaur from "@shared/types/race-types/minotaur";
+import TinkerGnome from "@shared/types/race-types/tinker-gnome";
+// #endregion
+
+export class Cleric implements IDslClass, IMortalClass, IClassType {
+  private static instance: Cleric;
+
+  id: string;
+  name: string;
+  displayName: string;
+  isMortalClass: boolean;
+  isReclass: boolean;
+  isCsr: boolean;
+  baseClass: IClassType;
+  classType: IClassType;
+  imgUrl: string;
+  imgCreditUrl: string;
+  primaryAttribute: IStatAttribute;
+  secondaryAttribute: IStatAttribute;
+  armorType: IDslArmorType;
+  classGroup: string;
+  raceRestrictions: IRace[];
+  abilities: Map<number, IAbility[]>;
+  characterCreationAbilityGroups: Map<number, IAbilityGroup[]>;
+  characterCreationSkills: Map<number, IAbility[]>;
+  baseCpModifier: number;
+  cpRacialModifiers: Map<IRace, number>;
+  helpfile: string;
+  castsAtLevel: boolean;
+  castingLevelModifier: number;
+  notes?: string;
+  buffActions?: IAbility[] | undefined;
+
+  constructor() {
+    this.id = MortalClass.Cleric.id;
+    this.name = MortalClass.Cleric.name;
+    this.displayName = MortalClass.Cleric.displayName;
+    this.isMortalClass = true;
+    this.isReclass = false;
+    this.isCsr = false;
+    this.baseClass = MortalClass.Cleric;
+    this.classType = MortalClass.Cleric;
+    this.imgUrl = "/img/classes/cleric.png";
+    this.imgCreditUrl = "https://www.reddit.com/r/DnD/comments/dx7rh3/art_oc_josephine_cain_grave_cleric_of_kelemvor/";
+    this.primaryAttribute = new StatAttribute({ type: StatAttributeType.Wisdom });
+    this.secondaryAttribute = new StatAttribute({ type: StatAttributeType.Intelligence });
+    this.armorType = DslArmorType.Leather;
+    this.classGroup = MortalClass.Cleric.toString();
+    this.raceRestrictions = [
+      GullyDwarf.GetInstance(),
+      Pixie.GetInstance()
+    ];
+
+    this.abilities = new Map<number, IAbility[]>([
+      [1, [
+        Axe.GetInstance(),
+        Dagger.GetInstance(),
+        Flail.GetInstance(),
+        Mace.GetInstance(),
+        Polearm.GetInstance(),
+        ShieldBlock.GetInstance(),
+        Spear.GetInstance(),
+        Sword.GetInstance(),
+        Staff.GetInstance(),
+        Whip.GetInstance(),
+        Swim.GetInstance(),
+        Scrolls.GetInstance(),
+        Staves.GetInstance(),
+        Wands.GetInstance(),
+        Recall.GetInstance(),
+        Dig.GetInstance(),
+        Age.GetInstance(),
+        CauseLight.GetInstance(),
+        CureLight.GetInstance()
+      ]],
+      [2, [ArmorSpell.GetInstance()]],
+      [3, [
+        Riding.GetInstance(),
+        CreateWater.GetInstance(),
+        FaerieFire.GetInstance()
+      ]],
+      [4, [
+        ContinualLight.GetInstance(),
+        DetectEvil.GetInstance(),
+        DetectGood.GetInstance()
+      ]],
+      [5, [
+        CreateFood.GetInstance(),
+        Refresh.GetInstance(),
+        WordOfRecall.GetInstance()
+      ]],
+      [6, [
+        Meditation.GetInstance(),
+        CureBlindness.GetInstance(),
+        DetectMagic.GetInstance()
+      ]],
+      [7, [
+        Bless.GetInstance(),
+        CauseSerious.GetInstance(),
+        CureSerious.GetInstance(),
+        DetectPoison.GetInstance()
+      ]],
+      [8, [
+        Blindness.GetInstance(),
+        DetectInvis.GetInstance(),
+        Illumination.GetInstance()
+      ]],
+      [9, [
+        FastHealing.GetInstance(),
+        KnowAlignment.GetInstance(),
+        ProtectionEvil.GetInstance(),
+        ProtectionNeutral.GetInstance(),
+        ProtectionGood.GetInstance()
+      ]],
+      [10, [
+        HandToHand.GetInstance(),
+        Lore.GetInstance(),
+        Earthquake.GetInstance(),
+        FloatingDisc.GetInstance(),
+        CreateTree.GetInstance()
+      ]],
+      [11, [
+        CreateRose.GetInstance(),
+        DetectHidden.GetInstance()
+      ]],
+      [12, [
+        Kick.GetInstance(),
+        Fireproof.GetInstance(),
+        Poison.GetInstance(),
+        Summon.GetInstance()
+      ]],
+      [13, [
+        Haggle.GetInstance(),
+        CauseCritical.GetInstance(),
+        CureCritical.GetInstance(),
+        CureDisease.GetInstance()
+      ]],
+      [14, [
+        Parry.GetInstance(),
+        Astrology.GetInstance(),
+        CurePoison.GetInstance(),
+        Weaken.GetInstance()
+      ]],
+      [15, [
+        Peek.GetInstance(),
+        DispelEvil.GetInstance(),
+        DispelNeutral.GetInstance(),
+        DispelGood.GetInstance(),
+        LocateObject.GetInstance(),
+        SummonElemental.GetInstance()
+      ]],
+      [16, [
+        Dodge.GetInstance(),
+        Calm.GetInstance(),
+        Farsight.GetInstance(),
+        HeatMetal.GetInstance(),
+        Identify.GetInstance()
+      ]],
+      [17, [
+        SecondAttack.GetInstance(),
+        CreateSpring.GetInstance(),
+        Gate.GetInstance(),
+        Plague.GetInstance()
+      ]],
+      [18, [
+        PickLock.GetInstance(),
+        CallLightning.GetInstance(),
+        Curse.GetInstance(),
+        Fly.GetInstance(),
+        RemoveCurse.GetInstance()
+      ]],
+      [19, [
+        EnhancedDamage.GetInstance(),
+        ControlWeather.GetInstance()
+      ]],
+      [20, [
+        BlindFighting.GetInstance(),
+        Flamestrike.GetInstance(),
+        Sanctuary.GetInstance()
+      ]],
+      [21, [
+        Peek.GetInstance(),
+        FaerieFog.GetInstance(),
+        Heal.GetInstance()
+      ]],
+      [22, [
+        Dodge.GetInstance(),
+        EnergyDrain.GetInstance(),
+        Teleport.GetInstance()
+      ]],
+      [23, [
+        Harm.GetInstance(),
+        LightningBolt.GetInstance()
+      ]],
+      [24, [
+        SecondAttack.GetInstance(),
+        DispelMagic.GetInstance(),
+        Frenzy.GetInstance(),
+        Waypoint.GetInstance(),
+        ProximityDispel.GetInstance()
+      ]],
+      [25, [PickLock.GetInstance()]],
+      [26, [Cancellation.GetInstance()]],
+      [27, [
+        CureBugbearBite.GetInstance(),
+        CureFatigue.GetInstance()
+      ]],
+      [29, [CreateHolySymbol.GetInstance()]],
+      [30, [
+        EnhancedDamage.GetInstance(),
+        Portal.GetInstance(),
+        ProtectionCold.GetInstance(),
+        ProtectionFire.GetInstance()
+      ]],
+      [31, [Firestorm.GetInstance()]],
+      [32, [PassDoor.GetInstance()]],
+      [33, [Crucify.GetInstance()]],
+      [34, [
+        BlindFighting.GetInstance(),
+        Demonfire.GetInstance()
+      ]],
+      [35, [
+        Nexus.GetInstance(),
+        RayOfTruth.GetInstance(),
+        Shield.GetInstance()
+      ]],
+      [36, [
+        Tornado.GetInstance(),
+        HolyWord.GetInstance()
+      ]],
+      [37, [CauseDecay.GetInstance()]],
+      [38, [
+        Blizzard.GetInstance(),
+        MassHealing.GetInstance()
+      ]],
+      [40, [
+        Slow.GetInstance(),
+        StoneSkin.GetInstance(),
+        KnowReligion.GetInstance()
+      ]],
+      [42, [Imbue.GetInstance()]],
+      [43, [
+        Fog.GetInstance(),
+        DispelFog.GetInstance()
+      ]],
+      [44, [HeartBlight.GetInstance()]],
+      [45, [CauseFatality.GetInstance()]]
+    ]);
+
+    this.characterCreationAbilityGroups = new Map<number, IAbilityGroup[]>([
+      [0, [ClericBasics.GetInstance()]],
+      [3, [Detection.GetInstance(), Healing.GetInstance()]],
+      [4, [Benedictions.GetInstance(), Curative.GetInstance(), Worship.GetInstance(), Transportation.GetInstance(), Creation.GetInstance(), Weather.GetInstance()]],
+      [5, [Attack.GetInstance(), Maladictions.GetInstance()]],
+      [6, [Elemental.GetInstance()]],
+    ]);
+    this.characterCreationSkills = new Map<number, IAbility[]>([
+      [2, [Staff.GetInstance(), Alchemy.GetInstance(), Scribe.GetInstance()]],
+      [3, [Sword.GetInstance(), Haggle.GetInstance(), Peek.GetInstance(), Mace.GetInstance()]],
+      [4, [Axe.GetInstance(), Bash.GetInstance(), DirtKicking.GetInstance(), Polearm.GetInstance(), Staff.GetInstance(), Disarm.GetInstance(), Parry.GetInstance(), ThirdAttack.GetInstance()]],
+      [5, [Berserk.GetInstance(), Backstab.GetInstance(), Whip.GetInstance()]],
+      [6, [DualWield.GetInstance(), Hide.GetInstance(), BlindFighting.GetInstance(), Dodge.GetInstance()]],
+      [8, [Trip.GetInstance(), Meditation.GetInstance()]]
+    ]);
+
+    this.baseCpModifier = 0;
+    this.cpRacialModifiers = new Map<IRace, number>([
+      [Human.GetInstance(), 1.0],
+      [HalfElf.GetInstance(), 1.4],
+      [WildElf.GetInstance(), 1.3],
+      [ShalonestiElf.GetInstance(), 1.4],
+      [SeaElf.GetInstance(), 1.4],
+      [DarkElf.GetInstance(), 1.4],
+      [HillDwarf.GetInstance(), 1.5],
+      [MountainDwarf.GetInstance(), 1.5],
+      [DarkDwarf.GetInstance(), 1.2],
+      [Mul.GetInstance(), 1.5],
+      [Ogre.GetInstance(), 1.4],
+      [HalfOgre.GetInstance(), 1.0],
+      [GiantOgre.GetInstance(), 1.6],
+      [Goblin.GetInstance(), 1.3],
+      [HobGoblin.GetInstance(), 1.0],
+      [Bugbear.GetInstance(), 1.0],
+      [TinkerGnome.GetInstance(), 1.25],
+      [DeepGnome.GetInstance(), 1.25],
+      [Felar.GetInstance(), 1.15],
+      [Wemic.GetInstance(), 1.15],
+      [Minotaur.GetInstance(), 1.5],
+      [Kender.GetInstance(), 1.4],
+      [Arboren.GetInstance(), 1.0],
+      [Yinn.GetInstance(), 1.6]
+    ]);
+
+    this.helpfile =
+`help cleric
+CLERIC 'CLERIC BASICS' 'CLERIC DEFAULT'
+Clerics are the most defensively orientated of all the classes. Most of their
+spells focus on healing or defending the faithful, with their few combat spells
+being far less powerful than those of mages. However, clerics excel at healing
+and possess an impressive array of protective magics.
+All clerics begin with skill in the mace. Other weapon or shield skills must
+be purchased, often at a high cost. The default cleric package includes:
+skills:
+flail           proper use of flails
+spell groups:
+attack          offensive magics
+creation        spells to create physical objects (e.g. food, water)
+curative        healing spells
+benedictions    powerful blessings from the gods
+detection       informational magics (e.g. detect magic, identify)
+healing         spells for treating wounds
+maladictions    a variety of curses
+protective      defensive spells, including sanctuary
+transportation  spells to move between locations
+weather         spells to control the elements
+`;
+    this.castsAtLevel = false;
+    this.castingLevelModifier = 0;
+    this.notes = "";
+    this.buffActions = undefined;
+  }
+
+  public static GetInstance(): Cleric {
+    if (!Cleric.instance) {
+      Cleric.instance = new Cleric();
+    }
+    return Cleric.instance;
+  }
+
+  public Get<T>(): T {
+    return Cleric.GetInstance() as unknown as T;
+  }
+}
+
+export default Cleric;

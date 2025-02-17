@@ -1,0 +1,401 @@
+// #region imports
+import Axe from "@shared/types/ability-types/skills/axe";
+import Dagger from "@shared/types/ability-types/skills/dagger";
+import Flail from "@shared/types/ability-types/skills/flail";
+import Mace from "@shared/types/ability-types/skills/mace";
+import Polearm from "@shared/types/ability-types/skills/polearm";
+import ShieldBlock from "@shared/types/ability-types/skills/shield-block";
+import Spear from "@shared/types/ability-types/skills/spear";
+import Sword from "@shared/types/ability-types/skills/sword";
+import Staff from "@shared/types/ability-types/skills/staff";
+import Whip from "@shared/types/ability-types/skills/whip";
+import Backstab from "@shared/types/ability-types/skills/backstab";
+import Dodge from "@shared/types/ability-types/skills/dodge";
+import Trip from "@shared/types/ability-types/skills/trip";
+import Haggle from "@shared/types/ability-types/skills/haggle";
+import Hide from "@shared/types/ability-types/skills/hide";
+import Peek from "@shared/types/ability-types/skills/peek";
+import Swim from "@shared/types/ability-types/skills/swim";
+import Scrolls from "@shared/types/ability-types/skills/scrolls";
+import Staves from "@shared/types/ability-types/skills/staves";
+import Wands from "@shared/types/ability-types/skills/wands";
+import Recall from "@shared/types/ability-types/skills/recall";
+import Dig from "@shared/types/ability-types/skills/dig";
+import Age from "@shared/types/ability-types/skills/age";
+import DirtKicking from "@shared/types/ability-types/skills/dirt-kicking";
+import Sneak from "@shared/types/ability-types/skills/sneak";
+import Steal from "@shared/types/ability-types/skills/steal";
+import Lore from "@shared/types/ability-types/skills/lore";
+import PickLock from "@shared/types/ability-types/skills/pick-lock";
+import Envenom from "@shared/types/ability-types/skills/envenom";
+import Disarm from "@shared/types/ability-types/skills/disarm";
+import SecondAttack from "@shared/types/ability-types/skills/second-attack";
+import Parry from "@shared/types/ability-types/skills/parry";
+import Kick from "@shared/types/ability-types/skills/kick";
+import Riding from "@shared/types/ability-types/skills/riding";
+import HandToHand from "@shared/types/ability-types/skills/hand-to-hand";
+import Meditation from "@shared/types/ability-types/skills/meditation";
+import FastHealing from "@shared/types/ability-types/skills/fast-healing";
+import ThirdAttack from "@shared/types/ability-types/skills/third-attack";
+import EnhancedDamage from "@shared/types/ability-types/skills/enhanced-damage";
+import DetectMagic from "@shared/types/ability-types/spells/detect-magic";
+import FaerieFire from "@shared/types/ability-types/spells/faerie-fire";
+import ChillTouch from "@shared/types/ability-types/spells/chill-touch";
+import ContinualLight from "@shared/types/ability-types/spells/continual-light";
+import DetectInvis from "@shared/types/ability-types/spells/detect-invis";
+import FloatingDisc from "@shared/types/ability-types/spells/floating-disc";
+import Armor from "@shared/types/ability-types/spells/armor";
+import BurningHands from "@shared/types/ability-types/spells/burning-hands";
+import CreateRose from "@shared/types/ability-types/spells/create-rose";
+import Infravision from "@shared/types/ability-types/spells/infravision";
+import CreateFood from "@shared/types/ability-types/spells/create-food";
+import LocateObject from "@shared/types/ability-types/spells/locate-object";
+import Sleep from "@shared/types/ability-types/spells/sleep";
+import CreateWater from "@shared/types/ability-types/spells/create-water";
+import DetectEvil from "@shared/types/ability-types/spells/detect-evil";
+import DetectGood from "@shared/types/ability-types/spells/detect-good";
+import DetectHidden from "@shared/types/ability-types/spells/detect-hidden";
+import Refresh from "@shared/types/ability-types/spells/refresh";
+import Illumination from "@shared/types/ability-types/spells/illumination";
+import CreateTree from "@shared/types/ability-types/spells/create-tree";
+import ShockingGrasp from "@shared/types/ability-types/spells/shocking-grasp";
+import Poison from "@shared/types/ability-types/spells/poison";
+import FaerieFog from "@shared/types/ability-types/spells/faerie-fog";
+import Farsight from "@shared/types/ability-types/spells/farsight";
+import Weaken from "@shared/types/ability-types/spells/weaken";
+import WordOfRecall from "@shared/types/ability-types/spells/word-of-recall";
+import Blindness from "@shared/types/ability-types/spells/blindness";
+import ProtectionEvil from "@shared/types/ability-types/spells/protection-evil";
+import ProtectionNeutral from "@shared/types/ability-types/spells/protection-neutral";
+import ProtectionGood from "@shared/types/ability-types/spells/protection-good";
+import Identify from "@shared/types/ability-types/spells/identify";
+import Fireproof from "@shared/types/ability-types/spells/fireproof";
+import Fly from "@shared/types/ability-types/spells/fly";
+import KnowAlignment from "@shared/types/ability-types/spells/know-alignment";
+import ColorSpray from "@shared/types/ability-types/spells/color-spray";
+import GiantStrength from "@shared/types/ability-types/spells/giant-strength";
+import LightFoot from "@shared/types/ability-types/spells/light-foot";
+import CreateSpring from "@shared/types/ability-types/spells/create-spring";
+import CharmPerson from "@shared/types/ability-types/spells/charm-person";
+import PassDoor from "@shared/types/ability-types/spells/pass-door";
+import Teleport from "@shared/types/ability-types/spells/teleport";
+import Curse from "@shared/types/ability-types/spells/curse";
+import EnergyDrain from "@shared/types/ability-types/spells/energy-drain";
+import Haste from "@shared/types/ability-types/spells/haste";
+import ControlWeather from "@shared/types/ability-types/spells/control-weather";
+import Summon from "@shared/types/ability-types/spells/summon";
+import DispelMagic from "@shared/types/ability-types/spells/dispel-magic";
+import Fireball from "@shared/types/ability-types/spells/fireball";
+import Blizzra from "@shared/types/ability-types/spells/blizzra";
+import ProximityDispel from "@shared/types/ability-types/spells/proximity-dispel";
+import CallLightning from "@shared/types/ability-types/spells/call-lightning";
+import MassInvis from "@shared/types/ability-types/spells/mass-invis";
+import Gate from "@shared/types/ability-types/spells/gate";
+import Cancellation from "@shared/types/ability-types/spells/cancellation";
+import AcidBlast from "@shared/types/ability-types/spells/acid-blast";
+import Shield from "@shared/types/ability-types/spells/shield";
+import Plague from "@shared/types/ability-types/spells/plague";
+import SelfProjection from "@shared/types/ability-types/spells/self-projection";
+import Waypoint from "@shared/types/ability-types/spells/waypoint";
+import ChainLightning from "@shared/types/ability-types/spells/chain-lightning";
+import Slow from "@shared/types/ability-types/spells/slow";
+import StoneSkin from "@shared/types/ability-types/spells/stone-skin";
+import RestoreMind from "@shared/types/ability-types/spells/restore-mind";
+import Sanctuary from "@shared/types/ability-types/spells/sanctuary";
+import Betray from "@shared/types/ability-types/spells/betray";
+import Tornado from "@shared/types/ability-types/spells/tornado";
+import Portal from "@shared/types/ability-types/spells/portal";
+import Calm from "@shared/types/ability-types/spells/calm";
+import Nexus from "@shared/types/ability-types/spells/nexus";
+import ThiefBasics from "@shared/types/ability-types/groups-class/thief-basics";
+import ThiefDefault from "@shared/types/ability-types/groups-class/thief-default";
+import Combat from "@shared/types/ability-types/groups-spells/combat";
+import Enhancement from "@shared/types/ability-types/groups-spells/enhancement";
+import Protective from "@shared/types/ability-types/groups-spells/protective";
+import Weaponsmaster from "@shared/types/ability-types/groups-skills/weaponsmaster";
+import Creation from "@shared/types/ability-types/groups-spells/creation";
+import Illusion from "@shared/types/ability-types/groups-spells/illusion";
+import Transportation from "@shared/types/ability-types/groups-spells/transportation";
+import Beguiling from "@shared/types/ability-types/groups-spells/beguiling";
+import Detection from "@shared/types/ability-types/groups-spells/detection";
+import Maladictions from "@shared/types/ability-types/groups-spells/maladictions";
+import IAbility from "@shared/types/ability-types/ability";
+import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
+import { IMortalClass, IClassType, MortalClass } from "@shared/types/character-types/class-type";
+import IDslClass from "@shared/types/character-types/dslClass";
+import IRace from "@shared/types/character-types/race-interface";
+import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
+import DslArmorType from "@shared/types/item-types/armor-type";
+import IDslArmorType from "@shared/types/item-types/armor-type-interface";
+import Kender from "@shared/types/race-types/kender";
+import HillDwarf from "@shared/types/race-types/hill-dwarf";
+import MountainDwarf from "@shared/types/race-types/mountain-dwarf";
+import GiantOgre from "@shared/types/race-types/giant-ogre";
+import Bugbear from "@shared/types/race-types/bugbear";
+import Wemic from "@shared/types/race-types/wemic";
+import Arboren from "@shared/types/race-types/arboren";
+import Troll from "@shared/types/race-types/troll";
+import Centaur from "@shared/types/race-types/centaur";
+import Human from "@shared/types/race-types/human";
+import HalfElf from "@shared/types/race-types/half-elf";
+import WildElf from "@shared/types/race-types/wild-elf";
+import ShalonestiElf from "@shared/types/race-types/shalonesti-elf";
+import SeaElf from "@shared/types/race-types/sea-elf";
+import DarkElf from "@shared/types/race-types/dark-elf";
+import DarkDwarf from "@shared/types/race-types/dark-dwarf";
+import Mul from "@shared/types/race-types/mul";
+import HalfOgre from "@shared/types/race-types/half-ogre";
+import Goblin from "@shared/types/race-types/goblin";
+import HobGoblin from "@shared/types/race-types/hobgoblin";
+import TinkerGnome from "@shared/types/race-types/tinker-gnome";
+import DeepGnome from "@shared/types/race-types/deep-gnome";
+import Felar from "@shared/types/race-types/felar";
+import Minotaur from "@shared/types/race-types/minotaur";
+import Yinn from "@shared/types/race-types/yinn";
+import BlindFighting from "@shared/types/ability-types/skills/blind-fighting";
+import Alchemy from "@shared/types/ability-types/skills/alchemy";
+import Scribe from "@shared/types/ability-types/skills/scribe";
+import Ogre from "@shared/types/race-types/ogre";
+// #endregion
+
+export class Thief implements IDslClass, IMortalClass, IClassType {
+  private static instance: Thief;
+
+  id: string;
+  name: string;
+  displayName: string;
+  isMortalClass: boolean;
+  isReclass: boolean;
+  isCsr: boolean;
+  baseClass: IClassType;
+  classType: IClassType;
+  imgUrl: string;
+  imgCreditUrl: string;
+  primaryAttribute: IStatAttribute;
+  secondaryAttribute: IStatAttribute;
+  armorType: IDslArmorType;
+  classGroup: string;
+  raceRestrictions: IRace[];
+  abilities: Map<number, IAbility[]>;
+  characterCreationAbilityGroups: Map<number, IAbilityGroup[]>;
+  characterCreationSkills: Map<number, IAbility[]>;
+  baseCpModifier: number;
+  cpRacialModifiers: Map<IRace, number>;
+  helpfile: string;
+  castsAtLevel: boolean;
+  castingLevelModifier: number;
+  notes?: string;
+  buffActions?: IAbility[] | undefined;
+
+  constructor() {
+    this.id = MortalClass.Thief.id;
+    this.name = MortalClass.Thief.name;
+    this.displayName = MortalClass.Thief.displayName;
+    this.isMortalClass = true;
+    this.isReclass = false;
+    this.isCsr = false;
+    this.baseClass = MortalClass.Thief;
+    this.classType = MortalClass.Thief;
+    this.imgUrl = "/img/classes/thief.png";
+    this.imgCreditUrl = "https://www.pinterest.co.uk/pin/124341639699409921/";
+    // In Thief, primary is Dexterity and secondary is Intelligence.
+    this.primaryAttribute = new StatAttribute({ type: StatAttributeType.Dexterity });
+    this.secondaryAttribute = new StatAttribute({ type: StatAttributeType.Intelligence });
+    this.classGroup = MortalClass.Thief.toString();
+    this.armorType = DslArmorType.Studded;
+    this.raceRestrictions = [
+      // Restricted: Troll, Arboren, Centaur
+      Troll.GetInstance(),
+      Arboren.GetInstance(),
+      Centaur.GetInstance()
+    ];
+
+    // Merge skills and spells into one abilities map.
+    // For each level, we merge the arrays from the Skills and Spells dictionaries.
+    this.abilities = new Map<number, IAbility[]>([
+      [1, [
+        // Skills at level 1:
+        Axe.GetInstance(),
+        Dagger.GetInstance(),
+        Flail.GetInstance(),
+        Mace.GetInstance(),
+        Polearm.GetInstance(),
+        ShieldBlock.GetInstance(),
+        Spear.GetInstance(),
+        Sword.GetInstance(),
+        Staff.GetInstance(),
+        Whip.GetInstance(),
+        Backstab.GetInstance(),
+        Dodge.GetInstance(),
+        Trip.GetInstance(),
+        Haggle.GetInstance(),
+        Hide.GetInstance(),
+        Peek.GetInstance(),
+        Swim.GetInstance(),
+        Scrolls.GetInstance(),
+        Staves.GetInstance(),
+        Wands.GetInstance(),
+        Recall.GetInstance(),
+        Dig.GetInstance(),
+        Age.GetInstance()
+      ]],
+      [3, [DirtKicking.GetInstance()]],
+      [4, [Sneak.GetInstance()]],
+      [5, [
+        Steal.GetInstance(),
+        // Also add spells at level 5:
+        DetectMagic.GetInstance(),
+        FaerieFire.GetInstance()
+      ]],
+      [6, [
+        Lore.GetInstance(),
+        // Also add spells at level 6:
+        ChillTouch.GetInstance(),
+        ContinualLight.GetInstance(),
+        DetectInvis.GetInstance()
+      ]],
+      [7, [PickLock.GetInstance(), FloatingDisc.GetInstance()]],
+      [10, [
+        Envenom.GetInstance(),
+        // Also add spells at level 10:
+        Armor.GetInstance(),
+        BurningHands.GetInstance(),
+        CreateRose.GetInstance(),
+        Infravision.GetInstance()
+      ]],
+      [11, [CreateFood.GetInstance(), LocateObject.GetInstance(), Sleep.GetInstance()]],
+      [12, [
+        Disarm.GetInstance(),
+        SecondAttack.GetInstance(),
+        // Also add spells at level 12:
+        CreateWater.GetInstance(),
+        DetectEvil.GetInstance(),
+        DetectGood.GetInstance(),
+        DetectHidden.GetInstance(),
+        Refresh.GetInstance(),
+        Illumination.GetInstance()
+      ]],
+      [13, [Parry.GetInstance(), CreateTree.GetInstance()]],
+      [14, [Kick.GetInstance(), Riding.GetInstance(), ShockingGrasp.GetInstance()]],
+      [15, [HandToHand.GetInstance(), Meditation.GetInstance(), Poison.GetInstance()]],
+      [16, [FastHealing.GetInstance(), FaerieFog.GetInstance(), Farsight.GetInstance(), Weaken.GetInstance(), WordOfRecall.GetInstance()]],
+      [17, [Blindness.GetInstance(), ProtectionEvil.GetInstance(), ProtectionNeutral.GetInstance(), ProtectionGood.GetInstance()]],
+      [18, [Identify.GetInstance()]],
+      [19, [Fireproof.GetInstance()]],
+      [20, [Fly.GetInstance(), KnowAlignment.GetInstance()]],
+      [22, [ColorSpray.GetInstance(), GiantStrength.GetInstance(), LightFoot.GetInstance()]],
+      [23, [CreateSpring.GetInstance()]],
+      [25, [EnhancedDamage.GetInstance(), CharmPerson.GetInstance(), PassDoor.GetInstance(), Teleport.GetInstance()]],
+      [26, [Curse.GetInstance(), EnergyDrain.GetInstance(), Haste.GetInstance()]],
+      [28, [ControlWeather.GetInstance()]],
+      [29, [Summon.GetInstance()]],
+      [30, [DispelMagic.GetInstance(), Fireball.GetInstance(), Blizzra.GetInstance(), ProximityDispel.GetInstance()]],
+      [31, [CallLightning.GetInstance(), MassInvis.GetInstance()]],
+      [32, [Gate.GetInstance()]],
+      [34, [Cancellation.GetInstance()]],
+      [35, [AcidBlast.GetInstance(), Shield.GetInstance()]],
+      [36, [Plague.GetInstance()]],
+      [38, [SelfProjection.GetInstance(), Waypoint.GetInstance()]],
+      [39, [ChainLightning.GetInstance(), Slow.GetInstance()]],
+      [40, [StoneSkin.GetInstance(), RestoreMind.GetInstance()]],
+      [42, [Sanctuary.GetInstance()]],
+      [44, [Betray.GetInstance()]],
+      [45, [Tornado.GetInstance(), Portal.GetInstance()]],
+      [50, [Calm.GetInstance(), Nexus.GetInstance()]]
+    ]);
+
+    // Merge character creation ability groups.
+    // Duplicate keys are merged.
+    this.characterCreationAbilityGroups = new Map<number, IAbilityGroup[]>([
+      [0, [ThiefBasics.GetInstance()]],
+      [6, [Beguiling.GetInstance(), Detection.GetInstance()]],
+      [7, [Protective.GetInstance(), Illusion.GetInstance()]],
+      [8, [Creation.GetInstance(), Transportation.GetInstance()]],
+      [9, [Enhancement.GetInstance(), Maladictions.GetInstance()]],
+      [10, [Combat.GetInstance()]],
+      [40, [ThiefDefault.GetInstance(), Weaponsmaster.GetInstance()]]
+    ]);
+
+    // Merge character creation skills.
+    // Group by level, merging duplicates.
+    this.characterCreationSkills = new Map<number, IAbility[]>([
+      [2, [Staff.GetInstance(), Alchemy.GetInstance(), Scribe.GetInstance()]],
+      [3, [Sword.GetInstance(), Haggle.GetInstance(), Peek.GetInstance(), Mace.GetInstance()]],
+      [4, [BlindFighting.GetInstance(), Dodge.GetInstance(), Envenom.GetInstance(), Hide.GetInstance(), Sneak.GetInstance(), Spear.GetInstance(), DirtKicking.GetInstance(), Trip.GetInstance(), PickLock.GetInstance()]],
+      [5, [Axe.GetInstance(), Backstab.GetInstance(), EnhancedDamage.GetInstance(), SecondAttack.GetInstance(), Whip.GetInstance()]],
+      [6, [Polearm.GetInstance(), Disarm.GetInstance(), Kick.GetInstance(), Flail.GetInstance(), ShieldBlock.GetInstance(), Parry.GetInstance(), HandToHand.GetInstance(), FastHealing.GetInstance()]],
+      [7, [Riding.GetInstance()]],
+      [8, [Meditation.GetInstance()]],
+      [10, [ThirdAttack.GetInstance()]],
+      [2.0, [Lore.GetInstance()]] // using key 2 for Lore (if desired; note: already used above in skills, so you may need to adjust if duplicates are undesired)
+    ]);
+
+    this.baseCpModifier = 0;
+    this.cpRacialModifiers = new Map<IRace, number>([
+      [Human.GetInstance(), 1.0],
+      [HalfElf.GetInstance(), 1.1],
+      [WildElf.GetInstance(), 1.1],
+      [ShalonestiElf.GetInstance(), 1.1],
+      [SeaElf.GetInstance(), 1.1],
+      [DarkElf.GetInstance(), 1.1],
+      [HillDwarf.GetInstance(), 1.5],
+      [MountainDwarf.GetInstance(), 1.4],
+      [DarkDwarf.GetInstance(), 1.5],
+      [Mul.GetInstance(), 1.5],
+      [Ogre.GetInstance(), 2.0],
+      [HalfOgre.GetInstance(), 1.75],
+      [GiantOgre.GetInstance(), 3.0],
+      [Goblin.GetInstance(), 1.0],
+      [HobGoblin.GetInstance(), 1.0],
+      [Bugbear.GetInstance(), 1.0],
+      [TinkerGnome.GetInstance(), 1.3],
+      [DeepGnome.GetInstance(), 1.3],
+      [Felar.GetInstance(), 1.15],
+      [Wemic.GetInstance(), 2.0],
+      [Minotaur.GetInstance(), 1.5],
+      [Kender.GetInstance(), 1.1],
+      [Yinn.GetInstance(), 1.6]
+    ]);
+    this.helpfile =
+`help thief
+THIEF 'THIEF BASICS' 'THIEF DEFAULT'
+Thieves are a marginal class. They do few things better than any other class,
+but have the widest range of skills available. Thieves are specialists at
+thievery and covert actions, being capable of entering areas undetected where
+more powerful adventurers would fear to tread. They are better fighters than
+clerics, but lack the wide weapon selection of warriors.
+All thieves begin with the dagger combat skill, and are learned in steal as
+well. Any other weapon skills must be purchased, unless the default selection
+is chosen. This default skill package includes:
+skills:
+mace            the use of maces and other blunt weapons
+sword           swordplay and fencing
+backstab        the art of hitting your opponent by surprise
+disarm          used to deprive your opponent of his weapon
+dodge           the best way to take a punch is not to be there
+second attack   with training, the skilled thief can hit twice as fast
+trip            a good way to introduce an opponent to the floor
+hide            the art of remaining undetected in a room
+peek            used to look into a person's belongings
+pick lock       a useful skill for breaking and entering
+sneak           with this skill, a thief can walk into a room undetected
+`;
+    this.castsAtLevel = false;
+    this.castingLevelModifier = 0.66;
+    this.notes = "";
+    this.buffActions = undefined;
+  }
+
+  public static GetInstance(): Thief {
+    if (!Thief.instance) {
+      Thief.instance = new Thief();
+    }
+    return Thief.instance;
+  }
+
+  public Get<T>(): T {
+    return Thief.GetInstance() as unknown as T;
+  }
+}
+
+export default Thief;

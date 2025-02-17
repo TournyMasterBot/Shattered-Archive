@@ -1,0 +1,381 @@
+// #region imports
+import Axe from "@shared/types/ability-types/skills/axe";
+import Dagger from "@shared/types/ability-types/skills/dagger";
+import Flail from "@shared/types/ability-types/skills/flail";
+import Mace from "@shared/types/ability-types/skills/mace";
+import Polearm from "@shared/types/ability-types/skills/polearm";
+import ShieldBlock from "@shared/types/ability-types/skills/shield-block";
+import Spear from "@shared/types/ability-types/skills/spear";
+import Sword from "@shared/types/ability-types/skills/sword";
+import Staff from "@shared/types/ability-types/skills/staff";
+import Whip from "@shared/types/ability-types/skills/whip";
+import Swim from "@shared/types/ability-types/skills/swim";
+import Scrolls from "@shared/types/ability-types/skills/scrolls";
+import Staves from "@shared/types/ability-types/skills/staves";
+import Wands from "@shared/types/ability-types/skills/wands";
+import Recall from "@shared/types/ability-types/skills/recall";
+import Dig from "@shared/types/ability-types/skills/dig";
+import Age from "@shared/types/ability-types/skills/age";
+import Meditation from "@shared/types/ability-types/skills/meditation";
+import Haggle from "@shared/types/ability-types/skills/haggle";
+import Peek from "@shared/types/ability-types/skills/peek";
+import Lore from "@shared/types/ability-types/skills/lore";
+import Spellcraft from "@shared/types/ability-types/skills/spellcraft";
+import FastHealing from "@shared/types/ability-types/skills/fast-healing";
+import Astrology from "@shared/types/ability-types/skills/astrology";
+import Riding from "@shared/types/ability-types/skills/riding";
+import Dodge from "@shared/types/ability-types/skills/dodge";
+import Alchemy from "@shared/types/ability-types/skills/alchemy";
+import Scribe from "@shared/types/ability-types/skills/scribe";
+import Parry from "@shared/types/ability-types/skills/parry";
+import HandToHand from "@shared/types/ability-types/skills/hand-to-hand";
+import PickLock from "@shared/types/ability-types/skills/pick-lock";
+import SecondAttack from "@shared/types/ability-types/skills/second-attack";
+import BlindFighting from "@shared/types/ability-types/skills/blind-fighting";
+import EnhancedDamage from "@shared/types/ability-types/skills/enhanced-damage";
+
+import MagicMissile from "@shared/types/ability-types/spells/magic-missile";
+import Ventriloquate from "@shared/types/ability-types/spells/ventriloquate";
+import DetectMagic from "@shared/types/ability-types/spells/detect-magic";
+import DetectInvis from "@shared/types/ability-types/spells/detect-invis";
+import ChillTouch from "@shared/types/ability-types/spells/chill-touch";
+import FloatingDisc from "@shared/types/ability-types/spells/floating-disc";
+import Invisibility from "@shared/types/ability-types/spells/invisibility";
+import ContinualLight from "@shared/types/ability-types/spells/continual-light";
+import FaerieFire from "@shared/types/ability-types/spells/faerie-fire";
+import Armor from "@shared/types/ability-types/spells/armor";
+import BurningHands from "@shared/types/ability-types/spells/burning-hands";
+import CreateWater from "@shared/types/ability-types/spells/create-water";
+import Refresh from "@shared/types/ability-types/spells/refresh";
+import Infravision from "@shared/types/ability-types/spells/infravision";
+import LocateObject from "@shared/types/ability-types/spells/locate-object";
+import Recharge from "@shared/types/ability-types/spells/recharge";
+import CreateFood from "@shared/types/ability-types/spells/create-food";
+import Fly from "@shared/types/ability-types/spells/fly";
+import ShockingGrasp from "@shared/types/ability-types/spells/shocking-grasp";
+import Sleep from "@shared/types/ability-types/spells/sleep";
+import WordOfRecall from "@shared/types/ability-types/spells/word-of-recall";
+import CreateTree from "@shared/types/ability-types/spells/create-tree";
+import Illumination from "@shared/types/ability-types/spells/illumination";
+import DetectEvil from "@shared/types/ability-types/spells/detect-evil";
+import DetectGood from "@shared/types/ability-types/spells/detect-good";
+import GiantStrength from "@shared/types/ability-types/spells/giant-strength";
+import Weaken from "@shared/types/ability-types/spells/weaken";
+import Blindness from "@shared/types/ability-types/spells/blindness";
+import KnowAlignment from "@shared/types/ability-types/spells/know-alignment";
+import ProtectionEvil from "@shared/types/ability-types/spells/protection-evil";
+import ProtectionNeutral from "@shared/types/ability-types/spells/protection-neutral";
+import ProtectionGood from "@shared/types/ability-types/spells/protection-good";
+import Fireproof from "@shared/types/ability-types/spells/fireproof";
+import LightningBolt from "@shared/types/ability-types/spells/lightning-bolt";
+import Teleport from "@shared/types/ability-types/spells/teleport";
+import CreateSpring from "@shared/types/ability-types/spells/create-spring";
+import FaerieFog from "@shared/types/ability-types/spells/faerie-fog";
+import Farsight from "@shared/types/ability-types/spells/farsight";
+import ControlWeather from "@shared/types/ability-types/spells/control-weather";
+import DetectHidden from "@shared/types/ability-types/spells/detect-hidden";
+import DetectPoison from "@shared/types/ability-types/spells/detect-poison";
+import Identify from "@shared/types/ability-types/spells/identify";
+import ColorSpray from "@shared/types/ability-types/spells/color-spray";
+import CreateRose from "@shared/types/ability-types/spells/create-rose";
+import DispelMagic from "@shared/types/ability-types/spells/dispel-magic";
+import EnchantArmor from "@shared/types/ability-types/spells/enchant-armor";
+import ProximityDispel from "@shared/types/ability-types/spells/proximity-dispel";
+import EnchantWeapon from "@shared/types/ability-types/spells/enchant-weapon";
+import Poison from "@shared/types/ability-types/spells/poison";
+import Cancellation from "@shared/types/ability-types/spells/cancellation";
+import Curse from "@shared/types/ability-types/spells/curse";
+import LightFoot from "@shared/types/ability-types/spells/light-foot";
+import EnergyDrain from "@shared/types/ability-types/spells/energy-drain";
+import CharmPerson from "@shared/types/ability-types/spells/charm-person";
+import ShieldSpell from "@shared/types/ability-types/spells/shield"; // renamed to avoid conflict
+import Haste from "@shared/types/ability-types/spells/haste";
+import Fireball from "@shared/types/ability-types/spells/fireball";
+import MassInvis from "@shared/types/ability-types/spells/mass-invis";
+import Blizzra from "@shared/types/ability-types/spells/blizzra";
+import SelfProjection from "@shared/types/ability-types/spells/self-projection";
+import Plague from "@shared/types/ability-types/spells/plague";
+import PassDoor from "@shared/types/ability-types/spells/pass-door";
+import SummonSpell from "@shared/types/ability-types/spells/summon"; // renamed to avoid conflict
+import StoneSkin from "@shared/types/ability-types/spells/stone-skin";
+import CallLightning from "@shared/types/ability-types/spells/call-lightning";
+import Gate from "@shared/types/ability-types/spells/gate";
+import AcidBlast from "@shared/types/ability-types/spells/acid-blast";
+import RestoreMind from "@shared/types/ability-types/spells/restore-mind";
+import WaterBreathing from "@shared/types/ability-types/spells/water-breathing";
+import ChainLightning from "@shared/types/ability-types/spells/chain-lightning";
+import Slow from "@shared/types/ability-types/spells/slow";
+import Portal from "@shared/types/ability-types/spells/portal";
+import Waypoint from "@shared/types/ability-types/spells/waypoint";
+import Sanctuary from "@shared/types/ability-types/spells/sanctuary";
+import Tornado from "@shared/types/ability-types/spells/tornado";
+import Nexus from "@shared/types/ability-types/spells/nexus";
+import Fog from "@shared/types/ability-types/spells/fog";
+import DispelFog from "@shared/types/ability-types/spells/dispel-fog";
+import Betray from "@shared/types/ability-types/spells/betray";
+import Magewind from "@shared/types/ability-types/spells/magewind";
+import Calm from "@shared/types/ability-types/spells/calm";
+import MageBasics from "@shared/types/ability-types/groups-class/mage-basics";
+import MageDefault from "@shared/types/ability-types/groups-class/mage-default";
+import Combat from "@shared/types/ability-types/groups-spells/combat";
+import Enchantment from "@shared/types/ability-types/groups-spells/enchantment";
+import Maladictions from "@shared/types/ability-types/groups-spells/maladictions";
+import Weather from "@shared/types/ability-types/groups-spells/weather";
+import Weaponsmaster from "@shared/types/ability-types/groups-skills/weaponsmaster";
+import Creation from "@shared/types/ability-types/groups-spells/creation";
+import Enhancement from "@shared/types/ability-types/groups-spells/enhancement";
+import Protective from "@shared/types/ability-types/groups-spells/protective";
+import Beguiling from "@shared/types/ability-types/groups-spells/beguiling";
+import Detection from "@shared/types/ability-types/groups-spells/detection";
+import Illusion from "@shared/types/ability-types/groups-spells/illusion";
+import Transportation from "@shared/types/ability-types/groups-spells/transportation";
+import IAbility from "@shared/types/ability-types/ability";
+import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
+import { IMortalClass, IClassType, MortalClass } from "@shared/types/character-types/class-type";
+import IDslClass from "@shared/types/character-types/dslClass";
+import IRace from "@shared/types/character-types/race-interface";
+import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
+import DslArmorType from "@shared/types/item-types/armor-type";
+import IDslArmorType from "@shared/types/item-types/armor-type-interface";
+import Kender from "@shared/types/race-types/kender";
+import HillDwarf from "@shared/types/race-types/hill-dwarf";
+import MountainDwarf from "@shared/types/race-types/mountain-dwarf";
+import GiantOgre from "@shared/types/race-types/giant-ogre";
+import Wemic from "@shared/types/race-types/wemic";
+import Arboren from "@shared/types/race-types/arboren";
+import Troll from "@shared/types/race-types/troll";
+import Centaur from "@shared/types/race-types/centaur";
+import GullyDwarf from "@shared/types/race-types/gully-dwarf";
+import Human from "@shared/types/race-types/human";
+import HalfElf from "@shared/types/race-types/half-elf";
+import WildElf from "@shared/types/race-types/wild-elf";
+import ShalonestiElf from "@shared/types/race-types/shalonesti-elf";
+import SeaElf from "@shared/types/race-types/sea-elf";
+import DarkElf from "@shared/types/race-types/dark-elf";
+import DarkDwarf from "@shared/types/race-types/dark-dwarf";
+import Mul from "@shared/types/race-types/mul";
+import HalfOgre from "@shared/types/race-types/half-ogre";
+import Goblin from "@shared/types/race-types/goblin";
+import HobGoblin from "@shared/types/race-types/hobgoblin";
+import TinkerGnome from "@shared/types/race-types/tinker-gnome";
+import DeepGnome from "@shared/types/race-types/deep-gnome";
+import Felar from "@shared/types/race-types/felar";
+import Minotaur from "@shared/types/race-types/minotaur";
+import Yinn from "@shared/types/race-types/yinn";
+// #endregion
+
+export class Mage implements IDslClass, IMortalClass, IClassType {
+  private static instance: Mage;
+
+  id: string;
+  name: string;
+  displayName: string;
+  isMortalClass: boolean;
+  isReclass: boolean;
+  isCsr: boolean;
+  baseClass: IClassType;
+  classType: IClassType;
+  imgUrl: string;
+  imgCreditUrl: string;
+  primaryAttribute: IStatAttribute;
+  secondaryAttribute: IStatAttribute;
+  armorType: IDslArmorType;
+  classGroup: string;
+  raceRestrictions: IRace[];
+  abilities: Map<number, IAbility[]>;
+  characterCreationAbilityGroups: Map<number, IAbilityGroup[]>;
+  characterCreationSkills: Map<number, IAbility[]>;
+  baseCpModifier: number;
+  cpRacialModifiers: Map<IRace, number>;
+  helpfile: string;
+  castsAtLevel: boolean;
+  castingLevelModifier: number;
+  notes?: string;
+  buffActions?: IAbility[] | undefined;
+
+  constructor() {
+    this.id = MortalClass.Mage.id;
+    this.name = MortalClass.Mage.name;
+    this.displayName = MortalClass.Mage.displayName;
+    this.isMortalClass = true;
+    this.isReclass = false;
+    this.isCsr = false;
+    this.baseClass = MortalClass.Mage;
+    this.classType = MortalClass.Mage;
+    this.imgUrl = "/img/classes/mage.png";
+    this.imgCreditUrl = "https://www.pinterest.com/pin/645281452834226413/";
+    this.primaryAttribute = new StatAttribute({ type: StatAttributeType.Intelligence });
+    this.secondaryAttribute = new StatAttribute({ type: StatAttributeType.Wisdom });
+    this.classGroup = MortalClass.Mage.toString();
+    this.armorType = DslArmorType.Cloth;
+
+    this.abilities = new Map<number, IAbility[]>([
+      [1, [
+        Axe.GetInstance(),
+        Dagger.GetInstance(),
+        Flail.GetInstance(),
+        Mace.GetInstance(),
+        Polearm.GetInstance(),
+        ShieldBlock.GetInstance(),
+        Spear.GetInstance(),
+        Sword.GetInstance(),
+        Staff.GetInstance(),
+        Whip.GetInstance(),
+        Swim.GetInstance(),
+        Scrolls.GetInstance(),
+        Staves.GetInstance(),
+        Wands.GetInstance(),
+        Recall.GetInstance(),
+        Dig.GetInstance(),
+        Age.GetInstance(),
+        MagicMissile.GetInstance(),
+        Ventriloquate.GetInstance()
+      ]],
+      [2, [DetectMagic.GetInstance()]],
+      [3, [DetectInvis.GetInstance()]],
+      [4, [ChillTouch.GetInstance(), FloatingDisc.GetInstance()]],
+      [5, [Invisibility.GetInstance()]],
+      [6, [Meditation.GetInstance(), ContinualLight.GetInstance(), FaerieFire.GetInstance()]],
+      [7, [Haggle.GetInstance(), Armor.GetInstance(), BurningHands.GetInstance()]],
+      [8, [Peek.GetInstance(), CreateWater.GetInstance(), Refresh.GetInstance()]],
+      [10, [Lore.GetInstance(), CreateFood.GetInstance(), Fly.GetInstance(), ShockingGrasp.GetInstance(), Sleep.GetInstance(), WordOfRecall.GetInstance(), CreateTree.GetInstance(), Illumination.GetInstance()]],
+      [11, [DetectEvil.GetInstance(), DetectGood.GetInstance(), GiantStrength.GetInstance(), Weaken.GetInstance()]],
+      [12, [Blindness.GetInstance(), KnowAlignment.GetInstance(), ProtectionEvil.GetInstance(), ProtectionNeutral.GetInstance(), ProtectionGood.GetInstance()]],
+      [13, [Fireproof.GetInstance(), LightningBolt.GetInstance(), Teleport.GetInstance()]],
+      [14, [Spellcraft.GetInstance(), CreateSpring.GetInstance(), FaerieFog.GetInstance(), Farsight.GetInstance()]],
+      [15, [FastHealing.GetInstance(), ControlWeather.GetInstance(), DetectHidden.GetInstance(), DetectPoison.GetInstance(), Identify.GetInstance()]],
+      [16, [Astrology.GetInstance(), ColorSpray.GetInstance(), CreateRose.GetInstance(), DispelMagic.GetInstance(), EnchantArmor.GetInstance(), ProximityDispel.GetInstance()]],
+      [17, [EnchantWeapon.GetInstance(), Poison.GetInstance()]],
+      [18, [Riding.GetInstance(), Cancellation.GetInstance(), Curse.GetInstance(), LightFoot.GetInstance()]],
+      [19, [EnergyDrain.GetInstance()]],
+      [20, [Dodge.GetInstance(), Alchemy.GetInstance(), Scribe.GetInstance(), CharmPerson.GetInstance(), ShieldSpell.GetInstance()]],
+      [21, [Haste.GetInstance()]],
+      [22, [Parry.GetInstance(), Fireball.GetInstance(), MassInvis.GetInstance(), Blizzra.GetInstance(), SelfProjection.GetInstance()]],
+      [23, [Plague.GetInstance()]],
+      [24, [PassDoor.GetInstance(), SummonSpell.GetInstance()]],
+      [25, [HandToHand.GetInstance(), PickLock.GetInstance(), StoneSkin.GetInstance()]],
+      [26, [CallLightning.GetInstance()]],
+      [27, [Gate.GetInstance()]],
+      [28, [AcidBlast.GetInstance()]],
+      [30, [SecondAttack.GetInstance(), RestoreMind.GetInstance()]],
+      [32, [WaterBreathing.GetInstance()]],
+      [33, [ChainLightning.GetInstance(), Slow.GetInstance()]],
+      [35, [Portal.GetInstance(), Waypoint.GetInstance()]],
+      [36, [Sanctuary.GetInstance()]],
+      [40, [Tornado.GetInstance(), Nexus.GetInstance()]],
+      [43, [BlindFighting.GetInstance(), Fog.GetInstance(), DispelFog.GetInstance()]],
+      [44, [Betray.GetInstance()]],
+      [45, [EnhancedDamage.GetInstance(), Magewind.GetInstance()]],
+      [48, [Calm.GetInstance()]]
+    ]);
+
+    this.characterCreationAbilityGroups = new Map<number, IAbilityGroup[]>([
+      [0, [MageBasics.GetInstance()]],
+      [4, [
+        Weather.GetInstance(),
+        Creation.GetInstance(),
+        Protective.GetInstance(),
+        Beguiling.GetInstance(),
+        Detection.GetInstance(),
+        Illusion.GetInstance(),
+        Transportation.GetInstance()
+      ]],
+      [5, [Enhancement.GetInstance()]],
+      [6, [
+        Combat.GetInstance(),
+        Enchantment.GetInstance(),
+        Maladictions.GetInstance()
+      ]],
+      [40, [
+        MageDefault.GetInstance(),
+        Weaponsmaster.GetInstance()
+      ]]
+    ]);
+
+    this.characterCreationSkills = new Map<number, IAbility[]>([
+      [2, [Staff.GetInstance(), Alchemy.GetInstance(), Scribe.GetInstance()]],
+      [3, [Lore.GetInstance()]],
+      [4, [Astrology.GetInstance(), Spear.GetInstance()]],
+      [5, [Sword.GetInstance(), Meditation.GetInstance(), Haggle.GetInstance(), Peek.GetInstance(), Mace.GetInstance()]],
+      [6, [Axe.GetInstance(), Polearm.GetInstance(), Flail.GetInstance(), ShieldBlock.GetInstance(), Whip.GetInstance(), Spellcraft.GetInstance()]],
+      [8, [HandToHand.GetInstance(), FastHealing.GetInstance(), Dodge.GetInstance(), Parry.GetInstance(), PickLock.GetInstance()]],
+      [10, [Riding.GetInstance(), EnhancedDamage.GetInstance(), SecondAttack.GetInstance()]],
+      [12, [BlindFighting.GetInstance()]]
+    ]);
+
+    this.raceRestrictions = [
+      HillDwarf.GetInstance(),
+      MountainDwarf.GetInstance(),
+      GiantOgre.GetInstance(),
+      Wemic.GetInstance(),
+      Kender.GetInstance(),
+      Arboren.GetInstance(),
+      Troll.GetInstance(),
+      Centaur.GetInstance(),
+      GullyDwarf.GetInstance()
+    ];
+
+    this.baseCpModifier = 0;
+    this.cpRacialModifiers = new Map<IRace, number>([
+      [Human.GetInstance(), 1.0],
+      [HalfElf.GetInstance(), 1.3],
+      [WildElf.GetInstance(), 1.75],
+      [ShalonestiElf.GetInstance(), 1.1],
+      [SeaElf.GetInstance(), 1.1],
+      [DarkElf.GetInstance(), 1.0],
+      [DarkDwarf.GetInstance(), 1.2],
+      [Mul.GetInstance(), 1.5],
+      [GiantOgre.GetInstance(), 2.0],
+      [HalfOgre.GetInstance(), 1.75],
+      [Goblin.GetInstance(), 1.5],
+      [HobGoblin.GetInstance(), 1.0],
+      [TinkerGnome.GetInstance(), 1.6],
+      [DeepGnome.GetInstance(), 1.6],
+      [Felar.GetInstance(), 1.15],
+      [Minotaur.GetInstance(), 1.5],
+      [Yinn.GetInstance(), 1.6]
+    ]);
+    this.helpfile =
+`help mage
+MAGE 'MAGIC-USER' 'MAGE BASICS' 'MAGE DEFAULT'
+Mages specialize in the casting of spells, offensive ones in particular. 
+Mages have the highest-powered magic of any class, and are very skilled at
+the use of magical items, though their combat skills are the weakest of any
+class.  
+All mages begin with skill in the dagger.  Any other weapon skills must be
+purchased, at a very high rate.  The default skill selection for mages is as
+follows: 
+skills:    
+lore                    the lore of magical items
+spell groups:
+beguiling               spells that control the mind
+combat          offensive magics, such as fireball and chill touch
+detection               informational magics, such as detect magic and identify
+enhancement             spells that maximize physical potential, such as haste
+illusion                magics for concealing and deceiving
+maladictions    a selection of curses fit for any witch
+protective              defensive magics, ranging from armor to stone skin
+transporation   spells for getting from here to there
+weather         spells for conjuring and mastering the elements
+`;
+    this.castsAtLevel = false;
+    this.castingLevelModifier = 0;
+    this.notes =
+`Mages must invest heavily in their magical ability in order to wield their spells.
+Weapon skills are far too expensive to be of much use.`;
+    this.buffActions = undefined;
+  }
+
+  public static GetInstance(): Mage {
+    if (!Mage.instance) {
+      Mage.instance = new Mage();
+    }
+    return Mage.instance;
+  }
+
+  public Get<T>(): T {
+    return Mage.GetInstance() as unknown as T;
+  }
+}
+
+export default Mage;

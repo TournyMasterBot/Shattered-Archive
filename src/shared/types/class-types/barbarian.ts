@@ -1,0 +1,551 @@
+import BarbarianBasics from "@shared/types/ability-types/groups-class/barbarian-basics";
+import BarbarianDefault from "@shared/types/ability-types/groups-class/barbarian-default";
+import AcuteVision from "@shared/types/ability-types/skills/acute-vision";
+import Age from "@shared/types/ability-types/skills/age";
+import Axe from "@shared/types/ability-types/skills/axe";
+import Bash from "@shared/types/ability-types/skills/bash";
+import BlindFighting from "@shared/types/ability-types/skills/blind-fighting";
+import Bow from "@shared/types/ability-types/skills/bow";
+import Butcher from "@shared/types/ability-types/skills/butcher";
+import Charge from "@shared/types/ability-types/skills/charge";
+import Cleanse from "@shared/types/ability-types/skills/cleanse";
+import CriticalShotFour from "@shared/types/ability-types/skills/critical-shot-four";
+import CriticalShotOne from "@shared/types/ability-types/skills/critical-shot-one";
+import CriticalShotThree from "@shared/types/ability-types/skills/critical-shot-three";
+import CriticalShotTwo from "@shared/types/ability-types/skills/critical-shot-two";
+import Dagger from "@shared/types/ability-types/skills/dagger";
+import DarkVision from "@shared/types/ability-types/skills/dark-vision";
+import Dig from "@shared/types/ability-types/skills/dig";
+import DirtKicking from "@shared/types/ability-types/skills/dirt-kicking";
+import Disarm from "@shared/types/ability-types/skills/disarm";
+import Dodge from "@shared/types/ability-types/skills/dodge";
+import DualWield from "@shared/types/ability-types/skills/dual-wield";
+import EnhancedDamage from "@shared/types/ability-types/skills/enhanced-damage";
+import Envenom from "@shared/types/ability-types/skills/envenom";
+import FastHealing from "@shared/types/ability-types/skills/fast-healing";
+import Flail from "@shared/types/ability-types/skills/flail";
+import FourthAttack from "@shared/types/ability-types/skills/fourth-attack";
+import Haggle from "@shared/types/ability-types/skills/haggle";
+import HandToHand from "@shared/types/ability-types/skills/hand-to-hand";
+import Hide from "@shared/types/ability-types/skills/hide";
+import HiltThrust from "@shared/types/ability-types/skills/hilt-thrust";
+import Kick from "@shared/types/ability-types/skills/kick";
+import Lore from "@shared/types/ability-types/skills/lore";
+import Mace from "@shared/types/ability-types/skills/mace";
+import MakeJewelry from "@shared/types/ability-types/skills/make-jewelry";
+import Mudcoat from "@shared/types/ability-types/skills/mudcoat";
+import Offering from "@shared/types/ability-types/skills/offering";
+import Parry from "@shared/types/ability-types/skills/parry";
+import Peek from "@shared/types/ability-types/skills/peek";
+import PickLock from "@shared/types/ability-types/skills/pick-lock";
+import Polearm from "@shared/types/ability-types/skills/polearm";
+import PowerSwing from "@shared/types/ability-types/skills/power-swing";
+import PrayRecall from "@shared/types/ability-types/skills/pray-recall";
+import QuickLoad from "@shared/types/ability-types/skills/quick-load";
+import Recall from "@shared/types/ability-types/skills/recall";
+import Rescue from "@shared/types/ability-types/skills/rescue";
+import Riding from "@shared/types/ability-types/skills/riding";
+import SecondAttack from "@shared/types/ability-types/skills/second-attack";
+import SecondWind from "@shared/types/ability-types/skills/second-wind";
+import ShieldBlock from "@shared/types/ability-types/skills/shield-block";
+import ShieldKick from "@shared/types/ability-types/skills/shield-kick";
+import ShieldStrike from "@shared/types/ability-types/skills/shield-strike";
+import Sneak from "@shared/types/ability-types/skills/sneak";
+import Spear from "@shared/types/ability-types/skills/spear";
+import Staff from "@shared/types/ability-types/skills/staff";
+import Swim from "@shared/types/ability-types/skills/swim";
+import Sword from "@shared/types/ability-types/skills/sword";
+import ThirdAttack from "@shared/types/ability-types/skills/third-attack";
+import Trip from "@shared/types/ability-types/skills/trip";
+import Warcry from "@shared/types/ability-types/skills/warcry";
+import Whip from "@shared/types/ability-types/skills/whip";
+import CauseLight from "@shared/types/ability-types/spells/cause-light";
+import IAbility from "@shared/types/ability-types/ability";
+import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
+import { IMortalClass, IClassType, MortalClass } from "@shared/types/character-types/class-type";
+import IDslClass from "@shared/types/character-types/dslClass";
+import IRace from "@shared/types/character-types/race-interface";
+import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
+import DslArmorType from "@shared/types/item-types/armor-type";
+import IDslArmorType from "@shared/types/item-types/armor-type-interface";
+import Arboren from "@shared/types/race-types/arboren";
+import Bugbear from "@shared/types/race-types/bugbear";
+import DarkDwarf from "@shared/types/race-types/dark-dwarf";
+import DarkElf from "@shared/types/race-types/dark-elf";
+import DeepGnome from "@shared/types/race-types/deep-gnome";
+import Felar from "@shared/types/race-types/felar";
+import GiantOgre from "@shared/types/race-types/giant-ogre";
+import Goblin from "@shared/types/race-types/goblin";
+import HalfElf from "@shared/types/race-types/half-elf";
+import HalfOgre from "@shared/types/race-types/half-ogre";
+import HillDwarf from "@shared/types/race-types/hill-dwarf";
+import HobGoblin from "@shared/types/race-types/hobgoblin";
+import Human from "@shared/types/race-types/human";
+import Kender from "@shared/types/race-types/kender";
+import Minotaur from "@shared/types/race-types/minotaur";
+import MountainDwarf from "@shared/types/race-types/mountain-dwarf";
+import Mul from "@shared/types/race-types/mul";
+import Ogre from "@shared/types/race-types/ogre";
+import Pixie from "@shared/types/race-types/pixie";
+import SeaElf from "@shared/types/race-types/sea-elf";
+import ShalonestiElf from "@shared/types/race-types/shalonesti-elf";
+import TinkerGnome from "@shared/types/race-types/tinker-gnome";
+import Wemic from "@shared/types/race-types/wemic";
+import WildElf from "@shared/types/race-types/wild-elf";
+import Yinn from "@shared/types/race-types/yinn";
+
+export class Barbarian implements IDslClass, IMortalClass, IClassType {
+    private static instance: Barbarian;
+
+    id: string;    
+    name: string;
+    displayName: string;
+    isMortalClass: boolean;
+    isReclass: boolean;
+    isCsr: boolean;
+    baseClass: IClassType;
+    classType: IClassType;
+    imgUrl: string;
+    primaryAttribute: IStatAttribute;
+    secondaryAttribute: IStatAttribute;
+    armorType: IDslArmorType;
+    classGroup: string;
+    raceRestrictions: IRace[];
+    abilities: Map<number, IAbility[]>;
+    characterCreationAbilityGroups: Map<number, IAbilityGroup[]>;
+    characterCreationSkills: Map<number, IAbility[]>;
+    baseCpModifier: number;
+    helpfile: string;
+    castsAtLevel: boolean;
+    castingLevelModifier: number;
+    notes?: string;
+    cpRacialModifiers: Map<IClassType, number>;
+
+    constructor() {
+        this.id = MortalClass.Barbarian.id;
+        this.name = MortalClass.Barbarian.name;
+        this.displayName = MortalClass.Barbarian.displayName;
+        this.isMortalClass = true;
+        this.isReclass = true;
+        this.isCsr = false;
+        this.baseClass = MortalClass.Warrior;
+        this.classType = MortalClass.Barbarian;
+        this.imgUrl = "/img/classes/Barbarian.png";
+        this.primaryAttribute = new StatAttribute({
+            type: StatAttributeType.Constitution
+        });
+        this.secondaryAttribute = new StatAttribute({
+            type: StatAttributeType.Strength
+        });
+        this.armorType = DslArmorType.Plate;
+        this.classGroup = this.baseClass.name;
+        this.abilities = new Map<number, IAbility[]>([
+            [1, [
+              Axe.GetInstance().Get(),
+              Dagger.GetInstance().Get(),
+              Flail.GetInstance().Get(),
+              Mace.GetInstance().Get(),
+              Polearm.GetInstance().Get(),
+              ShieldBlock.GetInstance().Get(),
+              Spear.GetInstance().Get(),
+              Sword.GetInstance().Get(),
+              Staff.GetInstance().Get(),
+              Whip.GetInstance().Get(),
+              Bash.GetInstance().Get(),
+              EnhancedDamage.GetInstance().Get(),
+              Parry.GetInstance().Get(),
+              Swim.GetInstance().Get(),
+              Recall.GetInstance().Get(),
+              Dig.GetInstance().Get(),
+              Age.GetInstance().Get(),
+              MakeJewelry.GetInstance().Get(),
+            ]],
+            [2, [Riding.GetInstance().Get()]],
+            [3, [DirtKicking.GetInstance().Get()]],
+            [4, [Trip.GetInstance().Get()]],
+            [5, [HandToHand.GetInstance().Get(), SecondAttack.GetInstance().Get()]],
+            [6, [FastHealing.GetInstance().Get()]],
+            [7, [Kick.GetInstance().Get(), Butcher.GetInstance().Get()]],
+            [9, [ShieldStrike.GetInstance().Get()]],
+            [10, [
+              BlindFighting.GetInstance().Get(),
+              Dodge.GetInstance().Get(),
+              Sneak.GetInstance().Get(),
+            ]],
+            [11, [
+              Disarm.GetInstance().Get(),
+              Rescue.GetInstance().Get(),
+            ]],
+            [12, [Hide.GetInstance().Get()]],
+            [13, [
+              ThirdAttack.GetInstance().Get(),
+              Mudcoat.GetInstance().Get(),
+            ]],
+            [14, [
+              Haggle.GetInstance().Get(),
+              Cleanse.GetInstance().Get(),
+            ]],
+            [15, [
+              Warcry.GetInstance().Get(),
+              DarkVision.GetInstance().Get(),
+              PrayRecall.GetInstance().Get(),
+              Bow.GetInstance().Get(),
+            ]],
+            [17, [Peek.GetInstance().Get()]],
+            [18, [ShieldKick.GetInstance().Get()]],
+            [20, [
+              DualWield.GetInstance().Get(),
+              CriticalShotOne.GetInstance().Get(),
+            ]],
+            [21, [Charge.GetInstance().Get()]],
+            [23, [Offering.GetInstance().Get()]],
+            [25, [
+              PickLock.GetInstance().Get(),
+              CriticalShotTwo.GetInstance().Get(),
+            ]],
+            [26, [
+              FourthAttack.GetInstance().Get(),
+              AcuteVision.GetInstance().Get(),
+            ]],
+            [30, [QuickLoad.GetInstance().Get()]],
+            [35, [
+              PowerSwing.GetInstance().Get(),
+              CriticalShotThree.GetInstance().Get(),
+            ]],
+            [38, [HiltThrust.GetInstance().Get()]],
+            [41, [SecondWind.GetInstance().Get()]],
+            [45, [CriticalShotFour.GetInstance().Get()]],
+          ]);
+        this.characterCreationAbilityGroups = new Map<number, IAbilityGroup[]>([
+            [0, BarbarianBasics.GetInstance().Get()],
+            [40, BarbarianDefault.GetInstance().Get()],
+        ]);
+        this.characterCreationSkills = new Map<number, IAbility[]>([
+            [1, [
+                new CauseLight(),
+                new Axe(),
+                new Dagger(),
+                new Flail(),
+                new Mace(),
+                new Polearm(),
+                new ShieldBlock(),
+                new Spear(),
+                new Sword(),
+                new Staff(),
+                new Whip(),
+                new Bash(),
+                new EnhancedDamage(),
+                new Parry(),
+                new Swim(),
+                new Recall(),
+                new Dig(),
+                new Age(),
+                new MakeJewelry()
+            ]],
+            [2, [
+                new Riding(),
+                new Sword(),
+                new Dagger(),
+                new ShieldBlock(),
+                new Spear(),
+                new Butcher(),
+                new PowerSwing(),
+                new Riding()
+            ]],
+            [3, [
+                new Axe(),
+                new CriticalShotOne(),
+                new CriticalShotFour(),
+                new Offering(),
+                new Dagger(),
+                new ShieldBlock(),
+                new Spear(),
+                new Butcher(),
+                new HiltThrust(),
+                new MakeJewelry(),
+                new Flail(),
+                new Kick(),
+                new EnhancedDamage(),
+                new DirtKicking(),
+                new SecondWind(),
+                new CriticalShotTwo(),
+                new Mudcoat(),
+                new MakeJewelry(),
+                new Flail(),
+                new Kick(),
+                new EnhancedDamage(),
+                new DirtKicking()
+            ]],
+            [4, [
+                new Polearm(),
+                new Bash(),
+                new Dodge(),
+                new Parry(),
+                new ThirdAttack(),
+                new Haggle(),
+                new Sneak(),
+                new Charge(),
+                new ShieldKick(),
+                new Staff(),
+                new ShieldStrike(),
+                new DualWield(),
+                new HandToHand(),
+                new Rescue(),
+                new QuickLoad(),
+                new Warcry(),
+                new Disarm(),
+                new Trip(),
+                new FastHealing(),
+                new Lore(),
+                new Riding(),
+                new Cleanse(),
+                new Whip()
+            ]],
+            [5, [
+                new Envenom(),
+                new PickLock(),
+                new Hide(),
+                new Sneak(),
+                new Charge(),
+                new DualWield(),
+                new HandToHand(),
+                new Haggle(),
+                new FastHealing(),
+                new Envenom(),
+                new ShieldKick(),
+                new ShieldStrike()
+            ]],
+            [6, [
+                new Envenom(),
+                new PickLock(),
+                new Hide(),
+                new Sneak(),
+                new Charge(),
+                new DualWield(),
+                new HandToHand(),
+                new Haggle(),
+                new FastHealing(),
+                new Envenom()
+            ]],
+            [7, [
+                new Peek(),
+                new AcuteVision()
+            ]],
+            [8, [
+                new FourthAttack(),
+                new PickLock(),
+                new Cleanse()
+            ]],
+            [9, [
+                new ShieldKick()
+            ]],
+            [10, [
+                new BlindFighting(),
+                new Dodge(),
+                new Sneak()
+            ]],
+            [11, [
+                new Disarm(),
+                new Rescue()
+            ]],
+            [12, [
+                new Hide()
+            ]],
+            [13, [
+                new ThirdAttack(),
+                new Mudcoat()
+            ]],
+            [14, [
+                new Haggle(),
+                new Cleanse()
+            ]],
+            [15, [
+                new Warcry(),
+                new DarkVision(),
+                new PrayRecall(),
+                new Bow()
+            ]],
+            [16, [
+                new Charge(),
+                new ShieldKick(),
+                new CriticalShotOne()
+            ]],
+            [17, [
+                new Peek()
+            ]],
+            [18, [
+                new ShieldKick()
+            ]],
+            [19, [
+                new DarkVision()
+            ]],
+            [20, [
+                new CriticalShotOne(),
+                new DualWield()
+            ]],
+            [21, [
+                new Charge()
+            ]],
+            [22, [
+                new CriticalShotOne(),
+                new DualWield()
+            ]],
+            [23, [
+                new Offering()
+            ]],
+            [24, [
+                new Cleanse()
+            ]],
+            [25, [
+                new PickLock(),
+                new CriticalShotTwo()
+            ]],
+            [26, [
+                new FourthAttack(),
+                new AcuteVision()
+            ]],
+            [27, [
+                new QuickLoad()
+            ]],
+            [28, [
+                new PowerSwing()
+            ]],
+            [29, [
+                new ShieldKick()
+            ]],
+            [30, [
+                new QuickLoad()
+            ]],
+            [31, [
+                new CriticalShotThree()
+            ]],
+            [32, [
+                new SecondWind()
+            ]],
+            [33, [
+                new HiltThrust()
+            ]],
+            [34, [
+                new MakeJewelry()
+            ]],
+            [35, [
+                new CriticalShotThree()
+            ]],
+            [36, [
+                new PowerSwing()
+            ]],
+            [37, [
+                new ShieldKick()
+            ]],
+            [38, [
+                new HiltThrust(),
+                new QuickLoad()
+            ]],
+            [39, [
+                new CriticalShotThree(),
+                new PowerSwing()
+            ]],
+            [40, [
+                new CriticalShotFour()
+            ]],
+            [41, [
+                new SecondWind()
+            ]],
+            [42, [
+                new Cleanse()
+            ]],
+            [43, [
+                new ShieldKick()
+            ]],
+            [44, [
+                new CriticalShotFour()
+            ]],
+            [45, [
+                new CriticalShotFour()
+            ]],
+            [46, [
+                new ShieldKick()
+            ]],
+        ]);
+        this.raceRestrictions = [
+            ShalonestiElf.GetInstance(),
+            DarkDwarf.GetInstance(),
+            TinkerGnome.GetInstance(),
+            Kender.GetInstance(),
+            Pixie.GetInstance()
+         ];
+        this.baseCpModifier = 3;
+        this.helpfile = 
+        `help Barbarian
+        Barbarian is actually a rather broad generalization, and probably not quite
+accurate in all cases.  Some choose to ignore the teaching of magic and
+learn pure fighting, becoming a true warrior.  However, a large number are
+in fact barbarians - wild, uncivilized, and brutal.  
+
+True barbarians have a natural distrust for magic, despising its use, and
+being unable to learn even the simplest of spells.  Instead they turn to
+weaponry, and become exceedingly dangerous with even the most common of
+weapons.  Strangely though, most barbarians find it difficult to resist the
+enhancements that magics from others can provide to them.  
+
+Using a variety of unusual techniques, each barbarian has a different method
+of fighting.  Some prefer to wield a shield, and others prefer wielding a
+pair of weapons to deal destruction as quickly as possible.  Some, less
+civilized than most will wield a single hulking weapon, dealing unimaginable
+damage with their powerful swings, often knocking foes to the ground with
+each blow.  
+
+The barbarian may be the most skilled master of weapons and fighting
+techniques in the land (although the dwarves would argue their so-called
+Battleragers hold that position, and the elves for their Bladesingers).  
+ 
+Who can be a Barbarian?
+ 
+CLASS:     WARRIORS ONLY
+RACE:      ALL EXCEPT SHALONESTI ELF, DARK DWARF, TINKER GNOME, KENDER
+ALIGNMENT: ANY
+CLAN:      ANY, including non-clanned
+ 
+See also - RECLASS`;
+        this.castsAtLevel = false;
+        this.castingLevelModifier = 0.50;
+        this.notes = "";
+        this.cpRacialModifiers = new Map<IRace, number>([
+            [Human.GetInstance(), 1.0],
+            [HalfElf.GetInstance(), 1.3],
+            [WildElf.GetInstance(), 1.5],
+            [SeaElf.GetInstance(), 1.1],
+            [DarkElf.GetInstance(), 1.0],
+            [HillDwarf.GetInstance(), 1.5],
+            [MountainDwarf.GetInstance(), 1.5],
+            [Mul.GetInstance(), 1.5],
+            [Ogre.GetInstance(), 2.0],
+            [HalfOgre.GetInstance(), 1.75],
+            [GiantOgre.GetInstance(), 2.5],
+            [Goblin.GetInstance(), 1.5],
+            [HobGoblin.GetInstance(), 1.0],
+            [Bugbear.GetInstance(), 1.0],
+            [DeepGnome.GetInstance(), 1.0],
+            [Felar.GetInstance(), 1.0],
+            [Wemic.GetInstance(), 1.0],
+            [Minotaur.GetInstance(), 1.5],
+            [Arboren.GetInstance(), 1.0],
+            [Yinn.GetInstance(), 1.6],
+        ]);
+    }
+
+    // Method to get the single instance of the class
+    public static GetInstance(): Barbarian {
+        if (!Barbarian.instance) {
+            Barbarian.instance = new Barbarian();
+        }
+        return Barbarian.instance;
+    }
+
+    // Method to get the class instance, used in the context of IAbility
+    public Get<T>(): T {
+        return Barbarian.GetInstance() as T;
+    }
+}
+
+export default Barbarian;

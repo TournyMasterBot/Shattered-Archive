@@ -6,6 +6,7 @@ coverage/*
 *.js
 !jest.config.js
 !meta-scripts/**/*.js
+jwt-secret.dat
 
 # Logs
 logs

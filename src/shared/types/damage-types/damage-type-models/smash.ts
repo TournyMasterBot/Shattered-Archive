@@ -1,6 +1,6 @@
 import { DslDamageType } from "@shared/types/damage-types/damage-type";
 import { DamageType } from "@shared/types/damage-types/damage-type";
-import { IDamageType } from "@shared/types/damage-types/damage-type-interface";
+import IDamageType from "@shared/types/damage-types/damage-type-interface";
 
 export class Smash extends DamageType implements IDamageType {
   private static instance: Smash;

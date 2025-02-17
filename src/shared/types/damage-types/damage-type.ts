@@ -1,4 +1,4 @@
-import { IDamageType } from "@shared/types/damage-types/damage-type-interface";
+import IDamageType from "@shared/types/damage-types/damage-type-interface";
 import { DslDamageCategoryType } from "@shared/types/damage-types/damage-category-type";
 import { DslDamageResistanceType } from "@shared/types/damage-types/damage-resistance-type";
 import DslError from "@shared/types/error-types/dsl-error";

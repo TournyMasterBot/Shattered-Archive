@@ -27,7 +27,17 @@ import path from "path";
   }
 
   // Load the server cache (using await inside an async function)
-  await ServerCache.Initialize();
+  await ServerCache.Initialize({
+    serviceName: "web-server",
+    gameCache: {
+      initializeAreas: false,
+      initializeDamageTypes: false,
+      initializeAbilities: false,
+      initializeAbilityGroups: false,
+      initializeRaces: true,
+      initializeClasses: true,
+    }
+  });
 
   // Start the server
   const shatteredServer = new ShatteredServer({ 

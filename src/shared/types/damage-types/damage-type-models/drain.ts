@@ -1,6 +1,6 @@
 import { DslDamageType } from "@shared/types/damage-types/damage-type";
 import { DamageType } from "@shared/types/damage-types/damage-type";
-import { IDamageType } from "@shared/types/damage-types/damage-type-interface";
+import IDamageType from "@shared/types/damage-types/damage-type-interface";
 import { DslDamageCategoryType } from "@shared/types/damage-types/damage-category-type";
 
 export class Drain extends DamageType implements IDamageType {

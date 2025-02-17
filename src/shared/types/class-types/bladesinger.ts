@@ -1,0 +1,334 @@
+// #region imports
+import Dagger from "@shared/types/ability-types/skills/dagger";
+import ShieldBlock from "@shared/types/ability-types/skills/shield-block";
+import Sword from "@shared/types/ability-types/skills/sword";
+import Parry from "@shared/types/ability-types/skills/parry";
+import Rescue from "@shared/types/ability-types/skills/rescue";
+import Swim from "@shared/types/ability-types/skills/swim";
+import Scrolls from "@shared/types/ability-types/skills/scrolls";
+import Staves from "@shared/types/ability-types/skills/staves";
+import Wands from "@shared/types/ability-types/skills/wands";
+import Recall from "@shared/types/ability-types/skills/recall";
+import Dig from "@shared/types/ability-types/skills/dig";
+import Age from "@shared/types/ability-types/skills/age";
+import DirtKicking from "@shared/types/ability-types/skills/dirt-kicking";
+import BlindFighting from "@shared/types/ability-types/skills/blind-fighting";
+import SecondAttack from "@shared/types/ability-types/skills/second-attack";
+import Haggle from "@shared/types/ability-types/skills/haggle";
+import Bash from "@shared/types/ability-types/skills/bash";
+import Kick from "@shared/types/ability-types/skills/kick";
+import Meditation from "@shared/types/ability-types/skills/meditation";
+import Riding from "@shared/types/ability-types/skills/riding";
+import Sneak from "@shared/types/ability-types/skills/sneak";
+import Peek from "@shared/types/ability-types/skills/peek";
+import ThirdAttack from "@shared/types/ability-types/skills/third-attack";
+import Hide from "@shared/types/ability-types/skills/hide";
+import FastHealing from "@shared/types/ability-types/skills/fast-healing";
+import HandToHand from "@shared/types/ability-types/skills/hand-to-hand";
+import Trip from "@shared/types/ability-types/skills/trip";
+import Lore from "@shared/types/ability-types/skills/lore";
+import Disarm from "@shared/types/ability-types/skills/disarm";
+import Dodge from "@shared/types/ability-types/skills/dodge";
+import EnhancedDamage from "@shared/types/ability-types/skills/enhanced-damage";
+import Astrology from "@shared/types/ability-types/skills/astrology";
+import Circle from "@shared/types/ability-types/skills/circle";
+import Reposition from "@shared/types/ability-types/skills/reposition";
+import PickLock from "@shared/types/ability-types/skills/pick-lock";
+import Offhand from "@shared/types/ability-types/skills/offhand";
+import Spellcraft from "@shared/types/ability-types/skills/spellcraft";
+
+import MagicMissile from "@shared/types/ability-types/spells/magic-missile";
+import ChillTouch from "@shared/types/ability-types/spells/chill-touch";
+import FaerieFire from "@shared/types/ability-types/spells/faerie-fire";
+import BurningHands from "@shared/types/ability-types/spells/burning-hands";
+import ContinualLight from "@shared/types/ability-types/spells/continual-light";
+import ArmorSpell from "@shared/types/ability-types/spells/armor";
+import CreateWater from "@shared/types/ability-types/spells/create-water";
+import FloatingDisc from "@shared/types/ability-types/spells/floating-disc";
+import CreateTree from "@shared/types/ability-types/spells/create-tree";
+import CreateFood from "@shared/types/ability-types/spells/create-food";
+import ShockingGrasp from "@shared/types/ability-types/spells/shocking-grasp";
+import LightFoot from "@shared/types/ability-types/spells/light-foot";
+import Illumination from "@shared/types/ability-types/spells/illumination";
+import Blindness from "@shared/types/ability-types/spells/blindness";
+import ProtectionEvil from "@shared/types/ability-types/spells/protection-evil";
+import ProtectionNeutral from "@shared/types/ability-types/spells/protection-neutral";
+import ProtectionGood from "@shared/types/ability-types/spells/protection-good";
+import Weaken from "@shared/types/ability-types/spells/weaken";
+import WordOfRecall from "@shared/types/ability-types/spells/word-of-recall";
+import LightningBolt from "@shared/types/ability-types/spells/lightning-bolt";
+import Fireproof from "@shared/types/ability-types/spells/fireproof";
+import Fly from "@shared/types/ability-types/spells/fly";
+import CreateSpring from "@shared/types/ability-types/spells/create-spring";
+import Refresh from "@shared/types/ability-types/spells/refresh";
+import ColorSpray from "@shared/types/ability-types/spells/color-spray";
+import ControlWeather from "@shared/types/ability-types/spells/control-weather";
+import FaerieFog from "@shared/types/ability-types/spells/faerie-fog";
+import Infravision from "@shared/types/ability-types/spells/infravision";
+import Poison from "@shared/types/ability-types/spells/poison";
+import CreateRose from "@shared/types/ability-types/spells/create-rose";
+import GiantStrength from "@shared/types/ability-types/spells/giant-strength";
+import Curse from "@shared/types/ability-types/spells/curse";
+import EnergyDrain from "@shared/types/ability-types/spells/energy-drain";
+import Summon from "@shared/types/ability-types/spells/summon";
+import SelfProjection from "@shared/types/ability-types/spells/self-projection";
+import DetectMagic from "@shared/types/ability-types/spells/detect-magic";
+import CallLightning from "@shared/types/ability-types/spells/call-lightning";
+import DispelMagic from "@shared/types/ability-types/spells/dispel-magic";
+import Fireball from "@shared/types/ability-types/spells/fireball";
+import Blizzra from "@shared/types/ability-types/spells/blizzra";
+import ProximityDispel from "@shared/types/ability-types/spells/proximity-dispel";
+import Cancellation from "@shared/types/ability-types/spells/cancellation";
+import Teleport from "@shared/types/ability-types/spells/teleport";
+import PassDoor from "@shared/types/ability-types/spells/pass-door";
+import Waypoint from "@shared/types/ability-types/spells/waypoint";
+import Portal from "@shared/types/ability-types/spells/portal";
+import ShieldSpell from "@shared/types/ability-types/spells/shield";
+import HolyWord from "@shared/types/ability-types/spells/holy-word";
+import CauseCritical from "@shared/types/ability-types/spells/cause-critical";
+import CureCritical from "@shared/types/ability-types/spells/cure-critical";
+import CauseFatality from "@shared/types/ability-types/spells/cause-fatality";
+import Bladesong from "@shared/types/ability-types/skills/bladesong";
+import CircleStab from "@shared/types/ability-types/skills/circle-stab";
+
+import BladesingerBasics from "@shared/types/ability-types/groups-class/bladesinger-basics";
+import BladesingerDefault from "@shared/types/ability-types/groups-class/bladesinger-default";
+
+import { MortalClass } from "@shared/types/character-types/class-type";
+import { StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
+import DslArmorType from "@shared/types/item-types/armor-type";
+
+import { IDslClass } from "@shared/types/character-types/dslClass";
+import { IMortalClass, IClassType } from "@shared/types/character-types/class-type";
+import IRace from "@shared/types/character-types/race-interface";
+import IAbility from "../ability-types/ability";
+import IAbilityGroup from "../ability-types/ability-group-interface";
+import AcidBlast from "../ability-types/spells/acid-blast";
+import ChainLightning from "../ability-types/spells/chain-lightning";
+import DetectEvil from "../ability-types/spells/detect-evil";
+import DetectGood from "../ability-types/spells/detect-good";
+import DetectHidden from "../ability-types/spells/detect-hidden";
+import DetectInvis from "../ability-types/spells/detect-invis";
+import DetectPoison from "../ability-types/spells/detect-poison";
+import DispelFog from "../ability-types/spells/dispel-fog";
+import Farsight from "../ability-types/spells/farsight";
+import Fog from "../ability-types/spells/fog";
+import Gate from "../ability-types/spells/gate";
+import Haste from "../ability-types/spells/haste";
+import Identify from "../ability-types/spells/identify";
+import Invisibility from "../ability-types/spells/invisibility";
+import KnowAlignment from "../ability-types/spells/know-alignment";
+import LocateObject from "../ability-types/spells/locate-object";
+import MassInvis from "../ability-types/spells/mass-invis";
+import Nexus from "../ability-types/spells/nexus";
+import Plague from "../ability-types/spells/plague";
+import Sanctuary from "../ability-types/spells/sanctuary";
+import Slow from "../ability-types/spells/slow";
+import StoneSkin from "../ability-types/spells/stone-skin";
+import Tornado from "../ability-types/spells/tornado";
+import AffilitionAllegiance from "../affiliation-types/affiliation-allegiance";
+import Affiliation from "../affiliation-types/affiliation-interface";
+import ShalonestiElf from "../race-types/shalonesti-elf";
+import HalfElf from "../race-types/half-elf";
+import WildElf from "../race-types/wild-elf";
+import SeaElf from "../race-types/sea-elf";
+import AffiliationTypes from "../affiliation-types/affiliation-type";
+// #endregion
+
+export class Bladesinger implements IDslClass, IMortalClass, IClassType {
+  private static instance: Bladesinger;
+
+  id: string;
+  name: string;
+  displayName: string;
+  isMortalClass: boolean;
+  isReclass: boolean;
+  isCsr: boolean;
+  baseClass: IClassType;
+  classType: IClassType;
+  imgUrl: string;
+  imgCreditUrl: string;
+  primaryAttribute: any; // IStatAttribute
+  secondaryAttribute: any; // IStatAttribute
+  armorType: DslArmorType;
+  classGroup: string;
+  raceRestrictions: IRace[];
+  affiliation: Affiliation;
+  abilities: Map<number, IAbility[]>;
+  characterCreationAbilityGroups: Map<number, IAbilityGroup[]>;
+  characterCreationSkills: Map<number, IAbility[]>;
+  baseCpModifier: number;
+  cpRacialModifiers: Map<IRace, number>;
+  helpfile: string;
+  castsAtLevel: boolean;
+  castingLevelModifier: number;
+  notes?: string;
+  buffActions?: any[];
+
+  constructor() {
+    this.id = MortalClass.Bladesinger.id;
+    this.name = MortalClass.Bladesinger.name;
+    this.displayName = MortalClass.Bladesinger.displayName;
+    this.isMortalClass = true;
+    this.isReclass = true;
+    this.isCsr = true;
+    this.baseClass = MortalClass.Bladesinger;
+    this.classType = MortalClass.Bladesinger;
+    this.imgUrl = "/img/classes/bladesinger.png";
+    this.imgCreditUrl = "https://www.joshuad.net/bladesinger/";
+    this.primaryAttribute = new StatAttribute({ type: StatAttributeType.Dexterity });
+    this.secondaryAttribute = new StatAttribute({ type: StatAttributeType.Intelligence });
+    this.armorType = DslArmorType.Chain;
+    this.classGroup = MortalClass.Thief.toString();
+    this.raceRestrictions = [];
+
+    this.affiliation = {
+      AffiliationType: AffiliationTypes.Race | AffiliationTypes.Kingdom | AffiliationTypes.Clan,
+      AffiliationRaces: [ShalonestiElf.GetInstance(), HalfElf.GetInstance(), WildElf.GetInstance(), SeaElf.GetInstance()],
+      AffiliationAllegiance: [AffilitionAllegiance.ShalonestiClan, AffilitionAllegiance.ShalonestiKingdom],
+    };
+
+    this.abilities = new Map<number, IAbility[]>([
+      [
+        1,
+        [
+          Dagger.GetInstance(),
+          ShieldBlock.GetInstance(),
+          Sword.GetInstance(),
+          Parry.GetInstance(),
+          Rescue.GetInstance(),
+          Swim.GetInstance(),
+          Scrolls.GetInstance(),
+          Staves.GetInstance(),
+          Wands.GetInstance(),
+          Recall.GetInstance(),
+          Dig.GetInstance(),
+          Age.GetInstance(),
+        ],
+      ],
+      [3, [DirtKicking.GetInstance()]],
+      [5, [BlindFighting.GetInstance(), SecondAttack.GetInstance(), ChillTouch.GetInstance()]],
+      [7, [Haggle.GetInstance(), FaerieFire.GetInstance()]],
+      [8, [Bash.GetInstance(), Kick.GetInstance(), Meditation.GetInstance(), BurningHands.GetInstance(), ContinualLight.GetInstance()]],
+      [9, [Riding.GetInstance(), ArmorSpell.GetInstance()]],
+      [10, [Bladesong.GetInstance(), Sneak.GetInstance(), CreateWater.GetInstance(), FloatingDisc.GetInstance(), CreateTree.GetInstance()]],
+      [11, [Peek.GetInstance(), CreateFood.GetInstance()]],
+      [12, [ThirdAttack.GetInstance(), Hide.GetInstance(), ShockingGrasp.GetInstance(), LightFoot.GetInstance(), Illumination.GetInstance()]],
+      [13, [FastHealing.GetInstance()]],
+      [
+        14,
+        [
+          HandToHand.GetInstance(),
+          Blindness.GetInstance(),
+          ProtectionEvil.GetInstance(),
+          ProtectionNeutral.GetInstance(),
+          ProtectionGood.GetInstance(),
+          Weaken.GetInstance(),
+          WordOfRecall.GetInstance(),
+        ],
+      ],
+      [15, [Trip.GetInstance(), Lore.GetInstance(), LightningBolt.GetInstance()]],
+      [16, [Fireproof.GetInstance(), Fly.GetInstance()]],
+      [17, [Disarm.GetInstance(), Dodge.GetInstance(), CreateSpring.GetInstance(), Refresh.GetInstance()]],
+      [18, [ColorSpray.GetInstance()]],
+      [19, [ControlWeather.GetInstance(), FaerieFog.GetInstance(), Infravision.GetInstance(), Poison.GetInstance()]],
+      [20, [EnhancedDamage.GetInstance(), Astrology.GetInstance(), Circle.GetInstance(), CreateRose.GetInstance(), GiantStrength.GetInstance()]],
+      [21, [Reposition.GetInstance()]],
+      [25, [PickLock.GetInstance()]],
+      [27, [Offhand.GetInstance(), KnowAlignment.GetInstance()]],
+      [32, [Spellcraft.GetInstance(), DetectPoison.GetInstance()]],
+      [43, [CircleStab.GetInstance()]],
+      [2, [MagicMissile.GetInstance()]],
+      [6, [DetectMagic.GetInstance()]],
+      [10, [CreateWater.GetInstance(), FloatingDisc.GetInstance(), CreateTree.GetInstance()]], // already merged above at level 10
+      [11, [CreateFood.GetInstance()]],
+      [12, [ShockingGrasp.GetInstance(), LightFoot.GetInstance(), Illumination.GetInstance()]], // merged at level 12
+      [
+        14,
+        [
+          Blindness.GetInstance(),
+          ProtectionEvil.GetInstance(),
+          ProtectionNeutral.GetInstance(),
+          ProtectionGood.GetInstance(),
+          Weaken.GetInstance(),
+          WordOfRecall.GetInstance(),
+        ],
+      ],
+      [16, [Fireproof.GetInstance(), Fly.GetInstance()]],
+      [17, [CreateSpring.GetInstance(), Refresh.GetInstance()]],
+      [18, [ColorSpray.GetInstance()]],
+      [19, [ControlWeather.GetInstance(), FaerieFog.GetInstance(), Infravision.GetInstance(), Poison.GetInstance()]], // merged at level 19
+      [20, [CreateRose.GetInstance(), GiantStrength.GetInstance()]],
+      [22, [Curse.GetInstance(), EnergyDrain.GetInstance(), Summon.GetInstance(), SelfProjection.GetInstance()]],
+      [23, [DetectMagic.GetInstance()]],
+      [24, [CallLightning.GetInstance(), DispelMagic.GetInstance(), Fireball.GetInstance(), Blizzra.GetInstance(), ProximityDispel.GetInstance()]],
+      [26, [Cancellation.GetInstance(), Teleport.GetInstance()]],
+      [28, [Gate.GetInstance(), ShieldSpell.GetInstance()]],
+      [29, [Haste.GetInstance()]],
+      [30, [AcidBlast.GetInstance(), DetectInvis.GetInstance(), Plague.GetInstance()]],
+      [31, [LocateObject.GetInstance(), PassDoor.GetInstance(), Waypoint.GetInstance()]],
+      [33, [DetectEvil.GetInstance(), DetectGood.GetInstance(), Sanctuary.GetInstance()]],
+      [35, [ChainLightning.GetInstance(), StoneSkin.GetInstance()]],
+      [36, [DetectHidden.GetInstance(), Slow.GetInstance()]],
+      [39, [Tornado.GetInstance(), Farsight.GetInstance()]],
+      [40, [Portal.GetInstance()]],
+      [42, [Identify.GetInstance()]],
+      [43, [Fog.GetInstance(), DispelFog.GetInstance()]],
+      [46, [Nexus.GetInstance()]],
+      [48, [Invisibility.GetInstance()]],
+      [49, [MassInvis.GetInstance()]],
+    ]);
+
+    this.characterCreationAbilityGroups = new Map<number, IAbilityGroup[]>([
+      [0, [BladesingerBasics.GetInstance()]],
+      [40, [BladesingerDefault.GetInstance()]],
+    ]);
+
+    this.characterCreationSkills = new Map<number, IAbility[]>();
+
+    this.baseCpModifier = 0;
+    this.cpRacialModifiers = new Map<IRace, number>();
+    this.helpfile = `help bladesinger
+The Bladesinger is an elite fighter, skillfully combining magic and
+might to defeat his foes, and the foes of all elves. The Bladesinger is a
+rarely multi-classed mixture of Mage and Warrior, effective using his spells
+to augment his swordarm.
+
+Bladesingers have more magical power than do pure warriors, but not
+quite as much as mages. Bladesingers cast spells at close to their actual
+experience level, and don't suffer the CP costs that warriors do when selecting
+spells for themselves. Bladesingers are proficient in many skills that pure
+mages cannot learn, such as disarm and bash.
+However, Bladesingers are restricted to the use of daggers and swords
+in their adventuring careers. Their dedication to both combat and magic forces
+them to use a narrow range of weapons, and being that elves have a natural
+affinity to swordfighting, the Bladesingers drift towards short and long swords.
+Bladesingers also have the unique ability to use a dance-like combat
+style known as the Bladesong. The Bladesong has been handed down from elven
+generation to generation, and is a graceful, deceptive combat style that only
+elves, with their natural agility, can master.
+Who can be a Bladesinger?
+CLASS:     Any Class
+RACE:      ELVES of any subrace
+ALIGNMENT: Any alignment
+CLAN:      SHALONESTI only
+see also: RECLASS BLADESONG SHALONESTI`;
+    this.notes = "While mechanically any elf subrace is allowed to be a bladesinger, it is worth checking IC";
+    this.castsAtLevel = false;
+    this.castingLevelModifier = 0;
+    this.buffActions = undefined;
+  }
+
+  public static GetInstance(): Bladesinger {
+    if (!Bladesinger.instance) {
+      Bladesinger.instance = new Bladesinger();
+    }
+    return Bladesinger.instance;
+  }
+
+  public Get<T>(): T {
+    return Bladesinger.GetInstance() as unknown as T;
+  }
+}
+
+export default Bladesinger;

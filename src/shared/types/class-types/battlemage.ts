@@ -1,0 +1,304 @@
+// #region imports
+import Axe from "@shared/types/ability-types/skills/axe";
+import Dagger from "@shared/types/ability-types/skills/dagger";
+import Flail from "@shared/types/ability-types/skills/flail";
+import Mace from "@shared/types/ability-types/skills/mace";
+import Polearm from "@shared/types/ability-types/skills/polearm";
+import ShieldBlock from "@shared/types/ability-types/skills/shield-block";
+import Spear from "@shared/types/ability-types/skills/spear";
+import Sword from "@shared/types/ability-types/skills/sword";
+import Staff from "@shared/types/ability-types/skills/staff";
+import Whip from "@shared/types/ability-types/skills/whip";
+import Swim from "@shared/types/ability-types/skills/swim";
+import Scrolls from "@shared/types/ability-types/skills/scrolls";
+import Staves from "@shared/types/ability-types/skills/staves";
+import Wands from "@shared/types/ability-types/skills/wands";
+import Recall from "@shared/types/ability-types/skills/recall";
+import Dig from "@shared/types/ability-types/skills/dig";
+import Age from "@shared/types/ability-types/skills/age";
+import Meditation from "@shared/types/ability-types/skills/meditation";
+import Haggle from "@shared/types/ability-types/skills/haggle";
+import Peek from "@shared/types/ability-types/skills/peek";
+import Lore from "@shared/types/ability-types/skills/lore";
+import Spellcraft from "@shared/types/ability-types/skills/spellcraft";
+import FastHealing from "@shared/types/ability-types/skills/fast-healing";
+import Astrology from "@shared/types/ability-types/skills/astrology";
+import Riding from "@shared/types/ability-types/skills/riding";
+import Dodge from "@shared/types/ability-types/skills/dodge";
+import Alchemy from "@shared/types/ability-types/skills/alchemy";
+import Scribe from "@shared/types/ability-types/skills/scribe";
+import Parry from "@shared/types/ability-types/skills/parry";
+import HandToHand from "@shared/types/ability-types/skills/hand-to-hand";
+import PickLock from "@shared/types/ability-types/skills/pick-lock";
+import SecondAttack from "@shared/types/ability-types/skills/second-attack";
+import BlindFighting from "@shared/types/ability-types/skills/blind-fighting";
+import EnhancedDamage from "@shared/types/ability-types/skills/enhanced-damage";
+import MagicMissile from "@shared/types/ability-types/spells/magic-missile";
+import DetectMagic from "@shared/types/ability-types/spells/detect-magic";
+import DetectInvis from "@shared/types/ability-types/spells/detect-invis";
+import ChillTouch from "@shared/types/ability-types/spells/chill-touch";
+import FaerieFire from "@shared/types/ability-types/spells/faerie-fire";
+import Armor from "@shared/types/ability-types/spells/armor";
+import BurningHands from "@shared/types/ability-types/spells/burning-hands";
+import Refresh from "@shared/types/ability-types/spells/refresh";
+import Infravision from "@shared/types/ability-types/spells/infravision";
+import LocateObject from "@shared/types/ability-types/spells/locate-object";
+import Fly from "@shared/types/ability-types/spells/fly";
+import ShockingGrasp from "@shared/types/ability-types/spells/shocking-grasp";
+import Sleep from "@shared/types/ability-types/spells/sleep";
+import WordOfRecall from "@shared/types/ability-types/spells/word-of-recall";
+import DetectEvil from "@shared/types/ability-types/spells/detect-evil";
+import DetectGood from "@shared/types/ability-types/spells/detect-good";
+import GiantStrength from "@shared/types/ability-types/spells/giant-strength";
+import KnowAlignment from "@shared/types/ability-types/spells/know-alignment";
+import ProtectionEvil from "@shared/types/ability-types/spells/protection-evil";
+import ProtectionNeutral from "@shared/types/ability-types/spells/protection-neutral";
+import ProtectionGood from "@shared/types/ability-types/spells/protection-good";
+import Fireproof from "@shared/types/ability-types/spells/fireproof";
+import LightningBolt from "@shared/types/ability-types/spells/lightning-bolt";
+import Teleport from "@shared/types/ability-types/spells/teleport";
+import FaerieFog from "@shared/types/ability-types/spells/faerie-fog";
+import Farsight from "@shared/types/ability-types/spells/farsight";
+import EnhancedConstitution from "@shared/types/ability-types/spells/enhanced-constitution";
+import ControlWeather from "@shared/types/ability-types/spells/control-weather";
+import DetectHidden from "@shared/types/ability-types/spells/detect-hidden";
+import DetectPoison from "@shared/types/ability-types/spells/detect-poison";
+import Identify from "@shared/types/ability-types/spells/identify";
+import ColorSpray from "@shared/types/ability-types/spells/color-spray";
+import DispelMagic from "@shared/types/ability-types/spells/dispel-magic";
+import Absorption from "@shared/types/ability-types/spells/absorption";
+import Cancellation from "@shared/types/ability-types/spells/cancellation";
+import WindBreath from "@shared/types/ability-types/spells/wind-breath";
+import CharmPerson from "@shared/types/ability-types/spells/charm-person";
+import Shield from "@shared/types/ability-types/spells/shield";
+import Regenerate from "@shared/types/ability-types/spells/regenerate";
+import Haste from "@shared/types/ability-types/spells/haste";
+import Fireball from "@shared/types/ability-types/spells/fireball";
+import Blizzra from "@shared/types/ability-types/spells/blizzra";
+import PassDoor from "@shared/types/ability-types/spells/pass-door";
+import Summon from "@shared/types/ability-types/spells/summon";
+import StoneSkin from "@shared/types/ability-types/spells/stone-skin";
+import CallLightning from "@shared/types/ability-types/spells/call-lightning";
+import Gate from "@shared/types/ability-types/spells/gate";
+import AcidBlast from "@shared/types/ability-types/spells/acid-blast";
+import Solidify from "@shared/types/ability-types/spells/solidify";
+import AncientVow from "@shared/types/ability-types/spells/ancient-vow";
+import AlterBeast from "@shared/types/ability-types/spells/alter-beast";
+import Infuriate from "@shared/types/ability-types/spells/infuriate";
+import WaterBreathing from "@shared/types/ability-types/spells/water-breathing";
+import ChainLightning from "@shared/types/ability-types/spells/chain-lightning";
+import InstantRegeneration from "@shared/types/ability-types/spells/instant-regeneration";
+import Portal from "@shared/types/ability-types/spells/portal";
+import Sanctuary from "@shared/types/ability-types/spells/sanctuary";
+import AuraOfPain from "@shared/types/ability-types/spells/aura-of-pain";
+import Tornado from "@shared/types/ability-types/spells/tornado";
+import Nexus from "@shared/types/ability-types/spells/nexus";
+import Fog from "@shared/types/ability-types/spells/fog";
+import DispelFog from "@shared/types/ability-types/spells/dispel-fog";
+import Betray from "@shared/types/ability-types/spells/betray";
+import Magewind from "@shared/types/ability-types/spells/magewind";
+import Calm from "@shared/types/ability-types/spells/calm";
+
+import BattlemageBasics from "@shared/types/ability-types/groups-class/battlemage-basics";
+import BattlemageDefault from "@shared/types/ability-types/groups-class/battlemage-default";
+
+import { IMortalClass, IClassType, MortalClass } from "@shared/types/character-types/class-type";
+import IDslClass from "@shared/types/character-types/dslClass";
+import IRace from "@shared/types/character-types/race-interface";
+import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
+import DslArmorType from "@shared/types/item-types/armor-type";
+import IDslArmorType from "@shared/types/item-types/armor-type-interface";
+
+import Kender from "@shared/types/race-types/kender";
+import HillDwarf from "@shared/types/race-types/hill-dwarf";
+import MountainDwarf from "@shared/types/race-types/mountain-dwarf";
+import GiantOgre from "@shared/types/race-types/giant-ogre";
+import Bugbear from "@shared/types/race-types/bugbear";
+import Wemic from "@shared/types/race-types/wemic";
+import IAbility from "@shared/types/ability-types/ability";
+import Affiliation from "@shared/types/affiliation-types/affiliation-interface";
+import IAbilityGroup from "../ability-types/ability-group-interface";
+import AffiliationTypes from "../affiliation-types/affiliation-type";
+import AffilitionAllegiance from "../affiliation-types/affiliation-allegiance";
+import AffiliationGods from "../affiliation-types/affiliation-gods";
+import Mage from "./mage";
+// #endregion
+
+export class Battlemage implements IDslClass, IMortalClass, IClassType {
+  private static instance: Battlemage;
+
+  id: string;
+  name: string;
+  displayName: string;
+  isMortalClass: boolean;
+  isReclass: boolean;
+  isCsr: boolean;
+  baseClass: IClassType;
+  classType: IClassType;
+  imgUrl: string;
+  imgCreditUrl: string;
+  primaryAttribute: IStatAttribute;
+  secondaryAttribute: IStatAttribute;
+  armorType: IDslArmorType;
+  classGroup: string;
+  raceRestrictions: IRace[];
+  abilities: Map<number, IAbility[]>;
+  affiliation: Affiliation;
+  characterCreationAbilityGroups: Map<number, IAbilityGroup[]>;
+  characterCreationSkills: Map<number, IAbility[]>;
+  baseCpModifier: number;
+  helpfile: string;
+  castsAtLevel: boolean;
+  castingLevelModifier: number;
+  notes?: string;
+  cpRacialModifiers: Map<IRace, number>;
+  buffActions?: IAbility[] | undefined;
+
+  constructor() {
+    this.id = MortalClass.Battlemage.id;
+    this.name = MortalClass.Battlemage.name;
+    this.displayName = MortalClass.Battlemage.displayName;
+    this.isMortalClass = true;
+    this.isReclass = true;
+    this.isCsr = true;
+    this.baseClass = MortalClass.Mage;
+    this.classType = MortalClass.Battlemage;
+    this.imgUrl = "/img/classes/battlemage.png";
+    this.imgCreditUrl = "https://www.deviantart.com/zix72/art/battle-mage-437671481";
+    this.primaryAttribute = new StatAttribute({ type: StatAttributeType.Intelligence });
+    this.secondaryAttribute = new StatAttribute({ type: StatAttributeType.Wisdom });
+    this.armorType = DslArmorType.Studded;
+    this.classGroup = MortalClass.Mage.toString();
+    this.raceRestrictions = [
+      Kender.GetInstance(),
+      HillDwarf.GetInstance(),
+      MountainDwarf.GetInstance(),
+      GiantOgre.GetInstance(),
+      Bugbear.GetInstance(),
+      Wemic.GetInstance()
+    ];
+    this.affiliation = {
+        AffiliationType: AffiliationTypes.Clan,
+        AffiliationAllegiance: [AffilitionAllegiance.Conclave],
+        AffiliationGods: [AffiliationGods.Drakkara, AffiliationGods.Sebatis, AffiliationGods.Kantilles],
+        AffiliationClasses: [Mage.GetInstance()]
+    };
+
+    // Merge skills and spells into one abilities map.
+    this.abilities = new Map<number, IAbility[]>([
+      [1, [
+        Axe.GetInstance(),
+        Dagger.GetInstance(),
+        Flail.GetInstance(),
+        Mace.GetInstance(),
+        Polearm.GetInstance(),
+        ShieldBlock.GetInstance(),
+        Spear.GetInstance(),
+        Sword.GetInstance(),
+        Staff.GetInstance(),
+        Whip.GetInstance(),
+        Swim.GetInstance(),
+        Scrolls.GetInstance(),
+        Staves.GetInstance(),
+        Wands.GetInstance(),
+        Recall.GetInstance(),
+        Dig.GetInstance(),
+        Age.GetInstance(),
+        MagicMissile.GetInstance()
+      ]],
+      [2, [DetectMagic.GetInstance()]],
+      [3, [DetectInvis.GetInstance()]],
+      [4, [ChillTouch.GetInstance()]],
+      [6, [
+        FaerieFire.GetInstance(),
+        Meditation.GetInstance()
+      ]],
+      [7, [
+        Haggle.GetInstance(),
+        Armor.GetInstance(),
+        BurningHands.GetInstance()
+      ]],
+      [8, [Peek.GetInstance(), Refresh.GetInstance()]],
+      [10, [Lore.GetInstance()]],
+      [14, [Spellcraft.GetInstance()]],
+      [15, [FastHealing.GetInstance()]],
+      [16, [Astrology.GetInstance()]],
+      [18, [Riding.GetInstance()]],
+      [20, [
+        Dodge.GetInstance(),
+        Alchemy.GetInstance(),
+        Scribe.GetInstance(),
+        CharmPerson.GetInstance(),
+        Shield.GetInstance(),
+        Regenerate.GetInstance()
+      ]],
+      [22, [Parry.GetInstance(), Fireball.GetInstance(), Blizzra.GetInstance()]],
+      [25, [HandToHand.GetInstance(), PickLock.GetInstance(), StoneSkin.GetInstance()]],
+      [30, [SecondAttack.GetInstance()]],
+      [31, [AlterBeast.GetInstance(), Infuriate.GetInstance()]],
+      [32, [WaterBreathing.GetInstance()]],
+      [33, [ChainLightning.GetInstance()]],
+      [34, [InstantRegeneration.GetInstance()]],
+      [35, [Portal.GetInstance()]],
+      [36, [Sanctuary.GetInstance()]],
+      [38, [AuraOfPain.GetInstance()]],
+      [40, [Tornado.GetInstance(), Nexus.GetInstance()]],
+      [43, [BlindFighting.GetInstance(), Fog.GetInstance(), DispelFog.GetInstance()]],
+      [44, [Betray.GetInstance()]],
+      [45, [EnhancedDamage.GetInstance(), Magewind.GetInstance()]],
+      [48, [Calm.GetInstance()]]
+    ]);
+
+    // Character creation ability groups.
+    this.characterCreationAbilityGroups = new Map<number, IAbilityGroup[]>([
+      [0, [BattlemageBasics.GetInstance()]],
+      [40, [BattlemageDefault.GetInstance()]]
+    ]);
+    // Character creation skills (none specified for Battlemage).
+    this.characterCreationSkills = new Map<number, IAbility[]>();
+
+    this.baseCpModifier = 0;
+    this.cpRacialModifiers = new Map<IRace, number>();
+    this.helpfile =
+`help battlemage
+BATTLEMAGE
+
+Battlemages are a special reclass only available to mages of the Conclave. 
+The battlemage of the Conclave is the first line of defense for the Citadel
+of Magic.  First learned in ages before history, the knowledge was recently
+brought back from the past and re-taught to the Conclave by a mage
+travelling through time.  They have since become some of the toughest magi
+in throughout the realm, having perfected magic that lets them absorb
+incredible amounts of punishment before falling to death.  On the
+battlefield, they are able to take the brunt of the attack while having the
+ability to control their fearsome creations in both offensive and defensive
+attack. 
+Who can be a Battlemage?  
+
+CLASS:     MAGES only
+RACE:      ANY EXCEPT KENDER, HILL/MOUNTAIN DWARVES, GIANT OGRES, BUGBEARS,
+           WEMICS
+ALIGNMENT: Any alignment
+CLAN:      CONCLAVE only
+ARMOR:     Studded Leather
+See also - RECLASS CONCLAVE BATTLEMAGIC
+`;
+    this.notes = "Every 100 hours: +1% chance at the 2.55x spell damage bonus, capped at 10% (1000 hours)";
+    this.castsAtLevel = false;
+    this.castingLevelModifier = 0;
+    this.buffActions = undefined;
+  }
+
+  public static GetInstance(): Battlemage {
+    if (!Battlemage.instance) {
+      Battlemage.instance = new Battlemage();
+    }
+    return Battlemage.instance;
+  }
+
+  public Get<T>(): T {
+    return Battlemage.GetInstance() as unknown as T;
+  }
+}
+
+export default Battlemage;
