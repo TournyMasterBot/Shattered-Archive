@@ -112,14 +112,15 @@ export class Barbarian implements IDslClass, IMortalClass, IClassType {
     classGroup: string;
     raceRestrictions: IRace[];
     abilities: Map<number, IAbility[]>;
-    characterCreationAbilityGroups: Map<number, IAbilityGroup[]>;
-    characterCreationSkills: Map<number, IAbility[]>;
+    characterCreationAbilityGroups: { [groupName: string]: number };
+    characterCreationSkills: { [abilityName: string]: number };
     baseCpModifier: number;
     helpfile: string;
     castsAtLevel: boolean;
     castingLevelModifier: number;
     notes?: string;
     cpRacialModifiers: Map<IClassType, number>;
+    isMoonAffected?: boolean | undefined;
 
     constructor() {
         this.id = MortalClass.Barbarian.id;
@@ -508,6 +509,7 @@ CLAN:      ANY, including non-clanned
  
 See also - RECLASS`;
         this.castsAtLevel = false;
+        this.isMoonAffected = false;
         this.castingLevelModifier = 0.50;
         this.notes = "";
         this.cpRacialModifiers = new Map<IRace, number>([

@@ -14,8 +14,10 @@ export class BrewmasterDefault implements IAbilityGroup {
   public abilityGroup: AbilityGroup;
   public abilityGroupType: AbilityGroupType;
   public abilities: IAbility[];
+  public name: string;
 
   constructor() {
+    this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.BrewmasterDefault;
     this.abilityGroupType = AbilityGroupType.Default;
     this.abilities = [new SecondAttack(), new KegToss(), new Dodge(), new SuckerPunch(), new Haymaker(), new FireBreather()];

@@ -121,7 +121,7 @@ import IAbilityGroup from "../ability-types/ability-group-interface";
 import AffiliationTypes from "../affiliation-types/affiliation-type";
 import AffilitionAllegiance from "../affiliation-types/affiliation-allegiance";
 import AffiliationGods from "../affiliation-types/affiliation-gods";
-import Mage from "./mage";
+import Mage from "./mage.ts.todo";
 // #endregion
 
 export class Battlemage implements IDslClass, IMortalClass, IClassType {
@@ -136,7 +136,6 @@ export class Battlemage implements IDslClass, IMortalClass, IClassType {
   baseClass: IClassType;
   classType: IClassType;
   imgUrl: string;
-  imgCreditUrl: string;
   primaryAttribute: IStatAttribute;
   secondaryAttribute: IStatAttribute;
   armorType: IDslArmorType;
@@ -144,8 +143,8 @@ export class Battlemage implements IDslClass, IMortalClass, IClassType {
   raceRestrictions: IRace[];
   abilities: Map<number, IAbility[]>;
   affiliation: Affiliation;
-  characterCreationAbilityGroups: Map<number, IAbilityGroup[]>;
-  characterCreationSkills: Map<number, IAbility[]>;
+  characterCreationAbilityGroups: { [groupName: string]: number };
+  characterCreationSkills: { [abilityName: string]: number };
   baseCpModifier: number;
   helpfile: string;
   castsAtLevel: boolean;
@@ -153,6 +152,7 @@ export class Battlemage implements IDslClass, IMortalClass, IClassType {
   notes?: string;
   cpRacialModifiers: Map<IRace, number>;
   buffActions?: IAbility[] | undefined;
+  isMoonAffected?: boolean | undefined;
 
   constructor() {
     this.id = MortalClass.Battlemage.id;
@@ -164,7 +164,6 @@ export class Battlemage implements IDslClass, IMortalClass, IClassType {
     this.baseClass = MortalClass.Mage;
     this.classType = MortalClass.Battlemage;
     this.imgUrl = "/img/classes/battlemage.png";
-    this.imgCreditUrl = "https://www.deviantart.com/zix72/art/battle-mage-437671481";
     this.primaryAttribute = new StatAttribute({ type: StatAttributeType.Intelligence });
     this.secondaryAttribute = new StatAttribute({ type: StatAttributeType.Wisdom });
     this.armorType = DslArmorType.Studded;
@@ -284,7 +283,8 @@ ARMOR:     Studded Leather
 See also - RECLASS CONCLAVE BATTLEMAGIC
 `;
     this.notes = "Every 100 hours: +1% chance at the 2.55x spell damage bonus, capped at 10% (1000 hours)";
-    this.castsAtLevel = false;
+    this.castsAtLevel = true;
+    this.isMoonAffected = true;
     this.castingLevelModifier = 0;
     this.buffActions = undefined;
   }

@@ -11,8 +11,10 @@ export class MasterySpear implements IAbilityGroup {
   public abilityGroup: AbilityGroup;
   public abilityGroupType: AbilityGroupType;
   public abilities: IAbility[];
+  public name: string;
 
   constructor() {
+    this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.MasterySpear;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilities = [Spin.GetInstance().Get(), Impale.GetInstance().Get(), Legsweep.GetInstance().Get()];

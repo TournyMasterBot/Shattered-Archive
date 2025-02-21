@@ -1,6 +1,6 @@
 import asyncHandler from "@shared/express-server/async-handler";
 import { Router } from "express";
-import { getRoom, getRooms } from "handlers/directions-handlers/room-handlers";
+import { getRoom, getRooms } from "handlers/areas-handlers/room-handlers";
 
 const router = Router();
 
@@ -28,10 +28,6 @@ const router = Router();
  *         payload: { key: "value" }
  *         errors: null
  */
-
-router.get("/", (req, res) => {
-  res.send("Hello from Directions Home!");
-});
 
 /**
  * @openapi
@@ -64,7 +60,7 @@ router.get("/", (req, res) => {
  *       500:
  *         description: Unhandled error while processing get-room.
  */
-router.post("/get-room", asyncHandler(getRoom));
+router.post("/directions/get-room", asyncHandler(getRoom));
 
 /**
  * @openapi
@@ -82,6 +78,6 @@ router.post("/get-room", asyncHandler(getRoom));
  *       500:
  *         description: Unhandled error while processing get-rooms.
  */
-router.get("/get-rooms", asyncHandler(getRooms));
+router.get("/directions/get-rooms", asyncHandler(getRooms));
 
 export default router;

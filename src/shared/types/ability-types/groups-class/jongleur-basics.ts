@@ -9,8 +9,10 @@ export class JongleurBasics implements IAbilityGroup {
   public abilityGroup: AbilityGroup;
   public abilityGroupType: AbilityGroupType;
   public abilities: IAbility[];
+  public name: string;
 
   constructor() {
+    this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.JongleurBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
     this.abilities = [Staff.GetInstance().Get()];

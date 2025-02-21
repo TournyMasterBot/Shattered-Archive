@@ -30,12 +30,13 @@ import path from "path";
   await ServerCache.Initialize({
     serviceName: "web-server",
     gameCache: {
-      initializeAreas: false,
+      initializeAreas: true,
       initializeDamageTypes: false,
       initializeAbilities: false,
       initializeAbilityGroups: false,
       initializeRaces: true,
       initializeClasses: true,
+      initializeItems: true,
     }
   });
 

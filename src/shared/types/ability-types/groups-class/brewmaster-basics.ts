@@ -9,8 +9,10 @@ export class BrewmasterBasics implements IAbilityGroup {
   public abilityGroup: AbilityGroup;
   public abilityGroupType: AbilityGroupType;
   public abilities: IAbility[];
+  public name: string;
 
   constructor() {
+    this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.BrewmasterBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
     this.abilities = [new Staff()];

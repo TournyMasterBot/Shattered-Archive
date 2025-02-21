@@ -11,8 +11,10 @@ export class MasteryFlail implements IAbilityGroup {
   public abilityGroup: AbilityGroup;
   public abilityGroupType: AbilityGroupType;
   public abilities: IAbility[];
+  public name: string;
 
   constructor() {
+    this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.MasteryFlail;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilities = [Entwine.GetInstance().Get(), Sting.GetInstance().Get(), Strip.GetInstance().Get()];

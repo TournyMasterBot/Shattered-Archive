@@ -85,7 +85,6 @@ import Transportation from "@shared/types/ability-types/groups-spells/transporta
 import Harmful from "@shared/types/ability-types/groups-spells/harmful";
 import Protective from "@shared/types/ability-types/groups-spells/protective";
 import IAbility from "@shared/types/ability-types/ability";
-import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import { IMortalClass, IClassType, MortalClass } from "@shared/types/character-types/class-type";
 import IDslClass from "@shared/types/character-types/dslClass";
 import IRace from "@shared/types/character-types/race-interface";
@@ -124,6 +123,7 @@ import Yinn from "@shared/types/race-types/yinn";
 import PiercingWinds from "../ability-types/songs/piering-winds";
 import WarHymns from "../ability-types/groups-songs/war-hymns";
 import HymnsOfLife from "../ability-types/groups-songs/hymns-of-life";
+import StoneFountain from "../ability-types/songs/stone-fountain";
 // #endregion
 
 export class Bard implements IDslClass, IMortalClass, IClassType {
@@ -138,15 +138,14 @@ export class Bard implements IDslClass, IMortalClass, IClassType {
   baseClass: IClassType;
   classType: IClassType;
   imgUrl: string;
-  imgCreditUrl: string;
   primaryAttribute: IStatAttribute;
   secondaryAttribute: IStatAttribute;
   armorType: IDslArmorType;
   classGroup: string;
   raceRestrictions: IRace[];
   abilities: Map<number, IAbility[]>;
-  characterCreationAbilityGroups: Map<number, IAbilityGroup[]>;
-  characterCreationSkills: Map<number, IAbility[]>;
+  characterCreationAbilityGroups: { [groupName: string]: number };
+  characterCreationSkills: { [abilityName: string]: number };
   baseCpModifier: number;
   helpfile: string;
   castsAtLevel: boolean;
@@ -154,6 +153,8 @@ export class Bard implements IDslClass, IMortalClass, IClassType {
   notes?: string;
   cpRacialModifiers: Map<IRace, number>;
   buffActions?: IAbility[] | undefined;
+  adept?: number | undefined;
+  isMoonAffected?: boolean | undefined;
 
   constructor() {
     this.id = MortalClass.Bard.id;
@@ -165,12 +166,11 @@ export class Bard implements IDslClass, IMortalClass, IClassType {
     this.baseClass = MortalClass.Bard;
     this.classType = MortalClass.Bard;
     this.imgUrl = "/img/classes/bard.png";
-    this.imgCreditUrl =
-      "https://i.pinimg.com/originals/2b/f9/73/2bf973516fefa8df40bb4a347e16ef63.jpg";
-    this.primaryAttribute = new StatAttribute({ type: StatAttributeType.Intelligence });
-    this.secondaryAttribute = new StatAttribute({ type: StatAttributeType.Wisdom });
+    this.primaryAttribute = new StatAttribute({ type: StatAttributeType.Wisdom });
+    this.secondaryAttribute = new StatAttribute({ type: StatAttributeType.Intelligence });
     this.armorType = DslArmorType.Studded;
     this.classGroup = MortalClass.Bard.toString();
+    // Verified against ShatteredArchive 2025-02-18
     this.raceRestrictions = [
       Ogre.GetInstance(),
       GiantOgre.GetInstance(),
@@ -184,27 +184,27 @@ export class Bard implements IDslClass, IMortalClass, IClassType {
       Pixie.GetInstance()
     ];
 
-    // Merge skills, spells, and songs into one big abilities map.
+    // Verified against ShatteredArchive 2025-02-18
     this.abilities = new Map<number, IAbility[]>([
       [1, [
+        Age.GetInstance(),
+        Recall.GetInstance(),
         Dagger.GetInstance(),
         Flail.GetInstance(),
-        Staff.GetInstance(),
-        Whip.GetInstance(),
         Haggle.GetInstance(),
-        Swim.GetInstance(),
         Scrolls.GetInstance(),
+        Staff.GetInstance(),
         Staves.GetInstance(),
-        Wands.GetInstance()
+        Swim.GetInstance(),
+        Wands.GetInstance(),
+        Whip.GetInstance(),
       ]],
       [3, [
-        Recall.GetInstance(),
-        Dig.GetInstance(),
-        Age.GetInstance(),
+        CauseLight.GetInstance(),
         DangerSense.GetInstance(),
+        Dig.GetInstance(),
         DirtKicking.GetInstance(),
         Dodge.GetInstance(),
-        CauseLight.GetInstance(),
         TorchBurns.GetInstance()
       ]],
       [4, [Trip.GetInstance()]],
@@ -212,10 +212,10 @@ export class Bard implements IDslClass, IMortalClass, IClassType {
       [7, [Kick.GetInstance(), SongOfWar.GetInstance()]],
       [9, [PickLock.GetInstance(), TravelTune.GetInstance()]],
       [10, [
-        Roundhouse.GetInstance(),
         Armor.GetInstance(),
         CauseSerious.GetInstance(),
-        Infravision.GetInstance()
+        Infravision.GetInstance(),
+        Roundhouse.GetInstance(),
       ]],
       [11, [BottlesOfBeer.GetInstance()]],
       [12, [
@@ -224,6 +224,7 @@ export class Bard implements IDslClass, IMortalClass, IClassType {
         NoEyes.GetInstance()
       ]],
       [13, [Parry.GetInstance()]],
+      [14, [StoneFountain.GetInstance()]],
       [15, [
         HandToHand.GetInstance(),
         SecondAttack.GetInstance(),
@@ -277,42 +278,43 @@ export class Bard implements IDslClass, IMortalClass, IClassType {
       [50, [Nexus.GetInstance(), CauseFatality.GetInstance()]]
     ]);
 
-    // Character creation ability groups.
-    this.characterCreationAbilityGroups = new Map<number, IAbilityGroup[]>([
-      [0, [BardBasics.GetInstance()]],
-      [4, [Harmful.GetInstance()]],
-      [6, [Transportation.GetInstance(), HymnsOfLife.GetInstance()]],
-      [7, [Enhancement.GetInstance()]],
-      [8, [WarHymns.GetInstance(), Protective.GetInstance()]],
-      [40, [BardDefault.GetInstance()]],
-    ]);
+    // Verified against ShatteredArchive 2025-02-18
+    this.characterCreationAbilityGroups = {
+      [BardBasics.GetInstance().name]: 0,
+      [BardDefault.GetInstance().name]: 40,
+      [Enhancement.GetInstance().name]: 7,
+      [Transportation.GetInstance().name]: 6,
+      [Harmful.GetInstance().name]: 4,
+      [WarHymns.GetInstance().name]: 8,
+      [Protective.GetInstance().name]: 8,
+      [HymnsOfLife.GetInstance().name]: 6
+    }
 
-    // Character creation skills.
-    this.characterCreationSkills = new Map<number, IAbility[]>([
-      [4, [
-        Dagger.GetInstance(),
-        BlindFighting.GetInstance(),
-        EnhancedDamage.GetInstance(),
-        Parry.GetInstance(),
-        SecondAttack.GetInstance(),
-        Meditation.GetInstance(),
-        DangerSense.GetInstance(),
-        Flail.GetInstance(),
-        DirtKicking.GetInstance(),
-        HandToHand.GetInstance(),
-        Pugil.GetInstance(),
-        Haggle.GetInstance(),
-        PickLock.GetInstance(),
-        Whip.GetInstance(),
-        Dodge.GetInstance(),
-        Kick.GetInstance(),
-        Trip.GetInstance(),
-        Lore.GetInstance(),
-        Roundhouse.GetInstance()
-      ]]
-    ]);
-
+    // Verified against ShatteredArchive 2025-02-18
+    this.characterCreationSkills = {
+      [Dagger.GetInstance().name]: 4,
+      [BlindFighting.GetInstance().name]: 12,
+      [EnhancedDamage.GetInstance().name]: 10,
+      [Parry.GetInstance().name]: 8,
+      [SecondAttack.GetInstance().name]: 6,
+      [Meditation.GetInstance().name]: 5,
+      [DangerSense.GetInstance().name]: 6,
+      [Flail.GetInstance().name]: 4,
+      [DirtKicking.GetInstance().name]: 6,
+      [HandToHand.GetInstance().name]: 6,
+      [Pugil.GetInstance().name]: 6,
+      [Haggle.GetInstance().name]: 2,
+      [PickLock.GetInstance().name]: 4,
+      [Whip.GetInstance().name]: 4,
+      [Dodge.GetInstance().name]: 6,
+      [Kick.GetInstance().name]: 1,
+      [Trip.GetInstance().name]: 4,
+      [Lore.GetInstance().name]: 4,
+      [Roundhouse.GetInstance().name]: 4
+    };
+    
     this.baseCpModifier = 0;
+    // Verified against ShatteredArchive 2025-02-18
     this.cpRacialModifiers = new Map<IRace, number>([
       [Human.GetInstance(), 1.0],
       [HalfElf.GetInstance(), 1.1],
@@ -360,8 +362,9 @@ roundhouse        a wild swing able to knock an opponent off their feet
 
 See also : BARDSONG SONGS HYMNS
 `;
-    this.castsAtLevel = false;
-    this.castingLevelModifier = 0;
+    this.castsAtLevel = true;
+    this.isMoonAffected = false;
+    this.castingLevelModifier = 1.0;
     this.notes = "";
     this.buffActions = undefined;
   }

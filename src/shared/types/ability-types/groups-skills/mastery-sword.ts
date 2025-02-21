@@ -11,8 +11,10 @@ export class MasterySword implements IAbilityGroup {
   public abilityGroup: AbilityGroup;
   public abilityGroupType: AbilityGroupType;
   public abilities: IAbility[];
+  public name: string;
 
   constructor() {
+    this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.MasterySword;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilities = [Florentine.GetInstance().Get(), Flurry.GetInstance().Get(), Cross.GetInstance().Get()];

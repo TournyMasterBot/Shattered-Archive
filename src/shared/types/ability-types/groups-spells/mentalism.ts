@@ -17,8 +17,10 @@ export class Mentalism implements IAbilityGroup {
   public abilityGroup: AbilityGroup;
   public abilityGroupType: AbilityGroupType;
   public abilities: IAbility[];
+  public name: string;
 
   constructor() {
+    this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.Mentalism;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [

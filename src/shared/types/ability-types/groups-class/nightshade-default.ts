@@ -23,8 +23,10 @@ export class NightshadeDefault implements IAbilityGroup {
   public abilityGroup: AbilityGroup;
   public abilityGroupType: AbilityGroupType;
   public abilities: IAbility[];
+  public name: string;
 
   constructor() {
+    this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.NightshadeDefault;
     this.abilityGroupType = AbilityGroupType.Default;
     this.abilities = [

@@ -8,6 +8,9 @@ import IArea, { IAreaDetails } from "@shared/types/area-types/area-interface";
 import { v4 } from "uuid";
 import IRace from "@shared/types/character-types/race-interface";
 import IDslClass from "@shared/types/character-types/dslClass";
+import IDslItem from "@shared/types/item-types/dsl-item-interface";
+import itemData from "@shared/types/item-types/raw-data/items.json";
+import itemManualData from "@shared/types/item-types/raw-data/item-manual-data.json";
 
 const secretDirectoryPath = path.join(__dirname, "secrets");
 const secretPath = path.join(`${secretDirectoryPath}`, "jwt-secret.dat");
@@ -27,6 +30,7 @@ export interface GameCacheProps {
   initializeAbilityGroups: boolean;
   initializeRaces: boolean;
   initializeClasses: boolean;
+  initializeItems: boolean;
 }
 
 const ServerCache = {
@@ -41,6 +45,7 @@ const ServerCache = {
   Rooms: {} as Record<string, Record<string, IAreaDetails>>,
   Races: {} as Record<string, IRace>,
   Classes: {} as Record<string, IDslClass>,
+  Items: {} as Record<string, IDslItem>,
   async Initialize(props: ServerCacheProps) {
     this.filesystem = new FileSystem();
     this.serviceName = props.serviceName;
@@ -75,8 +80,11 @@ const ServerCache = {
       if (props.gameCache.initializeRaces) {
         await this.InitializeRaces();
       }
-      if(props.gameCache.initializeClasses) {
+      if (props.gameCache.initializeClasses) {
         await this.InitializeClasses();
+      }
+      if (props.gameCache.initializeItems) {
+        await this.InitializeItems();
       }
     }
   },
@@ -188,6 +196,9 @@ const ServerCache = {
                 }
               }
             }
+            if (area.items === undefined) {
+              area.items = {};
+            }
           }
         }
       }),
@@ -215,19 +226,74 @@ const ServerCache = {
     console.debug("Fetching classes for cache", {
       classesPath,
     });
-    
+
     const [classes] = await Promise.all([this.filesystem.importModules(classesPath)]);
     for (const dslClass of classes) {
-      if (ServerCache.Races[dslClass.name] === undefined) {
-        ServerCache.Races[dslClass.name] = dslClass;
+      if (ServerCache.Classes[dslClass.name] === undefined) {
+        ServerCache.Classes[dslClass.name] = dslClass;
       }
     }
 
     console.log(`Classes count: ${classes.length}`);
   },
+  async InitializeItems(): Promise<void> {
+    console.debug("Adding items to item cache");
+    const processItems = itemData as IDslItem[];
+    processItems.forEach((item: IDslItem) => {
+      ServerCache.Items[item.item_hash] = item;
+      const areaName = item.area_found?.replace("/\s/g", "");
+      const area = this.GetAreaByName(areaName);
+      if (area !== undefined) {
+        area.items[item.item_name] = item;
+      }
+    });
+    const manualItems = itemManualData as IDslItem[];
+    manualItems.forEach((enrichedItem: IDslItem) => {
+      const key = enrichedItem.item_hash;
+      const existingItem = ServerCache.Items[key];
+
+      if (existingItem) {
+        // If the item exists, update its properties with the enriched data.
+        // This will overwrite existing values with those from the enriched item.
+        Object.assign(existingItem, enrichedItem);
+      } else {
+        // Otherwise, add the new item to the cache.
+        ServerCache.Items[key] = enrichedItem;
+      }
+
+      // Enrich areas with known item information
+      const area = this.GetAreaByName(enrichedItem.area_found);
+      if (area !== undefined) {
+        const existingItemInArea = area.items[enrichedItem.item_hash];
+        if (existingItemInArea) {
+          // If the item exists, update its properties with the enriched data.
+          // This will overwrite existing values with those from the enriched item.
+          Object.assign(existingItemInArea, enrichedItem);
+          area.items[key] = existingItemInArea;
+        } else {
+          // Otherwise, add the new item to the cache.
+          area.items[key] = existingItemInArea;
+        }
+      }
+    });
+
+    console.log(`Items count: ${processItems.length}, Manual Items Count: ${manualItems.length}`);
+  },
+  GetAreaByName(areaName: string): IArea | undefined {
+    const area = ServerCache.Areas[areaName];
+    return area;
+  },
   GetRaceByName(raceName: string): IRace | undefined {
     const race = ServerCache.Races[raceName];
     return race;
+  },
+  GetClassByName(className: string): IDslClass | undefined {
+    const dslClass = ServerCache.Classes[className];
+    return dslClass;
+  },
+  GetItemById(itemKey: string): IDslItem | undefined {
+    const item = ServerCache.Items[itemKey];
+    return item;
   },
 };
 

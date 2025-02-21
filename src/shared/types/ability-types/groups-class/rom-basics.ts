@@ -16,8 +16,10 @@ export class RomBasics implements IAbilityGroup {
   public abilityGroup: AbilityGroup;
   public abilityGroupType: AbilityGroupType;
   public abilities: IAbility[];
+  public name: string;
 
   constructor() {
+    this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.RomBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
     this.abilities = [new Scrolls(), new Recall(), new Dig(), new Staves(), new Swim(), new Wands(), new Age()];

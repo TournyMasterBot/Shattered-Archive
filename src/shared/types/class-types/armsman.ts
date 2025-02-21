@@ -1,7 +1,7 @@
 // #region imports
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
-import DslArmorType from "../item-types/armor-type";
-import IDslArmorType from "../item-types/armor-type-interface";
+import DslArmorType from "@shared/types/item-types/armor-type";
+import IDslArmorType from "@shared/types/item-types/armor-type-interface";
 import { Weaponsmaster } from "@shared/types/ability-types/groups-skills/weaponsmaster";
 import IRace from "@shared/types/character-types/race-interface";
 import ArmsmanBasics from "@shared/types/ability-types/groups-class/armsman-basics";
@@ -121,6 +121,21 @@ import Wemic from "@shared/types/race-types/wemic";
 import WildElf from "@shared/types/race-types/wild-elf";
 import Yinn from "@shared/types/race-types/yinn";
 import HobGoblin from "@shared/types/race-types/hobgoblin";
+import Protective from "@shared/types/ability-types/groups-spells/protective";
+import Strip from "@shared/types/ability-types/skills/strip";
+import Florentine from "@shared/types/ability-types/skills/florentine";
+import Cross from "@shared/types/ability-types/skills/cross";
+import Lash from "@shared/types/ability-types/skills/lash";
+import ConcealedAttack from "@shared/types/ability-types/skills/concealed-attack";
+import Entrap from "@shared/types/ability-types/skills/entrap";
+import Legsweep from "@shared/types/ability-types/skills/legsweep";
+import Drum from "@shared/types/ability-types/skills/drum";
+import Flurry from "@shared/types/ability-types/skills/flurry";
+import Whirl from "@shared/types/ability-types/skills/whirl";
+import Choke from "@shared/types/ability-types/skills/choke";
+import Chargeset from "@shared/types/ability-types/skills/chargeset";
+import Boneshatter from "@shared/types/ability-types/skills/boneshatter";
+import ShieldCleave from "@shared/types/ability-types/skills/shield-cleave";
 // #endregion
 
 export class Armsman implements IDslClass, IMortalClass, IClassType {
@@ -141,14 +156,15 @@ export class Armsman implements IDslClass, IMortalClass, IClassType {
     classGroup: string;
     raceRestrictions: IRace[];
     abilities: Map<number, IAbility[]>;
-    characterCreationAbilityGroups: Map<number, IAbilityGroup[]>;
-    characterCreationSkills: Map<number, IAbility[]>;
+    characterCreationAbilityGroups: { [groupName: string]: number };
+    characterCreationSkills: { [abilityName: string]: number };
     baseCpModifier: number;
     helpfile: string;
     castsAtLevel: boolean;
     castingLevelModifier: number;
     notes?: string;
     cpRacialModifiers: Map<IClassType, number>;
+    isMoonAffected?: boolean | undefined;
 
     constructor() {
         this.id = MortalClass.Armsman.id;
@@ -168,172 +184,221 @@ export class Armsman implements IDslClass, IMortalClass, IClassType {
         });
         this.armorType = DslArmorType.Plate;
         this.classGroup = this.baseClass.name;
+        // Verified against ShatteredArchive 2025-02-19
         this.abilities = new Map<number, IAbility[]>([
             [1, [
-                Axe.GetInstance().Get(),
-                Dagger.GetInstance().Get(),
-                Flail.GetInstance().Get(),
-                Mace.GetInstance().Get(),
-                Polearm.GetInstance().Get(),
-                ShieldBlock.GetInstance().Get(),
-                Spear.GetInstance().Get(),
-                Sword.GetInstance().Get(),
-                Staff.GetInstance().Get(),
-                Whip.GetInstance().Get(),
-                Bash.GetInstance().Get(),
-                EnhancedDamage.GetInstance().Get(),
-                Parry.GetInstance().Get(),
-                Rescue.GetInstance().Get(),
-                Swim.GetInstance().Get(),
-                Scrolls.GetInstance().Get(),
-                Staves.GetInstance().Get(),
-                Wands.GetInstance().Get(),
-                Recall.GetInstance().Get(),
-                Dig.GetInstance().Get(),
-                Age.GetInstance().Get()
+                Axe.GetInstance(),
+                Dagger.GetInstance(),
+                Flail.GetInstance(),
+                Mace.GetInstance(),
+                Polearm.GetInstance(),
+                ShieldBlock.GetInstance(),
+                Spear.GetInstance(),
+                Sword.GetInstance(),
+                Staff.GetInstance(),
+                Whip.GetInstance(),
+                Bash.GetInstance(),
+                EnhancedDamage.GetInstance(),
+                Parry.GetInstance(),
+                Rescue.GetInstance(),
+                Swim.GetInstance(),
+                Scrolls.GetInstance(),
+                Staves.GetInstance(),
+                Wands.GetInstance(),
+                Recall.GetInstance(),
+                Dig.GetInstance(),
+                Age.GetInstance()
             ]],
-            [2, [Riding.GetInstance().Get()]],
-            [3, [DirtKicking.GetInstance().Get()]],
+            [2, [Riding.GetInstance()]],
+            [3, [DirtKicking.GetInstance()]],
             [5, [
-                SecondAttack.GetInstance().Get(),
-                Armor.GetInstance().Get()
+                SecondAttack.GetInstance(),
+                Armor.GetInstance()
             ]],
             [6, [
-                HandToHand.GetInstance().Get(),
-                FastHealing.GetInstance().Get()
+                HandToHand.GetInstance(),
+                FastHealing.GetInstance()
             ]],
             [8, [
-                Kick.GetInstance().Get(),
-                Stab.GetInstance().Get()
+                Kick.GetInstance(),
+                Stab.GetInstance()
             ]],
             [9, [
-                Refresh.GetInstance().Get()
+                Strip.GetInstance(),
+                Florentine.GetInstance(),
+                Refresh.GetInstance()
             ]],
             [10, [
-                Backhand.GetInstance().Get(),
-                Distance.GetInstance().Get()
+                Backhand.GetInstance(),
+                Distance.GetInstance()
             ]],
             [11, [
-                Disarm.GetInstance().Get(),
-                Spin.GetInstance().Get(),
-                ProtectionEvil.GetInstance().Get(),
-                ProtectionNeutral.GetInstance().Get(),
-                ProtectionGood.GetInstance().Get()
+                Disarm.GetInstance(),
+                Spin.GetInstance(),
+                ProtectionEvil.GetInstance(),
+                ProtectionNeutral.GetInstance(),
+                ProtectionGood.GetInstance()
             ]],
             [12, [
-                ThirdAttack.GetInstance().Get(),
-                Disembowel.GetInstance().Get()
+                ThirdAttack.GetInstance(),
+                Disembowel.GetInstance()
             ]],
             [13, [
-                BlindFighting.GetInstance().Get(),
-                Dodge.GetInstance().Get(),
-                Infravision.GetInstance().Get(),
-                WordOfRecall.GetInstance().Get()
+                BlindFighting.GetInstance(),
+                Dodge.GetInstance(),
             ]],
             [14, [
-                Haggle.GetInstance().Get(),
-                Peek.GetInstance().Get()
+                Haggle.GetInstance(),
+                Peek.GetInstance()
             ]],
             [15, [
-                Trip.GetInstance().Get(),
-                Meditation.GetInstance().Get()
+                Trip.GetInstance(),
+                Meditation.GetInstance()
             ]],
             [16, [
-                Yank.GetInstance().Get(),
-                Grip.GetInstance().Get(),
-                Fireproof.GetInstance().Get()
+                Yank.GetInstance(),
+                Fireproof.GetInstance(),
+                Infravision.GetInstance(),
+                WordOfRecall.GetInstance()
             ]],
-            [18, [Berserk.GetInstance().Get(), GiantStrength.GetInstance().Get()]],
-            [19, [Charge.GetInstance().Get()]],
+            [17, [
+                Grip.GetInstance(),
+            ]],
+            [18, [
+                Berserk.GetInstance(),
+                Fireproof.GetInstance()
+            ]],
+            [19, [Charge.GetInstance()]],
             [20, [
-                Lore.GetInstance().Get(),
-                Sting.GetInstance().Get()
+                Lore.GetInstance(),
+                Sting.GetInstance(), 
+                GiantStrength.GetInstance()
             ]],
-            [21, [EnhancedReactions.GetInstance().Get()]],
+            [21, [EnhancedReactions.GetInstance()]],
             [22, [
-                DualWield.GetInstance().Get(),
-                Fly.GetInstance().Get(),
-                Summon.GetInstance().Get(),
-                LightFoot.GetInstance().Get()
+                DualWield.GetInstance(),
+                Fly.GetInstance(),
+                Summon.GetInstance(),
+                LightFoot.GetInstance()
             ]],
-            [28, [Gate.GetInstance().Get()]],
-            [29, [Haste.GetInstance().Get()]],
+            [23, [
+                Cross.GetInstance(),
+            ]],
+            [24, [
+                Lash.GetInstance(),
+            ]],
+            [25, [
+                PickLock.GetInstance(),
+            ]],
+            [26, [
+                ConcealedAttack.GetInstance()
+            ]],
+            [27, [
+                Entrap.GetInstance()
+            ]],
+            [28, [
+                FourthAttack.GetInstance(),
+                Gate.GetInstance()
+            ]],
+            [29, [Haste.GetInstance()]],
             [30, [
-                Sanctuary.GetInstance().Get(),
-                Shield.GetInstance().Get()
+                Legsweep.GetInstance(),
+                Sanctuary.GetInstance()
             ]],
-            [34, [Cancellation.GetInstance().Get()]],
-            [36, [Teleport.GetInstance().Get()]],
-            [37, [PassDoor.GetInstance().Get()]],
-            [39, [Waypoint.GetInstance().Get()]],
-            [40, [Portal.GetInstance().Get()]],
-            [43, [Entwine.GetInstance().Get()]],
-            [44, [Hurl.GetInstance().Get()]],
+            [33, [
+                Drum.GetInstance(),
+            ]],
+            [34, [
+                Flurry.GetInstance(),
+                Cancellation.GetInstance()
+            ]],
+            [35, [
+                Whirl.GetInstance(),
+            ]],
+            [36, [
+                Teleport.GetInstance()
+            ]],
+            [37, [
+                Choke.GetInstance(),
+                PassDoor.GetInstance()
+            ]],
+            [39, [
+                Chargeset.GetInstance(),
+                Waypoint.GetInstance()
+            ]],
+            [40, [
+                Portal.GetInstance(),
+                Shield.GetInstance()
+            ]],
+            [41, [
+                Boneshatter.GetInstance(),
+                ShieldCleave.GetInstance()
+            ]],
+            [43, [Entwine.GetInstance()]],
+            [44, [Hurl.GetInstance()]],
             [45, [
-                Impale.GetInstance().Get(),
-                Nexus.GetInstance().Get(),
-                StoneSkin.GetInstance().Get()
+                Impale.GetInstance(),
+                Nexus.GetInstance(),
+                StoneSkin.GetInstance()
             ]]
         ]);
-        this.characterCreationAbilityGroups = new Map<number, IAbilityGroup[]>([
-            [0, [ArmsmanBasics.GetInstance().Get()]],
-            [8, [new Transportation()]],
-            [9, [
-                MasteryMace.GetInstance().Get(),
-                MasterySword.GetInstance().Get(),
-                MasteryDagger.GetInstance().Get(),
-                Enhancement.GetInstance().Get(),
-                MasteryPolearm.GetInstance().Get(),
-                MasteryWhip.GetInstance().Get(),
-                MasteryFlail.GetInstance().Get(),
-                MasterySpear.GetInstance().Get(),
-                MasteryAxe.GetInstance().Get()
-            ]],
-            [20, [Weaponsmaster.GetInstance().Get()]],
-            [40, [ArmsmanDefault.GetInstance().Get()]]
-        ]);
-        this.characterCreationSkills = new Map<number, IAbility[]>([
-            [2, [Riding.GetInstance().Get(), ShieldBlock.GetInstance().Get()]],
-            [3, [
-                Axe.GetInstance().Get(),
-                Kick.GetInstance().Get(),
-                Grip.GetInstance().Get(),
-                BlindFighting.GetInstance().Get(),
-                EnhancedDamage.GetInstance().Get()
-            ]],
-            [4, [
-                Bash.GetInstance().Get(),
-                DirtKicking.GetInstance().Get(),
-                Parry.GetInstance().Get(),
-                Flail.GetInstance().Get(),
-                Whip.GetInstance().Get(),
-                HandToHand.GetInstance().Get(),
-                Dodge.GetInstance().Get(),
-                Lore.GetInstance().Get(),
-                Disarm.GetInstance().Get()
-            ]],
-            [5, [
-                Berserk.GetInstance().Get(),
-                Charge.GetInstance().Get(),
-                ThirdAttack.GetInstance().Get()
-            ]],
-            [6, [
-                DualWield.GetInstance().Get(),
-                Staff.GetInstance().Get(),
-                EnhancedReactions.GetInstance().Get(),
-                Haggle.GetInstance().Get(),
-                Peek.GetInstance().Get(),
-                FourthAttack.GetInstance().Get()
-            ]],
-            [8, [
-                Trip.GetInstance().Get(),
-                Meditation.GetInstance().Get(),
-                PickLock.GetInstance().Get()
-            ]],
-            [10, [
-                FastHealing.GetInstance().Get()
-            ]]
-        ]);
+        // Verified against ShatteredArchive 2025-02-19
+        this.characterCreationAbilityGroups = {
+            [Weaponsmaster.GetInstance().name]: 20,
+            [Transportation.GetInstance().name]: 8,
+            [MasteryMace.GetInstance().name]: 9,
+            [MasterySword.GetInstance().name]: 9,
+            [MasteryDagger.GetInstance().name]: 9,
+            [Enhancement.GetInstance().name]: 9,
+            [ArmsmanBasics.GetInstance().name]: 0,
+            [ArmsmanDefault.GetInstance().name]: 40,
+            [MasteryPolearm.GetInstance().name]: 9,
+            [MasteryWhip.GetInstance().name]: 9,
+            [Protective.GetInstance().name]: 9,
+            [MasteryFlail.GetInstance().name]: 9,
+            [MasterySpear.GetInstance().name]: 9,
+            [MasteryAxe.GetInstance().name]: 9
+        }
+
+        // Verified against ShatteredArchive 2025-02-19
+        this.characterCreationSkills = {
+            [Axe.GetInstance().name]: 3,
+            [Mace.GetInstance().name]: 3,
+            [Spear.GetInstance().name]: 3,
+            [Bash.GetInstance().name]: 4,
+            [DirtKicking.GetInstance().name]: 4,
+            [DualWield.GetInstance().name]: 6,
+            [Kick.GetInstance().name]: 3,
+            [Trip.GetInstance().name]: 8,
+            [FastHealing.GetInstance().name]: 4,
+            [Meditation.GetInstance().name]: 8,
+            [Riding.GetInstance().name]: 2,
+            [EnhancedReactions.GetInstance().name]: 4,
+            [Dagger.GetInstance().name]: 4,
+            [Polearm.GetInstance().name]: 4,
+            [Staff.GetInstance().name]: 6,
+            [Berserk.GetInstance().name]: 5,
+            [Disarm.GetInstance().name]: 4,
+            [EnhancedDamage.GetInstance().name]: 3,
+            [Parry.GetInstance().name]: 4,
+            [ThirdAttack.GetInstance().name]: 4,
+            [Haggle.GetInstance().name]: 6,
+            [Peek.GetInstance().name]: 6,
+            [Charge.GetInstance().name]: 5,
+            [Flail.GetInstance().name]: 4,
+            [ShieldBlock.GetInstance().name]: 2,
+            [Whip.GetInstance().name]: 4,
+            [BlindFighting.GetInstance().name]: 3,
+            [Dodge.GetInstance().name]: 6,
+            [HandToHand.GetInstance().name]: 4,
+            [Rescue.GetInstance().name]: 4,
+            [FourthAttack.GetInstance().name]: 6,
+            [Lore.GetInstance().name]: 4,
+            [PickLock.GetInstance().name]: 8,
+            [Grip.GetInstance().name]: 4
+        }
+
+        // Verified against ShatteredArchive 2025-02-19
         this.raceRestrictions = [
             Pixie.GetInstance()
          ];
@@ -359,8 +424,10 @@ export class Armsman implements IDslClass, IMortalClass, IClassType {
         CLAN:      ANY, including non-clanned
         see also: 'RECLASS'`;
         this.castsAtLevel = false;
+        this.isMoonAffected = false;
         this.castingLevelModifier = 0.50;
         this.notes = "Armsman are extremely versatile fighters that tend to be extremely expensive in both tnl to level and eggs for weapons. Armsman do not cast at level.";
+        // Verified against ShatteredArchive 2025-02-19
         this.cpRacialModifiers = new Map<IRace, number>([
             [Human.GetInstance(), 1.0],
             [HalfElf.GetInstance(), 1.0],

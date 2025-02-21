@@ -9,6 +9,7 @@
     "allowJs": true,
     "checkJs": false,
     "noEmit": true,
+    "resolveJsonModule": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -19,7 +20,7 @@
     "strictPropertyInitialization": true,
     "noImplicitThis": true,
     "alwaysStrict": true,
-    "noFallthroughCasesInSwitch": true,
+    "noFallthroughCasesInSwitch": true,    
     "rootDirs": [
       "./src/web-server",
       "./src/web-client",

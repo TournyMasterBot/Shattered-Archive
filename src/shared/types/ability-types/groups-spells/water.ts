@@ -12,8 +12,10 @@ export class Water implements IAbilityGroup {
   public abilityGroup: AbilityGroup;
   public abilityGroupType: AbilityGroupType;
   public abilities: IAbility[];
+  public name: string;
 
   constructor() {
+    this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.Water;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [Wave.GetInstance().Get(), Monsoon.GetInstance().Get(), Drown.GetInstance().Get(), FlamingSoul.GetInstance().Get()];

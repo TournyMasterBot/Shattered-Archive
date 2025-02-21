@@ -36,8 +36,8 @@ export class Battlerager implements IDslClass, IMortalClass, IClassType {
   raceRestrictions: IRace[];
   affiliation: Affiliation;
   abilities: Map<number, any>;
-  characterCreationAbilityGroups: Map<number, any>;
-  characterCreationSkills: Map<number, any>;
+  characterCreationAbilityGroups: { [groupName: string]: number };
+  characterCreationSkills: { [abilityName: string]: number };
   baseCpModifier: number;
   cpRacialModifiers: Map<IRace, number>;
   helpfile: string;
@@ -45,6 +45,7 @@ export class Battlerager implements IDslClass, IMortalClass, IClassType {
   castingLevelModifier: number;
   notes?: string;
   buffActions?: any[];
+  isMoonAffected?: boolean | undefined;
 
   constructor() {
     this.id = MortalClass.Battlerager.id;
@@ -93,6 +94,7 @@ ALIGNMENT: Any alignment
 CLAN:      WARGAR only
 see also: RECLASS BATTLERAGER WARGAR`;
     this.castsAtLevel = false;
+    this.isMoonAffected = false;
     this.castingLevelModifier = 0;
     this.notes = "";
     this.buffActions = undefined;

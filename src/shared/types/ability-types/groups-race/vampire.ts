@@ -9,8 +9,10 @@ export class Vampire implements IAbilityGroup {
   public abilityGroup: AbilityGroup;
   public abilityGroupType: AbilityGroupType;
   public abilities: IAbility[];
+  public name: string;
 
   constructor() {
+    this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.Vampire;
     this.abilityGroupType = AbilityGroupType.Specialty;
     this.abilities = [Dodge.GetInstance().Get()];

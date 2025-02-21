@@ -11,9 +11,11 @@ export class MasteryAxe implements IAbilityGroup {
   public abilityGroup: AbilityGroup;
   public abilityGroupType: AbilityGroupType;
   public abilities: IAbility[];
+  public name: string;
 
   // Private constructor to prevent direct instantiation
   private constructor() {
+    this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.MasteryAxe;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilities = [ShieldCleave.GetInstance().Get(), Whirl.GetInstance().Get(), Disembowel.GetInstance().Get()];

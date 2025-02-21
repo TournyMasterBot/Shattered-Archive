@@ -25,8 +25,10 @@ export class AngelBasics implements IAbilityGroup {
   public abilityGroup: AbilityGroup;
   public abilityGroupType: AbilityGroupType;
   public abilities: IAbility[];
+  public name: string;
 
   constructor() {
+    this.name = this.constructor.name.toLowerCase();
     const abilityGroups = [
       ...RomBasics.GetInstance().Get<RomBasics>().abilities,
       new BlindFighting(),

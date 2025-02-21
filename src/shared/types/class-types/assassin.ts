@@ -154,6 +154,9 @@ import Wemic from "@shared/types/race-types/wemic";
 import WildElf from "@shared/types/race-types/wild-elf";
 import Yinn from "@shared/types/race-types/yinn";
 import HobGoblin from "@shared/types/race-types/hobgoblin";
+import CreateWater from "../ability-types/spells/create-water";
+import ShockingGrasp from "../ability-types/spells/shocking-grasp";
+import Poison from "../ability-types/spells/poison";
 
 export class Assassin implements IDslClass, IMortalClass, IClassType {
     private static instance: Assassin;
@@ -167,21 +170,21 @@ export class Assassin implements IDslClass, IMortalClass, IClassType {
     baseClass: IClassType;
     classType: IClassType;
     imgUrl: string;
-    imgCreditUrl: string;
     primaryAttribute: IStatAttribute;
     secondaryAttribute: IStatAttribute;
     armorType: IDslArmorType;
     classGroup: string;
     raceRestrictions: IRace[];
     abilities: Map<number, IAbility[]>;
-    characterCreationAbilityGroups: Map<number, IAbilityGroup[]>;
-    characterCreationSkills: Map<number, IAbility[]>;
+    characterCreationAbilityGroups: { [groupName: string]: number };
+    characterCreationSkills: { [abilityName: string]: number };
     baseCpModifier: number;
     helpfile: string;
     castsAtLevel: boolean;
     castingLevelModifier: number;
     notes?: string;
     cpRacialModifiers: Map<IClassType, number>;
+    isMoonAffected?: boolean | undefined;
 
     constructor() {
         this.id = MortalClass.Assassin.id;
@@ -193,7 +196,6 @@ export class Assassin implements IDslClass, IMortalClass, IClassType {
         this.baseClass = MortalClass.Warrior;
         this.classType = MortalClass.Armsman;
         this.imgUrl = "/img/classes/armsman.png";
-        this.imgCreditUrl = "https://www.pinterest.com/pin/303430093640079604/";
         this.primaryAttribute = new StatAttribute({
             type: StatAttributeType.Dexterity
         });
@@ -202,248 +204,236 @@ export class Assassin implements IDslClass, IMortalClass, IClassType {
         });
         this.armorType = DslArmorType.Studded;
         this.classGroup = this.baseClass.name;
+
         this.abilities = new Map<number, IAbility[]>([
             [1, [
-                Dagger.GetInstance().Get(),
-                Flail.GetInstance().Get(),
-                Mace.GetInstance().Get(),
-                Polearm.GetInstance().Get(),
-                ShieldBlock.GetInstance().Get(),
-                Spear.GetInstance().Get(),
-                Sword.GetInstance().Get(),
-                Staff.GetInstance().Get(),
-                Whip.GetInstance().Get(),
-                Backstab.GetInstance().Get(),
-                Dodge.GetInstance().Get(),
-                Trip.GetInstance().Get(),
-                Haggle.GetInstance().Get(),
-                Hide.GetInstance().Get(),
-                Peek.GetInstance().Get(),
-                Swim.GetInstance().Get(),
-                Scrolls.GetInstance().Get(),
-                Staves.GetInstance().Get(),
-                Wands.GetInstance().Get(),
-                Recall.GetInstance().Get(),
-                Dig.GetInstance().Get(),
-                Age.GetInstance().Get()
+                Dagger.GetInstance(),
+                Flail.GetInstance(),
+                Mace.GetInstance(),
+                Polearm.GetInstance(),
+                ShieldBlock.GetInstance(),
+                Spear.GetInstance(),
+                Sword.GetInstance(),
+                Staff.GetInstance(),
+                Whip.GetInstance(),
+                Backstab.GetInstance(),
+                Dodge.GetInstance(),
+                Trip.GetInstance(),
+                Haggle.GetInstance(),
+                Hide.GetInstance(),
+                Peek.GetInstance(),
+                Swim.GetInstance(),
+                Scrolls.GetInstance(),
+                Staves.GetInstance(),
+                Wands.GetInstance(),
+                Recall.GetInstance(),
+                Dig.GetInstance(),
+                Age.GetInstance()
             ]],
             [2, [
-                MagicMissile.GetInstance().Get(),
-                Ventriloquate.GetInstance().Get()
+                MagicMissile.GetInstance(),
+                Ventriloquate.GetInstance()
             ]],
-            [3, [DirtKicking.GetInstance().Get()]],
-            [4, [Sneak.GetInstance().Get()]],
-            [5, [DetectMagic.GetInstance().Get()]],
+            [3, [DirtKicking.GetInstance()]],
+            [4, [Sneak.GetInstance()]],
+            [5, [DetectMagic.GetInstance()]],
             [6, [
-                ChillTouch.GetInstance().Get(),
-                ContinualLight.GetInstance().Get(),
-                DetectInvis.GetInstance().Get()
+                ChillTouch.GetInstance(),
+                ContinualLight.GetInstance(),
+                DetectInvis.GetInstance()
             ]],
             [7, [
-                FloatingDisc.GetInstance().Get(),
-                PickLock.GetInstance().Get()
+                FloatingDisc.GetInstance(),
+                PickLock.GetInstance()
             ]],
             [9, [
-                DetectPoison.GetInstance().Get(),
-                Invisibility.GetInstance().Get()
+                DetectPoison.GetInstance(),
+                Invisibility.GetInstance()
             ]],
             [10, [
-                Envenom.GetInstance().Get(),
-                Armor.GetInstance().Get(),
-                BurningHands.GetInstance().Get(),
-                CreateRose.GetInstance().Get(),
-                Infravision.GetInstance().Get()
+                Envenom.GetInstance(),
+                Armor.GetInstance(),
+                BurningHands.GetInstance(),
+                CreateRose.GetInstance(),
+                Infravision.GetInstance()
             ]],
             [11, [
-                CreateFood.GetInstance().Get(),
-                LocateObject.GetInstance().Get()
+                CreateFood.GetInstance(),
+                LocateObject.GetInstance()
             ]],
             [12, [
-                Disarm.GetInstance().Get(),
-                Kick.GetInstance().Get(),
-                SecondAttack.GetInstance().Get(),
-                DetectEvil.GetInstance().Get(),
-                DetectGood.GetInstance().Get(),
-                DetectHidden.GetInstance().Get(),
-                Refresh.GetInstance().Get(),
-                CreateTree.GetInstance().Get()
+                Disarm.GetInstance(),
+                Kick.GetInstance(),
+                SecondAttack.GetInstance(),
+                CreateWater.GetInstance(),
+                DetectEvil.GetInstance(),
+                DetectGood.GetInstance(),
+                DetectHidden.GetInstance(),
+                Refresh.GetInstance(),
+                CreateTree.GetInstance()
             ]],
-            [13, [Parry.GetInstance().Get()]],
-            [14, [Riding.GetInstance().Get()]],
+            [13, [Parry.GetInstance()]],
+            [14, [
+                Riding.GetInstance(),
+                ShockingGrasp.GetInstance(),
+            ]],
             [15, [
-                Caltraps.GetInstance().Get(),
-                HandToHand.GetInstance().Get(),
-                Lore.GetInstance().Get(),
-                Meditation.GetInstance().Get()
+                Caltraps.GetInstance(),
+                HandToHand.GetInstance(),
+                Lore.GetInstance(),
+                Meditation.GetInstance(),
+                Poison.GetInstance(),
             ]],
             [16, [
-                Vanish.GetInstance().Get(),
-                FastHealing.GetInstance().Get(),
-                Farsight.GetInstance().Get(),
-                Weaken.GetInstance().Get(),
-                WordOfRecall.GetInstance().Get()
+                Vanish.GetInstance(),
+                FastHealing.GetInstance(),
+                Farsight.GetInstance(),
+                Weaken.GetInstance(),
+                WordOfRecall.GetInstance()
             ]],
             [17, [
-                Blindness.GetInstance().Get(),
-                ProtectionEvil.GetInstance().Get(),
-                ProtectionNeutral.GetInstance().Get(),
-                ProtectionGood.GetInstance().Get()
+                Blindness.GetInstance(),
+                ProtectionEvil.GetInstance(),
+                ProtectionNeutral.GetInstance(),
+                ProtectionGood.GetInstance()
             ]],
             [18, [
-                FlashBomb.GetInstance().Get(),
-                Identify.GetInstance().Get()
+                FlashBomb.GetInstance(),
+                Identify.GetInstance()
             ]],
-            [19, [Fireproof.GetInstance().Get()]],
+            [19, [Fireproof.GetInstance()]],
             [20, [
-                Strangle.GetInstance().Get(),
-                PoisonSmoke.GetInstance().Get(),
-                Nerve.GetInstance().Get(),
-                Bow.GetInstance().Get(),
-                Fly.GetInstance().Get(),
-                KnowAlignment.GetInstance().Get()
+                Strangle.GetInstance(),
+                PoisonSmoke.GetInstance(),
+                Nerve.GetInstance(),
+                Bow.GetInstance(),
+                Fly.GetInstance(),
+                KnowAlignment.GetInstance()
             ]],
             [22, [
-                ColorSpray.GetInstance().Get(),
-                GiantStrength.GetInstance().Get()
+                ColorSpray.GetInstance(),
+                GiantStrength.GetInstance()
             ]],
             [23, [
-                BlindFighting.GetInstance().Get(),
-                CreateSpring.GetInstance().Get()
+                BlindFighting.GetInstance(),
+                CreateSpring.GetInstance()
             ]],
-            [24, [ThirdAttack.GetInstance().Get()]],
+            [24, [ThirdAttack.GetInstance()]],
             [25, [
-                EnhancedDamage.GetInstance().Get(),
-                PoisonDagger.GetInstance().Get(),
-                CriticalShotOne.GetInstance().Get(),
-                PassDoor.GetInstance().Get(),
-                Teleport.GetInstance().Get()
+                EnhancedDamage.GetInstance(),
+                PoisonDagger.GetInstance(),
+                CriticalShotOne.GetInstance(),
+                PassDoor.GetInstance(),
+                Teleport.GetInstance()
             ]],
             [26, [
-                Curse.GetInstance().Get(),
-                EnergyDrain.GetInstance().Get(),
-                Haste.GetInstance().Get()
+                Curse.GetInstance(),
+                EnergyDrain.GetInstance(),
+                Haste.GetInstance()
             ]],
-            [29, [DualWield.GetInstance().Get()]],
+            [29, [DualWield.GetInstance()]],
             [30, [
-                CriticalShotTwo.GetInstance().Get(),
-                DispelMagic.GetInstance().Get(),
-                Fireball.GetInstance().Get(),
-                Blizzra.GetInstance().Get()
+                CriticalShotTwo.GetInstance(),
+                DispelMagic.GetInstance(),
+                Fireball.GetInstance(),
+                Blizzra.GetInstance()
             ]],
-            [31, [MassInvis.GetInstance().Get()]],
-            [32, [Gate.GetInstance().Get()]],
-            [34, [Cancellation.GetInstance().Get()]],
+            [31, [MassInvis.GetInstance()]],
+            [32, [Gate.GetInstance()]],
+            [34, [Cancellation.GetInstance()]],
             [35, [
-                Assassinate.GetInstance().Get(),
-                QuickLoad.GetInstance().Get(),
-                AcidBlast.GetInstance().Get(),
-                Shield.GetInstance().Get()
+                Assassinate.GetInstance(),
+                QuickLoad.GetInstance(),
+                AcidBlast.GetInstance(),
+                Shield.GetInstance()
             ]],
-            [36, [Plague.GetInstance().Get()]],
+            [36, [Plague.GetInstance()]],
             [39, [
-                GroundControl.GetInstance().Get(),
-                ChainLightning.GetInstance().Get()
+                GroundControl.GetInstance(),
+                ChainLightning.GetInstance()
             ]],
             [40, [
-                Kurijitsu.GetInstance().Get(),
-                CriticalShotThree.GetInstance().Get(),
-                StoneSkin.GetInstance().Get()
+                Kurijitsu.GetInstance(),
+                CriticalShotThree.GetInstance(),
+                StoneSkin.GetInstance()
             ]],
-            [42, [Sanctuary.GetInstance().Get()]],
-            [43, [CureCritical.GetInstance().Get()]],
+            [42, [Sanctuary.GetInstance()]],
+            [43, [CureCritical.GetInstance()]],
             [45, [
-                Portal.GetInstance().Get(),
-                Slow.GetInstance().Get()
+                Portal.GetInstance(),
+                Slow.GetInstance()
             ]],
-            [49, [Nexus.GetInstance().Get()]],
+            [49, [Nexus.GetInstance()]],
             [50, [
-                CriticalShotFour.GetInstance().Get()
+                CriticalShotFour.GetInstance()
             ]]
         ]);
-        this.characterCreationAbilityGroups = new Map<number, IAbilityGroup[]>([
-            [0, [
-                AssassinBasics.GetInstance().Get()
-            ]],
-            [6, [
-                Detection.GetInstance().Get(),
-                Healing.GetInstance().Get()
-            ]],
-            [7, [
-                Illusion.GetInstance().Get(),
-                Protective.GetInstance().Get()
-            ]],
-            [8, [
-                Transportation.GetInstance().Get(),
-                Creation.GetInstance().Get()
-            ]],
-            [9, [
-                Enhancement.GetInstance().Get(),
-                Maladictions.GetInstance().Get()
-            ]],
-            [10, [
-                Combat.GetInstance().Get()
-            ]],
-            [40, [
-                AssassinDefault.GetInstance().Get()
-            ]]
-        ]);
-        this.characterCreationSkills = new Map<number, IAbility[]>([
-            [3, [
-                Staff.GetInstance().Get(),
-                Vanish.GetInstance().Get(),
-                Haggle.GetInstance().Get(),
-                Peek.GetInstance().Get(),
-                Nerve.GetInstance().Get(),
-                Sword.GetInstance().Get()
-            ]],
-            [4, [
-                Caltraps.GetInstance().Get(),
-                BlindFighting.GetInstance().Get(),
-                Dodge.GetInstance().Get(),
-                Envenom.GetInstance().Get(),
-                Kick.GetInstance().Get(),
-                Trip.GetInstance().Get(),
-                QuickLoad.GetInstance().Get(),
-                Bow.GetInstance().Get(),
-                CriticalShotOne.GetInstance().Get(),
-                CriticalShotTwo.GetInstance().Get(),
-                CriticalShotThree.GetInstance().Get(),
-                CriticalShotFour.GetInstance().Get(),
-                Mace.GetInstance().Get(),
-                Spear.GetInstance().Get(),
-                PoisonSmoke.GetInstance().Get(),
-                DirtKicking.GetInstance().Get(),
-                Hide.GetInstance().Get(),
-                Sneak.GetInstance().Get(),
-                Backstab.GetInstance().Get(),
-                FlashBomb.GetInstance().Get(),
-                Lore.GetInstance().Get(),
-                PickLock.GetInstance().Get(),
-                PoisonDagger.GetInstance().Get()
-            ]],
-            [5, [
-                Whip.GetInstance().Get(),
-                Strangle.GetInstance().Get(),
-                EnhancedDamage.GetInstance().Get()
-            ]],
-            [6, [
-                Flail.GetInstance().Get(),
-                ShieldBlock.GetInstance().Get(),
-                Kurijitsu.GetInstance().Get(),
-                Polearm.GetInstance().Get(),
-                Disarm.GetInstance().Get(),
-                HandToHand.GetInstance().Get(),
-                Parry.GetInstance().Get(),
-                FastHealing.GetInstance().Get()
-            ]],
-            [7, [Riding.GetInstance().Get()]],
-            [8, [
-                Meditation.GetInstance().Get(),
-                GroundControl.GetInstance().Get()
-            ]],
-            [10, [ThirdAttack.GetInstance().Get()]],
-            [11, [DualWield.GetInstance().Get()]]
-        ]);
+
+        // Verified against ShatteredArchive 2025-02-19
+        this.characterCreationAbilityGroups = {
+            [AssassinBasics.GetInstance().name]: 0,
+            [AssassinDefault.GetInstance().name]: 40,
+            [Detection.GetInstance().name]: 6,
+            [Illusion.GetInstance().name]: 7,
+            [Transportation.GetInstance().name]: 8,
+            [Combat.GetInstance().name]: 10,
+            [Enhancement.GetInstance().name]: 9,
+            [Maladictions.GetInstance().name]: 9,
+            [Creation.GetInstance().name]: 8,
+            [Healing.GetInstance().name]: 6,
+            [Protective.GetInstance().name]: 7
+        }
+
+        // Verified against ShatteredArchive 2025-02-19
+        this.characterCreationSkills = {
+            [Flail.GetInstance().name]: 6,
+            [ShieldBlock.GetInstance().name]: 6,
+            [Staff.GetInstance().name]: 3,
+            [Caltraps.GetInstance().name]: 4,
+            [Vanish.GetInstance().name]: 3,
+            [BlindFighting.GetInstance().name]: 4,
+            [Dodge.GetInstance().name]: 4,
+            [Envenom.GetInstance().name]: 4,
+            [Kick.GetInstance().name]: 4,
+            [Trip.GetInstance().name]: 4,
+            [Haggle.GetInstance().name]: 3,
+            [Meditation.GetInstance().name]: 8,
+            [Riding.GetInstance().name]: 7,
+            [QuickLoad.GetInstance().name]: 4,
+            [Bow.GetInstance().name]: 4,
+            [CriticalShotOne.GetInstance().name]: 4,
+            [CriticalShotTwo.GetInstance().name]: 4,
+            [CriticalShotThree.GetInstance().name]: 4,
+            [CriticalShotFour.GetInstance().name]: 4,
+            [Mace.GetInstance().name]: 4,
+            [Spear.GetInstance().name]: 4,
+            [Whip.GetInstance().name]: 5,
+            [Strangle.GetInstance().name]: 5,
+            [PoisonSmoke.GetInstance().name]: 4,
+            [DirtKicking.GetInstance().name]: 4,
+            [DualWield.GetInstance().name]: 11,
+            [GroundControl.GetInstance().name]: 8,
+            [Kurijitsu.GetInstance().name]: 6,
+            [ThirdAttack.GetInstance().name]: 10,
+            [Hide.GetInstance().name]: 4,
+            [Peek.GetInstance().name]: 3,
+            [Sneak.GetInstance().name]: 4,
+            [Polearm.GetInstance().name]: 6,
+            [Sword.GetInstance().name]: 3,
+            [Backstab.GetInstance().name]: 4,
+            [FlashBomb.GetInstance().name]: 4,
+            [Nerve.GetInstance().name]: 3,
+            [Disarm.GetInstance().name]: 6,
+            [EnhancedDamage.GetInstance().name]: 5,
+            [HandToHand.GetInstance().name]: 6,
+            [Parry.GetInstance().name]: 6,
+            [FastHealing.GetInstance().name]: 6,
+            [Lore.GetInstance().name]: 4,
+            [PickLock.GetInstance().name]: 4,
+            [PoisonDagger.GetInstance().name]: 4
+        }
+
+        // Verified against ShatteredArchive 2025-02-19
         this.raceRestrictions = [
             Bugbear.GetInstance(),
             Kender.GetInstance(),
@@ -475,7 +465,9 @@ CLAN:      ANY (EXCEPT KNIGHTHOOD), including non-clanned
  
 See also - RECLASS`;
         this.castsAtLevel = false;
+        this.isMoonAffected = false;
         this.castingLevelModifier = 0.66;
+        // Verified against ShatteredArchive 2025-02-19
         this.cpRacialModifiers = new Map<IRace, number>([
             [Human.GetInstance(), 1.0],
             [HalfElf.GetInstance(), 1.1],

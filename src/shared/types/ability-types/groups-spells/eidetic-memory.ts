@@ -9,8 +9,10 @@ export class EideticMemoryGroup implements IAbilityGroup {
   public abilityGroup: AbilityGroup;
   public abilityGroupType: AbilityGroupType;
   public abilities: IAbility[];
+  public name: string;
 
   constructor() {
+    this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.EideticMemory;
     this.abilityGroupType = AbilityGroupType.Class;
     this.abilities = [EideticMemory.GetInstance().Get()];

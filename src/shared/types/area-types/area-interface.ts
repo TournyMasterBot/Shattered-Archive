@@ -2,6 +2,8 @@
 //import { BeastiaryItem } from "./beastiary-model";
 //import { RecordRoomExits } from "./record-room-model";
 
+import IDslItem from "../item-types/dsl-item-interface";
+
 export interface IArea {
   continent_id: string;
   area_id: string;
@@ -12,6 +14,7 @@ export interface IArea {
   recommended_max_level: string;
   directions: string;
   autopilot_level: string;
+  items: { [key: string]: IDslItem };
   //beastiary: BeastiaryItem[];
   /** Data format: `${X}.${Y}.${Z}` */
   areaRooms: { [coordinate: string]: IAreaDetails };

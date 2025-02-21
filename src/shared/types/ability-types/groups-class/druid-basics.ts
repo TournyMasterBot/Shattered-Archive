@@ -10,8 +10,10 @@ export class DruidBasics implements IAbilityGroup {
   public abilityGroup: AbilityGroup;
   public abilityGroupType: AbilityGroupType;
   public abilities: IAbility[];
+  public name: string;
 
   constructor() {
+    this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.DruidBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
     this.abilities = [Staff.GetInstance().Get(), Herbal.GetInstance().Get()];

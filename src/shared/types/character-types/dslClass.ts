@@ -22,11 +22,11 @@ export interface IDslClass {
     /**
      * This map is the CP cost to take a particular spellgroup at character creation
      */
-    characterCreationAbilityGroups: Map<number, IAbilityGroup[]>;
+    characterCreationAbilityGroups: { [groupName: string]: number };
     /**
      * This map is the CP cost to take a particular skill at character creation
      */
-    characterCreationSkills: Map<number, IAbility[]>;
+    characterCreationSkills: { [abilityName: string]: number };
     /**
      * This map is the level at which a character will get a particular ability
      * Abilities may be skills, spells, or songs
@@ -39,6 +39,7 @@ export interface IDslClass {
     notes?: string;
     cpRacialModifiers: Map<IClassType, number>;
     buffActions?: IAbility[];
+    isMoonAffected?: boolean;
 }
 
 export default IDslClass;

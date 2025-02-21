@@ -202,8 +202,8 @@ export class Druid implements IDslClass, IMortalClass, IClassType {
     classGroup: string;
     raceRestrictions: IRace[];
     abilities: Map<number, IAbility[]>;
-    characterCreationAbilityGroups: Map<number, IAbilityGroup[]>;
-    characterCreationSkills: Map<number, IAbility[]>;
+    characterCreationAbilityGroups: { [groupName: string]: number };
+    characterCreationSkills: { [abilityName: string]: number };
     baseCpModifier: number;
     helpfile: string;
     castsAtLevel: boolean;
@@ -211,6 +211,7 @@ export class Druid implements IDslClass, IMortalClass, IClassType {
     notes?: string;
     cpRacialModifiers: Map<IClassType, number>;
     buffActions?: IAbility[] | undefined;
+    isMoonAffected?: boolean | undefined;
 
     constructor() {
         this.id = MortalClass.Druid.id;
@@ -323,6 +324,7 @@ CLAN:      ANY
  
 See Also:  'RECLASS'`;
         this.castsAtLevel = true;
+        this.isMoonAffected = false;
         this.castingLevelModifier = 1.00;
         this.notes = "";
         this.cpRacialModifiers = new Map<IRace, number>([

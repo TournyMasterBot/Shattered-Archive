@@ -10,8 +10,10 @@ export class AnalyticalMind implements IAbilityGroup {
   public abilityGroup: AbilityGroup;
   public abilityGroupType: AbilityGroupType;
   public abilities: IAbility[];
+  public name: string;
 
   constructor() {
+    this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.AnalyticalMind;
     this.abilityGroupType = AbilityGroupType.Class;
     this.abilities = [new AnalyticalMindSkill()];

@@ -170,15 +170,14 @@ export class Thief implements IDslClass, IMortalClass, IClassType {
   baseClass: IClassType;
   classType: IClassType;
   imgUrl: string;
-  imgCreditUrl: string;
   primaryAttribute: IStatAttribute;
   secondaryAttribute: IStatAttribute;
   armorType: IDslArmorType;
   classGroup: string;
   raceRestrictions: IRace[];
   abilities: Map<number, IAbility[]>;
-  characterCreationAbilityGroups: Map<number, IAbilityGroup[]>;
-  characterCreationSkills: Map<number, IAbility[]>;
+  characterCreationAbilityGroups: { [groupName: string]: number };
+  characterCreationSkills: { [abilityName: string]: number };
   baseCpModifier: number;
   cpRacialModifiers: Map<IRace, number>;
   helpfile: string;
@@ -186,6 +185,7 @@ export class Thief implements IDslClass, IMortalClass, IClassType {
   castingLevelModifier: number;
   notes?: string;
   buffActions?: IAbility[] | undefined;
+  isMoonAffected?: boolean | undefined;
 
   constructor() {
     this.id = MortalClass.Thief.id;
@@ -197,7 +197,6 @@ export class Thief implements IDslClass, IMortalClass, IClassType {
     this.baseClass = MortalClass.Thief;
     this.classType = MortalClass.Thief;
     this.imgUrl = "/img/classes/thief.png";
-    this.imgCreditUrl = "https://www.pinterest.co.uk/pin/124341639699409921/";
     // In Thief, primary is Dexterity and secondary is Intelligence.
     this.primaryAttribute = new StatAttribute({ type: StatAttributeType.Dexterity });
     this.secondaryAttribute = new StatAttribute({ type: StatAttributeType.Intelligence });
@@ -381,6 +380,7 @@ pick lock       a useful skill for breaking and entering
 sneak           with this skill, a thief can walk into a room undetected
 `;
     this.castsAtLevel = false;
+    this.isMoonAffected = false;
     this.castingLevelModifier = 0.66;
     this.notes = "";
     this.buffActions = undefined;

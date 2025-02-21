@@ -11,8 +11,10 @@ export class Elemental implements IAbilityGroup {
   public abilityGroup: AbilityGroup;
   public abilityGroupType: AbilityGroupType;
   public abilities: IAbility[];
+  public name: string;
 
   constructor() {
+    this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.Elemental;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [Blizzard.GetInstance().Get(), Firestorm.GetInstance().Get(), SummonElemental.GetInstance().Get()];
