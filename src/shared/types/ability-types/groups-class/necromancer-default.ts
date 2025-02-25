@@ -28,7 +28,7 @@ export class NecromancerDefault implements IAbilityGroup {
       ...Necromancy.GetInstance().Get<Necromancy>().abilities,
       ...Enhancement.GetInstance().Get<Enhancement>().abilities,
       ...Transportation.GetInstance().Get<Transportation>().abilities,
-      Astrology.GetInstance().Get(),
+      Astrology.GetInstance(),
     ];
   }
 

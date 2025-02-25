@@ -1,6 +1,6 @@
 import LoadRoutes from "@shared/express-server/middleware.route";
 import ShatteredServer from "@shared/express-server/server";
-import ServerCache from "cache/server-cache";
+import ServerCache from "@shared/cache/server-cache";
 import path from "path";
 
 (async function main() {
@@ -31,12 +31,12 @@ import path from "path";
     serviceName: "web-server",
     gameCache: {
       initializeAreas: true,
-      initializeDamageTypes: false,
-      initializeAbilities: false,
-      initializeAbilityGroups: false,
+      initializeDamageTypes: true,
       initializeRaces: true,
       initializeClasses: true,
       initializeItems: true,
+      initializeAbilities: true,
+      initializeAbilityGroups: true,
     }
   });
 

@@ -24,13 +24,13 @@ export class WarriorDefault implements IAbilityGroup {
     this.abilityGroupType = AbilityGroupType.Default;
     this.abilities = [
       ...Weaponsmaster.GetInstance().Get<Weaponsmaster>().abilities,
-      ShieldBlock.GetInstance().Get(),
-      Disarm.GetInstance().Get(),
-      Rescue.GetInstance().Get(),
-      EnhancedDamage.GetInstance().Get(),
-      ThirdAttack.GetInstance().Get(),
-      Bash.GetInstance().Get(),
-      Parry.GetInstance().Get(),
+      ShieldBlock.GetInstance(),
+      Disarm.GetInstance(),
+      Rescue.GetInstance(),
+      EnhancedDamage.GetInstance(),
+      ThirdAttack.GetInstance(),
+      Bash.GetInstance(),
+      Parry.GetInstance(),
     ];
   }
 

@@ -20,8 +20,9 @@ import ThirdAttack from "@shared/types/ability-types/skills/third-attack";
 import Swim from "@shared/types/ability-types/skills/swim";
 import FourthAttack from "@shared/types/ability-types/skills/fourth-attack";
 import TimeStop from "@shared/types/ability-types/spells/time-stop";
-import BalanxBasics from "./balanx-basics";
+import BalanxBasics from "./BalanxBasics";
 import View from "@shared/types/ability-types/spells/view";
+import ServerCache from "@shared/cache/server-cache";
 
 export class BalanxDefault implements IAbilityGroup {
   static instance: BalanxDefault;
@@ -35,26 +36,26 @@ export class BalanxDefault implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.BalanxDefault;
     this.abilityGroupType = AbilityGroupType.Default;
     this.abilities = [
-      ...BalanxBasics.GetInstance().Get<BalanxBasics>().abilities,
-      ...Enhancement.GetInstance().Get<Enhancement>().abilities,
-      ...Detection.GetInstance().Get<Detection>().abilities,
-      ...Healing.GetInstance().Get<Healing>().abilities,
-      ...Benedictions.GetInstance().Get<Benedictions>().abilities,
-      ...Maladictions.GetInstance().Get<Maladictions>().abilities,
-      ...Curative.GetInstance().Get<Curative>().abilities,
-      ...Illusion.GetInstance().Get<Illusion>().abilities,
-      ...Protective.GetInstance().Get<Protective>().abilities,
-      ...Transportation.GetInstance().Get<Transportation>().abilities,
-      ...Creation.GetInstance().Get<Creation>().abilities,
-      ...Weather.GetInstance().Get<Weather>().abilities,
-      SecondAttack.GetInstance().Get(),
-      HandToHand.GetInstance().Get(),
-      Focus.GetInstance().Get(),
-      ThirdAttack.GetInstance().Get(),
-      TimeStop.GetInstance().Get(),
-      Swim.GetInstance().Get(),
-      FourthAttack.GetInstance().Get(),
-      View.GetInstance().Get(),
+      ...BalanxBasics.GetInstance().abilities,
+      ...Enhancement.GetInstance().abilities,
+      ...Detection.GetInstance().abilities,
+      ...Healing.GetInstance().abilities,
+      ...Benedictions.GetInstance().abilities,
+      ...Maladictions.GetInstance().abilities,
+      ...Curative.GetInstance().abilities,
+      ...Illusion.GetInstance().abilities,
+      ...Protective.GetInstance().abilities,
+      ...Transportation.GetInstance().abilities,
+      ...Creation.GetInstance().abilities,
+      ...Weather.GetInstance().abilities,
+      SecondAttack.GetInstance(),
+      HandToHand.GetInstance(),
+      Focus.GetInstance(),
+      ThirdAttack.GetInstance(),
+      TimeStop.GetInstance(),
+      Swim.GetInstance(),
+      FourthAttack.GetInstance(),
+      View.GetInstance(),
     ];
   }
 
@@ -62,6 +63,7 @@ export class BalanxDefault implements IAbilityGroup {
   public static GetInstance(): BalanxDefault {
     if (!BalanxDefault.instance) {
       BalanxDefault.instance = new BalanxDefault();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return BalanxDefault.instance;
   }

@@ -32,7 +32,7 @@ export class EnchantorDefault implements IAbilityGroup {
       ...Protective.GetInstance().Get<Protective>().abilities,
       ...Beguiling.GetInstance().Get<Beguiling>().abilities,
       ...Enchantment.GetInstance().Get<Enchantment>().abilities,
-      Astrology.GetInstance().Get(),
+      Astrology.GetInstance(),
     ];
   }
 

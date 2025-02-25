@@ -42,13 +42,13 @@ export class CrusaderDefault implements IAbilityGroup {
       ...Worship.GetInstance().Get<Worship>().abilities,
       ...Detection.GetInstance().Get<Detection>().abilities,
       ...Protective.GetInstance().Get<Protective>().abilities,
-      DualWield.GetInstance().Get(),
-      Unhorse.GetInstance().Get(),
-      Riding.GetInstance().Get(),
-      ShieldBlock.GetInstance().Get(),
-      Parry.GetInstance().Get(),
-      Martyr.GetInstance().Get(),
-      Rear.GetInstance().Get(),
+      DualWield.GetInstance(),
+      Unhorse.GetInstance(),
+      Riding.GetInstance(),
+      ShieldBlock.GetInstance(),
+      Parry.GetInstance(),
+      Martyr.GetInstance(),
+      Rear.GetInstance(),
     ];
   }
 

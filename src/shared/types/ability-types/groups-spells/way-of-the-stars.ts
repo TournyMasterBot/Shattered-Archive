@@ -20,11 +20,11 @@ export class WayOfTheStars implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.WayOfTheStars;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      SummonLavalord.GetInstance().Get(),
-      SummonTreant.GetInstance().Get(),
-      SummonEarthlord.GetInstance().Get(),
-      SummonGryffon.GetInstance().Get(),
-      SummonWhompingWillow.GetInstance().Get(),
+      SummonLavalord.GetInstance(),
+      SummonTreant.GetInstance(),
+      SummonEarthlord.GetInstance(),
+      SummonGryffon.GetInstance(),
+      SummonWhompingWillow.GetInstance(),
     ];
   }
 

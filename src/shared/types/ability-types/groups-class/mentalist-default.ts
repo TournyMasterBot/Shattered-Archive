@@ -30,7 +30,7 @@ export class MentalistDefault implements IAbilityGroup {
       ...Illusion.GetInstance().Get<Illusion>().abilities,
       ...Detection.GetInstance().Get<Detection>().abilities,
       ...Mentalism.GetInstance().Get<Mentalism>().abilities,
-      Astrology.GetInstance().Get(),
+      Astrology.GetInstance(),
     ];
   }
 

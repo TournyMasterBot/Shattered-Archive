@@ -26,17 +26,17 @@ export class HymnsOfLife implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.HymnsOfLife;
     this.abilityGroupType = AbilityGroupType.Songs;
     this.abilities = [
-      SongOfHealing.GetInstance().Get(),
-      TorchBurns.GetInstance().Get(),
-      WakeTheDead.GetInstance().Get(),
-      MarriageSong.GetInstance().Get(),
-      TravelTune.GetInstance().Get(),
-      BottlesOfBeer.GetInstance().Get(),
-      RevealAll.GetInstance().Get(),
-      SongOfPeace.GetInstance().Get(),
-      StoneFountain.GetInstance().Get(),
-      ShieldOfWords.GetInstance().Get(),
-      RoostersCrow.GetInstance().Get(),
+      SongOfHealing.GetInstance(),
+      TorchBurns.GetInstance(),
+      WakeTheDead.GetInstance(),
+      MarriageSong.GetInstance(),
+      TravelTune.GetInstance(),
+      BottlesOfBeer.GetInstance(),
+      RevealAll.GetInstance(),
+      SongOfPeace.GetInstance(),
+      StoneFountain.GetInstance(),
+      ShieldOfWords.GetInstance(),
+      RoostersCrow.GetInstance(),
     ];
   }
 

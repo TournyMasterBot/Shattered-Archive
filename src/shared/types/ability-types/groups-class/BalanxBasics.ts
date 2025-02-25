@@ -21,6 +21,7 @@ import RemoveTrap from "@shared/types/ability-types/skills/remove-trap";
 import Alchemy from "@shared/types/ability-types/skills/alchemy";
 import Peek from "@shared/types/ability-types/skills/peek";
 import RomBasics from "./rom-basics";
+import ServerCache from "@shared/cache/server-cache";
 
 export class BalanxBasics implements IAbilityGroup {
   static instance: BalanxBasics;
@@ -34,25 +35,25 @@ export class BalanxBasics implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.BalanxBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
     this.abilities = [
-      ...RomBasics.GetInstance().Get<RomBasics>().abilities,
-      new Parry(),
-      new Riding(),
-      new Mountaineering(),
-      new Disarm(),
-      new Spellcraft(),
-      new Herbal(),
-      new BlindFighting(),
-      new Dodge(),
-      new Climbing(),
-      new Meditation(),
-      new Astrology(),
-      new Lore(),
-      new EnhancedDamage(),
-      new FastHealing(),
-      new Kick(),
-      new RemoveTrap(),
-      new Alchemy(),
-      new Peek(),
+      ...RomBasics.GetInstance().abilities,
+       Parry.GetInstance(),
+       Riding.GetInstance(),
+       Mountaineering.GetInstance(),
+       Disarm.GetInstance(),
+       Spellcraft.GetInstance(),
+       Herbal.GetInstance(),
+       BlindFighting.GetInstance(),
+       Dodge.GetInstance(),
+       Climbing.GetInstance(),
+       Meditation.GetInstance(),
+       Astrology.GetInstance(),
+       Lore.GetInstance(),
+       EnhancedDamage.GetInstance(),
+       FastHealing.GetInstance(),
+       Kick.GetInstance(),
+       RemoveTrap.GetInstance(),
+       Alchemy.GetInstance(),
+       Peek.GetInstance(),
     ];
   }
 
@@ -60,6 +61,7 @@ export class BalanxBasics implements IAbilityGroup {
   public static GetInstance(): BalanxBasics {
     if (!BalanxBasics.instance) {
       BalanxBasics.instance = new BalanxBasics();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return BalanxBasics.instance;
   }

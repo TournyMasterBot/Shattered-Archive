@@ -5,6 +5,7 @@ import AbilityGroup from "@shared/types/ability-types/ability-group";
 import ShieldCleave from "@shared/types/ability-types/skills/shield-cleave";
 import Whirl from "@shared/types/ability-types/skills/whirl";
 import Disembowel from "@shared/types/ability-types/skills/disembowel";
+import ServerCache from "@shared/cache/server-cache";
 
 export class MasteryAxe implements IAbilityGroup {
   private static instance: MasteryAxe;
@@ -15,16 +16,17 @@ export class MasteryAxe implements IAbilityGroup {
 
   // Private constructor to prevent direct instantiation
   private constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.MasteryAxe;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [ShieldCleave.GetInstance().Get(), Whirl.GetInstance().Get(), Disembowel.GetInstance().Get()];
+    this.abilities = [ShieldCleave.GetInstance(), Whirl.GetInstance(), Disembowel.GetInstance()];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): MasteryAxe {
     if (!MasteryAxe.instance) {
       MasteryAxe.instance = new MasteryAxe();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return MasteryAxe.instance;
   }

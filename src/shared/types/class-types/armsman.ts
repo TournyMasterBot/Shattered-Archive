@@ -4,18 +4,18 @@ import DslArmorType from "@shared/types/item-types/armor-type";
 import IDslArmorType from "@shared/types/item-types/armor-type-interface";
 import { Weaponsmaster } from "@shared/types/ability-types/groups-skills/weaponsmaster";
 import IRace from "@shared/types/character-types/race-interface";
-import ArmsmanBasics from "@shared/types/ability-types/groups-class/armsman-basics";
+import ArmsmanBasics from "@shared/types/ability-types/groups-class/ArmsmanBasics";
 import Axe from "@shared/types/ability-types/skills/axe";
-import MasteryMace from "@shared/types/ability-types/groups-skills/mastery-mace";
-import MasterySword from "@shared/types/ability-types/groups-skills/mastery-sword";
-import MasteryDagger from "@shared/types/ability-types/groups-skills/mastery-dagger";
+import MasteryMace from "@shared/types/ability-types/groups-skills/MasteryMace";
+import MasterySword from "@shared/types/ability-types/groups-skills/MasterySword";
+import MasteryDagger from "@shared/types/ability-types/groups-skills/MasteryDagger";
 import Enhancement from "@shared/types/ability-types/groups-spells/enhancement";
-import MasteryPolearm from "@shared/types/ability-types/groups-skills/mastery-polearm";
-import MasteryWhip from "@shared/types/ability-types/groups-skills/mastery-whip";
-import MasteryFlail from "@shared/types/ability-types/groups-skills/mastery-flail";
-import MasterySpear from "@shared/types/ability-types/groups-skills/mastery-spear";
-import MasteryAxe from "@shared/types/ability-types/groups-skills/mastery-axe";
-import ArmsmanDefault from "@shared/types/ability-types/groups-class/armsman-default";
+import MasteryPolearm from "@shared/types/ability-types/groups-skills/MasteryPolearm";
+import MasteryWhip from "@shared/types/ability-types/groups-skills/MasteryWhip";
+import MasteryFlail from "@shared/types/ability-types/groups-skills/MasteryFlail";
+import MasterySpear from "@shared/types/ability-types/groups-skills/MasterySpear";
+import MasteryAxe from "@shared/types/ability-types/groups-skills/MasteryAxe";
+import ArmsmanDefault from "@shared/types/ability-types/groups-class/ArmsmanDefault";
 import Transportation from "@shared/types/ability-types/groups-spells/transportation";
 import Flail from "@shared/types/ability-types/skills/flail";
 import Whip from "@shared/types/ability-types/skills/whip";
@@ -136,6 +136,7 @@ import Choke from "@shared/types/ability-types/skills/choke";
 import Chargeset from "@shared/types/ability-types/skills/chargeset";
 import Boneshatter from "@shared/types/ability-types/skills/boneshatter";
 import ShieldCleave from "@shared/types/ability-types/skills/shield-cleave";
+import ServerCache from "@shared/cache/server-cache";
 // #endregion
 
 export class Armsman implements IDslClass, IMortalClass, IClassType {
@@ -168,7 +169,7 @@ export class Armsman implements IDslClass, IMortalClass, IClassType {
 
     constructor() {
         this.id = MortalClass.Armsman.id;
-        this.name = MortalClass.Armsman.name;
+        this.name = this.constructor.name;
         this.displayName = MortalClass.Armsman.displayName;
         this.isMortalClass = true;
         this.isReclass = true;
@@ -460,6 +461,7 @@ export class Armsman implements IDslClass, IMortalClass, IClassType {
     public static GetInstance(): Armsman {
         if (!Armsman.instance) {
             Armsman.instance = new Armsman();
+            ServerCache.Classes[this.instance.name] = this.instance
         }
         return Armsman.instance;
     }

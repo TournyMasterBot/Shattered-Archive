@@ -27,8 +27,8 @@ export class WujenDefault implements IAbilityGroup {
       ...Protective.GetInstance().Get<Protective>().abilities,
       ...Combat.GetInstance().Get<Combat>().abilities,
       ...Enhancement.GetInstance().Get<Enhancement>().abilities,
-      Parry.GetInstance().Get(),
-      Dodge.GetInstance().Get(),
+      Parry.GetInstance(),
+      Dodge.GetInstance(),
     ];
   }
 

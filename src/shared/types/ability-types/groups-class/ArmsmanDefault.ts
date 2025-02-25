@@ -7,7 +7,8 @@ import DualWield from "@shared/types/ability-types/skills/dual-wield";
 import Grip from "@shared/types/ability-types/skills/grip";
 import Parry from "@shared/types/ability-types/skills/parry";
 import Weaponsmaster from "../groups-skills/weaponsmaster";
-import MasterySword from "../groups-skills/mastery-sword";
+import MasterySword from "../groups-skills/MasterySword";
+import ServerCache from "@shared/cache/server-cache";
 
 export class ArmsmanDefault implements IAbilityGroup {
   private static instance: ArmsmanDefault;
@@ -17,16 +18,16 @@ export class ArmsmanDefault implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.ArmsmanDefault;
     this.abilityGroupType = AbilityGroupType.Default;
     this.abilities = [
-      ...Weaponsmaster.GetInstance().Get<Weaponsmaster>().abilities,
-      ...MasterySword.GetInstance().Get<MasterySword>().abilities,
-      EnhancedReactions.GetInstance().Get(),
-      DualWield.GetInstance().Get(),
-      Grip.GetInstance().Get(),
-      Parry.GetInstance().Get(),
+      ...Weaponsmaster.GetInstance().abilities,
+      ...MasterySword.GetInstance().abilities,
+      EnhancedReactions.GetInstance(),
+      DualWield.GetInstance(),
+      Grip.GetInstance(),
+      Parry.GetInstance(),
     ];
   }
 
@@ -34,6 +35,7 @@ export class ArmsmanDefault implements IAbilityGroup {
   public static GetInstance(): ArmsmanDefault {
     if (!ArmsmanDefault.instance) {
       ArmsmanDefault.instance = new ArmsmanDefault();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return ArmsmanDefault.instance;
   }

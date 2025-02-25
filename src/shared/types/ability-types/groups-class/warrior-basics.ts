@@ -16,7 +16,7 @@ export class WarriorBasics implements IAbilityGroup {
     this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.WarriorBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
-    this.abilities = [Sword.GetInstance().Get(), SecondAttack.GetInstance().Get()];
+    this.abilities = [Sword.GetInstance(), SecondAttack.GetInstance()];
   }
 
   // Method to get the single instance of the class

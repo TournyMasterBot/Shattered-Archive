@@ -9,6 +9,7 @@ import DualWield from "@shared/types/ability-types/skills/dual-wield";
 import Astrology from "@shared/types/ability-types/skills/astrology";
 import PickLock from "@shared/types/ability-types/skills/pick-lock";
 import Scribe from "@shared/types/ability-types/skills/scribe";
+import ServerCache from "@shared/cache/server-cache";
 
 export class GiantExtras implements IAbilityGroup {
   static instance: GiantExtras;
@@ -18,17 +19,17 @@ export class GiantExtras implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.GiantExtras;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilities = [
-      Lore.GetInstance().Get(),
-      Spellcraft.GetInstance().Get(),
-      Alchemy.GetInstance().Get(),
-      DualWield.GetInstance().Get(),
-      Astrology.GetInstance().Get(),
-      PickLock.GetInstance().Get(),
-      Scribe.GetInstance().Get(),
+      Lore.GetInstance(),
+      Spellcraft.GetInstance(),
+      Alchemy.GetInstance(),
+      DualWield.GetInstance(),
+      Astrology.GetInstance(),
+      PickLock.GetInstance(),
+      Scribe.GetInstance(),
     ];
   }
 
@@ -36,6 +37,7 @@ export class GiantExtras implements IAbilityGroup {
   public static GetInstance(): GiantExtras {
     if (!GiantExtras.instance) {
       GiantExtras.instance = new GiantExtras();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return GiantExtras.instance;
   }

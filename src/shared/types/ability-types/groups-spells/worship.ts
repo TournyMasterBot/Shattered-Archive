@@ -20,11 +20,11 @@ export class Worship implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Worship;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      Crucify.GetInstance().Get(),
-      ImbueMount.GetInstance().Get(),
-      HolySteed.GetInstance().Get(),
-      Devotion.GetInstance().Get(),
-      Inspire.GetInstance().Get(),
+      Crucify.GetInstance(),
+      ImbueMount.GetInstance(),
+      HolySteed.GetInstance(),
+      Devotion.GetInstance(),
+      Inspire.GetInstance(),
     ];
   }
 

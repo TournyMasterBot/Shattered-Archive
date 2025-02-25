@@ -1,5 +1,5 @@
 import MessageEnvelope from "@shared/types/express-types/message-envelope";
-import ServerCache from "cache/server-cache";
+import ServerCache from "@shared/cache/server-cache";
 import { Request, Response } from "express";
 
 export const getRaces = async (req: Request, res: Response): Promise<MessageEnvelope> => {

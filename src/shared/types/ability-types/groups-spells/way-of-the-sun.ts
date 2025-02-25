@@ -20,11 +20,11 @@ export class WayOfTheSun implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.WayOfTheSun;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      Inferno.GetInstance().Get(),
-      VortexOfTheSun.GetInstance().Get(),
-      FireBomb.GetInstance().Get(),
-      RainOfFire.GetInstance().Get(),
-      SolarFlare.GetInstance().Get(),
+      Inferno.GetInstance(),
+      VortexOfTheSun.GetInstance(),
+      FireBomb.GetInstance(),
+      RainOfFire.GetInstance(),
+      SolarFlare.GetInstance(),
     ];
   }
 

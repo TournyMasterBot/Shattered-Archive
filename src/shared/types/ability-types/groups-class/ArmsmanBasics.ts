@@ -4,6 +4,7 @@ import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Sword from "@shared/types/ability-types/skills/sword";
 import SecondAttack from "@shared/types/ability-types/skills/second-attack";
+import ServerCache from "@shared/cache/server-cache";
 
 export class ArmsmanBasics implements IAbilityGroup {
   static instance: ArmsmanBasics;
@@ -13,16 +14,20 @@ export class ArmsmanBasics implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.ArmsmanBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
-    this.abilities = [Sword.GetInstance().Get<Sword>(), SecondAttack.GetInstance().Get<SecondAttack>()];
+    this.abilities = [
+      Sword.GetInstance(), 
+      SecondAttack.GetInstance()
+    ];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): ArmsmanBasics {
     if (!ArmsmanBasics.instance) {
       ArmsmanBasics.instance = new ArmsmanBasics();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return ArmsmanBasics.instance;
   }

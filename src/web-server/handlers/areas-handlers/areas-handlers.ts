@@ -1,5 +1,5 @@
 import MessageEnvelope from "@shared/types/express-types/message-envelope";
-import ServerCache from "cache/server-cache";
+import ServerCache from "@shared/cache/server-cache";
 import { Request, Response } from "express";
 
 export const getAreas = async (req: Request, res: Response): Promise<MessageEnvelope> => {
@@ -23,7 +23,6 @@ export const getArea = async (req: Request, res: Response): Promise<MessageEnvel
   let response: MessageEnvelope = new MessageEnvelope(req);
   const { areaName } = req.body;
   try {
-    // Fetch possible rooms
     const key = areaName.trim();
     const area = ServerCache.GetAreaByName(key);
     if(area === undefined) {
@@ -34,7 +33,6 @@ export const getArea = async (req: Request, res: Response): Promise<MessageEnvel
         });
         return response;
     }
-    // Set return payload
     response.setPayload(area);
   } catch (err: any) {
     response.addError({

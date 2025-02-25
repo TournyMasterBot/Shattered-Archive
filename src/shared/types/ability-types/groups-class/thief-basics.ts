@@ -16,7 +16,7 @@ export class ThiefBasics implements IAbilityGroup {
     this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.ThiefBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
-    this.abilities = [Dagger.GetInstance().Get(), Steal.GetInstance().Get()];
+    this.abilities = [Dagger.GetInstance(), Steal.GetInstance()];
   }
 
   // Method to get the single instance of the class

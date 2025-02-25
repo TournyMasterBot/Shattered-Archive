@@ -23,7 +23,7 @@ export class MortalClass implements IMortalClass {
     }
 
     static Unknown = new MortalClass("0", "unknown", "");
-    static Armsman = new MortalClass("10", "armsman", "Armsman");
+    static Armsman = new MortalClass("10", "Armsman", "Armsman");
     static Assassin = new MortalClass("20", "assassin", "Assassin");
     static Bandit = new MortalClass("30", "bandit", "Bandit");
     static Barbarian = new MortalClass("40", "barbarian", "Barbarian");

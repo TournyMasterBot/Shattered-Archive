@@ -31,14 +31,14 @@ export class BladesingerDefault implements IAbilityGroup {
       ...Enhancement.GetInstance().Get<Enhancement>().abilities,
       ...Combat.GetInstance().Get<Combat>().abilities,
       ...Transportation.GetInstance().Get<Transportation>().abilities,
-      EnhancedDamage.GetInstance().Get(),
-      Parry.GetInstance().Get(),
-      Reposition.GetInstance().Get(),
-      Dodge.GetInstance().Get(),
-      CircleStab.GetInstance().Get(),
-      ThirdAttack.GetInstance().Get(),
-      Circle.GetInstance().Get(),
-      Offhand.GetInstance().Get(),
+      EnhancedDamage.GetInstance(),
+      Parry.GetInstance(),
+      Reposition.GetInstance(),
+      Dodge.GetInstance(),
+      CircleStab.GetInstance(),
+      ThirdAttack.GetInstance(),
+      Circle.GetInstance(),
+      Offhand.GetInstance(),
     ];
   }
 

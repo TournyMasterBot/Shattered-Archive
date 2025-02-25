@@ -21,12 +21,12 @@ export class Enhancement implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Enhancement;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      GiantStrength.GetInstance().Get(),
-      Refresh.GetInstance().Get(),
-      Haste.GetInstance().Get(),
-      WaterBreathing.GetInstance().Get(),
-      Infravision.GetInstance().Get(),
-      LightFoot.GetInstance().Get(),
+      GiantStrength.GetInstance(),
+      Refresh.GetInstance(),
+      Haste.GetInstance(),
+      WaterBreathing.GetInstance(),
+      Infravision.GetInstance(),
+      LightFoot.GetInstance(),
     ];
   }
 

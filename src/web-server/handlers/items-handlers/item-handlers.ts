@@ -1,5 +1,5 @@
 import MessageEnvelope from "@shared/types/express-types/message-envelope";
-import ServerCache from "cache/server-cache";
+import ServerCache from "@shared/cache/server-cache";
 import { Request, Response } from "express";
 
 export const getItems = async (req: Request, res: Response): Promise<MessageEnvelope> => {
@@ -27,7 +27,6 @@ export const getItem = async (req: Request, res: Response): Promise<MessageEnvel
   let response: MessageEnvelope = new MessageEnvelope(req);
   const { itemKey } = req.params;
   try {
-    // Fetch possible rooms
     const key = itemKey.toLowerCase().trim();
     const item = ServerCache.GetItemById(key);
     if(item === undefined) {
@@ -38,7 +37,6 @@ export const getItem = async (req: Request, res: Response): Promise<MessageEnvel
         });
         return response;
     }
-    // Set return payload
     response.setPayload(item);
   } catch (err: any) {
     response.addError({

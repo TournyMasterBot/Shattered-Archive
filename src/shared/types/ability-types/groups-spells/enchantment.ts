@@ -19,10 +19,10 @@ export class Enchantment implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Enchantment;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      EnchantArmor.GetInstance().Get(),
-      Recharge.GetInstance().Get(),
-      EnchantWeapon.GetInstance().Get(),
-      Fireproof.GetInstance().Get(),
+      EnchantArmor.GetInstance(),
+      Recharge.GetInstance(),
+      EnchantWeapon.GetInstance(),
+      Fireproof.GetInstance(),
     ];
   }
 

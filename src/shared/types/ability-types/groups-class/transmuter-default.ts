@@ -32,7 +32,7 @@ export class TransmuterDefault implements IAbilityGroup {
       ...Transportation.GetInstance().Get<Transportation>().abilities,
       ...Detection.GetInstance().Get<Detection>().abilities,
       ...Illusion.GetInstance().Get<Illusion>().abilities,
-      Astrology.GetInstance().Get(),
+      Astrology.GetInstance(),
     ];
   }
 

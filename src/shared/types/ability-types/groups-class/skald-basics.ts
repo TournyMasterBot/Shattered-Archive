@@ -15,7 +15,7 @@ export class SkaldBasics implements IAbilityGroup {
     this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.SkaldBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
-    this.abilities = [Axe.GetInstance().Get()];
+    this.abilities = [Axe.GetInstance()];
   }
 
   // Method to get the single instance of the class

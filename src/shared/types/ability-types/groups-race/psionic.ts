@@ -3,6 +3,7 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import PsionicBlast from "@shared/types/ability-types/spells/psionic-blast";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Psionic implements IAbilityGroup {
   static instance: Psionic;
@@ -15,13 +16,14 @@ export class Psionic implements IAbilityGroup {
     this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.Psionic;
     this.abilityGroupType = AbilityGroupType.Race;
-    this.abilities = [PsionicBlast.GetInstance().Get()];
+    this.abilities = [PsionicBlast.GetInstance()];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): Psionic {
     if (!Psionic.instance) {
       Psionic.instance = new Psionic();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return Psionic.instance;
   }

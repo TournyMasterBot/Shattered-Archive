@@ -25,16 +25,16 @@ export class SkaldChants implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.SkaldChants;
     this.abilityGroupType = AbilityGroupType.Songs;
     this.abilities = [
-      ChantOfAccuracy.GetInstance().Get(),
-      CallToArms.GetInstance().Get(),
-      WarHowl.GetInstance().Get(),
-      RousalOfResistance.GetInstance().Get(),
-      DirgeOfDetection.GetInstance().Get(),
-      MelodyOfMeditation.GetInstance().Get(),
-      YelpOfAggression.GetInstance().Get(),
-      RequiemOfWayfaring.GetInstance().Get(),
-      JubileeOfRegeneration.GetInstance().Get(),
-      WarbleOfArrest.GetInstance().Get(),
+      ChantOfAccuracy.GetInstance(),
+      CallToArms.GetInstance(),
+      WarHowl.GetInstance(),
+      RousalOfResistance.GetInstance(),
+      DirgeOfDetection.GetInstance(),
+      MelodyOfMeditation.GetInstance(),
+      YelpOfAggression.GetInstance(),
+      RequiemOfWayfaring.GetInstance(),
+      JubileeOfRegeneration.GetInstance(),
+      WarbleOfArrest.GetInstance(),
     ];
   }
 

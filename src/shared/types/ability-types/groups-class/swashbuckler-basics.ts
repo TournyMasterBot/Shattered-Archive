@@ -17,7 +17,7 @@ export class SwashbucklerBasics implements IAbilityGroup {
     this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.SwashbucklerBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
-    this.abilities = [Sword.GetInstance().Get(), Dagger.GetInstance().Get(), Dodge.GetInstance().Get()];
+    this.abilities = [Sword.GetInstance(), Dagger.GetInstance(), Dodge.GetInstance()];
   }
 
   // Method to get the single instance of the class

@@ -18,6 +18,7 @@ import HandToHand from "@shared/types/ability-types/skills/hand-to-hand";
 import Backstab from "@shared/types/ability-types/skills/backstab";
 import Detection from "../groups-spells/detection";
 import FlashBomb from "@shared/types/ability-types/skills/flashbomb";
+import ServerCache from "@shared/cache/server-cache";
 
 export class AssassinDefault implements IAbilityGroup {
   static instance: AssassinDefault;
@@ -31,22 +32,22 @@ export class AssassinDefault implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.AssassinDefault;
     this.abilityGroupType = AbilityGroupType.Default;
     this.abilities = [
-      ...Detection.GetInstance().Get<Detection>().abilities,
-      Sneak.GetInstance().Get(),
-      Caltraps.GetInstance().Get(),
-      PoisonSmoke.GetInstance().Get(),
-      FlashBomb.GetInstance().Get(),
-      GroundControl.GetInstance().Get(),
-      Disarm.GetInstance().Get(),
-      Hide.GetInstance().Get(),
-      Strangle.GetInstance().Get(),
-      Vanish.GetInstance().Get(),
-      Kurijitsu.GetInstance().Get(),
-      Dodge.GetInstance().Get(),
-      PoisonDagger.GetInstance().Get(),
-      Nerve.GetInstance().Get(),
-      HandToHand.GetInstance().Get(),
-      Backstab.GetInstance().Get(),
+      ...Detection.GetInstance().abilities,
+      Sneak.GetInstance(),
+      Caltraps.GetInstance(),
+      PoisonSmoke.GetInstance(),
+      FlashBomb.GetInstance(),
+      GroundControl.GetInstance(),
+      Disarm.GetInstance(),
+      Hide.GetInstance(),
+      Strangle.GetInstance(),
+      Vanish.GetInstance(),
+      Kurijitsu.GetInstance(),
+      Dodge.GetInstance(),
+      PoisonDagger.GetInstance(),
+      Nerve.GetInstance(),
+      HandToHand.GetInstance(),
+      Backstab.GetInstance(),
     ];
   }
 
@@ -54,6 +55,7 @@ export class AssassinDefault implements IAbilityGroup {
   public static GetInstance(): AssassinDefault {
     if (!AssassinDefault.instance) {
       AssassinDefault.instance = new AssassinDefault();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return AssassinDefault.instance;
   }

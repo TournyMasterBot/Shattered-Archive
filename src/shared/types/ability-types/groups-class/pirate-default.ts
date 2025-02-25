@@ -30,21 +30,21 @@ export class PirateDefault implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.PirateDefault;
     this.abilityGroupType = AbilityGroupType.Default;
     this.abilities = [
-      ConcealedDagger.GetInstance().Get(),
-      Intimidation.GetInstance().Get(),
-      Dropkick.GetInstance().Get(),
-      Disarm.GetInstance().Get(),
-      DualWield.GetInstance().Get(),
-      Balance.GetInstance().Get(),
-      MortalShield.GetInstance().Get(),
-      DoubleParry.GetInstance().Get(),
-      Hide.GetInstance().Get(),
-      GrenadeToss.GetInstance().Get(),
-      Pistol.GetInstance().Get(),
-      Maingauche.GetInstance().Get(),
-      SecondAttack.GetInstance().Get(),
-      Sneak.GetInstance().Get(),
-      Parry.GetInstance().Get(),
+      ConcealedDagger.GetInstance(),
+      Intimidation.GetInstance(),
+      Dropkick.GetInstance(),
+      Disarm.GetInstance(),
+      DualWield.GetInstance(),
+      Balance.GetInstance(),
+      MortalShield.GetInstance(),
+      DoubleParry.GetInstance(),
+      Hide.GetInstance(),
+      GrenadeToss.GetInstance(),
+      Pistol.GetInstance(),
+      Maingauche.GetInstance(),
+      SecondAttack.GetInstance(),
+      Sneak.GetInstance(),
+      Parry.GetInstance(),
     ];
   }
 

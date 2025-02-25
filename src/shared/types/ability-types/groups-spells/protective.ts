@@ -28,19 +28,19 @@ export class Protective implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Protective;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      Armor.GetInstance().Get(),
-      Fireproof.GetInstance().Get(),
-      Sanctuary.GetInstance().Get(),
-      ProtectionFire.GetInstance().Get(),
-      ProximityDispel.GetInstance().Get(),
-      Cancellation.GetInstance().Get(),
-      ProtectionEvil.GetInstance().Get(),
-      Shield.GetInstance().Get(),
-      ProtectionCold.GetInstance().Get(),
-      DispelMagic.GetInstance().Get(),
-      ProtectionGood.GetInstance().Get(),
-      StoneSkin.GetInstance().Get(),
-      ProtectionNeutral.GetInstance().Get(),
+      Armor.GetInstance(),
+      Fireproof.GetInstance(),
+      Sanctuary.GetInstance(),
+      ProtectionFire.GetInstance(),
+      ProximityDispel.GetInstance(),
+      Cancellation.GetInstance(),
+      ProtectionEvil.GetInstance(),
+      Shield.GetInstance(),
+      ProtectionCold.GetInstance(),
+      DispelMagic.GetInstance(),
+      ProtectionGood.GetInstance(),
+      StoneSkin.GetInstance(),
+      ProtectionNeutral.GetInstance(),
     ];
   }
 

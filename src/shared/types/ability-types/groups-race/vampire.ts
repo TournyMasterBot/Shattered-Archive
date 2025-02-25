@@ -3,6 +3,7 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Dodge from "@shared/types/ability-types/skills/dodge";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Vampire implements IAbilityGroup {
   static instance: Vampire;
@@ -12,16 +13,17 @@ export class Vampire implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Vampire;
     this.abilityGroupType = AbilityGroupType.Specialty;
-    this.abilities = [Dodge.GetInstance().Get()];
+    this.abilities = [Dodge.GetInstance()];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): Vampire {
     if (!Vampire.instance) {
       Vampire.instance = new Vampire();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return Vampire.instance;
   }

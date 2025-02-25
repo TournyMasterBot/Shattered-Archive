@@ -13,6 +13,7 @@ import Steal from "@shared/types/ability-types/skills/steal";
 import Halt from "@shared/types/ability-types/skills/halt";
 import PotionSmash from "@shared/types/ability-types/skills/potion-smash";
 import Riot from "@shared/types/ability-types/skills/riot";
+import ServerCache from "@shared/cache/server-cache";
 
 export class BanditDefault implements IAbilityGroup {
   static instance: BanditDefault;
@@ -22,21 +23,21 @@ export class BanditDefault implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.BanditDefault;
     this.abilityGroupType = AbilityGroupType.Default;
     this.abilities = [
-      new PanicEnemy(),
-      new Waylay(),
-      new Stealth(),
-      new Peek(),
-      new SecondAttack(),
-      new Inspect(),
-      new Backstab(),
-      new Steal(),
-      new Halt(),
-      new PotionSmash(),
-      new Riot(),
+      PanicEnemy.GetInstance(),
+      Waylay.GetInstance(),
+      Stealth.GetInstance(),
+      Peek.GetInstance(),
+      SecondAttack.GetInstance(),
+      Inspect.GetInstance(),
+      Backstab.GetInstance(),
+      Steal.GetInstance(),
+      Halt.GetInstance(),
+      PotionSmash.GetInstance(),
+      Riot.GetInstance(),
     ];
   }
 
@@ -44,6 +45,7 @@ export class BanditDefault implements IAbilityGroup {
   public static GetInstance(): BanditDefault {
     if (!BanditDefault.instance) {
       BanditDefault.instance = new BanditDefault();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return BanditDefault.instance;
   }

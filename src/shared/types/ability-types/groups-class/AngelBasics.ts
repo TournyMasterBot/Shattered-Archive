@@ -18,6 +18,7 @@ import Staff from "@shared/types/ability-types/skills/staff";
 import Sword from "@shared/types/ability-types/skills/sword";
 import ThirdAttack from "@shared/types/ability-types/skills/third-attack";
 import RomBasics from "@shared/types/ability-types/groups-class/rom-basics";
+import ServerCache from "@shared/cache/server-cache";
 
 export class AngelBasics implements IAbilityGroup {
   private static instance: AngelBasics;
@@ -28,24 +29,24 @@ export class AngelBasics implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     const abilityGroups = [
       ...RomBasics.GetInstance().Get<RomBasics>().abilities,
-      new BlindFighting(),
-      new Spear(),
-      new Parry(),
-      new Dodge(),
-      new Riding(),
-      new Rescue(),
-      new Flail(),
-      new Staff(),
-      new SecondAttack(),
-      new Meditation(),
-      new Sword(),
-      new ShieldBlock(),
-      new EnhancedDamage(),
-      new ThirdAttack(),
-      new FastHealing(),
+      BlindFighting.GetInstance(),
+      Spear.GetInstance(),
+      Parry.GetInstance(),
+      Dodge.GetInstance(),
+      Riding.GetInstance(),
+      Rescue.GetInstance(),
+      Flail.GetInstance(),
+      Staff.GetInstance(),
+      SecondAttack.GetInstance(),
+      Meditation.GetInstance(),
+      Sword.GetInstance(),
+      ShieldBlock.GetInstance(),
+      EnhancedDamage.GetInstance(),
+      ThirdAttack.GetInstance(),
+      FastHealing.GetInstance(),
     ];
 
     this.abilityGroup = AbilityGroup.AngelBasics;
@@ -57,6 +58,7 @@ export class AngelBasics implements IAbilityGroup {
   public static GetInstance(): AngelBasics {
     if (!AngelBasics.instance) {
       AngelBasics.instance = new AngelBasics();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return AngelBasics.instance;
   }

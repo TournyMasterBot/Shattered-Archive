@@ -23,12 +23,12 @@ export class SkaldDefault implements IAbilityGroup {
     this.abilityGroupType = AbilityGroupType.Default;
     this.abilities = [
       ...SkaldChants.GetInstance().Get<SkaldChants>().abilities,
-      Dodge.GetInstance().Get(),
-      SecondAttack.GetInstance().Get(),
-      Parry.GetInstance().Get(),
-      ThirdAttack.GetInstance().Get(),
-      ShieldBlock.GetInstance().Get(),
-      Rescue.GetInstance().Get(),
+      Dodge.GetInstance(),
+      SecondAttack.GetInstance(),
+      Parry.GetInstance(),
+      ThirdAttack.GetInstance(),
+      ShieldBlock.GetInstance(),
+      Rescue.GetInstance(),
     ];
   }
 

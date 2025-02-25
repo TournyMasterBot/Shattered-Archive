@@ -34,13 +34,13 @@ export class PaladinDefault implements IAbilityGroup {
       ...Curative.GetInstance().Get<Curative>().abilities,
       ...Holy.GetInstance().Get<Holy>().abilities,
       ...Maladictions.GetInstance().Get<Maladictions>().abilities,
-      ShieldStrike.GetInstance().Get(),
-      Polearm.GetInstance().Get(),
-      Smite.GetInstance().Get(),
-      Riding.GetInstance().Get(),
-      ShieldBlock.GetInstance().Get(),
-      Charge.GetInstance().Get(),
-      Parry.GetInstance().Get(),
+      ShieldStrike.GetInstance(),
+      Polearm.GetInstance(),
+      Smite.GetInstance(),
+      Riding.GetInstance(),
+      ShieldBlock.GetInstance(),
+      Charge.GetInstance(),
+      Parry.GetInstance(),
     ];
   }
 

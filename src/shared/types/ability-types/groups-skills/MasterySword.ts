@@ -5,6 +5,7 @@ import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Florentine from "@shared/types/ability-types/skills/florentine";
 import Flurry from "@shared/types/ability-types/skills/flurry";
 import Cross from "@shared/types/ability-types/skills/cross";
+import ServerCache from "@shared/cache/server-cache";
 
 export class MasterySword implements IAbilityGroup {
   static instance: MasterySword;
@@ -14,16 +15,17 @@ export class MasterySword implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.MasterySword;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [Florentine.GetInstance().Get(), Flurry.GetInstance().Get(), Cross.GetInstance().Get()];
+    this.abilities = [Florentine.GetInstance(), Flurry.GetInstance(), Cross.GetInstance()];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): MasterySword {
     if (!MasterySword.instance) {
       MasterySword.instance = new MasterySword();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return MasterySword.instance;
   }

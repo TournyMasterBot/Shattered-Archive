@@ -15,7 +15,7 @@ export class SlipperyMind implements IAbilityGroup {
     this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.SlipperyMind;
     this.abilityGroupType = AbilityGroupType.Class;
-    this.abilities = [sm.GetInstance().Get()];
+    this.abilities = [sm.GetInstance()];
   }
 
   public Get<T>(): T {

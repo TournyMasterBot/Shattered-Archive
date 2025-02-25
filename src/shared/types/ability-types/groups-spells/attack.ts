@@ -23,14 +23,14 @@ export class Attack implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Attack;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      Demonfire.GetInstance().Get(),
-      Earthquake.GetInstance().Get(),
-      RayOfTruth.GetInstance().Get(),
-      DispelEvil.GetInstance().Get(),
-      Flamestrike.GetInstance().Get(),
-      DispelNeutral.GetInstance().Get(),
-      DispelGood.GetInstance().Get(),
-      HeatMetal.GetInstance().Get(),
+      Demonfire.GetInstance(),
+      Earthquake.GetInstance(),
+      RayOfTruth.GetInstance(),
+      DispelEvil.GetInstance(),
+      Flamestrike.GetInstance(),
+      DispelNeutral.GetInstance(),
+      DispelGood.GetInstance(),
+      HeatMetal.GetInstance(),
     ];
   }
 

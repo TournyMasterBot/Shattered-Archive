@@ -22,13 +22,13 @@ export class Benedictions implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Benedictions;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      Imbue.GetInstance().Get(),
-      Frenzy.GetInstance().Get(),
-      KnowReligion.GetInstance().Get(),
-      Bless.GetInstance().Get(),
-      HolyWord.GetInstance().Get(),
-      Calm.GetInstance().Get(),
-      RemoveCurse.GetInstance().Get(),
+      Imbue.GetInstance(),
+      Frenzy.GetInstance(),
+      KnowReligion.GetInstance(),
+      Bless.GetInstance(),
+      HolyWord.GetInstance(),
+      Calm.GetInstance(),
+      RemoveCurse.GetInstance(),
     ];
   }
 

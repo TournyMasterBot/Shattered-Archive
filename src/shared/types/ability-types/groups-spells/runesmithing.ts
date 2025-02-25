@@ -27,18 +27,18 @@ export class Runesmithing implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Runesmithing;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      CreateRunestaff.GetInstance().Get(),
-      SpellEating.GetInstance().Get(),
-      Furnace.GetInstance().Get(),
-      CliathsHammer.GetInstance().Get(),
-      Courage.GetInstance().Get(),
-      Fortitude.GetInstance().Get(),
-      SureStriking.GetInstance().Get(),
-      IronGrip.GetInstance().Get(),
-      Damned.GetInstance().Get(),
-      Breaking.GetInstance().Get(),
-      Destruction.GetInstance().Get(),
-      CreateRunehammer.GetInstance().Get(),
+      CreateRunestaff.GetInstance(),
+      SpellEating.GetInstance(),
+      Furnace.GetInstance(),
+      CliathsHammer.GetInstance(),
+      Courage.GetInstance(),
+      Fortitude.GetInstance(),
+      SureStriking.GetInstance(),
+      IronGrip.GetInstance(),
+      Damned.GetInstance(),
+      Breaking.GetInstance(),
+      Destruction.GetInstance(),
+      CreateRunehammer.GetInstance(),
     ];
   }
 

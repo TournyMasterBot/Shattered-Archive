@@ -16,7 +16,7 @@ export class NinjaBasics implements IAbilityGroup {
     this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.NinjaBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
-    this.abilities = [Sword.GetInstance().Get(), Sneak.GetInstance().Get()];
+    this.abilities = [Sword.GetInstance(), Sneak.GetInstance()];
   }
 
   // Method to get the single instance of the class

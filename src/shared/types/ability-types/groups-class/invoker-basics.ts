@@ -15,7 +15,7 @@ export class InvokerBasics implements IAbilityGroup {
     this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.InvokerBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
-    this.abilities = [Dagger.GetInstance().Get()];
+    this.abilities = [Dagger.GetInstance()];
   }
 
   // Method to get the single instance of the class

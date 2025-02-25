@@ -24,9 +24,9 @@ export class ShukenjaDefault implements IAbilityGroup {
       ...Shukenja.GetInstance().Get<Shukenja>().abilities,
       ...Healing.GetInstance().Get<Healing>().abilities,
       ...Benedictions.GetInstance().Get<Benedictions>().abilities,
-      Parry.GetInstance().Get(),
-      Dodge.GetInstance().Get(),
-      SecondAttack.GetInstance().Get(),
+      Parry.GetInstance(),
+      Dodge.GetInstance(),
+      SecondAttack.GetInstance(),
     ];
   }
 

@@ -26,17 +26,17 @@ export class WarHymns implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.WarHymns;
     this.abilityGroupType = AbilityGroupType.Songs;
     this.abilities = [
-      SongOfWar.GetInstance().Get(),
-      Lullaby.GetInstance().Get(),
-      SongOfCharm.GetInstance().Get(),
-      GreenLeaf.GetInstance().Get(),
-      PiercingWinds.GetInstance().Get(),
-      WeaknessWithin.GetInstance().Get(),
-      Nightmare.GetInstance().Get(),
-      ScreechingBanshee.GetInstance().Get(),
-      WeCome.GetInstance().Get(),
-      ReleaseMe.GetInstance().Get(),
-      RunRiot.GetInstance().Get(),
+      SongOfWar.GetInstance(),
+      Lullaby.GetInstance(),
+      SongOfCharm.GetInstance(),
+      GreenLeaf.GetInstance(),
+      PiercingWinds.GetInstance(),
+      WeaknessWithin.GetInstance(),
+      Nightmare.GetInstance(),
+      ScreechingBanshee.GetInstance(),
+      WeCome.GetInstance(),
+      ReleaseMe.GetInstance(),
+      RunRiot.GetInstance(),
     ];
   }
 

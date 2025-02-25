@@ -20,11 +20,11 @@ export class Curative implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Curative;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      CureBlindness.GetInstance().Get(),
-      CureBugbearBite.GetInstance().Get(),
-      CureDisease.GetInstance().Get(),
-      CureFatigue.GetInstance().Get(),
-      CurePoison.GetInstance().Get(),
+      CureBlindness.GetInstance(),
+      CureBugbearBite.GetInstance(),
+      CureDisease.GetInstance(),
+      CureFatigue.GetInstance(),
+      CurePoison.GetInstance(),
     ];
   }
 

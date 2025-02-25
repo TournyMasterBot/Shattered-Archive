@@ -28,19 +28,19 @@ export class EnhancedEnchantment implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.EnhancedEnchantment;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      Disenchant.GetInstance().Get(),
-      RestoreArmor.GetInstance().Get(),
-      AnimateObject.GetInstance().Get(),
-      InvoluntaryWizardry.GetInstance().Get(),
-      Sequestor.GetInstance().Get(),
-      WitheringEnchant.GetInstance().Get(),
-      InterlaceSpirit.GetInstance().Get(),
-      WavesOfWeariness.GetInstance().Get(),
-      EnchantingTouch.GetInstance().Get(),
-      RestoreWeapon.GetInstance().Get(),
-      EnchantGem.GetInstance().Get(),
-      Jest.GetInstance().Get(),
-      ContinualLight.GetInstance().Get(),
+      Disenchant.GetInstance(),
+      RestoreArmor.GetInstance(),
+      AnimateObject.GetInstance(),
+      InvoluntaryWizardry.GetInstance(),
+      Sequestor.GetInstance(),
+      WitheringEnchant.GetInstance(),
+      InterlaceSpirit.GetInstance(),
+      WavesOfWeariness.GetInstance(),
+      EnchantingTouch.GetInstance(),
+      RestoreWeapon.GetInstance(),
+      EnchantGem.GetInstance(),
+      Jest.GetInstance(),
+      ContinualLight.GetInstance(),
     ];
   }
 

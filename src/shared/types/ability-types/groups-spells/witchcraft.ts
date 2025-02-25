@@ -21,12 +21,12 @@ export class Witchcraft implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Witchcraft;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      CreateCauldron.GetInstance().Get(),
-      FindFamiliar.GetInstance().Get(),
-      Silence.GetInstance().Get(),
-      PossessFamiliar.GetInstance().Get(),
-      Fear.GetInstance().Get(),
-      Splinter.GetInstance().Get(),
+      CreateCauldron.GetInstance(),
+      FindFamiliar.GetInstance(),
+      Silence.GetInstance(),
+      PossessFamiliar.GetInstance(),
+      Fear.GetInstance(),
+      Splinter.GetInstance(),
     ];
   }
 

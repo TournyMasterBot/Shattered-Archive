@@ -24,15 +24,15 @@ export class Weaponsmaster implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Weaponsmaster;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilities = [
-      Axe.GetInstance().Get(),
-      Mace.GetInstance().Get(),
-      Sword.GetInstance().Get(),
-      Dagger.GetInstance().Get(),
-      Polearm.GetInstance().Get(),
-      Whip.GetInstance().Get(),
-      Flail.GetInstance().Get(),
-      Spear.GetInstance().Get(),
-      Staff.GetInstance().Get(),
+      Axe.GetInstance(),
+      Mace.GetInstance(),
+      Sword.GetInstance(),
+      Dagger.GetInstance(),
+      Polearm.GetInstance(),
+      Whip.GetInstance(),
+      Flail.GetInstance(),
+      Spear.GetInstance(),
+      Staff.GetInstance(),
     ];
   }
 

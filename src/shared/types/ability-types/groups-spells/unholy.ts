@@ -26,17 +26,17 @@ export class Unholy implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Unholy;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      DarkEssence.GetInstance().Get(),
-      SummonNightmare.GetInstance().Get(),
-      Intimidate.GetInstance().Get(),
-      SummonDeathknight.GetInstance().Get(),
-      DarkHeal.GetInstance().Get(),
-      DarkEmpower.GetInstance().Get(),
-      DarkEnergy.GetInstance().Get(),
-      SummonFelbeast.GetInstance().Get(),
-      DarkBolt.GetInstance().Get(),
-      Fasting.GetInstance().Get(),
-      DarkImmunity.GetInstance().Get(),
+      DarkEssence.GetInstance(),
+      SummonNightmare.GetInstance(),
+      Intimidate.GetInstance(),
+      SummonDeathknight.GetInstance(),
+      DarkHeal.GetInstance(),
+      DarkEmpower.GetInstance(),
+      DarkEnergy.GetInstance(),
+      SummonFelbeast.GetInstance(),
+      DarkBolt.GetInstance(),
+      Fasting.GetInstance(),
+      DarkImmunity.GetInstance(),
     ];
   }
 

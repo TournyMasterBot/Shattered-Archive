@@ -120,10 +120,11 @@ import Felar from "@shared/types/race-types/felar";
 import Minotaur from "@shared/types/race-types/minotaur";
 import Kender from "@shared/types/race-types/kender";
 import Yinn from "@shared/types/race-types/yinn";
-import PiercingWinds from "../ability-types/songs/piering-winds";
-import WarHymns from "../ability-types/groups-songs/war-hymns";
-import HymnsOfLife from "../ability-types/groups-songs/hymns-of-life";
-import StoneFountain from "../ability-types/songs/stone-fountain";
+import PiercingWinds from "@shared/types/ability-types/songs/piering-winds";
+import WarHymns from "@shared/types/ability-types/groups-songs/war-hymns";
+import HymnsOfLife from "@shared/types/ability-types/groups-songs/hymns-of-life";
+import StoneFountain from "@shared/types/ability-types/songs/stone-fountain";
+import ServerCache from "@shared/cache/server-cache";
 // #endregion
 
 export class Bard implements IDslClass, IMortalClass, IClassType {
@@ -158,7 +159,7 @@ export class Bard implements IDslClass, IMortalClass, IClassType {
 
   constructor() {
     this.id = MortalClass.Bard.id;
-    this.name = MortalClass.Bard.name;
+    this.name = this.constructor.name;
     this.displayName = MortalClass.Bard.displayName;
     this.isMortalClass = true;
     this.isReclass = false;
@@ -372,6 +373,7 @@ See also : BARDSONG SONGS HYMNS
   public static GetInstance(): Bard {
     if (!Bard.instance) {
       Bard.instance = new Bard();
+      ServerCache.Classes[this.instance.name] = this.instance;
     }
     return Bard.instance;
   }

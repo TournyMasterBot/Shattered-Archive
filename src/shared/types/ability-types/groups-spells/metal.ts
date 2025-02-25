@@ -19,10 +19,10 @@ export class Metal implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Metal;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      MetalStorm.GetInstance().Get(),
-      ForceField.GetInstance().Get(),
-      ControlMetal.GetInstance().Get(),
-      FlamingSoul.GetInstance().Get(),
+      MetalStorm.GetInstance(),
+      ForceField.GetInstance(),
+      ControlMetal.GetInstance(),
+      FlamingSoul.GetInstance(),
     ];
   }
 

@@ -33,8 +33,8 @@ export class PriestDefault implements IAbilityGroup {
       ...Curative.GetInstance().Get<Curative>().abilities,
       ...Benedictions.GetInstance().Get<Benedictions>().abilities,
       ...Elemental.GetInstance().Get<Elemental>().abilities,
-      Flail.GetInstance().Get(),
-      ShieldBlock.GetInstance().Get(),
+      Flail.GetInstance(),
+      ShieldBlock.GetInstance(),
     ];
   }
 

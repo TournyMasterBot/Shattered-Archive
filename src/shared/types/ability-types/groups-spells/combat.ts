@@ -24,15 +24,15 @@ export class Combat implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Combat;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      AcidBlast.GetInstance().Get(),
-      ChillTouch.GetInstance().Get(),
-      MagicMissile.GetInstance().Get(),
-      BurningHands.GetInstance().Get(),
-      ColorSpray.GetInstance().Get(),
-      ShockingGrasp.GetInstance().Get(),
-      ChainLightning.GetInstance().Get(),
-      Fireball.GetInstance().Get(),
-      Blizzra.GetInstance().Get(),
+      AcidBlast.GetInstance(),
+      ChillTouch.GetInstance(),
+      MagicMissile.GetInstance(),
+      BurningHands.GetInstance(),
+      ColorSpray.GetInstance(),
+      ShockingGrasp.GetInstance(),
+      ChainLightning.GetInstance(),
+      Fireball.GetInstance(),
+      Blizzra.GetInstance(),
     ];
   }
 

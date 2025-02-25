@@ -24,15 +24,15 @@ export class Nature implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Nature;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      CallWild.GetInstance().Get(),
-      Entangle.GetInstance().Get(),
-      Swarm.GetInstance().Get(),
-      BarkSkin.GetInstance().Get(),
-      CreateRangerStaff.GetInstance().Get(),
-      WrathOfNature.GetInstance().Get(),
-      ProtectionCold.GetInstance().Get(),
-      NatureGrowth.GetInstance().Get(),
-      EnhanceSeed.GetInstance().Get(),
+      CallWild.GetInstance(),
+      Entangle.GetInstance(),
+      Swarm.GetInstance(),
+      BarkSkin.GetInstance(),
+      CreateRangerStaff.GetInstance(),
+      WrathOfNature.GetInstance(),
+      ProtectionCold.GetInstance(),
+      NatureGrowth.GetInstance(),
+      EnhanceSeed.GetInstance(),
     ];
   }
 

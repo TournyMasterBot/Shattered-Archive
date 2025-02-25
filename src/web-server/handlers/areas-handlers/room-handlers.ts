@@ -1,6 +1,6 @@
 import { IAreaDetails } from "@shared/types/area-types/area-interface";
 import MessageEnvelope from "@shared/types/express-types/message-envelope";
-import ServerCache from "cache/server-cache";
+import ServerCache from "@shared/cache/server-cache";
 import { Request, Response } from "express";
 
 export const getRooms = async (req: Request, res: Response): Promise<MessageEnvelope> => {
@@ -25,16 +25,13 @@ export const getRoom = async (req: Request, res: Response): Promise<MessageEnvel
   const { roomName, descriptionFilter } = req.body;
   try {
     let result: IAreaDetails[] = [];
-    // Fetch possible rooms
     const possibleRooms = ServerCache.Rooms[roomName];
     if (possibleRooms === undefined || Object.keys(possibleRooms).length === 0) {
       response.setPayload(result);
       return response;
     }
-    // Apply filters, if any
     const rooms = Object.values(possibleRooms);
     result = descriptionFilter?.length ? rooms.filter((room) => room.rawDesc?.toLowerCase().includes(descriptionFilter.toLowerCase())) : rooms;
-    // Set return payload
     response.setPayload(result);
   } catch (err: any) {
     response.addError({

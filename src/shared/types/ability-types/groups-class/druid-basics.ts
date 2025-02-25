@@ -16,7 +16,7 @@ export class DruidBasics implements IAbilityGroup {
     this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.DruidBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
-    this.abilities = [Staff.GetInstance().Get(), Herbal.GetInstance().Get()];
+    this.abilities = [Staff.GetInstance(), Herbal.GetInstance()];
   }
 
   // Method to get the single instance of the class

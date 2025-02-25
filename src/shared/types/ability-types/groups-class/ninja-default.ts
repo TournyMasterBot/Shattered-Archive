@@ -22,13 +22,13 @@ export class NinjaDefault implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.NinjaDefault;
     this.abilityGroupType = AbilityGroupType.Default;
     this.abilities = [
-      Fukiya.GetInstance().Get(),
-      Ninjato.GetInstance().Get(),
-      GroundControl.GetInstance().Get(),
-      Disguise.GetInstance().Get(),
-      Pyro.GetInstance().Get(),
-      Shuriken.GetInstance().Get(),
-      NightCloak.GetInstance().Get(),
+      Fukiya.GetInstance(),
+      Ninjato.GetInstance(),
+      GroundControl.GetInstance(),
+      Disguise.GetInstance(),
+      Pyro.GetInstance(),
+      Shuriken.GetInstance(),
+      NightCloak.GetInstance(),
     ];
   }
 

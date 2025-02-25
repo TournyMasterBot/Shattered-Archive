@@ -31,22 +31,22 @@ export class SwashbucklerDefault implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.SwashbucklerDefault;
     this.abilityGroupType = AbilityGroupType.Default;
     this.abilities = [
-      Evasion.GetInstance().Get(),
-      Mask.GetInstance().Get(),
-      Target.GetInstance().Get(),
-      SecondAttack.GetInstance().Get(),
-      Hide.GetInstance().Get(),
-      Banter.GetInstance().Get(),
-      Mimic.GetInstance().Get(),
-      RetainWeapon.GetInstance().Get(),
-      OceanCall.GetInstance().Get(),
-      ThirdAttack.GetInstance().Get(),
-      Sneak.GetInstance().Get(),
-      Boarding.GetInstance().Get(),
-      ViolentDispossession.GetInstance().Get(),
-      Rescue.GetInstance().Get(),
-      Disarm.GetInstance().Get(),
-      Dropkick.GetInstance().Get(),
+      Evasion.GetInstance(),
+      Mask.GetInstance(),
+      Target.GetInstance(),
+      SecondAttack.GetInstance(),
+      Hide.GetInstance(),
+      Banter.GetInstance(),
+      Mimic.GetInstance(),
+      RetainWeapon.GetInstance(),
+      OceanCall.GetInstance(),
+      ThirdAttack.GetInstance(),
+      Sneak.GetInstance(),
+      Boarding.GetInstance(),
+      ViolentDispossession.GetInstance(),
+      Rescue.GetInstance(),
+      Disarm.GetInstance(),
+      Dropkick.GetInstance(),
     ];
   }
 

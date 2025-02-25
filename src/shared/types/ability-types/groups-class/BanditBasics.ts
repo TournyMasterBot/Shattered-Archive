@@ -3,6 +3,7 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Dagger from "@shared/types/ability-types/skills/dagger";
+import ServerCache from "@shared/cache/server-cache";
 
 export class BanditBasics implements IAbilityGroup {
   static instance: BanditBasics;
@@ -12,16 +13,19 @@ export class BanditBasics implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.BanditBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
-    this.abilities = [new Dagger()];
+    this.abilities = [
+      Dagger.GetInstance()
+    ];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): BanditBasics {
     if (!BanditBasics.instance) {
       BanditBasics.instance = new BanditBasics();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return BanditBasics.instance;
   }

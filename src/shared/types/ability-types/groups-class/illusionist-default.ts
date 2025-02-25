@@ -34,7 +34,7 @@ export class IllusionistDefault implements IAbilityGroup {
       ...Combat.GetInstance().Get<Combat>().abilities,
       ...Illusion.GetInstance().Get<Illusion>().abilities,
       ...Transportation.GetInstance().Get<Transportation>().abilities,
-      Astrology.GetInstance().Get(),
+      Astrology.GetInstance(),
     ];
   }
 

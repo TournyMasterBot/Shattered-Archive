@@ -15,7 +15,7 @@ export class EideticMemoryGroup implements IAbilityGroup {
     this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.EideticMemory;
     this.abilityGroupType = AbilityGroupType.Class;
-    this.abilities = [EideticMemory.GetInstance().Get()];
+    this.abilities = [EideticMemory.GetInstance()];
   }
 
   Get<T>(): T {

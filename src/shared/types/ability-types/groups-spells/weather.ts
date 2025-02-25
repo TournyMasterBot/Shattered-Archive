@@ -24,15 +24,15 @@ export class Weather implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Weather;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      CallLightning.GetInstance().Get(),
-      FaerieFog.GetInstance().Get(),
-      Magewind.GetInstance().Get(),
-      ControlWeather.GetInstance().Get(),
-      LightningBolt.GetInstance().Get(),
-      Fog.GetInstance().Get(),
-      FaerieFire.GetInstance().Get(),
-      Tornado.GetInstance().Get(),
-      DispelFog.GetInstance().Get(),
+      CallLightning.GetInstance(),
+      FaerieFog.GetInstance(),
+      Magewind.GetInstance(),
+      ControlWeather.GetInstance(),
+      LightningBolt.GetInstance(),
+      Fog.GetInstance(),
+      FaerieFire.GetInstance(),
+      Tornado.GetInstance(),
+      DispelFog.GetInstance(),
     ];
   }
 

@@ -18,7 +18,7 @@ export class Wind implements IAbilityGroup {
     this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.Wind;
     this.abilityGroupType = AbilityGroupType.Spells;
-    this.abilities = [EngulfWind.GetInstance().Get(), Gust.GetInstance().Get(), Suffocate.GetInstance().Get(), FlamingSoul.GetInstance().Get()];
+    this.abilities = [EngulfWind.GetInstance(), Gust.GetInstance(), Suffocate.GetInstance(), FlamingSoul.GetInstance()];
   }
 
   public Get<T>(): T {

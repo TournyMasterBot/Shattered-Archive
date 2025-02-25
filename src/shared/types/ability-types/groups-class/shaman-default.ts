@@ -32,11 +32,11 @@ export class ShamanDefault implements IAbilityGroup {
       ...Protective.GetInstance().Get<Protective>().abilities,
       ...Maladictions.GetInstance().Get<Maladictions>().abilities,
       ...Benedictions.GetInstance().Get<Benedictions>().abilities,
-      Dodge.GetInstance().Get(),
-      Skewer.GetInstance().Get(),
-      Butcher.GetInstance().Get(),
-      FindWater.GetInstance().Get(),
-      EnhancedSpear.GetInstance().Get(),
+      Dodge.GetInstance(),
+      Skewer.GetInstance(),
+      Butcher.GetInstance(),
+      FindWater.GetInstance(),
+      EnhancedSpear.GetInstance(),
     ];
   }
 

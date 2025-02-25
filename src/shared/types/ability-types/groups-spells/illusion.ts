@@ -19,10 +19,10 @@ export class Illusion implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Illusion;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      Invisibility.GetInstance().Get(),
-      SelfProjection.GetInstance().Get(),
-      MassInvis.GetInstance().Get(),
-      Ventriloquate.GetInstance().Get(),
+      Invisibility.GetInstance(),
+      SelfProjection.GetInstance(),
+      MassInvis.GetInstance(),
+      Ventriloquate.GetInstance(),
     ];
   }
 

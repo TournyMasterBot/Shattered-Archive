@@ -20,11 +20,11 @@ export class WayOfTheMoon implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.WayOfTheMoon;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      MoonGaze.GetInstance().Get(),
-      MoonPull.GetInstance().Get(),
-      EclipseBeing.GetInstance().Get(),
-      MoonShadow.GetInstance().Get(),
-      MindCrater.GetInstance().Get(),
+      MoonGaze.GetInstance(),
+      MoonPull.GetInstance(),
+      EclipseBeing.GetInstance(),
+      MoonShadow.GetInstance(),
+      MindCrater.GetInstance(),
     ];
   }
 

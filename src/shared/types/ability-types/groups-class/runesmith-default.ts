@@ -32,11 +32,11 @@ export class RunesmithDefault implements IAbilityGroup {
       ...Runesmithing.GetInstance().Get<Runesmithing>().abilities,
       ...Transportation.GetInstance().Get<Transportation>().abilities,
       ...Benedictions.GetInstance().Get<Benedictions>().abilities,
-      Parry.GetInstance().Get(),
-      Runehammer.GetInstance().Get(),
-      Meditation.GetInstance().Get(),
-      ShieldBlock.GetInstance().Get(),
-      Runestaff.GetInstance().Get(),
+      Parry.GetInstance(),
+      Runehammer.GetInstance(),
+      Meditation.GetInstance(),
+      ShieldBlock.GetInstance(),
+      Runestaff.GetInstance(),
     ];
   }
 

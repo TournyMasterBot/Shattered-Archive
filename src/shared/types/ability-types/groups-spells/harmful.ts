@@ -21,12 +21,12 @@ export class Harmful implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Harmful;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      CauseCritical.GetInstance().Get(),
-      Harm.GetInstance().Get(),
-      CauseLight.GetInstance().Get(),
-      CauseDecay.GetInstance().Get(),
-      CauseSerious.GetInstance().Get(),
-      CauseFatality.GetInstance().Get(),
+      CauseCritical.GetInstance(),
+      Harm.GetInstance(),
+      CauseLight.GetInstance(),
+      CauseDecay.GetInstance(),
+      CauseSerious.GetInstance(),
+      CauseFatality.GetInstance(),
     ];
   }
 

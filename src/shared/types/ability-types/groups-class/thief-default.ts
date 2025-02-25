@@ -26,17 +26,17 @@ export class ThiefDefault implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.ThiefDefault;
     this.abilityGroupType = AbilityGroupType.Default;
     this.abilities = [
-      Mace.GetInstance().Get(),
-      Disarm.GetInstance().Get(),
-      Trip.GetInstance().Get(),
-      PickLock.GetInstance().Get(),
-      Sword.GetInstance().Get(),
-      Dodge.GetInstance().Get(),
-      Hide.GetInstance().Get(),
-      Sneak.GetInstance().Get(),
-      Backstab.GetInstance().Get(),
-      SecondAttack.GetInstance().Get(),
-      Peek.GetInstance().Get(),
+      Mace.GetInstance(),
+      Disarm.GetInstance(),
+      Trip.GetInstance(),
+      PickLock.GetInstance(),
+      Sword.GetInstance(),
+      Dodge.GetInstance(),
+      Hide.GetInstance(),
+      Sneak.GetInstance(),
+      Backstab.GetInstance(),
+      SecondAttack.GetInstance(),
+      Peek.GetInstance(),
     ];
   }
 

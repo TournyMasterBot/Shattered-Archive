@@ -28,15 +28,15 @@ export class JongleurDefault implements IAbilityGroup {
     this.abilities = [
       ...WarHymns.GetInstance().Get<WarHymns>().abilities,
       ...HymnsOfLife.GetInstance().Get<HymnsOfLife>().abilities,
-      Dodge.GetInstance().Get(),
-      EnhancedDamage.GetInstance().Get(),
-      LightShow.GetInstance().Get(),
-      Tumbling.GetInstance().Get(),
-      PolevaultKick.GetInstance().Get(),
-      DangerSense.GetInstance().Get(),
-      SecondAttack.GetInstance().Get(),
-      Parry.GetInstance().Get(),
-      EntertainCrowd.GetInstance().Get(),
+      Dodge.GetInstance(),
+      EnhancedDamage.GetInstance(),
+      LightShow.GetInstance(),
+      Tumbling.GetInstance(),
+      PolevaultKick.GetInstance(),
+      DangerSense.GetInstance(),
+      SecondAttack.GetInstance(),
+      Parry.GetInstance(),
+      EntertainCrowd.GetInstance(),
     ];
   }
 

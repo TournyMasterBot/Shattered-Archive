@@ -51,10 +51,10 @@ export class GiantBasics implements IAbilityGroup {
       ...Transportation.GetInstance().Get<Transportation>().abilities,
       ...Beguiling.GetInstance().Get<Beguiling>().abilities,
       ...Illusion.GetInstance().Get<Illusion>().abilities,
-      Berserk.GetInstance().Get(),
-      Astrology.GetInstance().Get(),
-      Charge.GetInstance().Get(),
-      Meditation.GetInstance().Get(),
+      Berserk.GetInstance(),
+      Astrology.GetInstance(),
+      Charge.GetInstance(),
+      Meditation.GetInstance(),
     ];
   }
 

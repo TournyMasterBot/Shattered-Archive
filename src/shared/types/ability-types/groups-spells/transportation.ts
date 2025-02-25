@@ -24,15 +24,15 @@ export class Transportation implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Transportation;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      Fly.GetInstance().Get(),
-      PassDoor.GetInstance().Get(),
-      Teleport.GetInstance().Get(),
-      Gate.GetInstance().Get(),
-      Portal.GetInstance().Get(),
-      WordOfRecall.GetInstance().Get(),
-      Nexus.GetInstance().Get(),
-      Summon.GetInstance().Get(),
-      Waypoint.GetInstance().Get(),
+      Fly.GetInstance(),
+      PassDoor.GetInstance(),
+      Teleport.GetInstance(),
+      Gate.GetInstance(),
+      Portal.GetInstance(),
+      WordOfRecall.GetInstance(),
+      Nexus.GetInstance(),
+      Summon.GetInstance(),
+      Waypoint.GetInstance(),
     ];
   }
 

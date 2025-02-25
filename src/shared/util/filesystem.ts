@@ -114,7 +114,7 @@ export class FileSystem implements IFileSystem {
     }
   }
 
-  public async importModules(directory: string): Promise<any[]> {
+  public async importModules(directory: string, excludeFileKeys: string[] | undefined = undefined): Promise<any[]> {
     try {
       // Resolve the directory to an absolute path
       const absDirectory = path.resolve(directory);
@@ -132,7 +132,11 @@ export class FileSystem implements IFileSystem {
             // Allow .js and .ts files, but skip declaration files.
             const ext = path.extname(filePath);
             if (ext === ".d.ts" || (ext !== ".js" && ext !== ".ts")) return null;
-
+            const filterName = path.basename(filePath).replace(".ts", "");
+            if(excludeFileKeys !== undefined && excludeFileKeys.includes(filterName)) {
+              console.debug(`Skipping importModules ${filePath} :: Excluded`);
+              return null;
+            }
             // Dynamically require the module (ts-node handles .ts files)
             const mod = require(filePath);
             const imported = mod.default || mod;

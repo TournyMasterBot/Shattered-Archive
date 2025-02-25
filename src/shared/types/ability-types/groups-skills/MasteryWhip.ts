@@ -5,6 +5,7 @@ import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Lash from "@shared/types/ability-types/skills/lash";
 import Yank from "@shared/types/ability-types/skills/yank";
 import Choke from "@shared/types/ability-types/skills/choke";
+import ServerCache from "@shared/cache/server-cache";
 
 export class MasteryWhip implements IAbilityGroup {
   static instance: MasteryWhip;
@@ -14,16 +15,17 @@ export class MasteryWhip implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.MasteryWhip;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [Lash.GetInstance().Get(), Yank.GetInstance().Get(), Choke.GetInstance().Get()];
+    this.abilities = [Lash.GetInstance(), Yank.GetInstance(), Choke.GetInstance()];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): MasteryWhip {
     if (!MasteryWhip.instance) {
       MasteryWhip.instance = new MasteryWhip();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return MasteryWhip.instance;
   }

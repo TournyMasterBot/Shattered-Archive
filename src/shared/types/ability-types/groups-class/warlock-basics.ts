@@ -16,7 +16,7 @@ export class WarlockBasics implements IAbilityGroup {
     this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.WarlockBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
-    this.abilities = [Dagger.GetInstance().Get(), Staff.GetInstance().Get()];
+    this.abilities = [Dagger.GetInstance(), Staff.GetInstance()];
   }
 
   // Method to get the single instance of the class

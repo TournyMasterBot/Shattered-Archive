@@ -1,5 +1,5 @@
 import IRace from "@shared/types/character-types/race-interface";
-import ServerCache from "../../cache/server-cache";
+import ServerCache from "../../../shared/cache/server-cache";
 import IDslClass from "@shared/types/character-types/dslClass";
 
 const CharacterSimulator = {

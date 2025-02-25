@@ -20,11 +20,11 @@ export class Shukenja implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Shukenja;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      SpiritOfRetribution.GetInstance().Get(),
-      SpiritOfProtection.GetInstance().Get(),
-      BlessingOfPeace.GetInstance().Get(),
-      SummonYanLuo.GetInstance().Get(),
-      AncestralHonor.GetInstance().Get(),
+      SpiritOfRetribution.GetInstance(),
+      SpiritOfProtection.GetInstance(),
+      BlessingOfPeace.GetInstance(),
+      SummonYanLuo.GetInstance(),
+      AncestralHonor.GetInstance(),
     ];
   }
 

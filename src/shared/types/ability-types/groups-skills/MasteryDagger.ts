@@ -5,6 +5,7 @@ import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Stab from "@shared/types/ability-types/skills/stab";
 import Hurl from "@shared/types/ability-types/skills/hurl";
 import ConcealedAttack from "@shared/types/ability-types/skills/concealed-attack";
+import ServerCache from "@shared/cache/server-cache";
 
 export class MasteryDagger implements IAbilityGroup {
   static instance: MasteryDagger;
@@ -14,16 +15,17 @@ export class MasteryDagger implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.MasteryDagger;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [Stab.GetInstance().Get(), Hurl.GetInstance().Get(), ConcealedAttack.GetInstance().Get()];
+    this.abilities = [Stab.GetInstance(), Hurl.GetInstance(), ConcealedAttack.GetInstance()];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): MasteryDagger {
     if (!MasteryDagger.instance) {
       MasteryDagger.instance = new MasteryDagger();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return MasteryDagger.instance;
   }

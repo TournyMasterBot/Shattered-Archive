@@ -36,6 +36,7 @@ export interface GameCacheProps {
 const ServerCache = {
   serviceName: {} as string,
   baseSharedDir: {} as string,
+  cacheLoaded: {} as boolean,
   jwtSecret: {} as string,
   filesystem: {} as FileSystem,
   Abilities: {} as Record<string, IAbility>,
@@ -61,21 +62,16 @@ const ServerCache = {
       this.jwtSecret = await this.filesystem.readFile(`${secretPath}`);
     }
     this.baseSharedDir = await ResolveAlias("@shared");
+    this.cacheLoaded = false;
     console.debug("Setting base shared resource path", {
       baseSharedDir: this.baseSharedDir,
     });
-    if (props.gameCache) {
+    if (props.gameCache) {    
       if (props.gameCache.initializeAreas) {
         await this.InitializeAreas();
       }
       if (props.gameCache.initializeDamageTypes) {
         await this.InitializeDamageTypes();
-      }
-      if (props.gameCache.initializeAbilities) {
-        await this.InitializeAbilities();
-      }
-      if (props.gameCache.initializeAbilityGroups) {
-        await this.InitializeAbilityGroups();
       }
       if (props.gameCache.initializeRaces) {
         await this.InitializeRaces();
@@ -84,15 +80,25 @@ const ServerCache = {
         await this.InitializeClasses();
       }
       if (props.gameCache.initializeItems) {
-        await this.InitializeItems();
+       await this.InitializeItems();
       }
+    
+      // !IMPORTANT! LOAD ABILITY GROUPS BEFORE ABILITIES :: OPTIMIZATIONS IN PLACE!
+      if (props.gameCache.initializeAbilityGroups) {
+        await this.InitializeAbilityGroups();
+      }
+      if (props.gameCache.initializeAbilities) {
+       await this.InitializeAbilities();
+      }
+      
+      this.cacheLoaded = true;
     }
   },
   async InitializeAbilities(): Promise<void> {
     // Define the paths for each ability type.
-    const skillsPath = path.join(this.baseSharedDir, "types/ability-types/skills");
-    const spellsPath = path.join(this.baseSharedDir, "types/ability-types/spells");
-    const songsPath = path.join(this.baseSharedDir, "types/ability-types/songs");
+    const skillsPath = path.join(this.baseSharedDir, "types", "ability-types", "skills");
+    const spellsPath = path.join(this.baseSharedDir, "types", "ability-types", "spells");
+    const songsPath = path.join(this.baseSharedDir, "types", "ability-types", "songs");
 
     console.debug("Fetching abilities for cache", {
       skillsPath,
@@ -101,10 +107,13 @@ const ServerCache = {
     });
 
     // Import the modules concurrently.
+    const excludeFileKeys: string[] = [
+      ...Object.keys(this.Abilities)
+    ]
     const [skills, spells, songs] = await Promise.all([
-      this.filesystem.importModules(skillsPath),
-      this.filesystem.importModules(spellsPath),
-      this.filesystem.importModules(songsPath),
+      this.filesystem.importModules(skillsPath, excludeFileKeys),
+      this.filesystem.importModules(spellsPath, excludeFileKeys),
+      this.filesystem.importModules(songsPath, excludeFileKeys),
     ]);
 
     // Merge all abilities from the three arrays.
@@ -112,30 +121,48 @@ const ServerCache = {
 
     // Load the server cache with the abilities.
     for (const ability of abilities) {
-      if (ServerCache.Abilities[ability.name] === undefined) {
-        ServerCache.Abilities[ability.name] = ability;
+      const key = ability.name.toLowerCase().trim();
+      if (ServerCache.Abilities[key] === undefined) {
+        ServerCache.Abilities[key] = ability;
       }
     }
 
-    console.log(`Ability count: ${abilities.length}, Skills: ${skills.length}, Spells: ${spells.length}, Songs: ${songs.length}`);
+    console.debug("Finished loading abilities", {
+      AbilityCount: Object.keys(this.Abilities).length,
+      UnattachedSkills: skills.length,
+      UnattachedSpells: spells.length,
+      UnattachedSongs: songs.length,
+      //Skills: skills,
+      //Spells: spells,
+      //Songs: songs
+    });
   },
   async InitializeAbilityGroups(): Promise<void> {
     // Define paths for each group type.
-    const skillsPath = path.join(this.baseSharedDir, "types/ability-types/groups-skills");
-    const spellsPath = path.join(this.baseSharedDir, "types/ability-types/groups-spells");
-    const songsPath = path.join(this.baseSharedDir, "types/ability-types/groups-songs");
+    const skillsPath = path.join(this.baseSharedDir, "types","ability-types","groups-skills");
+    const spellsPath = path.join(this.baseSharedDir, "types","ability-types","groups-spells");
+    const songsPath = path.join(this.baseSharedDir, "types","ability-types","groups-songs");
+    const classPath = path.join(this.baseSharedDir, "types","ability-types","groups-class");
+    const racialPath = path.join(this.baseSharedDir, "types","ability-types","groups-race");
 
     console.log("Fetching ability groups for cache", {
       skillsPath,
       spellsPath,
       songsPath,
+      racialPath,
+      classPath
     });
 
     // Import modules concurrently.
+    const excludeFileKeys: string[] = [
+      ...Object.keys(this.AbilityGroups)
+    ]
     const [skills, spells, songs] = await Promise.all([
-      this.filesystem.importModules(skillsPath),
-      this.filesystem.importModules(spellsPath),
-      this.filesystem.importModules(songsPath),
+      this.filesystem.importModules(skillsPath, excludeFileKeys),
+      this.filesystem.importModules(spellsPath, excludeFileKeys),
+      this.filesystem.importModules(songsPath, excludeFileKeys),
+      this.filesystem.importModules(racialPath, excludeFileKeys),
+      this.filesystem.importModules(classPath, excludeFileKeys),
     ]);
 
     // Merge all imported ability groups.
@@ -143,16 +170,27 @@ const ServerCache = {
 
     // Load the server cache.
     for (const group of abilityGroups) {
-      if (ServerCache.AbilityGroups[group.abilityGroup] === undefined) {
-        ServerCache.AbilityGroups[group.abilityGroup] = group;
+      const key = group.abilityGroup.toLowerCase().trim();
+      if (ServerCache.AbilityGroups[key] === undefined) {
+        ServerCache.AbilityGroups[key] = group;
       }
     }
+    console.debug("Finished loading ability groups", {
+      AbilityGroupsCount: Object.keys(this.AbilityGroups).length,
+      UnattachedSkillGroups: skills.length,
+      UnattachedSpellGroups: spells.length,
+      UnattachedSongGroups: songs.length,
+      SkillGroups: skills,
+      SpellGroups: spells,
+      SongGroups: songs
+    });
+  },
+  async LoadAbilitiesFromFileCache(): Promise<void> {
 
-    console.log(`Ability Group count: ${abilityGroups.length}, Skills: ${skills.length}, Spells: ${spells.length}, Songs: ${songs.length}`);
   },
   async InitializeDamageTypes(): Promise<void> {
     const damageTypes: IDamageType[] = [];
-    const damageTypesPath = path.join(this.baseSharedDir, "types/damage-types/damage-type-models");
+    const damageTypesPath = path.join(this.baseSharedDir, "types", "damage-types", "damage-type-models");
     console.log("Fetching damage types for cache", {
       damageTypesPath,
     });
@@ -166,7 +204,7 @@ const ServerCache = {
     }
   },
   async InitializeAreas(): Promise<void> {
-    const areasPath = path.join(this.baseSharedDir, "data/areas");
+    const areasPath = path.join(this.baseSharedDir, "data", "areas");
     const areaFiles = await this.filesystem.getAllFiles(areasPath, true);
 
     // Filter for only JSON files.
@@ -205,7 +243,7 @@ const ServerCache = {
     );
   },
   async InitializeRaces(): Promise<void> {
-    const racesPath = path.join(this.baseSharedDir, "types/race-types");
+    const racesPath = path.join(this.baseSharedDir, "types", "race-types");
 
     console.debug("Fetching races for cache", {
       racesPath,
@@ -221,7 +259,7 @@ const ServerCache = {
     console.log(`Race count: ${races.length}`);
   },
   async InitializeClasses(): Promise<void> {
-    const classesPath = path.join(this.baseSharedDir, "types/class-types");
+    const classesPath = path.join(this.baseSharedDir, "types", "class-types");
 
     console.debug("Fetching classes for cache", {
       classesPath,
@@ -280,7 +318,11 @@ const ServerCache = {
     console.log(`Items count: ${processItems.length}, Manual Items Count: ${manualItems.length}`);
   },
   GetAreaByName(areaName: string): IArea | undefined {
-    const area = ServerCache.Areas[areaName];
+    if(areaName === undefined) {
+      return undefined;
+    }
+    const key = areaName.toLowerCase().trim();
+    const area = ServerCache.Areas[key];
     return area;
   },
   GetRaceByName(raceName: string): IRace | undefined {
@@ -295,6 +337,14 @@ const ServerCache = {
     const item = ServerCache.Items[itemKey];
     return item;
   },
+  GetAbilityByName(abilityName: string): IAbility | undefined {
+    if(abilityName === undefined) {
+      return undefined;
+    }
+    const key = abilityName.toLowerCase().trim();
+    const ability = ServerCache.Abilities[key];
+    return ability;
+  }
 };
 
 export default ServerCache;

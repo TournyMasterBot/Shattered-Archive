@@ -30,21 +30,21 @@ export class NightshadeDefault implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.NightshadeDefault;
     this.abilityGroupType = AbilityGroupType.Default;
     this.abilities = [
-      Stalk.GetInstance().Get(),
-      Misdirection.GetInstance().Get(),
-      Nightmeld.GetInstance().Get(),
-      Lifebane.GetInstance().Get(),
-      Sneak.GetInstance().Get(),
-      WeaponSlip.GetInstance().Get(),
-      Escape.GetInstance().Get(),
-      SheathCut.GetInstance().Get(),
-      Sword.GetInstance().Get(),
-      Hide.GetInstance().Get(),
-      Rend.GetInstance().Get(),
-      CutThroat.GetInstance().Get(),
-      Flare.GetInstance().Get(),
-      Backstab.GetInstance().Get(),
-      Parry.GetInstance().Get(),
+      Stalk.GetInstance(),
+      Misdirection.GetInstance(),
+      Nightmeld.GetInstance(),
+      Lifebane.GetInstance(),
+      Sneak.GetInstance(),
+      WeaponSlip.GetInstance(),
+      Escape.GetInstance(),
+      SheathCut.GetInstance(),
+      Sword.GetInstance(),
+      Hide.GetInstance(),
+      Rend.GetInstance(),
+      CutThroat.GetInstance(),
+      Flare.GetInstance(),
+      Backstab.GetInstance(),
+      Parry.GetInstance(),
     ];
   }
 

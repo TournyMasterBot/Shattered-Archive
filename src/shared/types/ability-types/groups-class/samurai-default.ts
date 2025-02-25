@@ -22,13 +22,13 @@ export class SamuraiDefault implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.SamuraiDefault;
     this.abilityGroupType = AbilityGroupType.Default;
     this.abilities = [
-      Parry.GetInstance().Get(),
-      Daikyu.GetInstance().Get(),
-      CallDog.GetInstance().Get(),
-      Retainer.GetInstance().Get(),
-      Kiai.GetInstance().Get(),
-      Bushido.GetInstance().Get(),
-      Aikido.GetInstance().Get(),
+      Parry.GetInstance(),
+      Daikyu.GetInstance(),
+      CallDog.GetInstance(),
+      Retainer.GetInstance(),
+      Kiai.GetInstance(),
+      Bushido.GetInstance(),
+      Aikido.GetInstance(),
     ];
   }
 

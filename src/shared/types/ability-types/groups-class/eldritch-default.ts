@@ -27,8 +27,8 @@ export class EldritchDefault implements IAbilityGroup {
       ...Protective.GetInstance().Get<Protective>().abilities,
       ...Eldritch.GetInstance().Get<Eldritch>().abilities,
       ...Transportation.GetInstance().Get<Transportation>().abilities,
-      Meditation.GetInstance().Get(),
-      Parry.GetInstance().Get(),
+      Meditation.GetInstance(),
+      Parry.GetInstance(),
     ];
   }
 

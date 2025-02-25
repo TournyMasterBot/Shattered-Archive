@@ -5,6 +5,7 @@ import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Spin from "@shared/types/ability-types/skills/spin";
 import Impale from "@shared/types/ability-types/skills/impale";
 import Legsweep from "@shared/types/ability-types/skills/legsweep";
+import ServerCache from "@shared/cache/server-cache";
 
 export class MasterySpear implements IAbilityGroup {
   static instance: MasterySpear;
@@ -14,16 +15,17 @@ export class MasterySpear implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.MasterySpear;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [Spin.GetInstance().Get(), Impale.GetInstance().Get(), Legsweep.GetInstance().Get()];
+    this.abilities = [Spin.GetInstance(), Impale.GetInstance(), Legsweep.GetInstance()];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): MasterySpear {
     if (!MasterySpear.instance) {
       MasterySpear.instance = new MasterySpear();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return MasterySpear.instance;
   }

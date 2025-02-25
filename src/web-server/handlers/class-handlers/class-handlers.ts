@@ -1,5 +1,5 @@
 import MessageEnvelope from "@shared/types/express-types/message-envelope";
-import ServerCache from "cache/server-cache";
+import ServerCache from "@shared/cache/server-cache";
 import { Request, Response } from "express";
 
 export const getClasses = async (req: Request, res: Response): Promise<MessageEnvelope> => {
@@ -23,7 +23,6 @@ export const getClass = async (req: Request, res: Response): Promise<MessageEnve
   let response: MessageEnvelope = new MessageEnvelope(req);
   const { className } = req.params;
   try {
-    // Fetch possible rooms
     const lookupByName = className.toLowerCase().trim();
     const dslClass = ServerCache.GetClassByName(lookupByName);
     if(dslClass === undefined) {
@@ -34,7 +33,6 @@ export const getClass = async (req: Request, res: Response): Promise<MessageEnve
         });
         return response;
     }
-    // Set return payload
     response.setPayload(dslClass);
   } catch (err: any) {
     response.addError({

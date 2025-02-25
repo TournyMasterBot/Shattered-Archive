@@ -5,6 +5,7 @@ import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Distance from "@shared/types/ability-types/skills/distance";
 import Entrap from "@shared/types/ability-types/skills/entrap";
 import Chargeset from "@shared/types/ability-types/skills/chargeset";
+import ServerCache from "@shared/cache/server-cache";
 
 export class MasteryPolearm implements IAbilityGroup {
   static instance: MasteryPolearm;
@@ -14,16 +15,17 @@ export class MasteryPolearm implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.MasteryPolearm;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [Distance.GetInstance().Get(), Entrap.GetInstance().Get(), Chargeset.GetInstance().Get()];
+    this.abilities = [Distance.GetInstance(), Entrap.GetInstance(), Chargeset.GetInstance()];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): MasteryPolearm {
     if (!MasteryPolearm.instance) {
       MasteryPolearm.instance = new MasteryPolearm();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return MasteryPolearm.instance;
   }

@@ -26,17 +26,17 @@ export class Detection implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Detection;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      DetectEvil.GetInstance().Get(),
-      DetectInvis.GetInstance().Get(),
-      Farsight.GetInstance().Get(),
-      LocateObject.GetInstance().Get(),
-      DetectGood.GetInstance().Get(),
-      DetectMagic.GetInstance().Get(),
-      Identify.GetInstance().Get(),
-      KnowLanguages.GetInstance().Get(),
-      DetectHidden.GetInstance().Get(),
-      DetectPoison.GetInstance().Get(),
-      KnowAlignment.GetInstance().Get(),
+      DetectEvil.GetInstance(),
+      DetectInvis.GetInstance(),
+      Farsight.GetInstance(),
+      LocateObject.GetInstance(),
+      DetectGood.GetInstance(),
+      DetectMagic.GetInstance(),
+      Identify.GetInstance(),
+      KnowLanguages.GetInstance(),
+      DetectHidden.GetInstance(),
+      DetectPoison.GetInstance(),
+      KnowAlignment.GetInstance(),
     ];
   }
 

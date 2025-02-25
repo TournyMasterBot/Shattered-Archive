@@ -23,14 +23,14 @@ export class Holy implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Holy;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      EmpowerWeapon.GetInstance().Get(),
-      DivineProtection.GetInstance().Get(),
-      SummonWarhorse.GetInstance().Get(),
-      TurnUndead.GetInstance().Get(),
-      LocateEmpower.GetInstance().Get(),
-      SummonEmpyrealWarhorse.GetInstance().Get(),
-      LayOnHands.GetInstance().Get(),
-      RemoveEmpower.GetInstance().Get(),
+      EmpowerWeapon.GetInstance(),
+      DivineProtection.GetInstance(),
+      SummonWarhorse.GetInstance(),
+      TurnUndead.GetInstance(),
+      LocateEmpower.GetInstance(),
+      SummonEmpyrealWarhorse.GetInstance(),
+      LayOnHands.GetInstance(),
+      RemoveEmpower.GetInstance(),
     ];
   }
 

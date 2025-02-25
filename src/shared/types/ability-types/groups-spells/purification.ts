@@ -27,18 +27,18 @@ export class Purification implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Purification;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      Purity.GetInstance().Get(),
-      EnduringWrath.GetInstance().Get(),
-      DetectVampire.GetInstance().Get(),
-      RighteousJudgement.GetInstance().Get(),
-      CompelledRepentance.GetInstance().Get(),
-      InsightfulGaze.GetInstance().Get(),
-      RecantBlasphemy.GetInstance().Get(),
-      Fervor.GetInstance().Get(),
-      ShakeResolve.GetInstance().Get(),
-      SacredBond.GetInstance().Get(),
-      Excommunicate.GetInstance().Get(),
-      DivineStaff.GetInstance().Get(),
+      Purity.GetInstance(),
+      EnduringWrath.GetInstance(),
+      DetectVampire.GetInstance(),
+      RighteousJudgement.GetInstance(),
+      CompelledRepentance.GetInstance(),
+      InsightfulGaze.GetInstance(),
+      RecantBlasphemy.GetInstance(),
+      Fervor.GetInstance(),
+      ShakeResolve.GetInstance(),
+      SacredBond.GetInstance(),
+      Excommunicate.GetInstance(),
+      DivineStaff.GetInstance(),
     ];
   }
 

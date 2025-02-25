@@ -30,7 +30,7 @@ export class InvokerDefault implements IAbilityGroup {
       ...Enhancement.GetInstance().Get<Enhancement>().abilities,
       ...Illusion.GetInstance().Get<Illusion>().abilities,
       ...Protective.GetInstance().Get<Protective>().abilities,
-      Astrology.GetInstance().Get(),
+      Astrology.GetInstance(),
     ];
   }
 

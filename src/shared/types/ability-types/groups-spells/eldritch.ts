@@ -25,16 +25,16 @@ export class Eldritch implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Eldritch;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      Scorch.GetInstance().Get(),
-      Firebolt.GetInstance().Get(),
-      HasteCrater.GetInstance().Get(),
-      NaturesGrip.GetInstance().Get(),
-      SummonTree.GetInstance().Get(),
-      ShieldCrater.GetInstance().Get(),
-      SunBlast.GetInstance().Get(),
-      Root.GetInstance().Get(),
-      SummonStonelord.GetInstance().Get(),
-      SummonMountainbeast.GetInstance().Get(),
+      Scorch.GetInstance(),
+      Firebolt.GetInstance(),
+      HasteCrater.GetInstance(),
+      NaturesGrip.GetInstance(),
+      SummonTree.GetInstance(),
+      ShieldCrater.GetInstance(),
+      SunBlast.GetInstance(),
+      Root.GetInstance(),
+      SummonStonelord.GetInstance(),
+      SummonMountainbeast.GetInstance(),
     ];
   }
 

@@ -24,15 +24,15 @@ export class Maladictions implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Maladictions;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      Blindness.GetInstance().Get(),
-      EnergyDrain.GetInstance().Get(),
-      Slow.GetInstance().Get(),
-      ChangeSex.GetInstance().Get(),
-      Plague.GetInstance().Get(),
-      Weaken.GetInstance().Get(),
-      Curse.GetInstance().Get(),
-      Poison.GetInstance().Get(),
-      HeartBlight.GetInstance().Get(),
+      Blindness.GetInstance(),
+      EnergyDrain.GetInstance(),
+      Slow.GetInstance(),
+      ChangeSex.GetInstance(),
+      Plague.GetInstance(),
+      Weaken.GetInstance(),
+      Curse.GetInstance(),
+      Poison.GetInstance(),
+      HeartBlight.GetInstance(),
     ];
   }
 

@@ -27,18 +27,18 @@ export class Invocation implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Invocation;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      Alarm.GetInstance().Get(),
-      ConeOfFire.GetInstance().Get(),
-      Darkness.GetInstance().Get(),
-      DispelProtection.GetInstance().Get(),
-      AntimagicShell.GetInstance().Get(),
-      ConeOfLightning.GetInstance().Get(),
-      Nondetection.GetInstance().Get(),
-      Regenerate.GetInstance().Get(),
-      ConeOfCold.GetInstance().Get(),
-      BindGolem.GetInstance().Get(),
-      Web.GetInstance().Get(),
-      Solidify.GetInstance().Get(),
+      Alarm.GetInstance(),
+      ConeOfFire.GetInstance(),
+      Darkness.GetInstance(),
+      DispelProtection.GetInstance(),
+      AntimagicShell.GetInstance(),
+      ConeOfLightning.GetInstance(),
+      Nondetection.GetInstance(),
+      Regenerate.GetInstance(),
+      ConeOfCold.GetInstance(),
+      BindGolem.GetInstance(),
+      Web.GetInstance(),
+      Solidify.GetInstance(),
     ];
   }
 

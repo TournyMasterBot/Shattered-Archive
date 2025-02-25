@@ -15,7 +15,7 @@ export class JongleurBasics implements IAbilityGroup {
     this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.JongleurBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
-    this.abilities = [Staff.GetInstance().Get()];
+    this.abilities = [Staff.GetInstance()];
   }
 
   // Method to get the single instance of the class

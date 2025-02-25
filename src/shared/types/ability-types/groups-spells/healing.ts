@@ -21,12 +21,12 @@ export class Healing implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Healing;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      CureCritical.GetInstance().Get(),
-      Heal.GetInstance().Get(),
-      CureLight.GetInstance().Get(),
-      MassHealing.GetInstance().Get(),
-      CureSerious.GetInstance().Get(),
-      Refresh.GetInstance().Get(),
+      CureCritical.GetInstance(),
+      Heal.GetInstance(),
+      CureLight.GetInstance(),
+      MassHealing.GetInstance(),
+      CureSerious.GetInstance(),
+      Refresh.GetInstance(),
     ];
   }
 

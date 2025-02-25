@@ -1,5 +1,5 @@
-import AssassinBasics from "@shared/types/ability-types/groups-class/assassin-basics";
-import AssassinDefault from "@shared/types/ability-types/groups-class/assassin-default";
+import AssassinBasics from "@shared/types/ability-types/groups-class/AssassinBasics";
+import AssassinDefault from "@shared/types/ability-types/groups-class/AssassinDefault";
 import Combat from "@shared/types/ability-types/groups-spells/combat";
 import Creation from "@shared/types/ability-types/groups-spells/creation";
 import Detection from "@shared/types/ability-types/groups-spells/detection";
@@ -120,7 +120,6 @@ import Ventriloquate from "@shared/types/ability-types/spells/ventriloquate";
 import Weaken from "@shared/types/ability-types/spells/weaken";
 import WordOfRecall from "@shared/types/ability-types/spells/word-of-recall";
 import IAbility from "@shared/types/ability-types/ability";
-import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import { IMortalClass, IClassType, MortalClass } from "@shared/types/character-types/class-type";
 import IDslClass from "@shared/types/character-types/dslClass";
 import IRace from "@shared/types/character-types/race-interface";
@@ -157,6 +156,7 @@ import HobGoblin from "@shared/types/race-types/hobgoblin";
 import CreateWater from "../ability-types/spells/create-water";
 import ShockingGrasp from "../ability-types/spells/shocking-grasp";
 import Poison from "../ability-types/spells/poison";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Assassin implements IDslClass, IMortalClass, IClassType {
     private static instance: Assassin;
@@ -188,7 +188,7 @@ export class Assassin implements IDslClass, IMortalClass, IClassType {
 
     constructor() {
         this.id = MortalClass.Assassin.id;
-        this.name = MortalClass.Assassin.name;
+        this.name = this.constructor.name;
         this.displayName = MortalClass.Assassin.displayName;
         this.isMortalClass = true;
         this.isReclass = true;
@@ -497,6 +497,7 @@ See also - RECLASS`;
     public static GetInstance(): Assassin {
         if (!Assassin.instance) {
             Assassin.instance = new Assassin();
+            ServerCache.Classes[this.instance.name] = this.instance;
         }
         return Assassin.instance;
     }

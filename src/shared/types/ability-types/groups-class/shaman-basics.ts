@@ -16,7 +16,7 @@ export class ShamanBasics implements IAbilityGroup {
     this.name = this.constructor.name.toLowerCase();
     this.abilityGroup = AbilityGroup.ShamanBasics;
     this.abilityGroupType = AbilityGroupType.Basics;
-    this.abilities = [Mace.GetInstance().Get(), Spear.GetInstance().Get()];
+    this.abilities = [Mace.GetInstance(), Spear.GetInstance()];
   }
 
   // Method to get the single instance of the class

@@ -30,21 +30,21 @@ export class DivineBlessings implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.DivineBlessings;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      HolyFlame.GetInstance().Get(),
-      Nurishment.GetInstance().Get(),
-      MentalDrain.GetInstance().Get(),
-      FaerieFlames.GetInstance().Get(),
-      DivineIntervention.GetInstance().Get(),
-      HolyPresence.GetInstance().Get(),
-      EnhancedRecovery.GetInstance().Get(),
-      BindSoul.GetInstance().Get(),
-      MendWounds.GetInstance().Get(),
-      Meteo.GetInstance().Get(),
-      Displacement.GetInstance().Get(),
-      Endurance.GetInstance().Get(),
-      CureDeafness.GetInstance().Get(),
-      DispelCurse.GetInstance().Get(),
-      Cornucopia.GetInstance().Get(),
+      HolyFlame.GetInstance(),
+      Nurishment.GetInstance(),
+      MentalDrain.GetInstance(),
+      FaerieFlames.GetInstance(),
+      DivineIntervention.GetInstance(),
+      HolyPresence.GetInstance(),
+      EnhancedRecovery.GetInstance(),
+      BindSoul.GetInstance(),
+      MendWounds.GetInstance(),
+      Meteo.GetInstance(),
+      Displacement.GetInstance(),
+      Endurance.GetInstance(),
+      CureDeafness.GetInstance(),
+      DispelCurse.GetInstance(),
+      Cornucopia.GetInstance(),
     ];
   }
 

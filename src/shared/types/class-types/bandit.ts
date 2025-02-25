@@ -1,5 +1,5 @@
-import BanditBasics from "@shared/types/ability-types/groups-class/bandit-basics";
-import BanditDefault from "@shared/types/ability-types/groups-class/bandit-default";
+import BanditBasics from "@shared/types/ability-types/groups-class/BanditBasics";
+import BanditDefault from "@shared/types/ability-types/groups-class/BanditDefault";
 import Weaponsmaster from "@shared/types/ability-types/groups-skills/weaponsmaster";
 import Combat from "@shared/types/ability-types/groups-spells/combat";
 import Creation from "@shared/types/ability-types/groups-spells/creation";
@@ -142,8 +142,9 @@ import Troll from "@shared/types/race-types/troll";
 import Wemic from "@shared/types/race-types/wemic";
 import WildElf from "@shared/types/race-types/wild-elf";
 import Yinn from "@shared/types/race-types/yinn";
-import CreateFood from "../ability-types/spells/create-food";
-import LocateObject from "../ability-types/spells/locate-object";
+import CreateFood from "@shared/types/ability-types/spells/create-food";
+import LocateObject from "@shared/types/ability-types/spells/locate-object";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Bandit implements IDslClass, IMortalClass, IClassType {
     private static instance: Bandit;
@@ -175,7 +176,7 @@ export class Bandit implements IDslClass, IMortalClass, IClassType {
 
     constructor() {
         this.id = MortalClass.Bandit.id;
-        this.name = MortalClass.Bandit.name;
+        this.name = this.constructor.name;
         this.displayName = MortalClass.Bandit.displayName;
         this.isMortalClass = true;
         this.isReclass = true;
@@ -444,6 +445,7 @@ See also - RECLASS`
     public static GetInstance(): Bandit {
     if (!Bandit.instance) {
         Bandit.instance = new Bandit();
+        ServerCache.Classes[this.instance.name] = this.instance;
     }
     return Bandit.instance;
     }

@@ -26,17 +26,17 @@ export class GreaterIllusions implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.GreaterIllusions;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      Spook.GetInstance().Get(),
-      Vacancy.GetInstance().Get(),
-      ImprovedInvisibility.GetInstance().Get(),
-      Imposter.GetInstance().Get(),
-      Blur.GetInstance().Get(),
-      SummonShadow.GetInstance().Get(),
-      FalseImage.GetInstance().Get(),
-      Paralyze.GetInstance().Get(),
-      MirrorImage.GetInstance().Get(),
-      RainbowPattern.GetInstance().Get(),
-      Blend.GetInstance().Get(),
+      Spook.GetInstance(),
+      Vacancy.GetInstance(),
+      ImprovedInvisibility.GetInstance(),
+      Imposter.GetInstance(),
+      Blur.GetInstance(),
+      SummonShadow.GetInstance(),
+      FalseImage.GetInstance(),
+      Paralyze.GetInstance(),
+      MirrorImage.GetInstance(),
+      RainbowPattern.GetInstance(),
+      Blend.GetInstance(),
     ];
   }
 

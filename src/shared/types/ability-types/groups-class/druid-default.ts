@@ -32,13 +32,13 @@ export class DruidDefault implements IAbilityGroup {
       ...Weather.GetInstance().Get<Weather>().abilities,
       ...Attack.GetInstance().Get<Attack>().abilities,
       ...Protective.GetInstance().Get<Protective>().abilities,
-      FindWater.GetInstance().Get(),
-      Sneak.GetInstance().Get(),
-      Dodge.GetInstance().Get(),
-      DarkVision.GetInstance().Get(),
-      Tame.GetInstance().Get(),
-      AcuteVision.GetInstance().Get(),
-      Creaturelore.GetInstance().Get(),
+      FindWater.GetInstance(),
+      Sneak.GetInstance(),
+      Dodge.GetInstance(),
+      DarkVision.GetInstance(),
+      Tame.GetInstance(),
+      AcuteVision.GetInstance(),
+      Creaturelore.GetInstance(),
     ];
   }
 

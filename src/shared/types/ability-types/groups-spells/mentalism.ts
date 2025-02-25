@@ -24,15 +24,15 @@ export class Mentalism implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Mentalism;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      HealingDream.GetInstance().Get(),
-      Haze.GetInstance().Get(),
-      Recover.GetInstance().Get(),
-      FocusedAggression.GetInstance().Get(),
-      FakeIllness.GetInstance().Get(),
-      AbandonHope.GetInstance().Get(),
-      InfluenceConfidence.GetInstance().Get(),
-      Amnesia.GetInstance().Get(),
-      Distortion.GetInstance().Get(),
+      HealingDream.GetInstance(),
+      Haze.GetInstance(),
+      Recover.GetInstance(),
+      FocusedAggression.GetInstance(),
+      FakeIllness.GetInstance(),
+      AbandonHope.GetInstance(),
+      InfluenceConfidence.GetInstance(),
+      Amnesia.GetInstance(),
+      Distortion.GetInstance(),
     ];
   }
 

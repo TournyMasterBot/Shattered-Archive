@@ -5,6 +5,7 @@ import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Entwine from "@shared/types/ability-types/skills/entwine";
 import Sting from "@shared/types/ability-types/skills/sting";
 import Strip from "@shared/types/ability-types/skills/strip";
+import ServerCache from "@shared/cache/server-cache";
 
 export class MasteryFlail implements IAbilityGroup {
   static instance: MasteryFlail;
@@ -14,16 +15,17 @@ export class MasteryFlail implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.MasteryFlail;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [Entwine.GetInstance().Get(), Sting.GetInstance().Get(), Strip.GetInstance().Get()];
+    this.abilities = [Entwine.GetInstance(), Sting.GetInstance(), Strip.GetInstance()];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): MasteryFlail {
     if (!MasteryFlail.instance) {
       MasteryFlail.instance = new MasteryFlail();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return MasteryFlail.instance;
   }

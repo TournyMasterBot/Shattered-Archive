@@ -28,11 +28,11 @@ export class ShadowknightDefault implements IAbilityGroup {
       ...Curative.GetInstance().Get<Curative>().abilities,
       ...Unholy.GetInstance().Get<Unholy>().abilities,
       ...Benedictions.GetInstance().Get<Benedictions>().abilities,
-      Riding.GetInstance().Get(),
-      Broadswing.GetInstance().Get(),
-      Polearm.GetInstance().Get(),
-      UnholyRapture.GetInstance().Get(),
-      ShieldDisarm.GetInstance().Get(),
+      Riding.GetInstance(),
+      Broadswing.GetInstance(),
+      Polearm.GetInstance(),
+      UnholyRapture.GetInstance(),
+      ShieldDisarm.GetInstance(),
     ];
   }
 

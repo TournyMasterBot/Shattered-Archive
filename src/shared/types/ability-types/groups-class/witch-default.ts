@@ -33,10 +33,10 @@ export class WitchDefault implements IAbilityGroup {
       ...Transportation.GetInstance().Get<Transportation>().abilities,
       ...Witchcraft.GetInstance().Get<Witchcraft>().abilities,
       ...Maladictions.GetInstance().Get<Maladictions>().abilities,
-      Toss.GetInstance().Get(),
-      ApplyPotion.GetInstance().Get(),
-      Astrology.GetInstance().Get(),
-      Brew.GetInstance().Get(),
+      Toss.GetInstance(),
+      ApplyPotion.GetInstance(),
+      Astrology.GetInstance(),
+      Brew.GetInstance(),
     ];
   }
 

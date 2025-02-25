@@ -24,15 +24,15 @@ export class Creation implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Creation;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      ContinualLight.GetInstance().Get(),
-      CreateWater.GetInstance().Get(),
-      CreateHolySymbol.GetInstance().Get(),
-      CreateFood.GetInstance().Get(),
-      CreateRose.GetInstance().Get(),
-      CreateTree.GetInstance().Get(),
-      CreateSpring.GetInstance().Get(),
-      FloatingDisc.GetInstance().Get(),
-      Illumination.GetInstance().Get(),
+      ContinualLight.GetInstance(),
+      CreateWater.GetInstance(),
+      CreateHolySymbol.GetInstance(),
+      CreateFood.GetInstance(),
+      CreateRose.GetInstance(),
+      CreateTree.GetInstance(),
+      CreateSpring.GetInstance(),
+      FloatingDisc.GetInstance(),
+      Illumination.GetInstance(),
     ];
   }
 

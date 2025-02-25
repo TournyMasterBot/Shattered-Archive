@@ -5,6 +5,7 @@ import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Backhand from "@shared/types/ability-types/skills/backhand";
 import Drum from "@shared/types/ability-types/skills/drum";
 import Boneshatter from "@shared/types/ability-types/skills/boneshatter";
+import ServerCache from "@shared/cache/server-cache";
 
 export class MasteryMace implements IAbilityGroup {
   static instance: MasteryMace;
@@ -14,16 +15,17 @@ export class MasteryMace implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.MasteryMace;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [Backhand.GetInstance().Get(), Drum.GetInstance().Get(), Boneshatter.GetInstance().Get()];
+    this.abilities = [Backhand.GetInstance(), Drum.GetInstance(), Boneshatter.GetInstance()];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): MasteryMace {
     if (!MasteryMace.instance) {
       MasteryMace.instance = new MasteryMace();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
     return MasteryMace.instance;
   }

@@ -20,11 +20,11 @@ export class Beguiling implements IAbilityGroup {
     this.abilityGroup = AbilityGroup.Beguiling;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      Calm.GetInstance().Get(),
-      RestoreMind.GetInstance().Get(),
-      CharmPerson.GetInstance().Get(),
-      Betray.GetInstance().Get(),
-      Sleep.GetInstance().Get(),
+      Calm.GetInstance(),
+      RestoreMind.GetInstance(),
+      CharmPerson.GetInstance(),
+      Betray.GetInstance(),
+      Sleep.GetInstance(),
     ];
   }
 
