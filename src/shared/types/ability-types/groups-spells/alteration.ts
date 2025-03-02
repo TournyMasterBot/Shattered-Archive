@@ -16,6 +16,7 @@ import Regenerate from "@shared/types/ability-types/spells/regenerate";
 import Solidify from "@shared/types/ability-types/spells/solidify";
 import SummonManticore from "@shared/types/ability-types/spells/summon-manticore";
 import WizardMark from "@shared/types/ability-types/spells/wizard-mark";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Alteration implements IAbilityGroup {
   private static instance: Alteration;
@@ -26,35 +27,34 @@ export class Alteration implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Alteration;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
-      /*
-            new Forget(),
-            new AlterSelf(),
-            new Reduce(),
-            new AlterArmor(),
-            new Blackstaff(),
-            new WizardMark(),
-            new FrostShroud(),
-            new Disjunction(),
-            new Regenerate(),
-            new SummonManticore(),
-            new Permancy(),
-            new Enlarge(),
-            new AlterElements(),
-            new Solidify()
-            */
+      Forget.GetInstance(),
+      AlterSelf.GetInstance(),
+      Reduce.GetInstance(),
+      AlterArmor.GetInstance(),
+      Blackstaff.GetInstance(),
+      WizardMark.GetInstance(),
+      FrostShroud.GetInstance(),
+      Disjunction.GetInstance(),
+      Regenerate.GetInstance(),
+      SummonManticore.GetInstance(),
+      Permancy.GetInstance(),
+      Enlarge.GetInstance(),
+      AlterElements.GetInstance(),
+      Solidify.GetInstance()
     ];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): Alteration {
-    if (!Alteration.instance) {
-      Alteration.instance = new Alteration();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Alteration.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

@@ -11,7 +11,7 @@ export class ContinualLight implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Continual Light";
+    this.name = this.constructor.name;
     this.helpFile = `
 help Continual Light
 'CONTINUAL LIGHT'

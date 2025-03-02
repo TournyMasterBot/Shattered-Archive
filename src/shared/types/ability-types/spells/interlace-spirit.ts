@@ -12,7 +12,7 @@ export class InterlaceSpirit implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Interlace Spirit";
+    this.name = this.constructor.name;
     this.helpFile = `INTERLACE SPIRIT
 
 Syntax: cast 'interlace spirit' <object>

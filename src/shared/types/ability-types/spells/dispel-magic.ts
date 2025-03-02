@@ -11,7 +11,7 @@ export class DispelMagic implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Dispel Magic";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Dispel Magic'
 'DISPEL MAGIC' CANCELLATION

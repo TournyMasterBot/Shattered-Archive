@@ -11,7 +11,7 @@ export class Embalm implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Embalm";
+    this.name = this.constructor.name;
     this.helpFile = `
 help embalm
 EMBALM

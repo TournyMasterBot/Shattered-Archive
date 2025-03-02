@@ -18,7 +18,7 @@ export class Breaking implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Breaking";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

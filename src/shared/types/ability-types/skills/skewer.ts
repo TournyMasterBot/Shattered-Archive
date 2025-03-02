@@ -18,7 +18,7 @@ export class Skewer implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Skewer";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `help skewer

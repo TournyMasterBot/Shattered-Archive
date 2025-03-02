@@ -12,7 +12,7 @@ export class Teleport implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Teleport";
+    this.name = this.constructor.name;
     this.helpFile = `help teleport
 TELEPORT
 TELEPORT

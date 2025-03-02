@@ -11,7 +11,7 @@ export class WindBreath implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Wind Breath";
+    this.name = this.constructor.name;
     this.helpFile = `WIND BREATH
 
 Syntax: cast 'wind breath' <target>

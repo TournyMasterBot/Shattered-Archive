@@ -23,11 +23,11 @@ export class BanditBasics implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): BanditBasics {
-    if (!BanditBasics.instance) {
-      BanditBasics.instance = new BanditBasics();
+    if (!this.instance) {
+      this.instance = new this();
       ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return BanditBasics.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

@@ -12,7 +12,7 @@ export class Chargeset implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Chargeset";
+    this.name = this.constructor.name;
     this.helpFile = `
 help chargeset
 mastery polearm distance entrap chargeset

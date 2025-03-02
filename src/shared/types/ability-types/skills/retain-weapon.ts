@@ -11,7 +11,7 @@ export class RetainWeapon implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Retain Weapon";
+    this.name = this.constructor.name;
     this.helpFile = `
 retain weapon
 With unequaled skill in their chosen weapons, swashbucklers become almost

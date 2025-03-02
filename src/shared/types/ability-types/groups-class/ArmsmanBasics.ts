@@ -25,11 +25,11 @@ export class ArmsmanBasics implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): ArmsmanBasics {
-    if (!ArmsmanBasics.instance) {
-      ArmsmanBasics.instance = new ArmsmanBasics();
+    if (!this.instance) {
+      this.instance = new this();
       ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return ArmsmanBasics.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

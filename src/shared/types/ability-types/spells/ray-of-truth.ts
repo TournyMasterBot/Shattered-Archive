@@ -11,7 +11,7 @@ export class RayOfTruth implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Ray of Truth";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Ray of Truth'
 'RAY OF TRUTH'

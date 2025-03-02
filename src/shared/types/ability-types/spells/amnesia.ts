@@ -18,7 +18,7 @@ export class Amnesia implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Amnesia";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -11,7 +12,7 @@ export class Astrology implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Astrology";
+    this.name = this.constructor.name;
     this.helpFile = `help astrology
 ASTROLOGY
 ASTROLOGY
@@ -36,10 +37,11 @@ see also: MOONS PHASES`;
 
   // Method to get the single instance of the class
   public static GetInstance(): Astrology {
-    if (!Astrology.instance) {
-      Astrology.instance = new Astrology();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Astrology.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

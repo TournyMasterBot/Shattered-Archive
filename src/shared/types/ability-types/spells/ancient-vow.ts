@@ -18,7 +18,7 @@ export class AncientVow implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Ancient Vow";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

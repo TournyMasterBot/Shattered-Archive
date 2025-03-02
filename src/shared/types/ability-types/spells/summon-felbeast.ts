@@ -12,7 +12,7 @@ export class SummonFelbeast implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Summon Felbeast";
+    this.name = this.constructor.name;
     this.helpFile = ``;
     this.manualDescription = ``;
     this.abilityGroupType = AbilityGroupType.Spells;

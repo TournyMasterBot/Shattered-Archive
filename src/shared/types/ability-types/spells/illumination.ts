@@ -12,7 +12,7 @@ export class Illumination implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Illumination";
+    this.name = this.constructor.name;
     this.helpFile = `
 help Illumination
 illumination

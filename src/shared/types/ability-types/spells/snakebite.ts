@@ -12,7 +12,7 @@ export class Snakebite implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Snakebite";
+    this.name = this.constructor.name;
     this.helpFile = `help Snakebite
 snakebite
 Syntax: c snakebite <target>

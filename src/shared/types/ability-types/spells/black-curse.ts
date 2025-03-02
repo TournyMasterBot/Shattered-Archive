@@ -18,7 +18,7 @@ export class BlackCurse implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Black Curse";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

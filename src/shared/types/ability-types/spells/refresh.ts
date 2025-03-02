@@ -11,7 +11,7 @@ export class Refresh implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Refresh";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Refresh'
 REFRESH

@@ -12,7 +12,7 @@ export class ChainLightning implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Chain Lightning";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Chain Lightning'
 'CHAIN LIGHTNING'

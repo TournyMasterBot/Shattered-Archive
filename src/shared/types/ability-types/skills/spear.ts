@@ -18,7 +18,7 @@ export class Spear implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Spear";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = `

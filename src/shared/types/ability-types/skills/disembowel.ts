@@ -18,7 +18,7 @@ export class Disembowel implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Disembowel";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `help disembowel

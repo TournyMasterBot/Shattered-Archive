@@ -20,7 +20,7 @@ export class BarkSkin implements IAbility {
   abilityBuffVariable?: string | undefined;
 
   constructor() {
-    this.name = "Bark Skin";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.abilityBuffCommand = "c 'bark skin'";

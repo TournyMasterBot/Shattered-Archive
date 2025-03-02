@@ -11,7 +11,7 @@ export class Firebolt implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Firebolt";
+    this.name = this.constructor.name;
     this.helpFile = `
 FIREBOLT
 

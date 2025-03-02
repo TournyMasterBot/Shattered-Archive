@@ -18,7 +18,7 @@ export class Tame implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Tame";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -12,7 +13,7 @@ export class Brew implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Brew";
+    this.name = this.constructor.name;
     this.helpFile = `
 BREW
 
@@ -38,10 +39,11 @@ work within a special cauldron.
 
   // Method to get the single instance of the class
   public static GetInstance(): Brew {
-    if (!Brew.instance) {
-      Brew.instance = new Brew();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Brew.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

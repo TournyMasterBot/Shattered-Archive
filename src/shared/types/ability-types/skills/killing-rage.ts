@@ -18,7 +18,7 @@ export class KillingRage implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Killing Rage";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `KILLING RAGE

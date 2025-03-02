@@ -18,7 +18,7 @@ export class Alarm implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Alarm";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

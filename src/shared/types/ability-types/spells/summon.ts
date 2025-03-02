@@ -12,7 +12,7 @@ export class Summon implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Summon";
+    this.name = this.constructor.name;
     this.helpFile = `SUMMON
 Syntax: cast summon <character>
 This spell summons a character from anywhere else in the world into your room.

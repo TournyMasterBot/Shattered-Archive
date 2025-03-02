@@ -11,7 +11,7 @@ export class CreateRose implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Create Rose";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Create Rose'
 'CREATE ROSE'

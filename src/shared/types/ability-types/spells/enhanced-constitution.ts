@@ -11,7 +11,7 @@ export class EnhancedConstitution implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Enhanced Constitution";
+    this.name = this.constructor.name;
     this.helpFile = `
 ENHANCED CONSTITUTION
 

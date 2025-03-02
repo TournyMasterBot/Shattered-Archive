@@ -11,7 +11,7 @@ export class ControlWeather implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Control Weather";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Control Weather'
 'CONTROL WEATHER'

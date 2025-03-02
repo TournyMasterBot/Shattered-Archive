@@ -13,19 +13,21 @@ export class Psionic implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Psionic;
     this.abilityGroupType = AbilityGroupType.Race;
-    this.abilities = [PsionicBlast.GetInstance()];
+    this.abilities = [
+      PsionicBlast.GetInstance()
+    ];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): Psionic {
-    if (!Psionic.instance) {
-      Psionic.instance = new Psionic();
+    if (!this.instance) {
+      this.instance = new this();
       ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Psionic.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

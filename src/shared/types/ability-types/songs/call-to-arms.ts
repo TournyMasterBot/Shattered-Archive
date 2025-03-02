@@ -18,7 +18,7 @@ export class CallToArms implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Call to Arms";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Songs;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

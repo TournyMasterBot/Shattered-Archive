@@ -18,7 +18,7 @@ export class Flail implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Flail";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = `

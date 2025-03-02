@@ -8,6 +8,7 @@ import CureLight from "@shared/types/ability-types/spells/cure-light";
 import MassHealing from "@shared/types/ability-types/spells/mass-healing";
 import CureSerious from "@shared/types/ability-types/spells/cure-serious";
 import Refresh from "@shared/types/ability-types/spells/refresh";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Healing implements IAbilityGroup {
   static instance: Healing;
@@ -17,7 +18,7 @@ export class Healing implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Healing;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -32,10 +33,11 @@ export class Healing implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Healing {
-    if (!Healing.instance) {
-      Healing.instance = new Healing();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Healing.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

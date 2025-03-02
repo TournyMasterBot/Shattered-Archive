@@ -18,7 +18,7 @@ export class Unhorse implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Unhorse";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = "";

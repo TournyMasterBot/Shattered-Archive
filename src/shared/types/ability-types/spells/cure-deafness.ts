@@ -11,7 +11,7 @@ export class CureDeafness implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Cure Deafness";
+    this.name = this.constructor.name;
     this.helpFile = `
 cure deafness
 Syntax: c 'cure deafness' <target>

@@ -8,6 +8,7 @@ import CauseLight from "@shared/types/ability-types/spells/cause-light";
 import CauseDecay from "@shared/types/ability-types/spells/cause-decay";
 import CauseSerious from "@shared/types/ability-types/spells/cause-serious";
 import CauseFatality from "@shared/types/ability-types/spells/cause-fatality";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Harmful implements IAbilityGroup {
   static instance: Harmful;
@@ -17,7 +18,7 @@ export class Harmful implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Harmful;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -32,10 +33,11 @@ export class Harmful implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Harmful {
-    if (!Harmful.instance) {
-      Harmful.instance = new Harmful();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Harmful.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

@@ -18,7 +18,7 @@ export class MarriageSong implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "The Marriage Song";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Songs;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

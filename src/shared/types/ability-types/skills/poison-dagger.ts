@@ -18,7 +18,7 @@ export class PoisonDagger implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Poison Dagger";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

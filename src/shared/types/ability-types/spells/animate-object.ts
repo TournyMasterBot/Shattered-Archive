@@ -12,7 +12,7 @@ export class AnimateObject implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Animate Object";
+    this.name = this.constructor.name;
     this.helpFile = `
 ANIMATE OBJECT
 

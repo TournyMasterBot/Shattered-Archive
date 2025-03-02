@@ -18,7 +18,7 @@ export class AntimagicShell implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Antimagic Shell";
+    this.name = this.constructor.name;
     this.helpFile = `
 ANTIMAGIC SHELL
 

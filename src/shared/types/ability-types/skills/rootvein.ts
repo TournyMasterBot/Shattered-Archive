@@ -11,7 +11,7 @@ export class Rootvein implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Rootvein";
+    this.name = this.constructor.name;
     this.helpFile = `
 help arboren
 ROOTVEIN allows them to root into the earth and travel to another forest on the same continent.

@@ -11,7 +11,7 @@ export class FindFamiliar implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Find Familiar";
+    this.name = this.constructor.name;
     this.helpFile = `
 FIND FAMILIAR
 FIND FAMILIAR

@@ -11,7 +11,7 @@ export class DivineProtection implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Divine Protection";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Divine Protection'
 'DIVINE PROTECTION'

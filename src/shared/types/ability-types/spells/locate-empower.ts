@@ -11,7 +11,7 @@ export class LocateEmpower implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Locate Empower";
+    this.name = this.constructor.name;
     this.helpFile = `
 locate empower
 Syntax: c 'locate empower'

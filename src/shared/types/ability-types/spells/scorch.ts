@@ -12,7 +12,7 @@ export class Scorch implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Scorch";
+    this.name = this.constructor.name;
     this.helpFile = `
 SCORCH
 Syntax:  cast scorch <target>

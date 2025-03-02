@@ -11,7 +11,7 @@ export class Nexus implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Nexus";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Nexus'
 'NEXUS'

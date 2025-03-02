@@ -11,7 +11,7 @@ export class RemoveEmpower implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Remove Empower";
+    this.name = this.constructor.name;
     this.helpFile = `
 remove empower
 Syntax: c 'remove empower' <weapon>

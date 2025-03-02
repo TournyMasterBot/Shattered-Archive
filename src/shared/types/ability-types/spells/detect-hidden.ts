@@ -11,7 +11,7 @@ export class DetectHidden implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Detect Hidden";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Detect Hidden'
 'DETECT HIDDEN'

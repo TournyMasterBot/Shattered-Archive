@@ -7,6 +7,7 @@ import SpiritOfProtection from "@shared/types/ability-types/spells/spirit-of-pro
 import BlessingOfPeace from "@shared/types/ability-types/spells/blessing-of-peace";
 import SummonYanLuo from "@shared/types/ability-types/spells/summon-yan-luo";
 import AncestralHonor from "@shared/types/ability-types/spells/ancestral-honor";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Shukenja implements IAbilityGroup {
   static instance: Shukenja;
@@ -16,7 +17,7 @@ export class Shukenja implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Shukenja;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -30,10 +31,11 @@ export class Shukenja implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Shukenja {
-    if (!Shukenja.instance) {
-      Shukenja.instance = new Shukenja();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Shukenja.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

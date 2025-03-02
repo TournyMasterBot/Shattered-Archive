@@ -12,7 +12,7 @@ export class Thunderclap implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Thunderclap";
+    this.name = this.constructor.name;
     this.helpFile = `thunderclap
 Syntax: c thunderclap
 By communing with the storm spirits, an experienced shaman can cause

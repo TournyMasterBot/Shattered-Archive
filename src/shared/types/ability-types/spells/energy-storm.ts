@@ -12,7 +12,7 @@ export class EnergyStorm implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Energy Storm";
+    this.name = this.constructor.name;
     this.helpFile = `
 `;
     this.manualDescription = "Energy Storm is the Mage bounty skill";

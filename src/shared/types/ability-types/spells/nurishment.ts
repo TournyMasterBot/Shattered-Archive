@@ -11,7 +11,7 @@ export class Nourishment implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Nourishment";
+    this.name = this.constructor.name;
     this.helpFile = `
 NOURISHMENT
 

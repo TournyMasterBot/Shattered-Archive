@@ -18,7 +18,7 @@ export class ShieldOfWords implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Shield of Words";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Songs;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

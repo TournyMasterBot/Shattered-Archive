@@ -12,7 +12,7 @@ export class View implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "View";
+    this.name = this.constructor.name;
     this.helpFile = ``;
     this.manualDescription = ``;
     this.abilityGroupType = AbilityGroupType.Spells;

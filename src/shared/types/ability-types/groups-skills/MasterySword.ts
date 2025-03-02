@@ -18,16 +18,20 @@ export class MasterySword implements IAbilityGroup {
     this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.MasterySword;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [Florentine.GetInstance(), Flurry.GetInstance(), Cross.GetInstance()];
+    this.abilities = [
+      Florentine.GetInstance(), 
+      Flurry.GetInstance(), 
+      Cross.GetInstance()
+    ];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): MasterySword {
-    if (!MasterySword.instance) {
-      MasterySword.instance = new MasterySword();
+    if (!this.instance) {
+      this.instance = new this();
       ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return MasterySword.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

@@ -12,7 +12,7 @@ export class SolarFlare implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Solar Flare";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.manualDescription = "";
     this.abilityGroupType = AbilityGroupType.Spells;

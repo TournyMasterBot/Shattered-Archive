@@ -12,7 +12,7 @@ export class Invisibility implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Invisibility";
+    this.name = this.constructor.name;
     this.helpFile = `
 help invis
 INVIS 'MASS INVIS' INVISIBILITY

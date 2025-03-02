@@ -18,7 +18,7 @@ export class Sword implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Sword";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = `

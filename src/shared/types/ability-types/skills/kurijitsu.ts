@@ -18,7 +18,7 @@ export class Kurijitsu implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Kurijitsu";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `help Kurijitsu

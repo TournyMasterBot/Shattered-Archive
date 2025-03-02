@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -12,7 +13,7 @@ export class Butcher implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Butcher";
+    this.name = this.constructor.name;
     this.helpFile = `
 BUTCHER
 BUTCHER
@@ -35,10 +36,11 @@ see also: 'RANGER' 'BARBARIAN' 'SHAMAN'
 
   // Method to get the single instance of the class
   public static GetInstance(): Butcher {
-    if (!Butcher.instance) {
-      Butcher.instance = new Butcher();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Butcher.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

@@ -11,7 +11,7 @@ export class RestoreWeapon implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Restore Weapon";
+    this.name = this.constructor.name;
     this.helpFile = `
 RESTORE WEAPON
 

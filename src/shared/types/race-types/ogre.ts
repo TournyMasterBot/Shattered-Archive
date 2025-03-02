@@ -1,6 +1,6 @@
 
 import IAbility from "@shared/types/ability-types/ability";
-import Bash from "@shared/types/ability-types/skills/bash";
+import Bash from "@shared/types/ability-types/skills/Bash";
 import FastHealing from "@shared/types/ability-types/skills/fast-healing";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
 import ColdDamageTypes from "@shared/types/damage-types/damage-type-group-models/groups-cold";

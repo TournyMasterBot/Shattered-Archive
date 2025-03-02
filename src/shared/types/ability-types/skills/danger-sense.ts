@@ -12,7 +12,7 @@ export class DangerSense implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Danger Sense";
+    this.name = this.constructor.name;
     this.helpFile = `
 help danger sense
 DANGER SENSE

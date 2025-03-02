@@ -11,7 +11,7 @@ export class GiantStrength implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Giant Strength";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Giant Strength'
 'GIANT STRENGTH'

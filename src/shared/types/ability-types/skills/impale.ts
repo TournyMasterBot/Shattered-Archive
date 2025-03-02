@@ -18,7 +18,7 @@ export class Impale implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Impale";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `help Impale

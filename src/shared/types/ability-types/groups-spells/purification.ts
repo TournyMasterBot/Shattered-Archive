@@ -14,6 +14,7 @@ import ShakeResolve from "@shared/types/ability-types/spells/shake-resolve";
 import SacredBond from "@shared/types/ability-types/spells/sacred-bond";
 import Excommunicate from "@shared/types/ability-types/spells/excommunicate";
 import DivineStaff from "@shared/types/ability-types/spells/divine-staff";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Purification implements IAbilityGroup {
   static instance: Purification;
@@ -23,7 +24,7 @@ export class Purification implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Purification;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -44,10 +45,11 @@ export class Purification implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Purification {
-    if (!Purification.instance) {
-      Purification.instance = new Purification();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Purification.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

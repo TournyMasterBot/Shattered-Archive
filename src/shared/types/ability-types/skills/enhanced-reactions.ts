@@ -18,7 +18,7 @@ export class EnhancedReactions implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "EnhancedReactions";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = `help 'enhanced reactions'

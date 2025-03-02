@@ -11,7 +11,7 @@ export class DispelFog implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Dispel Fog";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Dispel Fog'
 'DISPEL FOG'

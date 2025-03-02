@@ -12,7 +12,7 @@ export class Climbing implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Climbing";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;

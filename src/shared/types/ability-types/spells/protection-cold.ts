@@ -11,7 +11,7 @@ export class ProtectionCold implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Protection Cold";
+    this.name = this.constructor.name;
     this.helpFile = `help 'Protection Cold'
 'PROTECTION COLD' 'PROTECTION FIRE'
 'PROTECTION COLD' 'PROTECTION FIRE'

@@ -11,7 +11,7 @@ export class KnowAlignment implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Know Alignment";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Know Alignment'
 'KNOW ALIGNMENT'

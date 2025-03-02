@@ -11,7 +11,7 @@ export class EnchantWeapon implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Enchant Weapon";
+    this.name = this.constructor.name;
     this.helpFile = `
 help enchant weapon
 'ENCHANT WEAPON'

@@ -12,7 +12,7 @@ export class CutThroat implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Cut Throat";
+    this.name = this.constructor.name;
     this.helpFile = `
 cut throat
 Command: Cutthroat

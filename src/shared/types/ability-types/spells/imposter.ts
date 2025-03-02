@@ -12,7 +12,7 @@ export class Imposter implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Imposter";
+    this.name = this.constructor.name;
     this.helpFile = `
 help imposter
 IMPOSTER

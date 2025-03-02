@@ -11,7 +11,7 @@ export class CreateHolySymbol implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Create Holy Symbol";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Create Holy Symbol'
 'CREATE HOLY SYMBOL'

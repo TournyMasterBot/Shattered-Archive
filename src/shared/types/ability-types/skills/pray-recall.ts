@@ -18,7 +18,7 @@ export class PrayRecall implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "PrayRecall";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

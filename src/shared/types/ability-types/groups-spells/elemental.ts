@@ -5,6 +5,7 @@ import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Blizzard from "@shared/types/ability-types/spells/blizzard";
 import Firestorm from "@shared/types/ability-types/spells/firestorm";
 import SummonElemental from "@shared/types/ability-types/spells/summon-elemental";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Elemental implements IAbilityGroup {
   static instance: Elemental;
@@ -14,7 +15,7 @@ export class Elemental implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Elemental;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [Blizzard.GetInstance(), Firestorm.GetInstance(), SummonElemental.GetInstance()];
@@ -22,10 +23,11 @@ export class Elemental implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Elemental {
-    if (!Elemental.instance) {
-      Elemental.instance = new Elemental();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Elemental.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

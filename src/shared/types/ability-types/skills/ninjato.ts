@@ -18,7 +18,7 @@ export class Ninjato implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Ninjato";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = `NINJATO

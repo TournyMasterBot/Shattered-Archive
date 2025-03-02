@@ -11,7 +11,7 @@ export class WithstandDeath implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Withstand Death";
+    this.name = this.constructor.name;
     this.helpFile = `WITHSTAND DEATH
 
 Syntax: cast 'withstand death'

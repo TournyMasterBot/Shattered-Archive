@@ -18,7 +18,7 @@ export class FourthAttack implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "FourthAttack";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = `help 'Fourth Attack'

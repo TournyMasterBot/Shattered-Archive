@@ -12,7 +12,7 @@ export class TimeStop implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Time Stop";
+    this.name = this.constructor.name;
     this.helpFile = ``;
     this.manualDescription = ``;
     this.abilityGroupType = AbilityGroupType.Spells;

@@ -11,7 +11,7 @@ export class RemoveTrap implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Remove Trap";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;

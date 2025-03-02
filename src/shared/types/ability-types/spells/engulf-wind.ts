@@ -11,7 +11,7 @@ export class EngulfWind implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Engulf Wind";
+    this.name = this.constructor.name;
     this.helpFile = `
 help wujen
 Engulf Wind - Drawing a great deal of air into their bodies, a Wu Jen is

@@ -11,7 +11,7 @@ export class Aikido implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Aikido";
+    this.name = this.constructor.name;
     this.helpFile = `help Aikido
 AIKIDO
 AIKIDO

@@ -11,7 +11,7 @@ export class HealingDream implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Healing Dream";
+    this.name = this.constructor.name;
     this.helpFile = `
 HEALING DREAM
 

@@ -11,7 +11,7 @@ export class CorpseHost implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Corpse Host";
+    this.name = this.constructor.name;
     this.helpFile = `
 CORPSE HOST
 

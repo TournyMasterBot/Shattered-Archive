@@ -18,7 +18,7 @@ export class RequiemOfWayfaring implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Requiem of Wayfaring";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Songs;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

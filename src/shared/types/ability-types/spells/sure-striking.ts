@@ -12,7 +12,7 @@ export class SureStriking implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Sure Striking";
+    this.name = this.constructor.name;
     this.helpFile = ``;
     this.manualDescription = ``;
     this.abilityGroupType = AbilityGroupType.Spells;

@@ -2,9 +2,9 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Backhand from "@shared/types/ability-types/skills/backhand";
+import Backhand from "@shared/types/ability-types/skills/Backhand";
 import Drum from "@shared/types/ability-types/skills/drum";
-import Boneshatter from "@shared/types/ability-types/skills/boneshatter";
+import Boneshatter from "@shared/types/ability-types/skills/Boneshatter";
 import ServerCache from "@shared/cache/server-cache";
 
 export class MasteryMace implements IAbilityGroup {
@@ -18,16 +18,20 @@ export class MasteryMace implements IAbilityGroup {
     this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.MasteryMace;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [Backhand.GetInstance(), Drum.GetInstance(), Boneshatter.GetInstance()];
+    this.abilities = [
+      Backhand.GetInstance(), 
+      Drum.GetInstance(), 
+      Boneshatter.GetInstance()
+    ];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): MasteryMace {
-    if (!MasteryMace.instance) {
-      MasteryMace.instance = new MasteryMace();
+    if (!this.instance) {
+      this.instance = new this();
       ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return MasteryMace.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

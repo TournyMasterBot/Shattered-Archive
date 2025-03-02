@@ -11,7 +11,7 @@ export class MirrorImage implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Mirror Image";
+    this.name = this.constructor.name;
     this.helpFile = `
 mirror image
 syntax:  cast 'mirror image'

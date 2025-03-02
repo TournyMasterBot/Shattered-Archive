@@ -12,7 +12,7 @@ export class Identify implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Identify";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Identify'
 IDENTIFY

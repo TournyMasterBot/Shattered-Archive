@@ -11,7 +11,7 @@ export class Fly implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Fly";
+    this.name = this.constructor.name;
     this.helpFile = `
 help fly
 FLY

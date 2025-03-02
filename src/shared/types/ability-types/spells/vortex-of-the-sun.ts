@@ -12,7 +12,7 @@ export class VortexOfTheSun implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Vortex of the Sun";
+    this.name = this.constructor.name;
     this.helpFile = ``;
     this.manualDescription = ``;
     this.abilityGroupType = AbilityGroupType.Spells;

@@ -11,7 +11,7 @@ export class DetectVampire implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Detect Vampire";
+    this.name = this.constructor.name;
     this.helpFile = ""; // Add help text here
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;

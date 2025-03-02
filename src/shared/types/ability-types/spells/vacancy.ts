@@ -12,7 +12,7 @@ export class Vacancy implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Vacancy";
+    this.name = this.constructor.name;
     this.helpFile = `help Vacancy
 vacancy
 syntax: cast 'vacancy' <target>

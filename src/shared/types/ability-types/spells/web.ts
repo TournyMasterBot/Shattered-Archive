@@ -11,7 +11,7 @@ export class Web implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Web";
+    this.name = this.constructor.name;
     this.helpFile = `WEB
 
 Syntax: cast 'web' <target>

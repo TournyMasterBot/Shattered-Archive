@@ -20,6 +20,7 @@ import LocateRemains from "@shared/types/ability-types/spells/locate-remains";
 import CorpseHost from "@shared/types/ability-types/spells/corpse-host";
 import PreventRecovery from "@shared/types/ability-types/spells/prevent-recovery";
 import BodrumsBoils from "@shared/types/ability-types/spells/bodrums-boils";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Necromancy implements IAbilityGroup {
   private static instance: Necromancy;
@@ -30,7 +31,7 @@ export class Necromancy implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Necromancy;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -57,10 +58,11 @@ export class Necromancy implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Necromancy {
-    if (!Necromancy.instance) {
-      Necromancy.instance = new Necromancy();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Necromancy.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

@@ -11,7 +11,7 @@ export class Farsight implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Farsight";
+    this.name = this.constructor.name;
     this.helpFile = `help 'Farsight'
 FARSIGHT Syntax: cast 'farsight'
 

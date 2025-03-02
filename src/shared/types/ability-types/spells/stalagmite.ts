@@ -12,7 +12,7 @@ export class Stalagmite implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Stalagmite";
+    this.name = this.constructor.name;
     this.helpFile = `Stalagmite - The Wu Jen hurls a spike of rock into their enemy, dealing
 damage and having a chance to knock them off-balance, stunning them.`;
     this.manualDescription = "";

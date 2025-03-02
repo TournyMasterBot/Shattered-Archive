@@ -12,7 +12,7 @@ export class Silence implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Silence";
+    this.name = this.constructor.name;
     this.helpFile = `SILENCE
 SILENCE
 

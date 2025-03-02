@@ -18,7 +18,7 @@ export class Beastform implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Beastform";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

@@ -1,7 +1,7 @@
 
 import IAbility from "@shared/types/ability-types/ability";
-import Creation from "@shared/types/ability-types/groups-spells/creation";
-import Illusion from "@shared/types/ability-types/groups-spells/illusion";
+import Creation from "@shared/types/ability-types/groups-spells/Creation";
+import Illusion from "@shared/types/ability-types/groups-spells/Illusion";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
 import BoostedClass from "@shared/types/character-types/boostedClass";
 import IDamageType from "@shared/types/damage-types/damage-type-interface";

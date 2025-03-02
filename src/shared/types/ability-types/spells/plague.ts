@@ -11,7 +11,7 @@ export class Plague implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Plague";
+    this.name = this.constructor.name;
     this.helpFile = `help 'Plague'
 PLAGUE
 PLAGUE

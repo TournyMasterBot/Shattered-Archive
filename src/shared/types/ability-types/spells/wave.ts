@@ -11,7 +11,7 @@ export class Wave implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Wave";
+    this.name = this.constructor.name;
     this.helpFile = `help wujen
 Wave - The Wu Jen conjures a wave of water that carries them out of the
 room, continuing for up to two rooms in a direction of their choosing.`;

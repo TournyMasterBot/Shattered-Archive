@@ -18,7 +18,7 @@ export class ThirdAttack implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "ThirdAttack";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = `help 'Third Attack'

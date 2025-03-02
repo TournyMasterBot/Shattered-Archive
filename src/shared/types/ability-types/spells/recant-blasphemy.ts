@@ -11,7 +11,7 @@ export class RecantBlasphemy implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Recant Blasphemy";
+    this.name = this.constructor.name;
     this.helpFile = `
         `;
     this.abilityGroupType = AbilityGroupType.Spells;

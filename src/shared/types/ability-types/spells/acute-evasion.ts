@@ -18,7 +18,7 @@ export class AcuteEvasion implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Acute Evasion";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = ""; // Add relevant help file content here

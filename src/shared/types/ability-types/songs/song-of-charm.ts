@@ -18,7 +18,7 @@ export class SongOfCharm implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Song of Charm";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Songs;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

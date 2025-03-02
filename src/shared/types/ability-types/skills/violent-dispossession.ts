@@ -18,7 +18,7 @@ export class ViolentDispossession implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Violent Dispossession";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

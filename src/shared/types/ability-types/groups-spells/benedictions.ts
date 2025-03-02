@@ -9,6 +9,7 @@ import Bless from "@shared/types/ability-types/spells/bless";
 import HolyWord from "@shared/types/ability-types/spells/holy-word";
 import Calm from "@shared/types/ability-types/spells/calm";
 import RemoveCurse from "@shared/types/ability-types/spells/remove-curse";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Benedictions implements IAbilityGroup {
   static instance: Benedictions;
@@ -18,7 +19,7 @@ export class Benedictions implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Benedictions;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -34,10 +35,11 @@ export class Benedictions implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Benedictions {
-    if (!Benedictions.instance) {
-      Benedictions.instance = new Benedictions();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Benedictions.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

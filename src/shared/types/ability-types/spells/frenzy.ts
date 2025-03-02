@@ -13,7 +13,7 @@ export class Frenzy implements IAbility {
   abilityBuffCommand?: string | undefined;
 
   constructor() {
-    this.name = "Frenzy";
+    this.name = this.constructor.name;
     this.helpFile = `
 help Frenzy
 FRENZY

@@ -18,7 +18,7 @@ export class EnhancedSpear implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Enhanced Spear";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `help enhanced spear

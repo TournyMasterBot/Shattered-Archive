@@ -18,7 +18,7 @@ export class Survive implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Survive";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = ``;

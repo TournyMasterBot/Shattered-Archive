@@ -11,7 +11,7 @@ export class Deflection implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Deflection";
+    this.name = this.constructor.name;
     this.helpFile = ""; // Add help text if available
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;

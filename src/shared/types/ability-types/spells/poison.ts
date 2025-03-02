@@ -11,7 +11,7 @@ export class Poison implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Poison";
+    this.name = this.constructor.name;
     this.helpFile = `help poison
 POISON
 POISON

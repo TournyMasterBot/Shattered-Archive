@@ -11,7 +11,7 @@ export class Waypoint implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Waypoint";
+    this.name = this.constructor.name;
     this.helpFile = `help waypoint
 waypoint
 Syntax: cast 'waypoint'

@@ -11,7 +11,7 @@ export class EnhanceSeed implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Enhance Seed";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Enhance Seed'
 enhance seed

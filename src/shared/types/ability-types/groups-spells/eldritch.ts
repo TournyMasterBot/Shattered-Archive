@@ -12,6 +12,7 @@ import SummonMountainbeast from "@shared/types/ability-types/spells/summon-mount
 import SummonStonelord from "@shared/types/ability-types/spells/summon-stonelord";
 import SummonTree from "@shared/types/ability-types/spells/summon-tree";
 import SunBlast from "@shared/types/ability-types/spells/sun-blast";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Eldritch implements IAbilityGroup {
   static instance: Eldritch;
@@ -21,7 +22,7 @@ export class Eldritch implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Eldritch;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -40,10 +41,11 @@ export class Eldritch implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Eldritch {
-    if (!Eldritch.instance) {
-      Eldritch.instance = new Eldritch();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Eldritch.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

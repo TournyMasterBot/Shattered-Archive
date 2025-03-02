@@ -11,7 +11,7 @@ export class MendWounds implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Mend Wounds";
+    this.name = this.constructor.name;
     this.helpFile = `
 mend wounds
 Syntax: cast 'mend wounds' <target>

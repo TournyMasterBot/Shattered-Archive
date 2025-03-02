@@ -11,7 +11,7 @@ export class ConeOfLightning implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Cone of Lightning";
+    this.name = this.constructor.name;
     this.helpFile = `
 help cone of lightning
 'CONE OF LIGHTNING'

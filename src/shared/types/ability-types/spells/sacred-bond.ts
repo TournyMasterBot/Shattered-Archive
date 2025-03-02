@@ -12,7 +12,7 @@ export class SacredBond implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Sacred Bond";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.manualDescription = "";
     this.abilityGroupType = AbilityGroupType.Spells;

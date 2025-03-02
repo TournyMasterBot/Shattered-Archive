@@ -12,7 +12,7 @@ export class Solidify implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Solidify";
+    this.name = this.constructor.name;
     this.helpFile = `solidify
 A conclave only spell that solidifies the body and makes one harder to
 get stunned.`;

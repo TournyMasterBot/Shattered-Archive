@@ -20,6 +20,7 @@ import ShadowWhisper from "@shared/types/ability-types/spells/shadow-whisper";
 import ShadowVortex from "@shared/types/ability-types/spells/shadow-vortex";
 import CreateCauldron from "@shared/types/ability-types/spells/create-cauldron";
 import NightShield from "@shared/types/ability-types/spells/nightshield";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Shadowmagic implements IAbilityGroup {
   static instance: Shadowmagic;
@@ -29,7 +30,7 @@ export class Shadowmagic implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Shadowmagic;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -56,10 +57,11 @@ export class Shadowmagic implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Shadowmagic {
-    if (!Shadowmagic.instance) {
-      Shadowmagic.instance = new Shadowmagic();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Shadowmagic.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

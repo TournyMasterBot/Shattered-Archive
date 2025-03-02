@@ -4,9 +4,9 @@ import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Lore from "@shared/types/ability-types/skills/lore";
 import Spellcraft from "@shared/types/ability-types/skills/spellcraft";
-import Alchemy from "@shared/types/ability-types/skills/alchemy";
+import Alchemy from "@shared/types/ability-types/skills/Alchemy";
 import DualWield from "@shared/types/ability-types/skills/dual-wield";
-import Astrology from "@shared/types/ability-types/skills/astrology";
+import Astrology from "@shared/types/ability-types/skills/Astrology";
 import PickLock from "@shared/types/ability-types/skills/pick-lock";
 import Scribe from "@shared/types/ability-types/skills/scribe";
 import ServerCache from "@shared/cache/server-cache";
@@ -35,11 +35,11 @@ export class GiantExtras implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): GiantExtras {
-    if (!GiantExtras.instance) {
-      GiantExtras.instance = new GiantExtras();
+    if (!this.instance) {
+      this.instance = new this();
       ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return GiantExtras.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

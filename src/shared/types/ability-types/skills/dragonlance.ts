@@ -18,7 +18,7 @@ export class Dragonlance implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Dragonlance";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `help dragonlance

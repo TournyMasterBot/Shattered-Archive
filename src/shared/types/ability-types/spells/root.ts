@@ -11,7 +11,7 @@ export class Root implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Root";
+    this.name = this.constructor.name;
     this.helpFile = `
 ROOT
 

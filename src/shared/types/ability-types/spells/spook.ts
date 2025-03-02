@@ -12,7 +12,7 @@ export class Spook implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Spook";
+    this.name = this.constructor.name;
     this.helpFile = `help spook
 spook
 syntax: cast 'spook' <target>

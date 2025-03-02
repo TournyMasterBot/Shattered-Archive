@@ -11,7 +11,7 @@ export class Riot implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Riot";
+    this.name = this.constructor.name;
     this.helpFile = `
 riot
 The bandit has the ability to instill a riot mentality within a certain

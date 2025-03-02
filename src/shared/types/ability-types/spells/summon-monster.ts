@@ -12,7 +12,7 @@ export class SummonMonster implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Summon Monster";
+    this.name = this.constructor.name;
     this.helpFile = `help wujen
 The Wu Jen calls forth either a Rock or a Mud monster,
 which will do their bidding until destroyed. The rock monster is made for

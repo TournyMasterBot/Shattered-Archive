@@ -12,7 +12,7 @@ export class Soulsight implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Soulsight";
+    this.name = this.constructor.name;
     this.helpFile = `Syntax: c soulsight
 When properly attuned to the spirit world, soulsight allows a shaman
 to more clearly perceive the spirits which inhabit all things, and

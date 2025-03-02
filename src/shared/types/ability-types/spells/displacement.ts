@@ -11,7 +11,7 @@ export class Displacement implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Displacement";
+    this.name = this.constructor.name;
     this.helpFile = `
 displacement
 c 'displacement' <target>

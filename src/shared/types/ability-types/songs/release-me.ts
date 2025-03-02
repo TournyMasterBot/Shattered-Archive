@@ -18,7 +18,7 @@ export class ReleaseMe implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Release Me";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Songs;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

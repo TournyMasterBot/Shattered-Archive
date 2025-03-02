@@ -11,7 +11,7 @@ export class Empath implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Empath";
+    this.name = this.constructor.name;
     this.helpFile = `
 'EMPATH' 'EMPATHIC WOUND TRANSFER'
 EMPATH 'EMPATHIC WOUND TRANSFER'

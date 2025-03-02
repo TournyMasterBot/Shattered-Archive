@@ -11,7 +11,7 @@ export class NatureGrowth implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Nature Growth";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Nature Growth'
 NATURE GROWTH

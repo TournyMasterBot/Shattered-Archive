@@ -11,7 +11,7 @@ export class ProtectionFire implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Protection Fire";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Protection Fire'
 'PROTECTION COLD' 'PROTECTION FIRE'

@@ -12,7 +12,7 @@ export class ShakeResolve implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Shake Resolve";
+    this.name = this.constructor.name;
     this.helpFile = ""; // Empty help file
     this.manualDescription = "";
     this.abilityGroupType = AbilityGroupType.Spells;

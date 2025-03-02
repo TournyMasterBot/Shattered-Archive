@@ -18,7 +18,7 @@ export class LightShow implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Light Show";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `LIGHT SHOW

@@ -13,6 +13,7 @@ import KnowLanguages from "@shared/types/ability-types/spells/know-languages";
 import DetectHidden from "@shared/types/ability-types/spells/detect-hidden";
 import DetectPoison from "@shared/types/ability-types/spells/detect-poison";
 import KnowAlignment from "@shared/types/ability-types/spells/know-alignment";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Detection implements IAbilityGroup {
   static instance: Detection;
@@ -22,7 +23,7 @@ export class Detection implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Detection;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -42,10 +43,11 @@ export class Detection implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Detection {
-    if (!Detection.instance) {
-      Detection.instance = new Detection();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Detection.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

@@ -18,7 +18,7 @@ export class CallWild implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Call Wild";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

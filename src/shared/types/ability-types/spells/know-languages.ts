@@ -11,7 +11,7 @@ export class KnowLanguages implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Know Languages";
+    this.name = this.constructor.name;
     this.helpFile = `
 Syntax: cast 'know languages'
 This spell enables the transmuter to be able to both speak and understand

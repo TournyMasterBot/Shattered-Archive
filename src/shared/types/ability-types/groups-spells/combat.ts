@@ -11,6 +11,7 @@ import ShockingGrasp from "@shared/types/ability-types/spells/shocking-grasp";
 import ChainLightning from "@shared/types/ability-types/spells/chain-lightning";
 import Fireball from "@shared/types/ability-types/spells/fireball";
 import Blizzra from "@shared/types/ability-types/spells/blizzra";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Combat implements IAbilityGroup {
   static instance: Combat;
@@ -20,7 +21,7 @@ export class Combat implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Combat;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -38,10 +39,11 @@ export class Combat implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Combat {
-    if (!Combat.instance) {
-      Combat.instance = new Combat();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Combat.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

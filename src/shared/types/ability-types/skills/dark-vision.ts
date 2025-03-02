@@ -12,7 +12,7 @@ export class DarkVision implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Dark Vision";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'dark vision'
 'DARKVISION' 'DARK VISION'

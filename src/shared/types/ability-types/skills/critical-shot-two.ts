@@ -12,7 +12,7 @@ export class CriticalShotTwo implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Critical Shot Two";
+    this.name = this.constructor.name;
     this.helpFile = `
 help critical2
 BOWS ARROWS SHOOT CRITICAL1 CRITICAL2 CRITICAL3 CRITICAL4

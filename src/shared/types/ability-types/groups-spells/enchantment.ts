@@ -6,6 +6,7 @@ import EnchantArmor from "@shared/types/ability-types/spells/enchant-armor";
 import Recharge from "@shared/types/ability-types/spells/recharge";
 import EnchantWeapon from "@shared/types/ability-types/spells/enchant-weapon";
 import Fireproof from "@shared/types/ability-types/spells/fireproof";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Enchantment implements IAbilityGroup {
   static instance: Enchantment;
@@ -15,7 +16,7 @@ export class Enchantment implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Enchantment;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -28,10 +29,11 @@ export class Enchantment implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Enchantment {
-    if (!Enchantment.instance) {
-      Enchantment.instance = new Enchantment();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Enchantment.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

@@ -12,7 +12,7 @@ export class Cleanse implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Cleanse";
+    this.name = this.constructor.name;
     this.helpFile = `
 help cleanse
 CLEANSE

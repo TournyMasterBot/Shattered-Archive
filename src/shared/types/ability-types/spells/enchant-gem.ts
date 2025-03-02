@@ -11,7 +11,7 @@ export class EnchantGem implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Enchant Gem";
+    this.name = this.constructor.name;
     this.helpFile = `
 ENCHANT GEM
 

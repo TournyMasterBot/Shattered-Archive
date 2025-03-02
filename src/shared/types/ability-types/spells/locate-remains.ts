@@ -11,7 +11,7 @@ export class LocateRemains implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Locate Remains";
+    this.name = this.constructor.name;
     this.helpFile = `
 LOCATE REMAINS
 

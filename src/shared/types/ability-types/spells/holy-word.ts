@@ -12,7 +12,7 @@ export class HolyWord implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Holy Word";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Holy Word'
 'HOLY WORD'

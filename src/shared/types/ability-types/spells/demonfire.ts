@@ -11,7 +11,7 @@ export class Demonfire implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Demonfire";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Demonfire'
 DEMONFIRE

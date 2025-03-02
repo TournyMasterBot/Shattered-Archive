@@ -8,7 +8,7 @@ import Stealth from "@shared/types/ability-types/skills/stealth";
 import Peek from "@shared/types/ability-types/skills/peek";
 import SecondAttack from "@shared/types/ability-types/skills/second-attack";
 import Inspect from "@shared/types/ability-types/skills/inspect";
-import Backstab from "@shared/types/ability-types/skills/backstab";
+import Backstab from "@shared/types/ability-types/skills/Backstab";
 import Steal from "@shared/types/ability-types/skills/steal";
 import Halt from "@shared/types/ability-types/skills/halt";
 import PotionSmash from "@shared/types/ability-types/skills/potion-smash";
@@ -43,11 +43,11 @@ export class BanditDefault implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): BanditDefault {
-    if (!BanditDefault.instance) {
-      BanditDefault.instance = new BanditDefault();
+    if (!this.instance) {
+      this.instance = new this();
       ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return BanditDefault.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

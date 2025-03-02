@@ -11,7 +11,7 @@ export class HeartBlight implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Heart Blight";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Heart Blight'
 'HEART BLIGHT' HEARTBLIGHT

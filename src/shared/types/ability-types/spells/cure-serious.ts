@@ -11,7 +11,7 @@ export class CureSerious implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Cure Serious";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Cure Serious'
 'CURE LIGHT' 'CURE SERIOUS' 'CURE CRITICAL' HEAL

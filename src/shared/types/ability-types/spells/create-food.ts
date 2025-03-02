@@ -11,7 +11,7 @@ export class CreateFood implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Create Food";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Create Food'
 CREATE FOOD

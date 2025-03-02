@@ -12,7 +12,7 @@ export class SunBlast implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Sun Blast";
+    this.name = this.constructor.name;
     this.helpFile = `SUN BLAST
 
 Syntax: cast 'sun blast' <target>

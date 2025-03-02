@@ -11,7 +11,7 @@ export class Recover implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Recover";
+    this.name = this.constructor.name;
     this.helpFile = `
 RECOVER  -  Mentalist Spell
 

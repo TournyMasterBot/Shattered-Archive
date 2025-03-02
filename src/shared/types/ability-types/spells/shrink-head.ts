@@ -12,7 +12,7 @@ export class ShrinkHead implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Shrink Head";
+    this.name = this.constructor.name;
     this.helpFile = `
 shrink head
 Powerful JuJu! Shrink head lets the shaman decapitate a fallen enemy

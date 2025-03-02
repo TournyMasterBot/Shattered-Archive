@@ -11,7 +11,7 @@ export class CompelledRepentance implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Compelled Repentance";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Compelled Repentance'
 COMPPELLED REPENTANCE

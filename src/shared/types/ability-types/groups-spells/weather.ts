@@ -11,6 +11,7 @@ import Fog from "@shared/types/ability-types/spells/fog";
 import FaerieFire from "@shared/types/ability-types/spells/faerie-flames";
 import Tornado from "@shared/types/ability-types/spells/tornado";
 import DispelFog from "@shared/types/ability-types/spells/dispel-fog";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Weather implements IAbilityGroup {
   static instance: Weather;
@@ -20,7 +21,7 @@ export class Weather implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Weather;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -38,10 +39,11 @@ export class Weather implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Weather {
-    if (!Weather.instance) {
-      Weather.instance = new Weather();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Weather.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

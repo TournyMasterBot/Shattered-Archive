@@ -11,7 +11,7 @@ export class RemoveCurse implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Remove Curse";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Remove Curse'
 'REMOVE CURSE'

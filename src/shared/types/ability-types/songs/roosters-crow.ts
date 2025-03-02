@@ -18,7 +18,7 @@ export class RoostersCrow implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "The Roosters Crow";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Songs;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

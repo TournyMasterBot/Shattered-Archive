@@ -18,7 +18,7 @@ export class FindWater implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Find Water";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `help 'find water'

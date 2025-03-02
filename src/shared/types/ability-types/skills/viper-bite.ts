@@ -18,7 +18,7 @@ export class ViperBite implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Viper Bite";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = "";

@@ -11,7 +11,7 @@ export class Firestorm implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Firestorm";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Firestorm'
 FIRESTORM

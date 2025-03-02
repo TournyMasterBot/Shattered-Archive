@@ -121,7 +121,7 @@ const ServerCache = {
 
     // Load the server cache with the abilities.
     for (const ability of abilities) {
-      const key = ability.name.toLowerCase().trim();
+      const key = ability.name.trim();
       if (ServerCache.Abilities[key] === undefined) {
         ServerCache.Abilities[key] = ability;
       }
@@ -167,10 +167,9 @@ const ServerCache = {
 
     // Merge all imported ability groups.
     const abilityGroups = [...skills, ...spells, ...songs];
-
     // Load the server cache.
     for (const group of abilityGroups) {
-      const key = group.abilityGroup.toLowerCase().trim();
+      const key = group.abilityGroup.trim();
       if (ServerCache.AbilityGroups[key] === undefined) {
         ServerCache.AbilityGroups[key] = group;
       }
@@ -180,13 +179,10 @@ const ServerCache = {
       UnattachedSkillGroups: skills.length,
       UnattachedSpellGroups: spells.length,
       UnattachedSongGroups: songs.length,
-      SkillGroups: skills,
-      SpellGroups: spells,
-      SongGroups: songs
+      //SkillGroups: skills,
+      //SpellGroups: spells,
+      //SongGroups: songs
     });
-  },
-  async LoadAbilitiesFromFileCache(): Promise<void> {
-
   },
   async InitializeDamageTypes(): Promise<void> {
     const damageTypes: IDamageType[] = [];
@@ -337,11 +333,19 @@ const ServerCache = {
     const item = ServerCache.Items[itemKey];
     return item;
   },
+  GetAbilityGroupByName(abilityGroupName: string): IAbilityGroup | undefined {
+    if(abilityGroupName === undefined) {
+      return undefined;
+    }
+    const key = abilityGroupName.trim();
+    const abilityGroup = ServerCache.AbilityGroups[key];
+    return abilityGroup;
+  },
   GetAbilityByName(abilityName: string): IAbility | undefined {
     if(abilityName === undefined) {
       return undefined;
     }
-    const key = abilityName.toLowerCase().trim();
+    const key = abilityName.trim();
     const ability = ServerCache.Abilities[key];
     return ability;
   }

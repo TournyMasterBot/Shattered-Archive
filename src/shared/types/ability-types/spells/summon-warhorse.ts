@@ -12,7 +12,7 @@ export class SummonWarhorse implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Summon Warhorse";
+    this.name = this.constructor.name;
     this.helpFile = ``;
     this.manualDescription = ``;
     this.abilityGroupType = AbilityGroupType.Spells;

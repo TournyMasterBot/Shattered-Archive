@@ -11,7 +11,7 @@ export class ForceField implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Force Field";
+    this.name = this.constructor.name;
     this.helpFile = `
 help wujen
 Force Field - Utilizing their mastery over metal, the Wu Jen creates a field

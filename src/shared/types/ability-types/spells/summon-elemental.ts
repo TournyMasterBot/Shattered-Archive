@@ -12,7 +12,7 @@ export class SummonElemental implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Summon Elemental";
+    this.name = this.constructor.name;
     this.helpFile = `help 'Summon Elemental'
 'SUMMON ELEMENTAL'
 'SUMMON ELEMENTAL'

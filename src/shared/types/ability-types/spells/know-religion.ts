@@ -11,7 +11,7 @@ export class KnowReligion implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Know Religion";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Know Religion'
 KNOW RELIGION

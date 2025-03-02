@@ -11,7 +11,7 @@ export class HasteCrater implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Haste Crater";
+    this.name = this.constructor.name;
     this.helpFile = `
 HASTE CRATER
 

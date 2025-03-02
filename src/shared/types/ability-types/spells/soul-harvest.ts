@@ -12,7 +12,7 @@ export class SoulHarvest implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Soul Harvest";
+    this.name = this.constructor.name;
     this.helpFile = `soul harvest
 It's been told that a powerful Necromancer can take the heart harvested from
 the corpse of an individual and transfer its powers into that of another

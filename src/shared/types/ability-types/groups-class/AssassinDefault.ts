@@ -3,7 +3,7 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Sneak from "@shared/types/ability-types/skills/sneak";
-import Caltraps from "@shared/types/ability-types/skills/caltraps";
+import Caltraps from "@shared/types/ability-types/skills/Caltraps";
 import PoisonSmoke from "@shared/types/ability-types/skills/poison-smoke";
 import GroundControl from "@shared/types/ability-types/skills/ground-control";
 import Disarm from "@shared/types/ability-types/skills/disarm";
@@ -15,8 +15,8 @@ import Dodge from "@shared/types/ability-types/skills/dodge";
 import PoisonDagger from "@shared/types/ability-types/skills/poison-dagger";
 import Nerve from "@shared/types/ability-types/skills/nerve";
 import HandToHand from "@shared/types/ability-types/skills/hand-to-hand";
-import Backstab from "@shared/types/ability-types/skills/backstab";
-import Detection from "../groups-spells/detection";
+import Backstab from "@shared/types/ability-types/skills/Backstab";
+import Detection from "../groups-spells/Detection";
 import FlashBomb from "@shared/types/ability-types/skills/flashbomb";
 import ServerCache from "@shared/cache/server-cache";
 
@@ -28,7 +28,7 @@ export class AssassinDefault implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.AssassinDefault;
     this.abilityGroupType = AbilityGroupType.Default;
     this.abilities = [
@@ -53,11 +53,11 @@ export class AssassinDefault implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): AssassinDefault {
-    if (!AssassinDefault.instance) {
-      AssassinDefault.instance = new AssassinDefault();
+    if (!this.instance) {
+      this.instance = new this();
       ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return AssassinDefault.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

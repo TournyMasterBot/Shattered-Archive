@@ -11,7 +11,7 @@ export class PreventRecovery implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Prevent Recovery";
+    this.name = this.constructor.name;
     this.helpFile = `prevent recovery
 Syntax: c 'prevent recovery' <victim>
 

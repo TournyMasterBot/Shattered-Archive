@@ -12,7 +12,7 @@ export class Roundhouse implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Roundhouse";
+    this.name = this.constructor.name;
     this.helpFile = `
 help roundhouse
 ROUNDHOUSE

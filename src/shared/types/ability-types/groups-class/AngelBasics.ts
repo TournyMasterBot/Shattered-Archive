@@ -2,7 +2,7 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import BlindFighting from "@shared/types/ability-types/skills/blind-fighting";
+import BlindFighting from "@shared/types/ability-types/skills/BlindFighting";
 import Dodge from "@shared/types/ability-types/skills/dodge";
 import EnhancedDamage from "@shared/types/ability-types/skills/enhanced-damage";
 import FastHealing from "@shared/types/ability-types/skills/fast-healing";
@@ -17,7 +17,7 @@ import Spear from "@shared/types/ability-types/skills/spear";
 import Staff from "@shared/types/ability-types/skills/staff";
 import Sword from "@shared/types/ability-types/skills/sword";
 import ThirdAttack from "@shared/types/ability-types/skills/third-attack";
-import RomBasics from "@shared/types/ability-types/groups-class/rom-basics";
+import RomBasics from "@shared/types/ability-types/groups-class/RomBasics";
 import ServerCache from "@shared/cache/server-cache";
 
 export class AngelBasics implements IAbilityGroup {
@@ -31,7 +31,7 @@ export class AngelBasics implements IAbilityGroup {
   constructor() {
     this.name = this.constructor.name;
     const abilityGroups = [
-      ...RomBasics.GetInstance().Get<RomBasics>().abilities,
+      ...RomBasics.GetInstance().abilities,
       BlindFighting.GetInstance(),
       Spear.GetInstance(),
       Parry.GetInstance(),
@@ -56,11 +56,11 @@ export class AngelBasics implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): AngelBasics {
-    if (!AngelBasics.instance) {
-      AngelBasics.instance = new AngelBasics();
+    if (!this.instance) {
+      this.instance = new this();
       ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return AngelBasics.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

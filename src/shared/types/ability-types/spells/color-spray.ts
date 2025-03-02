@@ -11,7 +11,7 @@ export class ColorSpray implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Color Spray";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Color Spray'
 COLOR SPRAY 'COLOR SPRAY'

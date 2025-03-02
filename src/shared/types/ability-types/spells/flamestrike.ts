@@ -11,7 +11,7 @@ export class Flamestrike implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Flamestrike";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Flamestrike'
 FLAMESTRIKE

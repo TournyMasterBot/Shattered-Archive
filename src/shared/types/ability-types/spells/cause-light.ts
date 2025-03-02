@@ -12,7 +12,7 @@ export class CauseLight implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Cause Light";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'cause light'
 'CAUSE LIGHT' 'CAUSE SERIOUS' 'CAUSE CRITICAL' HARM

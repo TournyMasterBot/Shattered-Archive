@@ -18,7 +18,7 @@ export class DualWield implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "DualWield";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = `help 'dual wield'

@@ -11,7 +11,7 @@ export class Enlarge implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Enlarge";
+    this.name = this.constructor.name;
     this.helpFile = `
 ENLARGE REDUCE
 

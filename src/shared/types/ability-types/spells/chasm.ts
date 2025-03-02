@@ -11,7 +11,7 @@ export class Chasm implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Chasm";
+    this.name = this.constructor.name;
     this.helpFile = `
 Chasm - The Wu Jen splits open the earth and uses the altered terrain to
 their advantage, attempting to force enemy groups to break and scatter so as

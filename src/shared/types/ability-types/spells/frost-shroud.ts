@@ -11,7 +11,7 @@ export class FrostShroud implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Frost Shroud";
+    this.name = this.constructor.name;
     this.helpFile = `
 `;
     this.abilityGroupType = AbilityGroupType.Spells;

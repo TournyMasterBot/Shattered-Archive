@@ -12,7 +12,7 @@ export class CauseFatality implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Cause Fatality";
+    this.name = this.constructor.name;
     this.helpFile = `
 help harmful
 cause fatality  the most powerful harmful spell, possible instant death

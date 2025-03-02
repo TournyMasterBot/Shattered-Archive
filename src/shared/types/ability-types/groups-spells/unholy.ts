@@ -13,6 +13,7 @@ import SummonFelbeast from "@shared/types/ability-types/spells/summon-felbeast";
 import DarkBolt from "@shared/types/ability-types/spells/dark-bolt";
 import Fasting from "@shared/types/ability-types/spells/fasting";
 import DarkImmunity from "@shared/types/ability-types/spells/dark-immunity";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Unholy implements IAbilityGroup {
   static instance: Unholy;
@@ -22,7 +23,7 @@ export class Unholy implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Unholy;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -42,10 +43,11 @@ export class Unholy implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Unholy {
-    if (!Unholy.instance) {
-      Unholy.instance = new Unholy();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Unholy.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

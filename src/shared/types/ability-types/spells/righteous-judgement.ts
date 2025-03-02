@@ -11,7 +11,7 @@ export class RighteousJudgement implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Righteous Judgement";
+    this.name = this.constructor.name;
     this.helpFile = `
             // Add description here
         `;

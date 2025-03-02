@@ -11,7 +11,7 @@ export class RainbowPattern implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Rainbow Pattern";
+    this.name = this.constructor.name;
     this.helpFile = `rainbow pattern
 A bright rainbow of colors strikes your opponent. There is a good chance
 that it will leave your opponent blinded as well. It's a lot like color

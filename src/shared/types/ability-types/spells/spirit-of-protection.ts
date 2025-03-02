@@ -12,7 +12,7 @@ export class SpiritOfProtection implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Spirit of Protection";
+    this.name = this.constructor.name;
     this.helpFile = `help 'Spirit of Protection'
 SPIRIT OF PROTECTION
 

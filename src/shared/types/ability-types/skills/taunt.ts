@@ -18,7 +18,7 @@ export class Taunt implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Taunt";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

@@ -11,7 +11,7 @@ export class WitheringEnchant implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Withering Enchant";
+    this.name = this.constructor.name;
     this.helpFile = `WITHERING ENCHANT
 
 Syntax: cast 'withering enchant' <object>

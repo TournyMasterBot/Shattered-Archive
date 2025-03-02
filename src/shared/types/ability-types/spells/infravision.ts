@@ -12,7 +12,7 @@ export class Infravision implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Infravision";
+    this.name = this.constructor.name;
     this.helpFile = `help 'Infravision'
 INFRAVISION
 INFRAVISION

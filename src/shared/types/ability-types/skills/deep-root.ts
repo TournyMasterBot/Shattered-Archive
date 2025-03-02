@@ -12,7 +12,7 @@ export class Deeproot implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Deeproot";
+    this.name = this.constructor.name;
     this.helpFile = `
 help arboren
 DEEPROOT allows the Arboren to root into the earth making them almost immune to being stunned.

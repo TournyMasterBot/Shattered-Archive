@@ -11,7 +11,7 @@ export class Fasting implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Fasting";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;

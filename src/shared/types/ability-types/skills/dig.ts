@@ -12,7 +12,7 @@ export class Dig implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Dig";
+    this.name = this.constructor.name;
     this.helpFile = `
 help dig
 DIG BURY

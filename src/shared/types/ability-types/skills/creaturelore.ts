@@ -12,7 +12,7 @@ export class Creaturelore implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Creaturelore";
+    this.name = this.constructor.name;
     this.helpFile = `
 help creaturelore
 creaturelore

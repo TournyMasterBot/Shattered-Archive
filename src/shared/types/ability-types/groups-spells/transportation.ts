@@ -11,6 +11,7 @@ import WordOfRecall from "@shared/types/ability-types/spells/word-of-recall";
 import Nexus from "@shared/types/ability-types/spells/nexus";
 import Summon from "@shared/types/ability-types/spells/summon";
 import Waypoint from "@shared/types/ability-types/spells/waypoint";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Transportation implements IAbilityGroup {
   static instance: Transportation;
@@ -20,7 +21,7 @@ export class Transportation implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Transportation;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -38,10 +39,11 @@ export class Transportation implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Transportation {
-    if (!Transportation.instance) {
-      Transportation.instance = new Transportation();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Transportation.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

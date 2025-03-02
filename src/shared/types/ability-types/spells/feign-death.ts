@@ -11,7 +11,7 @@ export class FeignDeath implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Feign Death";
+    this.name = this.constructor.name;
     this.helpFile = `
 'FEIGN DEATH'
 

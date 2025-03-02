@@ -12,7 +12,7 @@ export class SummonManticore implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Summon Manticore";
+    this.name = this.constructor.name;
     this.helpFile = `SUMMON MANTICORE
 
 Syntax: cast 'summon manticore'

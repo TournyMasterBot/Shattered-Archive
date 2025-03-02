@@ -8,6 +8,7 @@ import Haste from "@shared/types/ability-types/spells/haste";
 import WaterBreathing from "@shared/types/ability-types/spells/water-breathing";
 import Infravision from "@shared/types/ability-types/spells/infravision";
 import LightFoot from "@shared/types/ability-types/spells/light-foot";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Enhancement implements IAbilityGroup {
   static instance: Enhancement;
@@ -17,7 +18,7 @@ export class Enhancement implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Enhancement;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -32,10 +33,11 @@ export class Enhancement implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Enhancement {
-    if (!Enhancement.instance) {
-      Enhancement.instance = new Enhancement();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Enhancement.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

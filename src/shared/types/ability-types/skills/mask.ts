@@ -18,7 +18,7 @@ export class Mask implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Mask";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `mask

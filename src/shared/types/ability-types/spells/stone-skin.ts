@@ -14,7 +14,7 @@ export class StoneSkin implements IAbility {
   abilityBuffVariable?: string | undefined;
 
   constructor() {
-    this.name = "Stone Skin";
+    this.name = this.constructor.name;
     this.helpFile = `help 'Stone Skin'
 SHIELD 'STONE SKIN'
 SHIELD 'STONE SKIN'

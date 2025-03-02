@@ -12,7 +12,7 @@ export class MagicMissile implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Magic Missile";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Magic Missile'
 'MAGIC MISSILE'

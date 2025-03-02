@@ -18,7 +18,7 @@ export class WeCome implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "We Come, We Come";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Songs;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

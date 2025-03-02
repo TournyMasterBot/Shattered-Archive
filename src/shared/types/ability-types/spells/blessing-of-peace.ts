@@ -18,7 +18,7 @@ export class BlessingOfPeace implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Blessing of Peace";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

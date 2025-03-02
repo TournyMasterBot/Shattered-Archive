@@ -12,7 +12,7 @@ export class ShrinkSkull implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Shrink Skull";
+    this.name = this.constructor.name;
     this.helpFile = `
 `;
     this.manualDescription = "";

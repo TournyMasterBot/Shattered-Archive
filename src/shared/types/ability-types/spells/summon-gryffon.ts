@@ -12,7 +12,7 @@ export class SummonGryffon implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Summon Gryffon";
+    this.name = this.constructor.name;
     this.helpFile = `help 'Summon Gryffon'
 'SUMMON GRYFFON'
 'SUMMON GRYFFON'

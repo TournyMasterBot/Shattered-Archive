@@ -11,7 +11,7 @@ export class Poultice implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Poultice";
+    this.name = this.constructor.name;
     this.helpFile = `help help Poultice
 poultice
 Primitive witch doctors may bind and treat the wounds of their tribe

@@ -6,6 +6,7 @@ import Chasm from "@shared/types/ability-types/spells/chasm";
 import FlamingSoul from "@shared/types/ability-types/spells/flaming-soul";
 import Stalagmite from "@shared/types/ability-types/spells/stalagmite";
 import SummonMonster from "@shared/types/ability-types/spells/summon-monster";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Earth implements IAbilityGroup {
   static instance: Earth;
@@ -15,17 +16,27 @@ export class Earth implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Earth;
     this.abilityGroupType = AbilityGroupType.Spells;
-    this.abilities = [Chasm.GetInstance(), FlamingSoul.GetInstance(), SummonMonster.GetInstance(), Stalagmite.GetInstance()];
+    this.abilities = [
+      Chasm.GetInstance(), 
+      FlamingSoul.GetInstance(), 
+      SummonMonster.GetInstance(), 
+      Stalagmite.GetInstance()
+    ];
+  }
+
+  public static GetInstance(): Earth {
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
+    }
+    return this.instance;
   }
 
   Get<T>(): T {
-    if (!Earth.instance) {
-      Earth.instance = new Earth();
-    }
-    return Earth.instance as T;
+    return Earth.GetInstance() as T;
   }
 }
 

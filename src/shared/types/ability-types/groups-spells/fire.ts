@@ -6,6 +6,7 @@ import FlameWall from "@shared/types/ability-types/spells/flame-wall";
 import FlamingSoul from "@shared/types/ability-types/spells/flaming-soul";
 import Ignite from "@shared/types/ability-types/spells/ignite";
 import ScorchingWinds from "@shared/types/ability-types/spells/scorching-winds";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Fire implements IAbilityGroup {
   static instance: Fire;
@@ -15,18 +16,24 @@ export class Fire implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Fire;
     this.abilityGroupType = AbilityGroupType.Spells;
-    this.abilities = [FlameWall.GetInstance(), FlamingSoul.GetInstance(), Ignite.GetInstance(), ScorchingWinds.GetInstance()];
+    this.abilities = [
+      FlameWall.GetInstance(), 
+      FlamingSoul.GetInstance(), 
+      Ignite.GetInstance(), 
+      ScorchingWinds.GetInstance()
+    ];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): Fire {
-    if (!Fire.instance) {
-      Fire.instance = new Fire();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Fire.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

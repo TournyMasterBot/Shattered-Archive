@@ -11,7 +11,7 @@ export class FakeIllness implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Fake Illness";
+    this.name = this.constructor.name;
     this.helpFile = `
 FAKE ILLNESS
 

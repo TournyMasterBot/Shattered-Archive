@@ -18,7 +18,7 @@ export class Waylay implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Waylay";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

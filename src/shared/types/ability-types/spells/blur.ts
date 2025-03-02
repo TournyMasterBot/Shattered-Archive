@@ -18,7 +18,7 @@ export class Blur implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Blur";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

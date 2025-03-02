@@ -11,7 +11,7 @@ export class Earthquake implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Earthquake";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Earthquake'
 'EARTHQUAKE'

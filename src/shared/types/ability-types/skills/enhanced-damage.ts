@@ -18,7 +18,7 @@ export class EnhancedDamage implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "EnhancedDamage";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = `help 'enhanced damage'

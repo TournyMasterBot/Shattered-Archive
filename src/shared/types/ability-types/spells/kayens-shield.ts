@@ -12,7 +12,7 @@ export class KayensShield implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Kayens Shield";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.manualDescription = "";
     this.abilityGroupType = AbilityGroupType.Spells;

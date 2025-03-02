@@ -18,7 +18,7 @@ export class RunRiot implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Run Riot";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Songs;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

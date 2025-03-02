@@ -12,7 +12,7 @@ export class SummonWhompingWillow implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Summon Whomping Willow";
+    this.name = this.constructor.name;
     this.helpFile = ``;
     this.manualDescription = ``;
     this.abilityGroupType = AbilityGroupType.Spells;

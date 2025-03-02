@@ -11,7 +11,7 @@ export class Permancy implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Permancy";
+    this.name = this.constructor.name;
     this.helpFile = `PERMANENCY
 
 Syntax: cast 'permanency' <object>

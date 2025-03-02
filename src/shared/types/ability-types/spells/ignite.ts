@@ -12,7 +12,7 @@ export class Ignite implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Ignite";
+    this.name = this.constructor.name;
     this.helpFile = `
 help wujen
 Ignite - The Wu Jen conjures an overpowering heat to wash over their enemy. 

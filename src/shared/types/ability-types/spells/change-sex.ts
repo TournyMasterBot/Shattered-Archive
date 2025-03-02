@@ -11,7 +11,7 @@ export class ChangeSex implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Change Sex";
+    this.name = this.constructor.name;
     this.helpFile = `'CHANGE SEX'
 Syntax: cast 'change sex' <victim>
 This spell changes the sex of the victim (temporarily).`;

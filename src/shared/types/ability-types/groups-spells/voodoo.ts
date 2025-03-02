@@ -20,6 +20,7 @@ import ShrinkSkull from "@shared/types/ability-types/spells/shrink-skull";
 import Haunt from "@shared/types/ability-types/spells/haunt";
 import ContinualLight from "@shared/types/ability-types/spells/continual-light";
 import Beastform from "@shared/types/ability-types/spells/beast-form";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Voodoo implements IAbilityGroup {
   static instance: Voodoo;
@@ -29,7 +30,7 @@ export class Voodoo implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Voodoo;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -56,10 +57,11 @@ export class Voodoo implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Voodoo {
-    if (!Voodoo.instance) {
-      Voodoo.instance = new Voodoo();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Voodoo.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

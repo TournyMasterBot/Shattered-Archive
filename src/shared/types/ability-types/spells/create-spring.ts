@@ -11,7 +11,7 @@ export class CreateSpring implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Create Spring";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Create Spring'
 'CREATE SPRING'

@@ -12,7 +12,7 @@ export class SummonEarthlord implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Summon Earthlord";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.manualDescription = "";
     this.abilityGroupType = AbilityGroupType.Spells;

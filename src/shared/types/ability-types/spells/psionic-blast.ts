@@ -11,7 +11,7 @@ export class PsionicBlast implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Psionic Blast";
+    this.name = this.constructor.name;
     this.helpFile = `'PSIONIC BLAST'
 Syntax: cast 'psionic blast' <target>
 It is rumored that the Deep Gnomes have developed a defensive ability in

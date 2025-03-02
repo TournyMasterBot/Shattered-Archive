@@ -12,7 +12,7 @@ export class Tornado implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Tornado";
+    this.name = this.constructor.name;
     this.helpFile = `help tornado
 TORNADO
 Syntax:  cast 'tornado' <target>

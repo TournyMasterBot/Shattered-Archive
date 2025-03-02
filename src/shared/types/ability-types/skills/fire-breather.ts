@@ -18,7 +18,7 @@ export class FireBreather implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Fire Breather";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = ` 

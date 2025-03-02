@@ -18,7 +18,7 @@ export class Riding implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Riding";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = `help Riding

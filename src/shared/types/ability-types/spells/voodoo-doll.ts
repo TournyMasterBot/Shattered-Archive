@@ -12,7 +12,7 @@ export class VoodooDoll implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Voodoo Doll";
+    this.name = this.constructor.name;
     this.helpFile = `VOODOO DOLL
 
 Syntax: c 'voodoo doll' <target>

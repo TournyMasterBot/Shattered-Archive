@@ -11,7 +11,7 @@ export class Devotion implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Devotion";
+    this.name = this.constructor.name;
     this.helpFile = `
 DEVOTION
 

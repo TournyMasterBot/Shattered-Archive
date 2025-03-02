@@ -12,7 +12,7 @@ export class Shadowbolt implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Shadowbolt";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.manualDescription = "";
     this.abilityGroupType = AbilityGroupType.Spells;

@@ -18,16 +18,19 @@ export class MasteryDagger implements IAbilityGroup {
     this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.MasteryDagger;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [Stab.GetInstance(), Hurl.GetInstance(), ConcealedAttack.GetInstance()];
+    this.abilities = [
+      Stab.GetInstance(), 
+      Hurl.GetInstance(), 
+      ConcealedAttack.GetInstance()];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): MasteryDagger {
-    if (!MasteryDagger.instance) {
-      MasteryDagger.instance = new MasteryDagger();
+    if (!this.instance) {
+      this.instance = new this();
       ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return MasteryDagger.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

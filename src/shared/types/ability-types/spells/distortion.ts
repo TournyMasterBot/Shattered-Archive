@@ -11,7 +11,7 @@ export class Distortion implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Distortion";
+    this.name = this.constructor.name;
     this.helpFile = `
 DISTORTION
 

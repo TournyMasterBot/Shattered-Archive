@@ -18,7 +18,7 @@ export class TravelTune implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Travel Tune";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Songs;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

@@ -18,7 +18,7 @@ export class AlterSelf implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Alter Self";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

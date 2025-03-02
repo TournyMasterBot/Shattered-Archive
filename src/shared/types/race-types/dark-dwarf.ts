@@ -1,6 +1,6 @@
 
 import IAbility from "@shared/types/ability-types/ability";
-import Berserk from "@shared/types/ability-types/skills/berserk";
+import Berserk from "@shared/types/ability-types/skills/Berserk";
 import Toughness from "@shared/types/ability-types/skills/toughness";
 import Infravision from "@shared/types/ability-types/spells/infravision";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";

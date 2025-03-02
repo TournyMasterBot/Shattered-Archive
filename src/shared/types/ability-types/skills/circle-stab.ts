@@ -12,7 +12,7 @@ export class CircleStab implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Circle Stab";
+    this.name = this.constructor.name;
     this.helpFile = `
 circle stab
 Syntax: circlestab <victim>

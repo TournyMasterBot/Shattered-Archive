@@ -18,7 +18,7 @@ export class CauseCritical implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Cause Critical";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

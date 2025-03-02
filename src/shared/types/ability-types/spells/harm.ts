@@ -11,7 +11,7 @@ export class Harm implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Harm";
+    this.name = this.constructor.name;
     this.helpFile = `
 harm            a very deadly harmful spell`;
     this.abilityGroupType = AbilityGroupType.Spells;

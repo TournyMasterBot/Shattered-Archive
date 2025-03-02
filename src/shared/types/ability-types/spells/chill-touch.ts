@@ -12,7 +12,7 @@ export class ChillTouch implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Chill Touch";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Chill Touch'
 'CHILL TOUCH'

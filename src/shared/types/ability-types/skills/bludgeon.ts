@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -12,7 +13,7 @@ export class Bludgeon implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Bludgeon";
+    this.name = this.constructor.name;
     this.helpFile = `
 BLUDGEON
 Syntax: bludgeon <target>
@@ -31,10 +32,11 @@ Hit your opponent with a staff to stun them.
 
   // Method to get the single instance of the class
   public static GetInstance(): Bludgeon {
-    if (!Bludgeon.instance) {
-      Bludgeon.instance = new Bludgeon();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Bludgeon.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

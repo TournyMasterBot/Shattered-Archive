@@ -12,7 +12,7 @@ export class CreateTree implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Create Tree";
+    this.name = this.constructor.name;
     this.manualDescription = `
 Creates a tree
 `;

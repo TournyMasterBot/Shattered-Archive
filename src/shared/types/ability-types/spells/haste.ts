@@ -13,7 +13,7 @@ export class Haste implements IAbility {
   abilityBuffVariable?: string | undefined;
 
   constructor() {
-    this.name = "Haste";
+    this.name = this.constructor.name;
     this.helpFile = `
 help Haste
 HASTE

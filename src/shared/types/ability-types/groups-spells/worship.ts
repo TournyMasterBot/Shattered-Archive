@@ -7,6 +7,7 @@ import ImbueMount from "@shared/types/ability-types/spells/imbue-mount";
 import HolySteed from "@shared/types/ability-types/spells/holy-steed";
 import Devotion from "@shared/types/ability-types/spells/devotion";
 import Inspire from "@shared/types/ability-types/spells/inspire";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Worship implements IAbilityGroup {
   static instance: Worship;
@@ -16,7 +17,7 @@ export class Worship implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Worship;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -30,10 +31,11 @@ export class Worship implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Worship {
-    if (!Worship.instance) {
-      Worship.instance = new Worship();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Worship.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

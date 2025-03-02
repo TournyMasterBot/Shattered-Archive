@@ -18,7 +18,7 @@ export class SongOfPeace implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Song of Peace";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Songs;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

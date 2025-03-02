@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -18,7 +19,7 @@ export class Age implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Age";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Specialty;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = `help age
@@ -47,10 +48,11 @@ Yinn      20-30     31-50         51-70     71-90         91-110`;
   }
   // Method to get the single instance of the class
   public static GetInstance(): Age {
-    if (!Age.instance) {
-      Age.instance = new Age();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Age.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

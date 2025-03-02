@@ -11,7 +11,7 @@ export class CreateRunehammer implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Create Runehammer";
+    this.name = this.constructor.name;
     this.helpFile = ""; // Add help text if needed
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;

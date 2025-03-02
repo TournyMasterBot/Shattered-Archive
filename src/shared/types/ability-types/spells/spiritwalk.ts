@@ -12,7 +12,7 @@ export class Spiritwalk implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Spiritwalk";
+    this.name = this.constructor.name;
     this.helpFile = `help spiritwalk
 spiritwalk
 Syntax: c spiritwalk

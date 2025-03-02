@@ -18,7 +18,7 @@ export class Staff implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Staff";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = `

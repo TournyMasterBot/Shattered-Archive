@@ -12,7 +12,7 @@ export class SelfProjection implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Self Projection";
+    this.name = this.constructor.name;
     this.helpFile = `
 SELF PROJECTION
 SELF PROJECTION

@@ -11,7 +11,7 @@ export class HolyPresence implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Holy Presence";
+    this.name = this.constructor.name;
     this.helpFile = `
 holy presence
 Syntax: c 'holy presence' <target>

@@ -12,7 +12,7 @@ export class CatchArrow implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Catch Arrow";
+    this.name = this.constructor.name;
     this.helpFile = `
 CATCH ARROW
  

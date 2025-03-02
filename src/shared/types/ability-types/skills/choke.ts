@@ -12,7 +12,7 @@ export class Choke implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Choke";
+    this.name = this.constructor.name;
     this.helpFile = `
 help choke
 mastery whip lash yank choke

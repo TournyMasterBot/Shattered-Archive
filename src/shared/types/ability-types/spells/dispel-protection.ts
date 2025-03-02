@@ -11,7 +11,7 @@ export class DispelProtection implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Dispel Protection";
+    this.name = this.constructor.name;
     this.helpFile = `
 'DISPEL PROTECTION'
 DISPEL PROTECTION

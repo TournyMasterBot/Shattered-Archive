@@ -12,7 +12,7 @@ export class Sequestor implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Sequestor";
+    this.name = this.constructor.name;
     this.helpFile = `
 SEQUESTOR
 

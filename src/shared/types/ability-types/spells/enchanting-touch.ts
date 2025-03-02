@@ -11,7 +11,7 @@ export class EnchantingTouch implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Enchanting Touch";
+    this.name = this.constructor.name;
     this.helpFile = `
 ENCHANTING TOUCH
 

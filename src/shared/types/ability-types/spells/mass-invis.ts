@@ -11,7 +11,7 @@ export class MassInvis implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Mass Invis";
+    this.name = this.constructor.name;
     this.helpFile = `
 help mass invis
 INVIS 'MASS INVIS' INVISIBILITY

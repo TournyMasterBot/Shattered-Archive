@@ -11,7 +11,7 @@ export class DeathShroud implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Death Shroud";
+    this.name = this.constructor.name;
     this.helpFile = `
 DEATH SHROUD
 

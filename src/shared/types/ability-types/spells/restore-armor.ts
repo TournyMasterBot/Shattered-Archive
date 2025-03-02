@@ -11,7 +11,7 @@ export class RestoreArmor implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Restore Armor";
+    this.name = this.constructor.name;
     this.helpFile = `
 RESTORE ARMOR
 

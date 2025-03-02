@@ -19,7 +19,7 @@ export class ShieldCleave implements IAbility {
 
   // Private constructor to prevent direct instantiation
   private constructor() {
-    this.name = "Shield Cleave";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `help 'Shield Cleave'

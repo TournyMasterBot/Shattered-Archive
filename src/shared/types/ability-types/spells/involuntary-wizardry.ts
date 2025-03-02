@@ -12,7 +12,7 @@ export class InvoluntaryWizardry implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Involuntary Wizardry";
+    this.name = this.constructor.name;
     this.helpFile = `
 INVOLUNTARY WIZARDRY
 

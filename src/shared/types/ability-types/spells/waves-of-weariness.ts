@@ -11,7 +11,7 @@ export class WavesOfWeariness implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Waves of Weariness";
+    this.name = this.constructor.name;
     this.helpFile = `WAVES OF WEARINESS
 
 Syntax: cast 'waves of weariness' <victim>

@@ -18,16 +18,20 @@ export class MasteryFlail implements IAbilityGroup {
     this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.MasteryFlail;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [Entwine.GetInstance(), Sting.GetInstance(), Strip.GetInstance()];
+    this.abilities = [
+      Entwine.GetInstance(), 
+      Sting.GetInstance(), 
+      Strip.GetInstance()
+    ];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): MasteryFlail {
-    if (!MasteryFlail.instance) {
-      MasteryFlail.instance = new MasteryFlail();
+    if (!this.instance) {
+      this.instance = new this();
       ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return MasteryFlail.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

@@ -18,7 +18,7 @@ export class MakeJewelry implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Make Jewelry";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `makejewelry

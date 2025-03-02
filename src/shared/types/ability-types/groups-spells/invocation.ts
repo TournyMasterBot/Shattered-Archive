@@ -14,6 +14,7 @@ import ConeOfCold from "@shared/types/ability-types/spells/cone-of-cold";
 import BindGolem from "@shared/types/ability-types/spells/bind-golem";
 import Web from "@shared/types/ability-types/spells/web";
 import Solidify from "@shared/types/ability-types/spells/solidify";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Invocation implements IAbilityGroup {
   private static instance: Invocation;
@@ -23,7 +24,7 @@ export class Invocation implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Invocation;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -44,10 +45,11 @@ export class Invocation implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Invocation {
-    if (!Invocation.instance) {
-      Invocation.instance = new Invocation();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Invocation.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

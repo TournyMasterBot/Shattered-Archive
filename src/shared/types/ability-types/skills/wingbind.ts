@@ -18,7 +18,7 @@ export class Wingbind implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Wingbind";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = "";

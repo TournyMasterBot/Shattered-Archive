@@ -12,7 +12,7 @@ export class Shadowcloak implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Shadowcloak";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.manualDescription = "";
     this.abilityGroupType = AbilityGroupType.Spells;

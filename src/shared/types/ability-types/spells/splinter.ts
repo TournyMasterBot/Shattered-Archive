@@ -12,7 +12,7 @@ export class Splinter implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Splinter";
+    this.name = this.constructor.name;
     this.helpFile = `SPLINTER
 SPLINTER
 

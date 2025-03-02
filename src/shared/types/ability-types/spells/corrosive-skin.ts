@@ -12,7 +12,7 @@ export class CorrosiveSkin implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Corrosive Skin";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;

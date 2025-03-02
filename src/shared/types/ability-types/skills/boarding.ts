@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -12,7 +13,7 @@ export class Boarding implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Boarding";
+    this.name = this.constructor.name;
     this.helpFile = `
 BOARDING
 The swashbuckler is the undisputed master of the sea. With reflexes as
@@ -32,10 +33,11 @@ upon his ship while he attacks from within theirs.
 
   // Method to get the single instance of the class
   public static GetInstance(): Boarding {
-    if (!Boarding.instance) {
-      Boarding.instance = new Boarding();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Boarding.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

@@ -12,7 +12,7 @@ export class WaterBreathing implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Water Breathing";
+    this.name = this.constructor.name;
     this.helpFile = `help water breath
 'WATER BREATHING'
 'WATER BREATHING'

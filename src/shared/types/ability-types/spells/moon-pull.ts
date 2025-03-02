@@ -11,7 +11,7 @@ export class MoonPull implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Moon Pull";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;

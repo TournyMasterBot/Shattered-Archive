@@ -11,7 +11,7 @@ export class LayOnHands implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Lay on Hands";
+    this.name = this.constructor.name;
     this.helpFile = `
 lay on hands
 syntax: cast 'lay on hands' <target>

@@ -11,6 +11,7 @@ import WrathOfNature from "@shared/types/ability-types/spells/wrath-of-nature";
 import ProtectionCold from "@shared/types/ability-types/spells/protection-cold";
 import NatureGrowth from "@shared/types/ability-types/spells/nature-growth";
 import EnhanceSeed from "@shared/types/ability-types/spells/enhance-seed";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Nature implements IAbilityGroup {
   static instance: Nature;
@@ -20,7 +21,7 @@ export class Nature implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Nature;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -37,17 +38,15 @@ export class Nature implements IAbilityGroup {
   }
 
   public static GetInstance(): Nature {
-    if (!Nature.instance) {
-      Nature.instance = new Nature();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Nature.instance;
+    return this.instance;
   }
 
   public Get<T>(): T {
-    if (!Nature.instance) {
-      Nature.instance = new Nature();
-    }
-    return Nature.instance as T;
+    return Nature.GetInstance() as T;
   }
 }
 

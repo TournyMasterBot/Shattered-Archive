@@ -11,7 +11,7 @@ export class Fear implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Fear";
+    this.name = this.constructor.name;
     this.helpFile = `FEAR
 FEAR
 

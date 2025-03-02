@@ -18,7 +18,7 @@ export class GourdOfHealth implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Gourd of Health";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `Sipping on a gourd to recover some health.`;

@@ -12,7 +12,7 @@ export class Imbue implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Imbue";
+    this.name = this.constructor.name;
     this.helpFile = `
 help Imbue
 IMBUE

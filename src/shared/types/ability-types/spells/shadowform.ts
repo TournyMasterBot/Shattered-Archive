@@ -12,7 +12,7 @@ export class Shadowform implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Shadowform";
+    this.name = this.constructor.name;
     this.helpFile = `SHADOWFORM
 
 Syntax: cast shadowform

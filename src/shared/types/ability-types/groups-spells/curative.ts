@@ -7,6 +7,7 @@ import CureBugbearBite from "@shared/types/ability-types/spells/cure-bugbear-bit
 import CureDisease from "@shared/types/ability-types/spells/cure-disease";
 import CureFatigue from "@shared/types/ability-types/spells/cure-fatigue";
 import CurePoison from "@shared/types/ability-types/spells/cure-poison";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Curative implements IAbilityGroup {
   static instance: Curative;
@@ -16,7 +17,7 @@ export class Curative implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Curative;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -30,10 +31,11 @@ export class Curative implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Curative {
-    if (!Curative.instance) {
-      Curative.instance = new Curative();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Curative.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

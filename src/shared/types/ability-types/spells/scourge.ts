@@ -12,7 +12,7 @@ export class Scourge implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Scourge";
+    this.name = this.constructor.name;
     this.helpFile = `
 SCOURGE
 

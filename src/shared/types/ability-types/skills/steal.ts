@@ -18,7 +18,7 @@ export class Steal implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Steal";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active; // Assuming it's an active skill based on the usage of stealing
     this.helpFile = `

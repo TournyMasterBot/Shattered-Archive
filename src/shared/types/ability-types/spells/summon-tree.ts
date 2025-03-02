@@ -12,7 +12,7 @@ export class SummonTree implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Summon Tree";
+    this.name = this.constructor.name;
     this.helpFile = `SUMMON TREE
 
 Syntax: cast 'summon tree'

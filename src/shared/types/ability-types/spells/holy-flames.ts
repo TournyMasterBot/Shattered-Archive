@@ -11,7 +11,7 @@ export class HolyFlame implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Holy Flame";
+    this.name = this.constructor.name;
     this.helpFile = `
 holy flame
 Syntax: c 'holy flame' <victim> OR c 'holy flame' <direction> <target>

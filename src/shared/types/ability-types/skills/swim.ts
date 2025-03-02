@@ -18,7 +18,7 @@ export class Swim implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Swim";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `help swim

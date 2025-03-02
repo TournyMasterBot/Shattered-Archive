@@ -2,7 +2,7 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Axe from "@shared/types/ability-types/skills/axe";
+import Axe from "@shared/types/ability-types/skills/Axe";
 import Mace from "@shared/types/ability-types/skills/mace";
 import Sword from "@shared/types/ability-types/skills/sword";
 import Dagger from "@shared/types/ability-types/skills/dagger";
@@ -11,6 +11,7 @@ import Whip from "@shared/types/ability-types/skills/whip";
 import Flail from "@shared/types/ability-types/skills/flail";
 import Spear from "@shared/types/ability-types/skills/spear";
 import Staff from "@shared/types/ability-types/skills/staff";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Weaponsmaster implements IAbilityGroup {
   static instance: Weaponsmaster;
@@ -20,7 +21,7 @@ export class Weaponsmaster implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Weaponsmaster;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilities = [
@@ -38,10 +39,11 @@ export class Weaponsmaster implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Weaponsmaster {
-    if (!Weaponsmaster.instance) {
-      Weaponsmaster.instance = new Weaponsmaster();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Weaponsmaster.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

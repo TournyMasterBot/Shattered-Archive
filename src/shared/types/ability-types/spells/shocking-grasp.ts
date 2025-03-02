@@ -12,7 +12,7 @@ export class ShockingGrasp implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Shocking Grasp";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Shocking Grasp'
 'SHOCKING GRASP'

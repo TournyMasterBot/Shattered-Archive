@@ -11,7 +11,7 @@ export class NightShield implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Night Shield";
+    this.name = this.constructor.name;
     this.helpFile = `
 `; // Add appropriate help text if available
     this.abilityGroupType = AbilityGroupType.Unknown; // Set appropriate group type

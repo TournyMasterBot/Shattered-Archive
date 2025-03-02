@@ -18,7 +18,7 @@ export class AlterElements implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Alter Elements";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

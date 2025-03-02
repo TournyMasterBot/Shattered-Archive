@@ -11,7 +11,7 @@ export class ProximityDispel implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Proximity Dispel";
+    this.name = this.constructor.name;
     this.helpFile = `help 'Proximity Dispel'
 proximity dispel
 Syntax: cast 'proximity dispel'

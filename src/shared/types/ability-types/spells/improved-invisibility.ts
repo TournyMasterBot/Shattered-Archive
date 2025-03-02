@@ -12,7 +12,7 @@ export class ImprovedInvisibility implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Improved Invisibility";
+    this.name = this.constructor.name;
     this.helpFile = `
 IMPROVED INVISIBILITY
 Improved invisibility is the same as invisibility except that the spell

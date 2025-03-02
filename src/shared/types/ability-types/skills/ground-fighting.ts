@@ -18,7 +18,7 @@ export class GroundFighting implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Ground Fighting";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

@@ -11,7 +11,7 @@ export class Curse implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Curse";
+    this.name = this.constructor.name;
     this.helpFile = `
 help curse
 CURSE

@@ -11,7 +11,7 @@ export class Drown implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Drown";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Drown'
 'DROWN'

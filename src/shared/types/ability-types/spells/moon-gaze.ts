@@ -11,7 +11,7 @@ export class MoonGaze implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Moon Gaze";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;

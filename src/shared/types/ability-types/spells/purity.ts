@@ -11,7 +11,7 @@ export class Purity implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Purity";
+    this.name = this.constructor.name;
     this.helpFile = ``;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;

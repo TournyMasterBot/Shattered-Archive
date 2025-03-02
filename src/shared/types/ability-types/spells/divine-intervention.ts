@@ -11,7 +11,7 @@ export class DivineIntervention implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Divine Intervention";
+    this.name = this.constructor.name;
     this.helpFile = `
 divine intervention
 Syntax: cast 'divine intervention' <target>

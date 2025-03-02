@@ -12,7 +12,7 @@ export class Heal implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Heal";
+    this.name = this.constructor.name;
     this.helpFile = `
 heal            the most powerful healing spell
 `;

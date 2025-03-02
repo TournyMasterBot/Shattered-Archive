@@ -11,7 +11,7 @@ export class QuickLoad implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Quick Load";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;

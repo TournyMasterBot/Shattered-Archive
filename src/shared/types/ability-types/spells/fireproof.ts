@@ -11,7 +11,7 @@ export class Fireproof implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Fireproof";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Fireproof'
 FIREPROOF

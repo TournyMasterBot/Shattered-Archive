@@ -18,7 +18,7 @@ export class Swindle implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Swindle";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

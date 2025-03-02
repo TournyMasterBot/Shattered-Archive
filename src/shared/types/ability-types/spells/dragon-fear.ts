@@ -11,7 +11,7 @@ export class DragonFear implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Dragon Fear";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Dragon Fear'
 'DRAGON FEAR'

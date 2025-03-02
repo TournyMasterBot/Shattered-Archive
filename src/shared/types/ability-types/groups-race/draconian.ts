@@ -16,16 +16,18 @@ export class Draconian implements IAbilityGroup {
     this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Draconian;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [Dodge.GetInstance()];
+    this.abilities = [
+      Dodge.GetInstance()
+    ];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): Draconian {
-    if (!Draconian.instance) {
-      Draconian.instance = new Draconian();
+    if (!this.instance) {
+      this.instance = new this();
       ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Draconian.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

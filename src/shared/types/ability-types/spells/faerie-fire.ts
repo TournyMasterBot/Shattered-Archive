@@ -11,7 +11,7 @@ export class FaerieFire implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Faerie Fire";
+    this.name = this.constructor.name;
     this.helpFile = `'FAERIE FIRE'
 'FAERIE FIRE'
 

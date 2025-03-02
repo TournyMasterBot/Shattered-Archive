@@ -10,6 +10,7 @@ import Flamestrike from "@shared/types/ability-types/spells/flamestrike";
 import DispelNeutral from "@shared/types/ability-types/spells/dispel-neutral";
 import DispelGood from "@shared/types/ability-types/spells/dispel-good";
 import HeatMetal from "@shared/types/ability-types/spells/heat-metal";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Attack implements IAbilityGroup {
   static instance: Attack;
@@ -19,7 +20,7 @@ export class Attack implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Attack;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -36,10 +37,11 @@ export class Attack implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Attack {
-    if (!Attack.instance) {
-      Attack.instance = new Attack();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Attack.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

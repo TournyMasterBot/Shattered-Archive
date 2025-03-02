@@ -12,7 +12,7 @@ export class ImbueMount implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Imbue Mount";
+    this.name = this.constructor.name;
     this.helpFile = `
 IMBUE MOUNT
 

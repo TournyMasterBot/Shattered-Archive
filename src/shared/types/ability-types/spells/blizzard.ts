@@ -18,7 +18,7 @@ export class Blizzard implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Blizzard";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

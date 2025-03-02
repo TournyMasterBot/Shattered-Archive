@@ -11,7 +11,7 @@ export class CreateCauldron implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Create Cauldron";
+    this.name = this.constructor.name;
     this.helpFile = `
 CREATE CAULDRON
 CREATE CAULDRON

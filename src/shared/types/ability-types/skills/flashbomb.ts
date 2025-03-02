@@ -18,7 +18,7 @@ export class FlashBomb implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Flash Bomb";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

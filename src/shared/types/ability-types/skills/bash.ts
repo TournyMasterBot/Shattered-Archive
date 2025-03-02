@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -18,7 +19,7 @@ export class Bash implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Bash";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `help bash
@@ -35,10 +36,11 @@ is generally not a wise idea.`;
 
   // Method to get the single instance of the class
   public static GetInstance(): Bash {
-    if (!Bash.instance) {
-      Bash.instance = new Bash();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Bash.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

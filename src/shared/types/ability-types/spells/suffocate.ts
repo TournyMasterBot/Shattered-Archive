@@ -12,7 +12,7 @@ export class Suffocate implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Suffocate";
+    this.name = this.constructor.name;
     this.helpFile = `help wujen
 Suffocate - Drawing all of the room in the air into themselves, a Wu Jen can
 create a temporary vacuum, stifling the breath of anyone not grouped with

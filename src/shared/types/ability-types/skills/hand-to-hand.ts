@@ -18,7 +18,7 @@ export class HandToHand implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "HandToHand";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = `help 'Hand to Hand'

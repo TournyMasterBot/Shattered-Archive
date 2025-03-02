@@ -18,7 +18,7 @@ export class Blend implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Blend";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

@@ -18,7 +18,7 @@ export class WeaknessWithin implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Weakness Within";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Songs;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

@@ -14,7 +14,7 @@ export class Shield implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Shield";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Shield'
 

@@ -12,7 +12,7 @@ export class TurnUndead implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Turn Undead";
+    this.name = this.constructor.name;
     this.helpFile = `turn undead
 syntax: cast 'turn undead' <target>
 Staying in close proximity with the divine powers of Good grants the

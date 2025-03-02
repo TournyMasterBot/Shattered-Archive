@@ -18,7 +18,7 @@ export class AbandonHope implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Abandon Hope";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

@@ -11,7 +11,7 @@ export class HeatMetal implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Heat Metal";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Heat Metal'
 'HEAT METAL'

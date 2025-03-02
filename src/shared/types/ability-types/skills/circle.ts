@@ -12,7 +12,7 @@ export class Circle implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Circle";
+    this.name = this.constructor.name;
     this.helpFile = `
 circle
 The circling tactic is a manuever of the Bladesong in which the bladesinger

@@ -12,7 +12,7 @@ export class Umbra implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Umbra";
+    this.name = this.constructor.name;
     this.helpFile = ``;
     this.manualDescription = ``;
     this.abilityGroupType = AbilityGroupType.Spells;

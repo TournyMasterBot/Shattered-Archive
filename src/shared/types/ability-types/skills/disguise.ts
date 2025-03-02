@@ -12,7 +12,7 @@ export class Disguise implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Disguise";
+    this.name = this.constructor.name;
     this.helpFile = `
 DISGUISE
 

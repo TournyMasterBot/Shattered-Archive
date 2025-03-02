@@ -18,7 +18,7 @@ export class AncestralHonor implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Ancestral Honor";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

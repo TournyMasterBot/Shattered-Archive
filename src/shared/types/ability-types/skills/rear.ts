@@ -11,7 +11,7 @@ export class Rear implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Rear";
+    this.name = this.constructor.name;
     this.helpFile = `
 REAR
 

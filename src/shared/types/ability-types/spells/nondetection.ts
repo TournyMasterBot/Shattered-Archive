@@ -11,7 +11,7 @@ export class Nondetection implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Nondetection";
+    this.name = this.constructor.name;
     this.helpFile = `
 NONDETECTION
 

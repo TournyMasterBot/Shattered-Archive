@@ -18,7 +18,7 @@ export class Warcry implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Warcry";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

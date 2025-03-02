@@ -12,7 +12,7 @@ export class InstantRegeneration implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Instant Regeneration";
+    this.name = this.constructor.name;
     this.helpFile = `INSTANT REGENERATION
 
 Syntax: cast 'instant regeneration'

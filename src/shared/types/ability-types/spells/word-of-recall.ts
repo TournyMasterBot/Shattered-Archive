@@ -11,7 +11,7 @@ export class WordOfRecall implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Word of Recall";
+    this.name = this.constructor.name;
     this.helpFile = `help 'Word of Recall'
 'WORD OF RECALL'
 'WORD OF RECALL'

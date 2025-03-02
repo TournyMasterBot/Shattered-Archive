@@ -11,7 +11,7 @@ export class EnhancedRecovery implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Enhanced Recovery";
+    this.name = this.constructor.name;
     this.helpFile = `
 ENHANCED RECOVERY
 

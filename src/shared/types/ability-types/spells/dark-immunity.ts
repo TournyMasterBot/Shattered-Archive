@@ -11,7 +11,7 @@ export class DarkImmunity implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Dark Immunity";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;

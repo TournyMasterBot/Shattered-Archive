@@ -1,6 +1,6 @@
 import asyncHandler from "@shared/express-server/async-handler";
 import { Router } from "express";
-import { getAbilities, getAbility } from "handlers/ability-handlers/item-handlers";
+import { getAbilities, getAbility } from "handlers/ability-handlers/ability-handlers";
 
 const router = Router();
 

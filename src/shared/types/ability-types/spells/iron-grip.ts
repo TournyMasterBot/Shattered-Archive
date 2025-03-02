@@ -12,7 +12,7 @@ export class IronGrip implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Iron Grip";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.manualDescription = "";
     this.abilityGroupType = AbilityGroupType.Spells;

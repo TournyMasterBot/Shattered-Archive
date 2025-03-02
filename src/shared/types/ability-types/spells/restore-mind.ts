@@ -11,7 +11,7 @@ export class RestoreMind implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Restore Mind";
+    this.name = this.constructor.name;
     this.helpFile = `
 help restore mind
 'RESTORE MIND'

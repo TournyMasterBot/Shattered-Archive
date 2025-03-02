@@ -12,7 +12,7 @@ export class SummonShadow implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Summon Shadow";
+    this.name = this.constructor.name;
     this.helpFile = `SUMMON SHADOW
 SUMMON SHADOW
 syntax: cast 'summon shadow'

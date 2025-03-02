@@ -6,7 +6,7 @@ import EnhancedReactions from "@shared/types/ability-types/skills/enhanced-react
 import DualWield from "@shared/types/ability-types/skills/dual-wield";
 import Grip from "@shared/types/ability-types/skills/grip";
 import Parry from "@shared/types/ability-types/skills/parry";
-import Weaponsmaster from "../groups-skills/weaponsmaster";
+import Weaponsmaster from "../groups-skills/Weaponsmaster";
 import MasterySword from "../groups-skills/MasterySword";
 import ServerCache from "@shared/cache/server-cache";
 
@@ -33,11 +33,11 @@ export class ArmsmanDefault implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): ArmsmanDefault {
-    if (!ArmsmanDefault.instance) {
-      ArmsmanDefault.instance = new ArmsmanDefault();
+    if (!this.instance) {
+      this.instance = new this();
       ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return ArmsmanDefault.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

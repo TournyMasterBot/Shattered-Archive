@@ -11,7 +11,7 @@ export class EnergyDrain implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Energy Drain";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Energy Drain'
 'ENERGY DRAIN'

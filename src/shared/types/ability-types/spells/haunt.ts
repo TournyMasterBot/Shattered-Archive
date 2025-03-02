@@ -11,7 +11,7 @@ export class Haunt implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Haunt";
+    this.name = this.constructor.name;
     this.helpFile = `
 `; // Add help file content if available
     this.abilityGroupType = AbilityGroupType.Spells;

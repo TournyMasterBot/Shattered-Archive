@@ -12,7 +12,7 @@ export class LightningBolt implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Lightning Bolt";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Lightning Bolt'
 'LIGHTNING BOLT'

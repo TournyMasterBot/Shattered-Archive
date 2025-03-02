@@ -11,7 +11,7 @@ export class RagerCharge implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Rager Charge";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;

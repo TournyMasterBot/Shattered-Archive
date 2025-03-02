@@ -11,7 +11,7 @@ export class Disjunction implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Disjunction";
+    this.name = this.constructor.name;
     this.helpFile = `
 DISJUNCTION
 

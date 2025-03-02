@@ -11,7 +11,7 @@ export class Runestaff implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Runestaff";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;

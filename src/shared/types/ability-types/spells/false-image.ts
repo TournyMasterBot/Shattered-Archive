@@ -11,7 +11,7 @@ export class FalseImage implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "False Image";
+    this.name = this.constructor.name;
     this.helpFile = `
 false image
 The false image spell does just that. It creates a false image of

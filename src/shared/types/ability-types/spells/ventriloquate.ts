@@ -12,7 +12,7 @@ export class Ventriloquate implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Ventriloquate";
+    this.name = this.constructor.name;
     this.helpFile = `help Ventriloquate
 VENTRILOQUATE
 VENTRILOQUATE

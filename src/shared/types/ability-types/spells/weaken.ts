@@ -11,7 +11,7 @@ export class Weaken implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Weaken";
+    this.name = this.constructor.name;
     this.helpFile = `help Weaken
 WEAKEN
 WEAKEN

@@ -11,7 +11,7 @@ export class FocusedAggression implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Focused Aggression";
+    this.name = this.constructor.name;
     this.helpFile = `
 FOCUSED AGGRESSION
 

@@ -11,7 +11,7 @@ export class Hex implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Hex";
+    this.name = this.constructor.name;
     this.helpFile = `
 help hex
 HEX

@@ -13,7 +13,7 @@ export class ProtectionGood implements IAbility {
   abilityBuffVariable?: string | undefined;
 
   constructor() {
-    this.name = "Protection Good";
+    this.name = this.constructor.name;
     this.helpFile = `help 'Protection Good'
 'PROTECTION GOOD' 'PROTECTION EVIL' 'PROTECTION NEUTRAL'
 'PROTECTION GOOD' 'PROTECTION EVIL' 'PROTECTION NEUTRAL'

@@ -11,7 +11,7 @@ export class Portal implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Portal";
+    this.name = this.constructor.name;
     this.helpFile = `help 'Portal'
 Syntax: cast 'portal' <target>
 The portal spell is similar to gate, but creates a lasting one-way portal to

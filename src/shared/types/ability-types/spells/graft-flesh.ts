@@ -11,7 +11,7 @@ export class GraftFlesh implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Graft Flesh";
+    this.name = this.constructor.name;
     this.helpFile = `
 'GRAFT FLESH'
 

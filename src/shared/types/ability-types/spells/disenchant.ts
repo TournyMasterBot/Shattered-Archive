@@ -11,7 +11,7 @@ export class Disenchant implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Disenchant";
+    this.name = this.constructor.name;
     this.helpFile = `
 DISENCHANT
 

@@ -12,7 +12,7 @@ export class SummonYanLuo implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Summon Yan Luo";
+    this.name = this.constructor.name;
     this.helpFile = `SUMMON YAN LUO
 
 Syntax: cast 'summon yan luo'

@@ -12,7 +12,7 @@ export class CriticalStrike implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Critical Strike";
+    this.name = this.constructor.name;
     this.helpFile = `
 `;
     this.abilityGroupType = AbilityGroupType.Skills;

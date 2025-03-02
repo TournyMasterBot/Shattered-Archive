@@ -11,7 +11,7 @@ export class EmpowerWeapon implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Empower Weapon";
+    this.name = this.constructor.name;
     this.helpFile = `
 empower weapon
 syntax:  cast 'empower weapon' <weapon>

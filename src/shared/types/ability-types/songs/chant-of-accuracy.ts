@@ -18,7 +18,7 @@ export class ChantOfAccuracy implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Chant of Accuracy";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Songs;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

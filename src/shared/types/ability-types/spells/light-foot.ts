@@ -11,7 +11,7 @@ export class LightFoot implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Light Foot";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Light Foot'
 light foot

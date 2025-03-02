@@ -14,6 +14,7 @@ import Damned from "@shared/types/ability-types/spells/damned";
 import Breaking from "@shared/types/ability-types/spells/breaking";
 import Destruction from "@shared/types/ability-types/spells/destruction";
 import CreateRunehammer from "@shared/types/ability-types/spells/create-runehammer";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Runesmithing implements IAbilityGroup {
   static instance: Runesmithing;
@@ -23,7 +24,7 @@ export class Runesmithing implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Runesmithing;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -44,10 +45,11 @@ export class Runesmithing implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Runesmithing {
-    if (!Runesmithing.instance) {
-      Runesmithing.instance = new Runesmithing();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Runesmithing.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

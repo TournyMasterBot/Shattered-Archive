@@ -18,7 +18,7 @@ export class Maingauche implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Maingauche";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = `maingauche

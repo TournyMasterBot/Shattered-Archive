@@ -18,7 +18,7 @@ export class PolevaultJump implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Polevault Jump";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

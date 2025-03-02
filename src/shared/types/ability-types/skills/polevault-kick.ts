@@ -18,7 +18,7 @@ export class PolevaultKick implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Polevault Kick";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

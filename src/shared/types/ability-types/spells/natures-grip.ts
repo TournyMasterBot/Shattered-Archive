@@ -11,7 +11,7 @@ export class NaturesGrip implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Natures Grip";
+    this.name = this.constructor.name;
     this.helpFile = `
 NATURES GRIP
 

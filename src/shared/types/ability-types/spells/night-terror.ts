@@ -11,7 +11,7 @@ export class NightTerror implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Night Terror";
+    this.name = this.constructor.name;
     this.helpFile = `
 `; // Add appropriate help text if available
     this.abilityGroupType = AbilityGroupType.Unknown; // Set appropriate group type

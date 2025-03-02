@@ -11,7 +11,7 @@ export class Haze implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Haze";
+    this.name = this.constructor.name;
     this.helpFile = `
 HAZE
 

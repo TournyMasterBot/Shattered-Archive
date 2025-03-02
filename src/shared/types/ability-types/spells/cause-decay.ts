@@ -14,7 +14,7 @@ export class CauseDecay implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Cause Decay";
+    this.name = this.constructor.name;
     this.manualDescription = `
 A spell that causes moderate damage and has a chance to apply debilitating maledictions to the target.
 `;

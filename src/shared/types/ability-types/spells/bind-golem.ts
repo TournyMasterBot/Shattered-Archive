@@ -18,7 +18,7 @@ export class BindGolem implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Bind Golem";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

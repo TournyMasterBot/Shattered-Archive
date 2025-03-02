@@ -12,7 +12,7 @@ export class InfluenceConfidence implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Influence Confidence";
+    this.name = this.constructor.name;
     this.helpFile = `INFLUENCE CONFIDENCE
 
 As with allowing their friends to focus their aggression, the mentalist is

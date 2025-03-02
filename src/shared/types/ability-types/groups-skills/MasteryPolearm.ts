@@ -18,16 +18,20 @@ export class MasteryPolearm implements IAbilityGroup {
     this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.MasteryPolearm;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilities = [Distance.GetInstance(), Entrap.GetInstance(), Chargeset.GetInstance()];
+    this.abilities = [
+      Distance.GetInstance(), 
+      Entrap.GetInstance(), 
+      Chargeset.GetInstance()
+    ];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): MasteryPolearm {
-    if (!MasteryPolearm.instance) {
-      MasteryPolearm.instance = new MasteryPolearm();
+    if (!this.instance) {
+      this.instance = new this();
       ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return MasteryPolearm.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

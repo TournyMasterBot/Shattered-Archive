@@ -11,7 +11,7 @@ export class DispelGood implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Dispel Good";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Dispel Good'
 'DISPEL GOOD'

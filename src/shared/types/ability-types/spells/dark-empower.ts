@@ -11,7 +11,7 @@ export class DarkEmpower implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Dark Empower";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;

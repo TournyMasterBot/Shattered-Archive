@@ -12,7 +12,7 @@ export class Sleep implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Sleep";
+    this.name = this.constructor.name;
     this.helpFile = `help sleep
 REST SLEEP STAND WAKE
 REST SLEEP STAND WAKE

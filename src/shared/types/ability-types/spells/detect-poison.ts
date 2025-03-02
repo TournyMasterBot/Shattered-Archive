@@ -11,7 +11,7 @@ export class DetectPoison implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Detect Poison";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Detect Poison'
 'DETECT POISON'

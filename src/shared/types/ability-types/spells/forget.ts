@@ -11,7 +11,7 @@ export class Forget implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Forget";
+    this.name = this.constructor.name;
     this.helpFile = `
 FORGET
 

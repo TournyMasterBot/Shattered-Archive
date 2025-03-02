@@ -11,7 +11,7 @@ export class Excommunicate implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Excommunicate";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Excommunicate'
 'EXCOMMUNICATE'

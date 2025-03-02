@@ -18,7 +18,7 @@ export class PoisonSmoke implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Poison Smoke";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

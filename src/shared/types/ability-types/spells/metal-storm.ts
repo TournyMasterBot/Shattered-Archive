@@ -11,7 +11,7 @@ export class MetalStorm implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Metal Storm";
+    this.name = this.constructor.name;
     this.helpFile = `
 help wujen
 Metal Storm - Pulling shards of metal from their surroundings, the Wu Jen

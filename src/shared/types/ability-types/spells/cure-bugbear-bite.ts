@@ -13,7 +13,7 @@ export class CureBugbearBite implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Cure Bugbear Bite";
+    this.name = this.constructor.name;
     this.manualDescription = `
 Casting this will cure bugbear bites, which cause negative status effects.
 `;

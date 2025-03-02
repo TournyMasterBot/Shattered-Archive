@@ -11,7 +11,7 @@ export class FireBomb implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Fire Bomb";
+    this.name = this.constructor.name;
     this.helpFile = `
 `;
     this.abilityGroupType = AbilityGroupType.Spells;

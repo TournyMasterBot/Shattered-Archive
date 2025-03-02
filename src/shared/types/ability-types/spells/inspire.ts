@@ -12,7 +12,7 @@ export class Inspire implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Inspire";
+    this.name = this.constructor.name;
     this.helpFile = `INSPIRE
 
 Motivated by fanatical loyalty towards one's deity, the crusader is capable

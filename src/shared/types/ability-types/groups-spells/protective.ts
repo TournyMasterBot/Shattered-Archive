@@ -15,6 +15,7 @@ import DispelMagic from "@shared/types/ability-types/spells/dispel-magic";
 import ProtectionGood from "@shared/types/ability-types/spells/protection-good";
 import StoneSkin from "@shared/types/ability-types/spells/stone-skin";
 import ProtectionNeutral from "@shared/types/ability-types/spells/protection-neutral";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Protective implements IAbilityGroup {
   static instance: Protective;
@@ -24,7 +25,7 @@ export class Protective implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Protective;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -46,10 +47,11 @@ export class Protective implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Protective {
-    if (!Protective.instance) {
-      Protective.instance = new Protective();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Protective.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

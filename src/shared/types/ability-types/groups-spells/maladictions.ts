@@ -11,6 +11,7 @@ import Weaken from "@shared/types/ability-types/spells/weaken";
 import Curse from "@shared/types/ability-types/spells/curse";
 import Poison from "@shared/types/ability-types/spells/poison";
 import HeartBlight from "@shared/types/ability-types/spells/heart-blight";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Maladictions implements IAbilityGroup {
   static instance: Maladictions;
@@ -20,7 +21,7 @@ export class Maladictions implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Maladictions;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -38,10 +39,11 @@ export class Maladictions implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Maladictions {
-    if (!Maladictions.instance) {
-      Maladictions.instance = new Maladictions();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Maladictions.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

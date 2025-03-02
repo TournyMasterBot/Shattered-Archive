@@ -11,7 +11,7 @@ export class Recharge implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Recharge";
+    this.name = this.constructor.name;
     this.helpFile = `
 help recharge
 'RECHARGE'

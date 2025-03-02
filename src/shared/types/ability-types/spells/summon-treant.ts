@@ -12,7 +12,7 @@ export class SummonTreant implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Summon Treant";
+    this.name = this.constructor.name;
     this.helpFile = ``;
     this.manualDescription = ``;
     this.abilityGroupType = AbilityGroupType.Spells;

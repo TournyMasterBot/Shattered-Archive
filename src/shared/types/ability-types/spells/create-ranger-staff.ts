@@ -11,7 +11,7 @@ export class CreateRangerStaff implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Create Ranger Staff";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Create Ranger Staff'
 'CREATE RANGER STAFF'

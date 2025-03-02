@@ -12,7 +12,7 @@ export class ScorchingWinds implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Scorching Winds";
+    this.name = this.constructor.name;
     this.helpFile = `
 help wujen
 Searing Winds - Much like the chaotic and wild chain lightning spell,

@@ -11,7 +11,7 @@ export class Leprosy implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Leprosy";
+    this.name = this.constructor.name;
     this.helpFile = `
 help Leprosy
 leprosy

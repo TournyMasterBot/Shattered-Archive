@@ -11,7 +11,7 @@ export class Reduce implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Reduce";
+    this.name = this.constructor.name;
     this.helpFile = `
 ENLARGE REDUCE
 

@@ -12,7 +12,7 @@ export class SummonLavalord implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Summon Lavalord";
+    this.name = this.constructor.name;
     this.helpFile = ``;
     this.manualDescription = ``;
     this.abilityGroupType = AbilityGroupType.Spells;

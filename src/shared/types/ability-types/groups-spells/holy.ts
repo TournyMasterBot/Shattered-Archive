@@ -10,6 +10,7 @@ import LocateEmpower from "@shared/types/ability-types/spells/locate-empower";
 import SummonEmpyrealWarhorse from "@shared/types/ability-types/spells/summon-empyreal-warhorse";
 import LayOnHands from "@shared/types/ability-types/spells/lay-on-hands";
 import RemoveEmpower from "@shared/types/ability-types/spells/remove-empower";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Holy implements IAbilityGroup {
   static instance: Holy;
@@ -19,7 +20,7 @@ export class Holy implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Holy;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -36,10 +37,11 @@ export class Holy implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Holy {
-    if (!Holy.instance) {
-      Holy.instance = new Holy();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Holy.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

@@ -18,7 +18,7 @@ export class ForepawSwipe implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Forepaw Swipe";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `help forepaw swipe

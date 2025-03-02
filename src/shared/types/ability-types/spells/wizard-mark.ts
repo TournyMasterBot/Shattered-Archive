@@ -11,7 +11,7 @@ export class WizardMark implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Wizard Mark";
+    this.name = this.constructor.name;
     this.helpFile = `'WIZARD MARK'
 WIZARD MARK
 

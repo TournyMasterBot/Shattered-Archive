@@ -11,7 +11,7 @@ export class Damned implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Damned";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;

@@ -11,7 +11,7 @@ export class Paralyze implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Paralyze";
+    this.name = this.constructor.name;
     this.helpFile = `PARALYZE
 An illusionist's spell used on others to make them think their muscles are
 failing. This spell seems to have a harder time landing on the smarter

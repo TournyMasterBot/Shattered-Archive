@@ -7,6 +7,7 @@ import RestoreMind from "@shared/types/ability-types/spells/restore-mind";
 import CharmPerson from "@shared/types/ability-types/spells/charm-person";
 import Betray from "@shared/types/ability-types/spells/betray";
 import Sleep from "@shared/types/ability-types/spells/sleep";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Beguiling implements IAbilityGroup {
   static instance: Beguiling;
@@ -16,7 +17,7 @@ export class Beguiling implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Beguiling;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -30,10 +31,11 @@ export class Beguiling implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Beguiling {
-    if (!Beguiling.instance) {
-      Beguiling.instance = new Beguiling();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Beguiling.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

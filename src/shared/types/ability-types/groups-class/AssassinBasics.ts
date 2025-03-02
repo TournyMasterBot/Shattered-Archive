@@ -4,7 +4,7 @@ import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Dagger from "@shared/types/ability-types/skills/dagger";
 import SecondAttack from "@shared/types/ability-types/skills/second-attack";
-import Assassinate from "@shared/types/ability-types/skills/assassinate";
+import Assassinate from "@shared/types/ability-types/skills/Assassinate";
 import ServerCache from "@shared/cache/server-cache";
 
 export class AssassinBasics implements IAbilityGroup {
@@ -27,11 +27,11 @@ export class AssassinBasics implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): AssassinBasics {
-    if (!AssassinBasics.instance) {
-      AssassinBasics.instance = new AssassinBasics();
+    if (!this.instance) {
+      this.instance = new this();
       ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return AssassinBasics.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

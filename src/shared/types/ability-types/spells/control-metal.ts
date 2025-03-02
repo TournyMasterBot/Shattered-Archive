@@ -11,7 +11,7 @@ export class ControlMetal implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Control Metal";
+    this.name = this.constructor.name;
     this.helpFile = `
 help wujen
 Control Metal - Demonstrating their mastery over the elements, the Wu Jen

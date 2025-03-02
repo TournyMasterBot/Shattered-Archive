@@ -12,7 +12,7 @@ export class ShieldCrater implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Shield Crater";
+    this.name = this.constructor.name;
     this.helpFile = `
 SHIELD CRATER
 

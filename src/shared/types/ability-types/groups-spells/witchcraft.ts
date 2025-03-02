@@ -8,6 +8,7 @@ import Silence from "@shared/types/ability-types/spells/silence";
 import PossessFamiliar from "@shared/types/ability-types/spells/possess-familiar";
 import Fear from "@shared/types/ability-types/spells/fear";
 import Splinter from "@shared/types/ability-types/spells/splinter";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Witchcraft implements IAbilityGroup {
   static instance: Witchcraft;
@@ -17,7 +18,7 @@ export class Witchcraft implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Witchcraft;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -32,10 +33,11 @@ export class Witchcraft implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Witchcraft {
-    if (!Witchcraft.instance) {
-      Witchcraft.instance = new Witchcraft();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Witchcraft.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

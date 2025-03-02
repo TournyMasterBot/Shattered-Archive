@@ -16,16 +16,18 @@ export class Vampire implements IAbilityGroup {
     this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Vampire;
     this.abilityGroupType = AbilityGroupType.Specialty;
-    this.abilities = [Dodge.GetInstance()];
+    this.abilities = [
+      Dodge.GetInstance()
+    ];
   }
 
   // Method to get the single instance of the class
   public static GetInstance(): Vampire {
-    if (!Vampire.instance) {
-      Vampire.instance = new Vampire();
+    if (!this.instance) {
+      this.instance = new this();
       ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Vampire.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

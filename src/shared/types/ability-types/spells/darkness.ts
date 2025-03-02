@@ -11,7 +11,7 @@ export class Darkness implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Darkness";
+    this.name = this.constructor.name;
     this.helpFile = `
 DARKNESS
 

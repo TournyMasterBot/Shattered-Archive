@@ -18,7 +18,7 @@ export class Brimstone implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Brimstone";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

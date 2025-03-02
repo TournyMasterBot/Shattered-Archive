@@ -11,7 +11,7 @@ export class MassHealing implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Mass Healing";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Mass Healing'
 MASS HEALING

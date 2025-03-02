@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -11,7 +12,7 @@ export class Banter implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Banter";
+    this.name = this.constructor.name;
     this.helpFile = `
 BANTER
 
@@ -39,10 +40,11 @@ Groups containing this skill: SWASHBUCKLER DEFAULT
 
   // Method to get the single instance of the class
   public static GetInstance(): Banter {
-    if (!Banter.instance) {
-      Banter.instance = new Banter();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Banter.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

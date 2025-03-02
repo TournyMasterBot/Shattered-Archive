@@ -12,7 +12,7 @@ export class Swarm implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Swarm";
+    this.name = this.constructor.name;
     this.helpFile = `help swarm
 SWARM
 SWARM

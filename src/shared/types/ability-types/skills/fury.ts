@@ -20,7 +20,7 @@ export class Fury implements IAbility {
   abilityBuffVariable?: string | undefined;
 
   constructor() {
-    this.name = "Fury";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.abilityBuffCommand = "fury";

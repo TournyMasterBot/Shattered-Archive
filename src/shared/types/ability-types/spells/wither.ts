@@ -11,7 +11,7 @@ export class Wither implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Wither";
+    this.name = this.constructor.name;
     this.helpFile = `help wither
 wither
 Syntax: c wither

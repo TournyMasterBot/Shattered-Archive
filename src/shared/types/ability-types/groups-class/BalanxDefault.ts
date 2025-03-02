@@ -2,17 +2,17 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Enhancement from "@shared/types/ability-types/groups-spells/enhancement";
-import Detection from "../groups-spells/detection";
-import Healing from "../groups-spells/healing";
-import Benedictions from "@shared/types/ability-types/groups-spells/benedictions";
-import Maladictions from "../groups-spells/maladictions";
-import Curative from "@shared/types/ability-types/groups-spells/curative";
-import Illusion from "../groups-spells/illusion";
-import Protective from "../groups-spells/protective";
-import Transportation from "../groups-spells/transportation";
-import Creation from "../groups-spells/creation";
-import Weather from "../groups-spells/weather";
+import Enhancement from "@shared/types/ability-types/groups-spells/Enhancement";
+import Detection from "../groups-spells/Detection";
+import Healing from "../groups-spells/Healing";
+import Benedictions from "@shared/types/ability-types/groups-spells/Benedictions";
+import Maladictions from "../groups-spells/Maladictions";
+import Curative from "@shared/types/ability-types/groups-spells/Curative";
+import Illusion from "../groups-spells/Illusion";
+import Protective from "../groups-spells/Protective";
+import Transportation from "../groups-spells/Transportation";
+import Creation from "../groups-spells/Creation";
+import Weather from "../groups-spells/Weather";
 import SecondAttack from "@shared/types/ability-types/skills/second-attack";
 import HandToHand from "@shared/types/ability-types/skills/hand-to-hand";
 import Focus from "@shared/types/ability-types/skills/focus";
@@ -32,7 +32,7 @@ export class BalanxDefault implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.BalanxDefault;
     this.abilityGroupType = AbilityGroupType.Default;
     this.abilities = [
@@ -61,11 +61,11 @@ export class BalanxDefault implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): BalanxDefault {
-    if (!BalanxDefault.instance) {
-      BalanxDefault.instance = new BalanxDefault();
+    if (!this.instance) {
+      this.instance = new this();
       ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return BalanxDefault.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

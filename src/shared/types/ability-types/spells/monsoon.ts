@@ -11,7 +11,7 @@ export class Monsoon implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Monsoon";
+    this.name = this.constructor.name;
     this.helpFile = `
 help wujen
 Monsoon - The Wu Jen summons a localized tempest that hammers rain down upon

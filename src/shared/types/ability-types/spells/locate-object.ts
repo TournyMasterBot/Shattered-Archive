@@ -11,7 +11,7 @@ export class LocateObject implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Locate Object";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Locate Object'
 'LOCATE OBJECT'

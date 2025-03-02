@@ -11,6 +11,7 @@ import AbandonHope from "@shared/types/ability-types/spells/abandon-hope";
 import InfluenceConfidence from "@shared/types/ability-types/spells/influence-confidence";
 import Amnesia from "@shared/types/ability-types/spells/amnesia";
 import Distortion from "@shared/types/ability-types/spells/distortion";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Mentalism implements IAbilityGroup {
   static instance: Mentalism;
@@ -20,7 +21,7 @@ export class Mentalism implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Mentalism;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -38,10 +39,11 @@ export class Mentalism implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Mentalism {
-    if (!Mentalism.instance) {
-      Mentalism.instance = new Mentalism();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Mentalism.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

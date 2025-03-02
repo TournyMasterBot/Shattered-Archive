@@ -12,7 +12,7 @@ export class HolySteed implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Holy Steed";
+    this.name = this.constructor.name;
     this.helpFile = `
 HOLY STEED 'HOLY STEED'
 HOLY STEED

@@ -11,7 +11,7 @@ export class Reposition implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Reposition";
+    this.name = this.constructor.name;
     this.helpFile = `
 reposition
 The art of repositioning in combat is one which requires much grace in

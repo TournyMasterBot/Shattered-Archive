@@ -11,7 +11,7 @@ export class RedirectSkill implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Redirect";
+    this.name = this.constructor.name;
     this.helpFile = ``;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;

@@ -11,6 +11,7 @@ import CreateTree from "@shared/types/ability-types/spells/create-tree";
 import CreateSpring from "@shared/types/ability-types/spells/create-spring";
 import FloatingDisc from "@shared/types/ability-types/spells/floating-disc";
 import Illumination from "@shared/types/ability-types/spells/illumination";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Creation implements IAbilityGroup {
   static instance: Creation;
@@ -20,7 +21,7 @@ export class Creation implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Creation;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -38,10 +39,11 @@ export class Creation implements IAbilityGroup {
 
   // Method to get the single instance of the class
   public static GetInstance(): Creation {
-    if (!Creation.instance) {
-      Creation.instance = new Creation();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Creation.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

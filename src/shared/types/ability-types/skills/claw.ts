@@ -11,7 +11,7 @@ export class Claw implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Claw";
+    this.name = this.constructor.name;
     this.helpFile = ""; // Empty help file as specified
 
     this.abilityGroupType = AbilityGroupType.Skills;

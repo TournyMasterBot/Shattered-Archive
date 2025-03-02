@@ -11,7 +11,7 @@ export class DetectInvis implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Detect Invis";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Detect Invis'
 'DETECT INVIS'

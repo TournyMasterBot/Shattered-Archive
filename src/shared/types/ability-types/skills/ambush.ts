@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -11,7 +12,7 @@ export class Ambush implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Ambush";
+    this.name = this.constructor.name;
     this.helpFile = `help ambush
 AMBUSH
 Syntax:  ambush <target>
@@ -31,10 +32,11 @@ See also:  RANGER CAMOUFLAGE PKILL`;
 
   // Method to get the single instance of the class
   public static GetInstance(): Ambush {
-    if (!Ambush.instance) {
-      Ambush.instance = new Ambush();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Ambush.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

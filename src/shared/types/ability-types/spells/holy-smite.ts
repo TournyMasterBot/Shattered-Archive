@@ -12,7 +12,7 @@ export class HolySmite implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Holy Smite";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.manualDescription =
       "Holy Smite is the Cleric bounty skill. This spell halves spell damage, including physical spells like snakebite. The effect of halving damage goes through AMS.";

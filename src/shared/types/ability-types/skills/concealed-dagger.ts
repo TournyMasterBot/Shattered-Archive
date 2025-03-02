@@ -12,7 +12,7 @@ export class ConcealedDagger implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Concealed Dagger";
+    this.name = this.constructor.name;
     this.helpFile = `
 CONCEALED DAGGER
 

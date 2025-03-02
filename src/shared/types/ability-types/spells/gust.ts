@@ -11,7 +11,7 @@ export class Gust implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Gust";
+    this.name = this.constructor.name;
     this.helpFile = `
 help wujen
 Gust - Invoking a localized vortex, the Wu Jen casts a billowing wind that

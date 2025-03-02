@@ -11,7 +11,7 @@ export class Cornucopia implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Cornucopia";
+    this.name = this.constructor.name;
     this.helpFile = `
 cornucopia
 Syntax: c 'cornucopia'

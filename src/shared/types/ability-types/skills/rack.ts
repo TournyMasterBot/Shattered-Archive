@@ -11,7 +11,7 @@ export class Rack implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Rack";
+    this.name = this.constructor.name;
     this.helpFile = `RACK
 
 A charlatan may, as a precursor to battle, or an act while engaged in

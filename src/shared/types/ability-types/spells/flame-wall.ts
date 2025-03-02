@@ -11,7 +11,7 @@ export class FlameWall implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Flame Wall";
+    this.name = this.constructor.name;
     this.helpFile = `
 help wujen
 Flame Wall - The Wu Jen conjures a wall of flame in the room, blinding all

@@ -12,7 +12,7 @@ export class InsightfulGaze implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Insightful Gaze";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.manualDescription = "";
     this.abilityGroupType = AbilityGroupType.Spells;

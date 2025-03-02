@@ -11,7 +11,7 @@ export class Rend implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Rend";
+    this.name = this.constructor.name;
     this.helpFile = `
 rend
 A passive Nightshade skill that is checked after each successful backstab. 

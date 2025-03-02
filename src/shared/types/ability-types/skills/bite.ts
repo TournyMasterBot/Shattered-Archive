@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -11,7 +12,7 @@ export class Bite implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Bite";
+    this.name = this.constructor.name;
     this.helpFile = `
 BITE
 Syntax:  bite <target>
@@ -33,10 +34,11 @@ See Also:  DRAGONS
 
   // Method to get the single instance of the class
   public static GetInstance(): Bite {
-    if (!Bite.instance) {
-      Bite.instance = new Bite();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Bite.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

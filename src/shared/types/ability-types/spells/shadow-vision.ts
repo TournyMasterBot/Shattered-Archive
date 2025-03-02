@@ -12,7 +12,7 @@ export class ShadowVision implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Shadow Vision";
+    this.name = this.constructor.name;
     this.helpFile = ""; // Empty help file
     this.manualDescription = "";
     this.abilityGroupType = AbilityGroupType.Spells;

@@ -11,7 +11,7 @@ export class DispelNeutral implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Dispel Neutral";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Dispel Neutral'
 DISPEL NEUTRAL

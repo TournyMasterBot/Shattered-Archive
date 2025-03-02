@@ -12,7 +12,7 @@ export class ConcealedAttack implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Concealed Attack";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'concealed attack'
 mastery dagger stab hurl concealed attack

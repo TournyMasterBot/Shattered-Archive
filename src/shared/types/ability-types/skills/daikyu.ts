@@ -12,7 +12,7 @@ export class Daikyu implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Daikyu";
+    this.name = this.constructor.name;
     this.helpFile = `
 help Daikyu
 daikyu

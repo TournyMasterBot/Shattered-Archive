@@ -11,7 +11,7 @@ export class Crucify implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Crucify";
+    this.name = this.constructor.name;
     this.helpFile = `
 help crucify
 CRUCIFY

@@ -12,7 +12,7 @@ export class Infuriate implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Infuriate";
+    this.name = this.constructor.name;
     this.helpFile = `INFURIATE
 
 Syntax: cast 'infuriate' <target>

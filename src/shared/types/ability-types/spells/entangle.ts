@@ -11,7 +11,7 @@ export class Entangle implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Entangle";
+    this.name = this.constructor.name;
     this.helpFile = `
 help Entangle
 ENTANGLE

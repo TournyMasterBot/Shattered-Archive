@@ -14,7 +14,7 @@ export class Sanctuary implements IAbility {
   abilityBuffCommand?: string | undefined;
 
   constructor() {
-    this.name = "Sanctuary";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Sanctuary'
 SANCTUARY

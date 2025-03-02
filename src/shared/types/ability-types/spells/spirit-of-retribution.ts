@@ -12,7 +12,7 @@ export class SpiritOfRetribution implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Spirit of Retribution";
+    this.name = this.constructor.name;
     this.helpFile = `help 'Spirit of Retribution'
 SPIRIT OF RETRIBUTION
 

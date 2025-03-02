@@ -12,7 +12,7 @@ export class Meteo implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Meteo";
+    this.name = this.constructor.name;
     this.helpFile = `
 meteo
 Syntax: cast 'meteo'

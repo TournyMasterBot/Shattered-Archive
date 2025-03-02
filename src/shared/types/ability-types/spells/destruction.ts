@@ -11,7 +11,7 @@ export class Destruction implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Destruction";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;

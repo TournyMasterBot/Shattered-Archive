@@ -12,7 +12,7 @@ export class Slow implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Slow";
+    this.name = this.constructor.name;
     this.helpFile = `help slow
 SLOW
 SLOW

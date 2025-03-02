@@ -18,7 +18,7 @@ export class GreenLeaf implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Green Leaf";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Songs;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

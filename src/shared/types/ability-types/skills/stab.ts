@@ -18,7 +18,7 @@ export class Stab implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Stab";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `mastery dagger stab hurl concealed attack

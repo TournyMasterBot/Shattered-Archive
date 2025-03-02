@@ -12,7 +12,7 @@ export class SummonEmpyrealWarhorse implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Summon Empyreal Warhorse";
+    this.name = this.constructor.name;
     this.helpFile = `SUMMON EMPYREAL
 
 Syntax: cast 'summon empyreal'

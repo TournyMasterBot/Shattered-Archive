@@ -18,7 +18,7 @@ export class GrenadeToss implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Grenade Toss";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `grenade castiron glass pistolball stinkball gignite gtoss

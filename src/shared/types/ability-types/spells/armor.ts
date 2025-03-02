@@ -20,7 +20,7 @@ export class Armor implements IAbility {
   abilityBuffVariable?: string | undefined;
 
   constructor() {
-    this.name = "Armor";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.abilityBuffCommand = "c armor";

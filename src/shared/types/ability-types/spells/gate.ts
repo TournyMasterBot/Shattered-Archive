@@ -11,7 +11,7 @@ export class Gate implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Gate";
+    this.name = this.constructor.name;
     this.helpFile = `
 help Gate
 GATE

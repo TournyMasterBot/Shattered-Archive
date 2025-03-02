@@ -11,7 +11,7 @@ export class CharmPerson implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Charm Person";
+    this.name = this.constructor.name;
     this.helpFile = `
 help charm person
 'CHARM PERSON'

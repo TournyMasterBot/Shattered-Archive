@@ -11,7 +11,7 @@ export class PossessFamiliar implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Possess Familiar";
+    this.name = this.constructor.name;
     this.helpFile = `POSSESS FAMILIAR
 POSSESS FAMILIAR
 

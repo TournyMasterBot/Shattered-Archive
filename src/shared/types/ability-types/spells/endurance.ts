@@ -11,7 +11,7 @@ export class Endurance implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Endurance";
+    this.name = this.constructor.name;
     this.helpFile = `
 endurance
 c 'endurance' <target>

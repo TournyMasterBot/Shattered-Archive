@@ -11,7 +11,7 @@ export class Retainer implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Retainer";
+    this.name = this.constructor.name;
     this.helpFile = `
 retainer
 RETAINER

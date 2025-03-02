@@ -18,7 +18,7 @@ export class BrainFever implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Brain Fever";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

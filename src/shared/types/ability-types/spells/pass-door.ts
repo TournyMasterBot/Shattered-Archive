@@ -11,7 +11,7 @@ export class PassDoor implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Pass Door";
+    this.name = this.constructor.name;
     this.helpFile = `PASS DOOR
 Syntax: cast 'pass door'
 This spell enables the caster to pass through closed doors.`;

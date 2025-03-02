@@ -18,7 +18,7 @@ export class Parry implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Parry";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = `help Parry

@@ -11,7 +11,7 @@ export class CreateWater implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Create Water";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Create Water'
 'CREATE WATER'

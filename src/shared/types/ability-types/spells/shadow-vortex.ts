@@ -12,7 +12,7 @@ export class ShadowVortex implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Shadow Vortex";
+    this.name = this.constructor.name;
     this.helpFile = ""; // Empty help file
     this.manualDescription = "";
     this.abilityGroupType = AbilityGroupType.Spells;

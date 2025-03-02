@@ -11,7 +11,7 @@ export class QuietMovement implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Quiet Movement";
+    this.name = this.constructor.name;
     this.helpFile = `help 'quiet movement'
         QMOVEMENT 'QUIET MOVEMENT'
         Syntax:  qmovement

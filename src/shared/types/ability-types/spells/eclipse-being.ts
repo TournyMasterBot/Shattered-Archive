@@ -11,7 +11,7 @@ export class EclipseBeing implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Eclipse Being";
+    this.name = this.constructor.name;
     this.helpFile = `
 `;
     this.abilityGroupType = AbilityGroupType.Spells;

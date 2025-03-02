@@ -13,7 +13,7 @@ export class ProtectionNeutral implements IAbility {
   abilityBuffVariable?: string | undefined;
 
   constructor() {
-    this.name = "Protection Neutral";
+    this.name = this.constructor.name;
     this.helpFile = `help 'Protection Neutral'
 'PROTECTION GOOD' 'PROTECTION EVIL' 'PROTECTION NEUTRAL'
 'PROTECTION GOOD' 'PROTECTION EVIL' 'PROTECTION NEUTRAL'

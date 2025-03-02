@@ -1,6 +1,6 @@
 
 import IAbility from "@shared/types/ability-types/ability";
-import Berserk from "@shared/types/ability-types/skills/berserk";
+import Berserk from "@shared/types/ability-types/skills/Berserk";
 import Gore from "@shared/types/ability-types/skills/gore";
 import HandToHand from "@shared/types/ability-types/skills/hand-to-hand";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";

@@ -11,7 +11,7 @@ export class FlamingSoul implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Flaming Soul";
+    this.name = this.constructor.name;
     this.helpFile = `
 Flaming Soul:
 

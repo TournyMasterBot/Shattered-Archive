@@ -12,7 +12,7 @@ export class Jest implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Jest";
+    this.name = this.constructor.name;
     this.helpFile = `JEST
 
 Syntax: cast 'jest' <victim>

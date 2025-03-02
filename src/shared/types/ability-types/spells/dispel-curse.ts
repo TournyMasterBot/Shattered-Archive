@@ -12,7 +12,7 @@ export class DispelCurse implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Dispel Curse";
+    this.name = this.constructor.name;
     this.helpFile = `
 dispel curse
 Syntax: c 'dispel curse' <object>

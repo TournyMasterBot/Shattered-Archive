@@ -11,7 +11,7 @@ export class MentalDrain implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Mental Drain";
+    this.name = this.constructor.name;
     this.helpFile = `
 mental drain
 Syntax: cast 'mental drain' <target>

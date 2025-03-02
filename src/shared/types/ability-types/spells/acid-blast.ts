@@ -18,7 +18,7 @@ export class AcidBlast implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Acid Blast";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `

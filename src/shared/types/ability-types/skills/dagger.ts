@@ -18,7 +18,7 @@ export class Dagger implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Dagger";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.helpFile = `

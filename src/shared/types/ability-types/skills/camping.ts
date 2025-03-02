@@ -12,7 +12,7 @@ export class Camping implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Camping";
+    this.name = this.constructor.name;
     this.helpFile = `
 help camping
 CAMP CAMPING

@@ -12,7 +12,7 @@ export class HostOfGargoyles implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Host of Gargoyles";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.manualDescription = "";
     this.abilityGroupType = AbilityGroupType.Spells;

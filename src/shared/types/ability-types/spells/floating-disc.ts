@@ -11,7 +11,7 @@ export class FloatingDisc implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Floating Disc";
+    this.name = this.constructor.name;
     this.helpFile = `
 'FLOATING DISC'
 

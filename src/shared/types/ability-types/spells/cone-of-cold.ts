@@ -11,7 +11,7 @@ export class ConeOfCold implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Cone of Cold";
+    this.name = this.constructor.name;
     this.helpFile = `
 CONE OF COLD
 

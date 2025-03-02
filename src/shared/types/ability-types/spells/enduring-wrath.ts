@@ -11,7 +11,7 @@ export class EnduringWrath implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Enduring Wrath";
+    this.name = this.constructor.name;
     this.helpFile = `
 help 'Enduring Wrath'
 'ENDURING WRATH'

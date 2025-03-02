@@ -11,7 +11,7 @@ export class Magewind implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Magewind";
+    this.name = this.constructor.name;
     this.helpFile = `
 help magewind
 MAGEWIND

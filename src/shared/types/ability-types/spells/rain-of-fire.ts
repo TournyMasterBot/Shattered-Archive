@@ -11,7 +11,7 @@ export class RainOfFire implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Rain of Fire";
+    this.name = this.constructor.name;
     this.helpFile = ``;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilityUsage = AbilityUsage.Active;

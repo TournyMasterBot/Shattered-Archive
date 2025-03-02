@@ -6,6 +6,7 @@ import MetalStorm from "@shared/types/ability-types/spells/metal-storm";
 import ForceField from "@shared/types/ability-types/spells/force-field";
 import ControlMetal from "@shared/types/ability-types/spells/control-metal";
 import FlamingSoul from "@shared/types/ability-types/spells/flaming-soul";
+import ServerCache from "@shared/cache/server-cache";
 
 export class Metal implements IAbilityGroup {
   static instance: Metal;
@@ -15,7 +16,7 @@ export class Metal implements IAbilityGroup {
   public name: string;
 
   constructor() {
-    this.name = this.constructor.name.toLowerCase();
+    this.name = this.constructor.name;
     this.abilityGroup = AbilityGroup.Metal;
     this.abilityGroupType = AbilityGroupType.Spells;
     this.abilities = [
@@ -26,11 +27,16 @@ export class Metal implements IAbilityGroup {
     ];
   }
 
-  public Get<T>(): T {
-    if (!Metal.instance) {
-      Metal.instance = new Metal();
+  public static GetInstance(): Metal {
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.AbilityGroups[this.instance.name] = this.instance;
     }
-    return Metal.instance as T;
+    return this.instance;
+  }
+
+  public Get<T>(): T {
+    return Metal.GetInstance() as T;
   }
 }
 

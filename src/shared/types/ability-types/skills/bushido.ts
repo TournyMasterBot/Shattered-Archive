@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -12,7 +13,7 @@ export class Bushido implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Bushido";
+    this.name = this.constructor.name;
     this.helpFile = `
 help Bushido
 bushido
@@ -40,10 +41,11 @@ maximize the number of strikes with minimal body movement.
 
   // Method to get the single instance of the class
   public static GetInstance(): Bushido {
-    if (!Bushido.instance) {
-      Bushido.instance = new Bushido();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Bushido.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

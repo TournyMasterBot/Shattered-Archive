@@ -12,7 +12,7 @@ export class StealMagic implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Steal Magic";
+    this.name = this.constructor.name;
     this.helpFile = "";
     this.manualDescription = "";
     this.abilityGroupType = AbilityGroupType.Spells;

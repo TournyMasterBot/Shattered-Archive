@@ -18,7 +18,7 @@ export class Focus implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Focus";
+    this.name = this.constructor.name;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
     this.helpFile = `help focus

@@ -11,7 +11,7 @@ export class WrathOfNature implements IAbility {
   abilityUsage: AbilityUsage;
 
   constructor() {
-    this.name = "Wrath of Nature";
+    this.name = this.constructor.name;
     this.helpFile = `help 'Wrath of Nature'
 WRATH OF NATURE
 Syntax:  cast 'wrath' <target>

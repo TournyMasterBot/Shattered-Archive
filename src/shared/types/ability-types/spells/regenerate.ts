@@ -12,7 +12,7 @@ export class Regenerate implements IAbility {
   manualDescription: string;
 
   constructor() {
-    this.name = "Regenerate";
+    this.name = this.constructor.name;
     this.helpFile = `
             `;
     this.abilityGroupType = AbilityGroupType.Spells;
