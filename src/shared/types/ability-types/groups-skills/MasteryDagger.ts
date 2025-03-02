@@ -4,7 +4,7 @@ import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Stab from "@shared/types/ability-types/skills/stab";
 import Hurl from "@shared/types/ability-types/skills/hurl";
-import ConcealedAttack from "@shared/types/ability-types/skills/concealed-attack";
+import ConcealedAttack from "@shared/types/ability-types/skills/ConcealedAttack";
 import ServerCache from "@shared/cache/server-cache";
 
 export class MasteryDagger implements IAbilityGroup {

@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -33,10 +34,11 @@ The bandit has the unique ability to quickly sneak and hide at the same time.
 
   // Method to get the single instance of the class
   public static GetInstance(): Stealth {
-    if (!Stealth.instance) {
-      Stealth.instance = new Stealth();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Stealth.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

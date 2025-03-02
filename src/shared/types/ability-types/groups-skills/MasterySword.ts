@@ -4,7 +4,7 @@ import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Florentine from "@shared/types/ability-types/skills/florentine";
 import Flurry from "@shared/types/ability-types/skills/flurry";
-import Cross from "@shared/types/ability-types/skills/cross";
+import Cross from "@shared/types/ability-types/skills/Cross";
 import ServerCache from "@shared/cache/server-cache";
 
 export class MasterySword implements IAbilityGroup {

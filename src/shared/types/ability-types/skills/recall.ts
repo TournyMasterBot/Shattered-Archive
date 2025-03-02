@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -40,10 +41,11 @@ curse may not recall at all.`;
   }
   // Method to get the single instance of the class
   public static GetInstance(): Recall {
-    if (!Recall.instance) {
-      Recall.instance = new Recall();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Recall.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

@@ -3,7 +3,7 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import ShieldBlock from "@shared/types/ability-types/skills/shield-block";
-import Disarm from "@shared/types/ability-types/skills/disarm";
+import Disarm from "@shared/types/ability-types/skills/Disarm";
 import Rescue from "@shared/types/ability-types/skills/rescue";
 import EnhancedDamage from "@shared/types/ability-types/skills/enhanced-damage";
 import ThirdAttack from "@shared/types/ability-types/skills/third-attack";

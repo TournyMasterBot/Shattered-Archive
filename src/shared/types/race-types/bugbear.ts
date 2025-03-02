@@ -1,6 +1,6 @@
 
 import IAbility from "@shared/types/ability-types/ability";
-import BugbearBite from "@shared/types/ability-types/skills/bugbear-bite";
+import BugbearBite from "@shared/types/ability-types/skills/BugbearBite";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
 import BoostedClass from "@shared/types/character-types/boostedClass";
 import IDamageType from "@shared/types/damage-types/damage-type-interface";

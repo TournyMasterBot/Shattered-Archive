@@ -2,7 +2,7 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import { AnalyticalMind as AnalyticalMindSkill } from "@shared/types/ability-types/skills/analytical-mind";
+import { AnalyticalMind as AnalyticalMindSkill } from "@shared/types/ability-types/skills/AnalyticalMind";
 import ServerCache from "@shared/cache/server-cache";
 
 export class AnalyticalMind implements IAbilityGroup {

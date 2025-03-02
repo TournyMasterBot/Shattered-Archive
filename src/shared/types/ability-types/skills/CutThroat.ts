@@ -1,9 +1,10 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
-export class CriticalStrike implements IAbility {
-  private static instance: CriticalStrike;
+export class CutThroat implements IAbility {
+  private static instance: CutThroat;
 
   name: string;
   helpFile: string;
@@ -14,28 +15,34 @@ export class CriticalStrike implements IAbility {
   constructor() {
     this.name = this.constructor.name;
     this.helpFile = `
+cut throat
+Command: Cutthroat
+
+A hidden Nightshade may use this skill to start a battle with unusually high
+damage. The skill does require some time and a still target for it to work.
 `;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Active;
-    this.manualDescription = "Critical Strike is the Warrior bounty skill";
+    this.manualDescription = "";
 
-    if (CriticalStrike.instance === undefined) {
-      CriticalStrike.instance = this;
+    if (CutThroat.instance === undefined) {
+      CutThroat.instance = this;
     }
   }
 
   // Method to get the single instance of the class
-  public static GetInstance(): CriticalStrike {
-    if (!CriticalStrike.instance) {
-      CriticalStrike.instance = new CriticalStrike();
+  public static GetInstance(): CutThroat {
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return CriticalStrike.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility
   public Get<T>(): T {
-    return CriticalStrike.GetInstance() as T;
+    return CutThroat.GetInstance() as T;
   }
 }
 
-export default CriticalStrike;
+export default CutThroat;

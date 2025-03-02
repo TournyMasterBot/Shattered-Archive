@@ -6,7 +6,7 @@ import Sneak from "@shared/types/ability-types/skills/sneak";
 import Caltraps from "@shared/types/ability-types/skills/Caltraps";
 import PoisonSmoke from "@shared/types/ability-types/skills/poison-smoke";
 import GroundControl from "@shared/types/ability-types/skills/ground-control";
-import Disarm from "@shared/types/ability-types/skills/disarm";
+import Disarm from "@shared/types/ability-types/skills/Disarm";
 import Hide from "@shared/types/ability-types/skills/hide";
 import Strangle from "@shared/types/ability-types/skills/strangle";
 import Vanish from "@shared/types/ability-types/skills/vanish";

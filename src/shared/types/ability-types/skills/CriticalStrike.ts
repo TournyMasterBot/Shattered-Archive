@@ -1,9 +1,10 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
-export class Deeproot implements IAbility {
-  private static instance: Deeproot;
+export class CriticalStrike implements IAbility {
+  private static instance: CriticalStrike;
 
   name: string;
   helpFile: string;
@@ -14,30 +15,29 @@ export class Deeproot implements IAbility {
   constructor() {
     this.name = this.constructor.name;
     this.helpFile = `
-help arboren
-DEEPROOT allows the Arboren to root into the earth making them almost immune to being stunned.
 `;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilityUsage = AbilityUsage.Passive;
-    this.manualDescription = "";
+    this.abilityUsage = AbilityUsage.Active;
+    this.manualDescription = "Critical Strike is the Warrior bounty skill";
 
-    if (Deeproot.instance === undefined) {
-      Deeproot.instance = this;
+    if (CriticalStrike.instance === undefined) {
+      CriticalStrike.instance = this;
     }
   }
 
   // Method to get the single instance of the class
-  public static GetInstance(): Deeproot {
-    if (!Deeproot.instance) {
-      Deeproot.instance = new Deeproot();
+  public static GetInstance(): CriticalStrike {
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Deeproot.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility
   public Get<T>(): T {
-    return Deeproot.GetInstance() as T;
+    return CriticalStrike.GetInstance() as T;
   }
 }
 
-export default Deeproot;
+export default CriticalStrike;

@@ -1,9 +1,10 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
-export class CriticalShotOne implements IAbility {
-  private static instance: CriticalShotOne;
+export class CriticalShotThree implements IAbility {
+  private static instance: CriticalShotThree;
 
   name: string;
   helpFile: string;
@@ -44,23 +45,24 @@ shoot with any of the critical commands.
     this.abilityUsage = AbilityUsage.Active;
     this.manualDescription = "";
 
-    if (CriticalShotOne.instance === undefined) {
-      CriticalShotOne.instance = this;
+    if (CriticalShotThree.instance === undefined) {
+      CriticalShotThree.instance = this;
     }
   }
 
   // Method to get the single instance of the class
-  public static GetInstance(): CriticalShotOne {
-    if (!CriticalShotOne.instance) {
-      CriticalShotOne.instance = new CriticalShotOne();
+  public static GetInstance(): CriticalShotThree {
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return CriticalShotOne.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility
   public Get<T>(): T {
-    return CriticalShotOne.GetInstance() as T;
+    return CriticalShotThree.GetInstance() as T;
   }
 }
 
-export default CriticalShotOne;
+export default CriticalShotThree;

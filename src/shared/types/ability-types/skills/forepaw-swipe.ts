@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -32,10 +33,11 @@ A swift attack using the character's forepaw to strike at opponents.`;
 
   // Method to get the single instance of the class
   public static GetInstance(): ForepawSwipe {
-    if (!ForepawSwipe.instance) {
-      ForepawSwipe.instance = new ForepawSwipe();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return ForepawSwipe.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

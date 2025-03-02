@@ -4,7 +4,7 @@ import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Distance from "@shared/types/ability-types/skills/distance";
 import Entrap from "@shared/types/ability-types/skills/entrap";
-import Chargeset from "@shared/types/ability-types/skills/chargeset";
+import Chargeset from "@shared/types/ability-types/skills/Chargeset";
 import ServerCache from "@shared/cache/server-cache";
 
 export class MasteryPolearm implements IAbilityGroup {

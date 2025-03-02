@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -39,10 +40,11 @@ barbarians may learn these skills.`;
 
   // Method to get the single instance of the class
   public static GetInstance(): Hide {
-    if (!Hide.instance) {
-      Hide.instance = new Hide();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Hide.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

@@ -3,37 +3,37 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
-export class Retainer implements IAbility {
-  private static instance: Retainer;
+export class DarkVision implements IAbility {
+  private static instance: DarkVision;
 
   name: string;
   helpFile: string;
   abilityGroupType: AbilityGroupType;
   abilityUsage: AbilityUsage;
+  manualDescription: string;
 
   constructor() {
     this.name = this.constructor.name;
     this.helpFile = `
-retainer
-RETAINER
-
-Syntax: retainer <target>
-
-For centuries the order of the Samurai were revered as the best bodyguards
-of the Royal Families of Shokono. The training for this level of protection
-is evident in the retainer ability, allowing the Samurai to passively rescue
-the retained target each combat round.  
+help 'dark vision'
+'DARKVISION' 'DARK VISION'
+DARKVISION, DARK VISION
+Darkvision is a skill which allows those who have it to see in the dark. 
+This frees these characters from any need to carry a light source to 
+see at night and in dark rooms. (Skill currently only works when 
+trained to 75%)
 `;
     this.abilityGroupType = AbilityGroupType.Skills;
-    this.abilityUsage = AbilityUsage.Active;
+    this.abilityUsage = AbilityUsage.Passive;
+    this.manualDescription = "";
 
-    if (Retainer.instance === undefined) {
-      Retainer.instance = this;
+    if (DarkVision.instance === undefined) {
+      DarkVision.instance = this;
     }
   }
 
   // Method to get the single instance of the class
-  public static GetInstance(): Retainer {
+  public static GetInstance(): DarkVision {
     if (!this.instance) {
       this.instance = new this();
       ServerCache.Abilities[this.instance.name] = this.instance;
@@ -43,8 +43,8 @@ the retained target each combat round.
 
   // Method to get the class instance, used in the context of IAbility
   public Get<T>(): T {
-    return Retainer.GetInstance() as T;
+    return DarkVision.GetInstance() as T;
   }
 }
 
-export default Retainer;
+export default DarkVision;

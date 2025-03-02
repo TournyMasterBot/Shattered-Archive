@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -31,10 +32,11 @@ Enhanced spear - Ups your Thac0, parry chance and damage percent.`;
 
   // Method to get the single instance of the class
   public static GetInstance(): EnhancedSpear {
-    if (!EnhancedSpear.instance) {
-      EnhancedSpear.instance = new EnhancedSpear();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return EnhancedSpear.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

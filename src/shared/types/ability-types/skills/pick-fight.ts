@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -34,10 +35,11 @@ Same as the charlatan skill, but you can make other people attack you by pouring
 
   // Method to get the single instance of the class
   public static GetInstance(): PickFight {
-    if (!PickFight.instance) {
-      PickFight.instance = new PickFight();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return PickFight.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

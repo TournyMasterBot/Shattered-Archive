@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -38,10 +39,11 @@ The bigger a pirate's reputation, the more intimidating he or she can be.`;
 
   // Method to get the single instance of the class
   public static GetInstance(): Intimidation {
-    if (!Intimidation.instance) {
-      Intimidation.instance = new Intimidation();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Intimidation.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

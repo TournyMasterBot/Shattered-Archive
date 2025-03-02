@@ -1,5 +1,5 @@
 import IAbility from "@shared/types/ability-types/ability";
-import Deeproot from "@shared/types/ability-types/skills/deep-root";
+import Deeproot from "@shared/types/ability-types/skills/Deeproot";
 import Rootvein from "@shared/types/ability-types/skills/rootvein";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
 import BluntDamageTypes from "@shared/types/damage-types/damage-type-group-models/groups-blunt";

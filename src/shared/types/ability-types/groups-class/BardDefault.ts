@@ -8,7 +8,7 @@ import Roundhouse from "@shared/types/ability-types/skills/roundhouse";
 import EnhancedDamage from "@shared/types/ability-types/skills/enhanced-damage";
 import SecondAttack from "@shared/types/ability-types/skills/second-attack";
 import Parry from "@shared/types/ability-types/skills/parry";
-import DangerSense from "@shared/types/ability-types/skills/danger-sense";
+import DangerSense from "@shared/types/ability-types/skills/DangerSense";
 import WarHymns from "../groups-songs/WarHymns";
 import HymnsOfLife from "../groups-songs/HymnsOfLife";
 import ServerCache from "@shared/cache/server-cache";

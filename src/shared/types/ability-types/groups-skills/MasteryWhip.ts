@@ -4,7 +4,7 @@ import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Lash from "@shared/types/ability-types/skills/lash";
 import Yank from "@shared/types/ability-types/skills/yank";
-import Choke from "@shared/types/ability-types/skills/choke";
+import Choke from "@shared/types/ability-types/skills/Choke";
 import ServerCache from "@shared/cache/server-cache";
 
 export class MasteryWhip implements IAbilityGroup {

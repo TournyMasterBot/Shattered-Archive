@@ -1,5 +1,5 @@
 // #region imports
-import Dagger from "@shared/types/ability-types/skills/dagger";
+import Dagger from "@shared/types/ability-types/skills/Dagger";
 import Flail from "@shared/types/ability-types/skills/flail";
 import Staff from "@shared/types/ability-types/skills/staff";
 import Whip from "@shared/types/ability-types/skills/whip";
@@ -9,10 +9,10 @@ import Scrolls from "@shared/types/ability-types/skills/scrolls";
 import Staves from "@shared/types/ability-types/skills/staves";
 import Wands from "@shared/types/ability-types/skills/wands";
 import Recall from "@shared/types/ability-types/skills/recall";
-import Dig from "@shared/types/ability-types/skills/dig";
+import Dig from "@shared/types/ability-types/skills/Dig";
 import Age from "@shared/types/ability-types/skills/Age";
-import DangerSense from "@shared/types/ability-types/skills/danger-sense";
-import DirtKicking from "@shared/types/ability-types/skills/dirt-kicking";
+import DangerSense from "@shared/types/ability-types/skills/DangerSense";
+import DirtKicking from "@shared/types/ability-types/skills/DirtKicking";
 import Dodge from "@shared/types/ability-types/skills/dodge";
 import Trip from "@shared/types/ability-types/skills/trip";
 import Lore from "@shared/types/ability-types/skills/lore";

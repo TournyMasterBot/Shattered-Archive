@@ -3,7 +3,7 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Mace from "@shared/types/ability-types/skills/mace";
-import Disarm from "@shared/types/ability-types/skills/disarm";
+import Disarm from "@shared/types/ability-types/skills/Disarm";
 import Trip from "@shared/types/ability-types/skills/trip";
 import PickLock from "@shared/types/ability-types/skills/pick-lock";
 import Sword from "@shared/types/ability-types/skills/sword";

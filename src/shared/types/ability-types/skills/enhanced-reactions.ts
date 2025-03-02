@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -37,10 +38,11 @@ reactions.`;
 
   // Method to get the single instance of the class
   public static GetInstance(): EnhancedReactions {
-    if (!EnhancedReactions.instance) {
-      EnhancedReactions.instance = new EnhancedReactions();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return EnhancedReactions.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

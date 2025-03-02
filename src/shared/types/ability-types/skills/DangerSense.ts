@@ -1,9 +1,10 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
 
-export class CatchArrow implements IAbility {
-  private static instance: CatchArrow;
+export class DangerSense implements IAbility {
+  private static instance: DangerSense;
 
   name: string;
   helpFile: string;
@@ -14,35 +15,35 @@ export class CatchArrow implements IAbility {
   constructor() {
     this.name = this.constructor.name;
     this.helpFile = `
-CATCH ARROW
- 
-With an impressive display of hand-eye coordination, the trained jongleur 
-is able to not only see his enemy's shot heading toward him, but also grab 
-it out of the air before it can strike him.  This is a passive skill.
+help danger sense
+DANGER SENSE
+Danger Sense allows you to sense what your opponent is going to do before
+they do it, so you can dodge or deflect their blow.
 
-Groups containing this skill: JONGLEUR DEFAULT
+Available to bards and bard reclasses.
 `;
     this.abilityGroupType = AbilityGroupType.Skills;
     this.abilityUsage = AbilityUsage.Passive;
     this.manualDescription = "";
 
-    if (CatchArrow.instance === undefined) {
-      CatchArrow.instance = this;
+    if (DangerSense.instance === undefined) {
+      DangerSense.instance = this;
     }
   }
 
   // Method to get the single instance of the class
-  public static GetInstance(): CatchArrow {
-    if (!CatchArrow.instance) {
-      CatchArrow.instance = new CatchArrow();
+  public static GetInstance(): DangerSense {
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return CatchArrow.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility
   public Get<T>(): T {
-    return CatchArrow.GetInstance() as T;
+    return DangerSense.GetInstance() as T;
   }
 }
 
-export default CatchArrow;
+export default DangerSense;

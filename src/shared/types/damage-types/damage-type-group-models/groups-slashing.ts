@@ -1,5 +1,5 @@
 import IDamageType from "@shared/types/damage-types/damage-type-interface";
-import Claw from "@shared/types/ability-types/skills/claw";
+import Claw from "@shared/types/ability-types/skills/Claw";
 import Cleave from "@shared/types/damage-types/damage-type-models/cleave";
 import Scratch from "@shared/types/damage-types/damage-type-models/scratch"
 import Slash from "@shared/types/damage-types/damage-type-models/slash"

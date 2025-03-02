@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -48,10 +49,11 @@ The exotic skill cannot be purchased, and is dependent solely upon level.
 
   // Method to get the single instance of the class
   public static GetInstance(): Mace {
-    if (!Mace.instance) {
-      Mace.instance = new Mace();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Mace.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

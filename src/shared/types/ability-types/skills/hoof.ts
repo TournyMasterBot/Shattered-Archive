@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -31,10 +32,11 @@ export class Hoof implements IAbility {
 
   // Method to get the single instance of the class
   public static GetInstance(): Hoof {
-    if (!Hoof.instance) {
-      Hoof.instance = new Hoof();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Hoof.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

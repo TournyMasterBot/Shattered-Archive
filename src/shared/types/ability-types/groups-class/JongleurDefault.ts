@@ -7,7 +7,7 @@ import EnhancedDamage from "@shared/types/ability-types/skills/enhanced-damage";
 import LightShow from "@shared/types/ability-types/skills/light-show";
 import Tumbling from "@shared/types/ability-types/skills/tumbling";
 import PolevaultKick from "@shared/types/ability-types/skills/polevault-kick";
-import DangerSense from "@shared/types/ability-types/skills/danger-sense";
+import DangerSense from "@shared/types/ability-types/skills/DangerSense";
 import SecondAttack from "@shared/types/ability-types/skills/second-attack";
 import Parry from "@shared/types/ability-types/skills/parry";
 import EntertainCrowd from "@shared/types/ability-types/skills/entertain-crowd";

@@ -2,7 +2,7 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Dagger from "@shared/types/ability-types/skills/dagger";
+import Dagger from "@shared/types/ability-types/skills/Dagger";
 import ServerCache from "@shared/cache/server-cache";
 
 export class ShadowmageBasics implements IAbilityGroup {

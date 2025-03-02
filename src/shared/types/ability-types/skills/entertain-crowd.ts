@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -38,10 +39,11 @@ in combat as a result.`;
 
   // Method to get the single instance of the class
   public static GetInstance(): EntertainCrowd {
-    if (!EntertainCrowd.instance) {
-      EntertainCrowd.instance = new EntertainCrowd();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return EntertainCrowd.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

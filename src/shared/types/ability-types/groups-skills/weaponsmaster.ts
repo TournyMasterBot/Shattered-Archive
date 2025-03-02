@@ -5,7 +5,7 @@ import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Axe from "@shared/types/ability-types/skills/Axe";
 import Mace from "@shared/types/ability-types/skills/mace";
 import Sword from "@shared/types/ability-types/skills/sword";
-import Dagger from "@shared/types/ability-types/skills/dagger";
+import Dagger from "@shared/types/ability-types/skills/Dagger";
 import Polearm from "@shared/types/ability-types/skills/polearm";
 import Whip from "@shared/types/ability-types/skills/whip";
 import Flail from "@shared/types/ability-types/skills/flail";

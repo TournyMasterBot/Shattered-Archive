@@ -7,7 +7,7 @@ import Polearm from "@shared/types/ability-types/skills/polearm";
 import Smite from "@shared/types/ability-types/skills/smite";
 import Riding from "@shared/types/ability-types/skills/riding";
 import ShieldBlock from "@shared/types/ability-types/skills/shield-block";
-import Charge from "@shared/types/ability-types/skills/charge";
+import Charge from "@shared/types/ability-types/skills/Charge";
 import Parry from "@shared/types/ability-types/skills/parry";
 import Attack from "../groups-spells/Attack";
 import Benedictions from "@shared/types/ability-types/groups-spells/Benedictions";

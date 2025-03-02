@@ -3,7 +3,7 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Age from "@shared/types/ability-types/skills/Age";
-import Dig from "@shared/types/ability-types/skills/dig";
+import Dig from "@shared/types/ability-types/skills/Dig";
 import Recall from "@shared/types/ability-types/skills/recall";
 import Scrolls from "@shared/types/ability-types/skills/scrolls";
 import Staves from "@shared/types/ability-types/skills/staves";

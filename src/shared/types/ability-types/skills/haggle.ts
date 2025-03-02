@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -37,10 +38,11 @@ although other classes may learn it as well.`;
 
   // Method to get the single instance of the class
   public static GetInstance(): Haggle {
-    if (!Haggle.instance) {
-      Haggle.instance = new Haggle();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Haggle.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

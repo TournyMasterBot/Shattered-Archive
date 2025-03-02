@@ -4,7 +4,7 @@ import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import ShieldCleave from "@shared/types/ability-types/skills/shield-cleave";
 import Whirl from "@shared/types/ability-types/skills/whirl";
-import Disembowel from "@shared/types/ability-types/skills/disembowel";
+import Disembowel from "@shared/types/ability-types/skills/Disembowel";
 import ServerCache from "@shared/cache/server-cache";
 
 export class MasteryAxe implements IAbilityGroup {

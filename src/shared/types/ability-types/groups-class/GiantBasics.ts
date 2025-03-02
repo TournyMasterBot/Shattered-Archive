@@ -4,7 +4,7 @@ import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Berserk from "@shared/types/ability-types/skills/Berserk";
 import Astrology from "@shared/types/ability-types/skills/Astrology";
-import Charge from "@shared/types/ability-types/skills/charge";
+import Charge from "@shared/types/ability-types/skills/Charge";
 import Meditation from "@shared/types/ability-types/skills/meditation";
 import Attack from "../groups-spells/Attack";
 import Benedictions from "@shared/types/ability-types/groups-spells/Benedictions";
