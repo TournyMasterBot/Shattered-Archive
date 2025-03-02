@@ -2,10 +2,10 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Chasm from "@shared/types/ability-types/spells/chasm";
-import FlamingSoul from "@shared/types/ability-types/spells/flaming-soul";
-import Stalagmite from "@shared/types/ability-types/spells/stalagmite";
-import SummonMonster from "@shared/types/ability-types/spells/summon-monster";
+import Chasm from "@shared/types/ability-types/spells/Chasm";
+import FlamingSoul from "@shared/types/ability-types/spells/FlamingSoul";
+import Stalagmite from "@shared/types/ability-types/spells/Stalagmite";
+import SummonMonster from "@shared/types/ability-types/spells/SummonMonster";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Earth implements IAbilityGroup {

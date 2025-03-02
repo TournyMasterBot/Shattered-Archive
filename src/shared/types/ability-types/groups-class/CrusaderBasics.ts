@@ -2,8 +2,8 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Mace from "@shared/types/ability-types/skills/mace";
-import Flail from "@shared/types/ability-types/skills/flail";
+import Mace from "@shared/types/ability-types/skills/Mace";
+import Flail from "@shared/types/ability-types/skills/Flail";
 import ServerCache from "@shared/cache/server-cache";
 
 export class CrusaderBasics implements IAbilityGroup {

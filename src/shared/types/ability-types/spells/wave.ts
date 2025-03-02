@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -25,10 +26,11 @@ room, continuing for up to two rooms in a direction of their choosing.`;
 
   // Method to get the single instance of the class
   public static GetInstance(): Wave {
-    if (!Wave.instance) {
-      Wave.instance = new Wave();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Wave.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

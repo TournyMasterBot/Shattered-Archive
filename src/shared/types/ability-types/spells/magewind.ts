@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -31,10 +32,11 @@ wind, to aid their ship.
 
   // Method to get the single instance of the class
   public static GetInstance(): Magewind {
-    if (!Magewind.instance) {
-      Magewind.instance = new Magewind();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Magewind.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -23,10 +24,11 @@ export class Courage implements IAbility {
 
   // Method to get the single instance of the class
   public static GetInstance(): Courage {
-    if (!Courage.instance) {
-      Courage.instance = new Courage();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Courage.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

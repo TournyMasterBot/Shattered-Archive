@@ -1,6 +1,6 @@
 
 import IAbility from "@shared/types/ability-types/ability";
-import Screech from "@shared/types/ability-types/skills/screech";
+import Screech from "@shared/types/ability-types/skills/Screech";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
 import BoostedClass from "@shared/types/character-types/boostedClass";
 import IDamageType from "@shared/types/damage-types/damage-type-interface";

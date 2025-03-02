@@ -3,8 +3,8 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Axe from "@shared/types/ability-types/skills/Axe";
-import KillingRage from "@shared/types/ability-types/skills/killing-rage";
-import Mace from "@shared/types/ability-types/skills/mace";
+import KillingRage from "@shared/types/ability-types/skills/KillingRage";
+import Mace from "@shared/types/ability-types/skills/Mace";
 import ServerCache from "@shared/cache/server-cache";
 
 export class BattleragerBasics implements IAbilityGroup {

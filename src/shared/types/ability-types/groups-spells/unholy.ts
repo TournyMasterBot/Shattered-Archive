@@ -2,17 +2,17 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import DarkEssence from "@shared/types/ability-types/spells/dark-essence";
-import SummonNightmare from "@shared/types/ability-types/spells/summon-nightmare";
-import Intimidate from "@shared/types/ability-types/spells/intimidate";
-import SummonDeathknight from "@shared/types/ability-types/spells/summon-deathknight";
-import DarkHeal from "@shared/types/ability-types/spells/dark-heal";
-import DarkEmpower from "@shared/types/ability-types/spells/dark-empower";
-import DarkEnergy from "@shared/types/ability-types/spells/dark-energy";
-import SummonFelbeast from "@shared/types/ability-types/spells/summon-felbeast";
-import DarkBolt from "@shared/types/ability-types/spells/dark-bolt";
-import Fasting from "@shared/types/ability-types/spells/fasting";
-import DarkImmunity from "@shared/types/ability-types/spells/dark-immunity";
+import DarkEssence from "@shared/types/ability-types/spells/DarkEssence";
+import SummonNightmare from "@shared/types/ability-types/spells/SummonNightmare";
+import Intimidate from "@shared/types/ability-types/spells/Intimidate";
+import SummonDeathknight from "@shared/types/ability-types/spells/SummonDeathknight";
+import DarkHeal from "@shared/types/ability-types/spells/DarkHeal";
+import DarkEmpower from "@shared/types/ability-types/spells/DarkEmpower";
+import DarkEnergy from "@shared/types/ability-types/spells/DarkEnergy";
+import SummonFelbeast from "@shared/types/ability-types/spells/SummonFelbeast";
+import DarkBolt from "@shared/types/ability-types/spells/DarkBolt";
+import Fasting from "@shared/types/ability-types/spells/Fasting";
+import DarkImmunity from "@shared/types/ability-types/spells/DarkImmunity";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Unholy implements IAbilityGroup {

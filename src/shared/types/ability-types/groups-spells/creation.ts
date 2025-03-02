@@ -2,15 +2,15 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import ContinualLight from "@shared/types/ability-types/spells/continual-light";
-import CreateWater from "@shared/types/ability-types/spells/create-water";
-import CreateHolySymbol from "@shared/types/ability-types/spells/create-holy-symbol";
-import CreateFood from "@shared/types/ability-types/spells/create-food";
-import CreateRose from "@shared/types/ability-types/spells/create-rose";
-import CreateTree from "@shared/types/ability-types/spells/create-tree";
-import CreateSpring from "@shared/types/ability-types/spells/create-spring";
-import FloatingDisc from "@shared/types/ability-types/spells/floating-disc";
-import Illumination from "@shared/types/ability-types/spells/illumination";
+import ContinualLight from "@shared/types/ability-types/spells/ContinualLight";
+import CreateWater from "@shared/types/ability-types/spells/CreateWater";
+import CreateHolySymbol from "@shared/types/ability-types/spells/CreateHolySymbol";
+import CreateFood from "@shared/types/ability-types/spells/CreateFood";
+import CreateRose from "@shared/types/ability-types/spells/CreateRose";
+import CreateTree from "@shared/types/ability-types/spells/CreateTree";
+import CreateSpring from "@shared/types/ability-types/spells/CreateSpring";
+import FloatingDisc from "@shared/types/ability-types/spells/FloatingDisc";
+import Illumination from "@shared/types/ability-types/spells/Illumination";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Creation implements IAbilityGroup {

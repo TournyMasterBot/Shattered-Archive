@@ -10,8 +10,8 @@ import Healing from "../groups-spells/Healing";
 import Maladictions from "../groups-spells/Maladictions";
 import Protective from "../groups-spells/Protective";
 import Transportation from "../groups-spells/Transportation";
-import Flail from "@shared/types/ability-types/skills/flail";
-import ShieldBlock from "@shared/types/ability-types/skills/shield-block";
+import Flail from "@shared/types/ability-types/skills/Flail";
+import ShieldBlock from "@shared/types/ability-types/skills/ShieldBlock";
 import ServerCache from "@shared/cache/server-cache";
 
 export class PriestDefault implements IAbilityGroup {

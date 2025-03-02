@@ -1,7 +1,7 @@
 
 import IAbility from "@shared/types/ability-types/ability";
-import Envenom from "@shared/types/ability-types/skills/envenom";
-import Spit from "@shared/types/ability-types/skills/spit";
+import Envenom from "@shared/types/ability-types/skills/Envenom";
+import Spit from "@shared/types/ability-types/skills/Spit";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
 import PoisonDamageTypes from "@shared/types/damage-types/damage-type-group-models/groups-poison";
 import BoostedClass from "@shared/types/character-types/boostedClass";

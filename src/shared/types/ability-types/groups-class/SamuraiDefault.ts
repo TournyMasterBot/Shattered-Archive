@@ -2,13 +2,13 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Parry from "@shared/types/ability-types/skills/parry";
-import Daikyu from "@shared/types/ability-types/skills/daikyu";
-import CallDog from "@shared/types/ability-types/skills/call-dog";
-import Retainer from "@shared/types/ability-types/skills/retainer";
-import Kiai from "@shared/types/ability-types/skills/kiai";
-import Bushido from "@shared/types/ability-types/skills/bushido";
-import Aikido from "@shared/types/ability-types/skills/aikido";
+import Parry from "@shared/types/ability-types/skills/Parry";
+import Daikyu from "@shared/types/ability-types/skills/Daikyu";
+import CallDog from "@shared/types/ability-types/skills/CallDog";
+import Retainer from "@shared/types/ability-types/skills/Retainer";
+import Kiai from "@shared/types/ability-types/skills/Kiai";
+import Bushido from "@shared/types/ability-types/skills/Bushido";
+import Aikido from "@shared/types/ability-types/skills/Aikido";
 import ServerCache from "@shared/cache/server-cache";
 
 export class SamuraiDefault implements IAbilityGroup {

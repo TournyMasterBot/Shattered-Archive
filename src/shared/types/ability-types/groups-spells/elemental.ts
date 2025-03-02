@@ -2,9 +2,9 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Blizzard from "@shared/types/ability-types/spells/blizzard";
-import Firestorm from "@shared/types/ability-types/spells/firestorm";
-import SummonElemental from "@shared/types/ability-types/spells/summon-elemental";
+import Blizzard from "@shared/types/ability-types/spells/Blizzard";
+import Firestorm from "@shared/types/ability-types/spells/Firestorm";
+import SummonElemental from "@shared/types/ability-types/spells/SummonElemental";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Elemental implements IAbilityGroup {

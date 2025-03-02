@@ -2,11 +2,11 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import SummonLavalord from "@shared/types/ability-types/spells/summon-lavalord";
-import SummonTreant from "@shared/types/ability-types/spells/summon-treant";
-import SummonEarthlord from "@shared/types/ability-types/spells/summon-earthlord";
-import SummonGryffon from "@shared/types/ability-types/spells/summon-gryffon";
-import SummonWhompingWillow from "@shared/types/ability-types/spells/summon-whomping-willow";
+import SummonLavalord from "@shared/types/ability-types/spells/SummonLavalord";
+import SummonTreant from "@shared/types/ability-types/spells/SummonTreant";
+import SummonEarthlord from "@shared/types/ability-types/spells/SummonEarthlord";
+import SummonGryffon from "@shared/types/ability-types/spells/SummonGryffon";
+import SummonWhompingWillow from "@shared/types/ability-types/spells/SummonWhompingWillow";
 import ServerCache from "@shared/cache/server-cache";
 
 export class WayOfTheStars implements IAbilityGroup {

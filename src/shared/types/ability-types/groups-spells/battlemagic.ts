@@ -2,16 +2,16 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Absorption from "@shared/types/ability-types/spells/absorption";
-import InstantRegeneration from "@shared/types/ability-types/spells/instant-regeneration";
-import EnhancedConstitution from "@shared/types/ability-types/spells/enhanced-constitution";
-import Solidify from "@shared/types/ability-types/spells/solidify";
-import AlterBeast from "@shared/types/ability-types/spells/alter-beast";
-import Infuriate from "@shared/types/ability-types/spells/infuriate";
-import AuraOfPain from "@shared/types/ability-types/spells/aura-of-pain";
-import AncientVow from "@shared/types/ability-types/spells/ancient-vow";
-import WindBreath from "@shared/types/ability-types/spells/wind-breath";
-import Regenerate from "@shared/types/ability-types/spells/regenerate";
+import Absorption from "@shared/types/ability-types/spells/Absorption";
+import InstantRegeneration from "@shared/types/ability-types/spells/InstantRegeneration";
+import EnhancedConstitution from "@shared/types/ability-types/spells/EnhancedConstitution";
+import Solidify from "@shared/types/ability-types/spells/Solidify";
+import AlterBeast from "@shared/types/ability-types/spells/AlterBeast";
+import Infuriate from "@shared/types/ability-types/spells/Infuriate";
+import AuraOfPain from "@shared/types/ability-types/spells/AuraOfPain";
+import AncientVow from "@shared/types/ability-types/spells/AncientVow";
+import WindBreath from "@shared/types/ability-types/spells/WindBreath";
+import Regenerate from "@shared/types/ability-types/spells/Regenerate";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Battlemagic implements IAbilityGroup {

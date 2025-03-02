@@ -2,17 +2,17 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Spook from "@shared/types/ability-types/spells/spook";
-import Vacancy from "@shared/types/ability-types/spells/vacancy";
-import ImprovedInvisibility from "@shared/types/ability-types/spells/improved-invisibility";
-import Imposter from "@shared/types/ability-types/spells/imposter";
-import Blur from "@shared/types/ability-types/spells/blur";
-import SummonShadow from "@shared/types/ability-types/spells/summon-shadow";
-import FalseImage from "@shared/types/ability-types/spells/false-image";
-import Paralyze from "@shared/types/ability-types/spells/paralyze";
-import MirrorImage from "@shared/types/ability-types/spells/mirror-image";
-import RainbowPattern from "@shared/types/ability-types/spells/rainbow-pattern";
-import Blend from "@shared/types/ability-types/spells/blend";
+import Spook from "@shared/types/ability-types/spells/Spook";
+import Vacancy from "@shared/types/ability-types/spells/Vacancy";
+import ImprovedInvisibility from "@shared/types/ability-types/spells/ImprovedInvisibility";
+import Imposter from "@shared/types/ability-types/spells/Imposter";
+import Blur from "@shared/types/ability-types/spells/Blur";
+import SummonShadow from "@shared/types/ability-types/spells/SummonShadow";
+import FalseImage from "@shared/types/ability-types/spells/FalseImage";
+import Paralyze from "@shared/types/ability-types/spells/Paralyze";
+import MirrorImage from "@shared/types/ability-types/spells/MirrorImage";
+import RainbowPattern from "@shared/types/ability-types/spells/RainbowPattern";
+import Blend from "@shared/types/ability-types/spells/Blend";
 import ServerCache from "@shared/cache/server-cache";
 
 export class GreaterIllusions implements IAbilityGroup {

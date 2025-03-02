@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -39,10 +40,11 @@ See also - COMBAT
 
   // Method to get the single instance of the class
   public static GetInstance(): Fireball {
-    if (!Fireball.instance) {
-      Fireball.instance = new Fireball();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Fireball.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

@@ -2,10 +2,10 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Invisibility from "@shared/types/ability-types/spells/invisibility";
-import SelfProjection from "@shared/types/ability-types/spells/self-projection";
-import MassInvis from "@shared/types/ability-types/spells/mass-invis";
-import Ventriloquate from "@shared/types/ability-types/spells/ventriloquate";
+import Invisibility from "@shared/types/ability-types/spells/Invisibility";
+import SelfProjection from "@shared/types/ability-types/spells/SelfProjection";
+import MassInvis from "@shared/types/ability-types/spells/MassInvis";
+import Ventriloquate from "@shared/types/ability-types/spells/Ventriloquate";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Illusion implements IAbilityGroup {

@@ -1,6 +1,6 @@
 
 import IAbility from "@shared/types/ability-types/ability";
-import FastHealing from "@shared/types/ability-types/skills/fast-healing";
+import FastHealing from "@shared/types/ability-types/skills/FastHealing";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
 import { MentalDamageTypes } from "@shared/types/damage-types/damage-type-group-models/groups-mental";
 import BoostedClass from "@shared/types/character-types/boostedClass";

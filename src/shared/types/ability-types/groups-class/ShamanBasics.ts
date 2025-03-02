@@ -2,8 +2,8 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Mace from "@shared/types/ability-types/skills/mace";
-import Spear from "@shared/types/ability-types/skills/spear";
+import Mace from "@shared/types/ability-types/skills/Mace";
+import Spear from "@shared/types/ability-types/skills/Spear";
 import ServerCache from "@shared/cache/server-cache";
 
 export class ShamanBasics implements IAbilityGroup {

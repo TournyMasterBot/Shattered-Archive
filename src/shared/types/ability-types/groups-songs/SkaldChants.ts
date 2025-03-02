@@ -2,16 +2,16 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import ChantOfAccuracy from "@shared/types/ability-types/songs/chant-of-accuracy";
-import CallToArms from "@shared/types/ability-types/songs/call-to-arms";
-import WarHowl from "@shared/types/ability-types/songs/war-howl";
-import DirgeOfDetection from "@shared/types/ability-types/songs/dirge-of-detection";
-import MelodyOfMeditation from "@shared/types/ability-types/songs/melody-of-meditation";
-import YelpOfAggression from "@shared/types/ability-types/songs/yelp-of-aggression";
-import RequiemOfWayfaring from "@shared/types/ability-types/songs/requiem-of-wayfaring";
-import JubileeOfRegeneration from "@shared/types/ability-types/songs/jubilee-of-regeneration";
+import ChantOfAccuracy from "@shared/types/ability-types/songs/ChantOfAccuracy";
+import CallToArms from "@shared/types/ability-types/songs/CallToArms";
+import WarHowl from "@shared/types/ability-types/songs/WarHowl";
+import DirgeOfDetection from "@shared/types/ability-types/songs/DirgeOfDetection";
+import MelodyOfMeditation from "@shared/types/ability-types/songs/MelodyOfMeditation";
+import YelpOfAggression from "@shared/types/ability-types/songs/YelpOfAggression";
+import RequiemOfWayfaring from "@shared/types/ability-types/songs/RequiemOfWayfaring";
+import JubileeOfRegeneration from "@shared/types/ability-types/songs/JubileeOfRegeneration";
 import WarbleOfArrest from "@shared/types/ability-types/songs/warble-of-arrest";
-import RousalOfResistance from "@shared/types/ability-types/songs/rousal-of-ressistance";
+import RousalOfResistance from "@shared/types/ability-types/songs/RousalOfResistance";
 import ServerCache from "@shared/cache/server-cache";
 
 export class SkaldChants implements IAbilityGroup {

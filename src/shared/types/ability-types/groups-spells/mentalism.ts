@@ -2,15 +2,15 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import HealingDream from "@shared/types/ability-types/spells/healing-dream";
-import Haze from "@shared/types/ability-types/spells/haze";
-import Recover from "@shared/types/ability-types/spells/recover";
-import FocusedAggression from "@shared/types/ability-types/spells/focused-aggression";
-import FakeIllness from "@shared/types/ability-types/spells/fake-illness";
-import AbandonHope from "@shared/types/ability-types/spells/abandon-hope";
-import InfluenceConfidence from "@shared/types/ability-types/spells/influence-confidence";
-import Amnesia from "@shared/types/ability-types/spells/amnesia";
-import Distortion from "@shared/types/ability-types/spells/distortion";
+import HealingDream from "@shared/types/ability-types/spells/HealingDream";
+import Haze from "@shared/types/ability-types/spells/Haze";
+import Recover from "@shared/types/ability-types/spells/Recover";
+import FocusedAggression from "@shared/types/ability-types/spells/FocusedAggression";
+import FakeIllness from "@shared/types/ability-types/spells/FakeIllness";
+import AbandonHope from "@shared/types/ability-types/spells/AbandonHope";
+import InfluenceConfidence from "@shared/types/ability-types/spells/InfluenceConfidence";
+import Amnesia from "@shared/types/ability-types/spells/Amnesia";
+import Distortion from "@shared/types/ability-types/spells/Distortion";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Mentalism implements IAbilityGroup {

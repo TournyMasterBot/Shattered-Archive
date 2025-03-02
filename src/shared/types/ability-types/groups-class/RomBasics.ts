@@ -4,11 +4,11 @@ import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Age from "@shared/types/ability-types/skills/Age";
 import Dig from "@shared/types/ability-types/skills/Dig";
-import Recall from "@shared/types/ability-types/skills/recall";
-import Scrolls from "@shared/types/ability-types/skills/scrolls";
-import Staves from "@shared/types/ability-types/skills/staves";
-import Swim from "@shared/types/ability-types/skills/swim";
-import Wands from "@shared/types/ability-types/skills/wands";
+import Recall from "@shared/types/ability-types/skills/Recall";
+import Scrolls from "@shared/types/ability-types/skills/Scrolls";
+import Staves from "@shared/types/ability-types/skills/Staves";
+import Swim from "@shared/types/ability-types/skills/Swim";
+import Wands from "@shared/types/ability-types/skills/Wands";
 import ServerCache from "@shared/cache/server-cache";
 
 export class RomBasics implements IAbilityGroup {

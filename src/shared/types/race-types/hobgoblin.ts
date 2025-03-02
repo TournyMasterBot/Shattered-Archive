@@ -1,6 +1,6 @@
 
 import IAbility from "@shared/types/ability-types/ability";
-import Spit from "@shared/types/ability-types/skills/spit";
+import Spit from "@shared/types/ability-types/skills/Spit";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
 import BoostedClass from "@shared/types/character-types/boostedClass";
 import IDamageType from "@shared/types/damage-types/damage-type-interface";

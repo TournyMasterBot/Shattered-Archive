@@ -1,8 +1,8 @@
 
 import IAbility from "@shared/types/ability-types/ability";
-import Hide from "@shared/types/ability-types/skills/hide";
-import Meditation from "@shared/types/ability-types/skills/meditation";
-import Sneak from "@shared/types/ability-types/skills/sneak";
+import Hide from "@shared/types/ability-types/skills/Hide";
+import Meditation from "@shared/types/ability-types/skills/Meditation";
+import Sneak from "@shared/types/ability-types/skills/Sneak";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
 import BoostedClass from "@shared/types/character-types/boostedClass";
 import IDamageType from "@shared/types/damage-types/damage-type-interface";

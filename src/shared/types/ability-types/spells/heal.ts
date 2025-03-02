@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -29,10 +30,11 @@ When used on a player, this will also show the player's current condition after 
 
   // Method to get the single instance of the class
   public static GetInstance(): Heal {
-    if (!Heal.instance) {
-      Heal.instance = new Heal();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Heal.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

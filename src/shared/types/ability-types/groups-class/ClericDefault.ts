@@ -12,7 +12,7 @@ import Maladictions from "../groups-spells/Maladictions";
 import Protective from "../groups-spells/Protective";
 import Transportation from "../groups-spells/Transportation";
 import Weather from "../groups-spells/Weather";
-import Flail from "@shared/types/ability-types/skills/flail";
+import Flail from "@shared/types/ability-types/skills/Flail";
 import ServerCache from "@shared/cache/server-cache";
 
 export class ClericDefault implements IAbilityGroup {

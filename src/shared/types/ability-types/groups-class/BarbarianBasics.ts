@@ -2,8 +2,8 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Mace from "@shared/types/ability-types/skills/mace";
-import SecondAttack from "@shared/types/ability-types/skills/second-attack";
+import Mace from "@shared/types/ability-types/skills/Mace";
+import SecondAttack from "@shared/types/ability-types/skills/SecondAttack";
 import ServerCache from "@shared/cache/server-cache";
 
 export class BarbarianBasics implements IAbilityGroup {

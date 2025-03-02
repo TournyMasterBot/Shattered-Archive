@@ -7,13 +7,13 @@ import Detection from "../groups-spells/Detection";
 import Enhancement from "@shared/types/ability-types/groups-spells/Enhancement";
 import Transportation from "../groups-spells/Transportation";
 import Circle from "@shared/types/ability-types/skills/circle";
-import CircleStab from "@shared/types/ability-types/skills/circle-stab";
-import Dodge from "@shared/types/ability-types/skills/dodge";
-import EnhancedDamage from "@shared/types/ability-types/skills/enhanced-damage";
-import Offhand from "@shared/types/ability-types/skills/offhand";
-import Parry from "@shared/types/ability-types/skills/parry";
-import Reposition from "@shared/types/ability-types/skills/reposition";
-import ThirdAttack from "@shared/types/ability-types/skills/third-attack";
+import CircleStab from "@shared/types/ability-types/skills/CircleStab";
+import Dodge from "@shared/types/ability-types/skills/Dodge";
+import EnhancedDamage from "@shared/types/ability-types/skills/EnhancedDamage";
+import Offhand from "@shared/types/ability-types/skills/Offhand";
+import Parry from "@shared/types/ability-types/skills/Parry";
+import Reposition from "@shared/types/ability-types/skills/Reposition";
+import ThirdAttack from "@shared/types/ability-types/skills/ThirdAttack";
 import ServerCache from "@shared/cache/server-cache";
 
 export class BladesingerDefault implements IAbilityGroup {

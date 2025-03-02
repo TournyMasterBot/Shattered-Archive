@@ -2,12 +2,12 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import CreateCauldron from "@shared/types/ability-types/spells/create-cauldron";
-import FindFamiliar from "@shared/types/ability-types/spells/find-familiar";
-import Silence from "@shared/types/ability-types/spells/silence";
-import PossessFamiliar from "@shared/types/ability-types/spells/possess-familiar";
-import Fear from "@shared/types/ability-types/spells/fear";
-import Splinter from "@shared/types/ability-types/spells/splinter";
+import CreateCauldron from "@shared/types/ability-types/spells/CreateCauldron";
+import FindFamiliar from "@shared/types/ability-types/spells/FindFamiliar";
+import Silence from "@shared/types/ability-types/spells/Silence";
+import PossessFamiliar from "@shared/types/ability-types/spells/PossessFamiliar";
+import Fear from "@shared/types/ability-types/spells/Fear";
+import Splinter from "@shared/types/ability-types/spells/Splinter";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Witchcraft implements IAbilityGroup {

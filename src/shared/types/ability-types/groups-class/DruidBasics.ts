@@ -2,8 +2,8 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Staff from "@shared/types/ability-types/skills/staff";
-import Herbal from "@shared/types/ability-types/skills/herbal";
+import Staff from "@shared/types/ability-types/skills/Staff";
+import Herbal from "@shared/types/ability-types/skills/Herbal";
 import ServerCache from "@shared/cache/server-cache";
 
 export class DruidBasics implements IAbilityGroup {

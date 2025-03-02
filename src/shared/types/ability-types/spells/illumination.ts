@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -33,10 +34,11 @@ weaker, illuminate the surrounding rooms as well.
 
   // Method to get the single instance of the class
   public static GetInstance(): Illumination {
-    if (!Illumination.instance) {
-      Illumination.instance = new Illumination();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Illumination.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

@@ -2,9 +2,9 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Sword from "@shared/types/ability-types/skills/sword";
+import Sword from "@shared/types/ability-types/skills/Sword";
 import Dagger from "@shared/types/ability-types/skills/Dagger";
-import Dodge from "@shared/types/ability-types/skills/dodge";
+import Dodge from "@shared/types/ability-types/skills/Dodge";
 import ServerCache from "@shared/cache/server-cache";
 
 export class SwashbucklerBasics implements IAbilityGroup {

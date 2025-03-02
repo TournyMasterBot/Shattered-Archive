@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -46,10 +47,11 @@ See also - BEGUILING`;
 
   // Method to get the single instance of the class
   public static GetInstance(): Sleep {
-    if (!Sleep.instance) {
-      Sleep.instance = new Sleep();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Sleep.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

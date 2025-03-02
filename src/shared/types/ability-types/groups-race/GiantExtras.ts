@@ -2,13 +2,13 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Lore from "@shared/types/ability-types/skills/lore";
-import Spellcraft from "@shared/types/ability-types/skills/spellcraft";
+import Lore from "@shared/types/ability-types/skills/Lore";
+import Spellcraft from "@shared/types/ability-types/skills/Spellcraft";
 import Alchemy from "@shared/types/ability-types/skills/Alchemy";
-import DualWield from "@shared/types/ability-types/skills/dual-wield";
+import DualWield from "@shared/types/ability-types/skills/DualWield";
 import Astrology from "@shared/types/ability-types/skills/Astrology";
-import PickLock from "@shared/types/ability-types/skills/pick-lock";
-import Scribe from "@shared/types/ability-types/skills/scribe";
+import PickLock from "@shared/types/ability-types/skills/PickLock";
+import Scribe from "@shared/types/ability-types/skills/Scribe";
 import ServerCache from "@shared/cache/server-cache";
 
 export class GiantExtras implements IAbilityGroup {

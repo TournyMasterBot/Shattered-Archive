@@ -1,6 +1,6 @@
 
 import IAbility from "@shared/types/ability-types/ability";
-import ViperBite from "@shared/types/ability-types/skills/viper-bite";
+import ViperBite from "@shared/types/ability-types/skills/ViperBite";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
 import ColdDamageTypes from "@shared/types/damage-types/damage-type-group-models/groups-cold";
 import FireDamageTypes from "@shared/types/damage-types/damage-type-group-models/groups-fire";

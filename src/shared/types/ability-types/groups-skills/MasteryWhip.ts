@@ -2,8 +2,8 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Lash from "@shared/types/ability-types/skills/lash";
-import Yank from "@shared/types/ability-types/skills/yank";
+import Lash from "@shared/types/ability-types/skills/Lash";
+import Yank from "@shared/types/ability-types/skills/Yank";
 import Choke from "@shared/types/ability-types/skills/Choke";
 import ServerCache from "@shared/cache/server-cache";
 

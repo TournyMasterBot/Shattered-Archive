@@ -1,6 +1,6 @@
-import Envenom from "@shared/types/ability-types/skills/envenom";
-import Lifebane from "@shared/types/ability-types/skills/lifebane";
-import Poison from "@shared/types/ability-types/spells/poison";
+import Envenom from "@shared/types/ability-types/skills/Envenom";
+import Lifebane from "@shared/types/ability-types/skills/Lifebane";
+import Poison from "@shared/types/ability-types/spells/Poison";
 import IDamageType from "@shared/types/damage-types/damage-type-interface";
 
 export class PoisonDamageTypes {

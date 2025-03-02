@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -39,10 +40,11 @@ See also: FIRESTORM
 
   // Method to get the single instance of the class
   public static GetInstance(): Blizzard {
-    if (!Blizzard.instance) {
-      Blizzard.instance = new Blizzard();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Blizzard.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

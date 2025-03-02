@@ -7,12 +7,12 @@ import Healing from "@shared/types/ability-types/groups-spells/Healing";
 import Protective from "@shared/types/ability-types/groups-spells/Protective";
 import Weather from "@shared/types/ability-types/groups-spells/Weather";
 import AcuteVision from "@shared/types/ability-types/skills/AcuteVision";
-import Creaturelore from "@shared/types/ability-types/skills/creaturelore";
-import DarkVision from "@shared/types/ability-types/skills/dark-vision";
-import Dodge from "@shared/types/ability-types/skills/dodge";
-import FindWater from "@shared/types/ability-types/skills/find-water";
-import Sneak from "@shared/types/ability-types/skills/sneak";
-import Tame from "@shared/types/ability-types/skills/tame";
+import Creaturelore from "@shared/types/ability-types/skills/Creaturelore";
+import DarkVision from "@shared/types/ability-types/skills/DarkVision";
+import Dodge from "@shared/types/ability-types/skills/Dodge";
+import FindWater from "@shared/types/ability-types/skills/FindWater";
+import Sneak from "@shared/types/ability-types/skills/Sneak";
+import Tame from "@shared/types/ability-types/skills/Tame";
 import ServerCache from "@shared/cache/server-cache";
 import Nature from "@shared/types/ability-types/groups-spells/Nature";
 

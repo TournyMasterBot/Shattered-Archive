@@ -2,13 +2,13 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Imbue from "@shared/types/ability-types/spells/imbue";
-import Frenzy from "@shared/types/ability-types/spells/frenzy";
-import KnowReligion from "@shared/types/ability-types/spells/know-religion";
-import Bless from "@shared/types/ability-types/spells/bless";
-import HolyWord from "@shared/types/ability-types/spells/holy-word";
-import Calm from "@shared/types/ability-types/spells/calm";
-import RemoveCurse from "@shared/types/ability-types/spells/remove-curse";
+import Imbue from "@shared/types/ability-types/spells/Imbue";
+import Frenzy from "@shared/types/ability-types/spells/Frenzy";
+import KnowReligion from "@shared/types/ability-types/spells/KnowReligion";
+import Bless from "@shared/types/ability-types/spells/Bless";
+import HolyWord from "@shared/types/ability-types/spells/HolyWord";
+import Calm from "@shared/types/ability-types/spells/Calm";
+import RemoveCurse from "@shared/types/ability-types/spells/RemoveCurse";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Benedictions implements IAbilityGroup {

@@ -2,10 +2,10 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import MetalStorm from "@shared/types/ability-types/spells/metal-storm";
-import ForceField from "@shared/types/ability-types/spells/force-field";
-import ControlMetal from "@shared/types/ability-types/spells/control-metal";
-import FlamingSoul from "@shared/types/ability-types/spells/flaming-soul";
+import MetalStorm from "@shared/types/ability-types/spells/MetalStorm";
+import ForceField from "@shared/types/ability-types/spells/ForceField";
+import ControlMetal from "@shared/types/ability-types/spells/ControlMetal";
+import FlamingSoul from "@shared/types/ability-types/spells/FlamingSoul";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Metal implements IAbilityGroup {

@@ -1,8 +1,8 @@
 
 import IAbility from "@shared/types/ability-types/ability";
-import FastHealing from "@shared/types/ability-types/skills/fast-healing";
-import Hide from "@shared/types/ability-types/skills/hide";
-import Sneak from "@shared/types/ability-types/skills/sneak";
+import FastHealing from "@shared/types/ability-types/skills/FastHealing";
+import Hide from "@shared/types/ability-types/skills/Hide";
+import Sneak from "@shared/types/ability-types/skills/Sneak";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
 import ColdDamageTypes from "@shared/types/damage-types/damage-type-group-models/groups-cold";
 import FireDamageTypes from "@shared/types/damage-types/damage-type-group-models/groups-fire";

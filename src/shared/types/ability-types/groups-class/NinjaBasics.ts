@@ -2,8 +2,8 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Sword from "@shared/types/ability-types/skills/sword";
-import Sneak from "@shared/types/ability-types/skills/sneak";
+import Sword from "@shared/types/ability-types/skills/Sword";
+import Sneak from "@shared/types/ability-types/skills/Sneak";
 import ServerCache from "@shared/cache/server-cache";
 
 export class NinjaBasics implements IAbilityGroup {

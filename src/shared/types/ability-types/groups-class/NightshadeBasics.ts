@@ -3,7 +3,7 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Dagger from "@shared/types/ability-types/skills/Dagger";
-import Steal from "@shared/types/ability-types/skills/steal";
+import Steal from "@shared/types/ability-types/skills/Steal";
 import ServerCache from "@shared/cache/server-cache";
 
 export class NightshadeBasics implements IAbilityGroup {

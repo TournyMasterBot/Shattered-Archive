@@ -2,8 +2,8 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Distance from "@shared/types/ability-types/skills/distance";
-import Entrap from "@shared/types/ability-types/skills/entrap";
+import Distance from "@shared/types/ability-types/skills/Distance";
+import Entrap from "@shared/types/ability-types/skills/Entrap";
 import Chargeset from "@shared/types/ability-types/skills/Chargeset";
 import ServerCache from "@shared/cache/server-cache";
 

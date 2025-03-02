@@ -2,12 +2,12 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import CureCritical from "@shared/types/ability-types/spells/cure-critical";
-import Heal from "@shared/types/ability-types/spells/heal";
-import CureLight from "@shared/types/ability-types/spells/cure-light";
-import MassHealing from "@shared/types/ability-types/spells/mass-healing";
-import CureSerious from "@shared/types/ability-types/spells/cure-serious";
-import Refresh from "@shared/types/ability-types/spells/refresh";
+import CureCritical from "@shared/types/ability-types/spells/CureCritical";
+import Heal from "@shared/types/ability-types/spells/Heal";
+import CureLight from "@shared/types/ability-types/spells/CureLight";
+import MassHealing from "@shared/types/ability-types/spells/MassHealing";
+import CureSerious from "@shared/types/ability-types/spells/CureSerious";
+import Refresh from "@shared/types/ability-types/spells/Refresh";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Healing implements IAbilityGroup {

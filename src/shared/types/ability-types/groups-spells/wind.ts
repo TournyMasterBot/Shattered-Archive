@@ -2,10 +2,10 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import EngulfWind from "@shared/types/ability-types/spells/engulf-wind";
-import Gust from "@shared/types/ability-types/spells/gust";
-import Suffocate from "@shared/types/ability-types/spells/suffocate";
-import FlamingSoul from "@shared/types/ability-types/spells/flaming-soul";
+import EngulfWind from "@shared/types/ability-types/spells/EngulfWind";
+import Gust from "@shared/types/ability-types/spells/Gust";
+import Suffocate from "@shared/types/ability-types/spells/Suffocate";
+import FlamingSoul from "@shared/types/ability-types/spells/FlamingSoul";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Wind implements IAbilityGroup {

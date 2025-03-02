@@ -2,17 +2,17 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import SongOfHealing from "@shared/types/ability-types/songs/song-of-healing";
-import TorchBurns from "@shared/types/ability-types/songs/torch-burns";
-import WakeTheDead from "@shared/types/ability-types/songs/wake-the-dead";
-import MarriageSong from "@shared/types/ability-types/songs/marriage-song";
-import TravelTune from "@shared/types/ability-types/songs/travel-tune";
-import BottlesOfBeer from "@shared/types/ability-types/songs/bottles-of-beer";
-import RevealAll from "@shared/types/ability-types/songs/reveal-all";
-import SongOfPeace from "@shared/types/ability-types/songs/song-of-peace";
-import StoneFountain from "@shared/types/ability-types/songs/stone-fountain";
-import ShieldOfWords from "@shared/types/ability-types/songs/shield-of-words";
-import RoostersCrow from "@shared/types/ability-types/songs/roosters-crow";
+import SongOfHealing from "@shared/types/ability-types/songs/SongOfHealing";
+import TorchBurns from "@shared/types/ability-types/songs/TorchBurns";
+import WakeTheDead from "@shared/types/ability-types/songs/WakeTheDead";
+import MarriageSong from "@shared/types/ability-types/songs/MarriageSong";
+import TravelTune from "@shared/types/ability-types/songs/TravelTune";
+import BottlesOfBeer from "@shared/types/ability-types/songs/BottlesOfBeer";
+import RevealAll from "@shared/types/ability-types/songs/RevealAll";
+import SongOfPeace from "@shared/types/ability-types/songs/SongOfPeace";
+import StoneFountain from "@shared/types/ability-types/songs/StoneFountain";
+import ShieldOfWords from "@shared/types/ability-types/songs/ShieldOfWords";
+import RoostersCrow from "@shared/types/ability-types/songs/RoostersCrow";
 import ServerCache from "@shared/cache/server-cache";
 
 export class HymnsOfLife implements IAbilityGroup {

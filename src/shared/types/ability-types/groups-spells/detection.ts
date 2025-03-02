@@ -2,17 +2,17 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import DetectEvil from "@shared/types/ability-types/spells/detect-evil";
-import DetectInvis from "@shared/types/ability-types/spells/detect-invis";
-import Farsight from "@shared/types/ability-types/spells/farsight";
-import LocateObject from "@shared/types/ability-types/spells/locate-object";
-import DetectGood from "@shared/types/ability-types/spells/detect-good";
-import DetectMagic from "@shared/types/ability-types/spells/detect-magic";
-import Identify from "@shared/types/ability-types/spells/identify";
-import KnowLanguages from "@shared/types/ability-types/spells/know-languages";
-import DetectHidden from "@shared/types/ability-types/spells/detect-hidden";
-import DetectPoison from "@shared/types/ability-types/spells/detect-poison";
-import KnowAlignment from "@shared/types/ability-types/spells/know-alignment";
+import DetectEvil from "@shared/types/ability-types/spells/DetectEvil";
+import DetectInvis from "@shared/types/ability-types/spells/DetectInvis";
+import Farsight from "@shared/types/ability-types/spells/Farsight";
+import LocateObject from "@shared/types/ability-types/spells/LocateObject";
+import DetectGood from "@shared/types/ability-types/spells/DetectGood";
+import DetectMagic from "@shared/types/ability-types/spells/DetectMagic";
+import Identify from "@shared/types/ability-types/spells/Identify";
+import KnowLanguages from "@shared/types/ability-types/spells/KnowLanguages";
+import DetectHidden from "@shared/types/ability-types/spells/DetectHidden";
+import DetectPoison from "@shared/types/ability-types/spells/DetectPoison";
+import KnowAlignment from "@shared/types/ability-types/spells/KnowAlignment";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Detection implements IAbilityGroup {

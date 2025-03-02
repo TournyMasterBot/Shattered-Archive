@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -24,10 +25,11 @@ harm            a very deadly harmful spell`;
 
   // Method to get the single instance of the class
   public static GetInstance(): Harm {
-    if (!Harm.instance) {
-      Harm.instance = new Harm();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Harm.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

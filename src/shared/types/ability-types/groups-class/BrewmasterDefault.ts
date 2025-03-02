@@ -2,12 +2,12 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Dodge from "@shared/types/ability-types/skills/dodge";
-import FireBreather from "@shared/types/ability-types/skills/fire-breather";
-import Haymaker from "@shared/types/ability-types/skills/haymaker";
-import KegToss from "@shared/types/ability-types/skills/keg-toss";
-import SecondAttack from "@shared/types/ability-types/skills/second-attack";
-import SuckerPunch from "@shared/types/ability-types/skills/sucker-punch";
+import Dodge from "@shared/types/ability-types/skills/Dodge";
+import FireBreather from "@shared/types/ability-types/skills/FireBreather";
+import Haymaker from "@shared/types/ability-types/skills/Haymaker";
+import KegToss from "@shared/types/ability-types/skills/KegToss";
+import SecondAttack from "@shared/types/ability-types/skills/SecondAttack";
+import SuckerPunch from "@shared/types/ability-types/skills/SuckerPunch";
 import ServerCache from "@shared/cache/server-cache";
 
 export class BrewmasterDefault implements IAbilityGroup {

@@ -2,10 +2,10 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import EnchantArmor from "@shared/types/ability-types/spells/enchant-armor";
-import Recharge from "@shared/types/ability-types/spells/recharge";
-import EnchantWeapon from "@shared/types/ability-types/spells/enchant-weapon";
-import Fireproof from "@shared/types/ability-types/spells/fireproof";
+import EnchantArmor from "@shared/types/ability-types/spells/EnchantArmor";
+import Recharge from "@shared/types/ability-types/spells/Recharge";
+import EnchantWeapon from "@shared/types/ability-types/spells/EnchantWeapon";
+import Fireproof from "@shared/types/ability-types/spells/Fireproof";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Enchantment implements IAbilityGroup {

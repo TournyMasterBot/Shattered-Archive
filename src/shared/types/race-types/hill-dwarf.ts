@@ -1,9 +1,9 @@
 
 import IAbility from "@shared/types/ability-types/ability";
 import Berserk from "@shared/types/ability-types/skills/Berserk";
-import Sharpen from "@shared/types/ability-types/skills/sharpen";
-import Toughness from "@shared/types/ability-types/skills/toughness";
-import Infravision from "@shared/types/ability-types/spells/infravision";
+import Sharpen from "@shared/types/ability-types/skills/Sharpen";
+import Toughness from "@shared/types/ability-types/skills/Toughness";
+import Infravision from "@shared/types/ability-types/spells/Infravision";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
 import BoostedClass from "@shared/types/character-types/boostedClass";
 import IDamageType from "@shared/types/damage-types/damage-type-interface";

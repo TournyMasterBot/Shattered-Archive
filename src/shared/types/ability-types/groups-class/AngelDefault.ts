@@ -6,7 +6,7 @@ import AngelBasics from "./AngelBasics";
 import Benedictions from "@shared/types/ability-types/groups-spells/Benedictions";
 import Curative from "@shared/types/ability-types/groups-spells/Curative";
 import Enhancement from "@shared/types/ability-types/groups-spells/Enhancement";
-import HandToHand from "@shared/types/ability-types/skills/hand-to-hand";
+import HandToHand from "@shared/types/ability-types/skills/HandToHand";
 import ServerCache from "@shared/cache/server-cache";
 
 export class AngelDefault implements IAbilityGroup {

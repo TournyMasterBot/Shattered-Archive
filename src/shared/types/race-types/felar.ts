@@ -1,6 +1,6 @@
 
 import IAbility from "@shared/types/ability-types/ability";
-import NineLives from "@shared/types/ability-types/skills/nine-lives";
+import NineLives from "@shared/types/ability-types/skills/NineLives";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
 import FireDamageTypes from "@shared/types/damage-types/damage-type-group-models/groups-fire";
 import BoostedClass from "@shared/types/character-types/boostedClass";

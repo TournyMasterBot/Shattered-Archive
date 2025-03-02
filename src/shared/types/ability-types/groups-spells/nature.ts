@@ -2,15 +2,15 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import CallWild from "@shared/types/ability-types/spells/call-wild";
-import Entangle from "@shared/types/ability-types/spells/entangle";
-import Swarm from "@shared/types/ability-types/spells/swarm";
-import BarkSkin from "@shared/types/ability-types/spells/bark-skin";
-import CreateRangerStaff from "@shared/types/ability-types/spells/create-ranger-staff";
-import WrathOfNature from "@shared/types/ability-types/spells/wrath-of-nature";
-import ProtectionCold from "@shared/types/ability-types/spells/protection-cold";
-import NatureGrowth from "@shared/types/ability-types/spells/nature-growth";
-import EnhanceSeed from "@shared/types/ability-types/spells/enhance-seed";
+import CallWild from "@shared/types/ability-types/spells/CallWild";
+import Entangle from "@shared/types/ability-types/spells/Entangle";
+import Swarm from "@shared/types/ability-types/spells/Swarm";
+import BarkSkin from "@shared/types/ability-types/spells/BarkSkin";
+import CreateRangerStaff from "@shared/types/ability-types/spells/CreateRangerStaff";
+import WrathOfNature from "@shared/types/ability-types/spells/WrathOfNature";
+import ProtectionCold from "@shared/types/ability-types/spells/ProtectionCold";
+import NatureGrowth from "@shared/types/ability-types/spells/NatureGrowth";
+import EnhanceSeed from "@shared/types/ability-types/spells/EnhanceSeed";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Nature implements IAbilityGroup {

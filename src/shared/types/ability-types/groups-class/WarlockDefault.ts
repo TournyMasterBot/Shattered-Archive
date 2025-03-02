@@ -2,7 +2,7 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Toss from "@shared/types/ability-types/skills/toss";
+import Toss from "@shared/types/ability-types/skills/Toss";
 import ApplyPotion from "@shared/types/ability-types/skills/ApplyPotion";
 import Astrology from "@shared/types/ability-types/skills/Astrology";
 import Brew from "@shared/types/ability-types/skills/Brew";

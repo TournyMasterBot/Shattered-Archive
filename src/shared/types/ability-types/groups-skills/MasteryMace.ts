@@ -3,7 +3,7 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Backhand from "@shared/types/ability-types/skills/Backhand";
-import Drum from "@shared/types/ability-types/skills/drum";
+import Drum from "@shared/types/ability-types/skills/Drum";
 import Boneshatter from "@shared/types/ability-types/skills/Boneshatter";
 import ServerCache from "@shared/cache/server-cache";
 

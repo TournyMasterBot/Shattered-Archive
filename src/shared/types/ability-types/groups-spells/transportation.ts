@@ -2,15 +2,15 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Fly from "@shared/types/ability-types/spells/fly";
-import PassDoor from "@shared/types/ability-types/spells/pass-door";
-import Teleport from "@shared/types/ability-types/spells/teleport";
-import Gate from "@shared/types/ability-types/spells/gate";
-import Portal from "@shared/types/ability-types/spells/portal";
-import WordOfRecall from "@shared/types/ability-types/spells/word-of-recall";
-import Nexus from "@shared/types/ability-types/spells/nexus";
-import Summon from "@shared/types/ability-types/spells/summon";
-import Waypoint from "@shared/types/ability-types/spells/waypoint";
+import Fly from "@shared/types/ability-types/spells/Fly";
+import PassDoor from "@shared/types/ability-types/spells/PassDoor";
+import Teleport from "@shared/types/ability-types/spells/Teleport";
+import Gate from "@shared/types/ability-types/spells/Gate";
+import Portal from "@shared/types/ability-types/spells/Portal";
+import WordOfRecall from "@shared/types/ability-types/spells/WordOfRecall";
+import Nexus from "@shared/types/ability-types/spells/Nexus";
+import Summon from "@shared/types/ability-types/spells/Summon";
+import Waypoint from "@shared/types/ability-types/spells/Waypoint";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Transportation implements IAbilityGroup {

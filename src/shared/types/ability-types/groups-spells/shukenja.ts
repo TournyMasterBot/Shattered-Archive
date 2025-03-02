@@ -2,11 +2,11 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import SpiritOfRetribution from "@shared/types/ability-types/spells/spirit-of-retribution";
-import SpiritOfProtection from "@shared/types/ability-types/spells/spirit-of-protection";
-import BlessingOfPeace from "@shared/types/ability-types/spells/blessing-of-peace";
-import SummonYanLuo from "@shared/types/ability-types/spells/summon-yan-luo";
-import AncestralHonor from "@shared/types/ability-types/spells/ancestral-honor";
+import SpiritOfRetribution from "@shared/types/ability-types/spells/SpiritOfRetribution";
+import SpiritOfProtection from "@shared/types/ability-types/spells/SpiritOfProtection";
+import BlessingOfPeace from "@shared/types/ability-types/spells/BlessingOfPeace";
+import SummonYanLuo from "@shared/types/ability-types/spells/SummonYanLuo";
+import AncestralHonor from "@shared/types/ability-types/spells/AncestralHonor";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Shukenja implements IAbilityGroup {

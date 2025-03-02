@@ -3,7 +3,7 @@ import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Dagger from "@shared/types/ability-types/skills/Dagger";
-import SecondAttack from "@shared/types/ability-types/skills/second-attack";
+import SecondAttack from "@shared/types/ability-types/skills/SecondAttack";
 import Assassinate from "@shared/types/ability-types/skills/Assassinate";
 import ServerCache from "@shared/cache/server-cache";
 

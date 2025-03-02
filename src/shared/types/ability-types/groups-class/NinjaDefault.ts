@@ -2,13 +2,13 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Fukiya from "@shared/types/ability-types/skills/fukiya";
-import Ninjato from "@shared/types/ability-types/skills/ninjato";
-import GroundControl from "@shared/types/ability-types/skills/ground-control";
-import Disguise from "@shared/types/ability-types/skills/disguise";
-import Pyro from "@shared/types/ability-types/skills/pyro";
-import Shuriken from "@shared/types/ability-types/skills/shuriken";
-import NightCloak from "@shared/types/ability-types/skills/night-cloak";
+import Fukiya from "@shared/types/ability-types/skills/Fukiya";
+import Ninjato from "@shared/types/ability-types/skills/Ninjato";
+import GroundControl from "@shared/types/ability-types/skills/GroundControl";
+import Disguise from "@shared/types/ability-types/skills/Disguise";
+import Pyro from "@shared/types/ability-types/skills/Pyro";
+import Shuriken from "@shared/types/ability-types/skills/Shuriken";
+import NightCloak from "@shared/types/ability-types/skills/NightCloak";
 import ServerCache from "@shared/cache/server-cache";
 
 export class NinjaDefault implements IAbilityGroup {

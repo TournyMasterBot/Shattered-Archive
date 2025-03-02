@@ -2,11 +2,11 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import CureBlindness from "@shared/types/ability-types/spells/cure-blindness";
-import CureBugbearBite from "@shared/types/ability-types/spells/cure-bugbear-bite";
-import CureDisease from "@shared/types/ability-types/spells/cure-disease";
-import CureFatigue from "@shared/types/ability-types/spells/cure-fatigue";
-import CurePoison from "@shared/types/ability-types/spells/cure-poison";
+import CureBlindness from "@shared/types/ability-types/spells/CureBlindness";
+import CureBugbearBite from "@shared/types/ability-types/spells/CureBugbearBite";
+import CureDisease from "@shared/types/ability-types/spells/CureDisease";
+import CureFatigue from "@shared/types/ability-types/spells/CureFatigue";
+import CurePoison from "@shared/types/ability-types/spells/CurePoison";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Curative implements IAbilityGroup {

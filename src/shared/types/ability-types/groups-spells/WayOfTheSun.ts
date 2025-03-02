@@ -2,11 +2,11 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Inferno from "@shared/types/ability-types/spells/inferno";
-import VortexOfTheSun from "@shared/types/ability-types/spells/vortex-of-the-sun";
-import FireBomb from "@shared/types/ability-types/spells/fire-bomb";
-import RainOfFire from "@shared/types/ability-types/spells/rain-of-fire";
-import SolarFlare from "@shared/types/ability-types/spells/solar-flare";
+import Inferno from "@shared/types/ability-types/spells/Inferno";
+import VortexOfTheSun from "@shared/types/ability-types/spells/VortexOfTheSun";
+import FireBomb from "@shared/types/ability-types/spells/FireBomb";
+import RainOfFire from "@shared/types/ability-types/spells/RainOfFire";
+import SolarFlare from "@shared/types/ability-types/spells/SolarFlare";
 import ServerCache from "@shared/cache/server-cache";
 
 export class WayOfTheSun implements IAbilityGroup {

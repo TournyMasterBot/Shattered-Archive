@@ -2,11 +2,11 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import MoonGaze from "@shared/types/ability-types/spells/moon-gaze";
-import MoonPull from "@shared/types/ability-types/spells/moon-pull";
-import EclipseBeing from "@shared/types/ability-types/spells/eclipse-being";
-import MoonShadow from "@shared/types/ability-types/spells/moon-shadow";
-import MindCrater from "@shared/types/ability-types/spells/mind-crater";
+import MoonGaze from "@shared/types/ability-types/spells/MoonGaze";
+import MoonPull from "@shared/types/ability-types/spells/MoonPull";
+import EclipseBeing from "@shared/types/ability-types/spells/EclipseBeing";
+import MoonShadow from "@shared/types/ability-types/spells/MoonShadow";
+import MindCrater from "@shared/types/ability-types/spells/MindCrater";
 import ServerCache from "@shared/cache/server-cache";
 
 export class WayOfTheMoon implements IAbilityGroup {

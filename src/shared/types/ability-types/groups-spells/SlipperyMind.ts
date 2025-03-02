@@ -2,7 +2,7 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import { SlipperyMind as sm } from "@shared/types/ability-types/skills/slippery-mind";
+import { SlipperyMind as sm } from "@shared/types/ability-types/skills/SlipperyMind";
 import ServerCache from "@shared/cache/server-cache";
 
 export class SlipperyMind implements IAbilityGroup {

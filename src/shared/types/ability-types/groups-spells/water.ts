@@ -2,10 +2,10 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Wave from "@shared/types/ability-types/spells/wave";
-import Monsoon from "@shared/types/ability-types/spells/monsoon";
-import Drown from "@shared/types/ability-types/spells/drown";
-import FlamingSoul from "@shared/types/ability-types/spells/flaming-soul";
+import Wave from "@shared/types/ability-types/spells/Wave";
+import Monsoon from "@shared/types/ability-types/spells/Monsoon";
+import Drown from "@shared/types/ability-types/spells/Drown";
+import FlamingSoul from "@shared/types/ability-types/spells/FlamingSoul";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Water implements IAbilityGroup {

@@ -1,14 +1,14 @@
 
 import IAbility from "@shared/types/ability-types/ability";
-import Dodge from "@shared/types/ability-types/skills/dodge";
-import Lore from "@shared/types/ability-types/skills/lore";
-import Peek from "@shared/types/ability-types/skills/peek";
-import PickLock from "@shared/types/ability-types/skills/pick-lock";
-import Sneak from "@shared/types/ability-types/skills/sneak";
-import Spear from "@shared/types/ability-types/skills/spear";
-import Staff from "@shared/types/ability-types/skills/staff";
-import Steal from "@shared/types/ability-types/skills/steal";
-import Taunt from "@shared/types/ability-types/skills/taunt";
+import Dodge from "@shared/types/ability-types/skills/Dodge";
+import Lore from "@shared/types/ability-types/skills/Lore";
+import Peek from "@shared/types/ability-types/skills/Peek";
+import PickLock from "@shared/types/ability-types/skills/PickLock";
+import Sneak from "@shared/types/ability-types/skills/Sneak";
+import Spear from "@shared/types/ability-types/skills/Spear";
+import Staff from "@shared/types/ability-types/skills/Staff";
+import Steal from "@shared/types/ability-types/skills/Steal";
+import Taunt from "@shared/types/ability-types/skills/Taunt";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
 import BoostedClass from "@shared/types/character-types/boostedClass";
 import IDamageType from "@shared/types/damage-types/damage-type-interface";

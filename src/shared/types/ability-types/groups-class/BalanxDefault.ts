@@ -13,15 +13,15 @@ import Protective from "../groups-spells/Protective";
 import Transportation from "../groups-spells/Transportation";
 import Creation from "../groups-spells/Creation";
 import Weather from "../groups-spells/Weather";
-import SecondAttack from "@shared/types/ability-types/skills/second-attack";
-import HandToHand from "@shared/types/ability-types/skills/hand-to-hand";
-import Focus from "@shared/types/ability-types/skills/focus";
-import ThirdAttack from "@shared/types/ability-types/skills/third-attack";
-import Swim from "@shared/types/ability-types/skills/swim";
-import FourthAttack from "@shared/types/ability-types/skills/fourth-attack";
-import TimeStop from "@shared/types/ability-types/spells/time-stop";
+import SecondAttack from "@shared/types/ability-types/skills/SecondAttack";
+import HandToHand from "@shared/types/ability-types/skills/HandToHand";
+import Focus from "@shared/types/ability-types/skills/Focus";
+import ThirdAttack from "@shared/types/ability-types/skills/ThirdAttack";
+import Swim from "@shared/types/ability-types/skills/Swim";
+import FourthAttack from "@shared/types/ability-types/skills/FourthAttack";
+import TimeStop from "@shared/types/ability-types/spells/TimeStop";
 import BalanxBasics from "./BalanxBasics";
-import View from "@shared/types/ability-types/spells/view";
+import View from "@shared/types/ability-types/spells/View";
 import ServerCache from "@shared/cache/server-cache";
 
 export class BalanxDefault implements IAbilityGroup {

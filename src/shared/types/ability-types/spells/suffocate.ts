@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -29,10 +30,11 @@ a short time, the amount of harm done proportional to their health.`;
 
   // Method to get the single instance of the class
   public static GetInstance(): Suffocate {
-    if (!Suffocate.instance) {
-      Suffocate.instance = new Suffocate();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Suffocate.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

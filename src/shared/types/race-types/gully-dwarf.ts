@@ -1,7 +1,7 @@
 
 import IAbility from "@shared/types/ability-types/ability";
-import Survive from "@shared/types/ability-types/skills/survive";
-import Toughness from "@shared/types/ability-types/skills/toughness";
+import Survive from "@shared/types/ability-types/skills/Survive";
+import Toughness from "@shared/types/ability-types/skills/Toughness";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
 import MagicDamageTypes from "@shared/types/damage-types/damage-type-group-models/groups-magic";
 import BoostedClass from "@shared/types/character-types/boostedClass";

@@ -4,7 +4,7 @@ import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
 import Bladesong from "@shared/types/ability-types/skills/Bladesong";
 import Dagger from "@shared/types/ability-types/skills/Dagger";
-import Sword from "@shared/types/ability-types/skills/sword";
+import Sword from "@shared/types/ability-types/skills/Sword";
 import ServerCache from "@shared/cache/server-cache";
 
 export class BladesingerBasics implements IAbilityGroup {

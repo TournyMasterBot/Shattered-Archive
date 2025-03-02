@@ -2,14 +2,14 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Demonfire from "@shared/types/ability-types/spells/demonfire";
-import Earthquake from "@shared/types/ability-types/spells/earthquake";
-import RayOfTruth from "@shared/types/ability-types/spells/ray-of-truth";
-import DispelEvil from "@shared/types/ability-types/spells/dispel-evil";
+import Demonfire from "@shared/types/ability-types/spells/Demonfire";
+import Earthquake from "@shared/types/ability-types/spells/Earthquake";
+import RayOfTruth from "@shared/types/ability-types/spells/RayOfTruth";
+import DispelEvil from "@shared/types/ability-types/spells/DispelEvil";
 import Flamestrike from "@shared/types/ability-types/spells/flamestrike";
-import DispelNeutral from "@shared/types/ability-types/spells/dispel-neutral";
-import DispelGood from "@shared/types/ability-types/spells/dispel-good";
-import HeatMetal from "@shared/types/ability-types/spells/heat-metal";
+import DispelNeutral from "@shared/types/ability-types/spells/DispelNeutral";
+import DispelGood from "@shared/types/ability-types/spells/DispelGood";
+import HeatMetal from "@shared/types/ability-types/spells/HeatMetal";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Attack implements IAbilityGroup {

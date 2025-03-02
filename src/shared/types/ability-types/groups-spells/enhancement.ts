@@ -2,12 +2,12 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import GiantStrength from "@shared/types/ability-types/spells/giant-strength";
-import Refresh from "@shared/types/ability-types/spells/refresh";
+import GiantStrength from "@shared/types/ability-types/spells/GiantStrength";
+import Refresh from "@shared/types/ability-types/spells/Refresh";
 import Haste from "@shared/types/ability-types/spells/haste";
-import WaterBreathing from "@shared/types/ability-types/spells/water-breathing";
-import Infravision from "@shared/types/ability-types/spells/infravision";
-import LightFoot from "@shared/types/ability-types/spells/light-foot";
+import WaterBreathing from "@shared/types/ability-types/spells/WaterBreathing";
+import Infravision from "@shared/types/ability-types/spells/Infravision";
+import LightFoot from "@shared/types/ability-types/spells/LightFoot";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Enhancement implements IAbilityGroup {

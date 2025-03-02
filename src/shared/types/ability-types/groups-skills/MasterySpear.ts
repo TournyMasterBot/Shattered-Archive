@@ -2,9 +2,9 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Spin from "@shared/types/ability-types/skills/spin";
-import Impale from "@shared/types/ability-types/skills/impale";
-import Legsweep from "@shared/types/ability-types/skills/legsweep";
+import Spin from "@shared/types/ability-types/skills/Spin";
+import Impale from "@shared/types/ability-types/skills/Impale";
+import Legsweep from "@shared/types/ability-types/skills/Legsweep";
 import ServerCache from "@shared/cache/server-cache";
 
 export class MasterySpear implements IAbilityGroup {

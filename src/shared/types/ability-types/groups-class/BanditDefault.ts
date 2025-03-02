@@ -2,17 +2,17 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import PanicEnemy from "@shared/types/ability-types/skills/panic-enemy";
-import Waylay from "@shared/types/ability-types/skills/waylay";
-import Stealth from "@shared/types/ability-types/skills/stealth";
-import Peek from "@shared/types/ability-types/skills/peek";
-import SecondAttack from "@shared/types/ability-types/skills/second-attack";
-import Inspect from "@shared/types/ability-types/skills/inspect";
+import PanicEnemy from "@shared/types/ability-types/skills/PanicEnemy";
+import Waylay from "@shared/types/ability-types/skills/Waylay";
+import Stealth from "@shared/types/ability-types/skills/Stealth";
+import Peek from "@shared/types/ability-types/skills/Peek";
+import SecondAttack from "@shared/types/ability-types/skills/SecondAttack";
+import Inspect from "@shared/types/ability-types/skills/Inspect";
 import Backstab from "@shared/types/ability-types/skills/Backstab";
-import Steal from "@shared/types/ability-types/skills/steal";
-import Halt from "@shared/types/ability-types/skills/halt";
-import PotionSmash from "@shared/types/ability-types/skills/potion-smash";
-import Riot from "@shared/types/ability-types/skills/riot";
+import Steal from "@shared/types/ability-types/skills/Steal";
+import Halt from "@shared/types/ability-types/skills/Halt";
+import PotionSmash from "@shared/types/ability-types/skills/PotionSmash";
+import Riot from "@shared/types/ability-types/skills/Riot";
 import ServerCache from "@shared/cache/server-cache";
 
 export class BanditDefault implements IAbilityGroup {

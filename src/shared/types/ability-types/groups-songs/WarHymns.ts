@@ -2,17 +2,17 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import SongOfWar from "@shared/types/ability-types/songs/song-of-war";
-import Lullaby from "@shared/types/ability-types/songs/lullaby";
-import SongOfCharm from "@shared/types/ability-types/songs/song-of-charm";
-import GreenLeaf from "@shared/types/ability-types/songs/green-leaf";
-import WeaknessWithin from "@shared/types/ability-types/songs/weakness-within";
-import Nightmare from "@shared/types/ability-types/songs/nightmare";
-import ScreechingBanshee from "@shared/types/ability-types/songs/screeching-banshee";
-import WeCome from "@shared/types/ability-types/songs/we-come";
-import ReleaseMe from "@shared/types/ability-types/songs/release-me";
-import RunRiot from "@shared/types/ability-types/songs/run-riot";
-import PiercingWinds from "@shared/types/ability-types/songs/piering-winds";
+import SongOfWar from "@shared/types/ability-types/songs/SongOfWar";
+import Lullaby from "@shared/types/ability-types/songs/Lullaby";
+import SongOfCharm from "@shared/types/ability-types/songs/SongOfCharm";
+import GreenLeaf from "@shared/types/ability-types/songs/GreenLeaf";
+import WeaknessWithin from "@shared/types/ability-types/songs/WeaknessWithin";
+import Nightmare from "@shared/types/ability-types/songs/Nightmare";
+import ScreechingBanshee from "@shared/types/ability-types/songs/ScreechingBanshee";
+import WeCome from "@shared/types/ability-types/songs/WeCome";
+import ReleaseMe from "@shared/types/ability-types/songs/ReleaseMe";
+import RunRiot from "@shared/types/ability-types/songs/RunRiot";
+import PiercingWinds from "@shared/types/ability-types/songs/PiercingWinds";
 import ServerCache from "@shared/cache/server-cache";
 
 export class WarHymns implements IAbilityGroup {

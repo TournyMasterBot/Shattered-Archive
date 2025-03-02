@@ -1,6 +1,6 @@
 
 import IAbility from "@shared/types/ability-types/ability";
-import PixieDust from "@shared/types/ability-types/skills/pixie-dust";
+import PixieDust from "@shared/types/ability-types/skills/PixieDust";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
 import ColdDamageTypes from "@shared/types/damage-types/damage-type-group-models/groups-cold";
 import BoostedClass from "@shared/types/character-types/boostedClass";

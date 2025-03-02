@@ -6,16 +6,16 @@ import Detection from "../groups-spells/Detection";
 import Bash from "@shared/types/ability-types/skills/Bash";
 import Dagger from "@shared/types/ability-types/skills/Dagger";
 import Disarm from "@shared/types/ability-types/skills/Disarm";
-import EnhancedDamage from "@shared/types/ability-types/skills/enhanced-damage";
-import Headbutt from "@shared/types/ability-types/skills/headbutt";
-import Parry from "@shared/types/ability-types/skills/parry";
-import Possession from "@shared/types/ability-types/skills/possession";
-import RagerCharge from "@shared/types/ability-types/skills/rager-charge";
-import Rescue from "@shared/types/ability-types/skills/rescue";
-import SecondAttack from "@shared/types/ability-types/skills/second-attack";
-import ShieldBlock from "@shared/types/ability-types/skills/shield-block";
-import ShieldKick from "@shared/types/ability-types/skills/shield-kick";
-import ThirdAttack from "@shared/types/ability-types/skills/third-attack";
+import EnhancedDamage from "@shared/types/ability-types/skills/EnhancedDamage";
+import Headbutt from "@shared/types/ability-types/skills/Headbutt";
+import Parry from "@shared/types/ability-types/skills/Parry";
+import Possession from "@shared/types/ability-types/skills/Possession";
+import RagerCharge from "@shared/types/ability-types/skills/RagerCharge";
+import Rescue from "@shared/types/ability-types/skills/Rescue";
+import SecondAttack from "@shared/types/ability-types/skills/SecondAttack";
+import ShieldBlock from "@shared/types/ability-types/skills/ShieldBlock";
+import ShieldKick from "@shared/types/ability-types/skills/ShieldKick";
+import ThirdAttack from "@shared/types/ability-types/skills/ThirdAttack";
 import ServerCache from "@shared/cache/server-cache";
 
 export class BattleragerDefault implements IAbilityGroup {

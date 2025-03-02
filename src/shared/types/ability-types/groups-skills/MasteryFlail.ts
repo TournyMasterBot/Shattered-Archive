@@ -2,9 +2,9 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Entwine from "@shared/types/ability-types/skills/entwine";
-import Sting from "@shared/types/ability-types/skills/sting";
-import Strip from "@shared/types/ability-types/skills/strip";
+import Entwine from "@shared/types/ability-types/skills/Entwine";
+import Sting from "@shared/types/ability-types/skills/Sting";
+import Strip from "@shared/types/ability-types/skills/Strip";
 import ServerCache from "@shared/cache/server-cache";
 
 export class MasteryFlail implements IAbilityGroup {

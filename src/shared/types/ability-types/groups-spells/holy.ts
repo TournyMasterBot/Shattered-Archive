@@ -2,14 +2,14 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import EmpowerWeapon from "@shared/types/ability-types/spells/empower-weapon";
-import DivineProtection from "@shared/types/ability-types/spells/divine-protection";
-import SummonWarhorse from "@shared/types/ability-types/spells/summon-warhorse";
-import TurnUndead from "@shared/types/ability-types/spells/turn-undead";
-import LocateEmpower from "@shared/types/ability-types/spells/locate-empower";
-import SummonEmpyrealWarhorse from "@shared/types/ability-types/spells/summon-empyreal-warhorse";
-import LayOnHands from "@shared/types/ability-types/spells/lay-on-hands";
-import RemoveEmpower from "@shared/types/ability-types/spells/remove-empower";
+import EmpowerWeapon from "@shared/types/ability-types/spells/EmpowerWeapon";
+import DivineProtection from "@shared/types/ability-types/spells/DivineProtection";
+import SummonWarhorse from "@shared/types/ability-types/spells/SummonWarhorse";
+import TurnUndead from "@shared/types/ability-types/spells/TurnUndead";
+import LocateEmpower from "@shared/types/ability-types/spells/LocateEmpower";
+import SummonEmpyrealWarhorse from "@shared/types/ability-types/spells/SummonEmpyrealWarhorse";
+import LayOnHands from "@shared/types/ability-types/spells/LayOnHands";
+import RemoveEmpower from "@shared/types/ability-types/spells/RemoveEmpower";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Holy implements IAbilityGroup {

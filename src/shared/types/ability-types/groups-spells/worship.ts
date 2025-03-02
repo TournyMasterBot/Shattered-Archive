@@ -2,11 +2,11 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Crucify from "@shared/types/ability-types/spells/crucify";
-import ImbueMount from "@shared/types/ability-types/spells/imbue-mount";
-import HolySteed from "@shared/types/ability-types/spells/holy-steed";
-import Devotion from "@shared/types/ability-types/spells/devotion";
-import Inspire from "@shared/types/ability-types/spells/inspire";
+import Crucify from "@shared/types/ability-types/spells/Crucify";
+import ImbueMount from "@shared/types/ability-types/spells/ImbueMount";
+import HolySteed from "@shared/types/ability-types/spells/HolySteed";
+import Devotion from "@shared/types/ability-types/spells/Devotion";
+import Inspire from "@shared/types/ability-types/spells/Inspire";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Worship implements IAbilityGroup {

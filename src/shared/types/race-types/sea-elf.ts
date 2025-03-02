@@ -1,8 +1,8 @@
 
 import IAbility from "@shared/types/ability-types/ability";
-import DolphinForm from "@shared/types/ability-types/skills/dolphin-form";
-import Sneak from "@shared/types/ability-types/skills/sneak";
-import Infravision from "@shared/types/ability-types/spells/infravision";
+import DolphinForm from "@shared/types/ability-types/skills/DolphinForm";
+import Sneak from "@shared/types/ability-types/skills/Sneak";
+import Infravision from "@shared/types/ability-types/spells/Infravision";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
 import BoostedClass from "@shared/types/character-types/boostedClass";
 import IDamageType from "@shared/types/damage-types/damage-type-interface";

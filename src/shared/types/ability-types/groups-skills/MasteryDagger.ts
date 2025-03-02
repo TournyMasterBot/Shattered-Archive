@@ -2,8 +2,8 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Stab from "@shared/types/ability-types/skills/stab";
-import Hurl from "@shared/types/ability-types/skills/hurl";
+import Stab from "@shared/types/ability-types/skills/Stab";
+import Hurl from "@shared/types/ability-types/skills/Hurl";
 import ConcealedAttack from "@shared/types/ability-types/skills/ConcealedAttack";
 import ServerCache from "@shared/cache/server-cache";
 

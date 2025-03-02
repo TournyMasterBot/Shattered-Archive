@@ -1,3 +1,4 @@
+import ServerCache from "@shared/cache/server-cache";
 import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import AbilityUsage from "@shared/types/ability-types/ability-usage";
@@ -30,10 +31,11 @@ terror. Some races, however, are amused at such sights.`;
 
   // Method to get the single instance of the class
   public static GetInstance(): Spook {
-    if (!Spook.instance) {
-      Spook.instance = new Spook();
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Abilities[this.instance.name] = this.instance;
     }
-    return Spook.instance;
+    return this.instance;
   }
 
   // Method to get the class instance, used in the context of IAbility

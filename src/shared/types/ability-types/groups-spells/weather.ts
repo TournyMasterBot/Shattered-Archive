@@ -2,15 +2,15 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import CallLightning from "@shared/types/ability-types/spells/call-lightning";
-import FaerieFog from "@shared/types/ability-types/spells/faerie-fog";
-import Magewind from "@shared/types/ability-types/spells/magewind";
-import ControlWeather from "@shared/types/ability-types/spells/control-weather";
-import LightningBolt from "@shared/types/ability-types/spells/lightning-bolt";
-import Fog from "@shared/types/ability-types/spells/fog";
-import FaerieFire from "@shared/types/ability-types/spells/faerie-flames";
-import Tornado from "@shared/types/ability-types/spells/tornado";
-import DispelFog from "@shared/types/ability-types/spells/dispel-fog";
+import CallLightning from "@shared/types/ability-types/spells/CallLightning";
+import FaerieFog from "@shared/types/ability-types/spells/FaerieFog";
+import Magewind from "@shared/types/ability-types/spells/Magewind";
+import ControlWeather from "@shared/types/ability-types/spells/ControlWeather";
+import LightningBolt from "@shared/types/ability-types/spells/LightningBolt";
+import Fog from "@shared/types/ability-types/spells/Fog";
+import FaerieFire from "@shared/types/ability-types/spells/FaerieFlames";
+import Tornado from "@shared/types/ability-types/spells/Tornado";
+import DispelFog from "@shared/types/ability-types/spells/DispelFog";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Weather implements IAbilityGroup {

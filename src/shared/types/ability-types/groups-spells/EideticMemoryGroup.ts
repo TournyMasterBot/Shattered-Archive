@@ -2,7 +2,7 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import EideticMemory from "@shared/types/ability-types/skills/eidetic-memory";
+import EideticMemory from "@shared/types/ability-types/skills/EideticMemory";
 import ServerCache from "@shared/cache/server-cache";
 
 export class EideticMemoryGroup implements IAbilityGroup {

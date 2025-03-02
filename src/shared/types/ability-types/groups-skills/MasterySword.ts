@@ -2,8 +2,8 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Florentine from "@shared/types/ability-types/skills/florentine";
-import Flurry from "@shared/types/ability-types/skills/flurry";
+import Florentine from "@shared/types/ability-types/skills/Florentine";
+import Flurry from "@shared/types/ability-types/skills/Flurry";
 import Cross from "@shared/types/ability-types/skills/Cross";
 import ServerCache from "@shared/cache/server-cache";
 

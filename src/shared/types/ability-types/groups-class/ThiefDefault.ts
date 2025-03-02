@@ -2,17 +2,17 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import Mace from "@shared/types/ability-types/skills/mace";
+import Mace from "@shared/types/ability-types/skills/Mace";
 import Disarm from "@shared/types/ability-types/skills/Disarm";
-import Trip from "@shared/types/ability-types/skills/trip";
-import PickLock from "@shared/types/ability-types/skills/pick-lock";
-import Sword from "@shared/types/ability-types/skills/sword";
-import Dodge from "@shared/types/ability-types/skills/dodge";
-import Hide from "@shared/types/ability-types/skills/hide";
-import Sneak from "@shared/types/ability-types/skills/sneak";
+import Trip from "@shared/types/ability-types/skills/Trip";
+import PickLock from "@shared/types/ability-types/skills/PickLock";
+import Sword from "@shared/types/ability-types/skills/Sword";
+import Dodge from "@shared/types/ability-types/skills/Dodge";
+import Hide from "@shared/types/ability-types/skills/Hide";
+import Sneak from "@shared/types/ability-types/skills/Sneak";
 import Backstab from "@shared/types/ability-types/skills/Backstab";
-import SecondAttack from "@shared/types/ability-types/skills/second-attack";
-import Peek from "@shared/types/ability-types/skills/peek";
+import SecondAttack from "@shared/types/ability-types/skills/SecondAttack";
+import Peek from "@shared/types/ability-types/skills/Peek";
 import ServerCache from "@shared/cache/server-cache";
 
 export class ThiefDefault implements IAbilityGroup {

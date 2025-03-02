@@ -11,8 +11,8 @@ import Curative from "@shared/types/ability-types/groups-spells/Curative";
 import Benedictions from "@shared/types/ability-types/groups-spells/Benedictions";
 import Transportation from "../groups-spells/Transportation";
 import Healing from "../groups-spells/Healing";
-import Whip from "@shared/types/ability-types/skills/whip";
-import Staff from "@shared/types/ability-types/skills/staff";
+import Whip from "@shared/types/ability-types/skills/Whip";
+import Staff from "@shared/types/ability-types/skills/Staff";
 import ServerCache from "@shared/cache/server-cache";
 
 export class ConfessorDefault implements IAbilityGroup {

@@ -2,10 +2,10 @@ import IAbility from "@shared/types/ability-types/ability";
 import AbilityGroupType from "@shared/types/ability-types/ability-group-type";
 import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 import AbilityGroup from "@shared/types/ability-types/ability-group";
-import FlameWall from "@shared/types/ability-types/spells/flame-wall";
-import FlamingSoul from "@shared/types/ability-types/spells/flaming-soul";
-import Ignite from "@shared/types/ability-types/spells/ignite";
-import ScorchingWinds from "@shared/types/ability-types/spells/scorching-winds";
+import FlameWall from "@shared/types/ability-types/spells/FlameWall";
+import FlamingSoul from "@shared/types/ability-types/spells/FlamingSoul";
+import Ignite from "@shared/types/ability-types/spells/Ignite";
+import ScorchingWinds from "@shared/types/ability-types/spells/ScorchingWinds";
 import ServerCache from "@shared/cache/server-cache";
 
 export class Fire implements IAbilityGroup {
