@@ -8,81 +8,75 @@ import BoostedClass from "@shared/types/character-types/boostedClass";
 import IDamageType from "@shared/types/damage-types/damage-type-interface";
 import IDslClass from "@shared/types/character-types/dslClass";
 import { IRace } from "@shared/types/character-types/race-interface";
+import ServerCache from "@shared/cache/server-cache";
 
 class Arboren implements IRace {
-    private static instance: Arboren;
+  private static instance: Arboren;
 
-    public id: string;
-    public imageUrl: string;
-    public description?: string | undefined;
-    public cpModifier?: number | undefined;
-    public name: string;
-    public displayName: string;
-    public isLimitedRace: boolean;
-    public isMortalRace: boolean;
-    public isLargeRace: boolean;
-    public stats: IStatAttribute[];
-    public primaryAttributeModifier: IStatAttribute;
-    public secondaryAttributeModifier: IStatAttribute;
-    public immunities: IDamageType[];
-    public resistances: IDamageType[];
-    public vulnerabilities: IDamageType[];
-    public racialAbilities: IAbility[];
-    public availableClasses: IDslClass[];
-    public restrictedClasses: IDslClass[];    
-    public boostedClasses: Map<IDslClass, BoostedClass[]>;
+  public id: string;
+  public imageUrl: string;
+  public description?: string | undefined;
+  public cpModifier?: number | undefined;
+  public name: string;
+  public displayName: string;
+  public isLimitedRace: boolean;
+  public isMortalRace: boolean;
+  public isLargeRace: boolean;
+  public stats: IStatAttribute[];
+  public primaryAttributeModifier: IStatAttribute;
+  public secondaryAttributeModifier: IStatAttribute;
+  public immunities: IDamageType[];
+  public resistances: IDamageType[];
+  public vulnerabilities: IDamageType[];
+  public racialAbilities: IAbility[];
+  public availableClasses: IDslClass[];
+  public restrictedClasses: IDslClass[];
+  public boostedClasses: Map<IDslClass, BoostedClass[]>;
 
-    constructor() {
-        this.id = "50";
-        this.name = "arboren";
-        this.displayName = "Arboren";
-        this.isLimitedRace = false;
-        this.isMortalRace = true;
-        this.isLargeRace = false;
-        this.cpModifier = 15;
-        this.stats = [
-            new StatAttribute({
-                type: StatAttributeType.Strength,
-                modifier: 72
-            }),
-            new StatAttribute({
-                type: StatAttributeType.Intelligence,
-                modifier: 50
-            }),
-            new StatAttribute({
-                type: StatAttributeType.Wisdom,
-                modifier: 70
-            }),
-            new StatAttribute({
-                type: StatAttributeType.Dexterity,
-                modifier: 48
-            }),
-            new StatAttribute({
-                type: StatAttributeType.Constitution,
-                modifier: 80
-            })
-        ]
-        this.primaryAttributeModifier = new StatAttribute({
-            type: StatAttributeType.Variable,
-            modifier: 8
-        });
-        this.secondaryAttributeModifier = new StatAttribute({
-            type: StatAttributeType.Variable,
-            modifier: 4
-        });
-        this.immunities = [];
-        this.resistances = [
-            ...BluntDamageTypes.getAll()
-        ];
-        this.vulnerabilities = [
-            ...ColdDamageTypes.getAll()
-        ];
-        this.racialAbilities = [
-            Deeproot.GetInstance().Get(),
-            Rootvein.GetInstance().Get()
-        ]
-        this.availableClasses = [
-            /*
+  constructor() {
+    this.id = "50";
+    this.name = this.constructor.name;
+    this.displayName = "Arboren";
+    this.isLimitedRace = false;
+    this.isMortalRace = true;
+    this.isLargeRace = false;
+    this.cpModifier = 15;
+    this.stats = [
+      new StatAttribute({
+        type: StatAttributeType.Strength,
+        modifier: 72,
+      }),
+      new StatAttribute({
+        type: StatAttributeType.Intelligence,
+        modifier: 50,
+      }),
+      new StatAttribute({
+        type: StatAttributeType.Wisdom,
+        modifier: 70,
+      }),
+      new StatAttribute({
+        type: StatAttributeType.Dexterity,
+        modifier: 48,
+      }),
+      new StatAttribute({
+        type: StatAttributeType.Constitution,
+        modifier: 80,
+      }),
+    ];
+    this.primaryAttributeModifier = new StatAttribute({
+      type: StatAttributeType.Variable,
+      modifier: 8,
+    });
+    this.secondaryAttributeModifier = new StatAttribute({
+      type: StatAttributeType.Variable,
+      modifier: 4,
+    });
+    this.immunities = [];
+    this.resistances = [...BluntDamageTypes.getAll()];
+    this.vulnerabilities = [...ColdDamageTypes.getAll()];
+    this.racialAbilities = [Deeproot.GetInstance().Get(), Rootvein.GetInstance().Get()];
+    this.availableClasses = [
+      /*
             new Warrior(),
             new Barbarian(),
             new Ranger(),
@@ -97,12 +91,12 @@ class Arboren implements IRace {
             new Monk(),
             new Dragonslayer(),
             */
-        ];
-        this.restrictedClasses = [
-            /*var missingClasses = DslClassHelper.GetAvailableClasses().Where(x => !this.AvailableClasses.Any(y => y.Name == x.Name)).ToArray();
+    ];
+    this.restrictedClasses = [
+      /*var missingClasses = DslClassHelper.GetAvailableClasses().Where(x => !this.AvailableClasses.Any(y => y.Name == x.Name)).ToArray();
                 return missingClasses.ToArray();*/
-        ];
-        this.boostedClasses = new Map<IDslClass, BoostedClass[]>/* 
+    ];
+    this.boostedClasses = new Map<IDslClass, BoostedClass[]>() /* 
         new IClassBoost(new Warrior(), 10, null, null),
         new IClassBoost(new Barbarian(), 10, null, null),
         new IClassBoost(new Ranger(), 30, null, null),
@@ -114,8 +108,8 @@ class Arboren implements IRace {
         new IClassBoost(new Warrior(), 20, null, null),
         new IClassBoost(new Shukenja(), 10, null, null),
         */;
-        this.imageUrl = `https://shatteredarchive.com/img/races/Arboren.png`
-        this.description = `The Arboren appear to be made of animated wood.  They are 4 to 5 feet
+    this.imageUrl = `https://shatteredarchive.com/img/races/Arboren.png`;
+    this.description = `The Arboren appear to be made of animated wood.  They are 4 to 5 feet
 tall and have the skin of various wood types depending on where they were
 born.  The males sprout leaves or various needles and the females sprout
 flowers for hair.  Arboren bleed sap instead of blood.  They speak common,
@@ -143,21 +137,22 @@ Arboren are exclusively neutral by nature and make great Druids, Priests and
 Rangers.  Arboren can only be Clerics and Warrior classes, excluding
 Swashbucklers.  
  
-Arboren are known to sprout leaves at people for a variety of reasons.`
-    }
-    
-    // Method to get the single instance of the class
-    public static GetInstance(): Arboren {
-        if (!Arboren.instance) {
-            Arboren.instance = new Arboren();
-        }
-        return Arboren.instance;
-    }
+Arboren are known to sprout leaves at people for a variety of reasons.`;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Arboren.GetInstance() as T;
+  // Method to get the single instance of the class
+  public static GetInstance(): Arboren {
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Races[this.instance.name] = this.instance;
     }
+    return this.instance;
+  }
+
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Arboren.GetInstance() as T;
+  }
 }
 
 export default Arboren;

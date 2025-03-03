@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2024",
-    "lib": ["ES2024"],
+    "lib": ["dom", "ES2024"],
     "jsx": "react",
-    "module": "commonjs",
+    "module": "ESNext",
     "rootDir": "./",
     "moduleResolution": "node",
     "allowJs": true,

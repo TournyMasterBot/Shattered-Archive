@@ -1,16 +1,16 @@
 import IAbility from "@shared/types/ability-types/ability";
-import ViperBite from "@shared/types/ability-types/skills/ViperBite";
+import Survive from "@shared/types/ability-types/skills/Survive";
+import Toughness from "@shared/types/ability-types/skills/Toughness";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
-import ColdDamageTypes from "@shared/types/damage-types/damage-type-group-models/groups-cold";
-import FireDamageTypes from "@shared/types/damage-types/damage-type-group-models/groups-fire";
+import MagicDamageTypes from "@shared/types/damage-types/damage-type-group-models/groups-magic";
 import BoostedClass from "@shared/types/character-types/boostedClass";
 import IDamageType from "@shared/types/damage-types/damage-type-interface";
 import IDslClass from "@shared/types/character-types/dslClass";
 import { IRace } from "@shared/types/character-types/race-interface";
 import ServerCache from "@shared/cache/server-cache";
 
-class Bakali implements IRace {
-  private static instance: Bakali;
+class GullyDwarf implements IRace {
+  private static instance: GullyDwarf;
 
   public id: string;
   public imageUrl: string;
@@ -33,33 +33,33 @@ class Bakali implements IRace {
   public boostedClasses: Map<IDslClass, BoostedClass[]>;
 
   constructor() {
-    this.id = "41";
+    this.id = "36";
     this.name = this.constructor.name;
-    this.displayName = "Bakali";
+    this.displayName = "Gully Dwarf";
     this.isLimitedRace = true;
     this.isMortalRace = true;
-    this.isLargeRace = true;
+    this.isLargeRace = false;
     this.cpModifier = undefined;
     this.stats = [
       new StatAttribute({
         type: StatAttributeType.Strength,
-        modifier: 72,
+        modifier: 66,
       }),
       new StatAttribute({
         type: StatAttributeType.Intelligence,
-        modifier: 46,
+        modifier: 30,
       }),
       new StatAttribute({
         type: StatAttributeType.Wisdom,
-        modifier: 46,
+        modifier: 44,
       }),
       new StatAttribute({
         type: StatAttributeType.Dexterity,
-        modifier: 64,
+        modifier: 50,
       }),
       new StatAttribute({
         type: StatAttributeType.Constitution,
-        modifier: 72,
+        modifier: 90,
       }),
     ];
     this.primaryAttributeModifier = new StatAttribute({
@@ -71,9 +71,9 @@ class Bakali implements IRace {
       modifier: 4,
     });
     this.immunities = [];
-    this.resistances = [...FireDamageTypes.getAll()];
-    this.vulnerabilities = [...ColdDamageTypes.getAll()];
-    this.racialAbilities = [ViperBite.GetInstance().Get()];
+    this.resistances = [];
+    this.vulnerabilities = [...MagicDamageTypes.getAll()];
+    this.racialAbilities = [Survive.GetInstance().Get(), Toughness.GetInstance().Get()];
     this.availableClasses = [
       /*
             new Warrior(),
@@ -85,24 +85,10 @@ class Bakali implements IRace {
             new Assassin(),
             new Bandit(),
             new Pirate(),
+            new Nightshade(),
             new Ninja(),
-            new Mage(),
-            new Witch(),
-            new Warlock(),
-            new Mentalist(),
-            new WuJen(),
-            new Cleric(),
-            new Crusader(),
-            new Druid(),
-            new Shaman(),
-            new Priest(),
-            new Shukenja(),
             new Monk(),
             new Dragonslayer(),
-            new Invoker(),
-            new Transmuter(),
-            new Necromancer(),
-            new Battlemage()
             */
     ];
     this.restrictedClasses = [
@@ -110,36 +96,35 @@ class Bakali implements IRace {
                 return missingClasses.ToArray();*/
     ];
     this.boostedClasses = this.boostedClasses = new Map<IDslClass, BoostedClass[]>() /*
-        new IClassBoost(new Armsman(), 20, null, null),
-        new IClassBoost(new Samurai(), 10, null, null),
-        new IClassBoost(new Assassin(), 20, null, null),
-        new IClassBoost(new Bandit(), 20, null, null),
-        new IClassBoost(new Ninja(), 10, null, null),
-        new IClassBoost(new Warlock(), 10, null, null),
-        new IClassBoost(new Shaman(), 10, null, null),
-        new IClassBoost(new Shukenja(), 10, null, null),*/;
-    this.imageUrl = `https://shatteredarchive.com/img/races/Bakali.png`;
-    this.description = `The Bakali are a scaled repitilian race who stand almost 7 feet tall and
-on two feet.  They have a head similar to that of a Cobra.  Their scales
-come in red, black, green, white or blue which makes some people believe
-they are the offspring of some sort of Chromatic Dragon.  They are known for
-their extremely bad tempers and have been to known to kill even their own
-kind with very little cause.  Bakali have a naturally venomous bite that has
-been known to paralyze their victims.  
+            
+        */;
+    this.imageUrl = `https://shatteredarchive.com/img/races/GullyDwarf.png`;
+    this.description = `Dwarves are short, stocky demi-humans, known for foul temper and great
+stamina.  Dwarves have high strength and constitution, but poor dexterity. 
+They are not as smart as humans, but are usually wiser due to their long
+lifespans.  Dwarves make excellent fighters and priests, but are very poor
+mages or thieves.
 
-The Bakali are native to the Tropica continent where they lived for
-centuries in seclusion, warring anything that invaded their territory.  They
-have only recently been driven out by the forces of Chaos.  It has been said
-that the Bakali grow even larger and more powerful with age.  
+Gully Dwarves are short and stout humanoids famous for both their lack of
+intelligence and strong stench, second only to goblin.  These creatures live
+all over Algoron and serve mostly as servants to the rich and powerful. 
+Gully Dwarves are usually easily and very obedient people.  However, when
+cornered and forced to defend themselves or a loved one, they become fierce
+fighters.  
 
-Bakali cannot be Bards, swashbucklers, Nightshades, Illusionists, or
-Enchantors. 
-
-Bakali growth unlock at 1000 hours, +10 hit, +10 dam, -25 ac. Viperbite will prevent fleeing when used used to init on a full health enemy for the remainder of the tick.`;
+Gully Dwarves are rumored to be the accidental invention of Dwarves who have
+historically tried to generate better Dwarves by the use of forced breeding
+with other species.  However, the Dwarf/Gnome offspring backfired creating a
+much dumber race.  Dwarves and Gnomes alike refuse to classify Gully Dwarf
+as one of their species.  Dwarves detest the very name of the Gully Dwarf
+and find no humor in it.  
+ 
+Gully Dwarves cannot be mages, bards or clerics, monks, swashbucklers 
+or Nightshades.`;
   }
 
   // Method to get the single instance of the class
-  public static GetInstance(): Bakali {
+  public static GetInstance(): GullyDwarf {
     if (!this.instance) {
       this.instance = new this();
       ServerCache.Races[this.instance.name] = this.instance;
@@ -149,8 +134,8 @@ Bakali growth unlock at 1000 hours, +10 hit, +10 dam, -25 ac. Viperbite will pre
 
   // Method to get the class instance, used in the context of IAbility
   public Get<T>(): T {
-    return Bakali.GetInstance() as T;
+    return GullyDwarf.GetInstance() as T;
   }
 }
 
-export default Bakali;
+export default GullyDwarf;

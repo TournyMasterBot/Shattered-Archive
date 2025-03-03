@@ -1,4 +1,3 @@
-
 import IAbility from "@shared/types/ability-types/ability";
 import Berserk from "@shared/types/ability-types/skills/Berserk";
 import Gore from "@shared/types/ability-types/skills/Gore";
@@ -10,83 +9,75 @@ import BoostedClass from "@shared/types/character-types/boostedClass";
 import IDamageType from "@shared/types/damage-types/damage-type-interface";
 import IDslClass from "@shared/types/character-types/dslClass";
 import { IRace } from "@shared/types/character-types/race-interface";
+import ServerCache from "@shared/cache/server-cache";
 
 class Minotaur implements IRace {
-    private static instance: Minotaur;
-    
-    public id: string;
-    public imageUrl: string;
-    public description?: string | undefined;
-    public cpModifier?: number | undefined;
-    public name: string;
-    public displayName: string;
-    public isLimitedRace: boolean;
-    public isMortalRace: boolean;
-    public isLargeRace: boolean;
-    public stats: IStatAttribute[];
-    public primaryAttributeModifier: IStatAttribute;
-    public secondaryAttributeModifier: IStatAttribute;
-    public immunities: IDamageType[];
-    public resistances: IDamageType[];
-    public vulnerabilities: IDamageType[];
-    public racialAbilities: IAbility[];
-    public availableClasses: IDslClass[];
-    public restrictedClasses: IDslClass[];
-    public boostedClasses: Map<IDslClass, BoostedClass[]>;
+  private static instance: Minotaur;
 
-    constructor() {
-        this.id = "15";
-        this.name = "minotaur";
-        this.displayName = "Minotaur";
-        this.isLimitedRace = false;
-        this.isMortalRace = true;
-        this.isLargeRace = true;
-        this.cpModifier = 15;
-        this.stats = [
-            new StatAttribute({
-                type: StatAttributeType.Strength,
-                modifier: 77
-            }),
-            new StatAttribute({
-                type: StatAttributeType.Intelligence,
-                modifier: 59
-            }),
-            new StatAttribute({
-                type: StatAttributeType.Wisdom,
-                modifier: 52
-            }),
-            new StatAttribute({
-                type: StatAttributeType.Dexterity,
-                modifier: 40
-            }),
-            new StatAttribute({
-                type: StatAttributeType.Constitution,
-                modifier: 80
-            })
-        ]
-        this.primaryAttributeModifier = new StatAttribute({
-            type: StatAttributeType.Variable,
-            modifier: 8
-        });
-        this.secondaryAttributeModifier = new StatAttribute({
-            type: StatAttributeType.Variable,
-            modifier: 4
-        });
-        this.immunities = [
-        ];
-        this.resistances = [
-            ...BluntDamageTypes.getAll()
-        ];
-        this.vulnerabilities = [
-            ...FireDamageTypes.getAll()
-        ];
-        this.racialAbilities = [
-            Gore.GetInstance().Get(),
-            HandToHand.GetInstance().Get(),
-            Berserk.GetInstance().Get()
-        ]
-        this.availableClasses = [
-            /*
+  public id: string;
+  public imageUrl: string;
+  public description?: string | undefined;
+  public cpModifier?: number | undefined;
+  public name: string;
+  public displayName: string;
+  public isLimitedRace: boolean;
+  public isMortalRace: boolean;
+  public isLargeRace: boolean;
+  public stats: IStatAttribute[];
+  public primaryAttributeModifier: IStatAttribute;
+  public secondaryAttributeModifier: IStatAttribute;
+  public immunities: IDamageType[];
+  public resistances: IDamageType[];
+  public vulnerabilities: IDamageType[];
+  public racialAbilities: IAbility[];
+  public availableClasses: IDslClass[];
+  public restrictedClasses: IDslClass[];
+  public boostedClasses: Map<IDslClass, BoostedClass[]>;
+
+  constructor() {
+    this.id = "15";
+    this.name = this.constructor.name;
+    this.displayName = "Minotaur";
+    this.isLimitedRace = false;
+    this.isMortalRace = true;
+    this.isLargeRace = true;
+    this.cpModifier = 15;
+    this.stats = [
+      new StatAttribute({
+        type: StatAttributeType.Strength,
+        modifier: 77,
+      }),
+      new StatAttribute({
+        type: StatAttributeType.Intelligence,
+        modifier: 59,
+      }),
+      new StatAttribute({
+        type: StatAttributeType.Wisdom,
+        modifier: 52,
+      }),
+      new StatAttribute({
+        type: StatAttributeType.Dexterity,
+        modifier: 40,
+      }),
+      new StatAttribute({
+        type: StatAttributeType.Constitution,
+        modifier: 80,
+      }),
+    ];
+    this.primaryAttributeModifier = new StatAttribute({
+      type: StatAttributeType.Variable,
+      modifier: 8,
+    });
+    this.secondaryAttributeModifier = new StatAttribute({
+      type: StatAttributeType.Variable,
+      modifier: 4,
+    });
+    this.immunities = [];
+    this.resistances = [...BluntDamageTypes.getAll()];
+    this.vulnerabilities = [...FireDamageTypes.getAll()];
+    this.racialAbilities = [Gore.GetInstance().Get(), HandToHand.GetInstance().Get(), Berserk.GetInstance().Get()];
+    this.availableClasses = [
+      /*
             new Warrior(),
             new Barbarian(),
             new Ranger(),
@@ -117,12 +108,12 @@ class Minotaur implements IRace {
             new Necromancer(),
             new Battlemage()
             */
-        ];
-        this.restrictedClasses = [
-            /*var missingClasses = DslClassHelper.GetAvailableClasses().Where(x => !this.AvailableClasses.Any(y => y.Name == x.Name)).ToArray();
+    ];
+    this.restrictedClasses = [
+      /*var missingClasses = DslClassHelper.GetAvailableClasses().Where(x => !this.AvailableClasses.Any(y => y.Name == x.Name)).ToArray();
                 return missingClasses.ToArray();*/
-        ];
-        this.boostedClasses = this.boostedClasses = new Map<IDslClass, BoostedClass[]>/*
+    ];
+    this.boostedClasses = this.boostedClasses = new Map<IDslClass, BoostedClass[]>() /*
             new IClassBoost(new Warrior(), 20, null, null),
             new IClassBoost(new Barbarian(), 30, null, null),
             new IClassBoost(new Armsman(), 20, null, null),
@@ -141,8 +132,8 @@ class Minotaur implements IRace {
             new IClassBoost(new Bard(), -10, null, null),
             new IClassBoost(new Invoker(), -10, null, null),
         */;
-        this.imageUrl = `https://shatteredarchive.com/img/races/Minotaur.png`
-        this.description = `These huge, bull-headed (literally) demihumans stand a hulking 8-10' tall.
+    this.imageUrl = `https://shatteredarchive.com/img/races/Minotaur.png`;
+    this.description = `These huge, bull-headed (literally) demihumans stand a hulking 8-10' tall.
 Their torsos and limbs are humanoid: rippling chests and muscular
 arms, legs, and hands. Their feet, however, end in cloven hooves. Their
 whole bodies are covered with a layer of short hair. Most minotaurs,
@@ -157,21 +148,22 @@ their race.
 Minotaurs receive hand to hand and berserk (if warrior) for free due to
 their fighting abilities. They also have gore, where they lower their
 head and try to ram their horns through their opponent. They do resist
-blunt weapons well.`
-    }
-    
-    // Method to get the single instance of the class
-    public static GetInstance(): Minotaur {
-        if (!Minotaur.instance) {
-            Minotaur.instance = new Minotaur();
-        }
-        return Minotaur.instance;
-    }
+blunt weapons well.`;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Minotaur.GetInstance() as T;
+  // Method to get the single instance of the class
+  public static GetInstance(): Minotaur {
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Races[this.instance.name] = this.instance;
     }
+    return this.instance;
+  }
+
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Minotaur.GetInstance() as T;
+  }
 }
 
 export default Minotaur;

@@ -7,6 +7,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
 
   return {
+    logLevel: "debug" as any,
     plugins: [react()],
     css: {
       preprocessorOptions: {
@@ -29,7 +30,9 @@ export default defineConfig(({ mode }) => {
       }),
     },
     resolve: {
-      alias: {},
+      alias: {
+        "@shared": path.resolve(__dirname, "../shared"),
+      },
     },
     server: {
       host: "0.0.0.0",

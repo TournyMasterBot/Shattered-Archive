@@ -3,11 +3,11 @@ import express, { Application, Request, Response } from "express";
 import session from "express-session";
 import cors from "cors";
 import sessionIdMiddleware from "@shared/middleware/session.middleware";
-import swaggerUi from 'swagger-ui-express';
-import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from "swagger-ui-express";
+import swaggerJsdoc from "swagger-jsdoc";
 import swaggerOptions from "@shared/swaggerOptions";
-import cookieParser from 'cookie-parser';
-import { generateToken } from "./middleware.csrf";
+import cookieParser from "cookie-parser";
+import { doubleCsrfProtection, generateToken } from "./middleware.csrf";
 import ServerCache from "@shared/cache/server-cache";
 
 export interface IShatteredServerProps {
@@ -32,9 +32,9 @@ export class ShatteredServer implements IShatteredServer {
       session({
         secret: ServerCache.jwtSecret, // use a strong secret in production
         resave: false,
-        saveUninitialized: true,  // creates a session even for non-authenticated users
-        cookie: { secure: config.stage === "prod", maxAge: 24 * 60 * 60 * 1000 } // 1 day
-      })
+        saveUninitialized: true, // creates a session even for non-authenticated users
+        cookie: { secure: config.stage === "prod", maxAge: 24 * 60 * 60 * 1000 }, // 1 day
+      }),
     );
     app.use(express.json());
     app.use(express.urlencoded({ extended: false })); // true: allow javascript objects to be expanded
@@ -45,16 +45,27 @@ export class ShatteredServer implements IShatteredServer {
     // Public endpoint to generate a CSRF token and set the corresponding cookie.
     // This route is unprotected so the frontend can retrieve a valid token.
     app.get("/security/get-csrf-token", (req: Request, res: Response) => {
-      const token = generateToken(req, res);
-      res.json({ token });
+      try {
+        const token = generateToken(req, res);
+        res.status(200).json({ token });
+      } catch (err) {
+        res.clearCookie("shatteredarchive.x-csrf-token", {
+          path: "/",
+          sameSite: "lax",
+          secure: config.stage === "prod", // must match the cookie options when it was set
+        });
+        res.status(403).json({
+          error: "csrf error",
+          message: "A csrf error occurred",
+        });
+      }
     });
-    //app.use(doubleCsrfProtection);
-    
-    if(config.stage !== "prod") {
+
+    if (config.stage !== "prod") {
       // Generate the swagger specification
       const specs = swaggerJsdoc(swaggerOptions);
       // Serve swagger docs on /api-docs
-      app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+      app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
     }
 
     this.server = app;

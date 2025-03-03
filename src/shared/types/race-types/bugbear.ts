@@ -1,4 +1,3 @@
-
 import IAbility from "@shared/types/ability-types/ability";
 import BugbearBite from "@shared/types/ability-types/skills/BugbearBite";
 import { IStatAttribute, StatAttribute, StatAttributeType } from "@shared/types/character-types/stat-attribute";
@@ -6,77 +5,75 @@ import BoostedClass from "@shared/types/character-types/boostedClass";
 import IDamageType from "@shared/types/damage-types/damage-type-interface";
 import IDslClass from "@shared/types/character-types/dslClass";
 import { IRace } from "@shared/types/character-types/race-interface";
+import ServerCache from "@shared/cache/server-cache";
 
 class Bugbear implements IRace {
-    private static instance: Bugbear;
-    
-    public id: string;
-    public imageUrl: string;
-    public description?: string | undefined;
-    public cpModifier?: number | undefined;
-    public name: string;
-    public displayName: string;
-    public isLimitedRace: boolean;
-    public isMortalRace: boolean;
-    public isLargeRace: boolean;
-    public stats: IStatAttribute[];
-    public primaryAttributeModifier: IStatAttribute;
-    public secondaryAttributeModifier: IStatAttribute;
-    public immunities: IDamageType[];
-    public resistances: IDamageType[];
-    public vulnerabilities: IDamageType[];
-    public racialAbilities: IAbility[];
-    public availableClasses: IDslClass[];
-    public restrictedClasses: IDslClass[];
-    public boostedClasses: Map<IDslClass, BoostedClass[]>;
+  private static instance: Bugbear;
 
-    constructor() {
-        this.id = "23";
-        this.name = "bugbear";
-        this.displayName = "Bugbear";
-        this.isLimitedRace = false;
-        this.isMortalRace = true;
-        this.isLargeRace = true;
-        this.cpModifier = 8.0;
-        this.stats = [
-            new StatAttribute({
-                type: StatAttributeType.Strength,
-                modifier: 78
-            }),
-            new StatAttribute({
-                type: StatAttributeType.Intelligence,
-                modifier: 49
-            }),
-            new StatAttribute({
-                type: StatAttributeType.Wisdom,
-                modifier: 49
-            }),
-            new StatAttribute({
-                type: StatAttributeType.Dexterity,
-                modifier: 46
-            }),
-            new StatAttribute({
-                type: StatAttributeType.Constitution,
-                modifier: 80
-            })
-        ]
-        this.primaryAttributeModifier = new StatAttribute({
-            type: StatAttributeType.Variable,
-            modifier: 8
-        });
-        this.secondaryAttributeModifier = new StatAttribute({
-            type: StatAttributeType.Variable,
-            modifier: 4
-        });
-        this.immunities = [];
-        this.resistances = [];
-        this.vulnerabilities = [
-        ];
-        this.racialAbilities = [
-            BugbearBite.GetInstance().Get()
-        ]
-        this.availableClasses = [
-            /*
+  public id: string;
+  public imageUrl: string;
+  public description?: string | undefined;
+  public cpModifier?: number | undefined;
+  public name: string;
+  public displayName: string;
+  public isLimitedRace: boolean;
+  public isMortalRace: boolean;
+  public isLargeRace: boolean;
+  public stats: IStatAttribute[];
+  public primaryAttributeModifier: IStatAttribute;
+  public secondaryAttributeModifier: IStatAttribute;
+  public immunities: IDamageType[];
+  public resistances: IDamageType[];
+  public vulnerabilities: IDamageType[];
+  public racialAbilities: IAbility[];
+  public availableClasses: IDslClass[];
+  public restrictedClasses: IDslClass[];
+  public boostedClasses: Map<IDslClass, BoostedClass[]>;
+
+  constructor() {
+    this.id = "23";
+    this.name = this.constructor.name;
+    this.displayName = "Bugbear";
+    this.isLimitedRace = false;
+    this.isMortalRace = true;
+    this.isLargeRace = true;
+    this.cpModifier = 8.0;
+    this.stats = [
+      new StatAttribute({
+        type: StatAttributeType.Strength,
+        modifier: 78,
+      }),
+      new StatAttribute({
+        type: StatAttributeType.Intelligence,
+        modifier: 49,
+      }),
+      new StatAttribute({
+        type: StatAttributeType.Wisdom,
+        modifier: 49,
+      }),
+      new StatAttribute({
+        type: StatAttributeType.Dexterity,
+        modifier: 46,
+      }),
+      new StatAttribute({
+        type: StatAttributeType.Constitution,
+        modifier: 80,
+      }),
+    ];
+    this.primaryAttributeModifier = new StatAttribute({
+      type: StatAttributeType.Variable,
+      modifier: 8,
+    });
+    this.secondaryAttributeModifier = new StatAttribute({
+      type: StatAttributeType.Variable,
+      modifier: 4,
+    });
+    this.immunities = [];
+    this.resistances = [];
+    this.vulnerabilities = [];
+    this.racialAbilities = [BugbearBite.GetInstance().Get()];
+    this.availableClasses = [
+      /*
             new Warrior(),
             new Barbarian(),
             new Ranger(),
@@ -91,12 +88,12 @@ class Bugbear implements IRace {
             new Monk(),
             new Dragonslayer(),
             */
-        ];
-        this.restrictedClasses = [
-            /*var missingClasses = DslClassHelper.GetAvailableClasses().Where(x => !this.AvailableClasses.Any(y => y.Name == x.Name)).ToArray();
+    ];
+    this.restrictedClasses = [
+      /*var missingClasses = DslClassHelper.GetAvailableClasses().Where(x => !this.AvailableClasses.Any(y => y.Name == x.Name)).ToArray();
                 return missingClasses.ToArray();*/
-        ];
-        this.boostedClasses = this.boostedClasses = new Map<IDslClass, BoostedClass[]>/*
+    ];
+    this.boostedClasses = this.boostedClasses = new Map<IDslClass, BoostedClass[]>() /*
             new IClassBoost(new Warrior(), 20, null, null),
             new IClassBoost(new Barbarian(), 20, null, null),
             new IClassBoost(new Ranger(), -10, null, null),
@@ -106,8 +103,8 @@ class Bugbear implements IRace {
             new IClassBoost(new Shaman(), 10, null, null),
             new IClassBoost(new Shukenja(), -10, null, null),
         */;
-        this.imageUrl = `https://shatteredarchive.com/img/races/Bugbear.png`
-        this.description = `The biggest and strongest of the goblinoids, bugbears are even more
+    this.imageUrl = `https://shatteredarchive.com/img/races/Bugbear.png`;
+    this.description = `The biggest and strongest of the goblinoids, bugbears are even more
 aggressive than their relatives.  They live by hunting any creature weaker
 than themselves.  
 
@@ -128,21 +125,22 @@ mercilessly.
 
 Bugbears make great Warriors and Barbarians, and their Clerics and Shaman
 tend to worship Raije due to their warlike culture or Devion due to their
-respect for trickery.`
-    }
-    
-    // Method to get the single instance of the class
-    public static GetInstance(): Bugbear {
-        if (!Bugbear.instance) {
-            Bugbear.instance = new Bugbear();
-        }
-        return Bugbear.instance;
-    }
+respect for trickery.`;
+  }
 
-    // Method to get the class instance, used in the context of IAbility
-    public Get<T>(): T {
-        return Bugbear.GetInstance() as T;
+  // Method to get the single instance of the class
+  public static GetInstance(): Bugbear {
+    if (!this.instance) {
+      this.instance = new this();
+      ServerCache.Races[this.instance.name] = this.instance;
     }
+    return this.instance;
+  }
+
+  // Method to get the class instance, used in the context of IAbility
+  public Get<T>(): T {
+    return Bugbear.GetInstance() as T;
+  }
 }
 
 export default Bugbear;

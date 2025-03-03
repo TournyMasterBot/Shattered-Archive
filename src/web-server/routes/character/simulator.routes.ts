@@ -5,7 +5,7 @@ import { simulateStraightCp } from "handlers/character-handlers/creation-simulat
 
 const router = Router();
 
-router.post("/simulators/creation", doubleCsrfProtection,asyncHandler(simulateStraightCp));
+router.post("/simulators/creation", doubleCsrfProtection, asyncHandler(simulateStraightCp));
 
 
 export default router;
