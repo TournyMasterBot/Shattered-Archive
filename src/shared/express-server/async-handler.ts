@@ -15,7 +15,7 @@ const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => P
           if (result.statusCode! >= 400 && result.statusCode != 404) {
             console.error("Error encountered during request", {
               sessionId: req.shatteredSessionId,
-              requestId: req.traceId,
+              requestId: req.requestId,
               path: req.path,
               result: result,
             });

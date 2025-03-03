@@ -1,4 +1,3 @@
-import http from "http";
 import ShatteredServer from "@shared/express-server/server";
 import path from "path";
 import LoadRoutes from "@shared/express-server/middleware.route";

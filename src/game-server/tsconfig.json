@@ -5,6 +5,7 @@
     "module": "CommonJS",                
     "strict": true,                      
     "noEmit": true,            // Prevent emitting compiled files
+    "resolveJsonModule": true,
     "esModuleInterop": true,             
     "skipLibCheck": true,                
     "forceConsistentCasingInFileNames": true,

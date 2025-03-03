@@ -13,7 +13,7 @@ const sessionIdMiddleware = (req: Request, res: Response, next: NextFunction) =>
     }
   }
   req.shatteredSessionId = sessionId;
-  req.traceId = v4();
+  req.requestId = v4();
   next();
 };
 

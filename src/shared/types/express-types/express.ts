@@ -6,8 +6,10 @@ declare global {
     interface Request {
       authToken?: string;
       User?: JwtAuth;
+      sessionID: string;
       shatteredSessionId?: string;
-      traceId?: string;
+      requestId?: string;
+      headers: any
     }
   }
 }

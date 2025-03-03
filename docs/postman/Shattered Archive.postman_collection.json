@@ -1,0 +1,479 @@
+{
+	"info": {
+		"_postman_id": "c32beeb0-d3f0-44ba-af0b-cd3a63ccf988",
+		"name": "Shattered Archive",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "42373868"
+	},
+	"item": [
+		{
+			"name": "Web Server",
+			"item": [
+				{
+					"name": "areas",
+					"item": [
+						{
+							"name": "/get-areas",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8081/areas/get-areas",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"areas",
+										"get-areas"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/get-area",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"areaName\": \"Asylum\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8081/areas/get-area",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"areas",
+										"get-area"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/directions/get-rooms",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8081/areas/directions/get-rooms",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"areas",
+										"directions",
+										"get-rooms"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/directions/get-rooms",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"roomName\": \"On the Porch of the Fellowship Saloon\",\r\n    \"descriptionFilter\": \"The porch is made of wood, and smells of old beer and sweat.  There are a\\r\\ncouple elves sitting around on old wooden stools, sipping wine and smoking\\r\\nlong curving pipes.  There\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8081/areas/directions/get-room",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"areas",
+										"directions",
+										"get-room"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "classes",
+					"item": [
+						{
+							"name": "/classes/get-classes",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8081/classes/get-classes",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"classes",
+										"get-classes"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/classes/get-class",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8081/classes/get-class/:className",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"classes",
+										"get-class",
+										":className"
+									],
+									"variable": [
+										{
+											"key": "className",
+											"value": "armsman"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "races",
+					"item": [
+						{
+							"name": "/races/get-race",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8081/races/get-race/:raceName",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"races",
+										"get-race",
+										":raceName"
+									],
+									"variable": [
+										{
+											"key": "raceName",
+											"value": "arboren"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/races/get-races",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8081/races/get-races",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"races",
+										"get-races"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "items",
+					"item": [
+						{
+							"name": "/items/get-item",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8081/items/get-item/:itemKey",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"items",
+										"get-item",
+										":itemKey"
+									],
+									"variable": [
+										{
+											"key": "itemKey",
+											"value": "c2f05aea7822a1c59c2f45227dd8c8d52b9404a6ed078657f6fa2ab72745ab5c"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/items/get-items",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8081/items/get-items",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"items",
+										"get-items"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "abilities",
+					"item": [
+						{
+							"name": "/abilities/get-ability",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8081/abilities/get-ability/:abilityName",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"abilities",
+										"get-ability",
+										":abilityName"
+									],
+									"variable": [
+										{
+											"key": "abilityName",
+											"value": "DragonFear"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/abilities/get-abilities",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8081/abilities/get-abilities",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"abilities",
+										"get-abilities"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "ability-groups",
+					"item": [
+						{
+							"name": "/abilities/get-ability-group",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8081/abilities/get-ability-group/:abilityGroupName",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"abilities",
+										"get-ability-group",
+										":abilityGroupName"
+									],
+									"variable": [
+										{
+											"key": "abilityGroupName",
+											"value": "Way of the Sun"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/abilities/get-ability-groups",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8081/abilities/get-ability-groups",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"abilities",
+										"get-ability-groups"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "character",
+					"item": [
+						{
+							"name": "simulators",
+							"item": [
+								{
+									"name": "/abilities/get-ability-group Copy",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"pm.sendRequest(\"http://localhost:8081/security/get-csrf-token\", function (err, res) {\r",
+													"  if (err) {\r",
+													"    console.error(\"Error fetching CSRF token:\", err);\r",
+													"  } else {\r",
+													"    const json = res.json();\r",
+													"    // Save the token to an environment variable\r",
+													"    pm.environment.set(\"csrfToken\", json.token);\r",
+													"    console.log(\"CSRF Token fetched:\", json.token);\r",
+													"  }\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "x-csrf-token",
+												"value": "{{csrfToken}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "http://localhost:8081/character/simulators/creation",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8081",
+											"path": [
+												"character",
+												"simulators",
+												"creation"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "security",
+					"item": [
+						{
+							"name": "csrf-fetch",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8081/security/get-csrf-token",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"security",
+										"get-csrf-token"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "sessionId",
+			"value": "test-1234",
+			"type": "default"
+		}
+	]
+}

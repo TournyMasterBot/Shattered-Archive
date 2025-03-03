@@ -11,7 +11,7 @@ class MessageEnvelope {
   constructor(request: Request, payload?: any, errors?: ApiError[]) {
     this.payload = payload;
     this.sessionId = request.shatteredSessionId;
-    this.requestId = request.traceId;
+    this.requestId = request.requestId;
     this.errors = errors ?? [];
     this.statusCode = this.computeStatusCode();
   }
