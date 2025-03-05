@@ -27,5 +27,9 @@
       "@shared/*": ["../shared/*"]
     }
   },
-  "include": ["vite.config.ts", "../shared"]
+  "include": [
+    "vite.config.ts", 
+    "../shared",
+    "global.d.ts"
+  ]
 }

@@ -21,10 +21,8 @@ class MessageEnvelope {
   }
 
   public addError(err: ApiError) {
-    if (this.errors === undefined) {
-      this.errors = [];
-    }
-    this.errors.push(err);
+    this.errors!.push(err);
+    this.statusCode = err.statusCode;
   }
 
   public unsetInternalErrors() {

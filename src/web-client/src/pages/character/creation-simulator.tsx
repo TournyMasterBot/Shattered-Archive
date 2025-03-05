@@ -2,14 +2,17 @@ import React, { useEffect, useState } from "react";
 import MessageEnvelope from "@shared/types/express-types/message-envelope";
 import SelectBox from "@shared/ui-components/form/select-box";
 import { useFormManager } from "@shared/ui-hooks/form/useFormManager";
+import ApiError from "@shared/types/error-types/api-error";
 
 const CreationSimulatorPage: React.FC = () => {
-  const { csrfToken, loading, error, submitForm } = useFormManager();
-  const [result, setResult] = useState<MessageEnvelope | null>(null);
-  const [selectedClassOption, setSelectedClassOption] = useState<string>("");
-  const [selectedRaceOption, setSelectedRaceOption] = useState<string>("");
+  const { loading, error, submitForm } = useFormManager();
+  const [formPostSelectRaceClassResult, setFormPostSelectRaceClassResult] = useState<MessageEnvelope | null>(null);
+  // Form Options
   const [selectClassOptions, setSelectClassOptions] = useState<{ [key: string]: string }>({});
   const [selectRaceOptions, setSelectRaceOptions] = useState<{ [key: string]: string }>({});
+  // Form Selections
+  const [selectedClassOption, setSelectedClassOption] = useState<string>("");
+  const [selectedRaceOption, setSelectedRaceOption] = useState<string>("");
 
   // Fetch classes on component mount.
   useEffect(() => {
@@ -35,6 +38,7 @@ const CreationSimulatorPage: React.FC = () => {
     const fetchRaces = async () => {
       try {
         const response = await fetch("/web-server/races/get-races");
+        console.log("response", response);
         const data = await response.json();
         const options = data.payload.reduce((acc: { [key: string]: string }, raceName: string) => {
           acc[raceName] = raceName;
@@ -51,24 +55,22 @@ const CreationSimulatorPage: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setResult(null);
-    
-    // Extract characterName from the form.
-    const formElements = event.currentTarget.elements as any;
-    const characterName = (formElements.namedItem("characterName") as HTMLInputElement).value;
-    
+    setFormPostSelectRaceClassResult(null);
+
     // Build the payload including the selected option.
     const payload = {
-      characterName,
       characterClass: selectedClassOption,
       characterRace: selectedRaceOption
     };
 
     try {
-      // Use submitForm from our form manager.
       const data = await submitForm<MessageEnvelope>("/web-server/character/simulators/creation", payload);
-      setResult(data);
-    } catch (err) {
+      setFormPostSelectRaceClassResult(data);
+    } catch (err: any) {
+      const apiError = err as ApiError;
+      if(apiError?.statusCode === 400) {
+        err
+      }
       console.error("Submission error:", err);
     }
   };
@@ -76,12 +78,8 @@ const CreationSimulatorPage: React.FC = () => {
   return (
     <div>
       <h1>Creation Simulator</h1>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && <p style={{ color: "red" }}>{`Encountered Error: ${error}`}</p>}
       <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="characterName">Character Name:</label>
-          <input type="text" id="characterName" name="characterName" required />
-        </div>
         <div style={{ marginTop: "1rem" }}>
           <label htmlFor="characterClass">Character Class:</label>
           <SelectBox
@@ -104,14 +102,14 @@ const CreationSimulatorPage: React.FC = () => {
             onSelectChange={(value) => setSelectedRaceOption(value)}
           />
         </div>
-        <button type="submit" disabled={loading || !csrfToken}>
+        <button type="submit" disabled={loading}>
           {loading ? "Submitting..." : "Submit"}
         </button>
       </form>
-      {result && (
+      {formPostSelectRaceClassResult && (
         <div>
           <h2>Response:</h2>
-          <pre>{JSON.stringify(result, null, 2)}</pre>
+          <pre>{JSON.stringify(formPostSelectRaceClassResult, null, 2)}</pre>
         </div>
       )}
     </div>

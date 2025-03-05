@@ -1,0 +1,34 @@
+// Define theme color maps
+$theme-light: (
+  "bg-color": #ffffff,
+  "text-color": #000000,
+);
+
+$theme-dark: (
+  "bg-color": "#484747",
+  "text-color": #000000,
+);
+
+// Mixin to output CSS variables from a theme map
+@mixin theme($theme-map) {
+  @each $name, $value in $theme-map {
+    --#{$name}: #{$value};
+  }
+}
+
+// Apply the light theme by default on :root
+:root {
+  @include theme($theme-light);
+}
+
+// Override with dark theme when .dark is applied
+.dark {
+  @include theme($theme-dark);
+}
+
+// Body styling using the custom properties
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
+}

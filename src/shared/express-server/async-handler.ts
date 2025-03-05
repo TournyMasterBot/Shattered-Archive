@@ -5,33 +5,19 @@ const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => P
   return (req, res, next) => {
     Promise.resolve(fn(req, res, next))
       .then((result: MessageEnvelope) => {
-        if (result !== undefined) {
-          // Unset errors before response
-          if (result.errors?.length ?? 0 === 0) {
-            result.errors = undefined;
-          }
-
-          // Ensure issues are logged
-          if (result.statusCode! >= 400 && result.statusCode != 404) {
-            console.error("Error encountered during request", {
-              sessionId: req.shatteredSessionId,
-              requestId: req.requestId,
-              path: req.path,
-              result: result,
-            });
-          }
-
-          // unset errors if not defined
-          if (result.errors === undefined || result.errors?.length === 0) {
-            result.errors = undefined;
-          }
-
-          // unset status code
-          const responseCode = result.statusCode!;
-          result.statusCode = undefined;
-          result.unsetInternalErrors();
-          res.status(responseCode).json(result);
+        if (result.statusCode! >= 400 && result.statusCode != 404) {
+          console.error("Error encountered during request", {
+            sessionId: req.shatteredSessionId,
+            requestId: req.requestId,
+            path: req.path,
+            result: JSON.stringify(result, null, 2),
+          });
         }
+        
+        // Append information
+        result.sessionId = req.sessionID;
+        result.requestId = req.requestId;
+        return res.status(result.statusCode!).json(result);
       })
       .catch(next);
   };

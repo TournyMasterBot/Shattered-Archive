@@ -1,8 +1,8 @@
-// App.tsx
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { useState } from 'react';
 import RoomsSelectPage from './pages/directions/room-select'; // adjust the path as needed
 import CreationSimulatorPage from './pages/character/creation-simulator';
+import Layout from "./pages/Layout";
 
 // Home component with your original content
 function Home() {
@@ -38,14 +38,16 @@ function Home() {
 function App() {
   return (
     <Router>
-      <nav>
-        <Link to="/">Home</Link> | <Link to="/rooms">Rooms</Link>
-      </nav>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/character/creation-simulator" element={<CreationSimulatorPage />} /> 
-        <Route path="/rooms" element={<RoomsSelectPage />} />
-      </Routes>
+      <Layout>
+        <nav>
+          <Link to="/">Home</Link> | <Link to="/rooms">Rooms</Link>
+        </nav>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/character/creation-simulator" element={<CreationSimulatorPage />} /> 
+          <Route path="/rooms" element={<RoomsSelectPage />} />
+        </Routes>
+      </Layout>
     </Router>
   );
 }

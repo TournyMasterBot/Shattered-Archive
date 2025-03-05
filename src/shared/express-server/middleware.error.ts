@@ -25,19 +25,6 @@ const doubleCsrfOptions = {
 // Destructure the original CSRF utilities.
 const { doubleCsrfProtection: originalDoubleCsrfProtection, generateToken } = doubleCsrf(doubleCsrfOptions);
 
-export function csrfErrorHandler(err: any, req: Request, res: Response, next: NextFunction): void {
-  // Check if the error is a CSRF error.
-  if (err && (err.name === "ForbiddenError" || err.code === "EBADCSRFTOKEN")) {
-    console.warn("CSRF error caught:", err.message);
-    res.status(403).json({
-      error: "Invalid CSRF token",
-      message: "Your session may have expired. Please refresh and try again.",
-    });
-  } else {
-    next(err);
-  }
-}
-
 /**
  * Wrapped CSRF middleware.
  * This wrapper calls the original middleware inside a try/catch.
@@ -47,7 +34,7 @@ export const doubleCsrfProtection = (req: Request, res: Response, next: NextFunc
   try {
     return originalDoubleCsrfProtection(req, res, next);
   } catch (err) {
-    return csrfErrorHandler(err, req, res, next);
+    return res.status(500).json(err);
   }
 };
 

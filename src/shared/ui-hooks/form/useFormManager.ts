@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 
 /**
  * Custom hook that manages CSRF token retrieval and form submission.
- * It automatically refreshes the token if a 403 (invalid token) is encountered.
  */
 export const useFormManager = (csrfEndpoint: string = "/web-server/security/get-csrf-token"): FormManager => {
   const [csrfToken, setCsrfToken] = useState<string>("");
@@ -13,15 +12,18 @@ export const useFormManager = (csrfEndpoint: string = "/web-server/security/get-
   // Function to fetch a new CSRF token
   const refreshToken = async (): Promise<string> => {
     try {
-      console.log("Refreshing CSRF token");
+      console.log("Fetching CSRF token");
       const res = await fetch(csrfEndpoint, {
         method: "GET",
         credentials: "include",
       });
       if (!res.ok) {
-        throw new Error("Failed to refresh CSRF token");
+        throw new Error("Failed to fetch CSRF token");
       }
       const data = await res.json();
+      if (!data.token) {
+        throw new Error("Failed to set CSRF token");
+      }
       setCsrfToken(data.token);
       return data.token;
     } catch (err: any) {
@@ -30,13 +32,6 @@ export const useFormManager = (csrfEndpoint: string = "/web-server/security/get-
     }
   };
 
-  // Initially fetch the token when the hook is first used.
-  useEffect(() => {
-    refreshToken().catch(() => {
-      // error is handled in refreshToken
-    });
-  }, [csrfEndpoint]);
-
   /**
    * Submit a form (POST) to a given URL with a provided payload.
    * If the CSRF token is invalid (403), it fetches a new token and retries.
@@ -44,7 +39,7 @@ export const useFormManager = (csrfEndpoint: string = "/web-server/security/get-
   const submitForm = async <T = any>(url: string, payload: any): Promise<T> => {
     setLoading(true);
     setError("");
-    
+  
     const makeRequest = async (token: string) => {
       return fetch(url, {
         method: "POST",
@@ -58,25 +53,55 @@ export const useFormManager = (csrfEndpoint: string = "/web-server/security/get-
     };
   
     try {
-      let response = await makeRequest(csrfToken);
-      if (response.status === 403) {
-        const newToken = await refreshToken();
-        response = await makeRequest(newToken);
-      }
+      let response = await makeRequest(csrfToken);  
       if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
+        let errorMsg = `Request failed with status ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.errors) {
+            console.log("Request Errors", {
+              errors: errorData.errors
+            });
+            if (response.status === 400) {
+              errorMsg = "Invalid form data, please check that all required fields are populated";
+            } else if (response.status === 403) {
+              errorMsg = "Request Forbidden"
+            } else if (response.status === 401) {
+              errorMsg = "Request Unauthorized"
+            } else if (response.status === 429) {
+              errorMsg = "Request Rate Limited"
+            } else if (response.status === 500) {
+              errorMsg = "Internal Server Error"
+            } else {
+              errorMsg = errorData.errors
+                .map((err: any) => err.message || JSON.stringify(err))
+                .join(" | ");
+            }
+          } else if (errorData.message) {
+            errorMsg = errorData.message;
+          }
+        } catch (parseError) {
+          console.log("Unknown error : Parse error", {
+            parseError: parseError
+          });
+          errorMsg = "Unknown error : Parse error";
+        }
+        setError(errorMsg);
+        throw new Error(errorMsg);
       }
+  
       const result = await response.json();
       setLoading(false);
       return result;
     } catch (err: any) {
+      console.log("Submission error:", {
+        err: err
+      });
       setLoading(false);
-      const simplifiedError = err.message || "Submission error";
-      setError(simplifiedError);
-      console.log("Submission error:", simplifiedError);
-      return Promise.reject(new Error(simplifiedError));
+      setError(err ?? ["An unknown error occurred"]);
+      throw err;
     }
-  };
+  };  
 
   return { csrfToken, loading, error, submitForm, refreshToken };
 };

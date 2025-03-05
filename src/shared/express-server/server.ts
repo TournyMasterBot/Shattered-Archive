@@ -7,7 +7,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerOptions from "@shared/swaggerOptions";
 import cookieParser from "cookie-parser";
-import { doubleCsrfProtection, generateToken } from "./middleware.csrf";
+import { generateToken } from "./middleware.error";
 import ServerCache from "@shared/cache/server-cache";
 
 export interface IShatteredServerProps {
@@ -67,7 +67,6 @@ export class ShatteredServer implements IShatteredServer {
       // Serve swagger docs on /api-docs
       app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
     }
-
     this.server = app;
   }
 
