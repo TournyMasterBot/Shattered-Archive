@@ -22,7 +22,10 @@ export interface IDslClass {
     /**
      * This map is the CP cost to take a particular spellgroup at character creation
      */
-    characterCreationAbilityGroups: { [groupName: string]: number };
+    characterCreationAbilityGroups: { [groupName: string]: {
+        cpCost: number,
+        abilityGroup: IAbilityGroup
+    } };
     /**
      * This map is the CP cost to take a particular skill at character creation
      */
@@ -37,7 +40,7 @@ export interface IDslClass {
     castsAtLevel: boolean;
     castingLevelModifier: number;
     notes?: string;
-    cpRacialModifiers: Map<IClassType, number>;
+    cpRacialModifiers: Record<string, number>;
     buffActions?: IAbility[];
     isMoonAffected?: boolean;
 }

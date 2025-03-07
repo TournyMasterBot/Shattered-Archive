@@ -153,10 +153,11 @@ import Wemic from "@shared/types/race-types/Wemic";
 import WildElf from "@shared/types/race-types/WildElf";
 import Yinn from "@shared/types/race-types/Yinn";
 import HobGoblin from "@shared/types/race-types/HobGoblin";
-import CreateWater from "../ability-types/spells/CreateWater";
-import ShockingGrasp from "../ability-types/spells/ShockingGrasp";
-import Poison from "../ability-types/spells/Poison";
+import CreateWater from "@shared/types/ability-types/spells/CreateWater";
+import ShockingGrasp from "@shared/types/ability-types/spells/ShockingGrasp";
+import Poison from "@shared/types/ability-types/spells/Poison";
 import ServerCache from "@shared/cache/server-cache";
+import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 
 export class Assassin implements IDslClass, IMortalClass, IClassType {
     private static instance: Assassin;
@@ -176,14 +177,17 @@ export class Assassin implements IDslClass, IMortalClass, IClassType {
     classGroup: string;
     raceRestrictions: IRace[];
     abilities: Map<number, IAbility[]>;
-    characterCreationAbilityGroups: { [groupName: string]: number };
+    characterCreationAbilityGroups: { [groupName: string]: {
+        cpCost: number,
+        abilityGroup: IAbilityGroup
+    } };
     characterCreationSkills: { [abilityName: string]: number };
     baseCpModifier: number;
     helpfile: string;
     castsAtLevel: boolean;
     castingLevelModifier: number;
     notes?: string;
-    cpRacialModifiers: Map<IClassType, number>;
+    cpRacialModifiers: Record<string, number>;
     isMoonAffected?: boolean | undefined;
 
     constructor() {
@@ -371,18 +375,51 @@ export class Assassin implements IDslClass, IMortalClass, IClassType {
 
         // Verified against ShatteredArchive 2025-02-19
         this.characterCreationAbilityGroups = {
-            [AssassinBasics.GetInstance().name]: 0,
-            [AssassinDefault.GetInstance().name]: 40,
-            [Detection.GetInstance().name]: 6,
-            [Illusion.GetInstance().name]: 7,
-            [Transportation.GetInstance().name]: 8,
-            [Combat.GetInstance().name]: 10,
-            [Enhancement.GetInstance().name]: 9,
-            [Maladictions.GetInstance().name]: 9,
-            [Creation.GetInstance().name]: 8,
-            [Healing.GetInstance().name]: 6,
-            [Protective.GetInstance().name]: 7
-        }
+            [AssassinBasics.GetInstance().name]: {
+              cpCost: 0,
+              abilityGroup: AssassinBasics.GetInstance()
+            },
+            [AssassinDefault.GetInstance().name]: {
+              cpCost: 40,
+              abilityGroup: AssassinDefault.GetInstance()
+            },
+            [Detection.GetInstance().name]: {
+              cpCost: 6,
+              abilityGroup: Detection.GetInstance()
+            },
+            [Illusion.GetInstance().name]: {
+              cpCost: 7,
+              abilityGroup: Illusion.GetInstance()
+            },
+            [Transportation.GetInstance().name]: {
+              cpCost: 8,
+              abilityGroup: Transportation.GetInstance()
+            },
+            [Combat.GetInstance().name]: {
+              cpCost: 10,
+              abilityGroup: Combat.GetInstance()
+            },
+            [Enhancement.GetInstance().name]: {
+              cpCost: 9,
+              abilityGroup: Enhancement.GetInstance()
+            },
+            [Maladictions.GetInstance().name]: {
+              cpCost: 9,
+              abilityGroup: Maladictions.GetInstance()
+            },
+            [Creation.GetInstance().name]: {
+              cpCost: 8,
+              abilityGroup: Creation.GetInstance()
+            },
+            [Healing.GetInstance().name]: {
+              cpCost: 6,
+              abilityGroup: Healing.GetInstance()
+            },
+            [Protective.GetInstance().name]: {
+              cpCost: 7,
+              abilityGroup: Protective.GetInstance()
+            }
+          };          
 
         // Verified against ShatteredArchive 2025-02-19
         this.characterCreationSkills = {
@@ -468,29 +505,29 @@ See also - RECLASS`;
         this.isMoonAffected = false;
         this.castingLevelModifier = 0.66;
         // Verified against ShatteredArchive 2025-02-19
-        this.cpRacialModifiers = new Map<IRace, number>([
-            [Human.GetInstance(), 1.0],
-            [HalfElf.GetInstance(), 1.1],
-            [WildElf.GetInstance(), 1.1],
-            [ShalonestiElf.GetInstance(), 1.1],
-            [SeaElf.GetInstance(), 1.1],
-            [DarkElf.GetInstance(), 1.1],
-            [HillDwarf.GetInstance(), 1.5],
-            [MountainDwarf.GetInstance(), 1.4],
-            [DarkDwarf.GetInstance(), 1.5],
-            [Mul.GetInstance(), 1.5],
-            [Ogre.GetInstance(), 2.0],
-            [HalfOgre.GetInstance(), 1.75],
-            [GiantOgre.GetInstance(), 3.0],
-            [Goblin.GetInstance(), 1.0],
-            [HobGoblin.GetInstance(), 1.0],
-            [TinkerGnome.GetInstance(), 1.3],
-            [DeepGnome.GetInstance(), 1.3],
-            [Felar.GetInstance(), 1.0],
-            [Wemic.GetInstance(), 2.1],
-            [Minotaur.GetInstance(), 1.5],
-            [Yinn.GetInstance(), 1.6]
-        ]);
+        this.cpRacialModifiers = {
+            [Human.GetInstance().name]: 1.0,
+            [HalfElf.GetInstance().name]: 1.1,
+            [WildElf.GetInstance().name]: 1.1,
+            [ShalonestiElf.GetInstance().name]: 1.1,
+            [SeaElf.GetInstance().name]: 1.1,
+            [DarkElf.GetInstance().name]: 1.1,
+            [HillDwarf.GetInstance().name]: 1.5,
+            [MountainDwarf.GetInstance().name]: 1.4,
+            [DarkDwarf.GetInstance().name]: 1.5,
+            [Mul.GetInstance().name]: 1.5,
+            [Ogre.GetInstance().name]: 2.0,
+            [HalfOgre.GetInstance().name]: 1.75,
+            [GiantOgre.GetInstance().name]: 3.0,
+            [Goblin.GetInstance().name]: 1.0,
+            [HobGoblin.GetInstance().name]: 1.0,
+            [TinkerGnome.GetInstance().name]: 1.3,
+            [DeepGnome.GetInstance().name]: 1.3,
+            [Felar.GetInstance().name]: 1.0,
+            [Wemic.GetInstance().name]: 2.1,
+            [Minotaur.GetInstance().name]: 1.5,
+            [Yinn.GetInstance().name]: 1.6
+        };
     }
 
     // Method to get the single instance of the class

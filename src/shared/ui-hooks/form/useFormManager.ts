@@ -36,20 +36,29 @@ export const useFormManager = (csrfEndpoint: string = "/web-server/security/get-
    * Submit a form (POST) to a given URL with a provided payload.
    * If the CSRF token is invalid (403), it fetches a new token and retries.
    */
-  const submitForm = async <T = any>(url: string, payload: any): Promise<T> => {
+  const submitForm = async <T = any>(url: string, method: string, payload?: any): Promise<T> => {
     setLoading(true);
     setError("");
   
     const makeRequest = async (token: string) => {
-      return fetch(url, {
-        method: "POST",
+      const upperMethod = method.toUpperCase();
+    
+      // Build the common options
+      const options: RequestInit = {
+        method: upperMethod,
         headers: {
-          "Content-Type": "application/json",
           "x-csrf-token": token,
+          "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify(payload),
-      });
+      };
+    
+      // Only add a body for methods that support one
+      if (upperMethod !== "GET" && upperMethod !== "HEAD") {
+        options.body = JSON.stringify(payload);
+      }
+    
+      return fetch(url, options);
     };
   
     try {
@@ -90,7 +99,7 @@ export const useFormManager = (csrfEndpoint: string = "/web-server/security/get-
         throw new Error(errorMsg);
       }
   
-      const result = await response.json();
+      const result = (await response.json());
       setLoading(false);
       return result;
     } catch (err: any) {

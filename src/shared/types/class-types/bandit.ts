@@ -145,6 +145,7 @@ import Yinn from "@shared/types/race-types/Yinn";
 import CreateFood from "@shared/types/ability-types/spells/CreateFood";
 import LocateObject from "@shared/types/ability-types/spells/LocateObject";
 import ServerCache from "@shared/cache/server-cache";
+import IAbilityGroup from "@shared/types/ability-types/ability-group-interface";
 
 export class Bandit implements IDslClass, IMortalClass, IClassType {
     private static instance: Bandit;
@@ -164,14 +165,17 @@ export class Bandit implements IDslClass, IMortalClass, IClassType {
     classGroup: string;
     raceRestrictions: IRace[];
     abilities: Map<number, IAbility[]>;
-    characterCreationAbilityGroups: { [groupName: string]: number };
+    characterCreationAbilityGroups: { [groupName: string]: {
+      cpCost: number,
+      abilityGroup: IAbilityGroup
+  } };
     characterCreationSkills: { [abilityName: string]: number };
     baseCpModifier: number;
     helpfile: string;
     castsAtLevel: boolean;
     castingLevelModifier: number;
     notes?: string;
-    cpRacialModifiers: Map<IClassType, number>;
+    cpRacialModifiers: Record<string, number>;
     isMoonAffected?: boolean | undefined;
 
     constructor() {
@@ -342,18 +346,51 @@ export class Bandit implements IDslClass, IMortalClass, IClassType {
           ]);
         // Verified against ShatteredArchive 2025-02-19
         this.characterCreationAbilityGroups = {
-          [BanditBasics.GetInstance().name]: 0,
-          [BanditDefault.GetInstance().name]: 40,
-          [Weaponsmaster.GetInstance().name]: 40,
-          [Detection.GetInstance().name]: 4,
-          [Maladictions.GetInstance().name]: 8,
-          [Combat.GetInstance().name]: 8,
-          [Enhancement.GetInstance().name]: 7,
-          [Protective.GetInstance().name]: 6,
-          [Creation.GetInstance().name]: 5,
-          [Illusion.GetInstance().name]: 5,
-          [Transportation.GetInstance().name]: 6
-        }
+          [BanditBasics.GetInstance().name]: {
+            cpCost: 0,
+            abilityGroup: BanditBasics.GetInstance()
+          },
+          [BanditDefault.GetInstance().name]: {
+            cpCost: 40,
+            abilityGroup: BanditDefault.GetInstance()
+          },
+          [Weaponsmaster.GetInstance().name]: {
+            cpCost: 40,
+            abilityGroup: Weaponsmaster.GetInstance()
+          },
+          [Detection.GetInstance().name]: {
+            cpCost: 4,
+            abilityGroup: Detection.GetInstance()
+          },
+          [Maladictions.GetInstance().name]: {
+            cpCost: 8,
+            abilityGroup: Maladictions.GetInstance()
+          },
+          [Combat.GetInstance().name]: {
+            cpCost: 8,
+            abilityGroup: Combat.GetInstance()
+          },
+          [Enhancement.GetInstance().name]: {
+            cpCost: 7,
+            abilityGroup: Enhancement.GetInstance()
+          },
+          [Protective.GetInstance().name]: {
+            cpCost: 6,
+            abilityGroup: Protective.GetInstance()
+          },
+          [Creation.GetInstance().name]: {
+            cpCost: 5,
+            abilityGroup: Creation.GetInstance()
+          },
+          [Illusion.GetInstance().name]: {
+            cpCost: 5,
+            abilityGroup: Illusion.GetInstance()
+          },
+          [Transportation.GetInstance().name]: {
+            cpCost: 6,
+            abilityGroup: Transportation.GetInstance()
+          }
+        };
 
         // Verified against ShatteredArchive 2025-02-19
         this.characterCreationSkills = {
@@ -402,30 +439,30 @@ export class Bandit implements IDslClass, IMortalClass, IClassType {
         this.isMoonAffected = false;
         this.castingLevelModifier = 0.66;
         // Verified against ShatteredArchive 2025-02-19
-        this.cpRacialModifiers = new Map<IClassType, number>([
-            [Human.GetInstance(), 1.0],
-            [HalfElf.GetInstance(), 1.1],
-            [WildElf.GetInstance(), 1.1],
-            [ShalonestiElf.GetInstance(), 1.1],
-            [SeaElf.GetInstance(), 1.1],
-            [DarkElf.GetInstance(), 1.1],
-            [HillDwarf.GetInstance(), 1.5],
-            [MountainDwarf.GetInstance(), 1.4],
-            [DarkDwarf.GetInstance(), 1.5],
-            [Mul.GetInstance(), 1.5],
-            [Ogre.GetInstance(), 2.0],
-            [HalfOgre.GetInstance(), 1.75],
-            [GiantOgre.GetInstance(), 3.0],
-            [Goblin.GetInstance(), 1.0],
-            [HobGoblin.GetInstance(), 1.0],
-            [Bugbear.GetInstance(), 1.0],
-            [TinkerGnome.GetInstance(), 1.3],
-            [DeepGnome.GetInstance(), 1.3],
-            [Felar.GetInstance(), 1.15],
-            [Wemic.GetInstance(), 2.0],
-            [Minotaur.GetInstance(), 1.5],
-            [Yinn.GetInstance(), 1.6]
-          ])
+        this.cpRacialModifiers = {
+          [Human.GetInstance().name]: 1.0,
+          [HalfElf.GetInstance().name]: 1.1,
+          [WildElf.GetInstance().name]: 1.1,
+          [ShalonestiElf.GetInstance().name]: 1.1,
+          [SeaElf.GetInstance().name]: 1.1,
+          [DarkElf.GetInstance().name]: 1.1,
+          [HillDwarf.GetInstance().name]: 1.5,
+          [MountainDwarf.GetInstance().name]: 1.4,
+          [DarkDwarf.GetInstance().name]: 1.5,
+          [Mul.GetInstance().name]: 1.5,
+          [Ogre.GetInstance().name]: 2.0,
+          [HalfOgre.GetInstance().name]: 1.75,
+          [GiantOgre.GetInstance().name]: 3.0,
+          [Goblin.GetInstance().name]: 1.0,
+          [HobGoblin.GetInstance().name]: 1.0,
+          [Bugbear.GetInstance().name]: 1.0,
+          [TinkerGnome.GetInstance().name]: 1.3,
+          [DeepGnome.GetInstance().name]: 1.3,
+          [Felar.GetInstance().name]: 1.15,
+          [Wemic.GetInstance().name]: 2.0,
+          [Minotaur.GetInstance().name]: 1.5,
+          [Yinn.GetInstance().name]: 1.6,
+        };
         this.helpfile = `Bandits are often vicious, cunning, and cruel.  They are ""cut throat"" even
 with their own kind generally, but a common goal of obtaining loot or the
 big score makes them more than willing to work in well organized groups.  

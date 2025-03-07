@@ -23,7 +23,7 @@ export const getClass = async (req: Request, res: Response): Promise<MessageEnve
   let response: MessageEnvelope = new MessageEnvelope(req);
   const { className } = req.params;
   try {
-    const lookupByName = className.toLowerCase().trim();
+    const lookupByName = className.trim();
     const dslClass = ServerCache.GetClassByName(lookupByName);
     if(dslClass === undefined) {
         response.addError({

@@ -1,6 +1,7 @@
 import ArgumentNull, { ArgumentNullError } from "@shared/types/error-types/argument-null-error";
 import MessageEnvelope from "@shared/types/express-types/message-envelope";
 import { Request, Response } from "express";
+import CharacterSimulator from "features/simulators/character/character-simulator";
 
 export const simulateStraightCp = async (req: Request, res: Response): Promise<MessageEnvelope> => {
   let response: MessageEnvelope = new MessageEnvelope(req);
@@ -8,11 +9,9 @@ export const simulateStraightCp = async (req: Request, res: Response): Promise<M
     req: JSON.stringify(req.body)
   });
   try {
-    const { characterClass, characterRace } = req.body;
-    console.log("characterClass:", characterClass, typeof characterClass);
-    console.log("characterRace:", characterRace, typeof characterRace);
-    ArgumentNull.throwIfNullOrWhiteSpace(characterClass, "characterClass");
-    ArgumentNull.throwIfNullOrWhiteSpace(characterRace, "characterRace");
+    const { cpCost, racialModifier } = req.body;
+    const result = CharacterSimulator.CalculateCp(cpCost, racialModifier);
+    response.payload = result;
   } catch (err: any) {
     console.log("Failed to process simulation request", {
       err: err.message

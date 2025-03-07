@@ -125,6 +125,7 @@ import WarHymns from "@shared/types/ability-types/groups-songs/WarHymns";
 import HymnsOfLife from "@shared/types/ability-types/groups-songs/HymnsOfLife";
 import StoneFountain from "@shared/types/ability-types/songs/StoneFountain";
 import ServerCache from "@shared/cache/server-cache";
+import IAbilityGroup from "../ability-types/ability-group-interface";
 // #endregion
 
 export class Bard implements IDslClass, IMortalClass, IClassType {
@@ -145,14 +146,17 @@ export class Bard implements IDslClass, IMortalClass, IClassType {
   classGroup: string;
   raceRestrictions: IRace[];
   abilities: Map<number, IAbility[]>;
-  characterCreationAbilityGroups: { [groupName: string]: number };
+  characterCreationAbilityGroups: { [groupName: string]: {
+    cpCost: number,
+    abilityGroup: IAbilityGroup
+  } };
   characterCreationSkills: { [abilityName: string]: number };
   baseCpModifier: number;
   helpfile: string;
   castsAtLevel: boolean;
   castingLevelModifier: number;
   notes?: string;
-  cpRacialModifiers: Map<IRace, number>;
+  cpRacialModifiers: Record<string, number>;
   buffActions?: IAbility[] | undefined;
   adept?: number | undefined;
   isMoonAffected?: boolean | undefined;
@@ -281,15 +285,39 @@ export class Bard implements IDslClass, IMortalClass, IClassType {
 
     // Verified against ShatteredArchive 2025-02-18
     this.characterCreationAbilityGroups = {
-      [BardBasics.GetInstance().name]: 0,
-      [BardDefault.GetInstance().name]: 40,
-      [Enhancement.GetInstance().name]: 7,
-      [Transportation.GetInstance().name]: 6,
-      [Harmful.GetInstance().name]: 4,
-      [WarHymns.GetInstance().name]: 8,
-      [Protective.GetInstance().name]: 8,
-      [HymnsOfLife.GetInstance().name]: 6
-    }
+      [BardBasics.GetInstance().name]: {
+        cpCost: 0,
+        abilityGroup: BardBasics.GetInstance()
+      },
+      [BardDefault.GetInstance().name]: {
+        cpCost: 40,
+        abilityGroup: BardDefault.GetInstance()
+      },
+      [Enhancement.GetInstance().name]: {
+        cpCost: 7,
+        abilityGroup: Enhancement.GetInstance()
+      },
+      [Transportation.GetInstance().name]: {
+        cpCost: 6,
+        abilityGroup: Transportation.GetInstance()
+      },
+      [Harmful.GetInstance().name]: {
+        cpCost: 4,
+        abilityGroup: Harmful.GetInstance()
+      },
+      [WarHymns.GetInstance().name]: {
+        cpCost: 8,
+        abilityGroup: WarHymns.GetInstance()
+      },
+      [Protective.GetInstance().name]: {
+        cpCost: 8,
+        abilityGroup: Protective.GetInstance()
+      },
+      [HymnsOfLife.GetInstance().name]: {
+        cpCost: 6,
+        abilityGroup: HymnsOfLife.GetInstance()
+      }
+    };
 
     // Verified against ShatteredArchive 2025-02-18
     this.characterCreationSkills = {
@@ -316,27 +344,27 @@ export class Bard implements IDslClass, IMortalClass, IClassType {
     
     this.baseCpModifier = 0;
     // Verified against ShatteredArchive 2025-02-18
-    this.cpRacialModifiers = new Map<IRace, number>([
-      [Human.GetInstance(), 1.0],
-      [HalfElf.GetInstance(), 1.1],
-      [WildElf.GetInstance(), 1.5],
-      [ShalonestiElf.GetInstance(), 1.1],
-      [SeaElf.GetInstance(), 1.3],
-      [DarkElf.GetInstance(), 1.1],
-      [HillDwarf.GetInstance(), 1.5],
-      [MountainDwarf.GetInstance(), 1.4],
-      [DarkDwarf.GetInstance(), 1.9],
-      [Mul.GetInstance(), 1.5],
-      [HalfOgre.GetInstance(), 1.75],
-      [Goblin.GetInstance(), 2.0],
-      [HobGoblin.GetInstance(), 1.0],
-      [TinkerGnome.GetInstance(), 1.5],
-      [DeepGnome.GetInstance(), 1.7],
-      [Felar.GetInstance(), 1.6],
-      [Minotaur.GetInstance(), 1.9],
-      [Kender.GetInstance(), 1.1],
-      [Yinn.GetInstance(), 1.8]
-    ]);
+    this.cpRacialModifiers = {
+      [Human.GetInstance().name]: 1.0,
+      [HalfElf.GetInstance().name]: 1.1,
+      [WildElf.GetInstance().name]: 1.5,
+      [ShalonestiElf.GetInstance().name]: 1.1,
+      [SeaElf.GetInstance().name]: 1.3,
+      [DarkElf.GetInstance().name]: 1.1,
+      [HillDwarf.GetInstance().name]: 1.5,
+      [MountainDwarf.GetInstance().name]: 1.4,
+      [DarkDwarf.GetInstance().name]: 1.9,
+      [Mul.GetInstance().name]: 1.5,
+      [HalfOgre.GetInstance().name]: 1.75,
+      [Goblin.GetInstance().name]: 2.0,
+      [HobGoblin.GetInstance().name]: 1.0,
+      [TinkerGnome.GetInstance().name]: 1.5,
+      [DeepGnome.GetInstance().name]: 1.7,
+      [Felar.GetInstance().name]: 1.6,
+      [Minotaur.GetInstance().name]: 1.9,
+      [Kender.GetInstance().name]: 1.1,
+      [Yinn.GetInstance().name]: 1.8,
+    };
 
     this.helpfile =
 `help bard

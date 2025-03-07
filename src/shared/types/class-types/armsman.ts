@@ -157,14 +157,17 @@ export class Armsman implements IDslClass, IMortalClass, IClassType {
     classGroup: string;
     raceRestrictions: IRace[];
     abilities: Map<number, IAbility[]>;
-    characterCreationAbilityGroups: { [groupName: string]: number };
+    characterCreationAbilityGroups: { [groupName: string]: {
+        cpCost: number,
+        abilityGroup: IAbilityGroup
+    } };
     characterCreationSkills: { [abilityName: string]: number };
     baseCpModifier: number;
     helpfile: string;
     castsAtLevel: boolean;
     castingLevelModifier: number;
     notes?: string;
-    cpRacialModifiers: Map<IClassType, number>;
+    cpRacialModifiers: Record<string, number>;
     isMoonAffected?: boolean | undefined;
 
     constructor() {
@@ -345,21 +348,63 @@ export class Armsman implements IDslClass, IMortalClass, IClassType {
         ]);
         // Verified against ShatteredArchive 2025-02-19
         this.characterCreationAbilityGroups = {
-            [Weaponsmaster.GetInstance().name]: 20,
-            [Transportation.GetInstance().name]: 8,
-            [MasteryMace.GetInstance().name]: 9,
-            [MasterySword.GetInstance().name]: 9,
-            [MasteryDagger.GetInstance().name]: 9,
-            [Enhancement.GetInstance().name]: 9,
-            [ArmsmanBasics.GetInstance().name]: 0,
-            [ArmsmanDefault.GetInstance().name]: 40,
-            [MasteryPolearm.GetInstance().name]: 9,
-            [MasteryWhip.GetInstance().name]: 9,
-            [Protective.GetInstance().name]: 9,
-            [MasteryFlail.GetInstance().name]: 9,
-            [MasterySpear.GetInstance().name]: 9,
-            [MasteryAxe.GetInstance().name]: 9
-        }
+            [Weaponsmaster.GetInstance().name]: {
+              cpCost: 20,
+              abilityGroup: Weaponsmaster.GetInstance()
+            },
+            [Transportation.GetInstance().name]: {
+              cpCost: 8,
+              abilityGroup: Transportation.GetInstance()
+            },
+            [MasteryMace.GetInstance().name]: {
+              cpCost: 9,
+              abilityGroup: MasteryMace.GetInstance()
+            },
+            [MasterySword.GetInstance().name]: {
+              cpCost: 9,
+              abilityGroup: MasterySword.GetInstance()
+            },
+            [MasteryDagger.GetInstance().name]: {
+              cpCost: 9,
+              abilityGroup: MasteryDagger.GetInstance()
+            },
+            [Enhancement.GetInstance().name]: {
+              cpCost: 9,
+              abilityGroup: Enhancement.GetInstance()
+            },
+            [ArmsmanBasics.GetInstance().name]: {
+              cpCost: 0,
+              abilityGroup: ArmsmanBasics.GetInstance()
+            },
+            [ArmsmanDefault.GetInstance().name]: {
+              cpCost: 40,
+              abilityGroup: ArmsmanDefault.GetInstance()
+            },
+            [MasteryPolearm.GetInstance().name]: {
+              cpCost: 9,
+              abilityGroup: MasteryPolearm.GetInstance()
+            },
+            [MasteryWhip.GetInstance().name]: {
+              cpCost: 9,
+              abilityGroup: MasteryWhip.GetInstance()
+            },
+            [Protective.GetInstance().name]: {
+              cpCost: 9,
+              abilityGroup: Protective.GetInstance()
+            },
+            [MasteryFlail.GetInstance().name]: {
+              cpCost: 9,
+              abilityGroup: MasteryFlail.GetInstance()
+            },
+            [MasterySpear.GetInstance().name]: {
+              cpCost: 9,
+              abilityGroup: MasterySpear.GetInstance()
+            },
+            [MasteryAxe.GetInstance().name]: {
+              cpCost: 9,
+              abilityGroup: MasteryAxe.GetInstance()
+            }
+          };
 
         // Verified against ShatteredArchive 2025-02-19
         this.characterCreationSkills = {
@@ -429,32 +474,32 @@ export class Armsman implements IDslClass, IMortalClass, IClassType {
         this.castingLevelModifier = 0.50;
         this.notes = "Armsman are extremely versatile fighters that tend to be extremely expensive in both tnl to level and eggs for weapons. Armsman do not cast at level.";
         // Verified against ShatteredArchive 2025-02-19
-        this.cpRacialModifiers = new Map<IRace, number>([
-            [Human.GetInstance(), 1.0],
-            [HalfElf.GetInstance(), 1.0],
-            [WildElf.GetInstance(), 1.0],
-            [ShalonestiElf.GetInstance(), 1.0],
-            [SeaElf.GetInstance(), 1.0],
-            [DarkElf.GetInstance(), 1.0],
-            [HillDwarf.GetInstance(), 1.0],
-            [MountainDwarf.GetInstance(), 1.0],
-            [DarkDwarf.GetInstance(), 1.0],
-            [Mul.GetInstance(), 1.0],
-            [Ogre.GetInstance(), 1.0],
-            [HalfOgre.GetInstance(), 1.0],
-            [GiantOgre.GetInstance(), 1.0],
-            [Goblin.GetInstance(), 1.0],
-            [HobGoblin.GetInstance(), 1.0],
-            [Bugbear.GetInstance(), 1.0],
-            [TinkerGnome.GetInstance(), 1.0],
-            [DeepGnome.GetInstance(), 1.0],
-            [Felar.GetInstance(), 1.0],
-            [Wemic.GetInstance(), 1.0],
-            [Minotaur.GetInstance(), 1.0],
-            [Kender.GetInstance(), 1.0],
-            [Arboren.GetInstance(), 1.0],
-            [Yinn.GetInstance(), 1.0],
-        ]);
+        this.cpRacialModifiers = {
+            [Human.GetInstance().name]: 1.0,
+            [HalfElf.GetInstance().name]: 1.0,
+            [WildElf.GetInstance().name]: 1.0,
+            [ShalonestiElf.GetInstance().name]: 1.0,
+            [SeaElf.GetInstance().name]: 1.0,
+            [DarkElf.GetInstance().name]: 1.0,
+            [HillDwarf.GetInstance().name]: 1.0,
+            [MountainDwarf.GetInstance().name]: 1.0,
+            [DarkDwarf.GetInstance().name]: 1.0,
+            [Mul.GetInstance().name]: 1.0,
+            [Ogre.GetInstance().name]: 1.0,
+            [HalfOgre.GetInstance().name]: 1.0,
+            [GiantOgre.GetInstance().name]: 1.0,
+            [Goblin.GetInstance().name]: 1.0,
+            [HobGoblin.GetInstance().name]: 1.0,
+            [Bugbear.GetInstance().name]: 1.0,
+            [TinkerGnome.GetInstance().name]: 1.0,
+            [DeepGnome.GetInstance().name]: 1.0,
+            [Felar.GetInstance().name]: 1.0,
+            [Wemic.GetInstance().name]: 1.0,
+            [Minotaur.GetInstance().name]: 1.0,
+            [Kender.GetInstance().name]: 1.0,
+            [Arboren.GetInstance().name]: 1.0,
+            [Yinn.GetInstance().name]: 1.0,
+          };          
     }
 
     // Method to get the single instance of the class

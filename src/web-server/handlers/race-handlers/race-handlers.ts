@@ -24,7 +24,7 @@ export const getRace = async (req: Request, res: Response): Promise<MessageEnvel
   const { raceName } = req.params;
   try {
     // Fetch possible rooms
-    const lookupByName = raceName.toLowerCase().trim();
+    const lookupByName = raceName.trim();
     const race = ServerCache.GetRaceByName(lookupByName);
     if(race === undefined) {
         response.addError({

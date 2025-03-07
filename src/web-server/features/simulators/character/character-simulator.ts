@@ -18,8 +18,8 @@ const CharacterSimulator = {
     * 241+: 1000000
      */
     CalculateCp: function(totalCp: number, racialModifier: number) {
+        let result: any = {};
         let tnl: number;
-
         if (totalCp > 40 && totalCp < 240) {
             const roundCpModifier = this.RoundCpMultiplier(totalCp, 20);
             let expectedCpModifier = totalCp % 20 !== 0 
@@ -39,14 +39,14 @@ const CharacterSimulator = {
             }
             const cpCheck = totalCp - multiplierCP;
             tnl = (cpCheck * multiplier) + additive;
-            console.debug("CP Calculation Result", {
+            result = {
                 roundCpModifier: roundCpModifier,
                 multiplierCP: multiplierCP,
                 expectedCpModifier: expectedCpModifier,
                 multiplier: multiplier,
                 additive: additive,
                 racialModifier: racialModifier
-            });
+            };
         } else if (totalCp >= 240) {
             tnl = 1000000;
         } else {
@@ -54,11 +54,17 @@ const CharacterSimulator = {
         }
     
         const total = tnl * racialModifier;
-        const racialModifiedTnl = this.RoundDown(total);
-        console.debug("Expected TNL", {
-            racialModifiedTnl: racialModifiedTnl
+        let racialModifiedTnl = this.RoundDown(total);
+        if(racialModifiedTnl > 1000000) {
+            racialModifiedTnl = 1000000;
+        } else if (racialModifiedTnl < 1000) {
+            racialModifiedTnl = 1000;
+        }
+        result.racialModifiedTnl = racialModifiedTnl;
+        console.debug("CP Calculation Result", {
+            result: JSON.stringify(result, null, 2)
         });
-        return racialModifiedTnl;
+        return result;
     },
     RoundCpMultiplier: function(totalCp: number, increment: number) {
         const interval = Math.floor(totalCp / increment) - 2;
