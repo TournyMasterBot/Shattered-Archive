@@ -40,7 +40,7 @@ class Ogre implements IRace {
     this.isLimitedRace = false;
     this.isMortalRace = true;
     this.isLargeRace = true;
-    this.cpModifier = 8;
+    this.cpModifier = 2.0;
     this.stats = [
       new StatAttribute({
         type: StatAttributeType.Strength,

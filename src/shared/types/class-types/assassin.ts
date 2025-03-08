@@ -416,7 +416,7 @@ export class Assassin implements IDslClass, IMortalClass, IClassType {
               abilityGroup: Healing.GetInstance()
             },
             [Protective.GetInstance().name]: {
-              cpCost: 7,
+              cpCost: 10,
               abilityGroup: Protective.GetInstance()
             }
           };          

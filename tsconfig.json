@@ -30,10 +30,10 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@web-server/*": ["./src/web-server"],
-      "@web-client/*": ["./src/web-client"],
-      "@game-server/*": ["./src/game-server"],
-      "@game-client/*": ["./src/game-client"],
+      "@web-server/*": ["./src/web-server/*"],
+      "@web-client/*": ["./src/web-client/*"],
+      "@game-server/*": ["./src/game-server/*"],
+      "@game-client/*": ["./src/game-client/*"],
       "@shared/*": ["./src/shared/*"]
     }
   },
