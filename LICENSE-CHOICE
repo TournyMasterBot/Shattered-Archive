@@ -1,0 +1,54 @@
+                License Options for ShatteredArchive Software
+
+This software is dual-licensed. You may choose EITHER of the following
+licenses depending on your use case:
+
+----------------------------------------------------------------------
+OPTION A — Apache License 2.0 (Open Source, Free Use)
+----------------------------------------------------------------------
+
+You may use, modify, and redistribute the Software under the terms of the
+Apache License 2.0 for:
+
+  • Personal use
+  • Academic use
+  • Internal business use
+  • Free redistribution of the Software or Derivative Works
+
+No royalty payments are required for Apache 2.0 use.
+
+You may obtain a copy of the Apache License 2.0 at:
+http://www.apache.org/licenses/LICENSE-2.0
+
+
+----------------------------------------------------------------------
+OPTION B — ShatteredArchive Commercial License 1.0 (Paid / For-Profit Use)
+----------------------------------------------------------------------
+
+You MUST use the ShatteredArchive Commercial License if You:
+
+  • Sell, license, or sublicense the Software;
+  • Sell or license Derivative Works based on the Software;
+  • Include the Software in a paid product or service;
+  • Monetize the Software in any way.
+
+Commercial use requires:
+
+  • Written notice to the Licensor;
+  • Payment of **10% of all gross revenue** generated from commercial
+    distribution of the Software or Derivative Works.
+
+The full terms are provided in the file: LICENSE-COMMERCIAL
+
+
+----------------------------------------------------------------------
+How to Choose
+----------------------------------------------------------------------
+
+If Your use is free and noncommercial → Use Apache 2.0.
+
+If Your use generates revenue of ANY kind → Use the Commercial License
+and remit required royalties.
+
+----------------------------------------------------------------------
+END OF FILE
