@@ -1,0 +1,61 @@
+{
+  "name": "shatteredarchive",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test --passWithNoTests",
+    "test:services:server": "pnpm --filter services-server test",
+    "format": "pnpm -r run format",
+    "build:types": "pnpm build:types:global && pnpm build:types:server && pnpm build:types:client",
+    "build:types:global": "pnpm --filter @shatteredarchive/types-global build",
+    "build:types:server": "pnpm --filter @shatteredarchive/types-server build",
+    "build:types:client": "pnpm --filter @shatteredarchive/types-client build",
+    "build:utils": "",
+    "build:utils:client": "",
+    "build:utils:server": "",
+    "dev": "concurrently \"pnpm dev:web-server\" \"pnpm dev:game-server\" \"pnpm dev:web-client\" \"pnpm dev:game-client\"",
+    "dev:web-client": "pnpm --filter @shatteredarchive/web-client dev",
+    "dev:web-server": "pnpm --filter @shatteredarchive/web-server dev",
+    "dev:game-client": "pnpm --filter @shatteredarchive/game-client dev",
+    "dev:game-server": "pnpm --filter @shatteredarchive/game-server dev"
+  },
+  "paths": {
+    "@docs/*": [
+      "./docs/*"
+    ]
+  },
+  "devDependencies": {
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "cors": "^2.8.5",
+    "jest": "^29.7.0",
+    "prettier": "^3.5.1",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@types/react-dom": "^19.2.3",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-search": "^0.15.0",
+    "@xterm/xterm": "^5.5.0",
+    "compression": "^1.8.1",
+    "concurrently": "^9.2.1",
+    "dotenv": "^17.2.3",
+    "events": "^3.3.0",
+    "express": "^4.22.1",
+    "fengari-web": "^0.1.4",
+    "helmet": "^8.1.0",
+    "react": "^18.3.1",
+    "scss": "^0.2.4",
+    "skulpt": "^1.2.0",
+    "uuid": "^13.0.0",
+    "winston": "^3.18.3",
+    "winston-daily-rotate-file": "^5.0.0"
+  }
+}

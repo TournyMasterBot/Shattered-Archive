@@ -1,0 +1,514 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+}
+
+/* Main modal container */
+.modal {
+  position: relative;
+  background: #101010;
+  border: 1px solid #333;
+  border-radius: 6px;
+
+  /* Desktop default size (overridable via inline styles in TSX) */
+  width: 960px;
+  height: 620px;
+  max-width: 95vw;
+  max-height: 90vh;
+
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85);
+  overflow: hidden; // outer container doesn't scroll; inner panes do
+}
+
+.noSelect {
+  user-select: none;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 8px 12px;
+  background: #181818;
+  border-bottom: 1px solid #333;
+}
+
+.title {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.closeButton {
+  border: none;
+  background: transparent;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 2px 6px;
+
+  &:hover {
+    color: #fff;
+    background: #333;
+    border-radius: 3px;
+  }
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  padding: 6px 8px;
+  background: #151515;
+  border-bottom: 1px solid #333;
+}
+
+.tab {
+  border: none;
+  background: #202020;
+  color: #ccc;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+
+  &:hover {
+    background: #2a2a2a;
+  }
+}
+
+.tabActive {
+  background: #3a3a3a;
+  color: #fff;
+}
+
+.newButton {
+  margin-left: auto;
+  border: none;
+  background: #2b4a2b;
+  color: #d6f5d6;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+
+  &:hover {
+    background: #356335;
+  }
+}
+
+/* Body layout: list + editor */
+.body {
+  flex: 1;
+  min-height: 0;
+
+  display: flex;
+  background: #111;
+}
+
+/* Left: script list */
+.listPane {
+  width: 230px;
+  min-width: 180px;
+  max-width: 280px;
+
+  border-right: 1px solid #333;
+  padding: 6px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  overflow-y: auto;
+}
+
+.scriptItem {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: #181818;
+  color: #ccc;
+  font-size: 0.75rem;
+  padding: 4px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  &:hover {
+    background: #222;
+  }
+}
+
+.scriptItemActive {
+  background: #304060;
+  color: #f0f4ff;
+}
+
+/* NEW: dim disabled scripts */
+.scriptItemDisabled {
+  opacity: 0.55;
+}
+
+.scriptName {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.scriptDisabled {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+/* Right: editor */
+.editorPane {
+  flex: 1;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.editorHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+/* Editable script name */
+.nameInput {
+  flex: 1;
+  min-width: 0;
+
+  border-radius: 3px;
+  border: 1px solid #333;
+  background: #141414;
+  color: #e0e0e0;
+  font-size: 0.8rem;
+  padding: 3px 6px;
+  box-sizing: border-box;
+
+  outline: none;
+
+  &:focus {
+    border-color: #4a7ad8;
+  }
+}
+
+/* Enabled toggle */
+.enabledToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: #ccc;
+
+  input {
+    margin: 0;
+  }
+}
+
+.draftIndicator {
+  font-size: 0.7rem;
+  color: #f6d8a0;
+}
+
+/* Buttons in header */
+.testButton,
+.discardButton,
+.saveButton,
+.deleteButton,
+.testDraftButton {
+  border: none;
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.testButton {
+  background: #33415c;
+  color: #dde6ff;
+
+  &:hover {
+    background: #44557a;
+  }
+}
+
+.testDraftButton {
+  background: #4a364f;
+  color: #f2d9ff;
+
+  &:hover {
+    background: #65446b;
+  }
+}
+
+.discardButton {
+  background: #3a3a3a;
+  color: #e0e0e0;
+
+  &:hover:not([disabled]) {
+    background: #505050;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.saveButton {
+  background: #265026;
+  color: #d2f5d2;
+
+  &:hover:not([disabled]) {
+    background: #326d32;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.deleteButton {
+  background: #4a1c1c;
+  color: #f6d0d0;
+
+  &:hover {
+    background: #6a2525;
+  }
+}
+
+/* Trigger test input row */
+.triggerTestRow {
+  margin-bottom: 4px;
+}
+
+.triggerConfigRow,
+.timerConfigRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 0.75rem;
+}
+
+.configLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.configSelect,
+.configInput {
+  background: #131313;
+  border: 1px solid #333;
+  border-radius: 3px;
+  padding: 4px 6px;
+  color: #e0e0e0;
+  font-size: 0.75rem;
+}
+
+.testInput {
+  width: 100%;
+  border-radius: 3px;
+  border: 1px solid #333;
+  background: #141414;
+  color: #e0e0e0;
+  font-size: 0.75rem;
+  padding: 4px 6px;
+  box-sizing: border-box;
+
+  outline: none;
+
+  &:focus {
+    border-color: #4a7ad8;
+  }
+}
+
+.editorTextarea {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+
+  resize: none;
+  border-radius: 3px;
+  border: 1px solid #333;
+  background: #050505;
+  color: #e0e0e0;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.75rem;
+  padding: 6px;
+  box-sizing: border-box;
+
+  outline: none;
+
+  &:focus {
+    border-color: #4a7ad8;
+  }
+}
+
+.emptyEditor {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 0.8rem;
+  color: #777;
+}
+
+/* Errors */
+.errorPanel {
+  border-top: 1px solid #333;
+  background: #120c0c;
+  padding: 4px 8px;
+  font-size: 0.7rem;
+}
+
+.errorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.clearErrorsButton {
+  border: none;
+  background: #3a2020;
+  color: #f0d0d0;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+
+  &:hover {
+    background: #5a2a2a;
+  }
+}
+
+.errorList {
+  max-height: 80px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.errorItem {
+  margin-bottom: 2px;
+}
+
+.errorTitle {
+  font-weight: 600;
+  color: #f0a0a0;
+}
+
+.errorMessage {
+  color: #f6e0e0;
+}
+
+/* Desktop resize handle */
+.resizeHandle {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px 0 3px 0;
+
+  background: #333;
+  cursor: se-resize;
+
+  box-shadow: -2px -2px 0 rgba(0, 0, 0, 0.5);
+}
+
+.languageLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #ccc;
+}
+
+.languageSelect {
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  color: #eee;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #666;
+  }
+
+  &:focus {
+    border-color: #888;
+    box-shadow: 0 0 0 2px rgba(120, 120, 120, 0.3);
+  }
+
+  option {
+    background-color: #2a2a2a;
+    color: #eee;
+  }
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  .modal {
+    width: 90vw;
+    height: 66vh;
+    /* roughly 2/3 of viewport height */
+    max-width: 90vw;
+    max-height: 66vh;
+  }
+
+  .resizeHandle {
+    display: none;
+    /* no manual resize on small screens */
+  }
+
+  .listPane {
+    width: 40%;
+    max-width: 40%;
+  }
+}
+
+@media (max-width: 540px) {
+  .body {
+    flex-direction: column;
+  }
+
+  .listPane {
+    width: 100%;
+    max-width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #333;
+    max-height: 35%;
+  }
+
+  .editorPane {
+    max-height: 65%;
+  }
+}

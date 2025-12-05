@@ -1,0 +1,15 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "type": "module",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023"],
+    "declaration": true,
+    "declarationMap": true
+  },
+  "@shatteredarchive/types-client": "workspace:*",
+  "include": ["src"]
+}

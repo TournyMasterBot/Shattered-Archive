@@ -1,0 +1,9 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./apps/game-client" },
+    { "path": "./apps/game-server" },
+    { "path": "./apps/web-client" },
+    { "path": "./apps/web-server" }
+  ]
+}

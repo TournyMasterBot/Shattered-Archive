@@ -1,0 +1,331 @@
+:root {
+  --right-pane-width: 320px;
+  --bottom-pane-height: 220px;
+}
+
+/* -------------------------------------------------
+   ROOT CONTAINER
+-------------------------------------------------- */
+.root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  overflow: hidden;
+  background-color: #050505;
+  color: #e0e0e0;
+  font-family: system-ui, sans-serif;
+}
+
+/* -------------------------------------------------
+   TOP MENU BAR
+-------------------------------------------------- */
+.menuBar {
+  min-height: 26px;
+  max-height: 26px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 0 10px;
+  border-radius: 4px;
+  background: #181818;
+  border: 1px solid #333;
+  font-size: 0.8rem;
+  user-select: none;
+
+  position: relative;
+  z-index: 3000;
+}
+
+.menuItem {
+  position: relative;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+/* -------------------------------------------------
+   SUBMENU INDICATORS (ARROWS)
+-------------------------------------------------- */
+
+/* ▼ Root-level has submenu */
+.menuItemHasSubmenu {
+  padding-right: 14px;
+}
+
+.menuItemHasSubmenu::after {
+  content: '▼';
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.6rem;
+  opacity: 0.7;
+}
+
+/* ▶ Submenu items with deeper levels */
+.subMenuItem {
+  position: relative;
+  padding: 4px 18px 4px 8px;
+  white-space: nowrap;
+  cursor: pointer;
+  font-size: 0.75rem;
+
+  &:hover {
+    background: #1f1f1f;
+  }
+}
+
+.subMenuItemHasSubmenu::after {
+  content: '▶';
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.6rem;
+  opacity: 0.7;
+}
+
+/* -------------------------------------------------
+   SUBMENU BASE LAYOUT (ALL LEVELS)
+-------------------------------------------------- */
+.subMenu,
+.subMenuLevel2,
+.subMenuLevel3 {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 160px;
+
+  background: #141414;
+  border: 1px solid #232323;
+  border-radius: 3px;
+  z-index: 2500;
+}
+
+/* Level 2 positioned to the right */
+.subMenuLevel2 {
+  top: 0;
+  left: 100%;
+}
+
+/* Level 3 positioned to the right of Level 2 */
+.subMenuLevel3 {
+  top: 20px !important; /* your offset */
+  left: 100%;
+}
+
+/* React toggles this class to show menus */
+.subMenuOpen {
+  display: block;
+}
+
+/* -------------------------------------------------
+   MAIN LAYOUT SHELL (LEFT/RIGHT)
+-------------------------------------------------- */
+.layoutShell {
+  flex: 1;
+  min-height: 0;
+
+  display: flex;
+  overflow: hidden;
+}
+
+.mainSplit {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* -------------------------------------------------
+   LEFT COLUMN (PLAY AREA + BOTTOM PANE)
+-------------------------------------------------- */
+.leftColumn {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* PRIMARY PLAY AREA */
+.playArea {
+  flex: 1;
+  min-height: 0;
+
+  background: #000;
+  border-bottom: 1px solid #333;
+
+  position: relative;
+  padding: 5px;
+  box-sizing: border-box;
+}
+
+/* BOTTOM PANE */
+.bottomPane {
+  height: var(--bottom-pane-height);
+  min-height: 120px;
+  max-height: 60%;
+
+  background: #181818;
+  border-top: 1px solid #333;
+
+  position: relative;
+  padding: 5px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden; /* your original preference */
+}
+
+/* -------------------------------------------------
+   RIGHT SIDEBAR (Affects Panel)
+-------------------------------------------------- */
+.rightPane {
+  width: var(--right-pane-width);
+  min-width: 220px;
+  max-width: 640px;
+
+  background: #151515;
+  border-left: 1px solid #333;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+
+  padding: 5px;
+  box-sizing: border-box;
+
+  overflow: hidden; /* your original preference */
+}
+
+/* -------------------------------------------------
+   RESIZE HANDLES
+-------------------------------------------------- */
+.verticalResizer {
+  width: 4px;
+  cursor: col-resize;
+  background: #252525;
+  flex-shrink: 0;
+}
+
+.horizontalResizer {
+  height: 4px;
+  cursor: row-resize;
+  background: #252525;
+  flex-shrink: 0;
+}
+
+/* -------------------------------------------------
+   PLACEHOLDER TEXT
+-------------------------------------------------- */
+.placeholderText {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  font-size: 0.8rem;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* -------------------------------------------------
+   FOCUS BAR (base styles)
+-------------------------------------------------- */
+.focusBar {
+  display: none; /* hidden on desktop by default */
+  min-height: 26px;
+  max-height: 30px;
+
+  background: #151515;
+  border-radius: 4px;
+  border: 1px solid #333;
+  overflow: hidden; /* non-scrolling */
+}
+
+.focusBarContent {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+}
+
+.focusBarLabel {
+  font-size: 0.75rem;
+  color: #c0c0c0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* -------------------------------------------------
+   MOBILE RESPONSIVENESS
+-------------------------------------------------- */
+@media (max-width: 900px) {
+  .layoutShell {
+    flex-direction: column;
+  }
+
+  .mainSplit {
+    flex-direction: column;
+  }
+
+  .rightPane {
+    display: none;
+  }
+
+  .verticalResizer {
+    display: none;
+  }
+
+  .bottomPane {
+    height: 120px !important;
+    min-height: 80px;
+    max-height: 160px;
+    overflow: hidden;
+  }
+
+  .horizontalResizer {
+    height: 2px;
+    cursor: default;
+  }
+
+  /* Level 2 opens normally */
+  .subMenuLevel2 {
+    left: 100%;
+    color: green;
+  }
+
+  /* Level 3 opens to the left */
+  .subMenuLevel3 {
+    top: 20px !important;
+    left: auto;
+    right: 100%;
+    color: steelblue;
+  }
+
+  /* MOBILE: show the focus bar between menu and layout */
+  .focusBar {
+    display: flex;
+    align-items: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .menuBar {
+    font-size: 0.7rem;
+    gap: 8px;
+  }
+
+  .bottomPane {
+    height: 100px !important;
+  }
+}

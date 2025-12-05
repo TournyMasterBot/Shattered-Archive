@@ -1,0 +1,21 @@
+{
+  "name": "@shatteredarchive/web-server",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "jest --config ../../jest.config.cjs --runInBand --rootDir .",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\"",
+    "dev": "node --loader ts-node/esm src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@shatteredarchive/types-server": "workspace:*",
+    "@shatteredarchive/services-server": "workspace:*",
+    "@shatteredarchive/utils-global": "workspace:*",
+    "@shatteredarchive/utils-server": "workspace:*",
+    "express": "^4.22.1"
+  }
+}

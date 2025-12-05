@@ -1,0 +1,11 @@
+{
+  "name": "@shatteredarchive/utils-global",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "jest --config ../../jest.config.cjs --runInBand --rootDir .",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\""
+  }
+}
