@@ -6,13 +6,11 @@ on:
   push:
     branches: [ release/dev, release/staging, release/production ]
 
-# Needed to comment on PRs with GITHUB_TOKEN
 permissions:
   contents: read
   pull-requests: write
 
 concurrency:
-  # Prevent duplicate in-flight runs per ref (esp. PR updates)
   group: ci-test-coverage-${{ github.ref }}
   cancel-in-progress: true
 
@@ -26,50 +24,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          # Enables pnpm store caching automatically when pnpm is available
-          cache: pnpm
-
+      # Install pnpm first so setup-node's pnpm cache logic can find it reliably (esp. in act)
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
 
       - name: Install dependencies (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
+      - name: Build
+        run: pnpm -r run build
+
       - name: Run Jest tests with coverage
         run: pnpm test -- --coverage
 
-      # Summarize coverage into the GitHub Actions job summary
       - name: Add coverage summary to run
         if: always()
         shell: bash
         run: |
           echo "### Test & Coverage" >> "$GITHUB_STEP_SUMMARY"
           if [ -f coverage/coverage-summary.json ]; then
-            node - <<'NODE'
-            const fs = require('fs');
-
-            const p = 'coverage/coverage-summary.json';
-            const s = JSON.parse(fs.readFileSync(p, 'utf8')).total;
-
-            function fmt(v) { return `${(v.pct ?? 0).toFixed(2)}%`; }
-
-            const lines = [];
-            lines.push('');
-            lines.push('| Metric | % | Covered / Total |');
-            lines.push('|---|---:|---:|');
-            lines.push(`| Lines | ${fmt(s.lines)} | ${s.lines.covered}/${s.lines.total} |`);
-            lines.push(`| Statements | ${fmt(s.statements)} | ${s.statements.covered}/${s.statements.total} |`);
-            lines.push(`| Functions | ${fmt(s.functions)} | ${s.functions.covered}/${s.functions.total} |`);
-            lines.push(`| Branches | ${fmt(s.branches)} | ${s.branches.covered}/${s.branches.total} |`);
-
-            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
-            NODE
+            node -e "const fs=require('fs'); const p='coverage/coverage-summary.json'; const s=JSON.parse(fs.readFileSync(p,'utf8')).total; const fmt=v=>\`\${((v.pct??0)).toFixed(2)}%\`; const lines=['','| Metric | % | Covered / Total |','|---|---:|---:|',\`| Lines | \${fmt(s.lines)} | \${s.lines.covered}/\${s.lines.total} |\`,\`| Statements | \${fmt(s.statements)} | \${s.statements.covered}/\${s.statements.total} |\`,\`| Functions | \${fmt(s.functions)} | \${s.functions.covered}/\${s.functions.total} |\`,\`| Branches | \${fmt(s.branches)} | \${s.branches.covered}/\${s.branches.total} |\`]; fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n')+'\n');"
           else
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "No coverage/coverage-summary.json found. Check Jest coverageDirectory/output paths." >> "$GITHUB_STEP_SUMMARY"
