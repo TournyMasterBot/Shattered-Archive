@@ -1,0 +1,178 @@
+// apps/game-client/src/features/userScripts/runtime.ts
+import ts from 'typescript';
+import {
+  AnyUserScript,
+  AliasScript,
+  TimerScript,
+  TriggerScript,
+  ScriptSandboxApi,
+  ScriptErrorInfo,
+  UserScriptLanguage,
+} from './types';
+import { runLuaSourceInBrowser } from './luaRuntime';
+import { runPythonSourceInBrowser } from './pythonRuntime';
+
+/**
+ * Core JS sandbox runner.
+ *
+ * For now we use a simple `new Function` with an `api` parameter.
+ * All user-facing capabilities are provided via that `api`.
+ */
+async function runJavascript(source: string, api: ScriptSandboxApi): Promise<void> {
+  try {
+    const fn = new Function(
+      'api',
+      `"use strict";
+const { sendCommand, log, error, event } = api;
+try {
+${source}
+} catch (err) {
+  error(
+    "[UserScript:JS] Runtime error",
+    err && err.message ? err.message : String(err)
+  );
+}`,
+    );
+
+    await fn(api);
+  } catch (err: any) {
+    api.error('[UserScript:JS] Failed to compile or execute script', err?.message ?? String(err));
+  }
+}
+
+/**
+ * TypeScript runner: transpile TS -> JS, then reuse runJavascript.
+ * No type-checking, just strip types / TS syntax.
+ */
+async function runTypescript(source: string, api: ScriptSandboxApi): Promise<void> {
+  try {
+    const { outputText } = ts.transpileModule(source, {
+      compilerOptions: {
+        module: ts.ModuleKind.ESNext,
+        target: ts.ScriptTarget.ES2018,
+        strict: false,
+      },
+    });
+
+    await runJavascript(outputText, api);
+  } catch (err: any) {
+    api.error('[UserScript:TS] Failed to transpile or execute script', err?.message ?? String(err));
+  }
+}
+
+/**
+ * Dispatch to the correct language runner.
+ */
+export async function runUserScript(script: AnyUserScript, api: ScriptSandboxApi): Promise<void> {
+  const lang: UserScriptLanguage = script.language;
+
+  // Disabled scripts do nothing
+  if (!script.enabled) return;
+
+  if (!script.source || !script.source.trim()) {
+    return;
+  }
+
+  switch (lang) {
+    case 'javascript': {
+      await runJavascript(script.source, api);
+      return;
+    }
+
+    case 'lua': {
+      await runLuaSourceInBrowser(script.source, api);
+      return;
+    }
+
+    case 'python': {
+      await runPythonSourceInBrowser(script.source, api);
+      return;
+    }
+
+    case 'typescript': {
+      await runTypescript(script.source, api);
+      return;
+    }
+
+    default: {
+      api.error(`[UserScript] Unsupported language: ${String(lang)}`);
+      return;
+    }
+  }
+}
+
+/**
+ * Convenience wrappers used by triggers, aliases, and timers.
+ */
+
+export async function runTriggerScript(
+  script: TriggerScript,
+  eventName: string,
+  payload: unknown,
+  baseApi: ScriptSandboxApi,
+): Promise<void> {
+  if (!script.enabled) return;
+
+  // If the trigger is bound to a specific event, enforce it.
+  if (script.eventName && script.eventName !== eventName) {
+    return;
+  }
+
+  const api: ScriptSandboxApi = {
+    ...baseApi,
+    event: {
+      name: eventName,
+      payload,
+    },
+  };
+
+  await runUserScript(script, api);
+}
+
+export async function runAliasScript(script: AliasScript, inputText: string, baseApi: ScriptSandboxApi): Promise<void> {
+  if (!script.enabled) return;
+
+  const api: ScriptSandboxApi = {
+    ...baseApi,
+    event: {
+      name: 'alias:input',
+      payload: { inputText },
+    },
+  };
+
+  await runUserScript(script, api);
+}
+
+export async function runTimerScript(script: TimerScript, baseApi: ScriptSandboxApi): Promise<void> {
+  if (!script.enabled) return;
+
+  const api: ScriptSandboxApi = {
+    ...baseApi,
+    event: {
+      name: 'timer:tick',
+      payload: { intervalMs: script.intervalMs },
+    },
+  };
+
+  await runUserScript(script, api);
+}
+
+/**
+ * Helper to record an error in a ScriptErrorInfo array.
+ */
+export function pushScriptError(
+  errors: ScriptErrorInfo[],
+  script: AnyUserScript,
+  message: string,
+  stack?: string,
+): ScriptErrorInfo[] {
+  const info: ScriptErrorInfo = {
+    scriptId: script.id,
+    scriptName: script.name,
+    kind: script.kind,
+    message,
+    stack,
+    timestamp: Date.now(),
+  };
+  return [...errors, info];
+}

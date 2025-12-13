@@ -1,0 +1,246 @@
+// apps/game-client/src/hooks/useConnectModal.ts
+import { useEffect, useState, useRef } from 'react';
+
+type SavedConnection = {
+  id: string;
+  name: string;
+  host: string;
+  port: number;
+  lastUsedAt: number;
+  autoEnableGmcp?: boolean; // optional for backward compatibility
+  isBuiltin?: boolean; // new: marks non-removable defaults
+};
+
+const STORAGE_KEY = 'shatteredArchive.connections';
+
+// Built-in DSL connection (non-removable)
+const BUILTIN_DSL_ID = 'builtin_dsl_dsl-mud.org_4000';
+const BUILTIN_DSL_HOST = 'dsl-mud.org';
+const BUILTIN_DSL_PORT = 4000;
+
+function makeBuiltinDslConnection(now: number): SavedConnection {
+  return {
+    id: BUILTIN_DSL_ID,
+    name: 'Dark and Shattered Lands (dsl-mud.org:4000)',
+    host: BUILTIN_DSL_HOST,
+    port: BUILTIN_DSL_PORT,
+    lastUsedAt: now,
+    autoEnableGmcp: true,
+    isBuiltin: true,
+  };
+}
+
+interface UseConnectModalOptions {
+  isOpen: boolean;
+  isConnected: boolean;
+  currentHost?: string;
+  currentPort?: number;
+
+  onConnect: (host: string, port: number, options?: { autoEnableGmcp?: boolean }) => void;
+  onDisconnect: () => void;
+  onClose: () => void;
+}
+
+export function useConnectModal({
+  isOpen,
+  isConnected,
+  currentHost,
+  currentPort,
+  onConnect,
+  onDisconnect,
+  onClose,
+}: UseConnectModalOptions) {
+  const [host, setHost] = useState('');
+  const [port, setPort] = useState<string>('');
+  const [remember, setRemember] = useState(true);
+  const [autoEnableGmcp, setAutoEnableGmcp] = useState(true);
+
+  const [saved, setSaved] = useState<SavedConnection[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Track previous connection state so we only auto-close on a transition
+  const prevIsConnectedRef = useRef(isConnected);
+
+  // ---------- localStorage helpers / initial load ----------
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setError(null);
+
+    if (typeof window === 'undefined') return;
+
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      let parsed: SavedConnection[] = [];
+
+      if (raw) {
+        parsed = JSON.parse(raw) as SavedConnection[];
+      }
+
+      const now = Date.now();
+
+      // Ensure the builtin DSL connection is present
+      const hasDsl = parsed.some((c) => c.host === BUILTIN_DSL_HOST && c.port === BUILTIN_DSL_PORT);
+
+      if (!hasDsl) {
+        parsed = [makeBuiltinDslConnection(now), ...parsed];
+      } else {
+        // Make sure any existing DSL entry is marked as builtin for safety
+        parsed = parsed.map((c) =>
+          c.host === BUILTIN_DSL_HOST && c.port === BUILTIN_DSL_PORT ? { ...c, isBuiltin: true } : c,
+        );
+      }
+
+      parsed.sort((a, b) => b.lastUsedAt - a.lastUsedAt);
+      setSaved(parsed);
+    } catch {
+      // If anything goes wrong, fall back to just the builtin DSL connection
+      const now = Date.now();
+      const builtin = makeBuiltinDslConnection(now);
+      setSaved([builtin]);
+    }
+
+    // Default form values when opening:
+    if (currentHost) {
+      setHost(currentHost);
+    } else {
+      // Default to DSL when not connected anywhere
+      setHost(BUILTIN_DSL_HOST);
+    }
+
+    if (currentPort != null) {
+      setPort(String(currentPort));
+    } else {
+      setPort(String(BUILTIN_DSL_PORT));
+    }
+
+    setSelectedId(null);
+    setAutoEnableGmcp(true);
+  }, [isOpen, currentHost, currentPort]);
+
+  // Auto-close modal only when we go from disconnected -> connected while it's open.
+  useEffect(() => {
+    const prev = prevIsConnectedRef.current;
+
+    if (isOpen && !prev && isConnected) {
+      // Transition: previously disconnected, now connected, and modal is open → close it.
+      setError(null);
+      onClose();
+    }
+
+    // Update the ref for next render
+    prevIsConnectedRef.current = isConnected;
+  }, [isOpen, isConnected, onClose]);
+
+  const persistSaved = (list: SavedConnection[]) => {
+    setSaved(list);
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    } catch {
+      // ignore storage errors
+    }
+  };
+
+  const handleSelectSaved = (conn: SavedConnection) => {
+    setSelectedId(conn.id);
+    setHost(conn.host);
+    setPort(String(conn.port));
+    setAutoEnableGmcp(conn.autoEnableGmcp ?? true);
+    setError(null);
+  };
+
+  const handleDeleteSaved = (id: string) => {
+    const target = saved.find((s) => s.id === id);
+    // Do not allow deleting builtin connections
+    if (target?.isBuiltin) {
+      return;
+    }
+
+    const next = saved.filter((s) => s.id !== id);
+    persistSaved(next);
+    if (selectedId === id) {
+      setSelectedId(null);
+    }
+  };
+
+  const handleConnect = () => {
+    setError(null);
+
+    const trimmedHost = host.trim();
+    const parsedPort = Number(port);
+
+    if (!trimmedHost) {
+      setError('Host is required.');
+      return;
+    }
+
+    if (!Number.isFinite(parsedPort) || parsedPort <= 0 || parsedPort > 65535) {
+      setError('Port must be a valid number between 1 and 65535.');
+      return;
+    }
+
+    // Tell parent to connect (including GMCP preference)
+    onConnect(trimmedHost, parsedPort, { autoEnableGmcp });
+
+    // Optionally remember this combination
+    if (remember) {
+      const now = Date.now();
+      const key = `${trimmedHost}:${parsedPort}`;
+      let next: SavedConnection[];
+
+      const existing = saved.find((s) => s.host === trimmedHost && s.port === parsedPort);
+
+      if (existing) {
+        const updated: SavedConnection = {
+          ...existing,
+          lastUsedAt: now,
+          autoEnableGmcp,
+        };
+        next = saved.map((s) => (s.id === existing.id ? updated : s)).sort((a, b) => b.lastUsedAt - a.lastUsedAt);
+      } else {
+        const newConn: SavedConnection = {
+          id: `conn_${now}_${Math.random().toString(36).slice(2)}`,
+          name: key, // future: rename UI
+          host: trimmedHost,
+          port: parsedPort,
+          lastUsedAt: now,
+          autoEnableGmcp,
+        };
+        next = [newConn, ...saved];
+      }
+
+      persistSaved(next);
+    }
+  };
+
+  const handleDisconnect = () => {
+    setError(null);
+    onDisconnect();
+  };
+
+  const handleClose = () => {
+    setError(null);
+    onClose();
+  };
+
+  return {
+    host,
+    setHost,
+    port,
+    setPort,
+    remember,
+    setRemember,
+    autoEnableGmcp,
+    setAutoEnableGmcp,
+    saved,
+    selectedId,
+    error,
+    handleSelectSaved,
+    handleDeleteSaved,
+    handleConnect,
+    handleDisconnect,
+    handleClose,
+  };
+}

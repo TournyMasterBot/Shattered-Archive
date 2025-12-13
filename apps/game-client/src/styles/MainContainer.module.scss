@@ -1,0 +1,23 @@
+/* apps/game-client/src/styles/MainContainer.module.scss */
+
+/* -------------------------------------------------
+   ROOT CONTAINER
+-------------------------------------------------- */
+.root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  overflow: hidden;
+  background-color: #050505;
+  color: #e0e0e0;
+  font-family: system-ui, sans-serif;
+}
+
+@media (max-width: 600px) {
+  .menuBar {
+    font-size: 0.7rem;
+    gap: 8px;
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "@shatteredarchive/utils-client",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "jest --config ../../jest.config.cjs --runInBand --rootDir .",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\""
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./ansi-to-html": {
+      "types": "./dist/ansi-to-html.d.ts",
+      "default": "./dist/ansi-to-html.js"
+    }
+  }
+}

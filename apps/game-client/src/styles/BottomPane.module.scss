@@ -1,0 +1,384 @@
+.root {
+  flex: 1;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* ----------------------------------------------
+   Bottom tab strip (Opponent / Exploration / Chat / Settings)
+---------------------------------------------- */
+
+.menuBar {
+  min-height: 24px;
+  max-height: 24px;
+
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+
+  padding: 0 6px;
+
+  background: #141414;
+  border: 1px solid #232323;
+  border-bottom: none;
+  border-radius: 3px 3px 0 0;
+
+  user-select: none;
+}
+
+/* RESET + THEME TABS */
+.menuItem {
+  /* reset native button look */
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid transparent;
+  border-bottom: none;
+  margin: 0;
+  outline: none;
+
+  /* layout */
+  padding: 3px 10px;
+  border-radius: 3px 3px 0 0;
+  background: #141414;
+
+  color: #b8b8b8;
+  font-size: 0.75rem;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.menuItem:hover {
+  background: #1f1f1f;
+  color: #e0e0e0;
+}
+
+.menuItemActive {
+  background: #181818;
+  color: #ffffff;
+  border-color: #232323;
+}
+
+/* Optional: focus ring that fits dark theme */
+.menuItem:focus-visible {
+  box-shadow: 0 0 0 1px #3a6cff;
+}
+
+/* Opponent tab button: only visible on small screens */
+.menuItemOpponent {
+  display: none;
+}
+
+.menuItemCompass {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .menuItemOpponent {
+    display: inline-flex;
+  }
+
+  .menuItemCompass {
+    display: inline-flex;
+  }
+}
+
+/* ----------------------------------------------
+   Content area (fills bottom pane)
+---------------------------------------------- */
+.content {
+  flex: 1;
+  min-height: 0;
+
+  margin-top: 0;
+
+  background: #181818;
+  border-radius: 0 3px 3px 3px;
+  border: 1px solid #232323;
+
+  position: relative;
+  padding: 6px;
+  box-sizing: border-box;
+
+  overflow: hidden; // pane itself does not scroll; inner panels do
+}
+
+/* Debug / placeholder text */
+.placeholderText {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+
+  font-size: 0.75rem;
+  color: #7a7a7a;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* ----------------------------------------------
+   Opponent tab content
+---------------------------------------------- */
+
+.opponentTabContent {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.opponentBar {
+  padding: 6px 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+
+  background: #181818;
+  border: 1px solid #333;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.opponentHeader {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #ffd35a;
+}
+
+.opponentTrack {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: #111;
+  overflow: hidden;
+}
+
+.opponentFill {
+  height: 100%;
+  background: linear-gradient(to right, #ff4f79, #ff9f9f);
+}
+
+.opponentMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #ddd;
+}
+
+.opponentName {
+  font-weight: 500;
+}
+
+.opponentStatus {
+  opacity: 0.8;
+}
+
+/* ----------------------------------------------
+   Settings tab layout (two-column, both scrollable)
+---------------------------------------------- */
+
+.settingsRoot {
+  display: flex;
+  height: 100%;
+  min-height: 0; /* so children can scroll */
+}
+
+/* Left nav */
+.settingsSidebar {
+  width: 180px;
+  min-width: 160px;
+  max-width: 220px;
+  border-right: 1px solid #262626;
+  padding: 4px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  overflow-y: auto;
+}
+
+.settingsNavItem {
+  border: none;
+  background: #202020;
+  color: #cccccc;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 3px;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.settingsNavItem:hover {
+  background: #262626;
+}
+
+.settingsNavItemActive {
+  background: #33405a;
+  color: #f0f4ff;
+}
+
+/* Right content */
+.settingsContent {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  box-sizing: border-box;
+
+  overflow-y: auto; /* independent scroll */
+}
+
+.settingsSectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #dddddd;
+}
+
+.settingsSectionTitle {
+  margin: 0 0 4px 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.settingsSectionIntro {
+  margin: 0 0 4px 0;
+  color: #b8b8b8;
+}
+
+.settingsHint {
+  margin: 6px 0 0 0;
+  font-size: 0.72rem;
+  color: #999;
+}
+
+.settingsBulletList {
+  margin: 4px 0 0 1.2rem;
+  padding: 0;
+  font-size: 0.78rem;
+
+  li {
+    margin-bottom: 2px;
+  }
+}
+
+.settingsFieldRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.settingsFieldColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settingsFieldLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.75rem;
+}
+
+.settingsSelect,
+.settingsInput,
+.settingsTextarea {
+  background: #101010;
+  border: 1px solid #333;
+  border-radius: 3px;
+  color: #e0e0e0;
+  padding: 4px 6px;
+  font-size: 0.75rem;
+  box-sizing: border-box;
+}
+
+.settingsTextarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+.settingsCheckboxRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+
+  input {
+    margin: 0;
+  }
+}
+
+/* Small screens: settings nav becomes a row of buttons at top */
+@media (max-width: 700px) {
+  .settingsRoot {
+    flex-direction: column;
+  }
+
+  .settingsSidebar {
+    width: 100%;
+    max-width: none;
+    border-right: none;
+    border-bottom: 1px solid #262626;
+
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .settingsNavItem {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+}
+
+/* Match scrollbar styling to main UI */
+.settingsSidebar,
+.settingsContent {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #555 #141414;
+
+  /* WebKit (Chrome/Edge/Safari) */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #141414;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #555;
+    border-radius: 4px;
+    border: 1px solid #222;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #777;
+  }
+}
+
+/* ----------------------------------------------
+   Chat container inside content
+---------------------------------------------- */
+
+.chatContainer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  min-height: 0; // critical so ChatPane can flex & scroll
+}

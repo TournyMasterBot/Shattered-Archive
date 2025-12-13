@@ -1,0 +1,60 @@
+.menuBar {
+  min-height: 24px;
+  max-height: 24px;
+
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+
+  padding: 0 6px;
+
+  background: #141414;
+  border: 1px solid #232323;
+  border-bottom: none;
+  border-radius: 3px 3px 0 0;
+
+  user-select: none;
+}
+
+/* RESET + THEME TABS */
+.menuItem {
+  /* reset native button look */
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid transparent;
+  border-bottom: none;
+  margin: 0;
+  outline: none;
+
+  /* layout */
+  padding: 3px 10px;
+  border-radius: 3px 3px 0 0;
+  background: #141414;
+
+  color: #b8b8b8;
+  font-size: 0.75rem;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.menuItem:hover {
+  background: #1f1f1f;
+  color: #e0e0e0;
+}
+
+.menuItemActive {
+  background: #181818;
+  color: #ffffff;
+  border-color: #232323;
+}
+
+/* Optional: focus ring that fits dark theme */
+.menuItem:focus-visible {
+  box-shadow: 0 0 0 1px #3a6cff;
+}

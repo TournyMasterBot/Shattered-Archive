@@ -1,0 +1,6 @@
+packages:
+  - "apps/*"
+  - "sdks/*"
+  - "utils/*"
+  - "types/*"
+  - "services/*"

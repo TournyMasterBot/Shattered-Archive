@@ -1,0 +1,117 @@
+/* =================================================
+   Compass Block Styles
+   - Desktop: 3x3 grid with U/D split (unchanged)
+   - Mobile: wide / flattened layout
+================================================== */
+
+.root {
+  width: 100%;
+}
+
+/* ======================
+   DESKTOP COMPASS
+====================== */
+
+.compassBlock {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+}
+
+.compassGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(40px, 1fr));
+  grid-auto-rows: 40px;
+  gap: 6px;
+}
+
+.compassBtn {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #aaa;
+  padding: 4px 0;
+  text-align: center;
+  cursor: default;
+}
+
+.compassBtnAvailable {
+  color: #fff;
+  border-color: #8bc34a;
+  box-shadow: 0 0 4px rgba(139, 195, 74, 0.7);
+}
+
+.compassCenterUD {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.compassCenterBtn {
+  flex: 1;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  font-size: 0.75rem;
+  color: #aaa;
+  padding: 0;
+  cursor: default;
+}
+
+.compassCenterBtn:first-child {
+  border-bottom-width: 0;
+  border-radius: 4px 4px 0 0;
+}
+
+.compassCenterBtn:last-child {
+  border-radius: 0 0 4px 4px;
+}
+
+/* ======================
+   MOBILE WIDE COMPASS
+====================== */
+
+.mobileWide {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .mobileWide {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+
+    width: 100%;
+    padding: 2px 0;
+
+    /* prevent wrapping */
+    flex-wrap: nowrap;
+  }
+
+  .mobileWideBtn {
+    flex: 1 1 0;
+    min-width: 0;
+    /* CRITICAL: allows shrinking */
+
+    padding: 6px 0;
+
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 4px;
+
+    font-size: 0.7rem;
+    line-height: 1;
+    color: #aaa;
+    text-align: center;
+    cursor: default;
+
+    white-space: nowrap;
+  }
+
+  .mobileWideBtnAvailable {
+    color: #fff;
+    border-color: #8bc34a;
+    box-shadow: 0 0 3px rgba(139, 195, 74, 0.7);
+  }
+}

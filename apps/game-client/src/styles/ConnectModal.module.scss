@@ -1,0 +1,325 @@
+/* apps/game-client/src/styles/ConnectModal.module.scss */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5100;
+}
+
+.modal {
+  width: 720px;
+  max-width: 95vw;
+  height: 420px;
+  max-height: 90vh;
+
+  background: #101010;
+  border: 1px solid #333;
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85);
+
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  background: #181818;
+  border-bottom: 1px solid #333;
+}
+
+.headerTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.headerStatus {
+  margin-left: 16px;
+  font-size: 0.75rem;
+  color: #a0d5ff;
+}
+
+.headerStatusHost {
+  font-weight: 600;
+}
+
+.headerStatusPort {
+  margin-left: 2px;
+}
+
+.closeButton {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: #ccc;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 4px;
+
+  &:hover {
+    color: #fff;
+    background: #333;
+    border-radius: 3px;
+  }
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+
+  display: flex;
+  background: #111;
+}
+
+/* Left: saved connections list */
+
+.savedPane {
+  width: 230px;
+  min-width: 200px;
+  max-width: 260px;
+
+  border-right: 1px solid #262626;
+  padding: 6px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.savedHeader {
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #dddddd;
+}
+
+.savedList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Match scrollbar styling with other panes */
+.savedList {
+  scrollbar-width: thin;
+  scrollbar-color: #555 #141414;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #141414;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: #555;
+    border-radius: 4px;
+    border: 1px solid #222;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #777;
+  }
+}
+
+.savedEmpty {
+  font-size: 0.74rem;
+  color: #888;
+}
+
+.savedItem {
+  border: none;
+  background: #181818;
+  color: #d0d0d0;
+  font-size: 0.75rem;
+  padding: 4px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  text-align: left;
+
+  &:hover {
+    background: #222;
+  }
+}
+
+.savedItemActive {
+  background: #304060;
+  color: #f0f4ff;
+}
+
+.savedItemMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.savedName {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.savedHostPort {
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+.savedDeleteButton {
+  border: none;
+  background: transparent;
+  color: #888;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0 2px;
+
+  &:hover {
+    color: #ff9f9f;
+  }
+}
+
+/* Right: connect form */
+
+.formPane {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fieldLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.75rem;
+  color: #dddddd;
+}
+
+.fieldInput {
+  background: #101010;
+  border: 1px solid #333;
+  border-radius: 3px;
+  color: #e0e0e0;
+  padding: 4px 6px;
+  font-size: 0.78rem;
+  box-sizing: border-box;
+
+  outline: none;
+
+  &:focus {
+    border-color: #4a7ad8;
+  }
+}
+
+.rememberRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #cccccc;
+
+  input {
+    margin: 0;
+  }
+}
+
+.errorText {
+  font-size: 0.74rem;
+  color: #ff9f9f;
+}
+
+/* Buttons row */
+
+.buttonsRow {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.buttonsSpacer {
+  flex: 1;
+}
+
+.primaryButton,
+.secondaryButton {
+  border-radius: 3px;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.primaryButton {
+  background: #2f6bff;
+  color: #fff;
+  border-color: #244fc0;
+
+  &:hover {
+    background: #345fff;
+  }
+}
+
+.secondaryButton {
+  background: #222;
+  color: #ccc;
+  border-color: #444;
+
+  &:hover:not(:disabled) {
+    background: #2c2c2c;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+/* Responsive */
+
+@media (max-width: 640px) {
+  .modal {
+    width: 92vw;
+    height: 70vh;
+  }
+
+  .savedPane {
+    width: 40%;
+  }
+}
+
+@media (max-width: 520px) {
+  .body {
+    flex-direction: column;
+  }
+
+  .savedPane {
+    width: 100%;
+    max-width: none;
+    border-right: none;
+    border-bottom: 1px solid #262626;
+  }
+}

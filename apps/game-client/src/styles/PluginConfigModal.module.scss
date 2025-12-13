@@ -1,0 +1,207 @@
+/* apps/game-client/src/styles/PluginConfigModal.module.scss */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* must be ABOVE PluginsModal (5000) */
+  z-index: 5200;
+}
+
+.modal {
+  width: 520px;
+  max-width: 92vw;
+  max-height: 86vh;
+
+  background: #101010;
+  border: 1px solid #333;
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85);
+
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  background: #181818;
+  border-bottom: 1px solid #333;
+}
+
+.title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #e6e6e6;
+}
+
+.closeButton {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: #ccc;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 4px;
+
+  &:hover {
+    color: #fff;
+    background: #333;
+    border-radius: 3px;
+  }
+}
+
+.body {
+  padding: 10px 12px;
+  overflow: auto;
+  min-height: 0;
+
+  /* match other panel scrollbars */
+  scrollbar-width: thin;
+  scrollbar-color: #555 #141414;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #141414;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: #555;
+    border-radius: 4px;
+    border: 1px solid #222;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #777;
+  }
+}
+
+.field {
+  margin-bottom: 12px;
+  padding: 10px;
+  border: 1px solid #2f2f2f;
+  border-radius: 6px;
+  background: #101010;
+}
+
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #e6e6e6;
+}
+
+.optional {
+  font-size: 0.7rem;
+  color: #a0a0a0;
+}
+
+.desc {
+  font-size: 0.75rem;
+  color: #a0a0a0;
+  margin-bottom: 6px;
+}
+
+/* match your commandInput style */
+.input {
+  width: 100%;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #111;
+  color: #f0f0f0;
+  font-size: 0.8rem;
+  font-family: monospace;
+  box-sizing: border-box;
+
+  outline: none;
+
+  &:focus {
+    border-color: #8bc34a;
+    box-shadow: 0 0 0 1px rgba(139, 195, 74, 0.5);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.checkboxRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #d0d0d0;
+
+  input {
+    transform: translateY(1px);
+  }
+}
+
+.empty {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #181818;
+  border-top: 1px solid #333;
+}
+
+.footerSpacer {
+  flex: 1;
+}
+
+.primaryButton,
+.secondaryButton {
+  border-radius: 3px;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.primaryButton {
+  background: #2f6bff;
+  color: #fff;
+  border-color: #244fc0;
+
+  &:hover {
+    background: #345fff;
+  }
+}
+
+.secondaryButton {
+  background: #222;
+  color: #ccc;
+  border-color: #444;
+
+  &:hover {
+    background: #2c2c2c;
+  }
+}
+
+@media (max-width: 640px) {
+  .modal {
+    width: 92vw;
+    height: 70vh;
+  }
+}

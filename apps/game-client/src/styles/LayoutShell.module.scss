@@ -1,0 +1,492 @@
+/* -------------------------------------------------
+   SHARED LAYOUT TOKENS
+   (Global CSS variables used by layout shell)
+-------------------------------------------------- */
+:root {
+  --right-pane-width: 320px;
+  --bottom-pane-height: 220px;
+}
+
+/* -------------------------------------------------
+   MAIN LAYOUT SHELL (LEFT/RIGHT)
+-------------------------------------------------- */
+.layoutShell {
+  flex: 1;
+  min-height: 0;
+
+  display: flex;
+  overflow: hidden;
+}
+
+.mainSplit {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* -------------------------------------------------
+   LEFT COLUMN (PLAY AREA + BOTTOM PANE)
+-------------------------------------------------- */
+.leftColumn {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* PRIMARY PLAY AREA */
+.playArea {
+  flex: 1;
+  min-height: 0;
+
+  background: #000;
+  border-bottom: 1px solid #333;
+
+  position: relative;
+  padding: 5px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ✨ NEW: Terminal flex wrapper */
+.playAreaTerminalShell {
+  flex: 1;
+  min-height: 0; /* Required so the Terminal scrolls correctly */
+  display: flex;
+  padding-left: 5px;
+}
+
+/* ✨ NEW: COMMAND INPUT BAR -------------------------------------------- */
+.commandInputBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.commandInput {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #111;
+  color: #f0f0f0;
+  font-size: 0.8rem;
+  font-family: monospace;
+
+  box-sizing: border-box;
+}
+
+.commandInput:focus {
+  outline: none;
+  border-color: #8bc34a;
+  box-shadow: 0 0 0 1px rgba(139, 195, 74, 0.5);
+}
+
+.commandInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Optional send button placeholder
+.commandSendButton {
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #222;
+  color: #f0f0f0;
+  font-size: 0.75rem;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #2b2b2b;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+*/
+
+/* -------------------------------------------------
+   BOTTOM PANE
+-------------------------------------------------- */
+.bottomPane {
+  height: var(--bottom-pane-height);
+  min-height: 120px;
+  max-height: 60%;
+
+  background: #181818;
+  border-top: 1px solid #333;
+
+  position: relative;
+  padding: 5px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden; /* your original preference */
+}
+
+/* -------------------------------------------------
+   RIGHT SIDEBAR (Affects Panel)
+-------------------------------------------------- */
+.rightPane {
+  width: var(--right-pane-width);
+  min-width: 220px;
+  max-width: 640px;
+
+  background: #151515;
+  border-left: 1px solid #333;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+
+  padding: 5px;
+  box-sizing: border-box;
+
+  overflow: hidden; /* your original preference */
+}
+
+/* -------------------------------------------------
+   RESIZE HANDLES
+-------------------------------------------------- */
+.verticalResizer {
+  width: 4px;
+  cursor: col-resize;
+  background: #252525;
+  flex-shrink: 0;
+}
+
+.horizontalResizer {
+  height: 4px;
+  cursor: row-resize;
+  background: #252525;
+  flex-shrink: 0;
+}
+
+/* -------------------------------------------------
+   PLACEHOLDER TEXT (for empty panes)
+-------------------------------------------------- */
+.placeholderText {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  font-size: 0.8rem;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* -------------------------------------------------
+   RIGHT PANE: ROOM HEADER
+-------------------------------------------------- */
+.roomHeader {
+  padding: 6px 8px;
+  border-bottom: 1px solid #333;
+  text-align: center;
+}
+
+.roomTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #f5f5f5;
+}
+
+.roomSubtitle {
+  font-size: 0.7rem;
+  color: #c0c0c0;
+}
+
+/* -------------------------------------------------
+   RIGHT PANE: TICK + VITALS + ENEMY
+-------------------------------------------------- */
+.statusBlock {
+  padding: 6px 8px 8px;
+  border-bottom: 1px solid #333;
+}
+
+.tickRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+}
+
+.tickLabel {
+  color: #ffdf7a;
+  font-weight: 600;
+}
+
+.tickValue {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #3a2b1a;
+  color: #ffdf7a;
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+.barGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.barRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+}
+
+.barLabel {
+  width: 2.2rem;
+  text-align: right;
+  font-weight: 600;
+}
+
+.barTrack {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: #222;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 999px;
+  background: #5cb85c;
+}
+
+.barValue {
+  min-width: 4.6rem;
+  text-align: right;
+  font-family: monospace;
+}
+
+/* Variants */
+.barHp .barFill {
+  background: #a94442;
+}
+
+.barMp .barFill {
+  background: #337ab7;
+}
+
+.barSta .barFill {
+  background: #5cb85c;
+}
+
+.barEnemy .barFill {
+  background: #c94a4a;
+}
+
+/* Enemy tweaks */
+.barEnemy {
+  align-items: flex-start;
+}
+
+.barEnemy .barLabel {
+  max-width: 110px;
+  white-space: normal;
+  line-height: 1.1;
+  font-size: 0.7rem;
+}
+
+/* -------------------------------------------------
+   RIGHT PANE: AFFECTS
+-------------------------------------------------- */
+.affectsBlock {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px 4px;
+  overflow: hidden;
+}
+
+.affectsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.affectsTime {
+  font-size: 0.75rem;
+  color: #e0e0e0;
+}
+
+.affectsTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #f0f0f0;
+}
+
+.affectsScroll {
+  flex: 1;
+  margin-top: 4px;
+  padding-right: 4px;
+  overflow-y: auto;
+  font-size: 0.7rem;
+
+  scrollbar-width: thin;
+  scrollbar-color: #555 #151515;
+}
+
+.affectItem {
+  padding: 4px 2px;
+  border-bottom: 1px dashed #333;
+}
+
+.affectItem:last-child {
+  border-bottom: none;
+}
+
+.affectName {
+  font-weight: 600;
+  color: #f5f5f5;
+}
+
+.affectDetails {
+  color: #c0c0c0;
+  white-space: pre-wrap;
+}
+
+.affectEmpty {
+  opacity: 0.7;
+  font-style: italic;
+}
+
+/* WebKit scrollbars */
+.affectsScroll::-webkit-scrollbar {
+  width: 6px;
+}
+.affectsScroll::-webkit-scrollbar-track {
+  background: #151515;
+}
+.affectsScroll::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 3px;
+  border: 1px solid #111;
+}
+.affectsScroll::-webkit-scrollbar-thumb:hover {
+  background-color: #777;
+}
+
+/* -------------------------------------------------
+   RESPONSIVE (LAYOUT SHELL)
+-------------------------------------------------- */
+@media (max-width: 900px) {
+  .layoutShell {
+    flex-direction: column;
+  }
+
+  .mainSplit {
+    flex-direction: column;
+  }
+
+  .rightPane {
+    display: none;
+  }
+
+  .verticalResizer {
+    display: none;
+  }
+
+  .bottomPane {
+    height: 120px !important;
+    min-height: 80px;
+    max-height: 160px;
+    overflow: hidden;
+  }
+
+  .horizontalResizer {
+    height: 2px;
+    cursor: default;
+  }
+
+  /* ✨ Larger tap area for mobile */
+  .commandInput {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .bottomPane {
+    height: 100px !important;
+  }
+
+  .commandInput {
+    font-size: 0.9rem;
+  }
+}
+
+/* -------------------------------------------------
+   EXTRA SMALL VERTICAL SPACE (mobile landscape)
+   Hide bottom pane, keep play area + command input
+-------------------------------------------------- */
+@media (max-height: 480px) and (orientation: landscape) {
+  .bottomPane {
+    display: none;
+  }
+
+  .horizontalResizer {
+    display: none;
+  }
+
+  /* Let the play area stretch to the bottom */
+  .leftColumn {
+    min-height: 0;
+  }
+
+  .playArea {
+    border-bottom: none; /* remove the bar border when bottom pane is gone */
+  }
+}
+
+/* -------------------------------------------------
+   STATUS BLOCK: OPTIONAL EXTRA STATUS LINE
+   (Carry %, quiet, flying, riding, language, etc.)
+-------------------------------------------------- */
+
+.statusExtraLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  padding: 2px 0;
+  /* inherits all colors from parent */
+}
+
+.statusExtraText {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statusExtraToggle {
+  background: transparent;
+  border: none;
+  color: #c0c0c0;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0 4px;
+
+  &:hover {
+    color: #fff;
+  }
+}

@@ -1,0 +1,73 @@
+// apps/game-client/src/hooks/useLayoutShell.ts
+import {
+  useTickTimer,
+  useVitalsState,
+  useEnemyHudState,
+  useAffectsState,
+  useCompassState,
+  CompassDirection,
+} from './useRightPaneHud';
+import { useCharData } from './useCharData';
+import { useTickData } from './useTickData';
+
+/* ---------------- Status block view model ---------------- */
+
+export function useStatusBlockViewModel() {
+  const { remaining } = useTickTimer(41);
+  const vitalsStore = useVitalsState();
+  const enemy = useEnemyHudState();
+  const { vitals: charVitals, ancillary } = useCharData();
+
+  const vitals = {
+    ...vitalsStore,
+    hp: charVitals.hp || vitalsStore.hp,
+    hpMax: charVitals.hpMax || vitalsStore.hpMax,
+    mp: charVitals.mp || vitalsStore.mp,
+    mpMax: charVitals.mpMax || vitalsStore.mpMax,
+    stamina: charVitals.stamina || vitalsStore.stamina,
+    staminaMax: charVitals.staminaMax || vitalsStore.staminaMax,
+  };
+
+  const pct = (value: number, max: number) => (max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0);
+
+  const hpPct = pct(vitals.hp, vitals.hpMax);
+  const mpPct = pct(vitals.mp, vitals.mpMax);
+  const staPct = pct(vitals.stamina, vitals.staminaMax);
+
+  return {
+    remaining,
+    vitals,
+    enemy,
+    hpPct,
+    mpPct,
+    staPct,
+    ancillary,
+  };
+}
+
+/* ---------------- Affects block view model ---------------- */
+
+export function useAffectsBlockViewModel() {
+  const affects = useAffectsState();
+  const { timeOfDay } = useTickData(41);
+
+  return {
+    affects,
+    timeOfDay,
+  };
+}
+
+/* ---------------- Compass block view model ---------------- */
+
+export function useCompassBlockViewModel() {
+  const { exits } = useCompassState();
+
+  const hasExit = (dir: CompassDirection) => exits.has(dir);
+
+  return {
+    exits,
+    hasExit,
+  };
+}
+
+export type { CompassDirection };

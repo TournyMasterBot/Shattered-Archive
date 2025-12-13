@@ -1,0 +1,47 @@
+@use './FocusBarShared' as fb;
+
+.focusBar {
+  @include fb.focusBarBase;
+
+  /* Show ONLY on small screens */
+  @media (max-width: 900px) {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.focusBarContent {
+  @include fb.focusBarContent;
+}
+
+.focusBarLabel {
+  @include fb.focusBarLabel;
+}
+
+.focusBarVitalsGroup {
+  @include fb.focusBarVitalsGroup;
+}
+
+.focusBarVitalRow {
+  @include fb.focusBarVitalRow;
+}
+
+.focusBarVitalName {
+  @include fb.focusBarVitalName;
+}
+
+.focusBarVitalTrack {
+  @include fb.focusBarVitalTrack;
+}
+
+.focusBarVitalFillHp {
+  @include fb.focusBarVitalFillHp;
+}
+
+.focusBarVitalFillMp {
+  @include fb.focusBarVitalFillMp;
+}
+
+.focusBarVitalFillSta {
+  @include fb.focusBarVitalFillSta;
+}

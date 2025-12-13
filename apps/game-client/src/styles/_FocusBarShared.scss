@@ -1,0 +1,76 @@
+/* apps/game-client/src/styles/_FocusBarShared.scss */
+
+/* Base bar container */
+@mixin focusBarBase {
+  display: none; /* hidden on desktop by default */
+  min-height: 26px;
+  max-height: 30px;
+
+  background: #151515;
+  border-radius: 4px;
+  border: 1px solid #333;
+  overflow: hidden; /* non-scrolling */
+}
+
+/* Inner layout */
+@mixin focusBarContent {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+}
+
+/* Label text */
+@mixin focusBarLabel {
+  font-size: 0.75rem;
+  color: #c0c0c0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Compact vitals group */
+@mixin focusBarVitalsGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+@mixin focusBarVitalRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+@mixin focusBarVitalName {
+  font-size: 0.7rem;
+  color: #ddd;
+  width: 1.8rem;
+  text-align: right;
+}
+
+@mixin focusBarVitalTrack {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: #111;
+  overflow: hidden;
+}
+
+@mixin focusBarVitalFillHp {
+  height: 100%;
+  background: linear-gradient(to right, #ff3b3b, #ff7b63);
+}
+
+@mixin focusBarVitalFillMp {
+  height: 100%;
+  background: linear-gradient(to right, #3b7bff, #4fd1ff);
+}
+
+@mixin focusBarVitalFillSta {
+  height: 100%;
+  background: linear-gradient(to right, #3bff7b, #9cff4f);
+}
