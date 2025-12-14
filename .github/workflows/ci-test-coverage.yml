@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Use Corepack + packageManager from package.json as the single source of truth.
       - name: Enable Corepack
