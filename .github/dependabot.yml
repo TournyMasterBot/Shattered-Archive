@@ -1,83 +1,43 @@
 version: 2
 updates:
-  # GitHub Actions
+  # GitHub Actions (group minor/patch together)
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      gha-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
-  # Root workspace
+  # npm / pnpm (monorepo) — group minor/patch together across all workspace dirs
   - package-ecosystem: "npm"
-    directory: "/"
+    directories:
+      - "/"
+      - "/apps/game-client"
+      - "/apps/game-server"
+      - "/apps/web-client"
+      - "/apps/web-server"
+      - "/sdks/sdks-client"
+      - "/sdks/sdks-server"
+      - "/services/services-client"
+      - "/services/services-server"
+      - "/types/types-client"
+      - "/types/types-global"
+      - "/types/types-server"
+      - "/utils/utils-client"
+      - "/utils/utils-global"
+      - "/utils/utils-server"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
-
-  # Apps
-  - package-ecosystem: "npm"
-    directory: "/apps/game-client"
-    schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "npm"
-    directory: "/apps/game-server"
-    schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "npm"
-    directory: "/apps/web-client"
-    schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "npm"
-    directory: "/apps/web-server"
-    schedule:
-      interval: "weekly"
-
-  # SDKs
-  - package-ecosystem: "npm"
-    directory: "/sdks/sdks-client"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "npm"
-    directory: "/sdks/sdks-server"
-    schedule:
-      interval: "weekly"
-
-  # Services
-  - package-ecosystem: "npm"
-    directory: "/services/services-client"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "npm"
-    directory: "/services/services-server"
-    schedule:
-      interval: "weekly"
-
-  # Types
-  - package-ecosystem: "npm"
-    directory: "/types/types-client"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "npm"
-    directory: "/types/types-global"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "npm"
-    directory: "/types/types-server"
-    schedule:
-      interval: "weekly"
-
-  # Utils
-  - package-ecosystem: "npm"
-    directory: "/utils/utils-client"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "npm"
-    directory: "/utils/utils-global"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "npm"
-    directory: "/utils/utils-server"
-    schedule:
-      interval: "weekly"
+    groups:
+      npm-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
