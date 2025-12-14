@@ -1,0 +1,83 @@
+ShatteredArchive Source Available License
+Version 1.1
+
+Copyright (c) 2024 ShatteredArchive.com
+
+This software is made available under a Source Available license.
+It is NOT licensed as Open Source under any OSI-approved license.
+
+----------------------------------------------------------------------
+Grant of Rights (Non-Commercial Use)
+----------------------------------------------------------------------
+
+Subject to the terms of this License, you are permitted to:
+
+• View, study, and modify the source code;
+• Run the Software for personal, educational, or internal use;
+• Use the Software as part of a larger system or service,
+  provided the Software itself is not monetized;
+• Fork the repository and submit pull requests;
+• Redistribute the Software or Derivative Works, provided that:
+  - such redistribution is non-commercial; and
+  - this License is included in full with any redistribution.
+
+----------------------------------------------------------------------
+Commercial Use Restriction
+----------------------------------------------------------------------
+
+You may NOT, under this License:
+
+• Sell, license, or monetize the Software itself;
+• Sell or license Derivative Works of the Software;
+• Monetize modifications to the Software;
+• Sell or monetize plugins, extensions, modules, themes, or add-ons
+  built for or designed to function with the Software;
+• Include the Software or Derivative Works as a paid product,
+  or as a monetized component of a product or service.
+
+Use of the Software to interoperate with, integrate with,
+or communicate with an external product or service
+does NOT, by itself, constitute Commercial Use,
+provided that the Software itself is not monetized
+and no Derivative Works are sold.
+
+Any commercial use as defined above requires acceptance of the
+ShatteredArchive Commercial License (see LICENSE-COMMERCIAL).
+
+----------------------------------------------------------------------
+Definitions
+----------------------------------------------------------------------
+
+“Software” means the Shattered Archive MUD Client and all associated
+tools, libraries, engines, frameworks, interfaces, and source code
+published by ShatteredArchive.com.
+
+“Derivative Work” has the same meaning as under the Apache License 2.0.
+
+“Commercial Use” means monetization of the Software itself,
+a Derivative Work, or a component built specifically to extend
+or modify the Software.
+
+----------------------------------------------------------------------
+Attribution and Notices
+----------------------------------------------------------------------
+
+All copyright notices, attribution notices, and this License must be
+preserved in all copies or substantial portions of the Software.
+
+----------------------------------------------------------------------
+Disclaimer of Warranty
+----------------------------------------------------------------------
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND.
+
+----------------------------------------------------------------------
+Limitation of Liability
+----------------------------------------------------------------------
+
+IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY ARISING FROM THE USE OF THE SOFTWARE.
+
+----------------------------------------------------------------------
+END OF TERMS
+----------------------------------------------------------------------
