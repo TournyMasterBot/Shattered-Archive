@@ -46,6 +46,10 @@ jobs:
       - name: Run Jest tests with coverage
         run: pnpm test -- --coverage
 
+      - name: Merge workspace coverage summaries
+        if: always()
+        run: node scripts/merge-coverage-summary.cjs
+
       - name: Add coverage summary to run
         if: always()
         shell: bash
@@ -63,13 +67,16 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: coverage/
+          path: |
+            coverage/
+            **/coverage/
 
       - name: Comment coverage on PR
         if: github.event_name == 'pull_request'
         uses: MishaKav/jest-coverage-comment@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          coverage-path: coverage/coverage-summary.json
-          update-comment: true
+          coverage-summary-path: coverage/coverage-summary.json
+          unique-id-for-comment: ci-test-coverage
+          create-new-comment: false
           hide-comment: false
