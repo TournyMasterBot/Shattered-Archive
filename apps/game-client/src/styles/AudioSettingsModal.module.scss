@@ -1,5 +1,3 @@
-/* apps/game-client/src/styles/AudioSettingsModal.module.scss */
-
 .backdrop {
   position: fixed;
   inset: 0;
@@ -14,13 +12,14 @@
   background: #101010;
   border: 1px solid #333;
   border-radius: 6px;
-  width: 800px;
-  height: 520px;
+  width: 900px;
+  height: 620px;
   max-width: 95vw;
-  max-height: 85vh;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85);
 }
 
 .header {
@@ -38,8 +37,8 @@
 }
 
 .closeButton {
-  background: transparent;
   border: none;
+  background: transparent;
   color: #ccc;
   cursor: pointer;
   font-size: 0.9rem;
@@ -54,32 +53,33 @@
 
 .body {
   flex: 1;
-  display: flex;
   min-height: 0;
+  display: flex;
+  background: #111;
 }
 
-.navPane {
+.leftNav {
   width: 200px;
   border-right: 1px solid #333;
-  background: #121212;
-  padding: 6px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  overflow-y: auto;
 }
 
 .navItem {
-  text-align: left;
   border: none;
-  background: #1a1a1a;
+  background: #181818;
   color: #ccc;
   font-size: 0.8rem;
-  padding: 6px 8px;
-  border-radius: 3px;
+  padding: 8px 10px;
+  border-radius: 4px;
   cursor: pointer;
+  text-align: left;
 
   &:hover {
-    background: #242424;
+    background: #222;
   }
 }
 
@@ -88,72 +88,305 @@
   color: #f0f4ff;
 }
 
-.contentPane {
+.rightPane {
   flex: 1;
-  padding: 12px;
+  min-width: 0;
+  padding: 10px;
   overflow-y: auto;
 }
 
 .section {
-  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.section h3 {
-  margin: 0 0 6px 0;
-  font-size: 0.85rem;
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: #ddd;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 0.8rem;
+  color: #ddd;
+  font-weight: 600;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 160px;
+  resize: vertical;
+  background: #0d0d0d;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #e0e0e0;
+  padding: 8px;
+  font-size: 0.75rem;
+  font-family: 'Fira Code', monospace;
 }
 
 .hint {
-  font-size: 0.75rem;
-  color: #888;
-  margin-bottom: 12px;
+  font-size: 0.72rem;
+  color: #999;
 }
 
-.sliderRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 0.75rem;
-  margin-bottom: 12px;
-
-  input[type='range'] {
-    flex: 1;
-  }
+.muted {
+  color: #aaa;
+  font-size: 0.78rem;
 }
 
-.checkboxRow {
+.inlineActions {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.75rem;
 }
 
-/* Responsive */
+.smallButton {
+  border: none;
+  background: #2a2a2a;
+  color: #ddd;
+  font-size: 0.78rem;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover {
+    background: #3a3a3a;
+  }
+}
+
+.smallDanger {
+  border: none;
+  background: #3a2323;
+  color: #f1c6c6;
+  font-size: 0.78rem;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover {
+    background: #4a2a2a;
+  }
+}
+
+.testButton {
+  border: none;
+  background: #203a50;
+  color: #d6eaff;
+  font-size: 0.78rem;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover {
+    background: #2a4c68;
+  }
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.grid1 {
+  display: grid;
+  grid-template-columns: minmax(120px, 220px);
+  gap: 10px;
+}
+
+.smallField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #ccc;
+
+  input {
+    background: #131313;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 6px 8px;
+    color: #e0e0e0;
+    font-size: 0.8rem;
+  }
+}
+
+.soundCard {
+  background: #0f0f0f;
+  border: 1px solid #2c2c2c;
+  border-radius: 4px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.soundRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.soundKind {
+  font-size: 0.78rem;
+  color: #ccc;
+}
+
+.soundChoiceRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filePicker,
+.filePickerSmall {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #333;
+  background: #181818;
+  color: #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.filePicker {
+  font-size: 0.78rem;
+  padding: 6px 10px;
+}
+
+.filePickerSmall {
+  font-size: 0.78rem;
+  padding: 6px 10px;
+}
+
+.filePicker input,
+.filePickerSmall input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.rulesList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ruleRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #0f0f0f;
+  border: 1px solid #2c2c2c;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.ruleHeader {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.ruleEnabled {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rulePattern {
+  width: 100%;
+  background: #131313;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 6px 8px;
+  color: #e0e0e0;
+  font-size: 0.8rem;
+  min-width: 0; // important: allow shrink inside grid
+}
+
+.ruleSoundControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #151515;
+  border-top: 1px solid #333;
+}
+
+.cancelButton,
+.saveButton {
+  border: none;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cancelButton {
+  background: #2a2a2a;
+  color: #ddd;
+
+  &:hover {
+    background: #3a3a3a;
+  }
+}
+
+.saveButton {
+  background: #265026;
+  color: #d2f5d2;
+
+  &:hover {
+    background: #326d32;
+  }
+}
+
 @media (max-width: 768px) {
   .modal {
     width: 92vw;
-    height: 70vh;
+    height: 78vh;
   }
 
-  .navPane {
-    width: 35%;
-  }
-}
-
-@media (max-width: 540px) {
   .body {
     flex-direction: column;
   }
 
-  .navPane {
+  .leftNav {
     width: 100%;
-    flex-direction: row;
     border-right: none;
     border-bottom: 1px solid #333;
+    flex-direction: row;
   }
 
   .navItem {
     flex: 1;
     text-align: center;
+  }
+
+  .grid3 {
+    grid-template-columns: 1fr;
   }
 }
