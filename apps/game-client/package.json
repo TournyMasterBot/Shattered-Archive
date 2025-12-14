@@ -20,7 +20,7 @@
     "@shatteredarchive/types-global": "workspace:*",
     "@shatteredarchive/types-client": "workspace:*",
     "vite": "^6.0.0",
-    "@testing-library/react": "^14.0.0",
+    "@testing-library/react": "^16.3.0",
     "@types/testing-library__react": "10.2.0"
   }
 }
