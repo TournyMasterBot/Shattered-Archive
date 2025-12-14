@@ -2,12 +2,15 @@
 import { useState } from 'react';
 import type React from 'react';
 
-type GameSettingsSection = 'Graphics' | 'Audio' | 'Controls' | null;
+type GameSettingsSection = 'Controls' | null;
 
 export function useMainMenuBar() {
   const [openRootMenu, setOpenRootMenu] = useState<string | null>(null);
   const [isGameSettingsOpen, setIsGameSettingsOpen] = useState(false);
   const [openGameSettingsSection, setOpenGameSettingsSection] = useState<GameSettingsSection>(null);
+
+  const [isGraphicsModalOpen, setIsGraphicsModalOpen] = useState(false);
+  const [isAudioModalOpen, setIsAudioModalOpen] = useState(false);
 
   const toggleRootMenu = (id: string) => {
     setOpenRootMenu((prev) => (prev === id ? null : id));
@@ -32,10 +35,35 @@ export function useMainMenuBar() {
     setOpenGameSettingsSection((prev) => (prev === section ? null : section));
   };
 
+  const openGraphicsModal = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    closeAllMenus();
+    setIsGraphicsModalOpen(true);
+  };
+
+  const closeGraphicsModal = () => setIsGraphicsModalOpen(false);
+
+  const openAudioModal = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    closeAllMenus();
+    setIsAudioModalOpen(true);
+  };
+
+  const closeAudioModal = () => setIsAudioModalOpen(false);
+
   return {
     openRootMenu,
     isGameSettingsOpen,
     openGameSettingsSection,
+
+    isGraphicsModalOpen,
+    openGraphicsModal,
+    closeGraphicsModal,
+
+    isAudioModalOpen,
+    openAudioModal,
+    closeAudioModal,
+
     toggleRootMenu,
     toggleGameSettings,
     toggleGameSettingsSection,

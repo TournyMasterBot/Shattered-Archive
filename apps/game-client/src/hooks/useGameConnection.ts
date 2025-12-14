@@ -1,5 +1,7 @@
 // apps/game-client/src/hooks/useGameConnection.ts
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { probeChatRange } from '../features/chat/chat-probe';
+import { appendChatRaw } from '../features/chat/chat-store';
 
 export interface UseGameConnectionResult {
   isConnected: boolean;
@@ -12,21 +14,19 @@ export interface UseGameConnectionResult {
   sendRaw: (data: string) => void;
 }
 
-/**
- * Text patterns that indicate we should start/reset watching for GMCP.
- *
- * Behavior:
- *  1. When ANY of these substrings is seen in RAW text, we (re)start a 5-minute timer.
- *  2a. If a GMCP message arrives before that timer fires, we cancel the timer
- *      and print "GMCP is enabled".
- *  2b. If no GMCP arrives before it fires, we auto-send "gmcp" and print the
- *      ghostly hands line.
- */
 const GMCP_TRIGGER_PATTERNS: string[] = [
   'Welcome to DSL! DSL Loves You! Other muds think you are ugly, they said so!',
   'When approaching a Red Dragon, be sure to bring your wand of marshmallow.',
   'Reconnecting. Type replay to see missed tells.',
 ];
+
+function dispatchSafe(name: string, detail?: any) {
+  try {
+    window.dispatchEvent(new CustomEvent(name, { detail }));
+  } catch {
+    // ignore (SSR / no window)
+  }
+}
 
 export function useGameConnection(): UseGameConnectionResult {
   const [isConnected, setIsConnected] = useState(false);
@@ -53,15 +53,7 @@ export function useGameConnection(): UseGameConnectionResult {
   };
 
   const emitTerminalText = useCallback((text: string) => {
-    try {
-      window.dispatchEvent(
-        new CustomEvent('game:terminal-data', {
-          detail: { text },
-        }),
-      );
-    } catch {
-      // ignore if window isn't available
-    }
+    dispatchSafe('game:terminal-data', { text });
   }, []);
 
   const sendTelnetData = useCallback((data: string) => {
@@ -71,19 +63,11 @@ export function useGameConnection(): UseGameConnectionResult {
   }, []);
 
   const emitSocketClosed = useCallback(() => {
-    try {
-      window.dispatchEvent(new CustomEvent('game:socket-closed'));
-    } catch {
-      // ignore
-    }
+    dispatchSafe('game:socket-closed');
   }, []);
 
   const emitSocketOpen = useCallback(() => {
-    try {
-      window.dispatchEvent(new CustomEvent('game:socket-open'));
-    } catch {
-      // ignore
-    }
+    dispatchSafe('game:socket-open');
   }, []);
 
   const cleanupSocket = useCallback(() => {
@@ -103,7 +87,6 @@ export function useGameConnection(): UseGameConnectionResult {
     clearGmcpProbe();
     gmcpAutoEnableRef.current = true;
 
-    // Notify listeners (timers, etc.) that the socket is closed
     emitSocketClosed();
   }, [emitSocketClosed]);
 
@@ -111,18 +94,12 @@ export function useGameConnection(): UseGameConnectionResult {
     cleanupSocket();
   }, [cleanupSocket]);
 
-  /**
-   * Start / reset a one-shot GMCP check AFTER a trigger text is seen.
-   * If, when the timer fires, we have NOT seen any GMCP (we will
-   * cancel the timer when GMCP arrives), we auto-send "gmcp".
-   */
   const scheduleGmcpCheck = useCallback(() => {
     if (!gmcpAutoEnableRef.current) {
       console.log('[game-connection] GMCP auto-enable is disabled; not scheduling probe');
       return;
     }
 
-    // If there's already a timer running, reset it
     if (gmcpProbeTimerRef.current) {
       clearTimeout(gmcpProbeTimerRef.current);
       gmcpProbeTimerRef.current = null;
@@ -143,24 +120,93 @@ export function useGameConnection(): UseGameConnectionResult {
         emitTerminalText("\x1b[38;5;67mGhostly hands type 'gmcp'\x1b[0m\r\n");
         sendTelnetData('gmcp');
 
-        try {
-          window.dispatchEvent(
-            new CustomEvent('game:gmcp-auto-enable', {
-              detail: {
-                host: lastHostRef.current,
-                port: lastPortRef.current,
-              },
-            }),
-          );
-        } catch {
-          // ignore
-        }
+        dispatchSafe('game:gmcp-auto-enable', {
+          host: lastHostRef.current,
+          port: lastPortRef.current,
+        });
       },
       5 * 60 * 1000,
-    ); // 5 minutes
+    );
 
     emitTerminalText('\x1b[38;5;67m[game-connection] GMCP probe timer created (5 minutes)\x1b[0m\r\n');
   }, [emitTerminalText, sendTelnetData]);
+
+  /**
+   * Scan a raw chunk without splitting into arrays.
+   * Note: we still slice per-line for plugin routing + chat payload.
+   */
+  const processRawChunk = useCallback(
+    (text: string) => {
+      // 0) emit raw chunk (you asked for raw text from raw event)
+      dispatchSafe('game:telnet-raw-chunk', { text });
+
+      // 1) existing behavior: terminal display
+      emitTerminalText(text);
+
+      // 2) GMCP trigger check (cheap)
+      const matchedPattern = GMCP_TRIGGER_PATTERNS.find((pattern) => text.includes(pattern));
+      if (matchedPattern) {
+        console.log(
+          '[game-connection] GMCP trigger text detected; (re)starting GMCP watch window via pattern:',
+          matchedPattern,
+        );
+        scheduleGmcpCheck();
+      }
+
+      // 3) scan for lines [start,end)
+      let start = 0;
+      const len = text.length;
+
+      for (let i = 0; i <= len; i++) {
+        const c = i < len ? text.charCodeAt(i) : 10; // sentinel newline
+
+        if (c === 10 /* \n */ || i === len) {
+          // end points at '\n' (or len). Include '\n' in rawLine when present.
+          const rawEnd = i < len ? i + 1 : i;
+
+          let end = i;
+          if (end > start && text.charCodeAt(end - 1) === 13 /* \r */) end--;
+
+          if (end > start) {
+            // string allocation (needed for consumers + store)
+            const lineText = text.slice(start, end);
+
+            // raw line *as received* (includes CRLF/LF if present)
+            const rawLine = text.slice(start, rawEnd);
+
+            // plugins / other consumers
+            dispatchSafe('game:telnet-raw-line', {
+              text: lineText,
+              rawLine,
+            });
+
+            // chat detection (no substr allocs inside probe)
+            const match = probeChatRange(text, start, end);
+            if (match.isChat) {
+              // capture even if ChatPane isn't mounted
+              appendChatRaw(lineText);
+
+              dispatchSafe('game:chat-line', {
+                text: lineText,
+                rawLine,
+                rawChunk: text,
+
+                speakerStart: match.speakerStart,
+                speakerEnd: match.speakerEnd,
+                verbStart: match.verbStart,
+                verbEnd: match.verbEnd,
+                messageStart: match.messageStart,
+                messageEnd: match.messageEnd,
+              });
+            }
+          }
+
+          start = i + 1;
+        }
+      }
+    },
+    [emitTerminalText, scheduleGmcpCheck],
+  );
 
   const connect = useCallback(
     (host: string, port: number, options?: { autoEnableGmcp?: boolean }) => {
@@ -177,13 +223,7 @@ export function useGameConnection(): UseGameConnectionResult {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        ws.send(
-          JSON.stringify({
-            type: 'connect',
-            host,
-            port,
-          }),
-        );
+        ws.send(JSON.stringify({ type: 'connect', host, port }));
 
         setIsConnected(true);
         setCurrentHost(host);
@@ -193,8 +233,6 @@ export function useGameConnection(): UseGameConnectionResult {
         lastPortRef.current = port;
 
         console.log('[game-connection] WebSocket opened; waiting for GMCP trigger text');
-
-        // Notify listeners (e.g., timers) that the socket is open
         emitSocketOpen();
       };
 
@@ -224,27 +262,7 @@ export function useGameConnection(): UseGameConnectionResult {
         switch (msg.type) {
           case 'raw': {
             const text: string = msg.data ?? '';
-
-            emitTerminalText(text);
-
-            if (
-              text.includes('When approaching a Red Dragon') ||
-              text.includes('Reconnecting. Type replay') ||
-              text.includes('DSL Loves You')
-            ) {
-              console.log('[game-connection] RAW candidate for GMCP trigger:', JSON.stringify(text));
-            }
-
-            const matchedPattern = GMCP_TRIGGER_PATTERNS.find((pattern) => text.includes(pattern));
-
-            if (matchedPattern) {
-              console.log(
-                '[game-connection] GMCP trigger text detected; (re)starting GMCP watch window via pattern:',
-                matchedPattern,
-              );
-              scheduleGmcpCheck();
-            }
-
+            processRawChunk(text);
             break;
           }
 
@@ -259,8 +277,6 @@ export function useGameConnection(): UseGameConnectionResult {
               console.log('[game-connection] GMCP received (no active probe timer)');
             }
 
-            console.log('[gmcp raw msg.data]', msg.data);
-
             try {
               const raw: string = msg.data ?? '';
               const trimmed = raw.trim();
@@ -269,19 +285,11 @@ export function useGameConnection(): UseGameConnectionResult {
                 const packageName = trimmed.slice(0, firstSpace);
                 const jsonPart = trimmed.slice(firstSpace + 1).trim();
 
-                console.log('[gmcp parsed]', {
-                  packageName,
-                  jsonPart: jsonPart.slice(0, 80) + '...',
-                });
-
                 if (jsonPart.startsWith('{')) {
                   const payload = JSON.parse(jsonPart);
 
                   switch (packageName) {
                     case 'char_data': {
-                      console.log('[gmcp char_data payload]', payload);
-
-                      // Existing: desktop / other listeners
                       window.dispatchEvent(new CustomEvent('game:char-data', { detail: payload }));
                       window.dispatchEvent(
                         new CustomEvent('game:gmcp-vitals', {
@@ -295,63 +303,37 @@ export function useGameConnection(): UseGameConnectionResult {
                           },
                         }),
                       );
-
                       break;
                     }
 
                     case 'room_data': {
-                      console.log('[gmcp room_data payload]', payload);
-
-                      window.dispatchEvent(
-                        new CustomEvent('game:room-data', {
-                          detail: payload,
-                        }),
-                      );
-
-                      console.log('[gmcp] dispatched game:room-data');
+                      window.dispatchEvent(new CustomEvent('game:room-data', { detail: payload }));
                       break;
                     }
 
                     case 'tick': {
-                      console.log('[gmcp tick payload]', payload);
                       window.dispatchEvent(new CustomEvent('game:tick', { detail: payload }));
                       break;
                     }
 
                     case 'affects': {
-                      console.log('[gmcp] affect_data payload parsed', payload);
-
                       const affects = Array.isArray(payload?.affects) ? payload.affects : [];
-
-                      window.dispatchEvent(
-                        new CustomEvent('game:affects-trueup', {
-                          detail: { affects },
-                        }),
-                      );
-
-                      console.log('[gmcp] dispatched game:affects-trueup', affects.length);
+                      window.dispatchEvent(new CustomEvent('game:affects-trueup', { detail: { affects } }));
                       break;
                     }
 
                     case 'add_affect': {
                       const affect = payload as any;
-
                       if (affect?.n) {
-                        window.dispatchEvent(
-                          new CustomEvent('game:affect-added', {
-                            detail: affect,
-                          }),
-                        );
+                        window.dispatchEvent(new CustomEvent('game:affect-added', { detail: affect }));
                       }
-
                       break;
                     }
 
-                    case 'remove_affect':
+                    case 'remove_affect': {
                       window.dispatchEvent(new CustomEvent('game:affect-removed', { detail: payload }));
                       break;
-
-                    // add room_data / affect_data later if needed
+                    }
                   }
                 }
               }
@@ -359,15 +341,7 @@ export function useGameConnection(): UseGameConnectionResult {
               console.error('[game-connection] failed to parse GMCP package', err);
             }
 
-            try {
-              window.dispatchEvent(
-                new CustomEvent('game:gmcp', {
-                  detail: msg.data,
-                }),
-              );
-            } catch {
-              // ignore
-            }
+            dispatchSafe('game:gmcp', { raw: msg.data });
             break;
           }
 
@@ -386,7 +360,7 @@ export function useGameConnection(): UseGameConnectionResult {
         }
       };
     },
-    [cleanupSocket, emitSocketClosed, emitSocketOpen, emitTerminalText, scheduleGmcpCheck],
+    [cleanupSocket, emitSocketClosed, emitSocketOpen, emitTerminalText, processRawChunk, scheduleGmcpCheck],
   );
 
   const sendRaw = useCallback(
@@ -413,22 +387,18 @@ export function useGameConnection(): UseGameConnectionResult {
       const ce = ev as CustomEvent<any>;
       const cmdRaw = ce.detail?.cmd;
 
-      // Only bail if truly missing; allow empty string
       if (cmdRaw === undefined || cmdRaw === null) return;
 
       const cmd = String(cmdRaw);
 
-      // Echo to terminal (preserve exactly what was sent)
       emitTerminalText(`\x1b[38;5;244m> ${cmd}\x1b[0m\r\n`);
-
-      // Actually send to the game (sendTelnetData already checks OPEN)
       sendTelnetData(cmd);
     };
 
     try {
       window.addEventListener('game:send-command', handler as EventListener);
     } catch {
-      // ignore (SSR / no window)
+      // ignore
     }
 
     return () => {

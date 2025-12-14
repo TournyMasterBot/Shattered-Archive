@@ -1,0 +1,159 @@
+/* apps/game-client/src/styles/AudioSettingsModal.module.scss */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+}
+
+.modal {
+  background: #101010;
+  border: 1px solid #333;
+  border-radius: 6px;
+  width: 800px;
+  height: 520px;
+  max-width: 95vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #181818;
+  border-bottom: 1px solid #333;
+}
+
+.title {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 2px 6px;
+
+  &:hover {
+    color: #fff;
+    background: #333;
+    border-radius: 3px;
+  }
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.navPane {
+  width: 200px;
+  border-right: 1px solid #333;
+  background: #121212;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.navItem {
+  text-align: left;
+  border: none;
+  background: #1a1a1a;
+  color: #ccc;
+  font-size: 0.8rem;
+  padding: 6px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+
+  &:hover {
+    background: #242424;
+  }
+}
+
+.navItemActive {
+  background: #304060;
+  color: #f0f4ff;
+}
+
+.contentPane {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.section {
+  max-width: 420px;
+}
+
+.section h3 {
+  margin: 0 0 6px 0;
+  font-size: 0.85rem;
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: #888;
+  margin-bottom: 12px;
+}
+
+.sliderRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.75rem;
+  margin-bottom: 12px;
+
+  input[type='range'] {
+    flex: 1;
+  }
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modal {
+    width: 92vw;
+    height: 70vh;
+  }
+
+  .navPane {
+    width: 35%;
+  }
+}
+
+@media (max-width: 540px) {
+  .body {
+    flex-direction: column;
+  }
+
+  .navPane {
+    width: 100%;
+    flex-direction: row;
+    border-right: none;
+    border-bottom: 1px solid #333;
+  }
+
+  .navItem {
+    flex: 1;
+    text-align: center;
+  }
+}

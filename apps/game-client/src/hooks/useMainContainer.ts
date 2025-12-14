@@ -108,7 +108,7 @@ export function useLayoutSizing() {
 /* -------------------------------------------
    Hook: top menu state
 -------------------------------------------- */
-type GameSettingsSection = 'Graphics' | 'Audio' | 'Controls' | null;
+type GameSettingsSection = 'Graphics' | 'Audio' | null;
 
 export function useMenuState() {
   const [openRootMenu, setOpenRootMenu] = useState<string | null>(null);
