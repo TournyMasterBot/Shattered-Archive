@@ -1,0 +1,83 @@
+version: 2
+updates:
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Root workspace
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  # Apps
+  - package-ecosystem: "npm"
+    directory: "/apps/game-client"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "npm"
+    directory: "/apps/game-server"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "npm"
+    directory: "/apps/web-client"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "npm"
+    directory: "/apps/web-server"
+    schedule:
+      interval: "weekly"
+
+  # SDKs
+  - package-ecosystem: "npm"
+    directory: "/sdks/sdks-client"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/sdks/sdks-server"
+    schedule:
+      interval: "weekly"
+
+  # Services
+  - package-ecosystem: "npm"
+    directory: "/services/services-client"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/services/services-server"
+    schedule:
+      interval: "weekly"
+
+  # Types
+  - package-ecosystem: "npm"
+    directory: "/types/types-client"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/types/types-global"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/types/types-server"
+    schedule:
+      interval: "weekly"
+
+  # Utils
+  - package-ecosystem: "npm"
+    directory: "/utils/utils-client"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/utils/utils-global"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/utils/utils-server"
+    schedule:
+      interval: "weekly"

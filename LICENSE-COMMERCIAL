@@ -1,128 +1,101 @@
-                     ShatteredArchive Commercial License 1.2
-                       Copyright (c) 2024 ShatteredArchive.com
+ShatteredArchive Commercial License
+Version 1.4
 
-This Commercial License (“License”) governs commercial redistribution and
-commercial use of the Shattered Archive Software and related works made
-available by ShatteredArchive.com (“Licensor”).
+Copyright (c) 2024 ShatteredArchive.com
 
-This License applies ONLY to commercial revenue derived from the Software,
-including Derivative Works, distributions, plugins, extensions, modules, or
-add-ons built for the Software. No other revenue streams of a company are
-affected.
+----------------------------------------------------------------------
+How to Obtain This License
+----------------------------------------------------------------------
 
-1. Definitions
+This Commercial License is not granted automatically.
 
-“Software” means the Shattered Archive MUD Client, its associated tools,
-libraries, engines, frameworks, interfaces, and any other code or assets
-explicitly published by the Licensor.
+To obtain a Commercial License, You must contact the Licensor directly
+and enter into a commercial licensing agreement.
 
-“Derivative Work” has the same meaning as under the Apache License 2.0 and
-includes any modified version of the Software or any work incorporating any
-portion of the Software.
+All commercial licensing inquiries must be directed to:
 
-“Commercial Use” means any monetized distribution, sale, licensing,
-subscription access, hosting access, or fee-based access involving the
-Software, a Derivative Work, or any plugin, extension, module, theme, or
-add-on built to function with or extend the Software.
+    legal@shatteredarchive.com
 
-Commercial Use includes, but is not limited to:
-  • Selling Derivative Works of the Software;
-  • Selling plugins, extensions, modules, add-ons, or themes for the Software;
-  • Selling software bundled with the Software;
-  • Selling commercial licenses that include the Software;
-  • Charging subscription or access fees for products containing the Software.
+No commercial rights are granted unless and until a commercial license
+has been explicitly issued or confirmed by the Licensor.
+
+----------------------------------------------------------------------
+Scope
+----------------------------------------------------------------------
+
+This License governs commercial monetization of the ShatteredArchive
+Software, Derivative Works, or components built specifically for the
+ShatteredArchive Software.
+
+It does NOT apply to unrelated revenue streams or services that merely
+interoperate with the ShatteredArchive Software without incorporating
+or modifying it.
+
+----------------------------------------------------------------------
+Definitions
+----------------------------------------------------------------------
+
+“ShatteredArchive Software” means the Shattered Archive MUD Client and
+associated tools, libraries, engines, frameworks, interfaces, and source
+code published by the Licensor.
+
+“Derivative Work” has the same meaning as under the Apache License 2.0.
+
+“Commercial Use” means any monetization of:
+
+• The ShatteredArchive Software itself;
+• A Derivative Work of the ShatteredArchive Software;
+• A plugin, extension, module, or theme built specifically for the
+  ShatteredArchive Software;
+• A materially modified version of the ShatteredArchive Software used
+  as part of a monetized product or service.
 
 Commercial Use DOES NOT include:
-  • Revenue from unrelated products or services;
-  • Revenue from other applications produced by the same company;
-  • General corporate revenue not derived from the Software;
-  • Donations, tips, or voluntary contributions not tied to the use or access
-    of the Software or Derivative Works;
-  • Software or services that merely interoperate with the Software but do not
-    include or incorporate any portion of the Software.
 
-“You” means any individual or legal entity exercising rights under this License.
+• Revenue from services that merely integrate with or communicate with
+  the ShatteredArchive Software;
+• Hosting or operating the ShatteredArchive Software internally without
+  monetizing it;
+• Third-party products or services that interoperate with the
+  ShatteredArchive Software via APIs, protocols, protocols, or data
+  exchange;
+• Donations, tips, or voluntary contributions not tied to access or usage.
 
-1. Grant of Commercial License
+----------------------------------------------------------------------
+Grant of Commercial License
+----------------------------------------------------------------------
 
-Subject to compliance with this License, the Licensor grants You a non-exclusive,
-worldwide license to:
+Subject to compliance with this License and confirmation by the Licensor,
+the Licensor grants You a non-exclusive, worldwide license to monetize
+the ShatteredArchive Software as defined under Commercial Use.
 
-  • Use the Software for commercial purposes;
-  • Modify the Software;
-  • Reproduce and distribute the Software and Derivative Works;
-  • Create and sell plugins, modules, extensions, or themes for the Software.
+----------------------------------------------------------------------
+Royalty Requirement
+----------------------------------------------------------------------
 
-This License applies ONLY to commercial activity involving the Software or its
-Derivative Works. Noncommercial use remains permitted under the Apache License 2.0.
+You must remit a recurring royalty equal to:
 
-3. Ongoing Royalty Requirement for Commercial Distribution
+**Ten percent (10%) of all gross revenue directly derived from
+Commercial Use of the ShatteredArchive Software or Derivative Works.**
 
-If You commercially distribute, sell, license, or otherwise profit from the
-Software, a Derivative Work, or any plugin/module/extension built for the
-Software, You must:
+This obligation continues for as long as such revenue is generated.
 
-  (a) Provide written notice to the Licensor at:
-      legal@shatteredarchive.com
+----------------------------------------------------------------------
+Payment Schedule
+----------------------------------------------------------------------
 
-  (b) Remit to the Licensor a recurring royalty equal to:
-      **Ten percent (10%) of all gross revenue directly derived from such
-      commercial distribution, on an ongoing basis, for as long as such
-      revenue continues to be generated.**
+Payments are due quarterly within fifteen (15) days after the end of each
+calendar quarter, unless otherwise agreed in writing.
 
-This royalty is **not a one-time fee**.  
-It is a **continuous, recurring financial obligation** tied to ongoing
-commercial revenue.
+Monthly payment schedules may be elected with written notice.
 
-4. Payment Schedule
+----------------------------------------------------------------------
+Termination
+----------------------------------------------------------------------
 
-4.1 **Royalty payments must be made on a quarterly basis**, within fifteen (15)
-days after the end of each calendar quarter, unless a different written schedule
-is agreed upon by both parties.
+Failure to comply with this License or the associated commercial
+agreement terminates all commercial rights granted herein.
 
-4.2 Each payment must include a revenue statement specifying:
-  • Total gross revenue derived from Commercial Use for the period;  
-  • Calculation of the 10% royalty;  
-  • A description of the commercial products or services generating revenue.
-
-4.3 If Your organization requires a monthly accounting cycle, You may elect to
-remit **monthly payments** instead of quarterly payments, provided You notify
-the Licensor in writing.
-
-4.4 The ongoing royalty obligation **continues for the entire duration** that the
-Software, Derivative Works, or licensed plugins/extensions generate revenue.
-
-5. No Removal of Notices
-
-All copyright notices, attribution notices, and copies of this License must be
-preserved in any redistribution of the Software or Derivative Works.
-
-6. No Trademark Rights
-
-Nothing in this License grants permission to use the Licensor’s trademarks,
-service marks, product names, or branding, except as permitted by law.
-
-7. Disclaimer of Warranty
-
-THE SOFTWARE IS PROVIDED “AS IS,” WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
-
-8. Limitation of Liability
-
-IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY INDIRECT, SPECIAL, INCIDENTAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OF THE SOFTWARE,
-EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-9. Termination
-
-Failure to comply with this License—including failure to make timely ongoing
-royalty payments—automatically terminates all rights granted herein. Termination
-does not affect rights granted under the Apache License 2.0 for noncommercial use.
-
-10. Entire Agreement
-
-This License constitutes the entire agreement for commercial use of the Software
-and supersedes any conflicting terms in the Apache License 2.0 for such use.
-
+----------------------------------------------------------------------
 END OF TERMS
+----------------------------------------------------------------------
