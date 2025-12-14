@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
+import { shouldOmitLine } from '../features/userScripts/triggerOmitStore';
 
 export function useTerminal() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -76,16 +77,48 @@ export function useTerminal() {
     const handleTerminalData = (ev: Event) => {
       const e = ev as CustomEvent<{ text: string }>;
       const text = e.detail?.text ?? '';
-      if (!text || !termRef.current) return;
+      const term = termRef.current;
+      if (!text || !term) return;
 
-      termRef.current.write(text);
+      // Fast path: if nothing to filter, write as-is
+      // (we can't directly know if store is empty without exposing it; ok to always run filter)
+      // We'll do a cheap line scan and only rebuild output if we actually omit anything.
 
-      // Let xterm manage scroll sync instead of touching scrollTop directly
+      let start = 0;
+      let out: string | null = null;
+
+      for (let i = 0; i <= text.length; i++) {
+        const ch = i < text.length ? text.charCodeAt(i) : 10; // sentinel \n
+        if (ch === 10 || i === text.length) {
+          const rawEnd = i < text.length ? i + 1 : i;
+
+          // line excludes trailing \r
+          let end = i;
+          if (end > start && text.charCodeAt(end - 1) === 13) end--;
+
+          const line = end > start ? text.slice(start, end) : '';
+          const rawLine = text.slice(start, rawEnd);
+
+          const omit = line.length > 0 && shouldOmitLine('text:line', line);
+
+          if (omit) {
+            if (out === null) out = text.slice(0, start); // create buffer lazily
+            // skip this line (don’t append rawLine)
+          } else if (out !== null) {
+            out += rawLine;
+          }
+
+          start = i + 1;
+        }
+      }
+
+      term.write(out ?? text);
+
       if (autoScrollRef.current) {
         try {
-          termRef.current.scrollToBottom();
+          term.scrollToBottom();
         } catch {
-          // ignore; terminal might be mid-resize/refresh
+          // ignore
         }
       }
     };

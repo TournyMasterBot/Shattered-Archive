@@ -107,7 +107,7 @@ function load(): AudioSettings {
       : [];
 
     const includeRules = Array.isArray(parsed.includeRules)
-      ? parsed.includeRules
+      ? (parsed.includeRules
           .map((r: any) => {
             const id = String(r?.id ?? '').trim() || `rule_${Math.random().toString(36).slice(2)}`;
             const pattern = String(r?.pattern ?? '').trim();
@@ -120,7 +120,7 @@ function load(): AudioSettings {
               sound: r?.sound ? normalizeBeepSound(r.sound, defaultBeep) : undefined,
             } as InclusionRule;
           })
-          .filter(Boolean) as InclusionRule[]
+          .filter(Boolean) as InclusionRule[])
       : [];
 
     return {

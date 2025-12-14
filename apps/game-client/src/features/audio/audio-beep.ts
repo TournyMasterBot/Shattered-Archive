@@ -141,9 +141,7 @@ export async function playBeepSound(sound: BeepSound) {
   }
 }
 
-export type BeepDecision =
-  | { shouldBeep: false }
-  | { shouldBeep: true; sound: BeepSound; reason: 'bell' | 'include' };
+export type BeepDecision = { shouldBeep: false } | { shouldBeep: true; sound: BeepSound; reason: 'bell' | 'include' };
 
 export function decideBeepForLine(line: string, settings: AudioSettings): BeepDecision {
   if (!settings.beepsEnabled) return { shouldBeep: false };

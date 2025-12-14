@@ -148,7 +148,11 @@ function isClearlyNotChatPrefix(buf: string, start: number, end: number): boolea
  * - closing quote must be followed by a boundary (space/punct/end)
  * - must have a matching close quote later
  */
-function findMessageOpenQuote(buf: string, start: number, end: number): { open: number; close: number; q: number } | null {
+function findMessageOpenQuote(
+  buf: string,
+  start: number,
+  end: number,
+): { open: number; close: number; q: number } | null {
   for (let i = start; i < end; i++) {
     const c = buf.charCodeAt(i);
 

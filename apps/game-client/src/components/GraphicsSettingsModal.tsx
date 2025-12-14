@@ -184,8 +184,7 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
                 onClick={() => setActiveNav(item.key)}
               >
                 <div className={styles.navLabel}>{item.label}</div>
-                {item.hint && <div className={styles.navHint}>{item.hint}</div>
-                }
+                {item.hint && <div className={styles.navHint}>{item.hint}</div>}
               </button>
             ))}
           </div>
@@ -212,12 +211,7 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
                 >
                   Discard
                 </button>
-                <button
-                  type="button"
-                  className={styles.saveButton}
-                  onClick={handleSave}
-                  disabled={!hasDraftChanges}
-                >
+                <button type="button" className={styles.saveButton} onClick={handleSave} disabled={!hasDraftChanges}>
                   Save
                 </button>
               </div>
@@ -245,7 +239,8 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
                 </label>
 
                 <div className={styles.hint}>
-                  These are placeholders for your upcoming renderer/terminal tuning. Saving persists per-browser for now.
+                  These are placeholders for your upcoming renderer/terminal tuning. Saving persists per-browser for
+                  now.
                 </div>
               </div>
             )}
@@ -309,7 +304,9 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
         </div>
 
         {/* Small-screen note (optional) */}
-        {isSmallScreen && <div className={styles.mobileFooterHint}>Tip: swipe/scroll the settings pane if it’s long.</div>}
+        {isSmallScreen && (
+          <div className={styles.mobileFooterHint}>Tip: swipe/scroll the settings pane if it’s long.</div>
+        )}
       </div>
     </div>
   );

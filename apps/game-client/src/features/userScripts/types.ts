@@ -19,6 +19,12 @@ export interface TriggerScript extends BaseUserScript {
   matchText: string;
   kind: 'trigger';
   eventName: string;
+
+  /**
+   * If true, matching text:line output should be omitted from the visible terminal,
+   * while still allowing actions to run.
+   */
+  omitFromOutput?: boolean;
 }
 
 /**

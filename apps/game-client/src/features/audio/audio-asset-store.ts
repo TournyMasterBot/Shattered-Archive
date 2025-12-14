@@ -26,7 +26,10 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
-function tx<T>(mode: IDBTransactionMode, fn: (store: IDBObjectStore, done: (v: T) => void, fail: (e: any) => void) => void) {
+function tx<T>(
+  mode: IDBTransactionMode,
+  fn: (store: IDBObjectStore, done: (v: T) => void, fail: (e: any) => void) => void,
+) {
   return openDb().then(
     (db) =>
       new Promise<T>((resolve, reject) => {

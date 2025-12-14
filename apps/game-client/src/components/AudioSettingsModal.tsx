@@ -412,7 +412,9 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({ isOpen, 
                   })}
                 </div>
 
-                <div className={styles.hint}>If a rule is too noisy, prefer adding an exclusion line that matches it.</div>
+                <div className={styles.hint}>
+                  If a rule is too noisy, prefer adding an exclusion line that matches it.
+                </div>
               </div>
             )}
           </div>
