@@ -110,39 +110,64 @@ function containsSoh(payload: unknown): boolean {
   return false;
 }
 
+/**
+ * Exported for unit tests.
+ * Returns a *format factory* (call it like `sohGate()` inside format.combine).
+ *
+ * Behavior:
+ * - If a line contains SOH and (optionally) eventType is allowlisted => toggle and DROP that SOH line.
+ * - If logging is disabled => DROP ALL logs.
+ */
+export function createSohGateFormat(args: {
+  enabled: boolean;
+  sohToggleEventTypes?: string[];
+  containsSohFn?: (payload: unknown) => boolean;
+  getEventType?: (info: winston.Logform.TransformableInfo) => string;
+  getPayload?: (info: winston.Logform.TransformableInfo) => unknown;
+}): winston.Logform.FormatWrap {
+  const {
+    enabled,
+    sohToggleEventTypes,
+    containsSohFn = containsSoh,
+    getEventType = (info) => String(info.message ?? ''),
+    getPayload = (info) => (info as any).payload,
+  } = args;
+
+  const sohTypes = sohToggleEventTypes?.length ? new Set(sohToggleEventTypes) : undefined;
+
+  // Closure owns toggle state for this format instance
+  let loggingEnabled = true;
+
+  return winston.format((info) => {
+    if (!enabled) return info;
+
+    const eventType = getEventType(info);
+    const payload = getPayload(info);
+
+    const canToggle = !sohTypes || sohTypes.has(eventType);
+    if (canToggle && containsSohFn(payload)) {
+      loggingEnabled = !loggingEnabled;
+      return false; // drop the SOH marker line itself
+    }
+
+    if (!loggingEnabled) return false;
+
+    return info;
+  });
+}
+
 export class Logger implements ILogger {
   private level: LogLevel;
   private logger: winston.Logger;
-
-  // Gate state — shared across ALL event types and ALL transports
-  private loggingEnabled = true;
 
   constructor(props: ExtendedLoggerProps) {
     this.level = props.level;
 
     const transports: winston.transport[] = [];
-    const sohTypes = props.sohToggleEventTypes?.length ? new Set(props.sohToggleEventTypes) : undefined;
 
-    /**
-     * SOH Gate (global):
-     * - If a line contains SOH and (optionally) eventType is allowlisted => toggle loggingEnabled and DROP that SOH line.
-     * - If loggingEnabled is false => DROP ALL logs (regardless of eventType / transport).
-     */
-    const sohGate = winston.format((info) => {
-      if (!props.diskToggleOnSoh) return info;
-
-      const eventType = String(info.message ?? '');
-      const payload = (info as any).payload;
-
-      const canToggle = !sohTypes || sohTypes.has(eventType);
-      if (canToggle && containsSoh(payload)) {
-        this.loggingEnabled = !this.loggingEnabled;
-        return false; // always drop the SOH “toggle marker” line itself
-      }
-
-      if (!this.loggingEnabled) return false;
-
-      return info;
+    const sohGate = createSohGateFormat({
+      enabled: !!props.diskToggleOnSoh,
+      sohToggleEventTypes: props.sohToggleEventTypes,
     });
 
     // ------------------------
