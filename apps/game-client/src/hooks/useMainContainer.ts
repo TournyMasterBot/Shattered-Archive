@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, CSSProperties } from 'react';
 import type React from 'react';
 import { initBrowserLuaRunner } from '../features/userScripts/luaRuntime';
+import { ensureAudioRuntimeAttached } from '../features/audio/audio-runtime';
 
 /* -------------------------------------------
    Layout constants
@@ -108,7 +109,7 @@ export function useLayoutSizing() {
 /* -------------------------------------------
    Hook: top menu state
 -------------------------------------------- */
-type GameSettingsSection = 'Graphics' | 'Audio' | 'Controls' | null;
+type GameSettingsSection = 'Graphics' | 'Audio' | null;
 
 export function useMenuState() {
   const [openRootMenu, setOpenRootMenu] = useState<string | null>(null);
@@ -216,6 +217,10 @@ export function useMainContainer() {
         console.error('[Lua] Failed to initialize Lua runtime:', err);
       }
     }
+  }, []);
+
+  useEffect(() => {
+    ensureAudioRuntimeAttached();
   }, []);
 
   // Only connect modal open/close lives here now

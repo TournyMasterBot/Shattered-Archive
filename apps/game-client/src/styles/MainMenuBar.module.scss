@@ -102,6 +102,19 @@
   display: block;
 }
 
+/* Make <a> look exactly like .subMenuItem divs */
+.subMenuLink {
+  color: inherit;
+  text-decoration: none;
+  display: block; /* ensures full row clickable like div */
+}
+
+/* Optional: nicer keyboard focus without changing layout */
+.subMenuLink:focus-visible {
+  outline: 1px solid #444;
+  outline-offset: -1px;
+}
+
 /* -------------------------------------------------
    RESPONSIVE (SUBMENUS + MENU BAR)
 -------------------------------------------------- */

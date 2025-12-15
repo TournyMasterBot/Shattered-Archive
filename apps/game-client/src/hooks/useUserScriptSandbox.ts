@@ -10,6 +10,7 @@ import {
   UserScriptKind,
 } from '../features/userScripts/types';
 import { runUserScript, runTimerScript } from '../features/userScripts/runtime';
+import { setOmitRules } from '../features/userScripts/triggerOmitStore';
 
 const STORAGE_KEY_PREFIX = 'shatteredArchive.userScripts.';
 
@@ -208,6 +209,25 @@ export function useUserScriptSandbox(connectionId?: string | null) {
       console.error('[UserScriptSandbox] Failed to save scripts:', err);
     }
   }, [scripts, connectionId]);
+
+  useEffect(() => {
+    if (!scripts) {
+      setOmitRules([]);
+      return;
+    }
+
+    const omitRules = scripts
+      .filter((s) => s.kind === 'trigger' && s.enabled)
+      .filter((s: any) => !!s.omitFromOutput)
+      .map((s: any) => ({
+        id: s.id,
+        eventName: s.eventName || 'text:line',
+        matchText: s.matchText || '',
+        caseInsensitive: true,
+      }));
+
+    setOmitRules(omitRules);
+  }, [scripts]);
 
   // Manage timers whenever scripts, socket state, or connection change
   useEffect(() => {

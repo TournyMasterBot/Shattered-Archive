@@ -1,4 +1,3 @@
-// apps/game-client/src/components/UserScriptSandboxModal.tsx
 import React, { useState, useEffect } from 'react';
 import { useUserScriptSandbox } from '../hooks/useUserScriptSandbox';
 import {
@@ -47,6 +46,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
   const [triggerEventName, setTriggerEventName] = useState<string>('example:event');
   const [triggerMatchText, setTriggerMatchText] = useState<string>('');
   const [triggerTestInput, setTriggerTestInput] = useState<string>('');
+  const [triggerOmitFromOutput, setTriggerOmitFromOutput] = useState<boolean>(false);
 
   // Alias-specific state
   const [aliasKey, setAliasKey] = useState<string>('');
@@ -83,6 +83,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       setTriggerEventName('example:event');
       setTriggerMatchText('');
       setTriggerTestInput('');
+      setTriggerOmitFromOutput(false);
       setAliasKey('');
       setTimerIntervalSeconds('');
     }
@@ -97,6 +98,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
     setTriggerEventName('example:event');
     setTriggerMatchText('');
     setTriggerTestInput('');
+    setTriggerOmitFromOutput(false);
     setAliasKey('');
     setTimerIntervalSeconds('');
   }, [activeTab]);
@@ -117,6 +119,9 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
   const baseTriggerMatchText =
     selectedScript && selectedScript.kind === 'trigger' ? ((selectedScript as TriggerScript).matchText ?? '') : '';
 
+  const baseTriggerOmitFromOutput =
+    selectedScript && selectedScript.kind === 'trigger' ? !!(selectedScript as TriggerScript).omitFromOutput : false;
+
   const baseTimerIntervalSeconds =
     selectedScript && selectedScript.kind === 'timer'
       ? String(
@@ -135,11 +140,12 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       editorSource !== selectedScript.source ||
       editorLanguage !== selectedScript.language ||
       (selectedScript.kind === 'trigger' &&
-        (triggerEventName !== baseTriggerEventName || triggerMatchText !== baseTriggerMatchText)) ||
+        (triggerEventName !== baseTriggerEventName ||
+          triggerMatchText !== baseTriggerMatchText ||
+          triggerOmitFromOutput !== baseTriggerOmitFromOutput)) ||
       (selectedScript.kind === 'timer' && timerIntervalSeconds !== baseTimerIntervalSeconds) ||
       (selectedScript.kind === 'alias' && aliasKey !== baseAliasKey));
 
-  // Make sure hooks are all declared above this line
   if (!isOpen) {
     return null;
   }
@@ -156,6 +162,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       const trig = script as TriggerScript;
       setTriggerEventName(trig.eventName ?? 'example:event');
       setTriggerMatchText(trig.matchText ?? '');
+      setTriggerOmitFromOutput(!!trig.omitFromOutput);
       setAliasKey('');
       setTimerIntervalSeconds('');
     } else if (script.kind === 'timer') {
@@ -164,16 +171,19 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       setTimerIntervalSeconds(String(secs));
       setTriggerEventName('example:event');
       setTriggerMatchText('');
+      setTriggerOmitFromOutput(false);
       setAliasKey('');
     } else if (script.kind === 'alias') {
       const a = script as AliasScript;
       setAliasKey(a.alias ?? '');
       setTriggerEventName('example:event');
       setTriggerMatchText('');
+      setTriggerOmitFromOutput(false);
       setTimerIntervalSeconds('');
     } else {
       setTriggerEventName('example:event');
       setTriggerMatchText('');
+      setTriggerOmitFromOutput(false);
       setAliasKey('');
       setTimerIntervalSeconds('');
     }
@@ -192,6 +202,7 @@ log("Trigger fired");
 sendCommand("say Hello from trigger");`,
         eventName: 'example:event',
         matchText: '',
+        omitFromOutput: false,
       });
       handleSelectScript(s);
       setActiveTab('triggers');
@@ -234,6 +245,7 @@ sendCommand("score");`,
       const trig = updated as TriggerScript;
       trig.eventName = triggerEventName || 'example:event';
       trig.matchText = triggerMatchText || '';
+      trig.omitFromOutput = !!triggerOmitFromOutput;
     } else if (updated.kind === 'timer') {
       const secs = Number(timerIntervalSeconds);
       const clampedSecs = Number.isFinite(secs) && secs > 0 ? secs : 5;
@@ -256,6 +268,7 @@ sendCommand("score");`,
     if (selectedScript.kind === 'trigger') {
       setTriggerEventName(baseTriggerEventName);
       setTriggerMatchText(baseTriggerMatchText);
+      setTriggerOmitFromOutput(baseTriggerOmitFromOutput);
     } else if (selectedScript.kind === 'timer') {
       setTimerIntervalSeconds(baseTimerIntervalSeconds);
     } else if (selectedScript.kind === 'alias') {
@@ -276,6 +289,7 @@ sendCommand("score");`,
     setTriggerEventName('example:event');
     setTriggerMatchText('');
     setTriggerTestInput('');
+    setTriggerOmitFromOutput(false);
     setAliasKey('');
     setTimerIntervalSeconds('');
   };
@@ -314,6 +328,7 @@ sendCommand("score");`,
       const trig = draft as TriggerScript;
       trig.eventName = triggerEventName || 'example:event';
       trig.matchText = triggerMatchText || '';
+      trig.omitFromOutput = !!triggerOmitFromOutput;
     } else if (draft.kind === 'timer') {
       const secs = Number(timerIntervalSeconds);
       const clampedSecs = Number.isFinite(secs) && secs > 0 ? secs : 5;
@@ -378,7 +393,6 @@ sendCommand("score");`,
   return (
     <div className={styles.backdrop}>
       <div className={styles.modal} style={modalStyle}>
-        {/* Header */}
         <div className={styles.header}>
           <div className={styles.title}>User Script Sandbox</div>
           <button type="button" className={styles.closeButton} onClick={onClose}>
@@ -386,7 +400,6 @@ sendCommand("score");`,
           </button>
         </div>
 
-        {/* Tabs */}
         <div className={styles.tabs}>
           <button
             type="button"
@@ -414,9 +427,7 @@ sendCommand("score");`,
           </button>
         </div>
 
-        {/* Body */}
         <div className={styles.body}>
-          {/* Left list */}
           <div className={styles.listPane}>
             {scriptsOfKind(activeTab === 'triggers' ? 'trigger' : activeTab === 'aliases' ? 'alias' : 'timer').map(
               (script) => (
@@ -443,7 +454,6 @@ sendCommand("score");`,
             )}
           </div>
 
-          {/* Right editor */}
           <div className={styles.editorPane}>
             {selectedScript ? (
               <>
@@ -455,7 +465,6 @@ sendCommand("score");`,
                     placeholder="Script name"
                   />
 
-                  {/* Language selector */}
                   <label className={styles.languageLabel}>
                     <select
                       className={styles.languageSelect}
@@ -504,7 +513,6 @@ sendCommand("score");`,
                   </button>
                 </div>
 
-                {/* Trigger configuration */}
                 {selectedScript.kind === 'trigger' && (
                   <div className={styles.triggerConfigRow}>
                     <label className={styles.configLabel}>
@@ -542,10 +550,18 @@ sendCommand("score");`,
                         placeholder="Simulated event payload"
                       />
                     </label>
+
+                    <label className={`${styles.enabledToggle} ${styles.omitToggle}`}>
+                      <input
+                        type="checkbox"
+                        checked={triggerOmitFromOutput}
+                        onChange={(e) => setTriggerOmitFromOutput(e.target.checked)}
+                      />
+                      <span>Omit from output</span>
+                    </label>
                   </div>
                 )}
 
-                {/* Alias configuration */}
                 {selectedScript.kind === 'alias' && (
                   <div className={styles.timerConfigRow}>
                     <label className={styles.configLabel}>
@@ -561,7 +577,6 @@ sendCommand("score");`,
                   </div>
                 )}
 
-                {/* Timer configuration */}
                 {selectedScript.kind === 'timer' && (
                   <div className={styles.timerConfigRow}>
                     <label className={styles.configLabel}>
@@ -590,7 +605,6 @@ sendCommand("score");`,
           </div>
         </div>
 
-        {/* Errors */}
         {errors.length > 0 && (
           <div className={styles.errorPanel}>
             <div className={styles.errorHeader}>
@@ -612,7 +626,6 @@ sendCommand("score");`,
           </div>
         )}
 
-        {/* Desktop-only resize handle */}
         {!isSmallScreen && <div className={styles.resizeHandle} onMouseDown={handleResizeMouseDown} />}
       </div>
     </div>

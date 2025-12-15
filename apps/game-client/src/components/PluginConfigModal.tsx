@@ -1,4 +1,3 @@
-// apps/game-client/src/components/PluginConfigModal.tsx
 import React from 'react';
 import { createPortal } from 'react-dom';
 import styles from '../styles/PluginConfigModal.module.scss';
@@ -25,13 +24,19 @@ function toNumberOrUndefined(raw: string): number | undefined {
 export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({ isOpen, onClose, connectionId, pluginId }) => {
   const { getInstallRecord, updatePluginConfig, installCorePlugin } = usePlugins(connectionId);
 
+  // ✅ hooks must be unconditional / always in the same order
   const firstInputRef = React.useRef<HTMLInputElement | null>(null);
-
-  const def = findCorePlugin(pluginId);
-  const mod = def?.create();
-  const schema = mod?.configSchema;
+  const shouldCloseRef = React.useRef(false);
 
   const record = getInstallRecord(pluginId);
+
+  // Only build plugin + schema when open (avoids unnecessary create() calls)
+  const { mod, schema } = React.useMemo(() => {
+    if (!isOpen) return { mod: undefined as any, schema: undefined as any };
+    const def = findCorePlugin(pluginId);
+    const created = def?.create();
+    return { mod: created, schema: created?.configSchema };
+  }, [isOpen, pluginId]);
 
   // Ensure install record exists so config persists
   React.useEffect(() => {
@@ -42,59 +47,45 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({ isOpen, on
   }, [isOpen, pluginId]);
 
   const defaults = schema?.defaults ?? {};
-  const initialCfg = React.useMemo(() => ({ ...defaults, ...(record?.userConfig ?? {}) }), [pluginId, isOpen, record]);
 
-  const [draft, setDraft] = React.useState<Record<string, unknown>>(initialCfg);
+  // ✅ include defaults in deps (it changes when schema changes)
+  const initialCfg = React.useMemo(() => ({ ...defaults, ...(record?.userConfig ?? {}) }), [defaults, record]);
+
+  const [draft, setDraft] = React.useState<Record<string, unknown>>(() => initialCfg);
 
   React.useEffect(() => {
     if (!isOpen) return;
+
     setDraft(initialCfg);
     const t = window.setTimeout(() => firstInputRef.current?.focus(), 0);
     return () => window.clearTimeout(t);
-  }, [isOpen, pluginId, initialCfg, record]);
-
-  if (!isOpen) return null;
+  }, [isOpen, initialCfg]);
 
   const updateDraft = (key: string, value: unknown) => {
     setDraft((prev) => ({ ...prev, [key]: value }));
-    // Do not persist here; only update local draft state.
   };
 
   const save = () => {
-    setDraft((currentDraft) => {
-      const cleaned = Object.fromEntries(Object.entries(currentDraft).filter(([, v]) => v !== undefined)) as Record<
-        string,
-        unknown
-      >;
-      // Debug: log the config being saved
-      // eslint-disable-next-line no-console
-      console.debug('[PluginConfigModal] Saving userConfig for', pluginId, cleaned);
-      updatePluginConfig(pluginId, cleaned);
-      pluginHost.updateEnabledPluginConfig(pluginId, cleaned);
-      onClose();
-      return currentDraft;
-    });
+    const cleaned = Object.fromEntries(Object.entries(draft).filter(([, v]) => v !== undefined)) as Record<
+      string,
+      unknown
+    >;
+
+    console.debug('[PluginConfigModal] Saving userConfig for', pluginId, cleaned);
+    updatePluginConfig(pluginId, cleaned);
+    pluginHost.updateEnabledPluginConfig(pluginId, cleaned);
+    onClose();
   };
 
-  // ----------------------------
-  // ✅ Backdrop close guard:
+  // Backdrop close guard:
   // Only close if pointer DOWN started on backdrop itself.
-  // ----------------------------
-  const shouldCloseRef = React.useRef(false);
-
   const onBackdropPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    // Only if the actual element pressed is the backdrop (not a child).
     shouldCloseRef.current = e.target === e.currentTarget;
   };
 
   const onBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Prevent "drag out then mouseup" from closing:
-    // we only close if pointerdown started on backdrop
     if (!shouldCloseRef.current) return;
-
-    // Also ensure this click is really on backdrop
     if (e.target !== e.currentTarget) return;
-
     onClose();
   };
 
@@ -106,6 +97,9 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({ isOpen, on
     e.stopPropagation();
     if (e.key === 'Escape') onClose();
   };
+
+  // ✅ return after all hooks are declared
+  if (!isOpen) return null;
 
   const modal = (
     <div
@@ -135,7 +129,7 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({ isOpen, on
           {!schema || schema.fields.length === 0 ? (
             <div className={styles.empty}>This plugin has no configuration.</div>
           ) : (
-            schema.fields.map((f, idx) => {
+            schema.fields.map((f: any, idx: any) => {
               const value = draft[f.key];
 
               if (f.type === 'number') {

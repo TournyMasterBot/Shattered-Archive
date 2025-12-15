@@ -112,6 +112,13 @@ in parallel.
 
 ---
 
+## Start the service
+### Game Client
+http://localhost:30080/
+
+### Web Client
+http://localhost:40080/
+
 ## Documentation
 
 Additional documentation can be found in the `docs/` directory and on
