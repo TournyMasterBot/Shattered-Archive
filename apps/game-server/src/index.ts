@@ -12,7 +12,18 @@ import type * as https from 'node:https';
 import { WebSocketServer, WebSocket } from 'ws';
 import { Logger } from '@shatteredarchive/services-server';
 const log = new Logger({
+  consoleLevel: LogLevel.Debug,
+  diskJsonLevel: LogLevel.Debug,
+  diskJsonEnabled: true,
+  diskJsonPath: process.env.JSON_LOG_FILE_PATH ?? './log/server.log.jsonl',
   level: LogLevel.Debug,
+  fileLevel: LogLevel.Debug,
+  filePath: process.env.LOG_FILE_PATH ?? './log/server.log',
+  maxSize: process.env.LOG_MAX_FILE_SIZE ?? undefined,
+  maxFiles: process.env.LOG_MAX_FILES ?? undefined,
+  datePartitioned: Boolean(process.env.LOG_DATE_PARTITIONED ?? 'false'),
+  diskToggleOnSoh: Boolean(process.env.LOG_RESPECT_SOH ?? 'true'),
+  sohToggleEventTypes: ['game:remote-server:raw', 'game:client:input'],
 });
 /**
  * ---------------------------------------------------------------------------
@@ -162,9 +173,10 @@ function setupGameWebSocketGateway(server: http.Server | https.Server) {
     let mudApp: MudClientApp | null = null;
     let closed = false;
 
-    const sendToClient = (msg: ServerMessage) => {
+    const sendToClient = (origin: string, msg: ServerMessage) => {
       if (closed) return;
       if (ws.readyState === WebSocket.OPEN) {
+        log.debug(origin, msg);
         ws.send(JSON.stringify(msg));
       }
     };
@@ -190,16 +202,18 @@ function setupGameWebSocketGateway(server: http.Server | https.Server) {
     ws.on('message', async (raw: Buffer) => {
       let msg: ClientMessage;
       try {
-        msg = JSON.parse(raw.toString('utf8')) as ClientMessage;
+        const remoteRaw = raw.toString('utf-8');
+        log.debug('game:client:input', remoteRaw);
+        msg = JSON.parse(remoteRaw) as ClientMessage;
       } catch {
-        sendToClient({ type: 'error', message: 'Invalid JSON payload' });
+        sendToClient('game:client:input:error', { type: 'error', message: 'Invalid JSON payload' });
         return;
       }
 
       // First message must be connect
       if (!mudApp) {
         if (msg.type !== 'connect') {
-          sendToClient({ type: 'error', message: 'First message must be type="connect"' });
+          sendToClient('game:server:connect:error', { type: 'error', message: 'First message must be type="connect"' });
           return;
         }
 
@@ -207,12 +221,12 @@ function setupGameWebSocketGateway(server: http.Server | https.Server) {
         const port = Number(msg.port);
 
         if (!host || !Number.isFinite(port) || port <= 0 || port > 65535) {
-          sendToClient({ type: 'error', message: 'Invalid host/port' });
+          sendToClient('game:server:connect:error', { type: 'error', message: 'Invalid host/port' });
           return;
         }
 
         if (!isTargetAllowed(host, port)) {
-          sendToClient({
+          sendToClient('game:server:connect:error', {
             type: 'error',
             message: `Target ${host}:${port} is not on the allowed list`,
           });
@@ -236,50 +250,36 @@ function setupGameWebSocketGateway(server: http.Server | https.Server) {
 
         // Wire telnet events → client
         telnet.on('dataReceived', (text: string) => {
-          log.debug('[game-server] TELNET RAW', {
-            text,
-          });
-          sendToClient({ type: 'raw', data: text });
+          sendToClient('game:remote-server:raw', { type: 'raw', data: text });
         });
 
         telnet.on('gmcpReceived', (gmcp: string) => {
-          log.debug('[game-server] TELNET GMCP', {
-            gmcp,
-          });
-          sendToClient({ type: 'gmcp', data: gmcp });
+          sendToClient('game:remote-server:gmcp', { type: 'gmcp', data: gmcp });
         });
 
         telnet.on('error', (err: Error) => {
-          log.error('[game-server] TELNET ERROR', {
-            err,
-          });
-          sendToClient({ type: 'error', message: `Remote error: ${err.message}` });
+          sendToClient('game:remote-server:error', { type: 'error', message: `Remote error: ${err.message}` });
           closeBoth('telnet-error');
         });
 
         telnet.on('connectionClosed', () => {
-          log.debug('[game-server] TELNET connection closed');
-          sendToClient({ type: 'close', reason: 'remote-closed' });
+          sendToClient('game:remote-server:connection:closed', { type: 'close', reason: 'remote-closed' });
           closeBoth('remote-closed');
         });
 
         telnet.on('disconnect', () => {
-          log.debug('[game-server] TELNET disconnect emitted');
-          sendToClient({ type: 'close', reason: 'remote-disconnect' });
+          sendToClient('game:remote-server:connection:disconnect', { type: 'close', reason: 'remote-disconnect' });
           closeBoth('remote-disconnect');
         });
 
         try {
           await telnet.Connect();
-          log.info('[game-server] Connected to remote MUD', {
+          log.info('game:remote-server:connect', {
             host,
             port,
           });
         } catch (err: any) {
-          log.error('[game-server] Failed to connect to remote MUD', {
-            err,
-          });
-          sendToClient({
+          sendToClient('game:remote-server:connection:error', {
             type: 'error',
             message: `Failed to connect to remote MUD: ${err?.message ?? 'unknown error'}`,
           });
@@ -295,10 +295,7 @@ function setupGameWebSocketGateway(server: http.Server | https.Server) {
         try {
           mudApp.MudClient.TelnetClient.Send(data);
         } catch (err: any) {
-          log.error('[game-server] Failed to send data to remote', {
-            err,
-          });
-          sendToClient({
+          sendToClient('game:remote-server:send:error', {
             type: 'error',
             message: `Failed to send data to remote: ${err?.message ?? 'unknown error'}`,
           });
@@ -308,7 +305,7 @@ function setupGameWebSocketGateway(server: http.Server | https.Server) {
 
     ws.on('close', (code: any, reasonBuf: any) => {
       const reason = reasonBuf?.toString() ?? '';
-      log.info('[game-server] WS client closed', {
+      log.info('game:server:connection:client-closed', {
         code,
         reason,
       });
@@ -316,7 +313,7 @@ function setupGameWebSocketGateway(server: http.Server | https.Server) {
     });
 
     ws.on('error', (err: any) => {
-      log.error('[game-server] WS error', {
+      log.error('game:server:connection:error', {
         err,
       });
       closeBoth('ws-error');
