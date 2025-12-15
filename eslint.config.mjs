@@ -54,7 +54,7 @@ export default [
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
       ],
 
-      // You have ANSI regex patterns; don’t fight them
+      // ANSI regex patterns; don’t fight them
       'no-control-regex': 'off',
     },
   },
