@@ -170,7 +170,6 @@ export class UserScriptRuntime {
     const context = api;
 
     try {
-      // eslint-disable-next-line no-new-func
       const fn = new Function(
         'context',
         `"use strict";

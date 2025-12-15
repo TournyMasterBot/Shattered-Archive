@@ -94,7 +94,7 @@ export class TelnetClient extends EventEmitter implements ITelnetClient {
     }
     this.config.socket?.end();
     this.config.socket?.destroy();
-    // eslint-disable-next-line no-console
+
     this.emit('disconnect');
   }
 

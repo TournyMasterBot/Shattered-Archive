@@ -1,6 +1,5 @@
 // apps/game-client/src/hooks/useRightPaneHud.ts
 import { useEffect, useState } from 'react';
-import { useTickTimer } from './useTickTimer'; // ✅ GMCP-driven countdown
 
 /** Re-export so existing imports keep working */
 export { useTickTimer } from './useTickTimer';

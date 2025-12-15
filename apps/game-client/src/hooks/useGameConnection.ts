@@ -33,6 +33,7 @@ export function useGameConnection(): UseGameConnectionResult {
   const [currentHost, setCurrentHost] = useState<string | undefined>();
   const [currentPort, setCurrentPort] = useState<number | undefined>();
   const [lastError, setLastError] = useState<string | null>(null);
+  const lastMoveAttemptRef = useRef<{ ts: number; cmd: string; dir?: string } | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -43,6 +44,19 @@ export function useGameConnection(): UseGameConnectionResult {
   // GMCP auto-enable state
   const gmcpProbeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gmcpAutoEnableRef = useRef(true);
+
+  useEffect(() => {
+    const onAttempt = (ev: Event) => {
+      const ce = ev as CustomEvent<any>;
+      const cmdRaw = ce.detail?.cmd;
+      if (cmdRaw === undefined || cmdRaw === null) return;
+      const cmd = String(cmdRaw);
+      lastMoveAttemptRef.current = { ts: Date.now(), cmd, dir: ce.detail?.dir };
+    };
+
+    window.addEventListener('game:movement-attempt', onAttempt as EventListener);
+    return () => window.removeEventListener('game:movement-attempt', onAttempt as EventListener);
+  }, []);
 
   const clearGmcpProbe = () => {
     if (gmcpProbeTimerRef.current) {
@@ -139,6 +153,24 @@ export function useGameConnection(): UseGameConnectionResult {
     (text: string) => {
       // 0) emit raw chunk (you asked for raw text from raw event)
       dispatchSafe('game:telnet-raw-chunk', { text });
+
+      const last = lastMoveAttemptRef.current;
+      if (last && Date.now() - last.ts < 1500) {
+        if (
+          text.includes("You can't go that way") ||
+          text.includes('Alas, you cannot go that way') ||
+          text.includes('You cannot go that way') ||
+          text.includes('No exit that way')
+        ) {
+          dispatchSafe('game:movement-failed', {
+            cmd: last.cmd,
+            dir: last.dir,
+            ts: Date.now(),
+            reasonLine: text,
+          });
+          lastMoveAttemptRef.current = null;
+        }
+      }
 
       // 1) existing behavior: terminal display
       emitTerminalText(text);
@@ -308,6 +340,16 @@ export function useGameConnection(): UseGameConnectionResult {
 
                     case 'room_data': {
                       window.dispatchEvent(new CustomEvent('game:room-data', { detail: payload }));
+                      const last = lastMoveAttemptRef.current;
+                      if (last && Date.now() - last.ts < 5000) {
+                        dispatchSafe('game:movement-succeeded', {
+                          cmd: last.cmd,
+                          dir: last.dir,
+                          ts: Date.now(),
+                          room: payload?.room,
+                        });
+                        lastMoveAttemptRef.current = null;
+                      }
                       break;
                     }
 
