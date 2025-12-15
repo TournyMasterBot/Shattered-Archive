@@ -1,57 +1,293 @@
-import { ILogger, LoggerProps, LogLevel } from '@shatteredarchive/types-server';
+// services/services-server/src/logger-service.ts
 import path from 'path';
+import fs from 'fs';
 import winston from 'winston';
 import 'winston-daily-rotate-file';
+
+import { ILogger, LoggerProps, LogLevel } from '@shatteredarchive/types-server';
+
+type ExtendedLoggerProps = LoggerProps & {
+  // Per-transport levels (optional)
+  consoleLevel?: LogLevel;
+  fileLevel?: LogLevel;
+
+  // Raw (text) file transport (optional)
+  filePath?: string;
+
+  // JSONL disk logger (optional)
+  diskJsonEnabled?: boolean;
+  diskJsonLevel?: LogLevel;
+  diskJsonPath?: string;
+
+  // If true, partition logs into <baseDir>/<YYYY>/<MM>/<DD>/
+  datePartitioned?: boolean;
+
+  // NOTE: winston-daily-rotate-file may still create audit metadata files;
+  // there is no guaranteed "off" switch across versions.
+  disableAuditFile?: boolean;
+
+  // Toggle logging when SOH (\u0001) is seen in payload
+  // (This gates ALL transports: console + file + jsonl.)
+  diskToggleOnSoh?: boolean;
+
+  // Optional: only SOH lines on these event types toggle logging
+  // (recommended: ['game:remote-server:raw', 'game:client:input'])
+  sohToggleEventTypes?: string[];
+};
+
+function pad2(n: number): string {
+  return n < 10 ? `0${n}` : String(n);
+}
+
+function ensureDirSync(dir: string): void {
+  if (!dir) return;
+  if (fs.existsSync(dir)) return;
+  fs.mkdirSync(dir, { recursive: true });
+}
+
+function resolvePartitionedPath(filePath: string, datePartitioned: boolean | undefined): string {
+  if (!datePartitioned) return filePath;
+
+  const now = new Date();
+  const y = String(now.getFullYear());
+  const m = pad2(now.getMonth() + 1);
+  const d = pad2(now.getDate());
+
+  const dir = path.dirname(filePath);
+  const base = path.basename(filePath); // keep file name as-is
+  return path.join(dir, y, m, d, base);
+}
+
+function toJsonSafe(value: unknown): unknown {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+
+  if (Buffer.isBuffer(value)) return value.toString('utf8');
+
+  if (value instanceof Error) {
+    return { name: value.name, message: value.message, stack: value.stack };
+  }
+
+  if (typeof value === 'bigint') return value.toString();
+
+  return value;
+}
+
+function safeJsonStringify(obj: unknown): string {
+  try {
+    return JSON.stringify(obj);
+  } catch (err) {
+    const e = err as Error;
+    return JSON.stringify({
+      type: 'logger:stringify-failed',
+      timestamp: new Date().toISOString(),
+      payload: { error: e?.message ?? 'unknown error' },
+    });
+  }
+}
+
+// Detect SOH in common payload shapes: string | Buffer | {data/text: string|Buffer}
+function containsSoh(payload: unknown): boolean {
+  const SOH = '\u0001';
+
+  if (payload === undefined || payload === null) return false;
+
+  if (typeof payload === 'string') return payload.includes(SOH);
+  if (Buffer.isBuffer(payload)) return payload.includes(0x01);
+
+  if (typeof payload === 'object') {
+    const anyObj = payload as any;
+
+    const d = anyObj?.data;
+    if (typeof d === 'string' && d.includes(SOH)) return true;
+    if (Buffer.isBuffer(d) && d.includes(0x01)) return true;
+
+    const t = anyObj?.text;
+    if (typeof t === 'string' && t.includes(SOH)) return true;
+    if (Buffer.isBuffer(t) && t.includes(0x01)) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Exported for unit tests.
+ * Returns a *format factory* (call it like `sohGate()` inside format.combine).
+ *
+ * Behavior:
+ * - If a line contains SOH and (optionally) eventType is allowlisted => toggle and DROP that SOH line.
+ * - If logging is disabled => DROP ALL logs.
+ */
+export function createSohGateFormat(args: {
+  enabled: boolean;
+  sohToggleEventTypes?: string[];
+  containsSohFn?: (payload: unknown) => boolean;
+  getEventType?: (info: winston.Logform.TransformableInfo) => string;
+  getPayload?: (info: winston.Logform.TransformableInfo) => unknown;
+}): winston.Logform.FormatWrap {
+  const {
+    enabled,
+    sohToggleEventTypes,
+    containsSohFn = containsSoh,
+    getEventType = (info) => String(info.message ?? ''),
+    getPayload = (info) => (info as any).payload,
+  } = args;
+
+  const sohTypes = sohToggleEventTypes?.length ? new Set(sohToggleEventTypes) : undefined;
+
+  // Closure owns toggle state for this format instance
+  let loggingEnabled = true;
+
+  return winston.format((info) => {
+    if (!enabled) return info;
+
+    const eventType = getEventType(info);
+    const payload = getPayload(info);
+
+    const canToggle = !sohTypes || sohTypes.has(eventType);
+    if (canToggle && containsSohFn(payload)) {
+      loggingEnabled = !loggingEnabled;
+      return false; // drop the SOH marker line itself
+    }
+
+    if (!loggingEnabled) return false;
+
+    return info;
+  });
+}
 
 export class Logger implements ILogger {
   private level: LogLevel;
   private logger: winston.Logger;
 
-  constructor(props: LoggerProps) {
+  constructor(props: ExtendedLoggerProps) {
     this.level = props.level;
 
-    let transports: winston.transport[] = [];
+    const transports: winston.transport[] = [];
 
-    // Console transport
+    const sohGate = createSohGateFormat({
+      enabled: !!props.diskToggleOnSoh,
+      sohToggleEventTypes: props.sohToggleEventTypes,
+    });
+
+    // ------------------------
+    // Console transport (GATED)
+    // ------------------------
+    const consoleLevel = props.consoleLevel ?? props.level;
+
     transports.push(
       new winston.transports.Console({
-        level: props.level,
+        level: consoleLevel,
         format: winston.format.combine(
+          sohGate(),
           winston.format.timestamp(),
           winston.format.colorize(),
           winston.format.printf((info) => {
-            const { timestamp, level, message, ...rest } = info;
-            const hasMeta = Object.keys(rest).length > 0;
-            const metaPart = hasMeta ? ` ${JSON.stringify(rest)}` : '';
-            return `[${timestamp}] ${level}: ${message}${metaPart}`;
+            const type = String(info.message ?? '');
+            const payload = (info as any).payload;
+            const hasPayload = payload !== undefined;
+            const payloadPart = hasPayload ? ` ${safeJsonStringify(toJsonSafe(payload))}` : '';
+            return `[${(info as any).timestamp}] ${String(info.level)}: ${type}${payloadPart}`;
           }),
         ),
       }),
     );
 
-    // Rotating file transport (optional)
+    // ------------------------
+    // Rotating raw file transport (optional, GATED)
+    // ------------------------
     if (props.filePath) {
-      const dir = path.dirname(props.filePath);
-      const base = path.basename(props.filePath, path.extname(props.filePath) || '.log');
-      const ext = path.extname(props.filePath) || '.log';
+      const resolved = resolvePartitionedPath(props.filePath, props.datePartitioned);
+      const dir = path.dirname(resolved);
+      ensureDirSync(dir);
+
+      const base = path.basename(resolved, path.extname(resolved) || '.log');
+      const ext = path.extname(resolved) || '.log';
+
+      const fileLevel = props.fileLevel ?? props.level;
 
       transports.push(
-        new winston.transports.DailyRotateFile({
+        new (winston.transports as any).DailyRotateFile({
           dirname: dir,
-          filename: `${base}-%DATE%${ext}`, // split by day
+          filename: `${base}-%DATE%${ext}`,
           datePattern: 'YYYY-MM-DD',
-          maxSize: props.maxSize ?? '10m',
-          maxFiles: props.maxFiles ?? '14d',
-          level: props.level,
+          maxSize: props.maxSize ?? undefined,
+          maxFiles: props.maxFiles ?? undefined, // undefined = keep forever
+          level: fileLevel,
+          // NOTE: no reliable "disable audit file" across versions; leaving undefined uses library defaults
+          auditFile: undefined,
+          format: winston.format.combine(
+            sohGate(),
+            winston.format.timestamp(),
+            winston.format.printf((info) => {
+              const type = String(info.message ?? '');
+              const payload = (info as any).payload;
+              const hasPayload = payload !== undefined;
+              const payloadPart = hasPayload ? ` ${safeJsonStringify(toJsonSafe(payload))}` : '';
+              return `[${(info as any).timestamp}] ${String(info.level)}: ${type}${payloadPart}`;
+            }),
+          ),
+        }),
+      );
+    }
+
+    // ------------------------
+    // Disk JSONL transport (optional, GATED)
+    // ------------------------
+    if (props.diskJsonEnabled && props.diskJsonPath) {
+      const resolved = resolvePartitionedPath(props.diskJsonPath, props.datePartitioned);
+      const dir = path.dirname(resolved);
+      ensureDirSync(dir);
+
+      const base = path.basename(resolved, path.extname(resolved) || '.jsonl');
+      const ext = path.extname(resolved) || '.jsonl';
+
+      const diskJsonLevel = props.diskJsonLevel ?? props.level;
+
+      transports.push(
+        new (winston.transports as any).DailyRotateFile({
+          dirname: dir,
+          filename: `${base}-%DATE%${ext}`,
+          datePattern: 'YYYY-MM-DD',
+          maxSize: props.maxSize ?? undefined,
+          maxFiles: props.maxFiles ?? undefined, // undefined = keep forever
+          level: diskJsonLevel,
+          auditFile: undefined,
+          format: winston.format.combine(
+            sohGate(),
+            winston.format.timestamp(),
+            winston.format.printf((info) => {
+              const type = String(info.message ?? '');
+              const payloadRaw = (info as any).payload;
+              const payload = toJsonSafe(payloadRaw);
+
+              const subtype =
+                payloadRaw &&
+                typeof payloadRaw === 'object' &&
+                typeof (payloadRaw as any).type === 'string' &&
+                (payloadRaw as any).type
+                  ? String((payloadRaw as any).type)
+                  : '';
+
+              return safeJsonStringify({
+                type,
+                subtype,
+                level: String(info.level ?? ''),
+                timestamp: String((info as any).timestamp ?? new Date().toISOString()),
+                payload,
+              });
+            }),
+          ),
         }),
       );
     }
 
     // ---- EXTENSION HOOK FOR CLOUD LOGGING (AZURE / AWS) ----
     if (props.extendTransports) {
-      transports = props.extendTransports(transports, props);
+      const extended = props.extendTransports(transports, props);
+      transports.length = 0;
+      transports.push(...extended);
     }
-    // --------------------------------------------------------
 
     this.logger = winston.createLogger({
       levels: {
@@ -73,28 +309,23 @@ export class Logger implements ILogger {
   setLevel(level: LogLevel): void {
     this.level = level;
     this.logger.level = level;
-    this.logger.transports.forEach((t) => {
-      t.level = level;
-    });
   }
 
   debug(message: string, meta?: unknown): void {
-    meta ? this.logger.debug(message, meta) : this.logger.debug(message);
+    this.logger.log({ level: 'debug', message, payload: meta });
   }
-
   info(message: string, meta?: unknown): void {
-    meta ? this.logger.info(message, meta) : this.logger.info(message);
+    this.logger.log({ level: 'info', message, payload: meta });
   }
-
   warn(message: string, meta?: unknown): void {
-    meta ? this.logger.warn(message, meta) : this.logger.warn(message);
+    this.logger.log({ level: 'warn', message, payload: meta });
   }
-
   error(message: string, meta?: unknown): void {
-    meta ? this.logger.error(message, meta) : this.logger.error(message);
+    this.logger.log({ level: 'error', message, payload: meta });
   }
-
   fatal(message: string, meta?: unknown): void {
-    meta ? this.logger.log('fatal', message, meta) : this.logger.log('fatal', message);
+    this.logger.log({ level: 'fatal', message, payload: meta });
   }
 }
+
+export default Logger;
