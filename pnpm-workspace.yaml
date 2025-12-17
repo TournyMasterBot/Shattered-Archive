@@ -1,6 +1,9 @@
 packages:
-  - "apps/*"
-  - "sdks/*"
-  - "utils/*"
-  - "types/*"
-  - "services/*"
+  - apps/*
+  - sdks/*
+  - utils/*
+  - types/*
+  - services/*
+
+onlyBuiltDependencies:
+  - esbuild
