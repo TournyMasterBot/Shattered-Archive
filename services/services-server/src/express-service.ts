@@ -47,7 +47,7 @@ export interface IExpressService {
  * variables. Centralized so apps don’t duplicate config logic.
  *
  * Each service sets its name, but env determines:
- *  - PORT                (default 30000)
+ *  - PORT                (default 31000)
  *  - SSL_ENABLED         ("true" / "false")
  *  - SSL_KEY_PATH
  *  - SSL_CERT_PATH

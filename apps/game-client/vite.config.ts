@@ -12,12 +12,12 @@ export default defineConfig(({ mode }) => {
   const webServerPort = Number(env.VITE_PORT_WEB_SERVER);
 
   // Targets
-  const gameApiTarget = env.VITE_GAME_API;    // e.g. http://localhost:30000
-  const gameWsTarget = env.VITE_GAME_WS;      // e.g. ws://localhost:30000
+  const gameApiTarget = env.VITE_GAME_API; // e.g. http://localhost:31000
+  const gameWsTarget = env.VITE_GAME_WS; // e.g. ws://localhost:31000
   const gameSecure = env.VITE_GAME_SECURE === 'true';
 
-  const webApiTarget = env.VITE_WEB_API;      // e.g. http://localhost:40000
-  const webWsTarget = env.VITE_WEB_WS;        // e.g. ws://localhost:40000
+  const webApiTarget = env.VITE_WEB_API; // e.g. http://localhost:41000
+  const webWsTarget = env.VITE_WEB_WS; // e.g. ws://localhost:41000
   const webSecure = env.VITE_WEB_SECURE === 'true';
 
   console.log('Loaded environment', {
@@ -35,11 +35,13 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),
-        os: path.resolve(__dirname, "src/shims/os-browser.ts"),
+        os: path.resolve(__dirname, 'src/shims/os-browser.ts'),
       },
     },
     server: {
+      host: '0.0.0.0',
       port,
+      strictPort: true,
       proxy: {
         // Convenience health endpoint → game-server
         // /api/health (dev) -> /health on game API
@@ -61,7 +63,7 @@ export default defineConfig(({ mode }) => {
 
         // WebSocket → game-server
         '/ws/game': {
-          target: gameWsTarget,
+          target: gameApiTarget, // http://localhost:31000
           ws: true,
           changeOrigin: true,
           secure: gameSecure,
@@ -78,7 +80,7 @@ export default defineConfig(({ mode }) => {
 
         // WebSocket → web-server
         '/ws/web': {
-          target: webWsTarget,
+          target: webApiTarget, // http://localhost:41000
           ws: true,
           changeOrigin: true,
           secure: webSecure,
@@ -88,10 +90,10 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         input: {
-          main: path.resolve(__dirname, "index.html"),
-          status: path.resolve(__dirname, "status.html"),
+          main: path.resolve(__dirname, 'index.html'),
+          status: path.resolve(__dirname, 'status.html'),
         },
       },
-    }
+    },
   };
 });
