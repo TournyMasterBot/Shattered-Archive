@@ -32,6 +32,7 @@ export default defineConfig(({ mode }) => {
       host: "0.0.0.0",
       port,
       strictPort: true,
+      allowedHosts: ['dsl.shatteredarchive.com', 'alpha-game-client.shatteredarchive.com'],
       proxy: {
         // HTTP → web-server
         '/api/web': {

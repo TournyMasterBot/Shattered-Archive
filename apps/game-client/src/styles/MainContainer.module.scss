@@ -1,5 +1,11 @@
 /* apps/game-client/src/styles/MainContainer.module.scss */
 
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
 /* -------------------------------------------------
    ROOT CONTAINER
 -------------------------------------------------- */

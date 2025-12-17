@@ -11,6 +11,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\""
   },
   "dependencies": {
-    "@shatteredarchive/types-server": "workspace:*"
+    "@shatteredarchive/types-server": "workspace:*",
+    "cors": "^2.8.5"
   }
 }
