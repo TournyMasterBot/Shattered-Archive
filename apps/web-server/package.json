@@ -16,6 +16,6 @@
     "@shatteredarchive/services-server": "workspace:*",
     "@shatteredarchive/utils-global": "workspace:*",
     "@shatteredarchive/utils-server": "workspace:*",
-    "express": "^4.22.1"
+    "express": "^5.2.1"
   }
 }
