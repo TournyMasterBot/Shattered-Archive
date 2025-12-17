@@ -1,0 +1,22 @@
+# never send dependency stores
+**/.github
+**/@personal-notes
+**/.vscode
+**/node_modules
+**/.pnpm-store
+**/.turbo
+**/.vite
+**/dist
+**/build
+**/out
+**/coverage
+**/*.tsbuildinfo
+**/*.log
+**/*.jsonl
+
+# git + editor noise
+.git
+.idea
+.vscode
+.DS_Store
+Thumbs.db

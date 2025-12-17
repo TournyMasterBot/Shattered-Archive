@@ -119,6 +119,87 @@ http://localhost:30080/
 ### Web Client
 http://localhost:40080/
 
+## Docker (Production-Like Local Environment)
+
+ShatteredArchive provides an optional **Docker-based, production-like local environment** for running the full ecosystem with realistic networking, DNS, and service boundaries.
+
+This setup is intended for:
+- validating service-to-service communication
+- testing deployment-style configurations
+- reducing local memory usage compared to `pnpm dev`
+- running the system closer to how it operates in production
+
+It is **not required** for day-to-day development, but is recommended for integration testing and environment validation.
+
+### What Docker Provides
+- Separate containers for each app:
+  - `game-client` (static Vite build)
+  - `web-client` (static Vite build)
+  - `game-server` (Node / Express)
+  - `web-server` (Node / Express)
+  - `nginx` (single HTTPS entrypoint)
+
+- Local `.dev` domains via Docker DNS
+- HTTPS via local development certificates
+- Realistic networking and proxy behavior
+
+### When to Use Docker
+| Scenario | Recommendation |
+|--------|----------------|
+| Feature development | `pnpm dev` |
+| Integration testing | Docker |
+| Production‑like testing | Docker |
+| Lower memory usage | Docker |
+
+### Certificates
+Local HTTPS certificates (mkcert)
+
+For local Docker runs, ShatteredArchive uses mkcert to generate trusted HTTPS certificates for .dev domains (for example game-client.shatteredarchive.dev).
+
+mkcert creates a local certificate authority (CA) and installs it into your operating system’s trust store. Certificates generated with mkcert are therefore treated as valid by your browser, avoiding HTTPS warnings while still allowing secure cookies, WebSockets, and same-origin behavior to work correctly.
+
+This setup is:
+
+Local-only (never used in production)
+
+Fully trusted by your browser once installed
+
+Hands-off after initial setup
+
+Certificates are generated once via pnpm setup:certs and mounted into the Docker nginx container for TLS termination.
+
+For details, see [docs/deploy.md](./docs/deploy.md) → Certificates & HTTPS.
+
+### Quick Start (Docker)
+
+*One‑time setup (hosts file + certs)*
+
+Must be run as administrator, may be applied manually
+
+```bash
+pnpm setup:hosts
+pnpm setup:certs
+```
+
+Start the stack:
+```bash
+docker compose -f deploy/docker-compose.yml up --build
+```
+
+Access points:
+- https://game-client.shatteredarchive.dev
+- https://web-client.shatteredarchive.dev
+
+### Deployment Architecture (Summary)
+
+- **nginx** is the only public entrypoint (ports 80/443)
+- All traffic routes through nginx by hostname
+- Clients are served as static sites
+- APIs and WebSockets are proxied to backend servers
+- Certificates are mounted read‑only into nginx
+
+➡ Full technical details: **[docs/deploy.md](./docs/deploy.md)**
+
 ## Documentation
 
 Additional documentation can be found in the `docs/` directory and on

@@ -18,10 +18,21 @@
     "build:utils:client": "",
     "build:utils:server": "",
     "dev": "concurrently \"pnpm dev:web-server\" \"pnpm dev:game-server\" \"pnpm dev:web-client\" \"pnpm dev:game-client\"",
+    "start": "concurrently \"pnpm start:web-server\" \"pnpm start:game-server\" \"pnpm start:web-client\" \"pnpm start:game-client\"",
     "dev:web-client": "pnpm --filter @shatteredarchive/web-client dev",
     "dev:web-server": "pnpm --filter @shatteredarchive/web-server dev",
     "dev:game-client": "pnpm --filter @shatteredarchive/game-client dev",
-    "dev:game-server": "pnpm --filter @shatteredarchive/game-server dev"
+    "dev:game-server": "pnpm --filter @shatteredarchive/game-server dev",
+    "start:web-client": "pnpm --filter @shatteredarchive/web-client preview",
+    "start:web-server": "pnpm --filter @shatteredarchive/web-server preview",
+    "start:game-client": "pnpm --filter @shatteredarchive/game-client preview",
+    "start:game-server": "pnpm --filter @shatteredarchive/game-server preview",
+    "setup:hosts:nix": "chmod +x deploy/scripts/add-hosts.sh && ./deploy/scripts/add-hosts.sh",
+    "remove:hosts:nix": "chmod +x deploy/scripts/remove-hosts.sh && ./deploy/scripts/remove-hosts.sh",
+    "setup:hosts:win": "powershell -ExecutionPolicy Bypass -File .\\deploy\\scripts\\add-hosts.ps1",
+    "remove:hosts:win": "powershell -ExecutionPolicy Bypass -File .\\deploy\\scripts\\remove-hosts.ps1",
+    "setup:certs": "node -e \"process.platform==='win32' ? require('child_process').execSync('powershell -ExecutionPolicy Bypass -File deploy/scripts/setup-certs.ps1', {stdio:'inherit'}) : require('child_process').execSync('bash deploy/scripts/setup-certs.sh', {stdio:'inherit'})\"",
+    "dev:docker": "pnpm setup:certs && docker compose -f deploy/docker-compose.yml up -d --build"
   },
   "paths": {
     "@docs/*": [

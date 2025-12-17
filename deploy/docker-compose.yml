@@ -1,0 +1,104 @@
+name: shatteredarchive
+
+networks:
+  shatteredarchive:
+    driver: bridge
+
+services:
+  ############################################################
+  # EDGE NGINX (TLS TERMINATION)
+  ############################################################
+  nginx:
+    image: nginx:alpine
+    container_name: shatteredarchive-nginx
+    depends_on:
+      - game-client
+      - web-client
+      - game-server
+      - web-server
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/edge-subdomains.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    networks:
+      shatteredarchive:
+        aliases:
+          - shatteredarchive.dev
+          - game-client.shatteredarchive.dev
+          - web-client.shatteredarchive.dev
+          - game-server.shatteredarchive.dev
+          - web-server.shatteredarchive.dev
+
+  ############################################################
+  # CLIENTS (nginx in-container listens on 80)
+  ############################################################
+  game-client:
+    build:
+      context: ..
+      dockerfile: deploy/game-client.Dockerfile
+      args:
+        VITE_WEB_API: "https://web-server.shatteredarchive.dev"
+        VITE_WEB_WS: "wss://web-server.shatteredarchive.dev"
+        VITE_WEB_SECURE: "true"
+        VITE_ENV: "docker"
+    image: shatteredarchive-game-client
+    networks:
+      shatteredarchive:
+        aliases:
+          - game-client.shatteredarchive.dev
+
+  web-client:
+    build:
+      context: ..
+      dockerfile: deploy/web-client.Dockerfile
+      args:
+        VITE_WEB_API: "https://web-server.shatteredarchive.dev"
+        VITE_WEB_WS: "wss://web-server.shatteredarchive.dev"
+        VITE_WEB_SECURE: "true"
+        VITE_ENV: "docker"
+    image: shatteredarchive-web-client
+    networks:
+      shatteredarchive:
+        aliases:
+          - web-client.shatteredarchive.dev
+
+  ############################################################
+  # SERVERS (keep their real internal ports)
+  ############################################################
+  game-server:
+    build:
+      context: ..
+      dockerfile: deploy/game-server.Dockerfile
+    image: shatteredarchive-game-server
+    env_file:
+      - ../apps/game-server/.env
+    environment:
+      NODE_ENV: production
+      PORT: "30000"
+      LOG_LEVEL: "info"
+    expose:
+      - "30000"
+    networks:
+      shatteredarchive:
+        aliases:
+          - game-server.shatteredarchive.dev
+
+  web-server:
+    build:
+      context: ..
+      dockerfile: deploy/web-server.Dockerfile
+    image: shatteredarchive-web-server
+    env_file:
+      - ../apps/web-server/.env
+    environment:
+      NODE_ENV: production
+      PORT: "40000"
+      LOG_LEVEL: "info"
+    expose:
+      - "40000"
+    networks:
+      shatteredarchive:
+        aliases:
+          - web-server.shatteredarchive.dev
