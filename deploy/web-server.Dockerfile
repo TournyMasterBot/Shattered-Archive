@@ -30,7 +30,7 @@ COPY deploy/.env /repo/.env
 RUN corepack enable
 
 ENV NODE_ENV=production
-ENV PORT=40000
+ENV PORT=41000
 
 COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 COPY tsconfig*.json ./
@@ -43,5 +43,5 @@ COPY --from=build /repo/sdks ./sdks
 
 RUN pnpm install --frozen-lockfile --prod --filter @shatteredarchive/web-server...
 
-EXPOSE 40000
+EXPOSE 41000
 CMD ["node", "apps/web-server/dist/index.js"]

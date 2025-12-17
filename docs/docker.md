@@ -97,7 +97,7 @@ sudo pnpm remove:hosts:nix
 ## Common Issues
 
 ### Ports already in use
-Ensure ports 80, 30000, and 40000 are free.
+Ensure ports 80, 31000, and 41000 are free.
 
 ### Services not reachable
 - Verify servers bind to `0.0.0.0`
