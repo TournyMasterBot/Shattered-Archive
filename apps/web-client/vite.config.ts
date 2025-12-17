@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      host: "0.0.0.0",
+      host: '0.0.0.0',
       port,
       strictPort: true,
       allowedHosts: ['dsl.shatteredarchive.com', 'alpha-game-client.shatteredarchive.com'],
@@ -52,6 +52,9 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
+      resolve: {
+        dedupe: ['react', 'react-dom'],
+      },
       rollupOptions: {
         input: {
           main: path.resolve(__dirname, 'index.html'),

@@ -88,6 +88,9 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
+      resolve: {
+        dedupe: ['react', 'react-dom'],
+      },
       rollupOptions: {
         input: {
           main: path.resolve(__dirname, 'index.html'),
