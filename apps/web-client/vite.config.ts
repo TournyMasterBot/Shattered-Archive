@@ -44,7 +44,7 @@ export default defineConfig(({ mode }) => {
 
         // WebSocket → web-server
         '/ws/web': {
-          target: webWsTarget,
+          target: webApiTarget, // http://localhost:41000
           ws: true,
           changeOrigin: true,
           secure: webSecure,

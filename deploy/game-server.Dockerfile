@@ -31,7 +31,7 @@ COPY deploy/.env /repo/.env
 RUN corepack enable
 
 ENV NODE_ENV=production
-ENV PORT=30000
+ENV PORT=31000
 
 COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 COPY tsconfig*.json ./
@@ -46,5 +46,5 @@ COPY --from=build /repo/sdks ./sdks
 # Install production deps for the filtered workspace (this links workspace packages).
 RUN pnpm install --frozen-lockfile --prod --filter @shatteredarchive/game-server...
 
-EXPOSE 30000
+EXPOSE 31000
 CMD ["node", "apps/game-server/dist/index.js"]
