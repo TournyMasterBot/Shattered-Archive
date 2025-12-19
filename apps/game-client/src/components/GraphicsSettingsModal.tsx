@@ -6,7 +6,7 @@ export interface GraphicsSettingsModalProps {
   onClose: () => void;
 }
 
-type GraphicsNavKey = 'rendering' | 'text' | 'colors' | 'performance';
+type GraphicsNavKey = 'rendering';
 
 type GraphicsConfig = {
   // Rendering
@@ -16,9 +16,6 @@ type GraphicsConfig = {
   // Text / terminal
   fontSize: number;
   lineHeight: number;
-
-  // Colors
-  highContrast: boolean;
 
   // Perf
   reduceMotion: boolean;
@@ -37,7 +34,6 @@ function loadConfig(): GraphicsConfig {
     enableEffects: true,
     fontSize: 12,
     lineHeight: 18,
-    highContrast: false,
     reduceMotion: false,
   };
 
@@ -151,9 +147,6 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
 
   const navItems: Array<{ key: GraphicsNavKey; label: string; hint?: string }> = [
     { key: 'rendering', label: 'Rendering', hint: 'Effects & engine' },
-    { key: 'text', label: 'Text', hint: 'Font & spacing' },
-    { key: 'colors', label: 'Colors', hint: 'Contrast & themes' },
-    { key: 'performance', label: 'Performance', hint: 'Motion & load' },
   ];
 
   return (
@@ -192,15 +185,7 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
           {/* Right settings */}
           <div className={styles.settingsPane}>
             <div className={styles.paneHeader}>
-              <div className={styles.paneTitle}>
-                {activeNav === 'rendering'
-                  ? 'Rendering'
-                  : activeNav === 'text'
-                    ? 'Text'
-                    : activeNav === 'colors'
-                      ? 'Colors'
-                      : 'Performance'}
-              </div>
+              <div className={styles.paneTitle}>{activeNav === 'rendering' ? 'Rendering' : ''}</div>
 
               <div className={styles.actions}>
                 <button
@@ -238,65 +223,28 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
                   />
                 </label>
 
-                <div className={styles.hint}>
-                  These are placeholders for your upcoming renderer/terminal tuning. Saving persists per-browser for
-                  now.
-                </div>
-              </div>
-            )}
+                <div className={styles.section}>
+                  <label className={styles.field}>
+                    <div className={styles.fieldLabel}>Font size</div>
+                    <input
+                      type="number"
+                      min={8}
+                      max={32}
+                      value={draft.fontSize}
+                      onChange={(e) => setDraft((d) => ({ ...d, fontSize: Number(e.target.value) }))}
+                    />
+                  </label>
 
-            {activeNav === 'text' && (
-              <div className={styles.section}>
-                <label className={styles.field}>
-                  <div className={styles.fieldLabel}>Font size</div>
-                  <input
-                    type="number"
-                    min={8}
-                    max={32}
-                    value={draft.fontSize}
-                    onChange={(e) => setDraft((d) => ({ ...d, fontSize: Number(e.target.value) }))}
-                  />
-                </label>
-
-                <label className={styles.field}>
-                  <div className={styles.fieldLabel}>Line height</div>
-                  <input
-                    type="number"
-                    min={10}
-                    max={60}
-                    value={draft.lineHeight}
-                    onChange={(e) => setDraft((d) => ({ ...d, lineHeight: Number(e.target.value) }))}
-                  />
-                </label>
-              </div>
-            )}
-
-            {activeNav === 'colors' && (
-              <div className={styles.section}>
-                <label className={styles.row}>
-                  <span className={styles.rowLabel}>High contrast</span>
-                  <input
-                    type="checkbox"
-                    checked={draft.highContrast}
-                    onChange={(e) => setDraft((d) => ({ ...d, highContrast: e.target.checked }))}
-                  />
-                </label>
-              </div>
-            )}
-
-            {activeNav === 'performance' && (
-              <div className={styles.section}>
-                <label className={styles.row}>
-                  <span className={styles.rowLabel}>Reduce motion</span>
-                  <input
-                    type="checkbox"
-                    checked={draft.reduceMotion}
-                    onChange={(e) => setDraft((d) => ({ ...d, reduceMotion: e.target.checked }))}
-                  />
-                </label>
-
-                <div className={styles.hint}>
-                  If enabled, you can also use this to disable heavier UI transitions/animations later.
+                  <label className={styles.field}>
+                    <div className={styles.fieldLabel}>Line height</div>
+                    <input
+                      type="number"
+                      min={10}
+                      max={60}
+                      value={draft.lineHeight}
+                      onChange={(e) => setDraft((d) => ({ ...d, lineHeight: Number(e.target.value) }))}
+                    />
+                  </label>
                 </div>
               </div>
             )}

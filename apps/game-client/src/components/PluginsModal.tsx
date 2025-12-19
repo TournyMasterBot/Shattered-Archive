@@ -42,6 +42,8 @@ export const PluginsModal: React.FC<PluginsModalProps> = ({ isOpen, onClose, con
   };
 
   const closeCss = () => {
+    // If user previewed changes, revert back to applied CSS on close
+    cssState.discardDraft();
     cssState.close();
     setActiveCssPluginId(null);
   };
@@ -152,6 +154,10 @@ export const PluginsModal: React.FC<PluginsModalProps> = ({ isOpen, onClose, con
           appliedCss={cssState.appliedCss}
           draftCss={cssState.draftCss}
           onChangeDraft={cssState.setDraftCss}
+          onPreview={() => {
+            cssState.save();
+            closeCss();
+          }}
           onSave={() => {
             cssState.save();
             closeCss();

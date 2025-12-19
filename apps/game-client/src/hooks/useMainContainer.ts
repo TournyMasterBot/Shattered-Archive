@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, CSSProperties } from 'react';
 import type React from 'react';
 import { initBrowserLuaRunner } from '../features/userScripts/luaRuntime';
 import { ensureAudioRuntimeAttached } from '../features/audio/audio-runtime';
+import { getAccessibilitySettings } from '../features/accessibility/accessibility-settings-store';
 
 /* -------------------------------------------
    Layout constants
@@ -25,6 +26,45 @@ const USER_CSS_KEY = 'shatteredArchive.userCssOverride';
 /** ID of user css override */
 const USER_CSS_STYLE_ID = 'user-css-override-style';
 
+function clamp(n: number, min: number, max: number) {
+  if (!Number.isFinite(n)) return min;
+  if (n < min) return min;
+  if (n > max) return max;
+  return n;
+}
+
+function buildAccessibilityCss(): string {
+  const settings = getAccessibilitySettings();
+
+  const fontScale = clamp(Number(settings.fontScale ?? 1), 0.8, 1.6);
+
+  const fontCss = `
+/* [sa-accessibility] Font scale */
+:root { --sa-font-scale: ${fontScale}; }
+html { font-size: calc(16px * var(--sa-font-scale)); }
+`.trim();
+
+  const highContrastCss = settings.preferHighContrast
+    ? `
+/* [sa-accessibility] Prefer high contrast UI */
+#root, #root * {
+  color: #ffffff !important;
+}
+
+#root {
+  background: #000000 !important;
+}
+
+input, textarea, select, button {
+  border-color: #777 !important;
+}
+`.trim()
+    : '';
+
+  // (Reduce motion can be added here later, same pattern.)
+  return [fontCss, highContrastCss].filter(Boolean).join('\n\n');
+}
+
 function applyUserCss(css: string) {
   if (typeof document === 'undefined') return;
 
@@ -37,6 +77,24 @@ function applyUserCss(css: string) {
   }
 
   styleEl.innerHTML = css || '';
+}
+
+function applyCombinedCss(userCss: string) {
+  const accessibilityCss = buildAccessibilityCss();
+
+  const combined = `
+/* =========================================================
+   Shattered Archive CSS Overrides
+   ========================================================= */
+
+/* [user-css] */
+${userCss ?? ''}
+
+/* [accessibility-css] */
+${accessibilityCss ?? ''}
+`.trim();
+
+  applyUserCss(combined);
 }
 
 /* -------------------------------------------
@@ -163,19 +221,39 @@ export function useUserCssOverrides() {
       const stored = window.localStorage.getItem(USER_CSS_KEY) || '';
       setUserCssApplied(stored);
       setUserCssDraft(stored);
-      applyUserCss(stored);
+
+      // Apply combined CSS at startup
+      applyCombinedCss(stored);
     } catch {
       // ignore localStorage errors
     }
   }, []);
 
+  // When accessibility settings change, re-apply combined CSS (using current applied user css)
+  useEffect(() => {
+    const onUpdated = () => {
+      applyCombinedCss(userCssApplied);
+    };
+
+    window.addEventListener('sa:accessibility-updated', onUpdated);
+    return () => window.removeEventListener('sa:accessibility-updated', onUpdated);
+  }, [userCssApplied]);
+
   const openStyleModal = () => setIsStyleModalOpen(true);
-  const closeStyleModal = () => setIsStyleModalOpen(false);
+
+  const closeStyleModal = () => {
+    // If user was previewing draft, revert to applied on close
+    applyCombinedCss(userCssApplied);
+    setIsStyleModalOpen(false);
+  };
 
   const saveUserCss = () => {
     const css = userCssDraft;
     setUserCssApplied(css);
-    applyUserCss(css);
+
+    // Apply combined and persist only the user portion
+    applyCombinedCss(css);
+
     try {
       if (css.trim()) {
         window.localStorage.setItem(USER_CSS_KEY, css);
@@ -187,8 +265,16 @@ export function useUserCssOverrides() {
     }
   };
 
+  const previewDraft = () => {
+    // Apply combined but do NOT persist
+    applyCombinedCss(userCssDraft);
+  };
+
   const discardDraft = () => {
     setUserCssDraft(userCssApplied);
+
+    // Revert preview immediately if they discard
+    applyCombinedCss(userCssApplied);
   };
 
   return {
@@ -199,6 +285,7 @@ export function useUserCssOverrides() {
     openStyleModal,
     closeStyleModal,
     saveUserCss,
+    previewDraft,
     discardDraft,
   };
 }

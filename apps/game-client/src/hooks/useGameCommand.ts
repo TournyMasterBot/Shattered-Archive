@@ -1,84 +1,110 @@
 // apps/game-client/src/hooks/useGameCommand.ts
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { userScriptRuntime } from '../features/userScripts/runtimeSingleton';
+import { preprocessOutgoingCommand } from '../features/accessibility/accessibility-command';
+import { OutboundQueue } from '../features/commands/outbount-queue';
 
 interface UseGameCommandOptions {
-  /** Raw send function from useGameConnection (or equivalent). */
   sendRaw: (data: string) => void;
-
-  /** Optional connection flag so the input can disable itself if needed. */
   isConnected?: boolean;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 interface UseGameCommandResult {
-  /** Bound value for your input box. */
   inputValue: string;
-
-  /** Setter for your input box onChange. */
   setInputValue: (value: string) => void;
-
-  /**
-   * Send the current inputValue.
-   * Does NOT trim or alter the input string.
-   */
   sendCommand: () => void;
-
-  /** Key handler for Enter / ArrowUp / ArrowDown (history). */
   handleKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-
-  /** Convenience flag for UI state (disable send, show status, etc). */
   isConnected: boolean;
 }
 
-/**
- * Higher-level command hook.
- * Wraps a low-level sendRaw so UI components don't care about WebSockets.
- * Includes command history with Up/Down navigation.
- */
 export function useGameCommand(options: UseGameCommandOptions): UseGameCommandResult {
-  const { sendRaw, isConnected = false } = options;
+  const { sendRaw, isConnected = false, inputRef } = options;
 
   const [inputValue, setInputValue] = useState('');
   const [history, setHistory] = useState<string[]>([]);
-  /**
-   * null  => editing a fresh command
-   * 0..n  => index into `history` (0 = oldest, history.length-1 = newest)
-   */
   const [historyIndex, setHistoryIndex] = useState<number | null>(null);
 
-  const sendCommand = useCallback(() => {
-    if (!isConnected) {
-      return;
-    }
+  const selectInputAll = useCallback(() => {
+    const el = inputRef?.current;
+    if (!el) return;
 
-    const txt = inputValue;
-
-    // Send to the game server
-    if (userScriptRuntime) {
-      userScriptRuntime.executeAlias(txt);
-    } else {
-      // 2) Fallback: no runtime available, send the raw line directly
-      sendRaw(txt);
-
+    queueMicrotask(() => {
       try {
-        window.dispatchEvent(
-          new CustomEvent('dsl:command-sent', {
-            detail: { text: txt },
-          }),
-        );
+        el.focus();
+        el.select();
       } catch {
         // ignore
       }
+    });
+  }, [inputRef]);
+
+  const sendLineRef = useRef<(line: string) => void>(() => {});
+
+  useEffect(() => {
+    sendLineRef.current = (line: string) => {
+      if (!isConnected) return;
+
+      if (userScriptRuntime) {
+        userScriptRuntime.executeAlias(line);
+      } else {
+        sendRaw(line);
+        try {
+          window.dispatchEvent(new CustomEvent('dsl:command-sent', { detail: { text: line } }));
+        } catch {
+          // ignore
+        }
+      }
+
+      setHistory((prev) => {
+        const next = [...prev, line];
+        if (next.length > 500) return next.slice(next.length - 500);
+        return next;
+      });
+    };
+  }, [isConnected, sendRaw]);
+
+  const enqueueSendLine = useCallback((line: string) => {
+    sendLineRef.current(line);
+  }, []);
+
+  const queue = useMemo(() => new OutboundQueue(enqueueSendLine), [enqueueSendLine]);
+
+  const sendCommand = useCallback(() => {
+    if (!isConnected) return;
+
+    const txt = inputValue;
+    const action = preprocessOutgoingCommand(txt, history);
+
+    if (action.kind === 'noop') {
+      setHistoryIndex(null);
+
+      if (!action.keepInputAfterSend) {
+        setInputValue('');
+      } else {
+        selectInputAll();
+      }
+
+      return;
     }
 
-    // Push onto history (newest at the end)
-    setHistory((prev) => [...prev, txt]);
+    if (action.flushQueue) {
+      queue.flushPending();
+    }
 
-    // Reset editing state
+    for (const line of action.lines) {
+      queue.enqueue({ kind: 'sendLine', line });
+    }
+
     setHistoryIndex(null);
-    setInputValue('');
-  }, [inputValue, sendRaw, isConnected]);
+
+    if (!action.keepInputAfterSend) {
+      setInputValue('');
+    } else {
+      selectInputAll();
+    }
+  }, [inputValue, isConnected, history, queue, selectInputAll]);
 
   const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = useCallback(
     (e) => {
@@ -92,7 +118,6 @@ export function useGameCommand(options: UseGameCommandOptions): UseGameCommandRe
         e.preventDefault();
         if (history.length === 0) return;
 
-        // First press: jump to newest
         if (historyIndex === null) {
           const newIndex = history.length - 1;
           setHistoryIndex(newIndex);
@@ -100,35 +125,28 @@ export function useGameCommand(options: UseGameCommandOptions): UseGameCommandRe
           return;
         }
 
-        // Subsequent presses: walk backward, but don't go past oldest
         if (historyIndex > 0) {
           const newIndex = historyIndex - 1;
           setHistoryIndex(newIndex);
           setInputValue(history[newIndex]);
         }
-        // If already at 0, stay there (per your "stay on last going back" rule)
         return;
       }
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         if (history.length === 0) return;
-
-        // If not in history, nothing to do
         if (historyIndex === null) return;
 
-        // If we're at the newest entry and go "forward", clear the input
         if (historyIndex === history.length - 1) {
           setHistoryIndex(null);
           setInputValue('');
           return;
         }
 
-        // Otherwise move toward newer
         const newIndex = historyIndex + 1;
         setHistoryIndex(newIndex);
         setInputValue(history[newIndex]);
-        return;
       }
     },
     [history, historyIndex, sendCommand],

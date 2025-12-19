@@ -3,6 +3,7 @@ import styles from '../styles/MainMenuBar.module.scss';
 import { useMainMenuBar } from '../hooks/useMainMenuBar';
 import GraphicsSettingsModal from './GraphicsSettingsModal';
 import AudioSettingsModal from './AudioSettingsModal';
+import AccessibilitySettingsModal from './AccessibilitySettingsModal';
 
 interface MainMenuBarProps {
   onOpenCustomStyles: () => void;
@@ -20,10 +21,8 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
   const {
     openRootMenu,
     isGameSettingsOpen,
-    openGameSettingsSection,
     toggleRootMenu,
     toggleGameSettings,
-    toggleGameSettingsSection,
     closeAllMenus,
 
     isGraphicsModalOpen,
@@ -33,6 +32,10 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
     isAudioModalOpen,
     openAudioModal,
     closeAudioModal,
+
+    isAccessibilityModalOpen,
+    openAccessibilityModal,
+    closeAccessibilityModal,
   } = useMainMenuBar();
 
   const rootRef = React.useRef<HTMLDivElement | null>(null);
@@ -115,6 +118,10 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
 
                 <div className={styles.subMenuItem} onClick={openAudioModal}>
                   Audio…
+                </div>
+
+                <div className={styles.subMenuItem} onClick={openAccessibilityModal}>
+                  Accessibility…
                 </div>
               </div>
             </div>
@@ -204,6 +211,7 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
       {/* Render modal outside the menu DOM so it isn't clipped */}
       <GraphicsSettingsModal isOpen={isGraphicsModalOpen} onClose={closeGraphicsModal} />
       <AudioSettingsModal isOpen={isAudioModalOpen} onClose={closeAudioModal} />
+      <AccessibilitySettingsModal isOpen={isAccessibilityModalOpen} onClose={closeAccessibilityModal} />
     </>
   );
 };

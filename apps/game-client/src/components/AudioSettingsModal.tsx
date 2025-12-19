@@ -1,3 +1,4 @@
+// apps\game-client\src\components\AudioSettingsModal.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import styles from '../styles/AudioSettingsModal.module.scss';
 import {

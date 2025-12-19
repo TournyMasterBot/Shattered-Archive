@@ -1,5 +1,5 @@
 // apps/game-client/src/components/CommandInput.tsx
-import React from 'react';
+import React, { useRef } from 'react';
 import styles from '../styles/LayoutShell.module.scss';
 import { useGameCommand } from '../hooks/useGameCommand';
 
@@ -9,14 +9,18 @@ interface CommandInputProps {
 }
 
 export const CommandInput: React.FC<CommandInputProps> = ({ sendRaw, isConnected }) => {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
   const { inputValue, setInputValue, handleKeyDown } = useGameCommand({
     sendRaw,
     isConnected,
+    inputRef,
   });
 
   return (
     <div className={styles.commandInputBar}>
       <input
+        ref={inputRef}
         id="game-command-input"
         className={styles.commandInput}
         type="text"
