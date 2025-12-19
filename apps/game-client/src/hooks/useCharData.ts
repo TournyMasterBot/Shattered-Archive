@@ -79,8 +79,8 @@ export function useCharData() {
       });
 
       setAncillary({
-        carryWeight, // 👈 NEW
-        carryWeightMax, // 👈 NEW
+        carryWeight,
+        carryWeightMax,
         carryWeightPct,
         isQuiet: !!data.is_quiet,
         isFlying: !!data.is_flying,

@@ -1,6 +1,7 @@
 // apps\game-client\src\pages\MainContainer.tsx
 import React from 'react';
 import styles from '../styles/MainContainer.module.scss';
+import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight';
 
 import { BottomPane } from '../components/BottomPane';
 import { UserStyleOverrideModal } from '../components/UserStyleOverrideModal';
@@ -22,6 +23,7 @@ import { pluginHost } from '../features/plugins/pluginHost';
 import { applyCssToDom, getAppliedCss } from '../features/userStyles/userStyleOverrideStore';
 
 export const MainContainer: React.FC = () => {
+  useVisualViewportHeight();
   const main = useMainContainer();
   const gameConn = useGameConnection();
   applyCssToDom(getAppliedCss());

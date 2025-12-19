@@ -88,6 +88,9 @@
 
     /* prevent wrapping */
     flex-wrap: nowrap;
+
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .mobileWideBtn {
@@ -114,5 +117,10 @@
     color: #fff;
     border-color: #8bc34a;
     box-shadow: 0 0 3px rgba(139, 195, 74, 0.7);
+  }
+
+  .mobileWideBtnDisabled {
+    opacity: 0.55;
+    /* keep clickable so we can preventDefault and preserve focus */
   }
 }

@@ -7,7 +7,7 @@ import {
   type AccessibilitySettings,
 } from '../features/accessibility/accessibility-settings-store';
 
-// NEW: apply/remove high-contrast CSS via your existing CSS override pipeline
+// apply/remove high-contrast CSS via your existing CSS override pipeline
 import { setHighContrastEnabled } from '../features/userStyles/userStyleOverrideStore';
 import { clearPreviewFontScale, setPreviewFontScale } from '../features/accessibility/fontScalePreview';
 
@@ -35,7 +35,7 @@ export const AccessibilitySettingsModal: React.FC<AccessibilitySettingsModalProp
   const [active, setActive] = useState<TabId>('vision');
   const [draft, setDraft] = useState<AccessibilitySettings>(() => getAccessibilitySettings());
 
-  // NEW: preview state (only affects UI while modal is open)
+  // preview state (only affects UI while modal is open)
   const [isPreviewOn, setIsPreviewOn] = useState(false);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export const AccessibilitySettingsModal: React.FC<AccessibilitySettingsModalProp
     clearPreviewFontScale();
   }, [isOpen]);
 
-  // NEW: while preview is enabled, inject temporary fontScale (does not save)
+  // while preview is enabled, inject temporary fontScale (does not save)
   useEffect(() => {
     if (!isOpen) return;
     if (!isPreviewOn) {
@@ -116,7 +116,7 @@ export const AccessibilitySettingsModal: React.FC<AccessibilitySettingsModalProp
         <div className={styles.header}>
           <div className={styles.title}>Accessibility</div>
 
-          {/* NEW: Preview toggle */}
+          {/* Preview toggle */}
           <button type="button" className={styles.secondaryButton} onClick={togglePreview}>
             {isPreviewOn ? 'Stop preview' : 'Preview'}
           </button>
@@ -179,7 +179,7 @@ export const AccessibilitySettingsModal: React.FC<AccessibilitySettingsModalProp
                     <div className={styles.valuePill}>{fontPct}%</div>
                   </div>
 
-                  {/* NEW: simple “what does this do” + whether preview is active */}
+                  {/* simple “what does this do” + whether preview is active */}
                   <div className={styles.hint}>
                     {isPreviewOn
                       ? 'Preview is ON (temporary while this modal is open).'

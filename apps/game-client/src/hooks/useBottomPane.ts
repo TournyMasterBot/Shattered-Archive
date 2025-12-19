@@ -5,7 +5,7 @@ import { useEnemyHudState } from './useRightPaneHud';
 export type BottomTab = 'compass' | 'opponent' | 'damage' | 'chat' | 'misc';
 
 export function useBottomPane() {
-  const [activeTab, setActiveTab] = useState<BottomTab>('damage');
+  const [activeTab, setActiveTab] = useState<BottomTab>('compass');
   const enemy = useEnemyHudState();
 
   const clampedPct = Math.max(0, Math.min(100, enemy.pct));

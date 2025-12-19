@@ -111,7 +111,7 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
             <div className={`${styles.subMenuItem} ${styles.subMenuItemHasSubmenu}`} onClick={toggleGameSettings}>
               Settings
               <div className={`${styles.subMenuLevel2} ${isGameSettingsOpen ? styles.subMenuOpen : ''}`}>
-                {/* NEW: Graphics is now an action that opens a modal */}
+                {/* Graphics is now an action that opens a modal */}
                 <div className={styles.subMenuItem} onClick={openGraphicsModal}>
                   Graphics…
                 </div>
