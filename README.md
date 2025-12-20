@@ -11,6 +11,9 @@ integrate into their own workflows and services.
 ShatteredArchive is **not affiliated with or endorsed by** Dark and Shattered
 Lands, DikuMUD, or their original authors.
 
+# Play Online
+A build of this client is available at https://game-client.shatteredarchive.dev/
+
 ---
 
 ## Overview
