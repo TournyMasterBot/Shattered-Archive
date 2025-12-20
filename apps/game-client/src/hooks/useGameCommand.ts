@@ -65,11 +65,7 @@ export function useGameCommand(options: UseGameCommandOptions): UseGameCommandRe
     };
   }, [isConnected, sendRaw]);
 
-  const enqueueSendLine = useCallback((line: string) => {
-    sendLineRef.current(line);
-  }, []);
-
-  const queue = useMemo(() => new OutboundQueue(enqueueSendLine), [enqueueSendLine]);
+  const queue = useMemo(() => new OutboundQueue(sendLineRef), []);
 
   const sendCommand = useCallback(() => {
     if (!isConnected) return;

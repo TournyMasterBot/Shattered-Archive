@@ -63,7 +63,7 @@ export const BottomPane: React.FC = () => {
         </button>
           */}
 
-          {/*
+        {/*
         <button
           type="button"
           role="tab"

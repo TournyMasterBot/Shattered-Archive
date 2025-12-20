@@ -45,7 +45,7 @@ html { font-size: calc(16px * var(--sa-font-scale)); }
 `.trim();
 
   const highContrastCss = settings.preferHighContrast
-  ? `
+    ? `
 /* [sa-accessibility] Prefer high contrast UI (reasonable) */
 #root {
   /* Core palette */
@@ -177,7 +177,7 @@ html { font-size: calc(16px * var(--sa-font-scale)); }
   background: var(--sa-hc-surface);
 }
 `.trim()
-  : '';
+    : '';
 
   // (Reduce motion can be added here later, same pattern.)
   return [fontCss, highContrastCss].filter(Boolean).join('\n\n');

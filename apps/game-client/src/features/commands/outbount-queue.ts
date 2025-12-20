@@ -1,3 +1,4 @@
+// apps/game-client/src/features/commands/outbount-queue.ts
 export type OutboundJob =
   | { kind: 'sendLine'; line: string }
   | { kind: 'repeatChain'; repeatLeft: number; chain: string[]; chainIndex: number };
@@ -6,7 +7,7 @@ export class OutboundQueue {
   private q: OutboundJob[] = [];
   private pumping = false;
 
-  constructor(private readonly sendLine: (line: string) => void) {}
+  constructor(private readonly sendLineRef: { current: (line: string) => void }) {}
 
   /** Immediately drop any queued-but-not-sent jobs. */
   flushPending(): void {
@@ -36,7 +37,7 @@ export class OutboundQueue {
     while (sent < MAX_PER_TICK && this.q.length > 0) {
       const job = this.q.shift()!;
       if (job.kind === 'sendLine') {
-        this.sendLine(job.line);
+        this.sendLineRef.current(job.line);
         sent++;
       }
     }
