@@ -45,21 +45,139 @@ html { font-size: calc(16px * var(--sa-font-scale)); }
 `.trim();
 
   const highContrastCss = settings.preferHighContrast
-    ? `
-/* [sa-accessibility] Prefer high contrast UI */
-#root, #root * {
-  color: #ffffff !important;
-}
-
+  ? `
+/* [sa-accessibility] Prefer high contrast UI (reasonable) */
 #root {
-  background: #000000 !important;
+  /* Core palette */
+  --sa-hc-bg: #0b0c0f;
+  --sa-hc-surface: #12141a;
+  --sa-hc-surface2: #171a22;
+
+  --sa-hc-text: #f5f7ff;
+  --sa-hc-muted: #c5ccdd;
+
+  --sa-hc-border: #3a4153;
+  --sa-hc-border-strong: #6b7590;
+
+  --sa-hc-accent: #7dd3fc;      /* cyan-ish */
+  --sa-hc-accent2: #a78bfa;     /* purple-ish */
+  --sa-hc-danger: #fb7185;
+
+  --sa-hc-focus: #fbbf24;       /* amber focus ring */
+  --sa-hc-shadow: rgba(0, 0, 0, 0.55);
+
+  background: var(--sa-hc-bg) !important;
+  color: var(--sa-hc-text) !important;
 }
 
-input, textarea, select, button {
-  border-color: #777 !important;
+/* Text hierarchy */
+#root .muted,
+#root [data-muted="true"] {
+  color: var(--sa-hc-muted) !important;
+}
+
+/* Surfaces (common containers) */
+#root .panel,
+#root .card,
+#root .modal,
+#root [role="dialog"],
+#root .rightPane,
+#root .leftNav {
+  background: var(--sa-hc-surface) !important;
+  color: var(--sa-hc-text) !important;
+  border-color: var(--sa-hc-border) !important;
+  box-shadow: 0 8px 24px var(--sa-hc-shadow);
+}
+
+/* Dividers */
+#root hr,
+#root .divider {
+  border-color: var(--sa-hc-border) !important;
+  opacity: 1 !important;
+}
+
+/* Links */
+#root a {
+  color: var(--sa-hc-accent) !important;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+#root a:hover {
+  color: #b7ecff !important;
+}
+
+/* Buttons */
+#root button,
+#root [role="button"],
+#root input[type="button"],
+#root input[type="submit"] {
+  background: var(--sa-hc-surface2) !important;
+  color: var(--sa-hc-text) !important;
+  border: 1px solid var(--sa-hc-border-strong) !important;
+}
+
+#root button:hover,
+#root [role="button"]:hover {
+  border-color: var(--sa-hc-accent) !important;
+}
+
+#root button:disabled,
+#root input:disabled,
+#root select:disabled,
+#root textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Inputs */
+#root input,
+#root textarea,
+#root select {
+  background: #0e1016 !important;
+  color: var(--sa-hc-text) !important;
+  border: 1px solid var(--sa-hc-border-strong) !important;
+}
+#root input::placeholder,
+#root textarea::placeholder {
+  color: #9aa6bf !important;
+  opacity: 1;
+}
+
+/* Checkbox / radio accent */
+#root input[type="checkbox"],
+#root input[type="radio"] {
+  accent-color: var(--sa-hc-accent);
+}
+
+/* Selection */
+#root ::selection {
+  background: rgba(125, 211, 252, 0.35);
+}
+
+/* Focus: make it obvious and consistent */
+#root :focus-visible {
+  outline: 3px solid var(--sa-hc-focus) !important;
+  outline-offset: 2px;
+}
+
+/* Scrollbars (Chromium / Edge) */
+#root *::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+#root *::-webkit-scrollbar-thumb {
+  background: #3b4256;
+  border: 2px solid var(--sa-hc-surface);
+  border-radius: 10px;
+}
+#root *::-webkit-scrollbar-thumb:hover {
+  background: #4b5470;
+}
+#root *::-webkit-scrollbar-corner {
+  background: var(--sa-hc-surface);
 }
 `.trim()
-    : '';
+  : '';
 
   // (Reduce motion can be added here later, same pattern.)
   return [fontCss, highContrastCss].filter(Boolean).join('\n\n');

@@ -37,6 +37,7 @@ export const BottomPane: React.FC = () => {
         </button>
 
         {/* Opponent tab — mobile only */}
+        {/* Hide for now
         <button
           type="button"
           role="tab"
@@ -48,7 +49,9 @@ export const BottomPane: React.FC = () => {
         >
           Opponent
         </button>
+        */}
 
+        {/* Hide for now
         <button
           type="button"
           role="tab"
@@ -58,7 +61,9 @@ export const BottomPane: React.FC = () => {
         >
           Damage
         </button>
+          */}
 
+          {/*
         <button
           type="button"
           role="tab"
@@ -68,6 +73,7 @@ export const BottomPane: React.FC = () => {
         >
           Misc
         </button>
+        */}
       </div>
 
       {/* Content */}

@@ -54,7 +54,7 @@ export function preprocessOutgoingCommand(rawInput: string, history: string[]): 
     return { kind: 'send', lines, keepInputAfterSend: keep, flushQueue: true };
   }
 
-  // 2) Repeat-chain: "&10kill mel;where" => repeat the chain 10 times (and split it)
+  // 2) Repeat-chain: "&10kill squirrel;where" => repeat the chain 10 times (and split it)
   if (startsWithPrefix(input, settings.repeatLastPrefix)) {
     const suffix = input.slice(settings.repeatLastPrefix.length).trimStart();
     if (!suffix) return { kind: 'noop', keepInputAfterSend: keep };

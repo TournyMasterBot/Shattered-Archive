@@ -9,9 +9,8 @@ import {
 
 // apply/remove high-contrast CSS via your existing CSS override pipeline
 import { setHighContrastEnabled } from '../features/userStyles/userStyleOverrideStore';
-import { clearPreviewFontScale, setPreviewFontScale } from '../features/accessibility/fontScalePreview';
 
-type TabId = 'vision' | 'input' | 'mobility' | 'about';
+type TabId = 'vision' | 'input' | 'about';
 
 export interface AccessibilitySettingsModalProps {
   isOpen: boolean;
@@ -35,32 +34,11 @@ export const AccessibilitySettingsModal: React.FC<AccessibilitySettingsModalProp
   const [active, setActive] = useState<TabId>('vision');
   const [draft, setDraft] = useState<AccessibilitySettings>(() => getAccessibilitySettings());
 
-  // preview state (only affects UI while modal is open)
-  const [isPreviewOn, setIsPreviewOn] = useState(false);
-
   useEffect(() => {
     if (!isOpen) return;
     setDraft(getAccessibilitySettings());
     setActive('vision');
-    setIsPreviewOn(false);
-    clearPreviewFontScale();
   }, [isOpen]);
-
-  // while preview is enabled, inject temporary fontScale (does not save)
-  useEffect(() => {
-    if (!isOpen) return;
-    if (!isPreviewOn) {
-      clearPreviewFontScale();
-      return;
-    }
-
-    // only preview fontScale; everything else is already "previewable" by toggles in the modal
-    setPreviewFontScale(clamp(Number(draft.fontScale ?? 1), 0.8, 1.6));
-
-    return () => {
-      clearPreviewFontScale();
-    };
-  }, [isOpen, isPreviewOn, draft.fontScale]);
 
   const fontPct = useMemo(() => Math.round((draft.fontScale ?? 1) * 100), [draft.fontScale]);
 
@@ -92,22 +70,11 @@ export const AccessibilitySettingsModal: React.FC<AccessibilitySettingsModalProp
       // ignore
     }
 
-    // cleanup preview css
-    clearPreviewFontScale();
-    setIsPreviewOn(false);
-
     onClose();
   };
 
   const closeWithoutSaving = () => {
-    // IMPORTANT: if preview was on, remove preview CSS
-    clearPreviewFontScale();
-    setIsPreviewOn(false);
     onClose();
-  };
-
-  const togglePreview = () => {
-    setIsPreviewOn((v) => !v);
   };
 
   return (
@@ -115,12 +82,6 @@ export const AccessibilitySettingsModal: React.FC<AccessibilitySettingsModalProp
       <div className={styles.modal} role="dialog" aria-modal="true" aria-label="Accessibility Settings">
         <div className={styles.header}>
           <div className={styles.title}>Accessibility</div>
-
-          {/* Preview toggle */}
-          <button type="button" className={styles.secondaryButton} onClick={togglePreview}>
-            {isPreviewOn ? 'Stop preview' : 'Preview'}
-          </button>
-
           <button type="button" className={styles.closeButton} onClick={closeWithoutSaving} aria-label="Close">
             ✕
           </button>
@@ -143,22 +104,6 @@ export const AccessibilitySettingsModal: React.FC<AccessibilitySettingsModalProp
             >
               Command input
             </button>
-
-            <button
-              type="button"
-              className={`${styles.navItem} ${active === 'mobility' ? styles.navItemActive : ''}`}
-              onClick={() => setActive('mobility')}
-            >
-              Mobility
-            </button>
-
-            <button
-              type="button"
-              className={`${styles.navItem} ${active === 'about' ? styles.navItemActive : ''}`}
-              onClick={() => setActive('about')}
-            >
-              Notes
-            </button>
           </div>
 
           <div className={styles.rightPane}>
@@ -178,13 +123,6 @@ export const AccessibilitySettingsModal: React.FC<AccessibilitySettingsModalProp
                     />
                     <div className={styles.valuePill}>{fontPct}%</div>
                   </div>
-
-                  {/* simple “what does this do” + whether preview is active */}
-                  <div className={styles.hint}>
-                    {isPreviewOn
-                      ? 'Preview is ON (temporary while this modal is open).'
-                      : 'Use Preview to test without saving.'}
-                  </div>
                 </div>
 
                 <label className={styles.row}>
@@ -194,15 +132,6 @@ export const AccessibilitySettingsModal: React.FC<AccessibilitySettingsModalProp
                     onChange={(e) => setDraft({ ...draft, preferHighContrast: e.target.checked })}
                   />
                   <span>Prefer high contrast UI</span>
-                </label>
-
-                <label className={styles.row}>
-                  <input
-                    type="checkbox"
-                    checked={draft.reduceMotion}
-                    onChange={(e) => setDraft({ ...draft, reduceMotion: e.target.checked })}
-                  />
-                  <span>Reduce motion (animations/transitions)</span>
                 </label>
               </div>
             )}
@@ -292,22 +221,10 @@ export const AccessibilitySettingsModal: React.FC<AccessibilitySettingsModalProp
                   <br />
                   <code>~who</code> → sends <code>~</code> then <code>who</code>
                   <br />
-                  <code>&10kill mel;where</code> → repeats the chain 10 times
+                  <code>&10kill squirrel;where</code> → repeats the chain 10 times
                   <br />
                   <code>#5n;5e;5s</code> → n×5, e×5, s×5 in order
                 </div>
-              </div>
-            )}
-
-            {active === 'mobility' && (
-              <div className={styles.section}>
-                <ul className={styles.bullets}>
-                  <li>Command palette (Ctrl+K) for common actions</li>
-                  <li>Large-button “direction pad” dock</li>
-                  <li>Sticky modifier mode</li>
-                  <li>Voice dictation integration</li>
-                  <li>Auto-complete from recent history + known aliases</li>
-                </ul>
               </div>
             )}
 
