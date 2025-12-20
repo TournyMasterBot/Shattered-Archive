@@ -1,4 +1,3 @@
-// apps/game-client/src/hooks/useTerminal.ts
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
@@ -35,25 +34,109 @@ export function useTerminal() {
     fitRef.current = fitAddon;
 
     const container = containerRef.current;
-    if (container) {
-      term.open(container);
-
-      // Force an initial render so internal dimensions are set
-      term.write('\x1b[0m');
-
-      // Defer fit until after layout/render to avoid dimensions errors
-      requestAnimationFrame(() => {
-        try {
-          fitAddon.fit();
-          term.scrollToBottom();
-        } catch {
-          // swallow any early fit issues
-        }
-      });
+    if (!container) {
+      term.dispose();
+      return;
     }
 
-    // Grab xterm's own viewport element for scroll tracking
-    const viewport = container?.querySelector('.xterm-viewport') as HTMLDivElement | null;
+    term.open(container);
+    // term.write('\x1b[0m');
+    // ============================================================
+    // 🔒 ANDROID / MOBILE HARD STOP: NO FOCUS, NO KEYBOARD
+    // ============================================================
+
+    const blurActive = () => {
+      try {
+        (document.activeElement as HTMLElement | null)?.blur?.();
+      } catch {
+        // ignore
+      }
+    };
+
+    // 1) xterm root itself is focusable (tabindex=0)
+    const xtermRoot = container.querySelector('.xterm') as HTMLElement | null;
+    if (xtermRoot) {
+      xtermRoot.tabIndex = -1;
+      xtermRoot.setAttribute('tabindex', '-1');
+      xtermRoot.addEventListener('focus', blurActive, true);
+      xtermRoot.addEventListener('focusin', blurActive, true);
+    }
+
+    // 2) Kill the helper textarea (main Android keyboard trigger)
+    const helper = container.querySelector('.xterm-helper-textarea') as HTMLTextAreaElement | null;
+    if (helper) {
+      helper.tabIndex = -1;
+      helper.setAttribute('tabindex', '-1');
+      helper.setAttribute('readonly', 'true');
+      helper.setAttribute('inputmode', 'none');
+      helper.setAttribute('autocomplete', 'off');
+      helper.setAttribute('autocorrect', 'off');
+      helper.setAttribute('autocapitalize', 'off');
+      helper.setAttribute('spellcheck', 'false');
+
+      helper.style.pointerEvents = 'none';
+      helper.style.opacity = '0';
+      helper.style.position = 'fixed';
+      helper.style.left = '-10000px';
+      helper.style.top = '0';
+      helper.style.width = '1px';
+      helper.style.height = '1px';
+
+      helper.addEventListener('focus', blurActive, true);
+      helper.addEventListener('focusin', blurActive, true);
+    }
+
+    // 3) Block focus at the container level (tap / click)
+    const preventPointerFocus = (e: Event) => {
+      e.preventDefault();
+    };
+
+    container.addEventListener('pointerdown', preventPointerFocus, {
+      capture: true,
+      passive: false,
+    });
+    container.addEventListener('touchstart', preventPointerFocus, {
+      capture: true,
+      passive: false,
+    });
+
+    // 4) Global safety net: if ANYTHING inside terminal focuses, blur it
+    const onFocusInCapture = (e: FocusEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      // Allow your real command input to keep focus
+      if (target.id === 'game-command-input') return;
+
+      if (container.contains(target)) {
+        blurActive();
+      }
+    };
+
+    document.addEventListener('focusin', onFocusInCapture, true);
+
+    // Ensure starting state is unfocused
+    blurActive();
+    try {
+      term.blur();
+    } catch {
+      // ignore
+    }
+
+    // ============================================================
+    // Layout / scrolling / data handling
+    // ============================================================
+
+    requestAnimationFrame(() => {
+      try {
+        fitAddon.fit();
+        term.scrollToBottom();
+      } catch {
+        // ignore
+      }
+    });
+
+    const viewport = container.querySelector('.xterm-viewport') as HTMLDivElement | null;
 
     const handleScroll = () => {
       if (!viewport) return;
@@ -73,26 +156,20 @@ export function useTerminal() {
 
     viewport?.addEventListener('scroll', handleScroll);
 
-    // Event bus: write text into terminal
     const handleTerminalData = (ev: Event) => {
       const e = ev as CustomEvent<{ text: string }>;
       const text = e.detail?.text ?? '';
-      const term = termRef.current;
-      if (!text || !term) return;
-
-      // Fast path: if nothing to filter, write as-is
-      // (we can't directly know if store is empty without exposing it; ok to always run filter)
-      // We'll do a cheap line scan and only rebuild output if we actually omit anything.
+      const t = termRef.current;
+      if (!text || !t) return;
 
       let start = 0;
       let out: string | null = null;
 
       for (let i = 0; i <= text.length; i++) {
-        const ch = i < text.length ? text.charCodeAt(i) : 10; // sentinel \n
+        const ch = i < text.length ? text.charCodeAt(i) : 10;
         if (ch === 10 || i === text.length) {
           const rawEnd = i < text.length ? i + 1 : i;
 
-          // line excludes trailing \r
           let end = i;
           if (end > start && text.charCodeAt(end - 1) === 13) end--;
 
@@ -102,8 +179,7 @@ export function useTerminal() {
           const omit = line.length > 0 && shouldOmitLine('text:line', line);
 
           if (omit) {
-            if (out === null) out = text.slice(0, start); // create buffer lazily
-            // skip this line (don’t append rawLine)
+            if (out === null) out = text.slice(0, start);
           } else if (out !== null) {
             out += rawLine;
           }
@@ -112,11 +188,11 @@ export function useTerminal() {
         }
       }
 
-      term.write(out ?? text);
+      t.write(out ?? text);
 
       if (autoScrollRef.current) {
         try {
-          term.scrollToBottom();
+          t.scrollToBottom();
         } catch {
           // ignore
         }
@@ -125,26 +201,36 @@ export function useTerminal() {
 
     window.addEventListener('game:terminal-data', handleTerminalData as EventListener);
 
-    // Re-fit on window resize
     const handleResize = () => {
-      if (!fitRef.current) return;
-      // Defer to next frame so container layout is stable
       requestAnimationFrame(() => {
         try {
           fitRef.current?.fit();
           termRef.current?.scrollToBottom();
         } catch {
-          // ignore if xterm is mid-internal update
+          // ignore
         }
       });
     };
 
     window.addEventListener('resize', handleResize);
 
+    // ============================================================
+    // Cleanup
+    // ============================================================
+
     return () => {
       viewport?.removeEventListener('scroll', handleScroll);
       window.removeEventListener('game:terminal-data', handleTerminalData as EventListener);
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('focusin', onFocusInCapture, true);
+
+      container.removeEventListener('pointerdown', preventPointerFocus, { capture: true } as any);
+      container.removeEventListener('touchstart', preventPointerFocus, { capture: true } as any);
+
+      xtermRoot?.removeEventListener('focus', blurActive, true);
+      xtermRoot?.removeEventListener('focusin', blurActive, true);
+      helper?.removeEventListener('focus', blurActive, true);
+      helper?.removeEventListener('focusin', blurActive, true);
 
       term.dispose();
       termRef.current = null;

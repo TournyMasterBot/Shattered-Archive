@@ -1,5 +1,7 @@
+// apps\game-client\src\pages\MainContainer.tsx
 import React from 'react';
 import styles from '../styles/MainContainer.module.scss';
+import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight';
 
 import { BottomPane } from '../components/BottomPane';
 import { UserStyleOverrideModal } from '../components/UserStyleOverrideModal';
@@ -18,9 +20,13 @@ import { useGameConnection } from '../hooks/useGameConnection';
 import { CORE_PLUGINS } from '../features/plugins/registry';
 import { pluginHost } from '../features/plugins/pluginHost';
 
+import { applyCssToDom, getAppliedCss } from '../features/userStyles/userStyleOverrideStore';
+
 export const MainContainer: React.FC = () => {
+  useVisualViewportHeight();
   const main = useMainContainer();
   const gameConn = useGameConnection();
+  applyCssToDom(getAppliedCss());
 
   const { layoutVars, handleVerticalResizeMouseDown, handleHorizontalResizeMouseDown } = useLayoutSizing();
 
@@ -99,6 +105,10 @@ export const MainContainer: React.FC = () => {
         appliedCss={userCssApplied}
         draftCss={userCssDraft}
         onChangeDraft={setUserCssDraft}
+        onPreview={() => {
+          saveUserCss();
+          closeStyleModal();
+        }}
         onSave={() => {
           saveUserCss();
           closeStyleModal();

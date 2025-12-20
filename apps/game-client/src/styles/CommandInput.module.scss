@@ -1,0 +1,177 @@
+/* -------------------------------------------------
+   COMMAND INPUT BAR
+-------------------------------------------------- */
+
+.commandInputBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  position: relative;
+}
+
+/* -------------------------------------------------
+   COMMAND INPUT FIELD
+-------------------------------------------------- */
+
+.commandInput {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #111;
+  color: #f0f0f0;
+  font-size: 0.8rem;
+  font-family: monospace;
+  box-sizing: border-box;
+
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.commandInput:focus {
+  outline: none;
+  border-color: #8bc34a;
+  box-shadow: 0 0 0 1px rgba(139, 195, 74, 0.5);
+}
+
+.commandInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* -------------------------------------------------
+   RECORDING STATES (INPUT)
+-------------------------------------------------- */
+
+/* Actively recording */
+.commandInputRecording {
+  border-color: #c94a4a;
+  box-shadow: 0 0 0 1px rgba(201, 74, 74, 0.55);
+}
+
+/* Wants recording, engine temporarily off */
+.commandInputRestarting {
+  border-color: #d28b2a;
+  box-shadow: 0 0 0 1px rgba(210, 139, 42, 0.55);
+}
+
+/* -------------------------------------------------
+   MICROPHONE BUTTON
+-------------------------------------------------- */
+
+.micButton {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #1a1a1a;
+  color: #f0f0f0;
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
+}
+
+.micButton:hover:not(:disabled) {
+  background: #242424;
+}
+
+.micButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* -------------------------------------------------
+   MICROPHONE STATES
+-------------------------------------------------- */
+
+/* Actively recording */
+.micButtonRecording {
+  border-color: #c94a4a;
+  box-shadow: 0 0 0 1px rgba(201, 74, 74, 0.55);
+  background: #2a1212;
+}
+
+/* Wants recording, engine restarting */
+.micButtonRestarting {
+  border-color: #d28b2a;
+  box-shadow: 0 0 0 1px rgba(210, 139, 42, 0.55);
+  background: #2a1c0d;
+}
+
+/* -------------------------------------------------
+   RECORDING HINT TEXT
+-------------------------------------------------- */
+
+.recordingHint {
+  position: absolute;
+  right: 40px;
+
+  /* go UP instead of down */
+  bottom: calc(100% + 4px);
+
+  font-size: 0.72rem;
+  color: #ffb3b3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 420px;
+  pointer-events: none;
+
+  /* keep above nearby borders */
+  z-index: 5;
+}
+
+/* Engine restarting */
+.recordingHintRestarting {
+  color: #ffcf8a;
+}
+
+/* -------------------------------------------------
+   ERROR TEXT
+-------------------------------------------------- */
+
+.micError {
+  position: absolute;
+  right: 40px;
+
+  /* stack error above hint */
+  bottom: calc(100% + 1.35rem);
+
+  font-size: 0.72rem;
+  color: #ffdf7a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 420px;
+  pointer-events: none;
+
+  z-index: 5;
+}
+
+/* -------------------------------------------------
+   RESPONSIVE
+-------------------------------------------------- */
+
+@media (max-width: 600px) {
+  .commandInput {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+  }
+
+  .micButton {
+    font-size: 0.9rem;
+  }
+
+  .recordingHint,
+  .micError {
+    max-width: 280px;
+  }
+}

@@ -12,6 +12,8 @@ export function useMainMenuBar() {
   const [isGraphicsModalOpen, setIsGraphicsModalOpen] = useState(false);
   const [isAudioModalOpen, setIsAudioModalOpen] = useState(false);
 
+  const [isAccessibilityModalOpen, setIsAccessibilityModalOpen] = useState(false);
+
   const toggleRootMenu = (id: string) => {
     setOpenRootMenu((prev) => (prev === id ? null : id));
     setIsGameSettingsOpen(false);
@@ -51,6 +53,14 @@ export function useMainMenuBar() {
 
   const closeAudioModal = () => setIsAudioModalOpen(false);
 
+  const openAccessibilityModal = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    closeAllMenus();
+    setIsAccessibilityModalOpen(true);
+  };
+
+  const closeAccessibilityModal = () => setIsAccessibilityModalOpen(false);
+
   return {
     openRootMenu,
     isGameSettingsOpen,
@@ -63,6 +73,10 @@ export function useMainMenuBar() {
     isAudioModalOpen,
     openAudioModal,
     closeAudioModal,
+
+    isAccessibilityModalOpen,
+    openAccessibilityModal,
+    closeAccessibilityModal,
 
     toggleRootMenu,
     toggleGameSettings,

@@ -1,4 +1,6 @@
+// apps/game-client/src/hooks/useCompassBlock.ts
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getRoomData, setRoomData } from '../features/room/roomDataStore';
 
 export type CompassDirection = 'NW' | 'N' | 'NE' | 'W' | 'E' | 'SW' | 'S' | 'SE' | 'U' | 'D';
 
@@ -40,8 +42,24 @@ const DIR_TO_COMMAND: Record<CompassDirection, string> = {
   D: 'd',
 };
 
+function exitsToSet(exits: unknown): Set<CompassDirection> {
+  const list = Array.isArray(exits) ? exits : [];
+  const next = new Set<CompassDirection>();
+
+  for (const e of list) {
+    const dir = normalizeExit(String(e));
+    if (dir) next.add(dir);
+  }
+
+  return next;
+}
+
 export function useCompassBlock() {
-  const [exitSet, setExitSet] = useState<Set<CompassDirection>>(() => new Set());
+  // Seed from roomDataStore so tab switching keeps exits
+  const [exitSet, setExitSet] = useState<Set<CompassDirection>>(() => {
+    const cached = getRoomData();
+    return exitsToSet(cached?.exits);
+  });
 
   const pendingMoveRef = useRef<CompassDirection | null>(null);
   const pendingTimerRef = useRef<number | null>(null);
@@ -52,17 +70,15 @@ export function useCompassBlock() {
   useEffect(() => {
     const onRoomData = (ev: Event) => {
       const ce = ev as CustomEvent<RoomDataPayload>;
-      const exits = Array.isArray(ce.detail?.exits) ? ce.detail.exits : [];
+      const payload = ce.detail ?? {};
 
-      const next = new Set<CompassDirection>();
-      for (const e of exits) {
-        const dir = normalizeExit(e);
-        if (dir) next.add(dir);
-      }
+      // Update global cache
+      setRoomData(payload);
 
-      setExitSet(next);
+      // Update local state
+      setExitSet(exitsToSet(payload.exits));
 
-      // If we were waiting on a move and room changed, movement succeeded
+      // Movement succeeded if room changed
       if (pendingMoveRef.current) {
         window.dispatchEvent(
           new CustomEvent('game:movement-succeeded', {
@@ -97,7 +113,6 @@ export function useCompassBlock() {
       }),
     );
 
-    // Failure detection window (no room update)
     if (pendingTimerRef.current) {
       window.clearTimeout(pendingTimerRef.current);
     }

@@ -8,6 +8,7 @@ export interface UserStyleOverrideModalProps {
   draftCss: string;
   onChangeDraft: (css: string) => void;
   onSave: () => void; // apply draft as active CSS
+  onPreview: () => void; // apply draft temporarily (no save)
   onDiscardDraft: () => void; // discard draft and revert to applied
   onClose: () => void; // close without changing applied/draft
 }
@@ -18,6 +19,7 @@ export const UserStyleOverrideModal: React.FC<UserStyleOverrideModalProps> = ({
   draftCss,
   onChangeDraft,
   onSave,
+  onPreview,
   onDiscardDraft,
   onClose,
 }) => {
@@ -90,6 +92,11 @@ button {
           <button type="button" className={styles.secondaryButton} onClick={onClose}>
             Cancel
           </button>
+
+          <button type="button" className={styles.secondaryButton} onClick={onPreview} disabled={!hasUnsavedChanges}>
+            Preview
+          </button>
+
           <button type="button" className={styles.primaryButton} onClick={onSave} disabled={!hasUnsavedChanges}>
             Save & Apply
           </button>

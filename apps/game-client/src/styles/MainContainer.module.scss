@@ -1,16 +1,24 @@
-/* apps/game-client/src/styles/MainContainer.module.scss */
-
 html,
 body {
   height: 100%;
   margin: 0;
 }
 
+/* prevent body scroll fighting */
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
 /* -------------------------------------------------
    ROOT CONTAINER
 -------------------------------------------------- */
 .root {
-  height: 100vh;
+  /* Key change: drive height from visual viewport */
+  height: var(--app-height, 100vh);
+  max-height: var(--app-height, 100vh);
+
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -19,6 +27,9 @@ body {
   background-color: #050505;
   color: #e0e0e0;
   font-family: system-ui, sans-serif;
+
+  /* Keeps content clear of iOS home indicator / safe areas */
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 @media (max-width: 600px) {

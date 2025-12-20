@@ -1,3 +1,4 @@
+// apps\game-client\src\components\BottomPane.tsx
 import React from 'react';
 import styles from '../styles/BottomPane.module.scss';
 import { MiscPane } from './MiscPane';
@@ -25,7 +26,18 @@ export const BottomPane: React.FC = () => {
           Compass
         </button>
 
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'chat'}
+          className={`${styles.menuItem} ${activeTab === 'chat' ? styles.menuItemActive : ''}`}
+          onClick={() => selectTab('chat')}
+        >
+          Chat
+        </button>
+
         {/* Opponent tab — mobile only */}
+        {/* Hide for now
         <button
           type="button"
           role="tab"
@@ -37,7 +49,9 @@ export const BottomPane: React.FC = () => {
         >
           Opponent
         </button>
+        */}
 
+        {/* Hide for now
         <button
           type="button"
           role="tab"
@@ -47,17 +61,9 @@ export const BottomPane: React.FC = () => {
         >
           Damage
         </button>
+          */}
 
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'chat'}
-          className={`${styles.menuItem} ${activeTab === 'chat' ? styles.menuItemActive : ''}`}
-          onClick={() => selectTab('chat')}
-        >
-          Chat
-        </button>
-
+        {/*
         <button
           type="button"
           role="tab"
@@ -67,11 +73,14 @@ export const BottomPane: React.FC = () => {
         >
           Misc
         </button>
+        */}
       </div>
 
       {/* Content */}
       <div className={styles.content}>
         {activeTab === 'compass' && <CompassBlockMobile />}
+
+        {activeTab === 'chat' && <ChatPane />}
 
         {activeTab === 'opponent' &&
           (enemy.visible ? (
@@ -90,8 +99,6 @@ export const BottomPane: React.FC = () => {
           ))}
 
         {activeTab === 'damage' && <span className={styles.placeholderText}>Damage tab content…</span>}
-
-        {activeTab === 'chat' && <ChatPane />}
 
         {activeTab === 'misc' && <MiscPane />}
       </div>

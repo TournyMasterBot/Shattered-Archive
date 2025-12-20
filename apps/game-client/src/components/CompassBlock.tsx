@@ -1,3 +1,4 @@
+// apps\game-client\src\components\CompassBlock.tsx
 import React from 'react';
 import styles from '../styles/CompassBlock.module.scss';
 import { useCompassBlock, CompassDirection } from '../hooks/useCompassBlock';

@@ -1,4 +1,3 @@
-// apps\game-client\src\styles\AudioSettingsModal.module.scss
 .backdrop {
   position: fixed;
   inset: 0;
@@ -122,86 +121,19 @@
   font-weight: 600;
 }
 
-.textarea {
-  width: 100%;
-  min-height: 160px;
-  resize: vertical;
-  background: #0d0d0d;
-  border: 1px solid #333;
-  border-radius: 4px;
-  color: #e0e0e0;
-  padding: 8px;
-  font-size: 0.75rem;
-  font-family: 'Fira Code', monospace;
-}
-
 .hint {
   font-size: 0.72rem;
   color: #999;
 }
 
-.muted {
-  color: #aaa;
-  font-size: 0.78rem;
-}
-
-.inlineActions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.smallButton {
-  border: none;
-  background: #2a2a2a;
-  color: #ddd;
-  font-size: 0.78rem;
-  padding: 6px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-
-  &:hover {
-    background: #3a3a3a;
-  }
-}
-
-.smallDanger {
-  border: none;
-  background: #3a2323;
-  color: #f1c6c6;
-  font-size: 0.78rem;
-  padding: 6px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-
-  &:hover {
-    background: #4a2a2a;
-  }
-}
-
-.testButton {
-  border: none;
-  background: #203a50;
-  color: #d6eaff;
-  font-size: 0.78rem;
-  padding: 6px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-
-  &:hover {
-    background: #2a4c68;
-  }
+.divider {
+  height: 1px;
+  background: #2c2c2c;
 }
 
 .grid3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(120px, 1fr));
-  gap: 10px;
-}
-
-.grid1 {
-  display: grid;
-  grid-template-columns: minmax(120px, 220px);
   gap: 10px;
 }
 
@@ -222,111 +154,28 @@
   }
 }
 
-.soundCard {
-  background: #0f0f0f;
-  border: 1px solid #2c2c2c;
-  border-radius: 4px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.range {
+  width: 260px;
 }
 
-.soundRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.soundKind {
-  font-size: 0.78rem;
-  color: #ccc;
-}
-
-.soundChoiceRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.filePicker,
-.filePickerSmall {
-  position: relative;
-  overflow: hidden;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.valuePill {
   border: 1px solid #333;
   background: #181818;
   color: #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-  user-select: none;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 999px;
 }
 
-.filePicker {
-  font-size: 0.78rem;
-  padding: 6px 10px;
-}
-
-.filePickerSmall {
-  font-size: 0.78rem;
-  padding: 6px 10px;
-}
-
-.filePicker input,
-.filePickerSmall input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.rulesList {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.ruleRow {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background: #0f0f0f;
-  border: 1px solid #2c2c2c;
-  border-radius: 4px;
-  padding: 8px;
-}
-
-.ruleHeader {
-  display: grid;
-  grid-template-columns: 28px 1fr;
-  gap: 8px;
-  align-items: center;
-}
-
-.ruleEnabled {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.rulePattern {
-  width: 100%;
-  background: #131313;
-  border: 1px solid #333;
-  border-radius: 4px;
-  padding: 6px 8px;
-  color: #e0e0e0;
+.bullets {
+  margin: 0;
+  padding-left: 18px;
+  color: #ddd;
   font-size: 0.8rem;
-  min-width: 0; // important: allow shrink inside grid
-}
 
-.ruleSoundControls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  li {
+    margin: 6px 0;
+  }
 }
 
 .footer {
