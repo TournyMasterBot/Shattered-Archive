@@ -174,3 +174,6 @@ docker compose up
 ```
 
 ---
+
+## Server Setup
+Shattered Archive recommends an [Ubuntu Setup](./deploy/deploy-readme.md)
