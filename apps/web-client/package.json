@@ -16,7 +16,7 @@
   "devDependencies": {
     "@shatteredarchive/utils-client": "workspace:*",
     "@shatteredarchive/utils-global": "workspace:*",
-    "@vitejs/plugin-react-swc": "^4.0.0",
+    "@vitejs/plugin-react-swc": "^4.2.2",
     "vite": "^7.3.0"
   }
 }

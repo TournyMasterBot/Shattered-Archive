@@ -6,4 +6,5 @@ packages:
   - services/*
 
 onlyBuiltDependencies:
+  - '@swc/core'
   - esbuild
