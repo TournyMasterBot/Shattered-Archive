@@ -55,18 +55,18 @@
     "eslint-plugin-react-refresh": "^0.4.26",
     "globals": "^16.5.0",
     "jest": "^30.2.0",
-    "prettier": "^3.5.1",
+    "prettier": "^3.7.4",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.3",
-    "typescript-eslint": "^8.49.0"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.50.0"
   },
   "dependencies": {
     "@testing-library/react": "^16.3.1",
     "@types/react-dom": "^19.2.3",
     "@types/ws": "^8.18.1",
-    "@xterm/addon-fit": "^0.10.0",
-    "@xterm/addon-search": "^0.15.0",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-search": "^0.16.0",
     "@xterm/xterm": "^5.5.0",
     "ansi-to-html": "^0.7.2",
     "compression": "^1.8.1",
@@ -81,7 +81,7 @@
     "scss": "^0.2.4",
     "skulpt": "^1.2.0",
     "uuid": "^13.0.0",
-    "winston": "^3.18.3",
+    "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
     "ws": "^8.18.3"
   },
