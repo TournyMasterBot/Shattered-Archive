@@ -1,3 +1,4 @@
+// apps\game-client\src\components\PluginsModal.tsx
 import React from 'react';
 import styles from '../styles/PluginsModal.module.scss';
 

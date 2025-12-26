@@ -1,3 +1,4 @@
+// apps\game-client\src\components\MainMenuBar.tsx
 import React from 'react';
 import styles from '../styles/MainMenuBar.module.scss';
 import { useMainMenuBar } from '../hooks/useMainMenuBar';
@@ -10,6 +11,7 @@ interface MainMenuBarProps {
   onOpenScriptSandbox: () => void;
   onOpenConnect: () => void;
   onOpenPlugins: () => void;
+  onOpenLibrary: () => void;
 }
 
 export const MainMenuBar: React.FC<MainMenuBarProps> = ({
@@ -17,6 +19,7 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
   onOpenScriptSandbox,
   onOpenConnect,
   onOpenPlugins,
+  onOpenLibrary,
 }) => {
   const {
     openRootMenu,
@@ -128,6 +131,17 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
                 </div>
               </div>
             </div>
+
+            <div
+  className={styles.subMenuItem}
+  onClick={(e) => {
+    e.stopPropagation();
+    closeAllMenus();
+    onOpenLibrary();
+  }}
+>
+  Library (Notes & Books)…
+</div>
           </div>
         </div>
 

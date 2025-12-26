@@ -409,7 +409,7 @@ export function useUserCssOverrides() {
 }
 
 /* -------------------------------------------
-   Hook: main initialization + connect modal
+   Hook: main initialization + connect modal + library modal
 -------------------------------------------- */
 export function useMainContainer() {
   // Initialize Lua runtime once
@@ -430,13 +430,21 @@ export function useMainContainer() {
 
   // Only connect modal open/close lives here now
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
-
   const openConnectModal = () => setIsConnectModalOpen(true);
   const closeConnectModal = () => setIsConnectModalOpen(false);
+
+  // Library modal open/close (Notes & Books)
+  const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
+  const openLibraryModal = () => setIsLibraryModalOpen(true);
+  const closeLibraryModal = () => setIsLibraryModalOpen(false);
 
   return {
     isConnectModalOpen,
     openConnectModal,
     closeConnectModal,
+
+    isLibraryModalOpen,
+    openLibraryModal,
+    closeLibraryModal,
   };
 }
