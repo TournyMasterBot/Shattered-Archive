@@ -1,7 +1,9 @@
-import type { LibraryBook, LibraryNote } from './library-types';
+// apps/game-client/src/features/library/library-store.ts
+
+import type { LibraryBook, LibraryBookPage, LibraryNote } from './library-types';
 
 const DB_NAME = 'shatteredArchive.library';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 const STORE_NOTES = 'notes';
 const STORE_BOOKS = 'books';
@@ -16,6 +18,7 @@ function openDb(): Promise<IDBDatabase> {
 
     req.onupgradeneeded = () => {
       const db = req.result;
+      const tx = req.transaction;
 
       if (!db.objectStoreNames.contains(STORE_NOTES)) {
         const s = db.createObjectStore(STORE_NOTES, { keyPath: 'id' });
@@ -27,6 +30,36 @@ function openDb(): Promise<IDBDatabase> {
         const s = db.createObjectStore(STORE_BOOKS, { keyPath: 'id' });
         s.createIndex('by_connection', 'connectionId', { unique: false });
         s.createIndex('by_connection_updated', ['connectionId', 'updatedAt'], { unique: false });
+      } else if (tx) {
+        // Migration: v1 books had { body: string }. v2 books have { pages: [{page, body}] }.
+        const store = tx.objectStore(STORE_BOOKS);
+
+        const getAllReq = store.getAll();
+        getAllReq.onsuccess = () => {
+          const rows = (getAllReq.result ?? []) as any[];
+
+          for (const row of rows) {
+            if (row && typeof row.body === 'string' && !Array.isArray(row.pages)) {
+              const body = row.body ?? '';
+              delete row.body;
+
+              const pages: LibraryBookPage[] = [{ page: 1, body }];
+              row.pages = pages;
+
+              store.put(row);
+            }
+
+            // Normalize pages array if present but malformed
+            if (row && Array.isArray(row.pages)) {
+              row.pages = row.pages
+                .filter((p: any) => p && Number.isFinite(p.page) && typeof p.body === 'string')
+                .map((p: any) => ({ page: Math.max(1, Math.floor(p.page)), body: p.body ?? '' }))
+                .sort((a: LibraryBookPage, b: LibraryBookPage) => a.page - b.page);
+
+              store.put(row);
+            }
+          }
+        };
       }
     };
 
@@ -67,7 +100,20 @@ export async function listNotes(connectionId: string): Promise<LibraryNote[]> {
 }
 
 export async function listBooks(connectionId: string): Promise<LibraryBook[]> {
-  return getAllByConnection<LibraryBook>(STORE_BOOKS, connectionId);
+  const books = await getAllByConnection<LibraryBook>(STORE_BOOKS, connectionId);
+
+  // Normalize + sort pages (defensive)
+  for (const b of books as any[]) {
+    if (!Array.isArray(b.pages)) b.pages = [{ page: 1, body: '' }];
+    b.pages = (b.pages as any[])
+      .filter((p) => p && Number.isFinite(p.page) && typeof p.body === 'string')
+      .map((p) => ({ page: Math.max(1, Math.floor(p.page)), body: p.body ?? '' }))
+      .sort((a: LibraryBookPage, c: LibraryBookPage) => a.page - c.page);
+
+    if (b.pages.length === 0) b.pages = [{ page: 1, body: '' }];
+  }
+
+  return books;
 }
 
 export async function upsertNote(note: LibraryNote): Promise<void> {
@@ -78,9 +124,20 @@ export async function upsertNote(note: LibraryNote): Promise<void> {
 }
 
 export async function upsertBook(book: LibraryBook): Promise<void> {
+  const normalized: LibraryBook = {
+    ...book,
+    pages:
+      (book.pages ?? [])
+        .filter((p) => p && Number.isFinite(p.page))
+        .map((p) => ({ page: Math.max(1, Math.floor(p.page)), body: p.body ?? '' }))
+        .sort((a, b) => a.page - b.page) || [],
+  };
+
+  if (normalized.pages.length === 0) normalized.pages = [{ page: 1, body: '' }];
+
   const db = await openDb();
   const tx = db.transaction(STORE_BOOKS, 'readwrite');
-  tx.objectStore(STORE_BOOKS).put(book);
+  tx.objectStore(STORE_BOOKS).put(normalized);
   await txDone(tx);
 }
 
@@ -118,7 +175,7 @@ export async function createBook(connectionId: string, title: string): Promise<L
     id: newId(),
     connectionId,
     title,
-    body: '',
+    pages: [{ page: 1, body: '' }],
     createdAt: now,
     updatedAt: now,
   };

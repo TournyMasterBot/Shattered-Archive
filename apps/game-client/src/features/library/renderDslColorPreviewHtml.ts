@@ -1,3 +1,5 @@
+// apps/game-client/src/features/library/renderDslColorPreviewHtml.ts
+
 /**
  * DSL color / attribute preview renderer
  *
@@ -11,6 +13,7 @@
  *  - Extended colors: {o {n {p {u
  *  - Reset: {x
  *  - Attributes: {! {- {& {_
+ *  - Literal '{' escape: '{{'
  */
 
 export function renderDslToHtml(input: string): string {
@@ -67,6 +70,13 @@ export function renderDslToHtml(input: string): string {
   while (i < input.length) {
     const ch = input[i];
 
+    // Escape literal '{' using '{{'
+    if (ch === '{' && i + 1 < input.length && input[i + 1] === '{') {
+      out += escapeHtml('{');
+      i += 2;
+      continue;
+    }
+
     if (ch === '{' && i + 1 < input.length) {
       const code = input.slice(i, i + 2);
 
@@ -117,7 +127,7 @@ export function renderDslToHtml(input: string): string {
         continue;
       }
 
-      // Extended DSL colors (actual tokens: {o {n {p {u)
+      // Extended DSL colors
       const extColor = EXTENDED_COLORS[code];
       if (extColor) {
         fg = extColor;
@@ -139,31 +149,31 @@ export function renderDslToHtml(input: string): string {
 }
 
 /* ----------------------------------------------------------
-   Color tables (DSL authoritative)
+   Color tables (from in-game help list)
 ---------------------------------------------------------- */
 
 const BASE_COLORS: Record<string, string> = {
   '{r': '#c0392b', // red
-  '{R': '#ff6b6b', // light red
-
-  '{g': '#27ae60', // green
-  '{G': '#6bff95', // light green
+  '{R': '#ff6b6b', // Lt Red
 
   '{y': '#f1c40f', // yellow
-  '{Y': '#fff176', // light yellow
+  '{Y': '#fff176', // Lt Yellow
 
   '{b': '#2980b9', // blue
-  '{B': '#6bbcff', // light blue
-
-  '{m': '#8e44ad', // magenta
-  '{M': '#d07cff', // light magenta
+  '{B': '#6bbcff', // Lt Blue
 
   '{c': '#16a085', // cyan
-  '{C': '#5fffe3', // light cyan
+  '{C': '#5fffe3', // Lt Cyan
 
-  '{D': '#555555', // black (bright black / dark gray)
-  '{w': '#cccccc', // grey
-  '{W': '#ffffff', // light white
+  '{m': '#8e44ad', // magenta
+  '{M': '#d07cff', // Lt Magenta
+
+  '{g': '#27ae60', // green
+  '{G': '#6bff95', // Lt Green
+
+  '{D': '#000000', // black
+  '{w': '#bdbdbd', // Grey
+  '{W': '#ffffff', // Lt White
 };
 
 const EXTENDED_COLORS: Record<string, string> = {
