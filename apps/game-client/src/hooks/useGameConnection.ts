@@ -386,12 +386,10 @@ export function useGameConnection(): UseGameConnectionResult {
                       break;
                     }
 
-                    case 'affect_data': 
+                    case 'affect_data':
                     case 'affects': {
                       const affects = Array.isArray(payload?.affects) ? payload.affects : [];
-                      window.dispatchEvent(
-                        new CustomEvent('game:affects-trueup', { detail: { affects } }),
-                      );
+                      window.dispatchEvent(new CustomEvent('game:affects-trueup', { detail: { affects } }));
                       break;
                     }
 
