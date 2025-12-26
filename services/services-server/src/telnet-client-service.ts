@@ -133,11 +133,18 @@ export class TelnetClient extends EventEmitter implements ITelnetClient {
 
       // ===== Inside subnegotiation (GMCP or other) =====
       if (this.inSubneg) {
+        // If we started SB last chunk but the option byte arrived now,
+        // consume this byte as the option and continue.
+        if ((this as any)._awaitingSubOption) {
+          delete (this as any)._awaitingSubOption;
+          this.subIsGMCP = b === TelnetClient.GMCP;
+          continue;
+        }
+
         // Inside subneg we watch for IAC SE and IAC IAC
         if (this.subSawIAC) {
           this.subSawIAC = false;
           if (b === TelnetClient.SE) {
-            // End of subnegotiation
             if (this.subIsGMCP) {
               const gmcpMessage = this.gmcpBuffer.join('');
               this.gmcpBuffer = [];
@@ -148,11 +155,9 @@ export class TelnetClient extends EventEmitter implements ITelnetClient {
             continue;
           }
           if (b === TelnetClient.IAC) {
-            // IAC IAC => literal 0xff inside subneg
             if (this.subIsGMCP) this.gmcpBuffer.push('\xFF');
             continue;
           }
-          // Any other byte after IAC inside subneg: ignore (protocol noise)
           continue;
         }
 
@@ -164,7 +169,6 @@ export class TelnetClient extends EventEmitter implements ITelnetClient {
         if (this.subIsGMCP) {
           if (b !== 0) this.gmcpBuffer.push(String.fromCharCode(b));
         }
-        // If subIsGMCP is false, we are in some other subneg; just consume bytes.
         continue;
       }
 
@@ -189,14 +193,6 @@ export class TelnetClient extends EventEmitter implements ITelnetClient {
         }
 
         // Other command (WILL/WONT/DO/DONT, etc). Ignore for now.
-        continue;
-      }
-
-      // If we began a subneg last byte but didn’t get the option yet (split across chunks),
-      // treat the first non-IAC byte we see as the option now.
-      if (this.inSubneg && (this as any)._awaitingSubOption) {
-        delete (this as any)._awaitingSubOption;
-        this.subIsGMCP = b === TelnetClient.GMCP;
         continue;
       }
 
