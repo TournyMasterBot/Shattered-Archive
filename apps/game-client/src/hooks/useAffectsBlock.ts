@@ -1,6 +1,7 @@
 // apps/game-client/src/hooks/useAffectsBlock.ts
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { AffectData } from '@shatteredarchive/types-global';
+import { useTickData } from './useTickData';
 
 function sortByDurationThenName(a: AffectData, b: AffectData) {
   const dd = a.d - b.d;
@@ -40,14 +41,12 @@ function normalizeAffects(list: unknown): AffectData[] {
 
 export function useAffectsBlock() {
   const [affects, setAffects] = useState<AffectData[]>([]);
+  const { timeOfDay } = useTickData();
 
   useEffect(() => {
     const onTrueUp = (ev: Event) => {
       const ce = ev as CustomEvent<any>;
 
-      // Accept any of these shapes:
-      // 1) { affects: AffectData[] }
-      // 2) AffectData[]   (just in case)
       const affectsPayload = Array.isArray(ce.detail) ? ce.detail : ce.detail?.affects;
 
       setAffects(normalizeAffects(affectsPayload));
@@ -56,7 +55,6 @@ export function useAffectsBlock() {
     const onAdd = (ev: Event) => {
       const ce = ev as CustomEvent<any>;
 
-      // Accept either single AffectData or { affect: AffectData } just in case
       const added = ce.detail?.affect ?? ce.detail;
 
       if (!isAffectData(added)) return;
@@ -92,8 +90,6 @@ export function useAffectsBlock() {
     window.addEventListener('game:tick', onTick as EventListener);
     return () => window.removeEventListener('game:tick', onTick as EventListener);
   }, []);
-
-  const timeOfDay = useMemo(() => '', []);
 
   return { affects, timeOfDay };
 }

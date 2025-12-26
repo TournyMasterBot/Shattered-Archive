@@ -28,6 +28,29 @@ function dispatchSafe(name: string, detail?: any) {
   }
 }
 
+/**
+ * Global singleton socket holder to survive Vite HMR / React remounts.
+ * Important: We store the WebSocket + last known host/port so after hot reload
+ * the UI can rehydrate connection state without requiring a new ws.onopen.
+ *
+ * We ALSO store an `unbind()` from the last binding so the next module instance
+ * can remove previous listeners (prevents double line feeds).
+ */
+type GameSocketSingleton = {
+  ws: WebSocket | null;
+  host?: string;
+  port?: number;
+  unbind?: null | (() => void);
+};
+
+const SINGLETON_KEY = '__shatteredarchive_game_ws__';
+
+function getSingleton(): GameSocketSingleton {
+  const g = globalThis as any;
+  if (!g[SINGLETON_KEY]) g[SINGLETON_KEY] = { ws: null, unbind: null } as GameSocketSingleton;
+  return g[SINGLETON_KEY] as GameSocketSingleton;
+}
+
 export function useGameConnection(): UseGameConnectionResult {
   const [isConnected, setIsConnected] = useState(false);
   const [currentHost, setCurrentHost] = useState<string | undefined>();
@@ -85,6 +108,18 @@ export function useGameConnection(): UseGameConnectionResult {
   }, []);
 
   const cleanupSocket = useCallback(() => {
+    const singleton = getSingleton();
+
+    // IMPORTANT: remove listeners first (prevents duplicate emitters if socket survives)
+    if (singleton.unbind) {
+      try {
+        singleton.unbind();
+      } catch {
+        // ignore
+      }
+      singleton.unbind = null;
+    }
+
     if (wsRef.current) {
       try {
         wsRef.current.close();
@@ -93,6 +128,10 @@ export function useGameConnection(): UseGameConnectionResult {
       }
       wsRef.current = null;
     }
+
+    singleton.ws = null;
+    singleton.host = undefined;
+    singleton.port = undefined;
 
     setIsConnected(false);
     setCurrentHost(undefined);
@@ -240,35 +279,26 @@ export function useGameConnection(): UseGameConnectionResult {
     [emitTerminalText, scheduleGmcpCheck],
   );
 
-  const connect = useCallback(
-    (host: string, port: number, options?: { autoEnableGmcp?: boolean }) => {
-      setLastError(null);
-      cleanupSocket();
-
-      gmcpAutoEnableRef.current = options?.autoEnableGmcp ?? true;
-      clearGmcpProbe();
-
-      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const url = `${proto}//${window.location.host}/ws/game`;
-
-      const ws = new WebSocket(url);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        ws.send(JSON.stringify({ type: 'connect', host, port }));
-
+  /**
+   * Binds handlers to a WebSocket, and returns an unbind function.
+   * Used both for:
+   * - newly created sockets
+   * - adopting an existing socket after HMR / component remount
+   */
+  const bindSocketHandlers = useCallback(
+    (ws: WebSocket) => {
+      const onOpen = () => {
         setIsConnected(true);
-        setCurrentHost(host);
-        setCurrentPort(port);
 
-        lastHostRef.current = host;
-        lastPortRef.current = port;
+        // Host/port should already be known (from connect()) when ws opens.
+        setCurrentHost(lastHostRef.current);
+        setCurrentPort(lastPortRef.current);
 
         console.log('[game-connection] WebSocket opened; waiting for GMCP trigger text');
         emitSocketOpen();
       };
 
-      ws.onclose = () => {
+      const onClose = () => {
         console.log('[game-connection] WebSocket closed');
         setIsConnected(false);
         setCurrentHost(undefined);
@@ -277,12 +307,12 @@ export function useGameConnection(): UseGameConnectionResult {
         emitSocketClosed();
       };
 
-      ws.onerror = (ev) => {
+      const onError = (ev: Event) => {
         console.error('[game-connection] websocket error', ev);
         setLastError('Connection error');
       };
 
-      ws.onmessage = (ev) => {
+      const onMessage = (ev: MessageEvent) => {
         let msg: { type: string; data?: any };
         try {
           msg = JSON.parse(String(ev.data));
@@ -305,8 +335,6 @@ export function useGameConnection(): UseGameConnectionResult {
 
               emitTerminalText('\x1b[38;5;67mGMCP is enabled\x1b[0m\r\n');
               console.log('[game-connection] GMCP received within probe window → GMCP is enabled');
-            } else {
-              console.log('[game-connection] GMCP received (no active probe timer)');
             }
 
             try {
@@ -358,9 +386,12 @@ export function useGameConnection(): UseGameConnectionResult {
                       break;
                     }
 
+                    case 'affect_data': 
                     case 'affects': {
                       const affects = Array.isArray(payload?.affects) ? payload.affects : [];
-                      window.dispatchEvent(new CustomEvent('game:affects-trueup', { detail: { affects } }));
+                      window.dispatchEvent(
+                        new CustomEvent('game:affects-trueup', { detail: { affects } }),
+                      );
                       break;
                     }
 
@@ -374,6 +405,13 @@ export function useGameConnection(): UseGameConnectionResult {
 
                     case 'remove_affect': {
                       window.dispatchEvent(new CustomEvent('game:affect-removed', { detail: payload }));
+                      break;
+                    }
+
+                    default: {
+                      console.log('Unknown GMCP message received', {
+                        payload,
+                      });
                       break;
                     }
                   }
@@ -401,8 +439,152 @@ export function useGameConnection(): UseGameConnectionResult {
             console.warn('[game-connection] unknown message type', msg.type);
         }
       };
+
+      ws.addEventListener('open', onOpen);
+      ws.addEventListener('close', onClose);
+      ws.addEventListener('error', onError);
+      ws.addEventListener('message', onMessage);
+
+      // Rehydrate immediately based on readyState (crucial for HMR)
+      setIsConnected(ws.readyState === WebSocket.OPEN);
+      if (ws.readyState === WebSocket.OPEN) {
+        setCurrentHost(lastHostRef.current);
+        setCurrentPort(lastPortRef.current);
+      }
+
+      return () => {
+        ws.removeEventListener('open', onOpen);
+        ws.removeEventListener('close', onClose);
+        ws.removeEventListener('error', onError);
+        ws.removeEventListener('message', onMessage);
+      };
     },
     [cleanupSocket, emitSocketClosed, emitSocketOpen, emitTerminalText, processRawChunk, scheduleGmcpCheck],
+  );
+
+  /**
+   * On mount: adopt an existing socket (if HMR preserved it) and re-bind handlers.
+   * We intentionally do NOT close the socket on unmount so it survives hot reload.
+   */
+  useEffect(() => {
+    const singleton = getSingleton();
+
+    // adopt existing
+    if (
+      singleton.ws &&
+      (singleton.ws.readyState === WebSocket.OPEN || singleton.ws.readyState === WebSocket.CONNECTING)
+    ) {
+      console.log('[game-connection] HMR rehydrate: adopting existing WebSocket', {
+        readyState: singleton.ws.readyState, // 0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED
+        host: singleton.host,
+        port: singleton.port,
+      });
+
+      // IMPORTANT: remove any previous module instance handlers before rebinding
+      if (singleton.unbind) {
+        console.log('[game-connection] HMR rehydrate: unbinding previous handlers');
+        try {
+          singleton.unbind();
+        } catch {
+          // ignore
+        }
+        singleton.unbind = null;
+      }
+
+      wsRef.current = singleton.ws;
+
+      // restore last host/port knowledge
+      lastHostRef.current = singleton.host;
+      lastPortRef.current = singleton.port;
+
+      setCurrentHost(singleton.host);
+      setCurrentPort(singleton.port);
+
+      singleton.unbind = bindSocketHandlers(singleton.ws);
+
+      // If we're currently connected, notify UI listeners that rely on socket-open
+      if (singleton.ws.readyState === WebSocket.OPEN) {
+        console.log('[game-connection] HMR rehydrate: socket already OPEN → emitting game:socket-open');
+        emitSocketOpen();
+      }
+
+      return () => {
+        // On HMR remount/unmount, just unbind handlers; do NOT close.
+        if (singleton.unbind) {
+          try {
+            singleton.unbind();
+          } catch {
+            // ignore
+          }
+          singleton.unbind = null;
+        }
+      };
+    }
+
+    return;
+  }, [bindSocketHandlers, emitSocketOpen]);
+
+  const connect = useCallback(
+    (host: string, port: number, options?: { autoEnableGmcp?: boolean }) => {
+      const singleton = getSingleton();
+
+      setLastError(null);
+
+      // If we had a live socket, fully close it (real disconnect)
+      cleanupSocket();
+
+      gmcpAutoEnableRef.current = options?.autoEnableGmcp ?? true;
+      clearGmcpProbe();
+
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const url = `${proto}//${window.location.host}/ws/game`;
+
+      const ws = new WebSocket(url);
+      wsRef.current = ws;
+
+      singleton.ws = ws;
+      singleton.host = host;
+      singleton.port = port;
+
+      lastHostRef.current = host;
+      lastPortRef.current = port;
+
+      setCurrentHost(host);
+      setCurrentPort(port);
+
+      // Defensive: ensure no stale handler set remains
+      if (singleton.unbind) {
+        try {
+          singleton.unbind();
+        } catch {
+          // ignore
+        }
+        singleton.unbind = null;
+      }
+
+      singleton.unbind = bindSocketHandlers(ws);
+
+      // Send connect once open
+      const sendConnect = () => {
+        try {
+          ws.send(JSON.stringify({ type: 'connect', host, port }));
+        } catch {
+          // ignore
+        }
+      };
+
+      if (ws.readyState === WebSocket.OPEN) sendConnect();
+      else {
+        const onceOpen = () => {
+          ws.removeEventListener('open', onceOpen);
+          sendConnect();
+        };
+        ws.addEventListener('open', onceOpen);
+      }
+
+      // NOTE: connect() returns void — do NOT return an unbind function here.
+    },
+    [bindSocketHandlers, cleanupSocket],
   );
 
   const sendRaw = useCallback(
