@@ -61,6 +61,25 @@ async function runTypescript(source: string, api: ScriptSandboxApi): Promise<voi
 }
 
 /**
+ * Plain text runner:
+ * - one command per line
+ * - blank lines preserved (sent as empty string)
+ * - NO trimming, NO normalization
+ */
+async function runPlainText(source: string, api: ScriptSandboxApi): Promise<void> {
+  // Intentionally allow empty string and whitespace-only scripts:
+  // user may be deliberately sending blank lines.
+  const text = source ?? '';
+
+  // Normalize to LF split, but preserve blank lines.
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+
+  for (const line of lines) {
+    api.sendCommand(line);
+  }
+}
+
+/**
  * Dispatch to the correct language runner.
  */
 export async function runUserScript(script: AnyUserScript, api: ScriptSandboxApi): Promise<void> {
@@ -91,6 +110,11 @@ export async function runUserScript(script: AnyUserScript, api: ScriptSandboxApi
 
     case 'typescript': {
       await runTypescript(script.source, api);
+      return;
+    }
+
+    case 'text': {
+      await runPlainText(script.source, api);
       return;
     }
 
