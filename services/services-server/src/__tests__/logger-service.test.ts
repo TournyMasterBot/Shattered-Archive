@@ -3,25 +3,39 @@ import winston from 'winston';
 import { Logger, createSohGateFormat } from '../logger-service.js';
 import { LogLevel, LoggerProps } from '@shatteredarchive/types-server';
 
-function runFormat(fmt: any, info: Record<string, any>): Record<string, any> | false {
-  return fmt.transform({ ...info }, fmt.options);
+type FakeWinstonLogger = {
+  level: string;
+  transports: winston.transport[];
+  log: jest.Mock;
+};
+
+function asTransportArray(t: winston.transport | winston.transport[] | undefined): winston.transport[] {
+  if (!t) return [];
+  return Array.isArray(t) ? t : [t];
+}
+
+function runFormat(fmt: winston.Logform.Format, info: Record<string, unknown>): Record<string, unknown> | false {
+  return fmt.transform({ ...(info as winston.Logform.TransformableInfo) }, fmt.options) as
+    | Record<string, unknown>
+    | false;
 }
 
 describe('Logger', () => {
-  let fakeLogger: any;
+  let fakeLogger: FakeWinstonLogger;
   let createLoggerSpy: jest.SpyInstance;
 
   beforeEach(() => {
     fakeLogger = {
       level: LogLevel.Info,
-      transports: [] as any[],
+      transports: [],
       log: jest.fn(),
     };
 
-    createLoggerSpy = jest.spyOn(winston, 'createLogger').mockImplementation((opts: any) => {
-      fakeLogger.transports = opts.transports ?? [];
-      fakeLogger.level = opts.level;
-      return fakeLogger;
+    createLoggerSpy = jest.spyOn(winston, 'createLogger').mockImplementation((opts?: winston.LoggerOptions) => {
+      const o = opts ?? {};
+      fakeLogger.transports = asTransportArray(o.transports as unknown as winston.transport | winston.transport[]);
+      fakeLogger.level = String(o.level ?? LogLevel.Info);
+      return fakeLogger as unknown as winston.Logger;
     });
   });
 
@@ -35,10 +49,11 @@ describe('Logger', () => {
     new Logger(props);
 
     expect(createLoggerSpy).toHaveBeenCalledTimes(1);
-    const call = createLoggerSpy.mock.calls[0][0];
+    const call = createLoggerSpy.mock.calls[0][0] as winston.LoggerOptions | undefined;
+    const transports = asTransportArray(call?.transports as unknown as winston.transport | winston.transport[]);
 
-    expect(call.transports).toHaveLength(1);
-    expect(call.transports[0]).toBeInstanceOf(winston.transports.Console);
+    expect(transports).toHaveLength(1);
+    expect(transports[0]).toBeInstanceOf(winston.transports.Console);
   });
 
   it('adds file transport when filePath is provided', () => {
@@ -51,11 +66,13 @@ describe('Logger', () => {
 
     new Logger(props);
 
-    const call = createLoggerSpy.mock.calls[0][0];
-    expect(call.transports).toHaveLength(2);
-    expect(call.transports[0]).toBeInstanceOf(winston.transports.Console);
+    const call = createLoggerSpy.mock.calls[0][0] as winston.LoggerOptions | undefined;
+    const transports = asTransportArray(call?.transports as unknown as winston.transport | winston.transport[]);
 
-    const fileTransport = call.transports[1];
+    expect(transports).toHaveLength(2);
+    expect(transports[0]).toBeInstanceOf(winston.transports.Console);
+
+    const fileTransport = transports[1] as unknown as { constructor?: { name?: string } };
     expect(fileTransport).not.toBeInstanceOf(winston.transports.Console);
     expect(fileTransport.constructor?.name).toBe('DailyRotateFile');
   });
@@ -87,13 +104,13 @@ describe('Logger', () => {
 
     expect(fakeLogger.level).toBe(LogLevel.Info);
 
-    const transportLevelsAtStart = fakeLogger.transports.map((t: any) => t.level);
+    const transportLevelsAtStart = fakeLogger.transports.map((t) => (t as { level?: unknown }).level);
 
     logger.setLevel(LogLevel.Error);
 
     expect(fakeLogger.level).toBe(LogLevel.Error);
 
-    const transportLevelsAfter = fakeLogger.transports.map((t: any) => t.level);
+    const transportLevelsAfter = fakeLogger.transports.map((t) => (t as { level?: unknown }).level);
     expect(transportLevelsAfter).toEqual(transportLevelsAtStart);
   });
 
@@ -105,7 +122,6 @@ describe('Logger', () => {
 
       const gate = gateFactory();
 
-      // toggle off (dropped)
       const r1 = runFormat(gate, {
         level: 'info',
         message: 'game:remote-server:raw',
@@ -113,7 +129,6 @@ describe('Logger', () => {
       });
       expect(r1).toBe(false);
 
-      // suppressed
       const r2 = runFormat(gate, {
         level: 'info',
         message: 'game:remote-server:raw',
@@ -121,7 +136,6 @@ describe('Logger', () => {
       });
       expect(r2).toBe(false);
 
-      // toggle on (dropped)
       const r3 = runFormat(gate, {
         level: 'info',
         message: 'game:remote-server:raw',
@@ -129,7 +143,6 @@ describe('Logger', () => {
       });
       expect(r3).toBe(false);
 
-      // allowed again
       const r4 = runFormat(gate, {
         level: 'info',
         message: 'game:remote-server:raw',
@@ -146,7 +159,6 @@ describe('Logger', () => {
 
       const gate = gateFactory();
 
-      // SOH on non-allowlisted type should NOT toggle and should pass through
       const a1 = runFormat(gate, {
         level: 'info',
         message: 'other:type',
@@ -154,7 +166,6 @@ describe('Logger', () => {
       });
       expect(a1).not.toBe(false);
 
-      // still enabled
       const a2 = runFormat(gate, {
         level: 'info',
         message: 'other:type',
@@ -162,7 +173,6 @@ describe('Logger', () => {
       });
       expect(a2).not.toBe(false);
 
-      // allowlisted SOH toggles off (dropped)
       const b1 = runFormat(gate, {
         level: 'info',
         message: 'allowed:type',
@@ -170,7 +180,6 @@ describe('Logger', () => {
       });
       expect(b1).toBe(false);
 
-      // now suppressed
       const b2 = runFormat(gate, {
         level: 'info',
         message: 'allowed:type',

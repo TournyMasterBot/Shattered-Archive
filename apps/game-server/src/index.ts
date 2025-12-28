@@ -55,6 +55,17 @@ function isTargetAllowed(host: string, port: number): boolean {
   return ALLOWLIST.some((t) => t.host === host && t.port === port);
 }
 
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'string') return err;
+  if (err && typeof err === 'object') {
+    const rec = err as Record<string, unknown>;
+    const msg = rec['message'];
+    if (typeof msg === 'string') return msg;
+  }
+  return 'unknown error';
+}
+
 /**
  * WebSocket message shapes
  */
@@ -278,10 +289,10 @@ function setupGameWebSocketGateway(server: http.Server | https.Server) {
             host,
             port,
           });
-        } catch (err: any) {
+        } catch (err: unknown) {
           sendToClient('game:remote-server:connection:error', {
             type: 'error',
-            message: `Failed to connect to remote MUD: ${err?.message ?? 'unknown error'}`,
+            message: `Failed to connect to remote MUD: ${getErrorMessage(err)}`,
           });
           closeBoth('connect-failed');
         }
@@ -294,17 +305,17 @@ function setupGameWebSocketGateway(server: http.Server | https.Server) {
         const data = msg.data ?? '';
         try {
           mudApp.MudClient.TelnetClient.Send(data);
-        } catch (err: any) {
+        } catch (err: unknown) {
           sendToClient('game:remote-server:send:error', {
             type: 'error',
-            message: `Failed to send data to remote: ${err?.message ?? 'unknown error'}`,
+            message: `Failed to send data to remote: ${getErrorMessage(err)}`,
           });
         }
       }
     });
 
-    ws.on('close', (code: any, reasonBuf: any) => {
-      const reason = reasonBuf?.toString() ?? '';
+    ws.on('close', (code: number, reasonBuf: Buffer) => {
+      const reason = reasonBuf.toString('utf8');
       log.info('game:server:connection:client-closed', {
         code,
         reason,
@@ -312,9 +323,9 @@ function setupGameWebSocketGateway(server: http.Server | https.Server) {
       closeBoth('ws-closed');
     });
 
-    ws.on('error', (err: any) => {
+    ws.on('error', (err: unknown) => {
       log.error('game:server:connection:error', {
-        err,
+        err: getErrorMessage(err),
       });
       closeBoth('ws-error');
     });
