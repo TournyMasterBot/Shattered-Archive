@@ -1,3 +1,4 @@
+// apps\game-client\src\features\plugins\pluginScriptRunner.ts
 import type { PluginBundledScript, PluginRuntimeApi, PluginId } from '@shatteredarchive/types-client';
 import type { AnyUserScript, UserScriptLanguage } from '../userScripts/types';
 import { runUserScript } from '../userScripts/runtime';

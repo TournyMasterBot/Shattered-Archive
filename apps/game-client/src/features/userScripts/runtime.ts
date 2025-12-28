@@ -88,8 +88,16 @@ export async function runUserScript(script: AnyUserScript, api: ScriptSandboxApi
   // Disabled scripts do nothing
   if (!script.enabled) return;
 
-  if (!script.source || !script.source.trim()) {
-    return;
+  // For plain text scripts, we intentionally allow empty/whitespace-only source
+  // because blank lines are meaningful (they should be sent as-is).
+  if (lang !== 'text') {
+    if (!script.source || !script.source.trim()) {
+      return;
+    }
+  } else {
+    if (script.source == null) {
+      return;
+    }
   }
 
   switch (lang) {
