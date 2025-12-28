@@ -21,6 +21,7 @@ import { CORE_PLUGINS } from '../features/plugins/registry';
 import { pluginHost } from '../features/plugins/pluginHost';
 
 import { applyCssToDom, getAppliedCss } from '../features/userStyles/userStyleOverrideStore';
+import LibraryModal from '../components/LibraryModal';
 
 export const MainContainer: React.FC = () => {
   useVisualViewportHeight();
@@ -48,6 +49,7 @@ export const MainContainer: React.FC = () => {
   const handleOpenScriptSandbox = () => setIsScriptModalOpen(true);
   const handleOpenConnect = () => main.openConnectModal();
   const handleOpenPlugins = () => setIsPluginsModalOpen(true);
+  const handleOpenLibrary = () => main.openLibraryModal();
 
   const connectionId = React.useMemo(() => {
     const host = gameConn.currentHost;
@@ -87,6 +89,7 @@ export const MainContainer: React.FC = () => {
         onOpenScriptSandbox={handleOpenScriptSandbox}
         onOpenConnect={handleOpenConnect}
         onOpenPlugins={handleOpenPlugins}
+        onOpenLibrary={handleOpenLibrary}
       />
 
       <FocusBar />
@@ -141,6 +144,8 @@ export const MainContainer: React.FC = () => {
         onConnect={gameConn.connect}
         onDisconnect={gameConn.disconnect}
       />
+
+      <LibraryModal isOpen={main.isLibraryModalOpen} onClose={main.closeLibraryModal} connectionId={connectionId} />
     </div>
   );
 };

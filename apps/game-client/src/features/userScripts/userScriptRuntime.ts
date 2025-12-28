@@ -1,11 +1,8 @@
-import {
-  AnyUserScript,
-  AliasScript,
-  TimerScript,
-  ScriptErrorInfo,
-  ScriptSandboxApi,
-  TriggerContextEvent,
-} from './types';
+// apps/game-client/src/features/userScripts/userScriptRuntime.ts
+
+import { AnyUserScript, ScriptErrorInfo, ScriptSandboxApi, TriggerContextEvent } from './types';
+
+import { runUserScript } from './runtime';
 
 export type SendCommandFn = (cmd: string) => void;
 
@@ -138,7 +135,6 @@ export class UserScriptRuntime {
 
   private executeScript(script: AnyUserScript, extraContext?: { event?: TriggerContextEvent }): void {
     if (!script.enabled) return;
-    if (script.language !== 'javascript') return;
 
     const api: ScriptSandboxApi = {
       sendCommand: this.sendCommand,
@@ -147,22 +143,8 @@ export class UserScriptRuntime {
       error: (...args: unknown[]) => console.error(`[Script:${script.name}]`, ...args),
     };
 
-    try {
-      const fn = new Function(
-        'context',
-        `"use strict";
-        const { sendCommand, event, log, error } = context;
-        try {
-          ${script.source}
-        } catch (innerErr) {
-          error("Unhandled error inside script:", innerErr);
-          throw innerErr;
-        }
-      `,
-      );
-
-      fn(api);
-    } catch (err) {
+    // Fire and forget; runtime handles internal errors via api.error.
+    void runUserScript(script, api).catch((err) => {
       const message = err instanceof Error ? err.message : String(err ?? 'Unknown error');
       const stack = err instanceof Error && err.stack ? err.stack.toString() : undefined;
 
@@ -177,6 +159,6 @@ export class UserScriptRuntime {
 
       if (this.onScriptError) this.onScriptError(errorInfo);
       else console.error('[UserScriptRuntime] error', errorInfo);
-    }
+    });
   }
 }

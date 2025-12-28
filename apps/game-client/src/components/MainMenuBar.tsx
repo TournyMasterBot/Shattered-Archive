@@ -1,3 +1,4 @@
+// apps\game-client\src\components\MainMenuBar.tsx
 import React from 'react';
 import styles from '../styles/MainMenuBar.module.scss';
 import { useMainMenuBar } from '../hooks/useMainMenuBar';
@@ -10,6 +11,7 @@ interface MainMenuBarProps {
   onOpenScriptSandbox: () => void;
   onOpenConnect: () => void;
   onOpenPlugins: () => void;
+  onOpenLibrary: () => void;
 }
 
 export const MainMenuBar: React.FC<MainMenuBarProps> = ({
@@ -17,6 +19,7 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
   onOpenScriptSandbox,
   onOpenConnect,
   onOpenPlugins,
+  onOpenLibrary,
 }) => {
   const {
     openRootMenu,
@@ -88,6 +91,25 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
         <div className={`${styles.menuItem} ${styles.menuItemHasSubmenu}`} onClick={() => toggleRootMenu('Game')}>
           Game
           <div className={`${styles.subMenu} ${openRootMenu === 'Game' ? styles.subMenuOpen : ''}`}>
+            <div className={`${styles.subMenuItem} ${styles.subMenuItemHasSubmenu}`} onClick={toggleGameSettings}>
+              Settings
+              <div className={`${styles.subMenuLevel2} ${isGameSettingsOpen ? styles.subMenuOpen : ''}`}>
+                {/* Graphics is now an action that opens a modal */}
+                {/* Hide for now, until more graphics options are available
+                <div className={styles.subMenuItem} onClick={openGraphicsModal}>
+                  Graphics…
+                </div>
+                */}
+                <div className={styles.subMenuItem} onClick={openAudioModal}>
+                  Audio…
+                </div>
+
+                <div className={styles.subMenuItem} onClick={openAccessibilityModal}>
+                  Accessibility…
+                </div>
+              </div>
+            </div>
+
             <div
               className={styles.subMenuItem}
               onClick={(e) => {
@@ -110,23 +132,15 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
               Custom Styles…
             </div>
 
-            <div className={`${styles.subMenuItem} ${styles.subMenuItemHasSubmenu}`} onClick={toggleGameSettings}>
-              Settings
-              <div className={`${styles.subMenuLevel2} ${isGameSettingsOpen ? styles.subMenuOpen : ''}`}>
-                {/* Graphics is now an action that opens a modal */}
-                {/* Hide for now, until more graphics options are available
-                <div className={styles.subMenuItem} onClick={openGraphicsModal}>
-                  Graphics…
-                </div>
-                */}
-                <div className={styles.subMenuItem} onClick={openAudioModal}>
-                  Audio…
-                </div>
-
-                <div className={styles.subMenuItem} onClick={openAccessibilityModal}>
-                  Accessibility…
-                </div>
-              </div>
+            <div
+              className={styles.subMenuItem}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeAllMenus();
+                onOpenLibrary();
+              }}
+            >
+              Library (Notes & Books)…
             </div>
           </div>
         </div>

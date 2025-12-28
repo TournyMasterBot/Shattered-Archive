@@ -1,4 +1,6 @@
-export type UserScriptLanguage = 'javascript' | 'lua' | 'python' | 'typescript';
+// apps/game-client/src/features/userScripts/types.ts
+
+export type UserScriptLanguage = 'javascript' | 'lua' | 'python' | 'typescript' | 'text';
 
 export type UserScriptKind = 'trigger' | 'alias' | 'timer';
 

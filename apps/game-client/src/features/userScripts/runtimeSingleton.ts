@@ -1,3 +1,4 @@
+// apps\game-client\src\features\userScripts\runtimeSingleton.ts
 import { getAccessibilitySettings } from '../accessibility/accessibility-settings-store';
 import { UserScriptRuntime } from './userScriptRuntime';
 

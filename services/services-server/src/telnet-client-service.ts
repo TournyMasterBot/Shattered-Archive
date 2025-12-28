@@ -28,6 +28,8 @@ export class TelnetClient extends EventEmitter implements ITelnetClient {
   private subIsGMCP = false; // the current subneg is GMCP
   private subSawIAC = false; // inside subneg: last byte was IAC (to catch IAC SE and IAC IAC)
 
+  private awaitingSubOption = false; // SB received, option byte may arrive in next chunk
+
   constructor(props: TelnetClientProps) {
     super();
     props.socket = props.socket ?? new net.Socket();
@@ -106,7 +108,7 @@ export class TelnetClient extends EventEmitter implements ITelnetClient {
       this.processIncomingData(data);
     });
 
-    this.config.socket.on('error', (err) => {
+    this.config.socket.on('error', (err: Error) => {
       this.emit('error', err);
     });
 
@@ -135,8 +137,8 @@ export class TelnetClient extends EventEmitter implements ITelnetClient {
       if (this.inSubneg) {
         // If we started SB last chunk but the option byte arrived now,
         // consume this byte as the option and continue.
-        if ((this as any)._awaitingSubOption) {
-          delete (this as any)._awaitingSubOption;
+        if (this.awaitingSubOption) {
+          this.awaitingSubOption = false;
           this.subIsGMCP = b === TelnetClient.GMCP;
           continue;
         }
@@ -187,7 +189,7 @@ export class TelnetClient extends EventEmitter implements ITelnetClient {
             const opt = data[++i];
             this.subIsGMCP = opt === TelnetClient.GMCP;
           } else {
-            (this as any)._awaitingSubOption = true;
+            this.awaitingSubOption = true;
           }
           continue;
         }
