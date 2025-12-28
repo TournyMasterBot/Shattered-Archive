@@ -1,3 +1,5 @@
+// apps/game-client/src/components/LibraryModal.tsx
+
 import React from 'react';
 import styles from '../styles/LibraryModal.module.scss';
 import useLibrary from '../hooks/useLibrary';
@@ -112,15 +114,41 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   const isBookContext = tab === 'books' && !!activeBook;
   const isBookDirty = isBookContext && (draftTitle !== savedBookTitle || draftBody !== (savedBookPageBody ?? ''));
 
-  const confirmLoseBookChanges = React.useCallback((): boolean => {
+  const confirmLoseBookChanges = (): boolean => {
     if (!isBookDirty) return true;
     return window.confirm('You have unsaved changes on this book page. Discard changes?');
-  }, [isBookDirty]);
+  };
 
-  const handleRequestClose = React.useCallback(() => {
+  const confirmDelete = (message: string): boolean => {
+    return window.confirm(message);
+  };
+
+  const confirmDeleteParchment = (n: LibraryNote): boolean => {
+    const title = (n.title ?? '').trim() || '(untitled)';
+    return confirmDelete(`Delete parchment "${title}"?\n\nThis cannot be undone.`);
+  };
+
+  const confirmDeleteUserNote = (n: UserNote): boolean => {
+    const subj = (n.subject ?? '').trim() || '(untitled)';
+    return confirmDelete(`Delete note [${n.spool}] "${subj}"?\n\nThis cannot be undone.`);
+  };
+
+  const confirmDeleteBook = (b: LibraryBook): boolean => {
+    const title = (b.title ?? '').trim() || '(untitled)';
+    return confirmDelete(`Delete book "${title}"?\n\nThis will delete ALL pages.\nThis cannot be undone.`);
+  };
+
+  const confirmDeleteBookPage = (b: LibraryBook, page: number): boolean => {
+    const title = (b.title ?? '').trim() || '(untitled)';
+    return confirmDelete(
+      `Permanently delete page ${page} from "${title}"?\n\nThis removes the page entry entirely.\nThis cannot be undone.`,
+    );
+  };
+
+  const handleRequestClose = () => {
     if (!confirmLoseBookChanges()) return;
     onClose();
-  }, [confirmLoseBookChanges, onClose]);
+  };
 
   // -------------------------------------------------------------------
   // Keep draft in sync with active selection
@@ -150,13 +178,14 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
     if (tab === 'books') {
       const b = activeBook;
 
-      // ✅ CHANGE: do NOT auto-jump to another page when current page is missing.
-      // Keep the selected page and show empty body (and "(missing)" UI).
-      const page = Math.max(1, Math.floor(activeBookPage || 1));
-      if (page !== activeBookPage) setActiveBookPage(page);
+      // Only repair truly invalid page state.
+      let nextPage = activeBookPage;
+      if (!Number.isFinite(nextPage) || nextPage < 1) nextPage = 1;
+
+      if (nextPage !== activeBookPage) setActiveBookPage(nextPage);
 
       setDraftTitle(b?.title ?? '');
-      setDraftBody(b && hasPage(b, page) ? getPageBody(b, page) : '');
+      setDraftBody(getPageBody(b, nextPage)); // returns '' if missing -> fine
       return;
     }
 
@@ -165,7 +194,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
     setDraftBody('gos {Rhello{B!{x');
   }, [tab, activeParchment, activeUserNote, activeBook, activeBookPage]);
 
-  // When switching books, reset page to first existing (or 1 if none exist)
+  // When switching books, reset page to first existing (or 1)
   React.useEffect(() => {
     if (tab !== 'books') return;
     const b = activeBook;
@@ -175,10 +204,8 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
     }
     const set = pagesToSet(b.pages);
     const sorted = Array.from(set).sort((x, y) => x - y);
-
-    // ✅ If a book has no pages, keep on page 1 (missing)
     setActiveBookPage(sorted[0] ?? 1);
-  }, [tab, activeBookId]); // intentionally by id
+  }, [tab, activeBook]); // <-- fixes exhaustive-deps warning (depends on the actual book)
 
   const previewHtml = React.useMemo(() => renderDslToHtml(draftBody), [draftBody]);
 
@@ -186,13 +213,13 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   // Create actions
   // -------------------------------------------------------------------
 
-  const handleNewParchment = React.useCallback(async () => {
+  const handleNewParchment = async () => {
     const created = await lib.createNote('New Parchment');
     setTab('parchment');
     setActiveParchmentId(created.id);
-  }, [lib]);
+  };
 
-  const handleNewUserNote = React.useCallback(async () => {
+  const handleNewUserNote = async () => {
     const created = await lib.createUserNote(noteSpool, 'New Note');
     setTab('notes');
     setActiveUserNoteId(created.id);
@@ -201,20 +228,20 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
     setDraftBody(created.body ?? '');
     setNoteSpool(created.spool);
     setNoteSubject(created.subject ?? '');
-  }, [lib, noteSpool]);
+  };
 
-  const handleNewBook = React.useCallback(async () => {
+  const handleNewBook = async () => {
     const created = await lib.createBook('New Book');
     setTab('books');
     setActiveBookId(created.id);
     setActiveBookPage(1);
-  }, [lib]);
+  };
 
   // -------------------------------------------------------------------
   // Save/Delete
   // -------------------------------------------------------------------
 
-  const handleSave = React.useCallback(async () => {
+  const handleSave = async () => {
     if (tab === 'parchment' && activeParchment) {
       await lib.saveNote({ ...activeParchment, title: draftTitle, body: draftBody, updatedAt: Date.now() });
       return;
@@ -253,16 +280,18 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
 
       return;
     }
-  }, [tab, activeParchment, activeUserNote, activeBook, activeBookPage, draftTitle, draftBody, lib, noteSpool]);
+  };
 
-  const handleDelete = React.useCallback(async () => {
+  const handleDelete = async () => {
     if (tab === 'parchment' && activeParchment) {
+      if (!confirmDeleteParchment(activeParchment)) return;
       await lib.deleteNote(activeParchment.id);
       setActiveParchmentId(null);
       return;
     }
 
     if (tab === 'notes' && activeUserNote) {
+      if (!confirmDeleteUserNote(activeUserNote)) return;
       await lib.deleteUserNote(activeUserNote.id);
       setActiveUserNoteId(null);
       return;
@@ -270,82 +299,113 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
 
     if (tab === 'books' && activeBook) {
       if (!confirmLoseBookChanges()) return;
+      if (!confirmDeleteBook(activeBook)) return;
+
       await lib.deleteBook(activeBook.id);
       setActiveBookId(null);
       setActiveBookPage(1);
     }
-  }, [tab, activeParchment, activeUserNote, activeBook, lib, confirmLoseBookChanges]);
+  };
 
   // ----- guarded book navigation helpers -----------------------------
 
-  const trySetBookPage = React.useCallback(
-    (next: number) => {
-      if (tab !== 'books') return;
-      if (!confirmLoseBookChanges()) return;
-      setActiveBookPage(Math.max(1, Math.floor(next)));
-    },
-    [tab, confirmLoseBookChanges],
-  );
+  const trySetBookPage = (next: number) => {
+    if (tab !== 'books') return;
+    if (!confirmLoseBookChanges()) return;
+    setActiveBookPage(Math.max(1, Math.floor(next)));
+  };
 
-  const handlePrevPage = React.useCallback(() => trySetBookPage(activeBookPage - 1), [trySetBookPage, activeBookPage]);
-  const handleNextPage = React.useCallback(() => trySetBookPage(activeBookPage + 1), [trySetBookPage, activeBookPage]);
+  const handlePrevPage = () => trySetBookPage(activeBookPage - 1);
+  const handleNextPage = () => trySetBookPage(activeBookPage + 1);
 
-  const handleAddNextPage = React.useCallback(async () => {
+  const handleAddNextPage = async () => {
     if (!activeBook) return;
     if (!confirmLoseBookChanges()) return;
     const next = getMaxPage(activeBook.pages) + 1;
     await lib.addBookPage(activeBook, next);
     setActiveBookPage(next);
-  }, [activeBook, lib, confirmLoseBookChanges]);
+  };
 
-  const handleTearOutPage = React.useCallback(async () => {
+  const handleTearOutPage = async () => {
     if (!activeBook) return;
     if (!confirmLoseBookChanges()) return;
 
-    // ✅ CHANGE: stay on the same page; the page becomes "(missing)".
     await lib.tearOutBookPage(activeBook, activeBookPage);
 
-    // Immediately reflect missing state in the editor (refresh may be async)
-    setDraftBody('');
-    // keep activeBookPage unchanged
-  }, [activeBook, activeBookPage, lib, confirmLoseBookChanges]);
+    const refreshed = lib.booksById.get(activeBook.id);
+    const b = refreshed ?? activeBook;
+    const set = pagesToSet(b.pages);
 
-  const handleRestorePage = React.useCallback(async () => {
+    if (set.has(activeBookPage)) return;
+
+    const prev = activeBookPage - 1;
+    const next = activeBookPage + 1;
+    if (prev >= 1 && set.has(prev)) setActiveBookPage(prev);
+    else if (set.has(next)) setActiveBookPage(next);
+    else {
+      const sorted = Array.from(set).sort((x, y) => x - y);
+      setActiveBookPage(sorted[0] ?? 1);
+    }
+  };
+
+  const handleDeletePage = async () => {
+    if (!activeBook) return;
+
+    // if they have unsaved edits on this page, ask first
+    if (!confirmLoseBookChanges()) return;
+
+    // only makes sense if the page actually exists
+    if (!hasPage(activeBook, activeBookPage)) return;
+
+    // destructive confirmation
+    if (!confirmDeleteBookPage(activeBook, activeBookPage)) return;
+
+    // "delete page" = remove the page record entirely
+    const pages = (activeBook.pages ?? []).filter((p) => p.page !== activeBookPage);
+    pages.sort((a, b) => a.page - b.page);
+
+    await lib.saveBook({
+      ...activeBook,
+      pages,
+      updatedAt: Date.now(),
+    });
+
+    // After delete: keep the same page number selected (so it becomes "(missing)"),
+    // OR optionally jump somewhere else. Your request implies you want it to become missing.
+    // Ensure editor clears:
+    setDraftBody('');
+  };
+
+  const handleRestorePage = async () => {
     if (!activeBook) return;
     if (!confirmLoseBookChanges()) return;
     await lib.addBookPage(activeBook, activeBookPage);
     setDraftBody('');
-  }, [activeBook, activeBookPage, lib, confirmLoseBookChanges]);
+  };
 
   // ----- guarded tab switching --------------------------------------
 
-  const handleSetTab = React.useCallback(
-    (next: TabId) => {
-      if (tab === next) return;
+  const handleSetTab = (next: TabId) => {
+    if (tab === next) return;
 
-      // leaving books? prompt if dirty
-      if (tab === 'books' && next !== 'books') {
-        if (!confirmLoseBookChanges()) return;
-      }
+    // leaving books? prompt if dirty
+    if (tab === 'books' && next !== 'books') {
+      if (!confirmLoseBookChanges()) return;
+    }
 
-      setTab(next);
-    },
-    [tab, confirmLoseBookChanges],
-  );
+    setTab(next);
+  };
 
   // ----- guarded book selection -------------------------------------
 
-  const handleSelectBook = React.useCallback(
-    (id: string) => {
-      if (tab !== 'books') {
-        setActiveBookId(id);
-        return;
-      }
-      if (!confirmLoseBookChanges()) return;
+  const handleSelectBook = (id: string) => {
+    if (tab !== 'books') {
       setActiveBookId(id);
-    },
-    [tab, confirmLoseBookChanges],
-  );
+      return;
+    }
+    if (!confirmLoseBookChanges()) return;
+    setActiveBookId(id);
+  };
 
   // ------------------------------------------------------------------
   // Scribe panel
@@ -366,7 +426,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   const [scribeBookKeyword, setScribeBookKeyword] = React.useState(''); // keyword before title (base book name)
   const [scribeBookKeywordAfterTitle, setScribeBookKeywordAfterTitle] = React.useState(''); // user-editable
 
-  const openScribe = React.useCallback(() => {
+  const openScribe = () => {
     if (tab === 'parchment') {
       const fallbackId = lib.notes[0]?.id ?? null;
       const nextId = activeParchmentId ?? fallbackId;
@@ -421,72 +481,47 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
 
       setIsScribeOpen(true);
     }
-  }, [
-    tab,
-    lib.notes,
-    lib.notesById,
-    activeParchmentId,
-    scribeTitle,
-    lib.userNotes,
-    lib.userNotesById,
-    activeUserNoteId,
-    noteSubject,
-    lib.books,
-    lib.booksById,
-    activeBookId,
-    scribeBookTitle,
-    scribeBookKeyword,
-    scribeBookKeywordAfterTitle,
-  ]);
+  };
 
-  const closeScribe = React.useCallback(() => {
+  const closeScribe = () => {
     if (tab === 'books' && !confirmLoseBookChanges()) return;
     setIsScribeOpen(false);
-  }, [tab, confirmLoseBookChanges]);
+  };
 
   // parchment select helper (existing)
-  const handleSelectParchmentForScribe = React.useCallback(
-    (id: string) => {
-      if (tab !== 'parchment') return;
-      setActiveParchmentId(id);
-      const n = lib.notesById.get(id);
-      if (n) setScribeTitle(n.title ?? '');
-    },
-    [tab, lib.notesById],
-  );
+  const handleSelectParchmentForScribe = (id: string) => {
+    if (tab !== 'parchment') return;
+    setActiveParchmentId(id);
+    const n = lib.notesById.get(id);
+    if (n) setScribeTitle(n.title ?? '');
+  };
 
   // notes select helper
-  const handleSelectUserNoteForScribe = React.useCallback(
-    (id: string) => {
-      if (tab !== 'notes') return;
-      setActiveUserNoteId(id);
-      const n = lib.userNotesById.get(id);
-      if (n) {
-        setNoteSpool(n.spool);
-        setNoteSubject(n.subject ?? '');
-      }
-    },
-    [tab, lib.userNotesById],
-  );
+  const handleSelectUserNoteForScribe = (id: string) => {
+    if (tab !== 'notes') return;
+    setActiveUserNoteId(id);
+    const n = lib.userNotesById.get(id);
+    if (n) {
+      setNoteSpool(n.spool);
+      setNoteSubject(n.subject ?? '');
+    }
+  };
 
   // books select helper (new)
-  const handleSelectBookForScribe = React.useCallback(
-    (id: string) => {
-      if (tab !== 'books') return;
-      setActiveBookId(id);
-      const b = lib.booksById.get(id);
-      if (b) {
-        setScribeBookTitle(b.title ?? '');
-        const baseKeyword = (b as any).keyword ?? b.title ?? '';
-        const afterKeyword = (b as any).keywordAfterTitle ?? baseKeyword;
-        setScribeBookKeyword(baseKeyword);
-        setScribeBookKeywordAfterTitle(afterKeyword);
-      }
-    },
-    [tab, lib.booksById],
-  );
+  const handleSelectBookForScribe = (id: string) => {
+    if (tab !== 'books') return;
+    setActiveBookId(id);
+    const b = lib.booksById.get(id);
+    if (b) {
+      setScribeBookTitle(b.title ?? '');
+      const baseKeyword = (b as any).keyword ?? b.title ?? '';
+      const afterKeyword = (b as any).keywordAfterTitle ?? baseKeyword;
+      setScribeBookKeyword(baseKeyword);
+      setScribeBookKeywordAfterTitle(afterKeyword);
+    }
+  };
 
-  const handleScribeParchment = React.useCallback(() => {
+  const handleScribeParchment = () => {
     if (tab !== 'parchment') return;
 
     const note = activeParchment;
@@ -522,9 +557,9 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
     sendGameCommand(`@`);
     sendGameCommand(`read ${title}`);
     setIsScribeOpen(false);
-  }, [tab, activeParchment, scribeParchment, scribeInk, scribeQuill, scribeTitle]);
+  };
 
-  const handleScribeUserNote = React.useCallback(() => {
+  const handleScribeUserNote = () => {
     if (tab !== 'notes') return;
 
     const n = activeUserNote;
@@ -560,9 +595,9 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
     sendGameCommand(`${spool} show`);
 
     setIsScribeOpen(false);
-  }, [tab, activeUserNote, noteSpool, noteToLine, noteSubject]);
+  };
 
-  const handleScribeBook = React.useCallback(() => {
+  const handleScribeBook = () => {
     if (tab !== 'books') return;
 
     const b = activeBook;
@@ -591,7 +626,6 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
       return;
     }
 
-    // ✅ Skip missing pages automatically: only iterate defined pages
     const pages = sortedDefinedPages(b);
     if (pages.length === 0) {
       window.alert('This book has no defined pages to scribe.');
@@ -626,28 +660,19 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
       sendGameCommand(`write ${afterKeyword} page ${p.page}`);
 
       sendGameCommand(`.c`);
-      for (const line of lines) sendGameCommand(line);
+      for (const line of lines) {
+        sendGameCommand(line);
+      }
       sendGameCommand(`@`);
     }
 
     setIsScribeOpen(false);
-  }, [
-    tab,
-    activeBook,
-    scribeBookQuill,
-    scribeBookInk,
-    scribeBookTitle,
-    scribeBookKeyword,
-    scribeBookKeywordAfterTitle,
-  ]);
+  };
 
   // ------------------------------------------------------------------
 
   const isBookPageMissing = tab === 'books' && activeBook ? !hasPage(activeBook, activeBookPage) : false;
-
-  // ✅ CHANGE: include the currently selected page so "/ {maxPages}" doesn't snap back to 1
-  // when you're viewing a missing page beyond the last defined page.
-  const maxPages = tab === 'books' && activeBook ? Math.max(1, activeBookPage, getMaxPage(activeBook.pages)) : 1;
+  const maxPages = tab === 'books' && activeBook ? Math.max(1, getMaxPage(activeBook.pages)) : 1;
 
   const notesBySpool = React.useMemo(() => {
     const groups = new Map<NoteSpool, UserNote[]>();
@@ -824,14 +849,26 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
                           Restore
                         </button>
                       ) : (
-                        <button
-                          type="button"
-                          className={styles.dangerButton}
-                          onClick={handleTearOutPage}
-                          disabled={!activeBook}
-                        >
-                          Tear Out
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            className={styles.secondaryButton}
+                            onClick={handleTearOutPage}
+                            disabled={!activeBook}
+                          >
+                            Tear Out
+                          </button>
+
+                          <button
+                            type="button"
+                            className={styles.dangerButton}
+                            onClick={handleDeletePage}
+                            disabled={!activeBook}
+                            title="Permanently remove this page entry"
+                          >
+                            Delete Page
+                          </button>
+                        </>
                       )}
                     </div>
                   ) : (
