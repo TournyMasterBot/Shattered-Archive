@@ -8,8 +8,6 @@ export default defineConfig(({ mode }) => {
 
   // Parse numeric port with a sane default
   const port = Number(env.VITE_PORT);
-  const gameServerPort = Number(env.VITE_PORT_GAME_SERVER);
-  const webServerPort = Number(env.VITE_PORT_WEB_SERVER);
 
   // Targets
   const gameApiTarget = env.VITE_GAME_API; // e.g. http://localhost:31000

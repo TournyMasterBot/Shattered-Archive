@@ -34,23 +34,37 @@ export interface CompassState {
   exits: Set<CompassDirection>;
 }
 
-function toNum(x: any): number | undefined {
+type AnyRecord = Record<string, unknown>;
+
+function isRecord(v: unknown): v is AnyRecord {
+  return typeof v === 'object' && v !== null;
+}
+
+function getDetail(ev: Event): unknown {
+  // We accept any CustomEvent payloads, but we don't assume the shape.
+  const ce = ev as CustomEvent<unknown>;
+  return ce.detail;
+}
+
+function toNum(x: unknown): number | undefined {
   const n = Number(x);
   return Number.isFinite(n) ? n : undefined;
 }
 
-function applyVitalsPatch(prev: VitalsState, d: any): VitalsState {
+function applyVitalsPatch(prev: VitalsState, detail: unknown): VitalsState {
   // Supports BOTH shapes:
-  // - your legacy custom event: { hp, hpMax, mp, mpMax, stamina, staminaMax } (+ mv/mvMax)
+  // - legacy custom event: { hp, hpMax, mp, mpMax, stamina, staminaMax } (+ mv/mvMax)
   // - GMCP char_data payload: { hp, max_hp, mana, max_mana, move, max_move }
-  const hp = toNum(d?.hp);
-  const hpMax = toNum(d?.hpMax ?? d?.max_hp);
+  const d = isRecord(detail) ? detail : {};
 
-  const mp = toNum(d?.mp ?? d?.mana);
-  const mpMax = toNum(d?.mpMax ?? d?.max_mana);
+  const hp = toNum(d.hp);
+  const hpMax = toNum(d.hpMax ?? d.max_hp);
 
-  const stamina = toNum(d?.stamina ?? d?.mv ?? d?.move);
-  const staminaMax = toNum(d?.staminaMax ?? d?.mvMax ?? d?.max_move);
+  const mp = toNum(d.mp ?? d.mana);
+  const mpMax = toNum(d.mpMax ?? d.max_mana);
+
+  const stamina = toNum(d.stamina ?? d.mv ?? d.move);
+  const staminaMax = toNum(d.staminaMax ?? d.mvMax ?? d.max_move);
 
   return {
     hp: hp ?? prev.hp,
@@ -80,24 +94,17 @@ export function useVitalsState(): VitalsState {
   });
 
   useEffect(() => {
-    const handlerGmcpVitals = (ev: Event) => {
-      const ce = ev as CustomEvent<any>;
-      const d = ce.detail || {};
+    const handler = (ev: Event) => {
+      const d = getDetail(ev);
       setVitals((prev) => applyVitalsPatch(prev, d));
     };
 
-    const handlerCharData = (ev: Event) => {
-      const ce = ev as CustomEvent<any>;
-      const d = ce.detail || {};
-      setVitals((prev) => applyVitalsPatch(prev, d));
-    };
-
-    window.addEventListener('game:gmcp-vitals', handlerGmcpVitals as EventListener);
-    window.addEventListener('game:char-data', handlerCharData as EventListener);
+    window.addEventListener('game:gmcp-vitals', handler as EventListener);
+    window.addEventListener('game:char-data', handler as EventListener);
 
     return () => {
-      window.removeEventListener('game:gmcp-vitals', handlerGmcpVitals as EventListener);
-      window.removeEventListener('game:char-data', handlerCharData as EventListener);
+      window.removeEventListener('game:gmcp-vitals', handler as EventListener);
+      window.removeEventListener('game:char-data', handler as EventListener);
     };
   }, []);
 
@@ -122,13 +129,22 @@ export function useEnemyHudState(): EnemyHudState {
 
   useEffect(() => {
     const handler = (ev: Event) => {
-      const ce = ev as CustomEvent<any>;
-      const d = ce.detail || {};
+      const detail = getDetail(ev);
+      const d = isRecord(detail) ? detail : {};
+
+      const visible = typeof d.visible === 'boolean' ? d.visible : undefined;
+      const label = typeof d.label === 'string' ? d.label : undefined;
+
+      const pctRaw = typeof d.pct === 'number' ? d.pct : toNum(d.pct);
+      const pct = typeof pctRaw === 'number' ? Math.max(0, Math.min(100, pctRaw)) : undefined;
+
+      const statusText = typeof d.statusText === 'string' ? d.statusText : undefined;
+
       setState((prev) => ({
-        visible: typeof d.visible === 'boolean' ? d.visible : prev.visible,
-        label: typeof d.label === 'string' ? d.label : prev.label,
-        pct: typeof d.pct === 'number' ? Math.max(0, Math.min(100, d.pct)) : prev.pct,
-        statusText: typeof d.statusText === 'string' ? d.statusText : prev.statusText,
+        visible: visible ?? prev.visible,
+        label: label ?? prev.label,
+        pct: pct ?? prev.pct,
+        statusText: statusText ?? prev.statusText,
       }));
     };
 
@@ -152,15 +168,38 @@ export function useAffectsState(): AffectEntry[] {
 
   useEffect(() => {
     const syncHandler = (ev: Event) => {
-      const ce = ev as CustomEvent<any>;
-      const list = Array.isArray(ce.detail?.affects) ? (ce.detail.affects as AffectEntry[]) : [];
+      const detail = getDetail(ev);
+      const d = isRecord(detail) ? detail : {};
+      const raw = d.affects;
+
+      const list: AffectEntry[] = Array.isArray(raw)
+        ? raw
+            .filter((x): x is AnyRecord => isRecord(x))
+            .map((x) => ({
+              id: typeof x.id === 'string' ? x.id : '',
+              name: typeof x.name === 'string' ? x.name : '',
+              summary: typeof x.summary === 'string' ? x.summary : undefined,
+            }))
+            .filter((x) => x.id.length > 0 && x.name.length > 0)
+        : [];
+
       setAffects(list);
     };
 
     const addHandler = (ev: Event) => {
-      const ce = ev as CustomEvent<any>;
-      const a = ce.detail?.affect as AffectEntry | undefined;
-      if (!a || !a.id) return;
+      const detail = getDetail(ev);
+      const d = isRecord(detail) ? detail : {};
+      const raw = d.affect;
+
+      if (!isRecord(raw)) return;
+
+      const a: AffectEntry = {
+        id: typeof raw.id === 'string' ? raw.id : '',
+        name: typeof raw.name === 'string' ? raw.name : '',
+        summary: typeof raw.summary === 'string' ? raw.summary : undefined,
+      };
+
+      if (!a.id || !a.name) return;
 
       setAffects((prev) => {
         const idx = prev.findIndex((x) => x.id === a.id);
@@ -172,8 +211,9 @@ export function useAffectsState(): AffectEntry[] {
     };
 
     const removeHandler = (ev: Event) => {
-      const ce = ev as CustomEvent<any>;
-      const id = ce.detail?.id as string | undefined;
+      const detail = getDetail(ev);
+      const d = isRecord(detail) ? detail : {};
+      const id = typeof d.id === 'string' ? d.id : '';
       if (!id) return;
       setAffects((prev) => prev.filter((a) => a.id !== id));
     };
@@ -205,9 +245,11 @@ export function useCompassState(): CompassState {
 
   useEffect(() => {
     const handler = (ev: Event) => {
-      const ce = ev as CustomEvent<any>;
-      const raw = ce.detail?.exits as string[] | undefined;
-      if (!raw) {
+      const detail = getDetail(ev);
+      const d = isRecord(detail) ? detail : {};
+      const raw = d.exits;
+
+      if (!Array.isArray(raw)) {
         setExits(new Set());
         return;
       }
@@ -215,10 +257,22 @@ export function useCompassState(): CompassState {
       const next = new Set<CompassDirection>();
       for (const dir of raw) {
         const up = String(dir).toUpperCase();
-        if (['N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW', 'U', 'D'].includes(up)) {
+        if (
+          up === 'N' ||
+          up === 'S' ||
+          up === 'E' ||
+          up === 'W' ||
+          up === 'NE' ||
+          up === 'NW' ||
+          up === 'SE' ||
+          up === 'SW' ||
+          up === 'U' ||
+          up === 'D'
+        ) {
           next.add(up as CompassDirection);
         }
       }
+
       setExits(next);
     };
 
