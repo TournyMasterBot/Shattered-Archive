@@ -1,9 +1,7 @@
-// apps/game-client/src/features/library/library-store.ts
-
 import type { LibraryBook, LibraryBookPage, LibraryNote, NoteSpool, UserNote } from './library-types';
 
 const DB_NAME = 'shatteredArchive.library';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 const STORE_NOTES = 'notes'; // parchment (existing)
 const STORE_BOOKS = 'books';
@@ -39,7 +37,7 @@ function openDb(): Promise<IDBDatabase> {
         s.createIndex('by_connection', 'connectionId', { unique: false });
         s.createIndex('by_connection_updated', ['connectionId', 'updatedAt'], { unique: false });
       } else if (tx) {
-        // Migration: v1 books had { body: string }. v2 books have { pages: [{page, body}] }.
+        // Migrations / normalization
         const store = tx.objectStore(STORE_BOOKS);
 
         const getAllReq = store.getAll();
@@ -47,25 +45,32 @@ function openDb(): Promise<IDBDatabase> {
           const rows = (getAllReq.result ?? []) as any[];
 
           for (const row of rows) {
-            if (row && typeof row.body === 'string' && !Array.isArray(row.pages)) {
+            if (!row) continue;
+
+            // v1 -> v2: { body } -> { pages }
+            if (typeof row.body === 'string' && !Array.isArray(row.pages)) {
               const body = row.body ?? '';
               delete row.body;
-
-              const pages: LibraryBookPage[] = [{ page: 1, body }];
-              row.pages = pages;
-
-              store.put(row);
+              row.pages = [{ page: 1, body }];
             }
 
-            // Normalize pages array if present but malformed
-            if (row && Array.isArray(row.pages)) {
+            // Normalize pages if present, but allow empty pages
+            if (Array.isArray(row.pages)) {
               row.pages = row.pages
-                .filter((p: any) => p && Number.isFinite(p.page) && typeof p.body === 'string')
+                .filter((p: any) => p && Number.isFinite(p.page))
                 .map((p: any) => ({ page: Math.max(1, Math.floor(p.page)), body: p.body ?? '' }))
                 .sort((a: LibraryBookPage, b: LibraryBookPage) => a.page - b.page);
-
-              store.put(row);
+            } else {
+              // If missing entirely, treat as empty (all pages missing)
+              row.pages = [];
             }
+
+            // v4: keywords for scribing
+            const title = typeof row.title === 'string' ? row.title : '';
+            if (typeof row.keyword !== 'string') row.keyword = title;
+            if (typeof row.keywordAfterTitle !== 'string') row.keywordAfterTitle = row.keyword;
+
+            store.put(row);
           }
         };
       }
@@ -98,7 +103,6 @@ async function getAllByConnection<T>(storeName: string, connectionId: string): P
 
   await txDone(tx);
 
-  // newest first (same UX expectation as plugins listing)
   (rows as any[]).sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
   return rows;
 }
@@ -110,15 +114,16 @@ export async function listNotes(connectionId: string): Promise<LibraryNote[]> {
 export async function listBooks(connectionId: string): Promise<LibraryBook[]> {
   const books = await getAllByConnection<LibraryBook>(STORE_BOOKS, connectionId);
 
-  // Normalize + sort pages (defensive)
+  // Normalize + sort pages + keyword fields (defensive), allow empty pages
   for (const b of books as any[]) {
-    if (!Array.isArray(b.pages)) b.pages = [{ page: 1, body: '' }];
+    if (!Array.isArray(b.pages)) b.pages = [];
     b.pages = (b.pages as any[])
-      .filter((p) => p && Number.isFinite(p.page) && typeof p.body === 'string')
+      .filter((p) => p && Number.isFinite(p.page))
       .map((p) => ({ page: Math.max(1, Math.floor(p.page)), body: p.body ?? '' }))
       .sort((a: LibraryBookPage, c: LibraryBookPage) => a.page - c.page);
 
-    if (b.pages.length === 0) b.pages = [{ page: 1, body: '' }];
+    if (typeof b.keyword !== 'string') b.keyword = b.title ?? '';
+    if (typeof b.keywordAfterTitle !== 'string') b.keywordAfterTitle = b.keyword;
   }
 
   return books;
@@ -132,8 +137,16 @@ export async function upsertNote(note: LibraryNote): Promise<void> {
 }
 
 export async function upsertBook(book: LibraryBook): Promise<void> {
+  const title = book.title ?? '';
+  const keyword = typeof (book as any).keyword === 'string' ? (book as any).keyword : title;
+  const keywordAfterTitle =
+    typeof (book as any).keywordAfterTitle === 'string' ? (book as any).keywordAfterTitle : keyword;
+
   const normalized: LibraryBook = {
     ...book,
+    title,
+    keyword,
+    keywordAfterTitle,
     pages:
       (book.pages ?? [])
         .filter((p) => p && Number.isFinite(p.page))
@@ -141,8 +154,7 @@ export async function upsertBook(book: LibraryBook): Promise<void> {
         .sort((a, b) => a.page - b.page) || [],
   };
 
-  if (normalized.pages.length === 0) normalized.pages = [{ page: 1, body: '' }];
-
+  // ✅ IMPORTANT: allow empty pages; do NOT force [{page:1,...}]
   const db = await openDb();
   const tx = db.transaction(STORE_BOOKS, 'readwrite');
   tx.objectStore(STORE_BOOKS).put(normalized);
@@ -183,6 +195,10 @@ export async function createBook(connectionId: string, title: string): Promise<L
     id: newId(),
     connectionId,
     title,
+    keyword: title,
+    keywordAfterTitle: title,
+    // Keep initial page 1 for new books (your existing UX),
+    // but you can tear it out and still show "(missing)" afterwards.
     pages: [{ page: 1, body: '' }],
     createdAt: now,
     updatedAt: now,

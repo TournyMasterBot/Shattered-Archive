@@ -1,13 +1,5 @@
-// apps/game-client/src/hooks/useLibrary.ts
-
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type {
-  LibraryBook,
-  LibraryBookPage,
-  LibraryNote,
-  UserNote,
-  NoteSpool,
-} from '../features/library/library-types';
+import type { LibraryBook, LibraryBookPage, LibraryNote, UserNote, NoteSpool } from '../features/library/library-types';
 import {
   createBook,
   createNote,
@@ -26,13 +18,13 @@ import {
 } from '../features/library/library-store';
 
 function normalizeBookPages(pages: LibraryBookPage[] | undefined): LibraryBookPage[] {
-  const p =
+  // ✅ IMPORTANT: allow empty pages to represent "all pages missing"
+  return (
     (pages ?? [])
       .filter((x) => x && Number.isFinite(x.page))
       .map((x) => ({ page: Math.max(1, Math.floor(x.page)), body: x.body ?? '' }))
-      .sort((a, b) => a.page - b.page) || [];
-
-  return p.length > 0 ? p : [{ page: 1, body: '' }];
+      .sort((a, b) => a.page - b.page) || []
+  );
 }
 
 export function useLibrary(connectionId: string) {
@@ -51,13 +43,10 @@ export function useLibrary(connectionId: string) {
   const refresh = useCallback(async () => {
     const cid = connRef.current;
 
-    const [n, b, un] = await Promise.all([
-      listNotes(cid),
-      listBooks(cid),
-      listUserNotes(cid),
-    ]);
+    const [n, b, un] = await Promise.all([listNotes(cid), listBooks(cid), listUserNotes(cid)]);
 
     setNotes(n);
+    // ✅ no longer force a synthetic page 1 here
     setBooks(b.map((x) => ({ ...x, pages: normalizeBookPages(x.pages) })));
     setUserNotes(un);
   }, []);
@@ -100,6 +89,7 @@ export function useLibrary(connectionId: string) {
 
   const saveBook = useCallback(
     async (book: LibraryBook) => {
+      // ✅ allow empty pages
       await upsertBook({ ...book, pages: normalizeBookPages(book.pages) });
       await refresh();
     },
@@ -153,12 +143,12 @@ export function useLibrary(connectionId: string) {
       const pages = normalizeBookPages(book.pages);
       const nextPages = pages.filter((p) => p.page !== page);
 
-      const safePages = nextPages.length > 0 ? nextPages : [{ page: 1, body: '' }];
-
+      // ✅ IMPORTANT: do NOT force page 1 back in.
+      // Empty pages array means "everything is missing".
       await saveBook({
         ...book,
         updatedAt: Date.now(),
-        pages: safePages,
+        pages: nextPages,
       });
     },
     [saveBook],

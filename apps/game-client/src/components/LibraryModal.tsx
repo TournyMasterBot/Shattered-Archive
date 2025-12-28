@@ -1,5 +1,3 @@
-// apps/game-client/src/components/LibraryModal.tsx
-
 import React from 'react';
 import styles from '../styles/LibraryModal.module.scss';
 import useLibrary from '../hooks/useLibrary';
@@ -64,6 +62,15 @@ function sendGameCommand(cmd: string): void {
       detail: { cmd },
     }),
   );
+}
+
+function sortedDefinedPages(book: LibraryBook): LibraryBookPage[] {
+  const pages = (book.pages ?? [])
+    .filter((p) => p && Number.isFinite(p.page))
+    .map((p) => ({ page: Math.max(1, Math.floor(p.page)), body: p.body ?? '' }))
+    .sort((a, b) => a.page - b.page);
+
+  return pages;
 }
 
 export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, connectionId }) => {
@@ -132,34 +139,24 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
       setDraftTitle(n?.subject ?? '');
       setDraftBody(n?.body ?? '');
 
-      // ✅ only hydrate spool when the selected note changes
-      // (and NOT as part of general re-renders)
+      // only hydrate spool when the selected note changes
       if (n?.spool) setNoteSpool(n.spool);
 
       // keep scribe subject defaulted when switching notes
       setNoteSubject(n?.subject ?? '');
-
       return;
     }
 
     if (tab === 'books') {
       const b = activeBook;
 
-      let nextPage = activeBookPage;
-      if (b) {
-        const pageSet = pagesToSet(b.pages);
-        if (!pageSet.has(nextPage)) {
-          const sorted = Array.from(pageSet).sort((x, y) => x - y);
-          nextPage = sorted[0] ?? 1;
-        }
-      } else {
-        nextPage = 1;
-      }
-
-      if (nextPage !== activeBookPage) setActiveBookPage(nextPage);
+      // ✅ CHANGE: do NOT auto-jump to another page when current page is missing.
+      // Keep the selected page and show empty body (and "(missing)" UI).
+      const page = Math.max(1, Math.floor(activeBookPage || 1));
+      if (page !== activeBookPage) setActiveBookPage(page);
 
       setDraftTitle(b?.title ?? '');
-      setDraftBody(getPageBody(b, nextPage));
+      setDraftBody(b && hasPage(b, page) ? getPageBody(b, page) : '');
       return;
     }
 
@@ -168,7 +165,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
     setDraftBody('gos {Rhello{B!{x');
   }, [tab, activeParchment, activeUserNote, activeBook, activeBookPage]);
 
-  // When switching books, reset page to first existing (or 1)
+  // When switching books, reset page to first existing (or 1 if none exist)
   React.useEffect(() => {
     if (tab !== 'books') return;
     const b = activeBook;
@@ -178,8 +175,10 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
     }
     const set = pagesToSet(b.pages);
     const sorted = Array.from(set).sort((x, y) => x - y);
+
+    // ✅ If a book has no pages, keep on page 1 (missing)
     setActiveBookPage(sorted[0] ?? 1);
-  }, [tab, activeBookId]);
+  }, [tab, activeBookId]); // intentionally by id
 
   const previewHtml = React.useMemo(() => renderDslToHtml(draftBody), [draftBody]);
 
@@ -198,7 +197,6 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
     setTab('notes');
     setActiveUserNoteId(created.id);
 
-    // hydrate editor subject/body/spool from newly created note
     setDraftTitle(created.subject ?? '');
     setDraftBody(created.body ?? '');
     setNoteSpool(created.spool);
@@ -231,9 +229,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
         updatedAt: Date.now(),
       });
 
-      // keep scribe subject aligned with what user saved/edited
       setNoteSubject(draftTitle);
-
       return;
     }
 
@@ -306,22 +302,12 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
     if (!activeBook) return;
     if (!confirmLoseBookChanges()) return;
 
+    // ✅ CHANGE: stay on the same page; the page becomes "(missing)".
     await lib.tearOutBookPage(activeBook, activeBookPage);
 
-    const refreshed = lib.booksById.get(activeBook.id);
-    const b = refreshed ?? activeBook;
-    const set = pagesToSet(b.pages);
-
-    if (set.has(activeBookPage)) return;
-
-    const prev = activeBookPage - 1;
-    const next = activeBookPage + 1;
-    if (prev >= 1 && set.has(prev)) setActiveBookPage(prev);
-    else if (set.has(next)) setActiveBookPage(next);
-    else {
-      const sorted = Array.from(set).sort((x, y) => x - y);
-      setActiveBookPage(sorted[0] ?? 1);
-    }
+    // Immediately reflect missing state in the editor (refresh may be async)
+    setDraftBody('');
+    // keep activeBookPage unchanged
   }, [activeBook, activeBookPage, lib, confirmLoseBookChanges]);
 
   const handleRestorePage = React.useCallback(async () => {
@@ -373,6 +359,13 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   const [scribeQuill, setScribeQuill] = React.useState('');
   const [scribeTitle, setScribeTitle] = React.useState('');
 
+  // book scribe inputs (new)
+  const [scribeBookInk, setScribeBookInk] = React.useState('');
+  const [scribeBookQuill, setScribeBookQuill] = React.useState('');
+  const [scribeBookTitle, setScribeBookTitle] = React.useState('');
+  const [scribeBookKeyword, setScribeBookKeyword] = React.useState(''); // keyword before title (base book name)
+  const [scribeBookKeywordAfterTitle, setScribeBookKeywordAfterTitle] = React.useState(''); // user-editable
+
   const openScribe = React.useCallback(() => {
     if (tab === 'parchment') {
       const fallbackId = lib.notes[0]?.id ?? null;
@@ -399,8 +392,6 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
       }
       setActiveUserNoteId(nextId);
 
-      // ✅ IMPORTANT: do NOT reset spool here; keep whatever is currently selected in editor (noteSpool)
-      // Subject defaults if blank
       const n = lib.userNotesById.get(nextId);
       if (n && !noteSubject) setNoteSubject(n.subject ?? '');
 
@@ -408,8 +399,28 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
       return;
     }
 
-    // Books tab: placeholder
-    if (tab === 'books') setIsScribeOpen(true);
+    if (tab === 'books') {
+      const fallbackId = lib.books[0]?.id ?? null;
+      const nextId = activeBookId ?? fallbackId;
+      if (!nextId) {
+        window.alert('You have no books to scribe yet.');
+        return;
+      }
+      setActiveBookId(nextId);
+
+      const b = lib.booksById.get(nextId) ?? null;
+      if (b) {
+        // Defaults
+        if (!scribeBookTitle) setScribeBookTitle(b.title ?? '');
+        const baseKeyword = (b as any).keyword ?? b.title ?? '';
+        const afterKeyword = (b as any).keywordAfterTitle ?? baseKeyword;
+
+        if (!scribeBookKeyword) setScribeBookKeyword(baseKeyword);
+        if (!scribeBookKeywordAfterTitle) setScribeBookKeywordAfterTitle(afterKeyword);
+      }
+
+      setIsScribeOpen(true);
+    }
   }, [
     tab,
     lib.notes,
@@ -420,6 +431,12 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
     lib.userNotesById,
     activeUserNoteId,
     noteSubject,
+    lib.books,
+    lib.booksById,
+    activeBookId,
+    scribeBookTitle,
+    scribeBookKeyword,
+    scribeBookKeywordAfterTitle,
   ]);
 
   const closeScribe = React.useCallback(() => {
@@ -445,12 +462,28 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
       setActiveUserNoteId(id);
       const n = lib.userNotesById.get(id);
       if (n) {
-        // This is the ONE place we intentionally hydrate spool from the selected note (because user explicitly changed note)
         setNoteSpool(n.spool);
         setNoteSubject(n.subject ?? '');
       }
     },
     [tab, lib.userNotesById],
+  );
+
+  // books select helper (new)
+  const handleSelectBookForScribe = React.useCallback(
+    (id: string) => {
+      if (tab !== 'books') return;
+      setActiveBookId(id);
+      const b = lib.booksById.get(id);
+      if (b) {
+        setScribeBookTitle(b.title ?? '');
+        const baseKeyword = (b as any).keyword ?? b.title ?? '';
+        const afterKeyword = (b as any).keywordAfterTitle ?? baseKeyword;
+        setScribeBookKeyword(baseKeyword);
+        setScribeBookKeywordAfterTitle(afterKeyword);
+      }
+    },
+    [tab, lib.booksById],
   );
 
   const handleScribeParchment = React.useCallback(() => {
@@ -484,9 +517,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
     sendGameCommand(`write ${parchment}`);
     sendGameCommand(`.c`);
 
-    for (const line of lines) {
-      sendGameCommand(line);
-    }
+    for (const line of lines) sendGameCommand(line);
 
     sendGameCommand(`@`);
     sendGameCommand(`read ${title}`);
@@ -531,10 +562,92 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
     setIsScribeOpen(false);
   }, [tab, activeUserNote, noteSpool, noteToLine, noteSubject]);
 
+  const handleScribeBook = React.useCallback(() => {
+    if (tab !== 'books') return;
+
+    const b = activeBook;
+    if (!b) return;
+
+    const quill = (scribeBookQuill ?? '').trim();
+    const ink = (scribeBookInk ?? '').trim();
+    const title = (scribeBookTitle ?? '').trim();
+    const baseKeyword = (scribeBookKeyword ?? '').trim();
+    const afterKeyword = (scribeBookKeywordAfterTitle ?? '').trim();
+
+    if (!quill || !ink) {
+      window.alert('Please fill quill and ink.');
+      return;
+    }
+    if (!title) {
+      window.alert('Please fill the new title.');
+      return;
+    }
+    if (!baseKeyword) {
+      window.alert('Please fill the book keyword (original book name/keyword).');
+      return;
+    }
+    if (!afterKeyword) {
+      window.alert('Please fill the keyword to use after changing the title.');
+      return;
+    }
+
+    // ✅ Skip missing pages automatically: only iterate defined pages
+    const pages = sortedDefinedPages(b);
+    if (pages.length === 0) {
+      window.alert('This book has no defined pages to scribe.');
+      return;
+    }
+
+    const pageList = pages.map((p) => p.page).join(', ');
+    const totalLines = pages.reduce((sum, p) => sum + splitLinesPreserveBlanks(p.body ?? '').length, 0);
+
+    const ok = window.confirm(
+      `Scribe book:\n` +
+        `Book: ${b.title}\n` +
+        `Title -> "${title}"\n` +
+        `Keyword (title cmd): ${baseKeyword}\n` +
+        `Keyword (page cmd): ${afterKeyword}\n` +
+        `Pages: ${pages.length} [${pageList}]\n` +
+        `Total lines: ${totalLines}\n\nProceed?`,
+    );
+    if (!ok) return;
+
+    // per your format:
+    // dip quill ink write {book} title {title}
+    sendGameCommand(`dip ${quill} ${ink}`);
+    sendGameCommand(`write ${baseKeyword} title ${title}`);
+
+    // First page uses dip line in your example; subsequent pages just "write ..."
+    for (let i = 0; i < pages.length; i++) {
+      const p = pages[i];
+      const lines = splitLinesPreserveBlanks(p.body ?? '');
+
+      sendGameCommand(`dip ${quill} ${ink}`);
+      sendGameCommand(`write ${afterKeyword} page ${p.page}`);
+
+      sendGameCommand(`.c`);
+      for (const line of lines) sendGameCommand(line);
+      sendGameCommand(`@`);
+    }
+
+    setIsScribeOpen(false);
+  }, [
+    tab,
+    activeBook,
+    scribeBookQuill,
+    scribeBookInk,
+    scribeBookTitle,
+    scribeBookKeyword,
+    scribeBookKeywordAfterTitle,
+  ]);
+
   // ------------------------------------------------------------------
 
   const isBookPageMissing = tab === 'books' && activeBook ? !hasPage(activeBook, activeBookPage) : false;
-  const maxPages = tab === 'books' && activeBook ? Math.max(1, getMaxPage(activeBook.pages)) : 1;
+
+  // ✅ CHANGE: include the currently selected page so "/ {maxPages}" doesn't snap back to 1
+  // when you're viewing a missing page beyond the last defined page.
+  const maxPages = tab === 'books' && activeBook ? Math.max(1, activeBookPage, getMaxPage(activeBook.pages)) : 1;
 
   const notesBySpool = React.useMemo(() => {
     const groups = new Map<NoteSpool, UserNote[]>();
@@ -549,12 +662,10 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
       groups.set(k, arr);
     }
 
-    return Array.from(groups.entries()).sort((a, b) =>
-      a[0].localeCompare(b[0], undefined, { sensitivity: 'base' }),
-    );
+    return Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0], undefined, { sensitivity: 'base' }));
   }, [lib.userNotes]);
 
-  // ✅ IMPORTANT: only now is it safe to early-return
+  // ✅ IMPORTANT: return null ONLY AFTER ALL HOOKS HAVE RUN
   if (!isOpen) return null;
 
   const showList = tab === 'parchment' || tab === 'notes' || tab === 'books';
@@ -635,7 +746,6 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
                 </div>
 
                 <div className={styles.editorHeader}>
-                  {/* ✅ FIX 1: put spool selector next to subject WHEN IN NOTES TAB */}
                   {tab === 'notes' ? (
                     <div className={styles.titleWithSpool}>
                       <div className={styles.noteSpoolSelectWrap}>
@@ -833,7 +943,6 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
                     </div>
                   </div>
 
-                  {/* ✅ FIX 2: Keep your parchment scribe selection section exactly as you had it */}
                   {isScribeOpen && (
                     <div className={styles.scribeInline}>
                       <div className={styles.scribeInlineHeader}>
@@ -1009,9 +1118,95 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
                       )}
 
                       {tab === 'books' && (
-                        <div className={styles.scribePlaceholder}>
-                          Book scribing placeholder — next we’ll add page-aware selection + preview.
-                        </div>
+                        <>
+                          <div className={styles.scribeGrid}>
+                            <div className={styles.scribeField}>
+                              <div className={styles.scribeFieldLabel}>Quill</div>
+                              <input
+                                className={styles.scribeInput}
+                                value={scribeBookQuill}
+                                onChange={(e) => setScribeBookQuill(e.target.value)}
+                                placeholder="quill name"
+                              />
+                            </div>
+
+                            <div className={styles.scribeField}>
+                              <div className={styles.scribeFieldLabel}>Ink</div>
+                              <input
+                                className={styles.scribeInput}
+                                value={scribeBookInk}
+                                onChange={(e) => setScribeBookInk(e.target.value)}
+                                placeholder="ink name"
+                              />
+                            </div>
+
+                            <div className={styles.scribeFieldWide}>
+                              <div className={styles.scribeFieldLabel}>New Title</div>
+                              <input
+                                className={styles.scribeInput}
+                                value={scribeBookTitle}
+                                onChange={(e) => setScribeBookTitle(e.target.value)}
+                                placeholder="New book title"
+                              />
+                            </div>
+
+                            <div className={styles.scribeFieldWide}>
+                              <div className={styles.scribeFieldLabel}>Book Keyword (for title command)</div>
+                              <input
+                                className={styles.scribeInput}
+                                value={scribeBookKeyword}
+                                onChange={(e) => setScribeBookKeyword(e.target.value)}
+                                placeholder="original book keyword (defaults to book title)"
+                              />
+                            </div>
+
+                            <div className={styles.scribeFieldWide}>
+                              <div className={styles.scribeFieldLabel}>Keyword After Title (for page commands)</div>
+                              <input
+                                className={styles.scribeInput}
+                                value={scribeBookKeywordAfterTitle}
+                                onChange={(e) => setScribeBookKeywordAfterTitle(e.target.value)}
+                                placeholder="keyword to use when writing pages"
+                              />
+                            </div>
+
+                            <div className={styles.scribeFieldWide}>
+                              <div className={styles.scribeFieldLabel}>Book</div>
+                              <div className={styles.scribeSelectWrap}>
+                                <select
+                                  className={styles.scribeSelect}
+                                  value={activeBookId ?? ''}
+                                  onChange={(e) => handleSelectBookForScribe(e.target.value)}
+                                >
+                                  {lib.books
+                                    .slice()
+                                    .sort((a, b) =>
+                                      (a.title ?? '').localeCompare(b.title ?? '', undefined, { sensitivity: 'base' }),
+                                    )
+                                    .map((bk) => (
+                                      <option key={bk.id} value={bk.id}>
+                                        {bk.title || '(untitled)'}
+                                      </option>
+                                    ))}
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className={styles.scribeActions}>
+                            <button type="button" className={styles.secondaryButton} onClick={closeScribe}>
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.primaryButton}
+                              onClick={handleScribeBook}
+                              disabled={!activeBook}
+                            >
+                              Scribe
+                            </button>
+                          </div>
+                        </>
                       )}
                     </div>
                   )}
@@ -1028,7 +1223,11 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
               </div>
 
               <div className={styles.editorGrid}>
-                <textarea className={styles.textArea} value={draftBody} onChange={(e) => setDraftBody(e.target.value)} />
+                <textarea
+                  className={styles.textArea}
+                  value={draftBody}
+                  onChange={(e) => setDraftBody(e.target.value)}
+                />
                 <div className={styles.previewPane}>
                   <div className={styles.previewTitle}>Rendered Preview</div>
                   <div className={styles.previewBody}>

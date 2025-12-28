@@ -9,15 +9,7 @@ export interface LibraryNote {
   updatedAt: number;
 }
 
-export type NoteSpool =
-  | 'note'
-  | 'anote'
-  | 'storynote'
-  | 'oocn'
-  | 'qnote'
-  | 'history'
-  | 'news'
-  | 'changes';
+export type NoteSpool = 'note' | 'anote' | 'storynote' | 'oocn' | 'qnote' | 'history' | 'news' | 'changes';
 
 export interface UserNote {
   id: LibraryId;
@@ -44,8 +36,19 @@ export interface LibraryBookPage {
 export interface LibraryBook {
   id: LibraryId;
   connectionId: string;
+
+  /** in-game title you want the book to have */
   title: string;
+
+  /** keyword to reference the book BEFORE changing title */
+  keyword: string;
+
+  /** keyword to reference the book AFTER changing title */
+  keywordAfterTitle: string;
+
+  /** only defined pages exist here; missing pages are allowed */
   pages: LibraryBookPage[];
+
   createdAt: number;
   updatedAt: number;
 }
