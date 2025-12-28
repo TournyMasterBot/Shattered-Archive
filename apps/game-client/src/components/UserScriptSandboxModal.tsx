@@ -1,3 +1,4 @@
+// apps\game-client\src\components\UserScriptSandboxModal.tsx
 import React, { useState, useEffect } from 'react';
 import { useUserScriptSandbox } from '../hooks/useUserScriptSandbox';
 import {
@@ -40,7 +41,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
   const [editorName, setEditorName] = useState<string>('');
   const [editorSource, setEditorSource] = useState<string>('');
-  const [editorLanguage, setEditorLanguage] = useState<UserScriptLanguage>('javascript');
+  const [editorLanguage, setEditorLanguage] = useState<UserScriptLanguage>('text');
 
   // Trigger-specific state
   const [triggerEventName, setTriggerEventName] = useState<string>('example:event');
@@ -79,7 +80,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       setSelectedScriptId(null);
       setEditorName('');
       setEditorSource('');
-      setEditorLanguage('javascript');
+      setEditorLanguage('text');
       setTriggerEventName('example:event');
       setTriggerMatchText('');
       setTriggerTestInput('');
@@ -94,7 +95,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
     setSelectedScriptId(null);
     setEditorName('');
     setEditorSource('');
-    setEditorLanguage('javascript');
+    setEditorLanguage('text');
     setTriggerEventName('example:event');
     setTriggerMatchText('');
     setTriggerTestInput('');
@@ -196,10 +197,9 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       const s = createTrigger({
         name: 'New Trigger',
         enabled: false,
-        language: 'javascript',
-        source: `// Trigger example
-log("Trigger fired");
-sendCommand("say Hello from trigger");`,
+        language: 'text',
+        source: `say Trigger fired
+look`,
         eventName: 'example:event',
         matchText: '',
         omitFromOutput: false,
@@ -211,8 +211,8 @@ sendCommand("say Hello from trigger");`,
         name: 'New Alias',
         alias: 'l',
         enabled: false,
-        language: 'javascript',
-        source: `log("Alias executed")`,
+        language: 'text',
+        source: `look`,
       });
       handleSelectScript(s);
       setActiveTab('aliases');
@@ -220,10 +220,8 @@ sendCommand("say Hello from trigger");`,
       const s = createTimer({
         name: 'New Timer',
         enabled: false,
-        language: 'javascript',
-        source: `// Timer example
-log("Timer fired");
-sendCommand("score");`,
+        language: 'text',
+        source: `score`,
         intervalMs: 5000,
       });
       handleSelectScript(s);
@@ -285,7 +283,7 @@ sendCommand("score");`,
     setSelectedScriptId(null);
     setEditorName('');
     setEditorSource('');
-    setEditorLanguage('javascript');
+    setEditorLanguage('text');
     setTriggerEventName('example:event');
     setTriggerMatchText('');
     setTriggerTestInput('');
@@ -471,6 +469,7 @@ sendCommand("score");`,
                       value={editorLanguage}
                       onChange={(e) => setEditorLanguage(e.target.value as UserScriptLanguage)}
                     >
+                      <option value="text">Plain text</option>
                       <option value="javascript">JavaScript</option>
                       <option value="lua">Lua</option>
                       <option value="python">Python</option>
@@ -522,6 +521,7 @@ sendCommand("score");`,
                         value={triggerEventName}
                         onChange={(e) => setTriggerEventName(e.target.value)}
                       >
+                        <option value="game:terminal-data">game:terminal-data</option>
                         <option value="text:line">text:line</option>
                         <option value="gmcp:room">gmcp:room</option>
                         <option value="gmcp:affects">gmcp:affects</option>

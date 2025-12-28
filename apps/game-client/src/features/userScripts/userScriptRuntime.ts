@@ -77,6 +77,15 @@ export class UserScriptRuntime {
     for (const script of this.scripts.values()) {
       if (script.kind !== 'trigger' || !script.enabled) continue;
       if (script.eventName !== event.name) continue;
+
+      const trig: any = script;
+      const matchText = String(trig.matchText ?? '');
+      if (matchText) {
+        const p: any = event.payload;
+        const text = typeof p === 'string' ? p : String(p?.text ?? '');
+        if (!text.toLowerCase().includes(matchText.toLowerCase())) continue;
+      }
+
       this.executeScript(script, { event });
     }
   }

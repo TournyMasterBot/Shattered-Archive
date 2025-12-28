@@ -205,6 +205,15 @@ export function useUserScriptSandbox(connectionId?: string | null) {
 
     try {
       window.localStorage.setItem(key, JSON.stringify(scripts));
+      try {
+        window.dispatchEvent(
+          new CustomEvent('game:userScripts-updated', {
+            detail: { connectionId: connectionId ?? 'default' },
+          }),
+        );
+      } catch {
+        // ignore
+      }
     } catch (err) {
       console.error('[UserScriptSandbox] Failed to save scripts:', err);
     }
@@ -219,12 +228,14 @@ export function useUserScriptSandbox(connectionId?: string | null) {
     const omitRules = scripts
       .filter((s) => s.kind === 'trigger' && s.enabled)
       .filter((s: any) => !!s.omitFromOutput)
-      .map((s: any) => ({
-        id: s.id,
-        eventName: s.eventName || 'text:line',
-        matchText: s.matchText || '',
-        caseInsensitive: true,
-      }));
+      .flatMap((s: any) => {
+        const matchText = s.matchText || '';
+        // support both block + line
+        return [
+          { id: `${s.id}:line`, eventName: 'text:line', matchText, caseInsensitive: true },
+          { id: `${s.id}:block`, eventName: 'game:terminal-data', matchText, caseInsensitive: true },
+        ];
+      });
 
     setOmitRules(omitRules);
   }, [scripts]);

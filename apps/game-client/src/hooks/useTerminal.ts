@@ -1,3 +1,4 @@
+// apps\game-client\src\hooks\useTerminal.ts
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
@@ -161,6 +162,8 @@ export function useTerminal() {
       const text = e.detail?.text ?? '';
       const t = termRef.current;
       if (!text || !t) return;
+
+      if (shouldOmitLine('game:terminal-data', text)) return;
 
       let start = 0;
       let out: string | null = null;

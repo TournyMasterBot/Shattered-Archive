@@ -1,3 +1,4 @@
+// apps\game-client\src\hooks\usePlugins.ts
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PluginId } from '@shatteredarchive/types-client';
 import { findCorePlugin } from '../features/plugins/registry';
