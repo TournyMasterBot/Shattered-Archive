@@ -1,5 +1,3 @@
-// apps/game-client/src/features/library/library-types.ts
-
 export type LibraryId = string;
 
 export interface LibraryNote {
@@ -7,6 +5,33 @@ export interface LibraryNote {
   connectionId: string;
   title: string;
   body: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export type NoteSpool =
+  | 'note'
+  | 'anote'
+  | 'storynote'
+  | 'oocn'
+  | 'qnote'
+  | 'history'
+  | 'news'
+  | 'changes';
+
+export interface UserNote {
+  id: LibraryId;
+  connectionId: string;
+
+  spool: NoteSpool;
+
+  /** what the UI calls “title”, but maps to `{spool} subject ...` */
+  subject: string;
+
+  /** free text editor body */
+  body: string;
+
+  /** for convenience / future search */
   createdAt: number;
   updatedAt: number;
 }
@@ -19,13 +44,8 @@ export interface LibraryBookPage {
 export interface LibraryBook {
   id: LibraryId;
   connectionId: string;
-
-  /** Title applies to the book; pages themselves do not have titles */
   title: string;
-
-  /** Sparse page set: gaps represent missing/torn-out pages */
   pages: LibraryBookPage[];
-
   createdAt: number;
   updatedAt: number;
 }

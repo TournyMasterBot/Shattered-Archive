@@ -1,7 +1,13 @@
 // apps/game-client/src/hooks/useLibrary.ts
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { LibraryBook, LibraryBookPage, LibraryNote } from '../features/library/library-types';
+import type {
+  LibraryBook,
+  LibraryBookPage,
+  LibraryNote,
+  UserNote,
+  NoteSpool,
+} from '../features/library/library-types';
 import {
   createBook,
   createNote,
@@ -11,6 +17,12 @@ import {
   listNotes,
   upsertBook,
   upsertNote,
+
+  // ✅ Notes (new store)
+  listUserNotes,
+  createUserNote,
+  upsertUserNote,
+  deleteUserNote,
 } from '../features/library/library-store';
 
 function normalizeBookPages(pages: LibraryBookPage[] | undefined): LibraryBookPage[] {
@@ -24,8 +36,12 @@ function normalizeBookPages(pages: LibraryBookPage[] | undefined): LibraryBookPa
 }
 
 export function useLibrary(connectionId: string) {
+  // Parchment (existing)
   const [notes, setNotes] = useState<LibraryNote[]>([]);
   const [books, setBooks] = useState<LibraryBook[]>([]);
+
+  // Notes (new)
+  const [userNotes, setUserNotes] = useState<UserNote[]>([]);
 
   const connRef = useRef(connectionId);
   useEffect(() => {
@@ -34,14 +50,25 @@ export function useLibrary(connectionId: string) {
 
   const refresh = useCallback(async () => {
     const cid = connRef.current;
-    const [n, b] = await Promise.all([listNotes(cid), listBooks(cid)]);
+
+    const [n, b, un] = await Promise.all([
+      listNotes(cid),
+      listBooks(cid),
+      listUserNotes(cid),
+    ]);
+
     setNotes(n);
     setBooks(b.map((x) => ({ ...x, pages: normalizeBookPages(x.pages) })));
+    setUserNotes(un);
   }, []);
 
   useEffect(() => {
     refresh();
   }, [connectionId, refresh]);
+
+  // -----------------------------
+  // Parchment actions (existing)
+  // -----------------------------
 
   const createNoteAction = useCallback(
     async (title?: string) => {
@@ -95,7 +122,10 @@ export function useLibrary(connectionId: string) {
     [refresh],
   );
 
-  // Book page helpers (end-to-end actions)
+  // -----------------------------
+  // Books page helpers (existing)
+  // -----------------------------
+
   const setBookPageBody = useCallback(
     async (book: LibraryBook, page: number, body: string) => {
       const pages = normalizeBookPages(book.pages);
@@ -123,7 +153,6 @@ export function useLibrary(connectionId: string) {
       const pages = normalizeBookPages(book.pages);
       const nextPages = pages.filter((p) => p.page !== page);
 
-      // If they tear out the last remaining page, keep page 1 as empty so the book stays editable
       const safePages = nextPages.length > 0 ? nextPages : [{ page: 1, body: '' }];
 
       await saveBook({
@@ -151,16 +180,53 @@ export function useLibrary(connectionId: string) {
     [saveBook],
   );
 
+  // -----------------------------
+  // Notes (new store) actions
+  // -----------------------------
+
+  const createUserNoteAction = useCallback(
+    async (spool: NoteSpool, subject?: string) => {
+      const cid = connRef.current;
+      const created = await createUserNote(cid, spool, subject ?? 'New Note');
+      await refresh();
+      return created;
+    },
+    [refresh],
+  );
+
+  const saveUserNote = useCallback(
+    async (note: UserNote) => {
+      await upsertUserNote(note);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const deleteUserNoteAction = useCallback(
+    async (id: string) => {
+      await deleteUserNote(id);
+      await refresh();
+    },
+    [refresh],
+  );
+
   const notesById = useMemo(() => new Map(notes.map((n) => [n.id, n])), [notes]);
   const booksById = useMemo(() => new Map(books.map((b) => [b.id, b])), [books]);
+  const userNotesById = useMemo(() => new Map(userNotes.map((n) => [n.id, n])), [userNotes]);
 
   return {
+    // parchment + books
     notes,
     books,
     notesById,
     booksById,
 
+    // notes (new)
+    userNotes,
+    userNotesById,
+
     refresh,
+
     createNote: createNoteAction,
     createBook: createBookAction,
     saveNote,
@@ -172,6 +238,11 @@ export function useLibrary(connectionId: string) {
     setBookPageBody,
     tearOutBookPage,
     addBookPage,
+
+    // Notes (new)
+    createUserNote: createUserNoteAction,
+    saveUserNote,
+    deleteUserNote: deleteUserNoteAction,
   };
 }
 

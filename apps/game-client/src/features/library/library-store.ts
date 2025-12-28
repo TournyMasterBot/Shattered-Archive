@@ -1,12 +1,13 @@
 // apps/game-client/src/features/library/library-store.ts
 
-import type { LibraryBook, LibraryBookPage, LibraryNote } from './library-types';
+import type { LibraryBook, LibraryBookPage, LibraryNote, NoteSpool, UserNote } from './library-types';
 
 const DB_NAME = 'shatteredArchive.library';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
-const STORE_NOTES = 'notes';
+const STORE_NOTES = 'notes'; // parchment (existing)
 const STORE_BOOKS = 'books';
+const STORE_USER_NOTES = 'user_notes'; // Notes tab
 
 function newId(): string {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -19,6 +20,13 @@ function openDb(): Promise<IDBDatabase> {
     req.onupgradeneeded = () => {
       const db = req.result;
       const tx = req.transaction;
+
+      if (!db.objectStoreNames.contains(STORE_USER_NOTES)) {
+        const s = db.createObjectStore(STORE_USER_NOTES, { keyPath: 'id' });
+        s.createIndex('by_connection', 'connectionId', { unique: false });
+        s.createIndex('by_connection_updated', ['connectionId', 'updatedAt'], { unique: false });
+        s.createIndex('by_connection_spool_updated', ['connectionId', 'spool', 'updatedAt'], { unique: false });
+      }
 
       if (!db.objectStoreNames.contains(STORE_NOTES)) {
         const s = db.createObjectStore(STORE_NOTES, { keyPath: 'id' });
@@ -181,4 +189,53 @@ export async function createBook(connectionId: string, title: string): Promise<L
   };
   await upsertBook(book);
   return book;
+}
+
+export async function listParchment(connectionId: string): Promise<LibraryNote[]> {
+  return listNotes(connectionId);
+}
+
+export async function upsertParchment(note: LibraryNote): Promise<void> {
+  return upsertNote(note);
+}
+
+export async function deleteParchment(id: string): Promise<void> {
+  return deleteNote(id);
+}
+
+export async function createParchment(connectionId: string, title: string): Promise<LibraryNote> {
+  return createNote(connectionId, title);
+}
+
+export async function listUserNotes(connectionId: string): Promise<UserNote[]> {
+  return getAllByConnection<UserNote>(STORE_USER_NOTES, connectionId);
+}
+
+export async function upsertUserNote(note: UserNote): Promise<void> {
+  const db = await openDb();
+  const tx = db.transaction(STORE_USER_NOTES, 'readwrite');
+  tx.objectStore(STORE_USER_NOTES).put(note);
+  await txDone(tx);
+}
+
+export async function deleteUserNote(id: string): Promise<void> {
+  const db = await openDb();
+  const tx = db.transaction(STORE_USER_NOTES, 'readwrite');
+  tx.objectStore(STORE_USER_NOTES).delete(id);
+  await txDone(tx);
+}
+
+export async function createUserNote(connectionId: string, spool: NoteSpool, subject: string): Promise<UserNote> {
+  const now = Date.now();
+  const note: UserNote = {
+    id: newId(),
+    connectionId,
+    spool,
+    subject,
+    body: '',
+    createdAt: now,
+    updatedAt: now,
+  };
+  await upsertUserNote(note);
+  return note;
 }

@@ -1,3 +1,5 @@
+// apps/game-client/src/styles/LibraryModal.module.scss
+
 .backdrop {
   position: fixed;
   inset: 0;
@@ -10,7 +12,6 @@
 }
 
 .modal {
-  /* wider when screen allows */
   width: min(1400px, 96vw);
   max-height: 90vh;
 
@@ -90,6 +91,60 @@
   color: #e6efff;
 }
 
+.titleWithSpool {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.noteSpoolSelectWrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+/* styled to match your inputs/selects */
+.noteSpoolSelect {
+  appearance: none;
+  width: 140px;
+  max-width: 140px;
+
+  background: #0e1016;
+  color: #f5f7ff;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 6px 28px 6px 8px;
+  font-size: 0.85rem;
+  line-height: 1.2;
+}
+
+/* simple caret that matches your existing scribe select wrap style */
+.noteSpoolSelectWrap::after {
+  content: '▾';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+/* Ensure title input can shrink next to the spool */
+.titleWithSpool .titleInput {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Optional: make the spool selector a bit narrower on small screens */
+@media (max-width: 900px) {
+  .noteSpoolSelect {
+    width: 140px;
+    max-width: 140px;
+  }
+}
+
+
 /* -------------------------------------------------- */
 /* Dark scrollbars                                    */
 /* -------------------------------------------------- */
@@ -160,7 +215,7 @@
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* prevent nested overlap weirdness */
+  overflow: hidden;
 }
 
 .split {
@@ -170,12 +225,10 @@
   min-height: 0;
   flex: 1;
 
-  /* shared sizing between header/body columns */
   --listW: 190px;
   --gap: 12px;
 }
 
-/* single aligned header row across both columns */
 .splitHeader {
   display: grid;
   grid-template-columns: var(--listW) 1fr;
@@ -184,7 +237,6 @@
   min-width: 0;
 }
 
-/* body grid uses the same columns as header */
 .splitBody {
   display: grid;
   grid-template-columns: var(--listW) 1fr;
@@ -229,6 +281,23 @@
   min-height: 0;
 }
 
+.treeGroup {
+  padding: 6px 0;
+}
+
+.treeGroupHeader {
+  padding: 6px 10px;
+  font-size: 0.7rem;
+  color: #a0a0a0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid #1f1f1f;
+  background: #0f0f0f;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
 .listItem {
   width: 100%;
   text-align: left;
@@ -260,7 +329,7 @@
 }
 
 /* -------------------------------------------------- */
-/* Right pane header (title + page controls + buttons)*/
+/* Right pane header                                  */
 /* -------------------------------------------------- */
 
 .editorHeader {
@@ -310,7 +379,7 @@
   background: #0e1016;
   color: #f5f7ff;
   border: 1px solid #444;
-  border-radius: 4px;
+  border-radius: (4px);
   padding: 4px 6px;
   font-size: 0.85rem;
 }
@@ -333,7 +402,7 @@
 }
 
 /* -------------------------------------------------- */
-/* Right pane body (editor + preview + scribe)         */
+/* Right pane body                                    */
 /* -------------------------------------------------- */
 
 .editorPane {
@@ -344,17 +413,17 @@
   flex-direction: column;
   gap: 10px;
 
-  overflow: hidden; /* critical: prevents scribe overlap */
+  overflow: hidden;
 }
 
 .editorMain {
   min-height: 0;
-  overflow: auto; /* the editor area scrolls, scribe stays in flow */
+  overflow: auto;
 }
 
 .editorGrid {
   display: grid;
-  grid-template-columns: 1.2fr 1fr; /* preview gets more space than before */
+  grid-template-columns: 1.2fr 1fr;
   gap: 10px;
   min-height: 360px;
 }
@@ -371,7 +440,6 @@
   font-size: 0.85rem;
   line-height: 1.35;
 
-  /* show exactly what user typed; horizontal scroll at bottom */
   white-space: pre;
   overflow: auto;
 }
@@ -402,13 +470,11 @@
   font-size: 0.85rem;
   line-height: 1.35;
 
-  /* bottom scrollbar, no wrap */
   white-space: pre;
   overflow: auto;
   min-height: 0;
 }
 
-/* prevents nested content from forcing weird scroll behavior */
 .previewInner {
   display: inline-block;
   min-width: max-content;
@@ -472,7 +538,7 @@
   flex-direction: column;
 
   min-height: 160px;
-  flex: 0 0 auto; /* stays below editor, never overlaps */
+  flex: 0 0 auto;
 }
 
 .scribeInlineHeader {
@@ -558,7 +624,7 @@
 }
 
 /* -------------------------------------------------- */
-/* Colors tab                                          */
+/* Colors tab                                         */
 /* -------------------------------------------------- */
 
 .colorsPane {
