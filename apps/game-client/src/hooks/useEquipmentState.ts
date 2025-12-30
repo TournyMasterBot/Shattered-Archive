@@ -1,4 +1,4 @@
-// apps/game-client/src/hooks/useEquipmentState.ts
+// apps\game-client\src\hooks\useEquipmentState.ts
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import {
   getEquipmentPrefs,
@@ -9,6 +9,7 @@ import {
 } from '../features/equipment/equipment-store';
 
 export function useEquipmentState(connectionId: string) {
+  // one-time hydrate per connectionId
   useEffect(() => {
     void hydrateEquipment(connectionId);
   }, [connectionId]);

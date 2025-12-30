@@ -1,94 +1,216 @@
+// apps\game-client\src\hooks\useEquipmentDeltas.ts
 import { useEffect } from 'react';
+import { parseEqDeltaLine } from '../features/equipment/eq-delta-parse';
+import { extractTerminalText } from '../features/terminal/extractTerminalText';
 import {
-  setSlotOptimistic,
-  setEqSnapshot,
   getEquipmentProfile,
+  getEquipmentState,
+  patchEqSnapshot,
+  setEquipmentFromDelta,
 } from '../features/equipment/equipment-store';
-import { applyWearLineToSnapshot, normalizeEqText, stripAnsi } from '../features/equipment/eq-delta-parse';
+import type { EqSlot } from '../features/equipment/equipment-types';
 
-console.log('[eq-delta] useEquipmentDeltas module loaded');
+function splitToLines(text: string): string[] {
+  return String(text ?? '')
+    .replace(/\r/g, '')
+    .split('\n')
+    .map((x) => x ?? '');
+}
+
+function stripAnsi(input: string): string {
+  return String(input ?? '').replace(/\u001b\[[0-9;]*m/g, '');
+}
+
+function normalizeForCompare(input: string): string {
+  const s = stripAnsi(input).toLowerCase().trim();
+
+  // drop punctuation-ish
+  const noPunct = s.replace(/[.,;:!?'"`]/g, ' ');
+
+  // remove common articles
+  const noArticles = noPunct.replace(/\b(the|an|a)\b/g, ' ');
+
+  // collapse whitespace
+  const compact = noArticles.replace(/\s+/g, ' ').trim();
+
+  // remove common wear-location suffixes that appear in snapshot lines
+  // (keeps matching tolerant between "belt about your waist" and "leather belt")
+  const withoutSuffix = compact
+    .replace(/\babout your waist\b/g, '')
+    .replace(/\babout your torso\b/g, '')
+    .replace(/\bon your torso\b/g, '')
+    .replace(/\bon your head\b/g, '')
+    .replace(/\bon your legs\b/g, '')
+    .replace(/\bon your feet\b/g, '')
+    .replace(/\bon your hands\b/g, '')
+    .replace(/\baround your neck\b/g, '')
+    .replace(/\baround your left wrist\b/g, '')
+    .replace(/\baround your right wrist\b/g, '')
+    .replace(/\bon your left finger\b/g, '')
+    .replace(/\bon your right finger\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return withoutSuffix;
+}
+
+function bestSnapshotSlotMatch(connectionId: string, removedItem: string): EqSlot | null {
+  const prof = getEquipmentProfile(connectionId);
+  const snap = prof.snapshot;
+  if (!snap?.slots) return null;
+
+  const target = normalizeForCompare(removedItem);
+  if (!target) return null;
+
+  let best: { slot: EqSlot; score: number } | null = null;
+  let tie = false;
+
+  for (const [slot, entry] of Object.entries(snap.slots) as Array<[EqSlot, any]>) {
+    const rawLine = String(entry?.rawLine ?? '');
+    const candidate = normalizeForCompare(rawLine);
+    if (!candidate) continue;
+
+    // simple scoring: exact normalized match wins; otherwise substring match
+    let score = 0;
+    if (candidate === target) score = 100;
+    else if (candidate.includes(target) || target.includes(candidate)) score = 50;
+
+    if (score <= 0) continue;
+
+    if (!best || score > best.score) {
+      best = { slot, score };
+      tie = false;
+    } else if (best && score === best.score) {
+      tie = true;
+    }
+  }
+
+  // conservative: only return if unique best
+  if (!best || tie) return null;
+  return best.slot;
+}
 
 export function useEquipmentDeltas(connectionId: string) {
   useEffect(() => {
-    console.log('[eq-delta] hook mounted', { connectionId });
+    console.debug('[eq-delta] hook mounted', { connectionId });
 
     const onTerminal = (ev: Event) => {
-      const e = ev as CustomEvent<{ text?: string }>;
-      const raw = e.detail?.text ?? '';
+      const detail = (ev as CustomEvent<unknown>).detail;
+      const chunk = extractTerminalText(detail);
+      if (!chunk) return;
 
-      console.debug('[eq-delta] terminal event received', { raw });
+      const lines = splitToLines(chunk);
 
-      if (!raw) return;
+      for (const line of lines) {
+        const evt = parseEqDeltaLine(line);
+        if (!evt) continue;
 
-      const cleaned = stripAnsi(raw).replace(/\r/g, '');
-      const lines = cleaned.split('\n');
+        // Always read current hotbar for removal rules.
+        const st = getEquipmentState(connectionId);
 
-      for (const lineRaw of lines) {
-        const line = lineRaw.trim();
-        if (!line) continue;
+        const wielded = st.slots.wielded?.text ?? '';
+        const secondary = st.slots.secondary?.text ?? '';
+        const shield = st.slots.shield?.text ?? '';
+        const sheathed = st.slots.sheathed?.text ?? '';
 
-        console.debug('[eq-delta] processing line', { line });
-
-        // DISARM (partial match)
-        if (line.includes('DISARMS you and sends your weapon flying!')) {
-          console.warn('[eq-delta] DISARM detected -> clearing wielded + secondary');
-          void setSlotOptimistic(connectionId, 'wielded', null);
-          void setSlotOptimistic(connectionId, 'secondary', null);
+        if (evt.kind === 'disarm') {
+          // hotbar
+          void setEquipmentFromDelta(connectionId, { wielded: '(nothing)', secondary: '(nothing)' });
+          // snapshot (delete so we don't show stale)
+          void patchEqSnapshot(connectionId, { wielded: null, secondary_weapon: null });
           continue;
         }
 
-        // WIELD (primary / secondary)
-        if (line.startsWith('You wield ')) {
-          const isSecondary = line.includes(' as a secondary weapon.');
-          const item = normalizeEqText(
-            line
-              .replace(/^You wield\s+/i, '')
-              .replace(/\s+as a secondary weapon\.\s*$/i, '')
-              .replace(/\.\s*$/i, ''),
-          );
-
-          console.info('[eq-delta] WIELD detected', { isSecondary, item });
-
-          void setSlotOptimistic(connectionId, isSecondary ? 'secondary' : 'wielded', item || '(nothing)');
+        if (evt.kind === 'wield') {
+          if (evt.isSecondary) {
+            void setEquipmentFromDelta(connectionId, { secondary: evt.item });
+            void patchEqSnapshot(connectionId, { secondary_weapon: evt.item });
+          } else {
+            void setEquipmentFromDelta(connectionId, { wielded: evt.item });
+            void patchEqSnapshot(connectionId, { wielded: evt.item });
+          }
           continue;
         }
 
-        // EQUIPMENT REMOVAL (partial match)
-        if (line.startsWith('You stop using')) {
-          console.warn('[eq-delta] STOP USING detected -> clearing wielded + secondary');
-          void setSlotOptimistic(connectionId, 'wielded', null);
-          void setSlotOptimistic(connectionId, 'secondary', null);
+        if (evt.kind === 'wear') {
+          // snapshot always gets the slot (this is what fixes your modal issue)
+          void patchEqSnapshot(connectionId, { [evt.slot]: evt.item } as Partial<Record<EqSlot, string | null>>);
+
+          // hotbar only mirrors a subset
+          if (evt.slot === 'worn_as_shield') {
+            void setEquipmentFromDelta(connectionId, { shield: evt.item });
+          }
+          if (evt.slot === 'sheathed') {
+            void setEquipmentFromDelta(connectionId, { sheathed: evt.item });
+          }
+          if (evt.slot === 'wielded') {
+            void setEquipmentFromDelta(connectionId, { wielded: evt.item });
+          }
+          if (evt.slot === 'secondary_weapon') {
+            void setEquipmentFromDelta(connectionId, { secondary: evt.item });
+          }
           continue;
         }
 
-        // WEAR -> update full snapshot
-        if (line.startsWith('You wear ')) {
-          console.info('[eq-delta] WEAR detected', { line });
+        if (evt.kind === 'stop_using') {
+          const removedRaw = evt.item;
+          const removed = normalizeForCompare(removedRaw);
 
-          const profile = getEquipmentProfile(connectionId);
-          const next = applyWearLineToSnapshot(profile.snapshot, line);
+          const wNorm = normalizeForCompare(wielded);
+          const sNorm = normalizeForCompare(secondary);
+          const shNorm = normalizeForCompare(shield);
+          const sheNorm = normalizeForCompare(sheathed);
 
-          if (!next) {
-            console.warn('[eq-delta] WEAR not recognized (no slot mapping)', { line });
+          const matchesWielded = removed && wNorm && removed === wNorm;
+          const matchesSecondary = removed && sNorm && removed === sNorm;
+          const matchesShield = removed && shNorm && removed === shNorm;
+          const matchesSheathed = removed && sheNorm && removed === sheNorm;
+
+          // Hotbar rules first
+          if (matchesWielded) {
+            // Dual-wield removal rule: removing primary clears both
+            if (secondary && secondary !== '(nothing)') {
+              void setEquipmentFromDelta(connectionId, { wielded: '(nothing)', secondary: '(nothing)' });
+              void patchEqSnapshot(connectionId, { wielded: null, secondary_weapon: null });
+            } else {
+              void setEquipmentFromDelta(connectionId, { wielded: '(nothing)' });
+              void patchEqSnapshot(connectionId, { wielded: null });
+            }
             continue;
           }
 
-          console.debug('[eq-delta] snapshot updated', {
-            updatedAt: next.updatedAt,
-            slotKeys: Object.keys(next.slots ?? {}),
-          });
+          if (matchesSecondary) {
+            void setEquipmentFromDelta(connectionId, { secondary: '(nothing)' });
+            void patchEqSnapshot(connectionId, { secondary_weapon: null });
+            continue;
+          }
 
-          void setEqSnapshot(connectionId, next);
+          if (matchesShield) {
+            void setEquipmentFromDelta(connectionId, { shield: '(nothing)' });
+            void patchEqSnapshot(connectionId, { worn_as_shield: null });
+            continue;
+          }
+
+          if (matchesSheathed) {
+            void setEquipmentFromDelta(connectionId, { sheathed: '(nothing)' });
+            void patchEqSnapshot(connectionId, { sheathed: null });
+            continue;
+          }
+
+          // Snapshot-only removal: try to find the correct slot (conservative)
+          const slot = bestSnapshotSlotMatch(connectionId, removedRaw);
+          if (slot) {
+            void patchEqSnapshot(connectionId, { [slot]: null } as Partial<Record<EqSlot, string | null>>);
+          }
+
           continue;
         }
-
-        console.debug('[eq-delta] line ignored', { line });
       }
     };
 
     window.addEventListener('game:terminal-data', onTerminal as EventListener);
     return () => {
-      console.log('[eq-delta] hook unmounted', { connectionId });
+      console.debug('[eq-delta] hook unmounted', { connectionId });
       window.removeEventListener('game:terminal-data', onTerminal as EventListener);
     };
   }, [connectionId]);

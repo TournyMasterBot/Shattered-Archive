@@ -1,83 +1,150 @@
-import type { EquipmentSnapshot, EqSlot, EquipmentSlotSnapshot } from './equipment-types';
+// apps\game-client\src\features\equipment\eq-delta-parse.ts
+import type { EqSlot } from './equipment-types';
 
-export function stripAnsi(input: string): string {
+function stripAnsi(input: string): string {
   return String(input ?? '').replace(/\u001b\[[0-9;]*m/g, '');
 }
 
-export function normalizeEqText(input: string): string {
-  return stripAnsi(input).replace(/\r?\n/g, '').trim();
+function clean(input: string): string {
+  return stripAnsi(input).replace(/\r/g, '').trim();
 }
 
-function ensureSnapshot(snap: EquipmentSnapshot | undefined): EquipmentSnapshot {
-  if (snap) return snap;
-  return { updatedAt: Date.now(), slots: {} as any, allLines: [] };
+export type EqDeltaEvent =
+  | { kind: 'wield'; item: string; isSecondary: boolean }
+  | { kind: 'wear'; slot: EqSlot; item: string }
+  | { kind: 'stop_using'; item: string }
+  | { kind: 'disarm' };
+
+function matchWield(line: string): { item: string; isSecondary: boolean } | null {
+  const s = clean(line);
+
+  const m2 = s.match(/^You wield (.+) as a secondary weapon\.$/i);
+  if (m2) return { item: m2[1].trim(), isSecondary: true };
+
+  const m1 = s.match(/^You wield (.+)\.$/i);
+  if (m1) return { item: m1[1].trim(), isSecondary: false };
+
+  return null;
 }
 
-function upsertSlot(snap: EquipmentSnapshot, slot: EqSlot, rawLine: string, ts: number): EquipmentSnapshot {
-  console.debug('[eq-delta] upsertSlot', { slot, rawLine });
-
-  const nextSlots: Record<EqSlot, EquipmentSlotSnapshot> = {
-    ...(snap.slots as any),
-  };
-
-  nextSlots[slot] = {
-    slot,
-    rawLine: rawLine && rawLine.length ? rawLine : '(nothing)',
-    updatedAt: ts,
-  };
-
-  const allLines = Array.isArray(snap.allLines) ? snap.allLines.slice() : [];
-  allLines.push(`<${slot}> ${nextSlots[slot].rawLine}`);
-
-  return {
-    updatedAt: ts,
-    slots: nextSlots,
-    allLines,
-  };
+function matchStopUsing(line: string): string | null {
+  const s = clean(line);
+  const m = s.match(/^You stop using (.+)\.$/i);
+  if (!m) return null;
+  return m[1].trim();
 }
 
-/**
- * Parses lines like:
- * - "You wear X on your left finger."
- * - "You wear X around your neck."
- * - "You wear X as a shield."
- */
-export function applyWearLineToSnapshot(
-  existing: EquipmentSnapshot | undefined,
-  line: string,
-): EquipmentSnapshot | null {
-  const ts = Date.now();
-  const snap = ensureSnapshot(existing);
-  const s = normalizeEqText(line);
+function matchDisarm(line: string): boolean {
+  const s = clean(line);
+  return s.includes('DISARMS you and sends your weapon flying!');
+}
 
-  console.debug('[eq-delta] applyWearLine', { s });
+function matchWear(line: string): { slot: EqSlot; item: string } | null {
+  const s = clean(line);
 
-  if (!s.startsWith('You wear ')) return null;
-
-  const rest = s.slice('You wear '.length);
-
-  const rules: Array<[RegExp, EqSlot]> = [
-    [/on your (left|right) finger\.$/i, 'worn_on_finger'],
-    [/around your neck\.$/i, 'worn_around_neck'],
-    [/on your torso\.$/i, 'worn_on_torso'],
-    [/on your head\.$/i, 'worn_on_head'],
-    [/on your legs\.$/i, 'worn_on_legs'],
-    [/on your feet\.$/i, 'worn_on_feet'],
-    [/on your hands\.$/i, 'worn_on_hands'],
-    [/on your arms\.$/i, 'worn_on_arms'],
-    [/as a shield\.$/i, 'worn_as_shield'],
-    [/about your waist\.$/i, 'worn_about_waist'],
-    [/around your (left|right) wrist\.$/i, 'worn_around_wrist'],
-  ];
-
-  for (const [rx, slot] of rules) {
-    if (rx.test(rest)) {
-      const item = rest.replace(rx, '').trim();
-      console.info('[eq-delta] wear matched', { slot, item });
-      return upsertSlot(snap, slot, item, ts);
-    }
+  // used as light
+  // WEAR: You light {item} and hold it.
+  {
+    const m = s.match(/^You light (.+) and hold it\.$/i);
+    if (m) return { slot: 'used_as_light', item: m[1].trim() };
   }
 
-  console.warn('[eq-delta] wear unmatched', { line: s });
+  // held
+  // WEAR: You hold {item} in your hand.
+  {
+    const m = s.match(/^You hold (.+) in your hand\.$/i);
+    if (m) return { slot: 'held', item: m[1].trim() };
+  }
+
+  // floating nearby
+  // WEAR: You release {item} and it floats next to you.
+  {
+    const m = s.match(/^You release (.+) and it floats next to you\.$/i);
+    if (m) return { slot: 'floating_nearby', item: m[1].trim() };
+  }
+
+  // worn as quiver
+  // WEAR: You put {item} on your shoulder.
+  {
+    const m = s.match(/^You put (.+) on your shoulder\.$/i);
+    if (m) return { slot: 'worn_as_quiver', item: m[1].trim() };
+  }
+
+  // sheathed (two types)
+  // WEAR: You slip {item} over your shoulder.
+  {
+    const m = s.match(/^You slip (.+) over your shoulder\.$/i);
+    if (m) return { slot: 'sheathed', item: m[1].trim() };
+  }
+  // WEAR: You sheath {item}.
+  {
+    const m = s.match(/^You sheath (.+)\.$/i);
+    if (m) return { slot: 'sheathed', item: m[1].trim() };
+  }
+
+  // generic "You wear ..."
+  const prefix = 'You wear ';
+  if (!s.startsWith(prefix)) return null;
+
+  const tailIdx = s.lastIndexOf('.');
+  const core = tailIdx >= 0 ? s.slice(0, tailIdx) : s;
+  const rest = core.slice(prefix.length);
+
+  {
+    const mShield = rest.match(/^(.+)\s+as a shield$/i);
+    if (mShield) return { slot: 'worn_as_shield', item: mShield[1].trim() };
+  }
+
+  const mFinger = rest.match(/^(.+)\s+on your (left|right) finger$/i);
+  if (mFinger) return { slot: 'worn_on_finger', item: mFinger[1].trim() };
+
+  const mNeck = rest.match(/^(.+)\s+around your neck$/i);
+  if (mNeck) return { slot: 'worn_around_neck', item: mNeck[1].trim() };
+
+  const mTorso = rest.match(/^(.+)\s+on your torso$/i);
+  if (mTorso) return { slot: 'worn_on_torso', item: mTorso[1].trim() };
+
+  const mHead = rest.match(/^(.+)\s+on your head$/i);
+  if (mHead) return { slot: 'worn_on_head', item: mHead[1].trim() };
+
+  const mLegs = rest.match(/^(.+)\s+on your legs$/i);
+  if (mLegs) return { slot: 'worn_on_legs', item: mLegs[1].trim() };
+
+  const mFeet = rest.match(/^(.+)\s+on your feet$/i);
+  if (mFeet) return { slot: 'worn_on_feet', item: mFeet[1].trim() };
+
+  const mHands = rest.match(/^(.+)\s+on your hands$/i);
+  if (mHands) return { slot: 'worn_on_hands', item: mHands[1].trim() };
+
+  // about body
+  const mBody = rest.match(/^(.+)\s+about your torso$/i);
+  if (mBody) return { slot: 'worn_about_body', item: mBody[1].trim() };
+
+  // waist
+  const mWaist = rest.match(/^(.+)\s+about your waist$/i);
+  if (mWaist) return { slot: 'worn_about_waist', item: mWaist[1].trim() };
+
+  // wrist
+  const mWrist = rest.match(/^(.+)\s+around your (left|right) wrist$/i);
+  if (mWrist) return { slot: 'worn_around_wrist', item: mWrist[1].trim() };
+
+  return null;
+}
+
+export function parseEqDeltaLine(line: string): EqDeltaEvent | null {
+  const s = clean(line);
+  if (!s) return null;
+
+  const stopItem = matchStopUsing(s);
+  if (stopItem) return { kind: 'stop_using', item: stopItem };
+
+  if (matchDisarm(s)) return { kind: 'disarm' };
+
+  const w = matchWield(s);
+  if (w) return { kind: 'wield', item: w.item, isSecondary: w.isSecondary };
+
+  const wear = matchWear(s);
+  if (wear) return { kind: 'wear', slot: wear.slot, item: wear.item };
+
   return null;
 }

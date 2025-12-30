@@ -1,144 +1,161 @@
+// apps/game-client/src/styles/EquipmentModal.module.scss
 .backdrop {
   position: fixed;
   inset: 0;
-  z-index: 2000;
-
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
-
-  padding: 16px;
-
-  background: rgba(0, 0, 0, 0.55);
-  //backdrop-filter: blur(2px);
+  z-index: 9999;
 }
 
 .modal {
-  width: min(900px, 96vw);
-  max-height: calc(100vh - 32px);
-
+  width: min(760px, 92vw);
+  max-height: min(86vh, 900px);
+  background: #111;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-
-  background: rgba(18, 18, 18, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.65);
-
-  overflow: hidden; /* important: keeps internal scroll clean */
 }
 
-/* ---------- Header ---------- */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   padding: 12px 14px;
-
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .title {
-  font-size: 18px;
-  font-weight: 650;
-  letter-spacing: 0.2px;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .closeBtn {
-  appearance: none;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
+  border: 0;
+  background: transparent;
   color: rgba(255, 255, 255, 0.85);
-
-  width: 34px;
-  height: 34px;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 8px;
+  font-size: 16px;
   cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 8px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
 }
 
-.closeBtn:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.18);
+/* ---------- Scrollbar theming (local to this modal) ---------- */
+/* Firefox */
+.body,
+.eqList {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) rgba(0, 0, 0, 0.35);
 }
 
-.closeBtn:active {
-  transform: translateY(1px);
+/* Chromium/WebKit */
+.body::-webkit-scrollbar,
+.eqList::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
 }
 
-/* ---------- Sections ---------- */
-.section {
+.body::-webkit-scrollbar-track,
+.eqList::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 999px;
+}
+
+.body::-webkit-scrollbar-thumb,
+.eqList::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  border: 2px solid rgba(0, 0, 0, 0.35);
+}
+
+.body::-webkit-scrollbar-thumb:hover,
+.eqList::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+/* ------------------------------------------------------------ */
+
+.body {
   padding: 12px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: auto;
 }
 
-.section:last-child {
-  border-bottom: none;
+.section {
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  &:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
 }
 
 .sectionTitle {
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 700;
   opacity: 0.9;
   margin-bottom: 10px;
 }
 
-/* ---------- Hotbar toggle ---------- */
 .toggleRow {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .toggleBtn {
-  appearance: none;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.85);
-
-  padding: 6px 12px;
-  border-radius: 8px;
-
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.88);
+  padding: 8px 10px;
+  border-radius: 10px;
   cursor: pointer;
   font-size: 13px;
-}
 
-.toggleBtn:hover {
-  border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.06);
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
 }
 
 .toggleBtnActive {
-  border-color: rgba(125, 211, 252, 0.55);
-  background: rgba(125, 211, 252, 0.14);
-  color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(120, 200, 255, 0.55);
+  background: rgba(120, 200, 255, 0.18);
 }
 
-/* ---------- Rows ---------- */
+.empty {
+  font-size: 13px;
+  opacity: 0.8;
+  line-height: 1.4;
+  padding: 10px 0;
+}
+
 .row {
   display: grid;
-  grid-template-columns: 110px 1fr;
-  gap: 12px;
-
+  grid-template-columns: 120px 1fr;
+  gap: 10px;
   padding: 6px 0;
 }
 
 .slot {
-  opacity: 0.75;
-  font-size: 14px;
+  font-size: 13px;
+  opacity: 0.8;
 }
 
 .item {
-  font-size: 14px;
-  line-height: 1.35;
-
+  font-size: 13px;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .muted {
@@ -149,87 +166,31 @@
   font-size: 11px;
   padding: 2px 6px;
   border-radius: 999px;
-
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  background: rgba(251, 191, 36, 0.12);
-  color: rgba(251, 191, 36, 0.95);
-
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
+  background: rgba(255, 180, 80, 0.16);
+  border: 1px solid rgba(255, 180, 80, 0.28);
+  opacity: 0.95;
 }
 
-/* ---------- Notes ---------- */
 .footerNote {
   margin-top: 10px;
   font-size: 12px;
-  opacity: 0.6;
+  opacity: 0.65;
 }
 
-/* ---------- Empty states ---------- */
-.empty {
-  font-size: 13px;
-  opacity: 0.7;
-
-  padding: 10px 12px;
-  border-radius: 10px;
-
-  border: 1px dashed rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-/* ---------- Full gear list ---------- */
-/*
-  Critical: DO NOT let the list expand forever.
-  Give it a max height and scroll.
-*/
 .eqList {
-  max-height: min(40vh, 360px);
+  max-height: 280px;
   overflow: auto;
-
-  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 10px;
-
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.2);
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .eqLine {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  font-size: 12.5px;
-  line-height: 1.4;
-
-  padding: 4px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-
-  white-space: pre-wrap; /* preserve spacing and wrap long lines */
+  font-size: 12px;
+  line-height: 1.35;
+  padding: 3px 2px;
+  white-space: pre-wrap;
   word-break: break-word;
-}
-
-.eqLine:last-child {
-  border-bottom: none;
-}
-
-/* Nice scrollbars for Chromium */
-.eqList::-webkit-scrollbar {
-  width: 10px;
-}
-
-.eqList::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
-  border-radius: 10px;
-}
-
-.eqList::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* ---------- Responsive tweaks ---------- */
-@media (max-width: 520px) {
-  .row {
-    grid-template-columns: 90px 1fr;
-  }
-
-  .modal {
-    width: 100%;
-  }
 }

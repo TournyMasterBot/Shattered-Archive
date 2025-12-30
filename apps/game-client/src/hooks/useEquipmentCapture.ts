@@ -1,53 +1,145 @@
 // apps/game-client/src/hooks/useEquipmentCapture.ts
 import { useEffect, useRef } from 'react';
-import { buildEqSnapshot, isEqEnd, isEqHeader } from '../features/equipment/eq-parse';
-import { setEquipmentFromEq, setEqSnapshot } from '../features/equipment/equipment-store';
+import { buildEqSnapshot, isEqHeader } from '../features/equipment/eq-parse';
+import { getEquipmentProfile, setEquipmentFromEq, setEqSnapshot } from '../features/equipment/equipment-store';
+import { extractTerminalText } from '../features/terminal/extractTerminalText';
 
-console.log('useEquipmentCapture module loaded');
+const EQ_CAPTURE_VERSION = 'eq-capture.v3.prompt-or-timeout';
+const EQ_IDLE_END_MS = 250; // if no new eq lines arrive for this long, end capture
+
+console.log(`[eq-capture] module loaded (${EQ_CAPTURE_VERSION})`);
+
+function stripAnsi(input: string): string {
+  return String(input ?? '').replace(/\u001b\[[0-9;]*m/g, '');
+}
+
+function splitIntoLines(chunk: string): string[] {
+  if (!chunk) return [];
+  return chunk.split(/\r?\n/);
+}
+
+function isPromptLine(line: string): boolean {
+  const normalized = stripAnsi(line).replace(/\r/g, '').trim();
+  return normalized.includes('tnl>');
+}
+
+function hasEqTagLine(line: string): boolean {
+  const normalized = stripAnsi(line).replace(/\r/g, '');
+  return normalized.trim().startsWith('<');
+}
 
 export function useEquipmentCapture(connectionId: string) {
+  console.debug(`[eq-capture] HOOK FUNCTION CALLED (${EQ_CAPTURE_VERSION})`, { connectionId });
+
   const capturing = useRef(false);
   const buffer = useRef<string[]>([]);
+  const seenAnyEq = useRef(false);
+
+  const idleTimer = useRef<number | null>(null);
+
+  function clearIdleTimer() {
+    if (idleTimer.current != null) {
+      window.clearTimeout(idleTimer.current);
+      idleTimer.current = null;
+    }
+  }
+
+  function endCapture(reason: 'prompt' | 'idle') {
+    if (!capturing.current) return;
+
+    capturing.current = false;
+    clearIdleTimer();
+
+    console.debug(`[eq-capture] END (${reason}) (${EQ_CAPTURE_VERSION})`, {
+      count: buffer.current.length,
+    });
+
+    const snapshot = buildEqSnapshot(buffer.current);
+
+    // Guard: do not overwrite a previous non-empty snapshot with an empty one
+    const prevProfile = getEquipmentProfile(connectionId);
+    const prevLinesCount = prevProfile.snapshot?.allLines?.length ?? 0;
+
+    if ((snapshot.allLines?.length ?? 0) === 0 && prevLinesCount > 0) {
+      console.warn('[eq-capture] ignoring empty eq snapshot; keeping previous snapshot', {
+        connectionId,
+        prevLinesCount,
+      });
+      buffer.current = [];
+      return;
+    }
+
+    void setEqSnapshot(connectionId, snapshot);
+
+    void setEquipmentFromEq(connectionId, {
+      wielded: snapshot.slots.wielded?.rawLine ?? '(nothing)',
+      secondary: snapshot.slots.secondary_weapon?.rawLine ?? '(nothing)',
+      shield: snapshot.slots.worn_as_shield?.rawLine ?? '(nothing)',
+      sheathed: snapshot.slots.sheathed?.rawLine ?? '(nothing)',
+    });
+
+    buffer.current = [];
+  }
+
+  function armIdleEnd() {
+    clearIdleTimer();
+    idleTimer.current = window.setTimeout(() => endCapture('idle'), EQ_IDLE_END_MS);
+  }
 
   useEffect(() => {
-    const onRaw = (ev: Event) => {
-      const e = ev as CustomEvent<{ text?: string }>;
-      const line = e.detail?.text ?? '';
-      if (!line) return;
+    console.debug(`[eq-capture] hook mounted (${EQ_CAPTURE_VERSION})`, { connectionId });
 
-      const isEqHeaderLine = isEqHeader(line);
-      if (isEqHeaderLine) {
-        capturing.current = true;
-        buffer.current = [];
-        console.debug('[eq-capture] START');
-        return;
+    const onTerminal = (ev: Event) => {
+      const detail = (ev as CustomEvent<unknown>).detail;
+      const chunk = extractTerminalText(detail);
+      if (!chunk) return;
+
+      const lines = splitIntoLines(chunk);
+
+      for (const rawLine of lines) {
+        const line = rawLine;
+
+        const normalized = stripAnsi(line).replace(/\r/g, '');
+
+        // Start capturing on header
+        if (isEqHeader(line)) {
+          capturing.current = true;
+          buffer.current = [];
+          seenAnyEq.current = true;
+          console.debug(`[eq-capture] START (${EQ_CAPTURE_VERSION})`);
+          armIdleEnd();
+          continue;
+        }
+
+        if (!capturing.current) continue;
+
+        // Prompt ends capture immediately
+        if (isPromptLine(line)) {
+          endCapture('prompt');
+          continue;
+        }
+
+        // Buffer anything that looks relevant:
+        // - <slot> lines
+        // - blanks (harmless; buildEqSnapshot ignores)
+        // - lines in between (if any)
+        buffer.current.push(line);
+
+        // Reset idle end when we see likely eq content
+        if (hasEqTagLine(line) || normalized.trim() === '') {
+          armIdleEnd();
+        }
       }
-
-      if (!capturing.current) return;
-
-      if (isEqEnd(line)) {
-        capturing.current = false;
-        console.debug('[eq-capture] END', { count: buffer.current.length });
-
-        const snapshot = buildEqSnapshot(buffer.current);
-
-        void setEqSnapshot(connectionId, snapshot);
-
-        void setEquipmentFromEq(connectionId, {
-          wielded: snapshot.slots.wielded?.rawLine ?? '(nothing)',
-          secondary: snapshot.slots.secondary_weapon?.rawLine ?? '(nothing)',
-          shield: snapshot.slots.worn_as_shield?.rawLine ?? '(nothing)',
-          sheathed: snapshot.slots.sheathed?.rawLine ?? '(nothing)',
-        });
-
-        return;
-      }
-
-      buffer.current.push(line);
     };
 
-    console.debug('[eq-capture] HOOK INVOKED', connectionId);
-    window.addEventListener('game:terminal-data', onRaw as EventListener);
-    return () => window.removeEventListener('game:terminal-data', onRaw as EventListener);
+    window.addEventListener('game:terminal-data', onTerminal as EventListener);
+    return () => {
+      console.debug(`[eq-capture] hook unmounted (${EQ_CAPTURE_VERSION})`, {
+        connectionId,
+        seenAnyEq: seenAnyEq.current,
+      });
+      clearIdleTimer();
+      window.removeEventListener('game:terminal-data', onTerminal as EventListener);
+    };
   }, [connectionId]);
 }

@@ -21,7 +21,7 @@ const STORE_STATE = 'equipment_state';
 const STORE_PREFS = 'equipment_prefs';
 const STORE_PROFILES = 'profiles';
 
-function now() {
+function now(): number {
   return Date.now();
 }
 
@@ -140,7 +140,7 @@ async function idbGet<T>(storeName: string, key: string): Promise<T | null> {
 async function idbPut<T>(storeName: string, row: T): Promise<void> {
   const db = await openDb();
   const tx = db.transaction(storeName, 'readwrite');
-  tx.objectStore(storeName).put(row as any);
+  tx.objectStore(storeName).put(row as unknown as Record<string, unknown>);
   await txDone(tx);
 }
 
@@ -211,7 +211,6 @@ export function getEquipmentProfile(connectionId: string): EquipmentProfile {
 /* ---------------- Hydration ---------------- */
 
 export async function hydrateEquipment(connectionId: string): Promise<void> {
-  // state
   try {
     const row = await idbGet<EquipmentState>(STORE_STATE, connectionId);
     if (row) {
@@ -223,7 +222,6 @@ export async function hydrateEquipment(connectionId: string): Promise<void> {
     // ignore
   }
 
-  // prefs
   try {
     const row = await idbGet<EquipmentPreferences>(STORE_PREFS, connectionId);
     if (row) {
@@ -235,7 +233,6 @@ export async function hydrateEquipment(connectionId: string): Promise<void> {
     // ignore
   }
 
-  // profile
   try {
     const row = await idbGet<EquipmentProfile>(STORE_PROFILES, connectionId);
     if (row) {
@@ -249,11 +246,11 @@ export async function hydrateEquipment(connectionId: string): Promise<void> {
 }
 
 function normalizeState(input: EquipmentState): EquipmentState {
-  const slots = input?.slots ?? ({} as any);
+  const slots = input?.slots ?? ({} as unknown as Record<string, unknown>);
 
   const normSlot = (slot: EquipmentSlot): EquipmentSlotState | null => {
-    const s = slots?.[slot] as any;
-    if (!s || typeof s.text !== 'string') return null;
+    const s = (slots as unknown as Record<string, unknown>)[slot] as unknown;
+    if (!isRecord(s) || typeof s.text !== 'string') return null;
 
     return {
       slot,
@@ -290,26 +287,26 @@ function normalizeProfile(input: EquipmentProfile): EquipmentProfile {
     connectionId: String(input.connectionId ?? 'default'),
     aliases: isRecord(input.aliases) ? (input.aliases as Record<string, string>) : {},
     sets: Array.isArray(input.sets) ? input.sets : [],
-    snapshot: isRecord(input.snapshot) ? (input.snapshot as any as EquipmentSnapshot) : undefined,
+    snapshot: isRecord(input.snapshot) ? (input.snapshot as unknown as EquipmentSnapshot) : undefined,
     activeSetId: typeof input.activeSetId === 'string' ? input.activeSetId : undefined,
   };
 }
 
 /* ---------------- Mutations ---------------- */
 
-export async function setEquipmentFromEq(
-  connectionId: string,
-  slots: Partial<Record<EquipmentSlot, string>>,
-): Promise<void> {
-  const prev = getEquipmentState(connectionId);
-  const ts = now();
+function applySlotPatch(
+  prevSlots: EquipmentState['slots'],
+  patch: Partial<Record<EquipmentSlot, string>>,
+  ts: number,
+  dirty: boolean,
+): EquipmentState['slots'] {
+  const nextSlots: EquipmentState['slots'] = { ...prevSlots };
 
-  const nextSlots: EquipmentState['slots'] = { ...prev.slots };
+  const applyIfProvided = (slot: EquipmentSlot) => {
+    if (!(slot in patch)) return;
 
-  const apply = (slot: EquipmentSlot) => {
-    // IMPORTANT: "(nothing)" should remain a literal string if caller sends it.
-    const raw = String(slots[slot] ?? '');
-    const text = raw.trim();
+    const raw = patch[slot];
+    const text = String(raw ?? '').trim();
 
     if (!text) {
       nextSlots[slot] = null;
@@ -320,18 +317,33 @@ export async function setEquipmentFromEq(
       slot,
       text,
       updatedAt: ts,
-      dirty: false,
+      dirty,
     };
   };
 
-  apply('wielded');
-  apply('secondary');
-  apply('shield');
-  apply('sheathed');
+  applyIfProvided('wielded');
+  applyIfProvided('secondary');
+  applyIfProvided('shield');
+  applyIfProvided('sheathed');
+
+  return nextSlots;
+}
+
+/**
+ * Authoritative hotbar update (from eq capture).
+ * - dirty: false
+ * - updates lastEqAt
+ */
+export async function setEquipmentFromEq(
+  connectionId: string,
+  slots: Partial<Record<EquipmentSlot, string>>,
+): Promise<void> {
+  const prev = getEquipmentState(connectionId);
+  const ts = now();
 
   const next: EquipmentState = {
     connectionId,
-    slots: nextSlots,
+    slots: applySlotPatch(prev.slots, slots, ts, false),
     lastEqAt: ts,
   };
 
@@ -346,7 +358,45 @@ export async function setEquipmentFromEq(
   }
 }
 
+/**
+ * Advisory hotbar update (from live deltas).
+ * - dirty: true
+ * - does NOT touch lastEqAt
+ */
+export async function setEquipmentFromDelta(
+  connectionId: string,
+  slots: Partial<Record<EquipmentSlot, string>>,
+): Promise<void> {
+  const prev = getEquipmentState(connectionId);
+  const ts = now();
+
+  const next: EquipmentState = {
+    ...prev,
+    connectionId,
+    slots: applySlotPatch(prev.slots, slots, ts, true),
+    // keep lastEqAt as-is
+  };
+
+  mem.stateByConn[connectionId] = next;
+  writeAllStateToLS(mem.stateByConn);
+  emit();
+
+  try {
+    await idbPut(STORE_STATE, next);
+  } catch {
+    // ignore
+  }
+}
+
 export async function setEqSnapshot(connectionId: string, snapshot: EquipmentSnapshot): Promise<void> {
+  console.debug('[equipment-store] setEqSnapshot', {
+    connectionId,
+    updatedAt: snapshot?.updatedAt,
+    slotsCount: snapshot?.slots ? Object.keys(snapshot.slots).length : 0,
+    allLinesCount: snapshot?.allLines?.length ?? 0,
+    sampleLines: (snapshot?.allLines ?? []).slice(0, 3),
+  });
+
   const prev = getEquipmentProfile(connectionId);
 
   const next: EquipmentProfile = {
@@ -367,63 +417,67 @@ export async function setEqSnapshot(connectionId: string, snapshot: EquipmentSna
 }
 
 /**
- * Incrementally update the "full gear" snapshot from non-eq text (wear/wield/disarm/etc).
- * - If rawLine is null, that slot is removed from the snapshot.
- * - This does not attempt to rebuild allLines perfectly; the modal can render from slots if desired.
+ * Deltas may optimistically patch the snapshot between eq captures.
+ * eq remains the most authoritative refresh.
  */
-export async function applyEqSnapshotDelta(connectionId: string, eqSlot: EqSlot, rawLine: string | null): Promise<void> {
+export async function patchEqSnapshot(
+  connectionId: string,
+  patch: Partial<Record<EqSlot, string | null>>,
+): Promise<void> {
   const prev = getEquipmentProfile(connectionId);
-  const prevSnap = prev.snapshot;
-
   const ts = now();
 
-  const nextSlots: any = { ...(prevSnap?.slots ?? {}) };
+  const existing = prev.snapshot;
+  const nextSnapshot: EquipmentSnapshot = existing
+    ? {
+        ...existing,
+        updatedAt: ts,
+        slots: { ...existing.slots },
+        allLines: existing.allLines ?? [],
+      }
+    : {
+        updatedAt: ts,
+        slots: {} as EquipmentSnapshot['slots'],
+        allLines: [],
+      };
 
-  if (!rawLine) {
-    delete nextSlots[eqSlot];
-  } else {
-    nextSlots[eqSlot] = {
-      slot: eqSlot,
-      rawLine,
+  for (const [slot, value] of Object.entries(patch) as Array<[EqSlot, string | null]>) {
+    if (value == null) {
+      delete (nextSnapshot.slots as unknown as Record<string, unknown>)[slot];
+      continue;
+    }
+
+    (nextSnapshot.slots as unknown as Record<string, unknown>)[slot] = {
+      slot,
+      rawLine: String(value),
       updatedAt: ts,
     };
   }
 
-  const nextSnap: EquipmentSnapshot = {
-    updatedAt: ts,
-    slots: nextSlots,
-    // keep prior allLines if present; optional (UI can render from slots instead)
-    allLines: prevSnap?.allLines ?? [],
+  const rebuiltLines: string[] = [];
+  const entries = Object.values(nextSnapshot.slots) as unknown[];
+  for (const it of entries) {
+    if (!isRecord(it)) continue;
+    const slot = it.slot;
+    const rawLine = it.rawLine;
+    if (typeof slot === 'string' && typeof rawLine === 'string') {
+      rebuiltLines.push(`<${slot}> ${rawLine}`);
+    }
+  }
+  nextSnapshot.allLines = rebuiltLines;
+
+  const nextProfile: EquipmentProfile = {
+    ...prev,
+    connectionId,
+    snapshot: nextSnapshot,
   };
 
-  await setEqSnapshot(connectionId, nextSnap);
-}
-
-export async function setSlotOptimistic(connectionId: string, slot: EquipmentSlot, text: string | null): Promise<void> {
-  const prev = getEquipmentState(connectionId);
-  const ts = now();
-
-  const nextSlots: EquipmentState['slots'] = { ...prev.slots };
-
-  const t = String(text ?? '').trim();
-  if (!t) {
-    nextSlots[slot] = null;
-  } else {
-    nextSlots[slot] = {
-      slot,
-      text: t,
-      updatedAt: ts,
-      dirty: true,
-    };
-  }
-
-  const next: EquipmentState = { ...prev, slots: nextSlots };
-  mem.stateByConn[connectionId] = next;
-  writeAllStateToLS(mem.stateByConn);
+  mem.profileByConn[connectionId] = nextProfile;
+  writeAllProfilesToLS(mem.profileByConn);
   emit();
 
   try {
-    await idbPut(STORE_STATE, next);
+    await idbPut(STORE_PROFILES, nextProfile);
   } catch {
     // ignore
   }

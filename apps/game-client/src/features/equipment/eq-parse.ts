@@ -1,4 +1,4 @@
-// apps/game-client/src/features/equipment/eq-parse.ts
+// apps\game-client\src\features\equipment\eq-parse.ts
 import type { EqSlot, EquipmentSnapshot } from './equipment-types';
 
 function stripAnsi(input: string): string {
@@ -14,6 +14,7 @@ export function isEqHeader(line: string): boolean {
 }
 
 export function isEqEnd(line: string): boolean {
+  // eq terminates with a blank line
   return normalizeLine(line).length === 0;
 }
 
@@ -41,10 +42,15 @@ const TAG_MAP: Record<string, EqSlot> = {
 
 export function buildEqSnapshot(lines: string[]): EquipmentSnapshot {
   const ts = Date.now();
-  const slots: EquipmentSnapshot['slots'] = {};
+
+  const slots = {} as Record<EqSlot, { slot: EqSlot; rawLine: string; updatedAt: number }>;
+  const allLines: string[] = [];
 
   for (const raw of lines) {
     const s = normalizeLine(raw);
+    if (!s) continue;
+    allLines.push(s);
+
     const m = s.match(/^<([^>]+)>\s*(.+)$/);
     if (!m) continue;
 
@@ -52,12 +58,10 @@ export function buildEqSnapshot(lines: string[]): EquipmentSnapshot {
     const slot = TAG_MAP[tag];
     if (!slot) continue;
 
-    const value = String(m[2] ?? '').trim();
-    const rawLine = value.length ? value : '(nothing)';
-
+    const value = (m[2] ?? '').trim();
     slots[slot] = {
       slot,
-      rawLine,
+      rawLine: value.length ? value : '(nothing)',
       updatedAt: ts,
     };
   }
@@ -65,6 +69,6 @@ export function buildEqSnapshot(lines: string[]): EquipmentSnapshot {
   return {
     updatedAt: ts,
     slots,
-    allLines: lines.map(normalizeLine).filter(Boolean),
+    allLines,
   };
 }
