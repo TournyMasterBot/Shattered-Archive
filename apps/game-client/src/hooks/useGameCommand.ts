@@ -46,15 +46,16 @@ export function useGameCommand(options: UseGameCommandOptions): UseGameCommandRe
     sendLineRef.current = (line: string) => {
       if (!isConnected) return;
 
+      try {
+        window.dispatchEvent(new CustomEvent('game:command-sent', { detail: { text: line } }));
+      } catch {
+        // ignore
+      }
+
       if (userScriptRuntime) {
         userScriptRuntime.executeAlias(line);
       } else {
         sendRaw(line);
-        try {
-          window.dispatchEvent(new CustomEvent('dsl:command-sent', { detail: { text: line } }));
-        } catch {
-          // ignore
-        }
       }
 
       setHistory((prev) => {

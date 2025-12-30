@@ -438,6 +438,10 @@ export function useMainContainer() {
   const openLibraryModal = () => setIsLibraryModalOpen(true);
   const closeLibraryModal = () => setIsLibraryModalOpen(false);
 
+  const [isEquipmentModalOpen, setIsEquipmentModalOpen] = useState(false);
+  const openEquipmentModal = () => setIsEquipmentModalOpen(true);
+  const closeEquipmentModal = () => setIsEquipmentModalOpen(false);
+
   return {
     isConnectModalOpen,
     openConnectModal,
@@ -446,5 +450,9 @@ export function useMainContainer() {
     isLibraryModalOpen,
     openLibraryModal,
     closeLibraryModal,
+
+    isEquipmentModalOpen,
+    openEquipmentModal,
+    closeEquipmentModal,
   };
 }

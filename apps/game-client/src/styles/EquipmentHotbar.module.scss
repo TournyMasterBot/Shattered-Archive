@@ -1,0 +1,54 @@
+.root {
+  display: flex;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid #2a2a2a;
+  background: #141414;
+  border-radius: 10px;
+  align-items: center;
+}
+
+.rootFloating {
+  position: fixed;
+  top: 34px; /* below menu bar */
+  right: 10px;
+  z-index: 3500;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+.pill {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  gap: 8px;
+  align-items: center;
+
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #333;
+  background: #101010;
+  color: #ddd;
+  cursor: pointer;
+  min-width: 160px;
+
+  &:hover {
+    border-color: #666;
+  }
+}
+
+.pillLabel {
+  opacity: 0.8;
+}
+
+.pillText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pillDirty {
+  font-size: 0.75rem;
+  opacity: 0.85;
+  border: 1px solid #444;
+  padding: 2px 6px;
+  border-radius: 999px;
+}

@@ -1,3 +1,4 @@
+// apps\game-client\src\components\PluginConfigModal.tsx
 import React from 'react';
 import { createPortal } from 'react-dom';
 import styles from '../styles/PluginConfigModal.module.scss';

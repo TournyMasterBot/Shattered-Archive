@@ -1,3 +1,5 @@
+// apps\game-client\src\features\plugins\pluginCss.ts
+
 function getStyleId(connectionId: string, pluginId: string) {
   const c = connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
   return `plugin-css-style-${c}-${pluginId}`;
