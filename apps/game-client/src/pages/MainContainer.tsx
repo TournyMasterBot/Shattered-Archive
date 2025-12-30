@@ -25,6 +25,7 @@ import LibraryModal from '../components/LibraryModal';
 
 import EquipmentModal from '../components/EquipmentModal';
 import { useEquipmentCapture } from '../hooks/useEquipmentCapture';
+import { useEquipmentDeltas } from '../hooks/useEquipmentDeltas';
 
 export const MainContainer: React.FC = () => {
   useVisualViewportHeight();
@@ -67,6 +68,7 @@ export const MainContainer: React.FC = () => {
 
   const plugins = usePlugins(connectionId);
   useEquipmentCapture(connectionId);
+  useEquipmentDeltas(connectionId);
 
   React.useEffect(() => {
     pluginHost.setConnection(connectionId);

@@ -7,6 +7,7 @@ import type {
   EquipmentSnapshot,
   EquipmentProfile,
   HotbarDockMode,
+  EqSlot,
 } from './equipment-types';
 
 const LS_KEY_STATE = 'shatteredArchive.equipment.state.v1';
@@ -306,6 +307,7 @@ export async function setEquipmentFromEq(
   const nextSlots: EquipmentState['slots'] = { ...prev.slots };
 
   const apply = (slot: EquipmentSlot) => {
+    // IMPORTANT: "(nothing)" should remain a literal string if caller sends it.
     const raw = String(slots[slot] ?? '');
     const text = raw.trim();
 
@@ -359,6 +361,69 @@ export async function setEqSnapshot(connectionId: string, snapshot: EquipmentSna
 
   try {
     await idbPut(STORE_PROFILES, next);
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Incrementally update the "full gear" snapshot from non-eq text (wear/wield/disarm/etc).
+ * - If rawLine is null, that slot is removed from the snapshot.
+ * - This does not attempt to rebuild allLines perfectly; the modal can render from slots if desired.
+ */
+export async function applyEqSnapshotDelta(connectionId: string, eqSlot: EqSlot, rawLine: string | null): Promise<void> {
+  const prev = getEquipmentProfile(connectionId);
+  const prevSnap = prev.snapshot;
+
+  const ts = now();
+
+  const nextSlots: any = { ...(prevSnap?.slots ?? {}) };
+
+  if (!rawLine) {
+    delete nextSlots[eqSlot];
+  } else {
+    nextSlots[eqSlot] = {
+      slot: eqSlot,
+      rawLine,
+      updatedAt: ts,
+    };
+  }
+
+  const nextSnap: EquipmentSnapshot = {
+    updatedAt: ts,
+    slots: nextSlots,
+    // keep prior allLines if present; optional (UI can render from slots instead)
+    allLines: prevSnap?.allLines ?? [],
+  };
+
+  await setEqSnapshot(connectionId, nextSnap);
+}
+
+export async function setSlotOptimistic(connectionId: string, slot: EquipmentSlot, text: string | null): Promise<void> {
+  const prev = getEquipmentState(connectionId);
+  const ts = now();
+
+  const nextSlots: EquipmentState['slots'] = { ...prev.slots };
+
+  const t = String(text ?? '').trim();
+  if (!t) {
+    nextSlots[slot] = null;
+  } else {
+    nextSlots[slot] = {
+      slot,
+      text: t,
+      updatedAt: ts,
+      dirty: true,
+    };
+  }
+
+  const next: EquipmentState = { ...prev, slots: nextSlots };
+  mem.stateByConn[connectionId] = next;
+  writeAllStateToLS(mem.stateByConn);
+  emit();
+
+  try {
+    await idbPut(STORE_STATE, next);
   } catch {
     // ignore
   }
