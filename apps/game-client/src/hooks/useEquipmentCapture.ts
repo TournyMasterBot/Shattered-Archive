@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { buildEqSnapshot, isEqHeader } from '../features/equipment/eq-parse';
 import { getEquipmentProfile, setEquipmentFromEq, setEqSnapshot } from '../features/equipment/equipment-store';
 import { extractTerminalText } from '../features/terminal/extractTerminalText';
+import { stripItemStatusPrefixes } from '../features/equipment/equipment-text';
 
 const EQ_CAPTURE_VERSION = 'eq-capture.v3.prompt-or-timeout';
 const EQ_IDLE_END_MS = 250; // if no new eq lines arrive for this long, end capture
@@ -72,10 +73,10 @@ export function useEquipmentCapture(connectionId: string) {
     void setEqSnapshot(connectionId, snapshot);
 
     void setEquipmentFromEq(connectionId, {
-      wielded: snapshot.slots.wielded?.rawLine ?? '(nothing)',
-      secondary: snapshot.slots.secondary_weapon?.rawLine ?? '(nothing)',
-      shield: snapshot.slots.worn_as_shield?.rawLine ?? '(nothing)',
-      sheathed: snapshot.slots.sheathed?.rawLine ?? '(nothing)',
+      wielded: stripItemStatusPrefixes(snapshot.slots.wielded?.rawLine ?? '(nothing)'),
+      secondary: stripItemStatusPrefixes(snapshot.slots.secondary_weapon?.rawLine ?? '(nothing)'),
+      shield: stripItemStatusPrefixes(snapshot.slots.worn_as_shield?.rawLine ?? '(nothing)'),
+      sheathed: stripItemStatusPrefixes(snapshot.slots.sheathed?.rawLine ?? '(nothing)'),
     });
 
     buffer.current = [];

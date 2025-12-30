@@ -9,6 +9,7 @@ import {
   setEquipmentFromDelta,
 } from '../features/equipment/equipment-store';
 import type { EqSlot } from '../features/equipment/equipment-types';
+import { stripItemStatusPrefixes } from '../features/equipment/equipment-text';
 
 function splitToLines(text: string): string[] {
   return String(text ?? '')
@@ -22,19 +23,13 @@ function stripAnsi(input: string): string {
 }
 
 function normalizeForCompare(input: string): string {
-  const s = stripAnsi(input).toLowerCase().trim();
+  const base = stripItemStatusPrefixes(input);
+  const s = stripAnsi(base).toLowerCase().trim();
 
-  // drop punctuation-ish
   const noPunct = s.replace(/[.,;:!?'"`]/g, ' ');
-
-  // remove common articles
   const noArticles = noPunct.replace(/\b(the|an|a)\b/g, ' ');
-
-  // collapse whitespace
   const compact = noArticles.replace(/\s+/g, ' ').trim();
 
-  // remove common wear-location suffixes that appear in snapshot lines
-  // (keeps matching tolerant between "belt about your waist" and "leather belt")
   const withoutSuffix = compact
     .replace(/\babout your waist\b/g, '')
     .replace(/\babout your torso\b/g, '')

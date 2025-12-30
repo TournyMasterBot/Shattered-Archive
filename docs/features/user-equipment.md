@@ -122,7 +122,7 @@ The game describes wear locations in many ways:
 ```
 You wear an amulet around your neck.
 You wear a shield as a shield.
-You wear boots on your feet.
+You wear gloves on your hands.
 You wear an engraved leather belt about your waist.
 ```
 
@@ -153,7 +153,7 @@ You wear a gem pouch about your waist.
 - The delta pipeline must clear the **correct snapshot slot** for the removed item
 - Then apply the new item to that same slot (here: the waist slot)
 
-If the “stop using” step fails to match the snapshot slot (due to ANSI, articles, suffix differences), the snapshot will incorrectly keep the old item and appear stale.
+If the “stop using” step fails to match the snapshot slot (due to ANSI, articles, suffix differences, or status tags), the snapshot will incorrectly keep the old item and appear stale.
 
 ---
 
@@ -165,14 +165,32 @@ Game output and snapshot output rarely match *exactly*:
 - Snapshot lines often include wear-location suffixes (e.g., `about your waist`)
 - Articles and formatting can differ (e.g., `a belt` vs `an engraved leather belt`)
 - The game may omit or include extra words
+- **Status tags** may be injected into item names as leading parenthesized markers  
+  (e.g., `(Glowing) (Humming) (Invis) some item name`)
 
 **Therefore, stop-using must match tolerantly:**
 - Strip ANSI codes
 - Trim whitespace
 - Normalize article differences (`a` / `an` / `the`)
 - Allow suffix differences (e.g., snapshot includes `about your waist` but stop-using does not)
+- **Strip leading parenthesized status tags from item names**
 
-This tolerance is essential for correct swap handling.
+### Parenthesized status tags (required)
+Some item strings include one or more leading tags like:
+
+- `(Glowing)`
+- `(Humming)`
+- `(Invis)`
+
+These are **not part of the item identity** and must be removed before:
+
+- storing an `item` extracted from a delta line, and/or
+- comparing a delta item to snapshot/hotbar text
+
+**Recommended simple heuristic:**  
+If the string starts with `'('` and contains the pattern `') '` (close-paren + space), remove everything up to and including the **last** `') '` that appears in the leading tag run.
+
+This is intentionally a heuristic (not a perfect parser), but it matches the game’s common formatting and is fast.
 
 ---
 
@@ -189,6 +207,7 @@ This tolerance is essential for correct swap handling.
 - Overwrite unrelated snapshot slots
 - Assume a delta implies complete state
 - Rely on exact string equality when ANSI / formatting differs
+- Treat parenthesized status tags as part of the true item name
 
 ---
 
@@ -232,7 +251,7 @@ This tolerance is essential for correct swap handling.
 ## Common pitfalls
 
 - “Stop using” doesn’t clear the correct snapshot slot (swap appears broken)
-- Exact string equality breaks due to ANSI or suffix differences
+- Exact string equality breaks due to ANSI, suffix differences, or status tags
 - Clearing multiple slots because matching logic is too broad
 - Forgetting dual-wield or disarm rules
 - Patching snapshot for ambiguous events (inventing state)
@@ -257,6 +276,7 @@ This section is written for an AI assistant helping maintain the system.
 - Do **not** guess missing file contents. Ask for the file or sample logs first.
 - `game:terminal-data` is the correct browser event name for terminal output.
 - Deltas may patch snapshot, but must remain conservative and slot-specific.
+- Parenthesized status tags like `(Glowing)` / `(Invis)` are **formatting noise** and must be stripped before comparisons.
 
 ## Event-shape contract (recommended)
 Ensure `eq-delta-parse.ts` returns a **discriminated union** or another consistent shape that downstream code can handle safely.
@@ -272,12 +292,13 @@ If you change the shape, update all consumers in one pass (especially `useEquipm
 When processing a delta line:
 
 1. Strip ANSI and normalize text
-2. If the line indicates a **known slot** (wear/wield):
+2. Strip parenthesized status tags from item text (when extracting and when comparing)
+3. If the line indicates a **known slot** (wear/wield):
    - Patch snapshot slot directly
-3. If the line is **stop using**:
+4. If the line is **stop using**:
    - Match the removed item to an existing snapshot slot using tolerant matching
    - Clear only that slot if confidently matched
-4. Apply game-specific weapon rules:
+5. Apply game-specific weapon rules:
    - Disarm clears both weapon slots
    - Dual-wield primary removal clears both if applicable
 
@@ -285,13 +306,14 @@ When processing a delta line:
 Maintain multiple representations for comparison:
 - raw (as printed)
 - ansi-stripped
-- normalized “comparison” form
+- normalized “comparison” form (including stripped status tags)
 
 Normalize by:
 - lowercasing
 - removing ANSI
 - trimming extra whitespace
 - stripping leading articles (`a`, `an`, `the`)
+- stripping leading parenthesized status tags
 - optionally stripping known wear-location suffixes during comparison
 
 Then:
@@ -308,17 +330,22 @@ Use real log lines whenever possible.
    - then reverse the swap
    - Expect snapshot waist slot to reflect the new item each time
 
-2. **ANSI noise**
+2. **Status tags**
+   - stop using line contains tags like `(Glowing) (Invis)`
+   - snapshot contains no tags
+   - Expect matching to succeed
+
+3. **ANSI noise**
    - stop using line contains ANSI colors
    - snapshot contains plain text
    - Expect matching to succeed
 
-3. **Dual wield**
+4. **Dual wield**
    - wield primary + wield secondary
    - stop using primary
    - Expect both cleared
 
-4. **Disarm**
+5. **Disarm**
    - disarm line occurs
    - Expect both weapon slots cleared
 
@@ -327,7 +354,7 @@ Use real log lines whenever possible.
 - If swap appears broken, inspect:
   - whether stop-using matched the snapshot slot
   - whether wear applied to the same slot
-  - whether normalization removed ANSI/articles/suffixes correctly
+  - whether normalization removed ANSI/articles/suffixes/status-tags correctly
 
 ---
 
@@ -368,18 +395,22 @@ These mappings exist to help maintainers extend delta parsing safely and to keep
   - **REMOVE:** `You stop using {item}.`
 
 - `<worn on hands>`
-  - **WEAR:** `You wear {item} as a shield.`
+  - **WEAR:** `You wear {item} on your hands.`
   - **REMOVE:** `You stop using {item}.`
 
 - `<worn as shield>`
-  - **WEAR:** `You wear {item} on your hands.`
+  - **WEAR:** `You wear {item} as a shield.`
   - **REMOVE:** `You stop using {item}.`
 
 - `<worn about body>`
   - **WEAR:** `You wear {item} about your torso.`
   - **REMOVE:** `You stop using {item}.`
 
-- `<worn about wrist>`
+- `<worn about waist>`
+  - **WEAR:** `You wear {item} about your waist.`
+  - **REMOVE:** `You stop using {item}.`
+
+- `<worn around wrist>`
   - **WEAR:** `You wear {item} around your {left|right} wrist.`
   - **REMOVE:** `You stop using {item}.`
 
@@ -407,4 +438,3 @@ These mappings exist to help maintainers extend delta parsing safely and to keep
 - `<worn as quiver>`
   - **WEAR:** `You put {item} on your shoulder.`
   - **REMOVE:** `You stop using {item}.`
-
