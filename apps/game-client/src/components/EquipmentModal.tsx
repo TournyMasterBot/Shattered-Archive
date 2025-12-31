@@ -43,7 +43,11 @@ function mergeSnapshotWithHotbar(snapshotLines: string[], hotbar: Record<Equipme
 
   for (const rep of replacements) {
     const prefix = `<${rep.tag}>`;
-    const idx = out.findIndex((l) => String(l ?? '').trimStart().startsWith(prefix));
+    const idx = out.findIndex((l) =>
+      String(l ?? '')
+        .trimStart()
+        .startsWith(prefix),
+    );
 
     if (idx >= 0) out[idx] = rep.line;
     else out.push(rep.line);

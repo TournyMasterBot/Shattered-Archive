@@ -120,3 +120,21 @@ function matchWear(line: string): { slot: EqSlot; item: string } | null {
 
   return null;
 }
+
+export function parseEqDeltaLine(line: string): EqDeltaEvent | null {
+  const s = clean(line);
+  if (!s) return null;
+
+  const stopItem = matchStopUsing(s);
+  if (stopItem) return { kind: 'stop_using', item: stopItem };
+
+  if (matchDisarm(s)) return { kind: 'disarm' };
+
+  const w = matchWield(s);
+  if (w) return { kind: 'wield', item: w.item, isSecondary: w.isSecondary };
+
+  const wear = matchWear(s);
+  if (wear) return { kind: 'wear', slot: wear.slot, item: wear.item };
+
+  return null;
+}
