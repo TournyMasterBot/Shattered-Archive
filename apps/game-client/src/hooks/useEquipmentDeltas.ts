@@ -109,6 +109,11 @@ export function useEquipmentDeltas(connectionId: string) {
         const sheathed = st.slots.sheathed?.text ?? '';
 
         if (evt.kind === 'disarm') {
+          try {
+            window.dispatchEvent(new CustomEvent('event:disarm', { detail: wielded }));
+          } catch {
+            // ignore
+          }
           // hotbar
           void setEquipmentFromDelta(connectionId, { wielded: '(nothing)', secondary: '(nothing)' });
           // snapshot (delete so we don't show stale)
@@ -118,9 +123,19 @@ export function useEquipmentDeltas(connectionId: string) {
 
         if (evt.kind === 'wield') {
           if (evt.isSecondary) {
+            try {
+              window.dispatchEvent(new CustomEvent('event:wield:secondary', { detail: wielded }));
+            } catch {
+              // ignore
+            }
             void setEquipmentFromDelta(connectionId, { secondary: evt.item });
             void patchEqSnapshot(connectionId, { secondary_weapon: evt.item });
           } else {
+            try {
+              window.dispatchEvent(new CustomEvent('event:wield:primary', { detail: wielded }));
+            } catch {
+              // ignore
+            }
             void setEquipmentFromDelta(connectionId, { wielded: evt.item });
             void patchEqSnapshot(connectionId, { wielded: evt.item });
           }
@@ -128,6 +143,12 @@ export function useEquipmentDeltas(connectionId: string) {
         }
 
         if (evt.kind === 'wear') {
+          try {
+            window.dispatchEvent(new CustomEvent(`event:gear:wear`, { detail: evt.item }));
+            window.dispatchEvent(new CustomEvent(`event:gear:wear:${evt.slot}`, { detail: evt.item }));
+          } catch {
+            // ignore
+          }
           // snapshot always gets the slot (this is what fixes your modal issue)
           void patchEqSnapshot(connectionId, { [evt.slot]: evt.item } as Partial<Record<EqSlot, string | null>>);
 
@@ -160,6 +181,12 @@ export function useEquipmentDeltas(connectionId: string) {
           const matchesSecondary = removed && sNorm && removed === sNorm;
           const matchesShield = removed && shNorm && removed === shNorm;
           const matchesSheathed = removed && sheNorm && removed === sheNorm;
+
+          try {
+            window.dispatchEvent(new CustomEvent(`event:gear:remove`, { detail: evt.item }));
+          } catch {
+            // ignore
+          }
 
           // Hotbar rules first
           if (matchesWielded) {
@@ -195,6 +222,11 @@ export function useEquipmentDeltas(connectionId: string) {
           // Snapshot-only removal: try to find the correct slot (conservative)
           const slot = bestSnapshotSlotMatch(connectionId, removedRaw);
           if (slot) {
+            try {
+              window.dispatchEvent(new CustomEvent(`event:gear:remove:${slot}`, { detail: evt.item }));
+            } catch {
+              // ignore
+            }
             void patchEqSnapshot(connectionId, { [slot]: null } as Partial<Record<EqSlot, string | null>>);
           }
 

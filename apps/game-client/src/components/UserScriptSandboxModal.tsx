@@ -44,7 +44,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
   const [editorLanguage, setEditorLanguage] = useState<UserScriptLanguage>('text');
 
   // Trigger-specific state
-  const [triggerEventName, setTriggerEventName] = useState<string>('example:event');
+  const [triggerEventName, setTriggerEventName] = useState<string>('game:terminal-data');
   const [triggerMatchText, setTriggerMatchText] = useState<string>('');
   const [triggerTestInput, setTriggerTestInput] = useState<string>('');
   const [triggerOmitFromOutput, setTriggerOmitFromOutput] = useState<boolean>(false);
@@ -81,7 +81,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       setEditorName('');
       setEditorSource('');
       setEditorLanguage('text');
-      setTriggerEventName('example:event');
+      setTriggerEventName('game:terminal-data');
       setTriggerMatchText('');
       setTriggerTestInput('');
       setTriggerOmitFromOutput(false);
@@ -96,7 +96,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
     setEditorName('');
     setEditorSource('');
     setEditorLanguage('text');
-    setTriggerEventName('example:event');
+    setTriggerEventName('game:terminal-data');
     setTriggerMatchText('');
     setTriggerTestInput('');
     setTriggerOmitFromOutput(false);
@@ -114,8 +114,8 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
 
   const baseTriggerEventName =
     selectedScript && selectedScript.kind === 'trigger'
-      ? ((selectedScript as TriggerScript).eventName ?? 'example:event')
-      : 'example:event';
+      ? ((selectedScript as TriggerScript).eventName ?? 'game:terminal-data')
+      : 'game:terminal-data';
 
   const baseTriggerMatchText =
     selectedScript && selectedScript.kind === 'trigger' ? ((selectedScript as TriggerScript).matchText ?? '') : '';
@@ -161,7 +161,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
 
     if (script.kind === 'trigger') {
       const trig = script as TriggerScript;
-      setTriggerEventName(trig.eventName ?? 'example:event');
+      setTriggerEventName(trig.eventName ?? 'game:terminal-data');
       setTriggerMatchText(trig.matchText ?? '');
       setTriggerOmitFromOutput(!!trig.omitFromOutput);
       setAliasKey('');
@@ -170,19 +170,19 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       const t = script as TimerScript;
       const secs = t.intervalMs ? Math.round(t.intervalMs / 1000) : 5;
       setTimerIntervalSeconds(String(secs));
-      setTriggerEventName('example:event');
+      setTriggerEventName('game:terminal-data');
       setTriggerMatchText('');
       setTriggerOmitFromOutput(false);
       setAliasKey('');
     } else if (script.kind === 'alias') {
       const a = script as AliasScript;
       setAliasKey(a.alias ?? '');
-      setTriggerEventName('example:event');
+      setTriggerEventName('game:terminal-data');
       setTriggerMatchText('');
       setTriggerOmitFromOutput(false);
       setTimerIntervalSeconds('');
     } else {
-      setTriggerEventName('example:event');
+      setTriggerEventName('game:terminal-data');
       setTriggerMatchText('');
       setTriggerOmitFromOutput(false);
       setAliasKey('');
@@ -200,7 +200,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
         language: 'text',
         source: `say Trigger fired
 look`,
-        eventName: 'example:event',
+        eventName: 'game:terminal-data',
         matchText: '',
         omitFromOutput: false,
       });
@@ -241,7 +241,7 @@ look`,
 
     if (updated.kind === 'trigger') {
       const trig = updated as TriggerScript;
-      trig.eventName = triggerEventName || 'example:event';
+      trig.eventName = triggerEventName || 'game:terminal-data';
       trig.matchText = triggerMatchText || '';
       trig.omitFromOutput = !!triggerOmitFromOutput;
     } else if (updated.kind === 'timer') {
@@ -284,7 +284,7 @@ look`,
     setEditorName('');
     setEditorSource('');
     setEditorLanguage('text');
-    setTriggerEventName('example:event');
+    setTriggerEventName('game:terminal-data');
     setTriggerMatchText('');
     setTriggerTestInput('');
     setTriggerOmitFromOutput(false);
@@ -324,7 +324,7 @@ look`,
 
     if (draft.kind === 'trigger') {
       const trig = draft as TriggerScript;
-      trig.eventName = triggerEventName || 'example:event';
+      trig.eventName = triggerEventName || 'game:terminal-data';
       trig.matchText = triggerMatchText || '';
       trig.omitFromOutput = !!triggerOmitFromOutput;
     } else if (draft.kind === 'timer') {
@@ -340,7 +340,7 @@ look`,
       draft.kind === 'trigger'
         ? {
             event: {
-              name: triggerEventName || 'example:event',
+              name: triggerEventName || 'game:terminal-data',
               payload: triggerTestInput,
             },
           }
@@ -523,9 +523,14 @@ look`,
                       >
                         <option value="game:terminal-data">game:terminal-data</option>
                         <option value="text:line">text:line</option>
+                        <option value="event:disarm">event:disarm</option>
+                        <option value="event:wield:primary">event:wield:primary</option>
+                        <option value="event:wield:secondary">event:wield:secondary</option>
+                        <option value="event:gear:wear">event:gear:wear</option>
+                        <option value="event:gear:remove">event:gear:remove</option>
                         <option value="gmcp:room">gmcp:room</option>
                         <option value="gmcp:affects">gmcp:affects</option>
-                        <option value="example:event">example:event</option>
+                        {/*<option value="example:event">example:event</option>*/}
                       </select>
                     </label>
 
