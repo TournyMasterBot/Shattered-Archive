@@ -104,4 +104,25 @@ function hydrateRuntime(connectionId?: string | null) {
       userScriptRuntime.dispatchEvent({ name: 'text:line', payload: { text: line } });
     }
   });
+
+  // Bridge other routed window events into user-script triggers
+  const ROUTED_EVENTS: string[] = [
+    'event:gear:wear',
+    'event:gear:remove',
+    'event:disarm',
+    'event:wield:primary',
+    'event:wield:secondary',
+    // add more events to make them accessible to triggers
+  ];
+
+  for (const name of ROUTED_EVENTS) {
+    window.addEventListener(name, (ev: any) => {
+      const payload = ev?.detail;
+
+      userScriptRuntime.dispatchEvent({
+        name,
+        payload,
+      });
+    });
+  }
 })();

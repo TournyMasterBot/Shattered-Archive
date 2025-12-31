@@ -8,8 +8,6 @@ import { stripItemStatusPrefixes } from '../features/equipment/equipment-text';
 const EQ_CAPTURE_VERSION = 'eq-capture.v3.prompt-or-timeout';
 const EQ_IDLE_END_MS = 250; // if no new eq lines arrive for this long, end capture
 
-console.log(`[eq-capture] module loaded (${EQ_CAPTURE_VERSION})`);
-
 function stripAnsi(input: string): string {
   return String(input ?? '').replace(/\u001b\[[0-9;]*m/g, '');
 }
@@ -30,8 +28,6 @@ function hasEqTagLine(line: string): boolean {
 }
 
 export function useEquipmentCapture(connectionId: string) {
-  console.debug(`[eq-capture] HOOK FUNCTION CALLED (${EQ_CAPTURE_VERSION})`, { connectionId });
-
   const capturing = useRef(false);
   const buffer = useRef<string[]>([]);
   const seenAnyEq = useRef(false);

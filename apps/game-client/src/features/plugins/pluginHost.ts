@@ -22,6 +22,10 @@ type HostState = {
 };
 
 const ROUTED_WINDOW_EVENTS: string[] = [
+  'text:line',
+  'event:gear:wear',
+  'event:gear:remove',
+  'event:disarm',
   'game:terminal-data',
   'game:gmcp',
   'game:socket-open',

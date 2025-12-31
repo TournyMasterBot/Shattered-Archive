@@ -1,15 +1,142 @@
 // apps/game-client/src/components/RightSidebar.tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styles from '../styles/LayoutShell.module.scss';
 import { useStatusBlockViewModel } from '../hooks/useLayoutShell';
 import AffectsBlock from './AffectsBlock';
 import CompassBlock from './CompassBlock';
 import RoomHeader from './RoomHeader';
+import {
+  enemyColorClass,
+  formatOpponentStatusText,
+  type EnemyUiState,
+  type OpponentStatusDetail,
+} from '../features/combat/opponent-types';
 
 /* ---------------- Status block (tick + vitals + enemy + ancillary) ---------------- */
 
+type HudKey = 'tick' | 'statusIcons' | 'hp' | 'mp' | 'stam' | 'opponent';
+type HudToggles = Record<HudKey, boolean>;
+
+const DEFAULT_HUD: HudToggles = {
+  tick: true,
+  statusIcons: true,
+  hp: true,
+  mp: true,
+  stam: true,
+  opponent: true,
+};
+
+function safeParseHud(json: string | null): HudToggles | null {
+  if (!json) return null;
+  try {
+    const obj = JSON.parse(json) as Partial<HudToggles>;
+    if (!obj || typeof obj !== 'object') return null;
+
+    const out: HudToggles = { ...DEFAULT_HUD };
+    (Object.keys(DEFAULT_HUD) as HudKey[]).forEach((k) => {
+      if (typeof obj[k] === 'boolean') out[k] = obj[k] as boolean;
+    });
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+const HUD_STORAGE_KEY = 'sa:hud:statusBlock';
+
 const StatusBlock: React.FC = () => {
-  const { remaining, vitals, enemy, hpPct, mpPct, staPct, ancillary } = useStatusBlockViewModel();
+  const { remaining, vitals, hpPct, mpPct, staPct, ancillary } = useStatusBlockViewModel();
+
+  // HUD toggle state (persisted)
+  const [hud, setHud] = useState<HudToggles>(
+    () => safeParseHud(window.localStorage?.getItem(HUD_STORAGE_KEY)) ?? DEFAULT_HUD,
+  );
+  const [hudMenuOpen, setHudMenuOpen] = useState(false);
+  const hudMenuWrapRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    try {
+      window.localStorage?.setItem(HUD_STORAGE_KEY, JSON.stringify(hud));
+    } catch {
+      // ignore
+    }
+  }, [hud]);
+
+  const toggleHud = (key: HudKey) => setHud((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  // Click-outside to close menu
+  useEffect(() => {
+    if (!hudMenuOpen) return;
+
+    const onDown = (e: MouseEvent) => {
+      const wrap = hudMenuWrapRef.current;
+      if (!wrap) return;
+      if (wrap.contains(e.target as Node)) return;
+      setHudMenuOpen(false);
+    };
+
+    window.addEventListener('mousedown', onDown);
+    return () => window.removeEventListener('mousedown', onDown);
+  }, [hudMenuOpen]);
+
+  // Enemy UI state (last known)
+  const [enemyUi, setEnemyUi] = useState<EnemyUiState>({
+    lastSeenTs: 0,
+    label: 'Enemy',
+    pct: 0,
+    statusText: '',
+  });
+
+  type DamageChunk = { leftPct: number; widthPct: number; key: number };
+  const [damageChunk, setDamageChunk] = useState<DamageChunk | null>(null);
+  const chunkTimerRef = useRef<number | null>(null);
+
+  // "Now" ticker so staleness can flip without new events
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Date.now()), 200);
+    return () => window.clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    const handler = (ev: Event) => {
+      const ce = ev as CustomEvent<OpponentStatusDetail>;
+      const d = ce.detail;
+      if (!d || !Number.isFinite(d.pct)) return;
+
+      setEnemyUi((prev) => {
+        const prevSeen = prev.lastSeenTs > 0;
+        const prevPct = prevSeen ? prev.pct : d.pct;
+        const nextPct = d.pct;
+
+        // If enemy pct decreased, show pulsing "damage chunk" over the lost segment.
+        if (nextPct < prevPct) {
+          const left = Math.max(0, Math.min(100, nextPct));
+          const width = Math.max(0, Math.min(100 - left, prevPct - nextPct));
+
+          if (width > 0.05) {
+            setDamageChunk({ leftPct: left, widthPct: width, key: d.ts || Date.now() });
+
+            if (chunkTimerRef.current) window.clearTimeout(chunkTimerRef.current);
+            chunkTimerRef.current = window.setTimeout(() => setDamageChunk(null), 4500);
+          }
+        }
+
+        return {
+          lastSeenTs: d.ts || Date.now(),
+          label: d.label?.trim() || prev.label || 'Enemy',
+          pct: nextPct,
+          statusText: formatOpponentStatusText(d.pct, d.minPct, d.maxPct),
+        };
+      });
+    };
+
+    window.addEventListener('event:fighting:opponent', handler as EventListener);
+    return () => {
+      window.removeEventListener('event:fighting:opponent', handler as EventListener);
+      if (chunkTimerRef.current) window.clearTimeout(chunkTimerRef.current);
+    };
+  }, []);
 
   // Only log ancillary when it actually changes
   useEffect(() => {
@@ -38,83 +165,176 @@ const StatusBlock: React.FC = () => {
     ancillary.language,
   ]);
 
-  const pieces: string[] = [];
+  type StatusPiece = { key: string; text: string; title: string };
+
+  const statusPieces: StatusPiece[] = [];
 
   if (ancillary.carryWeight != null && ancillary.carryWeightMax != null && ancillary.carryWeightPct != null) {
-    // 🧺 120 / 300 (40%)
-    pieces.push(
-      `🧺 ${ancillary.carryWeight.toFixed(0)} / ${ancillary.carryWeightMax.toFixed(0)} (${ancillary.carryWeightPct.toFixed(0)}%)`,
-    );
-  }
-  if (ancillary.isQuiet) pieces.push('🔇');
-  if (ancillary.isFlying) pieces.push('🪽');
-  if (ancillary.isRiding) pieces.push('🐎');
-  if (ancillary.isFighting) pieces.push('⚔️');
-  if (ancillary.language && ancillary.language.toLowerCase() !== 'common') {
-    pieces.push(`💬 ${ancillary.language}`);
+    const cw = ancillary.carryWeight.toFixed(0);
+    const cwm = ancillary.carryWeightMax.toFixed(0);
+    const cwp = ancillary.carryWeightPct.toFixed(0);
+
+    statusPieces.push({
+      key: 'carry',
+      text: `🧺 ${cw} / ${cwm} (${cwp}%)`,
+      title: `Carry weight: ${cw} / ${cwm} (${cwp}%)`,
+    });
   }
 
-  const statusText = pieces.length > 0 ? pieces.join('   ') : '';
+  if (ancillary.isQuiet) statusPieces.push({ key: 'quiet', text: '🔇', title: 'Quiet (deafened)' });
+  if (ancillary.isFlying) statusPieces.push({ key: 'flying', text: '🪽', title: 'Flying' });
+  if (ancillary.isRiding) statusPieces.push({ key: 'riding', text: '🐎', title: 'Riding' });
+  if (ancillary.isFighting) statusPieces.push({ key: 'fighting', text: '⚔️', title: 'Fighting' });
+
+  if (ancillary.language && ancillary.language.toLowerCase() !== 'common') {
+    statusPieces.push({ key: 'language', text: `💬 ${ancillary.language}`, title: `Language: ${ancillary.language}` });
+  }
+
+  const hasStatusPieces = statusPieces.length > 0;
+
+  const enemyRowClass = useMemo(() => {
+    const color = enemyColorClass(styles as any, enemyUi.pct);
+    return `${styles.barRow} ${styles.barEnemy} ${color}`;
+  }, [enemyUi.pct]);
+
+  // Active if we saw a message in the last 5 seconds
+  const ENEMY_STALE_MS = 5000;
+  const isEnemyActive = enemyUi.lastSeenTs > 0 && now - enemyUi.lastSeenTs <= ENEMY_STALE_MS;
+
+  // If stale, clear any leftover chunk immediately
+  useEffect(() => {
+    if (!isEnemyActive && damageChunk) setDamageChunk(null);
+  }, [isEnemyActive, damageChunk]);
 
   return (
     <div className={styles.statusBlock}>
-      {/* Tick line */}
+      {/* TOP ROW: always visible so the config manager never disappears */}
       <div className={styles.tickRow}>
-        <span className={styles.tickLabel}>Next Tick:</span>
-        <span className={styles.tickValue}>{remaining}</span>
+        <div className={styles.tickLeft}>
+          <div className={styles.hudConfigWrap} ref={hudMenuWrapRef}>
+            <button
+              type="button"
+              className={styles.hudConfigButton}
+              aria-label="HUD display options"
+              aria-expanded={hudMenuOpen}
+              onClick={() => setHudMenuOpen((v) => !v)}
+            >
+              ⚙
+            </button>
+
+            {hudMenuOpen && (
+              <div className={styles.hudConfigPanel} role="menu" aria-label="HUD toggles">
+                <div className={styles.hudToggleRow} role="menuitem" onClick={() => toggleHud('tick')}>
+                  <span className={`${styles.hudDot} ${hud.tick ? styles.hudDotOn : styles.hudDotOff}`} />
+                  <span className={styles.hudToggleLabel}>Tick</span>
+                </div>
+
+                <div className={styles.hudToggleRow} role="menuitem" onClick={() => toggleHud('statusIcons')}>
+                  <span className={`${styles.hudDot} ${hud.statusIcons ? styles.hudDotOn : styles.hudDotOff}`} />
+                  <span className={styles.hudToggleLabel}>Status</span>
+                </div>
+
+                <div className={styles.hudToggleRow} role="menuitem" onClick={() => toggleHud('hp')}>
+                  <span className={`${styles.hudDot} ${hud.hp ? styles.hudDotOn : styles.hudDotOff}`} />
+                  <span className={styles.hudToggleLabel}>HP</span>
+                </div>
+
+                <div className={styles.hudToggleRow} role="menuitem" onClick={() => toggleHud('mp')}>
+                  <span className={`${styles.hudDot} ${hud.mp ? styles.hudDotOn : styles.hudDotOff}`} />
+                  <span className={styles.hudToggleLabel}>MP</span>
+                </div>
+
+                <div className={styles.hudToggleRow} role="menuitem" onClick={() => toggleHud('stam')}>
+                  <span className={`${styles.hudDot} ${hud.stam ? styles.hudDotOn : styles.hudDotOff}`} />
+                  <span className={styles.hudToggleLabel}>Stam</span>
+                </div>
+
+                <div className={styles.hudToggleRow} role="menuitem" onClick={() => toggleHud('opponent')}>
+                  <span className={`${styles.hudDot} ${hud.opponent ? styles.hudDotOn : styles.hudDotOff}`} />
+                  <span className={styles.hudToggleLabel}>Opp</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Only show the tick label when enabled */}
+          {hud.tick && <span className={styles.tickLabel}>Next Tick:</span>}
+        </div>
+
+        {/* Only show the tick value pill when enabled */}
+        {hud.tick && <span className={styles.tickValue}>{remaining}</span>}
       </div>
 
-      {/* Ancillary status line (only if we have anything to show) */}
-      {statusText && (
+      {/* Status icons row */}
+      {hud.statusIcons && hasStatusPieces && (
         <div className={styles.tickRow}>
           <span className={styles.tickLabel}>Status:</span>
-          <span style={{ flex: 1, fontSize: '0.7rem' }}>{statusText}</span>
+
+          <span style={{ flex: 1, fontSize: '0.7rem', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {statusPieces.map((p) => (
+              <span key={p.key} title={p.title} aria-label={p.title}>
+                {p.text}
+              </span>
+            ))}
+          </span>
         </div>
       )}
 
       {/* Vitals + enemy bars */}
       <div className={styles.barGroup}>
-        {/* Player HP */}
-        <div className={`${styles.barRow} ${styles.barHp}`}>
-          <span className={styles.barLabel}>HP</span>
-          <div className={styles.barTrack}>
-            <div className={styles.barFill} style={{ width: `${hpPct}%` }} />
-          </div>
-          <span className={styles.barValue}>
-            {vitals.hp} / {vitals.hpMax}
-          </span>
-        </div>
-
-        {/* Player MP */}
-        <div className={`${styles.barRow} ${styles.barMp}`}>
-          <span className={styles.barLabel}>MP</span>
-          <div className={styles.barTrack}>
-            <div className={styles.barFill} style={{ width: `${mpPct}%` }} />
-          </div>
-          <span className={styles.barValue}>
-            {vitals.mp} / {vitals.mpMax}
-          </span>
-        </div>
-
-        {/* Player Stamina */}
-        <div className={`${styles.barRow} ${styles.barSta}`}>
-          <span className={styles.barLabel}>Stam</span>
-          <div className={styles.barTrack}>
-            <div className={styles.barFill} style={{ width: `${staPct}%` }} />
-          </div>
-          <span className={styles.barValue}>
-            {vitals.stamina} / {vitals.staminaMax}
-          </span>
-        </div>
-
-        {/* Enemy HP (visible only when combat state says so) */}
-        {enemy.visible && (
-          <div className={`${styles.barRow} ${styles.barEnemy}`}>
-            <span className={styles.barLabel}>{enemy.label || 'Enemy'}</span>
+        {hud.hp && (
+          <div className={`${styles.barRow} ${styles.barHp}`}>
+            <span className={styles.barLabel}>HP</span>
             <div className={styles.barTrack}>
-              <div className={styles.barFill} style={{ width: `${enemy.pct}%` }} />
+              <div className={styles.barFill} style={{ width: `${hpPct}%` }} />
             </div>
-            <span className={styles.barValue}>{enemy.statusText || `${enemy.pct.toFixed(0)}%`}</span>
+            <span className={styles.barValue}>
+              {vitals.hp} / {vitals.hpMax}
+            </span>
+          </div>
+        )}
+
+        {hud.mp && (
+          <div className={`${styles.barRow} ${styles.barMp}`}>
+            <span className={styles.barLabel}>MP</span>
+            <div className={styles.barTrack}>
+              <div className={styles.barFill} style={{ width: `${mpPct}%` }} />
+            </div>
+            <span className={styles.barValue}>
+              {vitals.mp} / {vitals.mpMax}
+            </span>
+          </div>
+        )}
+
+        {hud.stam && (
+          <div className={`${styles.barRow} ${styles.barSta}`}>
+            <span className={styles.barLabel}>Stam</span>
+            <div className={styles.barTrack}>
+              <div className={styles.barFill} style={{ width: `${staPct}%` }} />
+            </div>
+            <span className={styles.barValue}>
+              {vitals.stamina} / {vitals.staminaMax}
+            </span>
+          </div>
+        )}
+
+        {hud.opponent && (
+          <div className={enemyRowClass}>
+            <span className={styles.barLabel}>{isEnemyActive ? enemyUi.label : ''}</span>
+
+            <div className={`${styles.barTrack} ${styles.enemyTrack}`}>
+              <div className={styles.barFill} style={{ width: `${isEnemyActive ? enemyUi.pct : 0}%` }} />
+
+              {isEnemyActive && damageChunk && damageChunk.widthPct > 0.05 && (
+                <div
+                  key={damageChunk.key}
+                  className={styles.enemyDamageChunk}
+                  style={{ left: `${damageChunk.leftPct}%`, width: `${damageChunk.widthPct}%` }}
+                />
+              )}
+            </div>
+
+            <span className={styles.barValue}>{isEnemyActive ? enemyUi.statusText : ''}</span>
           </div>
         )}
       </div>

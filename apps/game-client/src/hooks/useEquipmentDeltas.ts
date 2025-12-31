@@ -124,7 +124,7 @@ export function useEquipmentDeltas(connectionId: string) {
         if (evt.kind === 'wield') {
           if (evt.isSecondary) {
             try {
-              window.dispatchEvent(new CustomEvent('event:wield:secondary', { detail: wielded }));
+              window.dispatchEvent(new CustomEvent('event:wield:secondary', { detail: evt.item }));
             } catch {
               // ignore
             }
@@ -132,7 +132,7 @@ export function useEquipmentDeltas(connectionId: string) {
             void patchEqSnapshot(connectionId, { secondary_weapon: evt.item });
           } else {
             try {
-              window.dispatchEvent(new CustomEvent('event:wield:primary', { detail: wielded }));
+              window.dispatchEvent(new CustomEvent('event:wield:primary', { detail: evt.item }));
             } catch {
               // ignore
             }
@@ -144,6 +144,10 @@ export function useEquipmentDeltas(connectionId: string) {
 
         if (evt.kind === 'wear') {
           try {
+            console.log('Emitting event', {
+              eventName: 'event:gear:wear',
+              detail: evt.item,
+            });
             window.dispatchEvent(new CustomEvent(`event:gear:wear`, { detail: evt.item }));
             window.dispatchEvent(new CustomEvent(`event:gear:wear:${evt.slot}`, { detail: evt.item }));
           } catch {
