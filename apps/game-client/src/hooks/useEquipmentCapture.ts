@@ -84,8 +84,6 @@ export function useEquipmentCapture(connectionId: string) {
   }
 
   useEffect(() => {
-    console.debug(`[eq-capture] hook mounted (${EQ_CAPTURE_VERSION})`, { connectionId });
-
     const onTerminal = (ev: Event) => {
       const detail = (ev as CustomEvent<unknown>).detail;
       const chunk = extractTerminalText(detail);

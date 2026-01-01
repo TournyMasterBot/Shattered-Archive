@@ -87,8 +87,6 @@ function bestSnapshotSlotMatch(connectionId: string, removedItem: string): EqSlo
 
 export function useEquipmentDeltas(connectionId: string) {
   useEffect(() => {
-    console.debug('[eq-delta] hook mounted', { connectionId });
-
     const onTerminal = (ev: Event) => {
       const detail = (ev as CustomEvent<unknown>).detail;
       const chunk = extractTerminalText(detail);

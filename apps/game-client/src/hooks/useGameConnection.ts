@@ -293,10 +293,6 @@ export function useGameConnection(): UseGameConnectionResult {
       // 2) GMCP trigger check (cheap)
       const matchedPattern = GMCP_TRIGGER_PATTERNS.find((pattern) => text.includes(pattern));
       if (matchedPattern) {
-        console.log(
-          '[game-connection] GMCP trigger text detected; (re)starting GMCP watch window via pattern:',
-          matchedPattern,
-        );
         scheduleGmcpCheck();
       }
 

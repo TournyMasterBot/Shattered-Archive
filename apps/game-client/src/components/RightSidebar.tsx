@@ -152,8 +152,6 @@ const StatusBlock: React.FC = () => {
     ) {
       return;
     }
-
-    console.log('[StatusBlock] ancillary changed', ancillary);
   }, [
     ancillary.carryWeight,
     ancillary.carryWeightMax,
