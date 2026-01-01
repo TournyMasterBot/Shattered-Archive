@@ -4,6 +4,7 @@ import type { IPluginModule, PluginId, PluginRuntimeApi } from '@shatteredarchiv
 import { applyPluginBaseCss, removePluginBaseCss } from './pluginCss';
 import { startPluginBundledScripts } from './pluginScriptRunner';
 import { normalizePluginModule } from './normalizePluginModule';
+import { ROUTED_WINDOW_EVENTS } from './routed-gmcp-events';
 
 type PluginCleanup = {
   api?: PluginRuntimeApi;
@@ -20,23 +21,6 @@ type HostState = {
   modules: Map<PluginId, IPluginModule>;
   cleanups: Map<PluginId, PluginCleanup>;
 };
-
-const ROUTED_WINDOW_EVENTS: string[] = [
-  'text:line',
-  'event:gear:wear',
-  'event:gear:remove',
-  'event:disarm',
-  'game:terminal-data',
-  'game:gmcp',
-  'game:socket-open',
-  'game:socket-closed',
-  'game:room-data',
-  'game:char-data',
-  'game:tick',
-  'game:affects-trueup',
-  'game:affect-added',
-  'game:affect-removed',
-];
 
 function makeDefaultApi(connectionId: string, pluginId: PluginId, module: IPluginModule): PluginRuntimeApi {
   const onEvent: PluginRuntimeApi['onEvent'] = (eventName, handler) => {
@@ -179,13 +163,13 @@ export class PluginHost {
     this.state!.modules.set(module.manifest.id, module);
   }
 
-  // ✅ Added: for PluginsPage / UI usage
+  // PluginsPage / UI usage
   getRegisteredPlugins(): Array<{ id: PluginId; module: IPluginModule }> {
     if (!this.state) return [];
     return Array.from(this.state.modules.entries()).map(([id, module]) => ({ id, module }));
   }
 
-  // ✅ Added: fetch a module by id
+  // Fetch a module by id
   getPluginModule(pluginId: PluginId): IPluginModule | undefined {
     return this.state?.modules.get(pluginId);
   }

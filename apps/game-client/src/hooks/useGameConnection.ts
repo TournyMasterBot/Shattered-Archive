@@ -488,8 +488,14 @@ export function useGameConnection(): UseGameConnectionResult {
                       break;
                     }
 
+                    case 'login_data': {
+                      window.dispatchEvent(new CustomEvent('game:character-login', { detail: payload }));
+                      break;
+                    }
+
                     default: {
                       console.log('Unknown GMCP message received', {
+                        packageName,
                         payload,
                       });
                       break;

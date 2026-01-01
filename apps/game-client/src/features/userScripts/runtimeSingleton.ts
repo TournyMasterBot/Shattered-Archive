@@ -2,6 +2,7 @@
 import { getAccessibilitySettings } from '../accessibility/accessibility-settings-store';
 import { UserScriptRuntime } from './userScriptRuntime';
 import type { AnyUserScript } from './types';
+import { ROUTED_WINDOW_EVENTS } from '../plugins/routed-gmcp-events';
 
 const settings = getAccessibilitySettings();
 
@@ -106,16 +107,7 @@ function hydrateRuntime(connectionId?: string | null) {
   });
 
   // Bridge other routed window events into user-script triggers
-  const ROUTED_EVENTS: string[] = [
-    'event:gear:wear',
-    'event:gear:remove',
-    'event:disarm',
-    'event:wield:primary',
-    'event:wield:secondary',
-    // add more events to make them accessible to triggers
-  ];
-
-  for (const name of ROUTED_EVENTS) {
+  for (const name of ROUTED_WINDOW_EVENTS) {
     window.addEventListener(name, (ev: any) => {
       const payload = ev?.detail;
 

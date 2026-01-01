@@ -2,8 +2,19 @@
 set -eu
 
 CERT_DIR="/etc/nginx/certs"
-CERT="${CERT_DIR}/fullchain.pem"
-KEY="${CERT_DIR}/privkey.pem"
+CERT="${CERT_DIR}/shatteredarchive.dev.pem"
+KEY="${CERT_DIR}/shatteredarchive.dev-key.pem"
+
+mkdir -p /var/log/nginx /var/lib/logrotate
+
+# Ensure log files exist (so logrotate has something to work with early)
+touch /var/log/nginx/access.log /var/log/nginx/error.log || true
+
+# start cron for logrotate
+crond -l 8 -b
+
+# run once at startup
+/usr/sbin/logrotate -s /var/lib/logrotate/status /etc/logrotate.d/nginx || true
 
 # Generate a single self-signed cert with SANs for the local dev domains.
 # This is NOT trusted by browsers by default; use http:// for no warnings.
@@ -38,4 +49,4 @@ EOF
   rm -f /tmp/openssl.cnf
 fi
 
-exec "$@"
+exec /docker-entrypoint.sh "$@"

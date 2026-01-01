@@ -9,6 +9,7 @@ import {
   UserScriptLanguage,
 } from '../features/userScripts/types';
 import styles from '../styles/UserScriptSandboxModal.module.scss';
+import { ROUTED_WINDOW_EVENTS } from '../features/plugins/routed-gmcp-events';
 
 interface UserScriptSandboxModalProps {
   isOpen: boolean;
@@ -521,16 +522,11 @@ look`,
                         value={triggerEventName}
                         onChange={(e) => setTriggerEventName(e.target.value)}
                       >
-                        <option value="game:terminal-data">game:terminal-data</option>
-                        <option value="text:line">text:line</option>
-                        <option value="event:disarm">event:disarm</option>
-                        <option value="event:wield:primary">event:wield:primary</option>
-                        <option value="event:wield:secondary">event:wield:secondary</option>
-                        <option value="event:gear:wear">event:gear:wear</option>
-                        <option value="event:gear:remove">event:gear:remove</option>
-                        <option value="gmcp:room">gmcp:room</option>
-                        <option value="gmcp:affects">gmcp:affects</option>
-                        {/*<option value="example:event">example:event</option>*/}
+                        {ROUTED_WINDOW_EVENTS.map((evt) => (
+                          <option key={evt} value={evt}>
+                            {evt}
+                          </option>
+                        ))}
                       </select>
                     </label>
 
