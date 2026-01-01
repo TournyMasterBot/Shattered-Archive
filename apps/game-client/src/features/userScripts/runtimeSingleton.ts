@@ -2,6 +2,7 @@
 import { getAccessibilitySettings } from '../accessibility/accessibility-settings-store';
 import { UserScriptRuntime } from './userScriptRuntime';
 import type { AnyUserScript } from './types';
+import { ROUTED_WINDOW_EVENTS } from '../plugins/routed-gmcp-events';
 
 const settings = getAccessibilitySettings();
 
@@ -104,4 +105,16 @@ function hydrateRuntime(connectionId?: string | null) {
       userScriptRuntime.dispatchEvent({ name: 'text:line', payload: { text: line } });
     }
   });
+
+  // Bridge other routed window events into user-script triggers
+  for (const name of ROUTED_WINDOW_EVENTS) {
+    window.addEventListener(name, (ev: any) => {
+      const payload = ev?.detail;
+
+      userScriptRuntime.dispatchEvent({
+        name,
+        payload,
+      });
+    });
+  }
 })();

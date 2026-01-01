@@ -1,3 +1,4 @@
+// types\types-client\src\plugins\plugin-base.ts
 export type PluginId = string;
 
 export type PluginLanguage = 'javascript' | 'typescript' | 'python' | 'lua';

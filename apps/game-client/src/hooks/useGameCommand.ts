@@ -46,22 +46,19 @@ export function useGameCommand(options: UseGameCommandOptions): UseGameCommandRe
     sendLineRef.current = (line: string) => {
       if (!isConnected) return;
 
+      try {
+        window.dispatchEvent(new CustomEvent('game:command-sent', { detail: { text: line } }));
+      } catch {
+        // ignore
+      }
+
       if (userScriptRuntime) {
         userScriptRuntime.executeAlias(line);
       } else {
         sendRaw(line);
-        try {
-          window.dispatchEvent(new CustomEvent('dsl:command-sent', { detail: { text: line } }));
-        } catch {
-          // ignore
-        }
       }
 
-      setHistory((prev) => {
-        const next = [...prev, line];
-        if (next.length > 500) return next.slice(next.length - 500);
-        return next;
-      });
+      // IMPORTANT: do NOT save to history here (this is per-line after splitting)
     };
   }, [isConnected, sendRaw]);
 
@@ -92,6 +89,15 @@ export function useGameCommand(options: UseGameCommandOptions): UseGameCommandRe
     for (const line of action.lines) {
       queue.enqueue({ kind: 'sendLine', line });
     }
+
+    // Save the ORIGINAL, UNMODIFIED input as a single history entry
+    setHistory((prev) => {
+      if (txt.trim().length === 0) return prev;
+
+      const next = [...prev, txt];
+      if (next.length > 500) return next.slice(next.length - 500);
+      return next;
+    });
 
     setHistoryIndex(null);
 

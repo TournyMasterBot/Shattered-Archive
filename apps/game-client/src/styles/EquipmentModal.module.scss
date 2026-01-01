@@ -1,0 +1,196 @@
+// apps/game-client/src/styles/EquipmentModal.module.scss
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal {
+  width: min(760px, 92vw);
+  max-height: min(86vh, 900px);
+  background: #111;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.closeBtn {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 8px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* ---------- Scrollbar theming (local to this modal) ---------- */
+/* Firefox */
+.body,
+.eqList {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) rgba(0, 0, 0, 0.35);
+}
+
+/* Chromium/WebKit */
+.body::-webkit-scrollbar,
+.eqList::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.body::-webkit-scrollbar-track,
+.eqList::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 999px;
+}
+
+.body::-webkit-scrollbar-thumb,
+.eqList::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  border: 2px solid rgba(0, 0, 0, 0.35);
+}
+
+.body::-webkit-scrollbar-thumb:hover,
+.eqList::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+/* ------------------------------------------------------------ */
+
+.body {
+  padding: 12px 14px;
+  overflow: auto;
+}
+
+.section {
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  &:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+}
+
+.sectionTitle {
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0.9;
+  margin-bottom: 10px;
+}
+
+.toggleRow {
+  display: flex;
+  gap: 8px;
+}
+
+.toggleBtn {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.88);
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.toggleBtnActive {
+  border-color: rgba(120, 200, 255, 0.55);
+  background: rgba(120, 200, 255, 0.18);
+}
+
+.empty {
+  font-size: 13px;
+  opacity: 0.8;
+  line-height: 1.4;
+  padding: 10px 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.slot {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.item {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.muted {
+  opacity: 0.55;
+}
+
+.dirty {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(255, 180, 80, 0.16);
+  border: 1px solid rgba(255, 180, 80, 0.28);
+  opacity: 0.95;
+}
+
+.footerNote {
+  margin-top: 10px;
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.eqList {
+  max-height: 280px;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.eqLine {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.35;
+  padding: 3px 2px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

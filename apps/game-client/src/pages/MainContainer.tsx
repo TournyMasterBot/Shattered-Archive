@@ -23,6 +23,10 @@ import { pluginHost } from '../features/plugins/pluginHost';
 import { applyCssToDom, getAppliedCss } from '../features/userStyles/userStyleOverrideStore';
 import LibraryModal from '../components/LibraryModal';
 
+import EquipmentModal from '../components/EquipmentModal';
+import { useEquipmentCapture } from '../hooks/useEquipmentCapture';
+import { useEquipmentDeltas } from '../hooks/useEquipmentDeltas';
+
 export const MainContainer: React.FC = () => {
   useVisualViewportHeight();
   const main = useMainContainer();
@@ -51,6 +55,8 @@ export const MainContainer: React.FC = () => {
   const handleOpenPlugins = () => setIsPluginsModalOpen(true);
   const handleOpenLibrary = () => main.openLibraryModal();
 
+  const handleOpenEquipment = () => main.openEquipmentModal();
+
   const connectionId = React.useMemo(() => {
     const host = gameConn.currentHost;
     const port = gameConn.currentPort;
@@ -61,6 +67,8 @@ export const MainContainer: React.FC = () => {
   }, [gameConn.currentHost, gameConn.currentPort]);
 
   const plugins = usePlugins(connectionId);
+  useEquipmentCapture(connectionId);
+  useEquipmentDeltas(connectionId);
 
   React.useEffect(() => {
     pluginHost.setConnection(connectionId);
@@ -90,6 +98,7 @@ export const MainContainer: React.FC = () => {
         onOpenConnect={handleOpenConnect}
         onOpenPlugins={handleOpenPlugins}
         onOpenLibrary={handleOpenLibrary}
+        onOpenEquipment={handleOpenEquipment}
       />
 
       <FocusBar />
@@ -146,6 +155,12 @@ export const MainContainer: React.FC = () => {
       />
 
       <LibraryModal isOpen={main.isLibraryModalOpen} onClose={main.closeLibraryModal} connectionId={connectionId} />
+
+      <EquipmentModal
+        isOpen={main.isEquipmentModalOpen}
+        onClose={main.closeEquipmentModal}
+        connectionId={connectionId}
+      />
     </div>
   );
 };

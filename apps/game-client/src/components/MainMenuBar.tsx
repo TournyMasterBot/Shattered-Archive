@@ -12,6 +12,7 @@ interface MainMenuBarProps {
   onOpenConnect: () => void;
   onOpenPlugins: () => void;
   onOpenLibrary: () => void;
+  onOpenEquipment: () => void;
 }
 
 export const MainMenuBar: React.FC<MainMenuBarProps> = ({
@@ -20,6 +21,7 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
   onOpenConnect,
   onOpenPlugins,
   onOpenLibrary,
+  onOpenEquipment,
 }) => {
   const {
     openRootMenu,
@@ -141,6 +143,16 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
               }}
             >
               Library (Notes & Books)…
+            </div>
+            <div
+              className={styles.subMenuItem}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeAllMenus();
+                onOpenEquipment();
+              }}
+            >
+              Equipment…
             </div>
           </div>
         </div>

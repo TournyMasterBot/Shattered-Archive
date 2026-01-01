@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { probeChatRange } from '../features/chat/chat-probe';
 import { appendChatRaw } from '../features/chat/chat-store';
+import { OpponentStatusDetail } from '../features/combat/opponent-types';
 
 export interface UseGameConnectionResult {
   isConnected: boolean;
@@ -26,6 +27,81 @@ function dispatchSafe(name: string, detail?: any) {
   } catch {
     // ignore (SSR / no window)
   }
+}
+
+// --- opponent condition probe (fast-gated, low traffic) ---
+
+const OPPONENT_GATES: string[] = [
+  'excellent condition',
+  'few scratches',
+  'small wounds and bruises',
+  'quite a few wounds',
+  'big nasty wounds and scratches',
+  'pretty hurt',
+  'awful condition',
+];
+
+// Only used when gate hits (rare), so regex strip is acceptable here.
+const ANSI_CSI_RE = /\u001b\[[0-9;]*m/g;
+
+const OPPONENT_BUCKETS: Array<{
+  phrase: string;
+  min: number;
+  max: number;
+  est: number;
+}> = [
+  { phrase: 'is in excellent condition.', min: 100, max: 100, est: 100 },
+  { phrase: 'a few scratches.', min: 90, max: 99, est: 95 },
+  { phrase: 'has some small wounds and bruises.', min: 75, max: 89, est: 82 },
+  { phrase: 'has quite a few wounds.', min: 50, max: 74, est: 62 },
+  { phrase: 'has some big nasty wounds and scratches.', min: 30, max: 49, est: 40 },
+  { phrase: 'looks pretty hurt.', min: 15, max: 29, est: 22 },
+  { phrase: 'is in awful condition.', min: 0, max: 14, est: 8 },
+];
+
+function probeOpponentConditionLine(lineText: string): OpponentStatusDetail | null {
+  // Fast gate: avoid any allocations unless we see likely keywords.
+  let gated = false;
+  for (let i = 0; i < OPPONENT_GATES.length; i++) {
+    if (lineText.indexOf(OPPONENT_GATES[i]) !== -1) {
+      gated = true;
+      break;
+    }
+  }
+  if (!gated) return null;
+
+  const clean = lineText.replace(ANSI_CSI_RE, '').trim();
+  if (!clean) return null;
+
+  for (let i = 0; i < OPPONENT_BUCKETS.length; i++) {
+    const b = OPPONENT_BUCKETS[i];
+    const idx = clean.indexOf(b.phrase);
+    if (idx === -1) continue;
+
+    // Best-effort label extraction: everything before the matched phrase.
+    // (This might include "The troll is"/"The troll has"; we trim that down a bit.)
+    let label = clean.slice(0, idx).trim();
+
+    // Remove trailing verb if present (common patterns: "... is", "... has")
+    if (label.endsWith(' is')) label = label.slice(0, -3).trim();
+    if (label.endsWith(' has')) label = label.slice(0, -4).trim();
+
+    // Some lines might have extra punctuation before the phrase
+    label = label.replace(/[,\-:]+$/g, '').trim();
+
+    const range = b.min === b.max ? `${b.est}%` : `${b.est}% (${b.min}%–${b.max}%)`;
+
+    return {
+      ts: Date.now(),
+      label: label || undefined,
+      pct: b.est,
+      minPct: b.min,
+      maxPct: b.max,
+      statusText: range,
+    };
+  }
+
+  return null;
 }
 
 /**
@@ -217,10 +293,6 @@ export function useGameConnection(): UseGameConnectionResult {
       // 2) GMCP trigger check (cheap)
       const matchedPattern = GMCP_TRIGGER_PATTERNS.find((pattern) => text.includes(pattern));
       if (matchedPattern) {
-        console.log(
-          '[game-connection] GMCP trigger text detected; (re)starting GMCP watch window via pattern:',
-          matchedPattern,
-        );
         scheduleGmcpCheck();
       }
 
@@ -241,6 +313,12 @@ export function useGameConnection(): UseGameConnectionResult {
           if (end > start) {
             // string allocation (needed for consumers + store)
             const lineText = text.slice(start, end);
+
+            // --- opponent probe (rare match) ---
+            const opp = probeOpponentConditionLine(lineText);
+            if (opp) {
+              dispatchSafe('event:fighting:opponent', opp);
+            }
 
             // raw line *as received* (includes CRLF/LF if present)
             const rawLine = text.slice(start, rawEnd);
@@ -406,8 +484,14 @@ export function useGameConnection(): UseGameConnectionResult {
                       break;
                     }
 
+                    case 'login_data': {
+                      window.dispatchEvent(new CustomEvent('game:character-login', { detail: payload }));
+                      break;
+                    }
+
                     default: {
                       console.log('Unknown GMCP message received', {
+                        packageName,
                         payload,
                       });
                       break;

@@ -1,3 +1,4 @@
+// apps\game-client\src\features\plugins\normalizePluginModule.ts
 import type { IPluginModule, PluginAssets, PluginManifest, PluginConfigSchema } from '@shatteredarchive/types-client';
 
 function asString(x: unknown): string {
