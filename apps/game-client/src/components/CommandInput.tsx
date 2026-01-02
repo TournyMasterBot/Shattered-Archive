@@ -6,9 +6,16 @@ import { useVoiceDictation } from '../hooks/useVoiceDictation';
 interface CommandInputProps {
   sendRaw: (data: string) => void;
   isConnected: boolean;
+  onOpenAutoLeveling?: () => void;
+  autoLevelingActive?: boolean;
 }
 
-export const CommandInput: React.FC<CommandInputProps> = ({ sendRaw, isConnected }) => {
+export const CommandInput: React.FC<CommandInputProps> = ({
+  sendRaw,
+  isConnected,
+  onOpenAutoLeveling,
+  autoLevelingActive = false,
+}) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const { inputValue, setInputValue, handleKeyDown } = useGameCommand({
@@ -52,6 +59,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({ sendRaw, isConnected
   });
 
   const micDisabled = !isConnected || !isSupported;
+  const autoDisabled = !isConnected || !onOpenAutoLeveling;
 
   return (
     <div className={styles.commandInputBar}>
@@ -63,7 +71,6 @@ export const CommandInput: React.FC<CommandInputProps> = ({ sendRaw, isConnected
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={(e) => {
-          // While recording, Enter should not send (no text yet).
           if (isRecording && e.key === 'Enter') {
             e.preventDefault();
             return;
@@ -82,10 +89,23 @@ export const CommandInput: React.FC<CommandInputProps> = ({ sendRaw, isConnected
 
       <button
         type="button"
+        className={`${styles.autoLevelButton} ${autoLevelingActive ? styles.autoLevelButtonActive : ''}`}
+        onMouseDown={(e) => e.preventDefault()} // keep focus in input
+        onClick={() => onOpenAutoLeveling?.()}
+        disabled={autoDisabled}
+        aria-label={autoDisabled ? 'Auto leveling unavailable' : 'Open auto leveling'}
+        title={!isConnected ? 'Connect to a server to use auto leveling' : 'Auto leveling'}
+      >
+        ⚔️
+      </button>
+
+      <button
+        type="button"
         className={`${styles.micButton} ${isRecording ? styles.micButtonRecording : ''}`}
+        onMouseDown={(e) => e.preventDefault()} // keep input focus
         onClick={toggle}
         disabled={micDisabled}
-        aria-label={micDisabled ? 'Voice dictation unavailable' : isRecording ? 'Stop recording' : 'Start recording'}
+        aria-label={micDisabled ? 'Voice dictation unavailable' : isRecording ? 'Stop recording' : 'Start dictation'}
         aria-pressed={isRecording}
         title={
           !isSupported

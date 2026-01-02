@@ -1,3 +1,4 @@
+// apps\game-client\src\styles\CommandInput.module.scss
 /* -------------------------------------------------
    COMMAND INPUT BAR
 -------------------------------------------------- */
@@ -174,4 +175,35 @@
   .micError {
     max-width: 280px;
   }
+}
+
+.autoLevelButton {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #1a1a1a;
+  color: #f0f0f0;
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
+}
+
+.autoLevelButton:hover:not(:disabled) {
+  background: #242424;
+}
+
+.autoLevelButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.autoLevelButtonActive {
+  border-color: #8bc34a;
+  box-shadow: 0 0 0 1px rgba(139, 195, 74, 0.45);
 }

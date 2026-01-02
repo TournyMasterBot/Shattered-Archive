@@ -1,3 +1,4 @@
+// apps\game-client\src\hooks\useVoiceDictation.ts
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type SpeechRecognitionCtor = new () => SpeechRecognition;

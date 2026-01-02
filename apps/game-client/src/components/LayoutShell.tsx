@@ -15,6 +15,9 @@ interface LayoutShellProps {
   // From useGameConnection
   isConnected: boolean;
   sendRaw: (data: string) => void;
+
+  onOpenAutoLeveling?: () => void;
+  autoLevelingActive?: boolean;
 }
 
 export const LayoutShell: React.FC<LayoutShellProps> = ({
@@ -24,6 +27,8 @@ export const LayoutShell: React.FC<LayoutShellProps> = ({
   BottomPaneComponent,
   isConnected,
   sendRaw,
+  onOpenAutoLeveling,
+  autoLevelingActive,
 }) => {
   return (
     <div className={styles.layoutShell} style={layoutVars}>
@@ -36,7 +41,12 @@ export const LayoutShell: React.FC<LayoutShellProps> = ({
             </div>
 
             {/* Command input bar at the bottom of the play area */}
-            <CommandInput isConnected={isConnected} sendRaw={sendRaw} />
+            <CommandInput
+              isConnected={isConnected}
+              sendRaw={sendRaw}
+              onOpenAutoLeveling={onOpenAutoLeveling}
+              autoLevelingActive={!!autoLevelingActive}
+            />
           </div>
 
           <div className={styles.horizontalResizer} onMouseDown={onHorizontalResizeMouseDown} />

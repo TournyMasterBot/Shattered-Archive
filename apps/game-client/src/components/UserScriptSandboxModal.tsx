@@ -566,7 +566,7 @@ look`,
                 {selectedScript.kind === 'alias' && (
                   <div className={styles.timerConfigRow}>
                     <label className={styles.configLabel}>
-                      Alias key
+                      Game Input Command
                       <input
                         type="text"
                         className={styles.configInput}

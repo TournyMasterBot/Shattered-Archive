@@ -1,0 +1,600 @@
+/* apps/game-client/src/styles/AutoLevelingModal.module.scss */
+
+/* -------------------------------------------------
+   BACKDROP + MODAL SHELL
+-------------------------------------------------- */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+  padding: 16px;
+}
+
+.modal {
+  width: min(1200px, calc(100vw - 24px));
+  max-height: min(860px, calc(100vh - 24px));
+  background: #121212;
+  border: 1px solid #2b2b2b;
+  border-radius: 10px;
+  box-shadow: 0 16px 60px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* -------------------------------------------------
+   HEADER
+-------------------------------------------------- */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 10px 12px;
+  background: #181818;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f0f0f0;
+  letter-spacing: 0.2px;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.runState {
+  font-size: 0.78rem;
+  color: #cfcfcf;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
+.closeButton {
+  border: 1px solid #444;
+  background: #151515;
+  color: #f0f0f0;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  user-select: none;
+
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+
+  &:hover {
+    background: #1f1f1f;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: #8bc34a;
+    box-shadow: 0 0 0 1px rgba(139, 195, 74, 0.45);
+  }
+}
+
+/* -------------------------------------------------
+   TABS BAR
+-------------------------------------------------- */
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 8px 10px;
+  background: #141414;
+  border-bottom: 1px solid #242424;
+}
+
+.tab {
+  border: 1px solid #333;
+  background: #101010;
+  color: #e6e6e6;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  user-select: none;
+
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+
+  &:hover {
+    background: #171717;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: #8bc34a;
+    box-shadow: 0 0 0 1px rgba(139, 195, 74, 0.35);
+  }
+}
+
+.tabActive {
+  background: #1b1b1b;
+  border-color: #4a4a4a;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.discardButton,
+.saveButton {
+  border: 1px solid #444;
+  background: #161616;
+  color: #f0f0f0;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  cursor: pointer;
+
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    opacity 120ms ease;
+
+  &:hover:not(:disabled) {
+    background: #222;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: #8bc34a;
+    box-shadow: 0 0 0 1px rgba(139, 195, 74, 0.35);
+  }
+}
+
+.saveButton {
+  border-color: #557a3b;
+}
+
+/* -------------------------------------------------
+   BODY
+-------------------------------------------------- */
+
+.body {
+  padding: 12px;
+  overflow: auto;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* -------------------------------------------------
+   SECTION HEADERS
+-------------------------------------------------- */
+
+.sectionHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+
+  padding: 8px 10px;
+  background: #161616;
+  border: 1px solid #262626;
+  border-radius: 8px;
+}
+
+.sectionHeaderTitle {
+  color: #f0f0f0;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.sectionHeaderSub {
+  color: #cfcfcf;
+  font-size: 0.75rem;
+  opacity: 0.85;
+  text-align: right;
+}
+
+/* -------------------------------------------------
+   FORMS
+-------------------------------------------------- */
+
+.row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #dcdcdc;
+  font-size: 0.78rem;
+  min-width: 220px;
+}
+
+.labelInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #dcdcdc;
+  font-size: 0.82rem;
+  user-select: none;
+}
+
+/* Shared dark theme inputs */
+.input,
+.textarea,
+.select,
+.numInput {
+  background: #111;
+  color: #f0f0f0;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
+
+  &:focus {
+    outline: none;
+    border-color: #8bc34a;
+    box-shadow: 0 0 0 1px rgba(139, 195, 74, 0.45);
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+}
+
+.input {
+  width: 100%;
+  min-width: 220px;
+}
+
+.numInput {
+  width: 84px;
+  min-width: 84px;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  line-height: 1.25;
+  white-space: pre;
+}
+
+/* Select styling */
+.select {
+  min-width: 110px;
+  appearance: none;
+}
+
+/* Checkbox styling */
+.checkbox {
+  width: 14px;
+  height: 14px;
+  accent-color: #8bc34a;
+}
+
+/* -------------------------------------------------
+   LISTS (BUFFS / RULES)
+-------------------------------------------------- */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.listRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 8px;
+  background: #141414;
+  border: 1px solid #242424;
+  border-radius: 8px;
+}
+
+.ruleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  padding: 8px;
+  background: #141414;
+  border: 1px solid #242424;
+  border-radius: 8px;
+}
+
+/* -------------------------------------------------
+   BUTTONS
+-------------------------------------------------- */
+
+.addButton {
+  align-self: flex-start;
+  border: 1px solid #555;
+  background: #1a1a1a;
+  color: #f0f0f0;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  user-select: none;
+
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    opacity 120ms ease;
+
+  &:hover:not(:disabled) {
+    background: #242424;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: #8bc34a;
+    box-shadow: 0 0 0 1px rgba(139, 195, 74, 0.35);
+  }
+}
+
+.deleteSmall {
+  border: 1px solid #4b2c2c;
+  background: #1b1111;
+  color: #ffcccc;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  user-select: none;
+
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    opacity 120ms ease;
+
+  &:hover {
+    background: #241212;
+    border-color: #6a3b3b;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: #c94a4a;
+    box-shadow: 0 0 0 1px rgba(201, 74, 74, 0.35);
+  }
+}
+
+.inlineButton {
+  border: 1px solid #555;
+  background: #1a1a1a;
+  color: #f0f0f0;
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.8rem;
+
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    opacity 120ms ease;
+
+  &:hover:not(:disabled) {
+    background: #242424;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: #8bc34a;
+    box-shadow: 0 0 0 1px rgba(139, 195, 74, 0.35);
+  }
+}
+
+/* -------------------------------------------------
+   CONFIGURE PAGE BLOCKS
+-------------------------------------------------- */
+
+.blockCard {
+  background: #131313;
+  border: 1px solid #262626;
+  border-radius: 10px;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.blockHeader {
+  padding: 10px 10px;
+  background: #161616;
+  border-bottom: 1px solid #262626;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.blockHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.blockNumber {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: #1f1f1f;
+  border: 1px solid #2f2f2f;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #f0f0f0;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.blockTitle {
+  color: #f0f0f0;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.blockBody {
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+/* -------------------------------------------------
+   PHASE CARDS + LINE EDITOR
+-------------------------------------------------- */
+
+.phaseCard {
+  background: #121212;
+  border: 1px solid #242424;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.phaseHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  padding: 8px 10px;
+  background: #171717;
+  border-bottom: 1px solid #242424;
+}
+
+.phaseTitle {
+  color: #f0f0f0;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.phaseHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lines {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lineRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help {
+  padding: 0 10px 10px 10px;
+  color: #cfcfcf;
+  font-size: 0.74rem;
+  opacity: 0.9;
+
+  code {
+    background: #0f0f0f;
+    border: 1px solid #242424;
+    border-radius: 5px;
+    padding: 1px 6px;
+    margin: 0 2px;
+    color: #f0f0f0;
+    font-family: monospace;
+    font-size: 0.74rem;
+  }
+}
+
+/* -------------------------------------------------
+   RESPONSIVE
+-------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .modal {
+    width: min(980px, calc(100vw - 18px));
+  }
+
+  .label {
+    min-width: 180px;
+  }
+
+  .input {
+    min-width: 180px;
+  }
+}
+
+@media (max-width: 600px) {
+  .tabs {
+    flex-wrap: wrap;
+  }
+
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sectionHeaderSub {
+    text-align: left;
+  }
+
+  .blockBody {
+    padding: 8px;
+  }
+
+  .lines {
+    padding: 8px;
+  }
+}
