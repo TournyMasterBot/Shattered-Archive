@@ -1,19 +1,19 @@
 {
-    "continentNames": [
-        "Althainia",
-        "Arkania",
-        "Icewall",
-        "Tropica",
-        "Shokono",
-        "Dojia",
-        "Limbo",
-        "NE Ocean",
-        "SE Ocean",
-        "SW Ocean",
-        "NW Ocean",
-        "N Ocean",
-        "S Ocean",
-        "Central Ocean",
-        "Underworld"
-    ]
+  "continentNames": [
+    "Althainia",
+    "Arkania",
+    "Icewall",
+    "Tropica",
+    "Shokono",
+    "Dojia",
+    "Limbo",
+    "NE Ocean",
+    "SE Ocean",
+    "SW Ocean",
+    "NW Ocean",
+    "N Ocean",
+    "S Ocean",
+    "Central Ocean",
+    "Underworld"
+  ]
 }

@@ -128,15 +128,18 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
     setStepEditors(buildStepEditors(config));
   }, [config]);
 
-  const updateBuff = useCallback((id: string, patch: Partial<DesiredBuff>) => {
-    setDraft((prev) => ({
-      ...prev,
-      init: {
-        ...prev.init,
-        desiredBuffs: prev.init.desiredBuffs.map((b) => (b.id === id ? { ...b, ...patch } : b)),
-      },
-    }));
-  }, []);
+  const updateBuff = useCallback(
+    (id: string, patch: Partial<DesiredBuff>) => {
+      setDraft((prev) => ({
+        ...prev,
+        init: {
+          ...prev.init,
+          desiredBuffs: prev.init.desiredBuffs.map((b) => (b.id === id ? { ...b, ...patch } : b)),
+        },
+      }));
+    },
+    [setDraft],
+  );
 
   const addBuff = useCallback(() => {
     setDraft((prev) => ({
@@ -146,27 +149,33 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
         desiredBuffs: [...prev.init.desiredBuffs, { id: newId(), enabled: true, cmd: '' }],
       },
     }));
-  }, []);
+  }, [setDraft]);
 
-  const removeBuff = useCallback((id: string) => {
-    setDraft((prev) => ({
-      ...prev,
-      init: {
-        ...prev.init,
-        desiredBuffs: prev.init.desiredBuffs.filter((b) => b.id !== id),
-      },
-    }));
-  }, []);
+  const removeBuff = useCallback(
+    (id: string) => {
+      setDraft((prev) => ({
+        ...prev,
+        init: {
+          ...prev.init,
+          desiredBuffs: prev.init.desiredBuffs.filter((b) => b.id !== id),
+        },
+      }));
+    },
+    [setDraft],
+  );
 
-  const updateRule = useCallback((id: string, patch: Partial<AbilityThresholdRule>) => {
-    setDraft((prev) => ({
-      ...prev,
-      init: {
-        ...prev.init,
-        abilityThresholds: prev.init.abilityThresholds.map((r) => (r.id === id ? { ...r, ...patch } : r)),
-      },
-    }));
-  }, []);
+  const updateRule = useCallback(
+    (id: string, patch: Partial<AbilityThresholdRule>) => {
+      setDraft((prev) => ({
+        ...prev,
+        init: {
+          ...prev.init,
+          abilityThresholds: prev.init.abilityThresholds.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+        },
+      }));
+    },
+    [setDraft],
+  );
 
   const addRule = useCallback(() => {
     setDraft((prev) => ({
@@ -179,24 +188,27 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
         ],
       },
     }));
-  }, []);
+  }, [setDraft]);
 
-  const removeRule = useCallback((id: string) => {
-    setDraft((prev) => ({
-      ...prev,
-      init: {
-        ...prev.init,
-        abilityThresholds: prev.init.abilityThresholds.filter((r) => r.id !== id),
-      },
-    }));
-  }, []);
+  const removeRule = useCallback(
+    (id: string) => {
+      setDraft((prev) => ({
+        ...prev,
+        init: {
+          ...prev.init,
+          abilityThresholds: prev.init.abilityThresholds.filter((r) => r.id !== id),
+        },
+      }));
+    },
+    [setDraft],
+  );
 
   const canStart = useMemo(() => {
     // “Run” tab is gone per your rules, but we still compute availability for tooltip/state.
     return isConnected && socketReady && config.enabled;
   }, [isConnected, socketReady, config.enabled]);
 
-  const editor = useCallback((key: StepKey, label: string) => {
+  const editor = (key: StepKey, label: string) => {
     return (
       <div className={styles.phaseCard}>
         <div className={styles.phaseHeader}>
@@ -229,7 +241,7 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
         </div>
       </div>
     );
-  }, []);
+  };
 
   // ✅ After *all* hooks are declared, it’s safe to return null.
   if (!isOpen) return null;
@@ -423,7 +435,6 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
                 </button>
               </div>
 
-              {/* Optional: if you want an action row here, keep it non-hook */}
               <div className={styles.sectionHeader}>
                 <div className={styles.sectionHeaderTitle}>Controls</div>
                 <div className={styles.sectionHeaderSub} />
