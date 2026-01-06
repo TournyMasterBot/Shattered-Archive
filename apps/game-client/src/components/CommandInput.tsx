@@ -140,7 +140,13 @@ export const CommandInput: React.FC<CommandInputProps> = ({
     fireStop();
   };
 
-  const autoLabel = isIdle ? 'Start auto level' : isRunning ? 'Pause auto level' : isPaused ? 'Resume auto level' : 'Auto level';
+  const autoLabel = isIdle
+    ? 'Start auto level'
+    : isRunning
+      ? 'Pause auto level'
+      : isPaused
+        ? 'Resume auto level'
+        : 'Auto level';
 
   return (
     <div className={styles.commandInputBar}>

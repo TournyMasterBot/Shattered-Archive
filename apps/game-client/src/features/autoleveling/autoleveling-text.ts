@@ -8,9 +8,5 @@ export function stripAnsi(input: string): string {
 
 export function normalizeForMatch(input: string): string {
   // IMPORTANT: do NOT strip articles (a/an/the). Only normalize ANSI/case/whitespace.
-  return stripAnsi(input)
-    .replace(/\r/g, '')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim();
+  return stripAnsi(input).replace(/\r/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 }

@@ -1,5 +1,20 @@
 // apps/game-client/src/features/autoleveling/autoleveling-types.ts
 
+/**
+ * Autoleveling Types (schema)
+ * --------------------------
+ * Intent:
+ * - Defines the persisted config schema and runtime runState.
+ * - v2 is intentionally gated (no implicit migration) to avoid half-baked mappings.
+ *
+ * Strong step-order inference (engine-driven):
+ * - A "Round" is a full loop of:
+ *    start triplet -> (trainingPath segments: move + identify + injected encounters) -> reset.endRound -> reset.wait
+ * - Encounters (fight flow) are injected asynchronously when terminal output contains a target's lookName.
+ * - Engagement is owned by the engine:
+ *    initiationCommand template + keyword attempts until fighting starts.
+ */
+
 export type AutoLevelAction =
   | { kind: 'send'; cmd: string }
   | { kind: 'wait_ms'; ms: number }
@@ -8,6 +23,10 @@ export type AutoLevelAction =
   | { kind: 'wait_fighting'; value: boolean; timeoutMs?: number };
 
 export type AutoLevelPhaseTriplet = {
+  /**
+   * pre / exec / post is a consistent structure used across major steps.
+   * It helps keep "setup", "do the thing", "cleanup" separated.
+   */
   pre: AutoLevelAction[];
   exec: AutoLevelAction[];
   post: AutoLevelAction[];
@@ -16,7 +35,8 @@ export type AutoLevelPhaseTriplet = {
 export type AutoLevelStepConfig = {
   /**
    * Optional end-to-end movement route, expressed as semicolon-separated commands.
-   * If present, this is treated as the primary movement path.
+   * NOTE: In the current engine implementation, the authoritative training path is `config.init.trainingPath`,
+   * not this `steps.trainingPath` field. This field is currently effectively unused.
    */
   trainingPath?: string | null;
 
@@ -37,11 +57,11 @@ export type AutoLevelStepConfig = {
 };
 
 /**
- * The selected targets are stored as “rich” records so the engine has everything it needs
+ * Targets are stored as “rich” records so the engine has everything it needs
  * without re-querying maps.
  *
- * - lookName is used for encounter detection (terminal includes match)
- * - keywords are used for engagement attempts in order
+ * - lookName is used for encounter detection (terminal output includes match)
+ * - keywords are used for engagement attempts in order (first is usually best)
  */
 export type AutoLevelTarget = {
   cleanName: string; // stable key
@@ -73,6 +93,7 @@ export type AutoLevelInitConfigV2 = {
 
   /**
    * The end-to-end movement path. Semicolon-separated commands.
+   * This is what the engine uses for the round loop.
    */
   trainingPath?: string | null;
 
@@ -99,6 +120,7 @@ export type AutoLevelConfig = {
   steps: AutoLevelStepConfig;
 
   loopRounds: boolean;
+  roundLoopTimeMs: number;
   idleTimeoutMs: number;
 
   fleePk: boolean;
@@ -106,6 +128,8 @@ export type AutoLevelConfig = {
 
 export type AutoLevelRunState =
   | { status: 'idle' }
+  | { status: 'waiting' }
+  | { status: 'resting' }
   | { status: 'running'; round: number; step: string; actionIndex: number }
   | { status: 'paused'; round: number; step: string; actionIndex: number }
   | { status: 'stopping' }

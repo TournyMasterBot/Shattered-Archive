@@ -1,5 +1,14 @@
 // apps/game-client/src/features/autoleveling/autoleveling-defaults.ts
 
+/**
+ * Autoleveling Defaults
+ * ---------------------
+ * Intent:
+ * - Provide a safe, minimal config that does nothing unless enabled + configured by the user.
+ * - Default to enabled=false to avoid accidental automation.
+ * - Leave identify/fight steps empty to avoid spam.
+ */
+
 import type { AutoLevelConfig } from './autoleveling-types';
 
 export function createDefaultAutoLevelConfig(): AutoLevelConfig {
@@ -8,7 +17,8 @@ export function createDefaultAutoLevelConfig(): AutoLevelConfig {
 
     enabled: false,
     loopRounds: true,
-    idleTimeoutMs: 30000,
+    idleTimeoutMs: 1000,
+    roundLoopTimeMs: 300_000,
     fleePk: false,
 
     init: {
@@ -23,12 +33,11 @@ export function createDefaultAutoLevelConfig(): AutoLevelConfig {
     },
 
     steps: {
-      trainingPath: null,
+      trainingPath: null, // currently unused; see autoleveling-types.ts comment
 
       start: { pre: [], exec: [], post: [] },
       move: { pre: [], exec: [], post: [] },
 
-      // If you want: [{ kind:'send', cmd:'look' }] but keeping empty by default avoids spam.
       identify: { pre: [], exec: [], post: [] },
 
       // Optional “after engage” actions; default empty.

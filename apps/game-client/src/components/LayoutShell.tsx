@@ -31,7 +31,7 @@ export const LayoutShell: React.FC<LayoutShellProps> = ({
   sendRaw,
   onOpenAutoLeveling,
   autoLevelingActive,
-  autoLevelRunState
+  autoLevelRunState,
 }) => {
   return (
     <div className={styles.layoutShell} style={layoutVars}>

@@ -1,4 +1,42 @@
 // apps/game-client/src/features/autoleveling/autoleveling-engine.ts
+
+/**
+ * AutoLevelingEngine (runtime)
+ * ----------------------------
+ * Intent:
+ * - Drive an automated "round" loop using a semicolon-separated trainingPath (config.init.trainingPath).
+ * - Gate movement using movement-succeeded/movement-failed events so automation doesn't outrun the client.
+ * - Detect encounters from terminal text (lookName match) and inject an engagement+fight sequence.
+ * - Own engagement:
+ *   - For a detected target: try initiationCommand template with keywords until GMCP says fighting=true
+ *   - If terminal says "They aren't here", try next keyword immediately.
+ * - Provide wait primitives for scripted actions:
+ *   - wait_ms, wait_text, wait_regex, wait_fighting
+ *
+ * Strong inferred step order:
+ *  Round:
+ *   A) start.pre -> start.exec -> start.post
+ *   B) For each trainingPath segment (config.init.trainingPath split by ';', empty segments preserved):
+ *       1) move.pre
+ *       2) send segment (dispatches game:send-command, plus game:movement-attempt for directionals)
+ *       3) if segment is movement:
+ *            waitForMovement(...) using game:movement-succeeded/failed
+ *            move.post
+ *            identify.pre -> identify.exec -> identify.post
+ *          else:
+ *            move.post
+ *       4) flushInjected()  (may run injected encounter sequence)
+ *   C) reset.endRound
+ *   D) reset.wait
+ *
+ * Encounter injection (async between any two actions/segments):
+ * - on terminal-data: if lookName matches and not locked => inject __engage_target at front of queue, lock encounters
+ * - flushInjected:
+ *    - engageTarget() attempts keywords
+ *    - if engaged, run fight triplet, then ensure fighting ends, then unlock encounters
+ *    - if engage fails, unlock and continue
+ */
+
 import type { AutoLevelAction, AutoLevelConfig, AutoLevelRunState, AutoLevelTarget } from './autoleveling-types';
 
 type EngineDeps = {
@@ -7,8 +45,9 @@ type EngineDeps = {
 };
 
 type MovementResult =
-  | { ok: true; room?: string; cmd?: string }
-  | { ok: false; reasonLine?: string; cmd?: string };
+  | { result: 'succeeded'; cmd: string; room?: string }
+  | { result: 'failed'; cmd: string; reasonLine?: string }
+  | { result: 'timeout'; cmd: string; reasonLine: string };
 
 type InjectedEngineAction =
   | AutoLevelAction
@@ -70,9 +109,10 @@ function now() {
 
 function dispatchSafe(name: string, detail?: any) {
   try {
+    dbg('dispatch', { name, detail });
     window.dispatchEvent(new CustomEvent(name, { detail }));
-  } catch {
-    // ignore
+  } catch (e) {
+    warn('dispatch failed (ignored)', { name, e });
   }
 }
 
@@ -80,7 +120,8 @@ function parseTrainingPath(path: string | null | undefined): string[] {
   const raw = String(path ?? '');
   if (!raw.trim()) return [];
   // preserve original segments (including empties)
-  return raw.split(';').map((s) => s);
+  const segs = raw.split(';').map((s) => s);
+  return segs;
 }
 
 const MOVE_DIRS = new Set(['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw', 'u', 'd', 'up', 'down']);
@@ -100,9 +141,64 @@ function applyInitiationTemplate(template: string, keyword: string): string {
   return t.replace(/\{name\}/g, k).replace(/\{target\}/g, k).replace(/\{keyword\}/g, k);
 }
 
+function normCmd(cmd: string): string {
+  return String(cmd ?? '')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+function normalizeDirToken(v: unknown): string | null {
+  const s = String(v ?? '')
+    .trim()
+    .toLowerCase();
+
+  if (!s) return null;
+
+  // already canonical
+  if (MOVE_DIRS.has(s)) return s;
+
+  // common long forms
+  if (s === 'north') return 'n';
+  if (s === 'south') return 's';
+  if (s === 'east') return 'e';
+  if (s === 'west') return 'w';
+  if (s === 'northeast') return 'ne';
+  if (s === 'northwest') return 'nw';
+  if (s === 'southeast') return 'se';
+  if (s === 'southwest') return 'sw';
+  if (s === 'up') return 'up';
+  if (s === 'down') return 'down';
+
+  // compass-style (sometimes already handled, but keep explicit)
+  if (s === 'u') return 'u';
+  if (s === 'd') return 'd';
+
+  return null;
+}
+
+function extractEventMoveKey(detail: any): { cmd?: string; dir?: string; ts?: number; room?: any; reasonLine?: any } {
+  const cmd = detail?.cmd != null ? normCmd(detail.cmd) : undefined;
+
+  const dir =
+    normalizeDirToken(detail?.dir) ??
+    normalizeDirToken(detail?.direction) ??
+    undefined;
+
+  const ts = typeof detail?.ts === 'number' ? detail.ts : undefined;
+
+  return {
+    cmd,
+    dir,
+    ts,
+    room: detail?.room,
+    reasonLine: detail?.reasonLine,
+  };
+}
+
 export class AutoLevelingEngine {
   private deps: EngineDeps;
 
+  private trainingPathSteps: string[] = [];
   private stopping = false;
   private paused = false;
 
@@ -115,58 +211,50 @@ export class AutoLevelingEngine {
   private lastEncounterMatch: { targetCleanName: string; lookName: string; at: number } | null = null;
 
   // movement gating
-  private moveWait:
-    | null
-    | {
-        resolve: (r: MovementResult) => void;
-        reject: (e: any) => void;
-        timeoutId: ReturnType<typeof setTimeout> | null;
-        startedAt: number;
-        cmd: string;
-      } = null;
+  private moveWait: null | {
+    promise: Promise<MovementResult>;
+    resolve: (r: MovementResult) => void;
+    reject: (e: any) => void;
+    timeoutId: ReturnType<typeof setTimeout> | null;
+    startedAt: number;
+    cmd: string; // normalized
+    dir?: string; // normalized direction token (n/ne/up/etc)
+  } = null;
 
   // generic waits used by action scripts (advanced)
-  private waitText:
-    | null
-    | {
-        kind: 'text';
-        text: string;
-        caseInsensitive: boolean;
-        resolve: () => void;
-        reject: (e: any) => void;
-        timeoutId: ReturnType<typeof setTimeout> | null;
-      } = null;
+  private waitText: null | {
+    kind: 'text';
+    text: string;
+    caseInsensitive: boolean;
+    resolve: () => void;
+    reject: (e: any) => void;
+    timeoutId: ReturnType<typeof setTimeout> | null;
+  } = null;
 
-  private waitRegex:
-    | null
-    | {
-        kind: 'regex';
-        re: RegExp;
-        resolve: () => void;
-        reject: (e: any) => void;
-        timeoutId: ReturnType<typeof setTimeout> | null;
-      } = null;
+  private waitRegex: null | {
+    kind: 'regex';
+    re: RegExp;
+    resolve: () => void;
+    reject: (e: any) => void;
+    timeoutId: ReturnType<typeof setTimeout> | null;
+  } = null;
 
-  private waitFighting:
-    | null
-    | {
-        value: boolean;
-        resolve: () => void;
-        reject: (e: any) => void;
-        timeoutId: ReturnType<typeof setTimeout> | null;
-      } = null;
+  private waitFighting: null | {
+    value: boolean;
+    resolve: () => void;
+    reject: (e: any) => void;
+    timeoutId: ReturnType<typeof setTimeout> | null;
+  } = null;
 
   // engagement wait (keyword attempts)
-  private engageWait:
-    | null
-    | {
-        startedAt: number;
-        minDelayMs: number;
-        resolve: (r: { ok: boolean; reason?: string }) => void;
-        reject: (e: any) => void;
-        timeoutId: ReturnType<typeof setTimeout> | null;
-        sawNotHere: boolean;
-      } = null;
+  private engageWait: null | {
+    startedAt: number;
+    minDelayMs: number;
+    resolve: (r: { ok: boolean; reason?: string }) => void;
+    reject: (e: any) => void;
+    timeoutId: ReturnType<typeof setTimeout> | null;
+    sawNotHere: boolean;
+  } = null;
 
   // cached targets for detection
   private targets: Array<{
@@ -179,6 +267,8 @@ export class AutoLevelingEngine {
     const textRaw = ce?.detail?.text;
     if (textRaw === undefined || textRaw === null) return;
     const text = String(textRaw);
+
+    dbg('terminal-data', { sample: stripAnsi(text).slice(0, 120) });
 
     // feed waits
     this.onTerminalLine(text);
@@ -196,40 +286,89 @@ export class AutoLevelingEngine {
     if (!this.moveWait) return;
 
     const ce = ev as CustomEvent<any>;
-    const cmd = String(ce?.detail?.cmd ?? '');
-    if (cmd !== this.moveWait.cmd) {
-      dbg('movement-succeeded ignored (cmd mismatch)', { got: cmd, expected: this.moveWait.cmd });
+    const { cmd, dir, ts, room } = extractEventMoveKey(ce?.detail);
+
+    // If timestamp exists and it's clearly older than this wait, ignore it.
+    if (typeof ts === 'number' && ts < this.moveWait.startedAt - 50) {
+      dbg('movement-succeeded ignored (stale ts)', {
+        ts,
+        startedAt: this.moveWait.startedAt,
+        expected: { cmd: this.moveWait.cmd, dir: this.moveWait.dir },
+        got: { cmd, dir },
+        detail: ce?.detail,
+      });
       return;
     }
 
-    dbg('movement-succeeded', { cmd, room: ce?.detail?.room, ms: now() - this.moveWait.startedAt });
+    const expectedCmd = this.moveWait.cmd;
+    const expectedDir = this.moveWait.dir;
+
+    const cmdMatch = !!cmd && cmd === expectedCmd;
+    const dirMatch = !cmd && !!dir && !!expectedDir && dir === expectedDir;
+
+    if (!cmdMatch && !dirMatch) {
+      dbg('movement-succeeded ignored (no match)', {
+        expected: { cmd: expectedCmd, dir: expectedDir },
+        got: { cmd, dir, ts },
+        detail: ce?.detail,
+      });
+      return;
+    }
+
+    const resolve = this.moveWait.resolve;
 
     this.clearMoveWaitTimer();
-    const resolve = this.moveWait.resolve;
     this.moveWait = null;
-    resolve({ ok: true, room: ce?.detail?.room, cmd });
+
+    resolve({
+      result: 'succeeded',
+      cmd: cmd ?? expectedCmd,
+      room: room,
+    });
   };
 
   private boundOnMovementFailed = (ev: Event) => {
     if (!this.moveWait) return;
 
     const ce = ev as CustomEvent<any>;
-    const cmd = String(ce?.detail?.cmd ?? '');
-    if (cmd !== this.moveWait.cmd) {
-      dbg('movement-failed ignored (cmd mismatch)', { got: cmd, expected: this.moveWait.cmd });
+    const { cmd, dir, ts, reasonLine } = extractEventMoveKey(ce?.detail);
+
+    if (typeof ts === 'number' && ts < this.moveWait.startedAt - 50) {
+      dbg('movement-failed ignored (stale ts)', {
+        ts,
+        startedAt: this.moveWait.startedAt,
+        expected: { cmd: this.moveWait.cmd, dir: this.moveWait.dir },
+        got: { cmd, dir },
+        detail: ce?.detail,
+      });
       return;
     }
 
-    dbg('movement-failed', {
-      cmd,
-      reasonLine: String(ce?.detail?.reasonLine ?? ''),
-      ms: now() - this.moveWait.startedAt,
-    });
+    const expectedCmd = this.moveWait.cmd;
+    const expectedDir = this.moveWait.dir;
+
+    const cmdMatch = !!cmd && cmd === expectedCmd;
+    const dirMatch = !cmd && !!dir && !!expectedDir && dir === expectedDir;
+
+    if (!cmdMatch && !dirMatch) {
+      dbg('movement-failed ignored (no match)', {
+        expected: { cmd: expectedCmd, dir: expectedDir },
+        got: { cmd, dir, ts },
+        detail: ce?.detail,
+      });
+      return;
+    }
+
+    const resolve = this.moveWait.resolve;
 
     this.clearMoveWaitTimer();
-    const resolve = this.moveWait.resolve;
     this.moveWait = null;
-    resolve({ ok: false, reasonLine: String(ce?.detail?.reasonLine ?? ''), cmd });
+
+    resolve({
+      result: 'failed',
+      cmd: cmd ?? expectedCmd,
+      reasonLine: String(reasonLine ?? ''),
+    });
   };
 
   private boundOnCharDataFighting = (ev: Event) => {
@@ -270,8 +409,8 @@ export class AutoLevelingEngine {
       window.addEventListener('game:char-data', this.boundOnCharDataFighting as EventListener);
       window.addEventListener('game:gmcp-char-data', this.boundOnCharDataFighting as EventListener);
       window.addEventListener('gmcp:char_data', this.boundOnCharDataFighting as EventListener);
-    } catch {
-      // ignore
+    } catch (e) {
+      warn('bind failed (ignored)', e);
     }
   }
 
@@ -287,8 +426,8 @@ export class AutoLevelingEngine {
       window.removeEventListener('game:char-data', this.boundOnCharDataFighting as EventListener);
       window.removeEventListener('game:gmcp-char-data', this.boundOnCharDataFighting as EventListener);
       window.removeEventListener('gmcp:char_data', this.boundOnCharDataFighting as EventListener);
-    } catch {
-      // ignore
+    } catch (e) {
+      warn('unbind failed (ignored)', e);
     }
   }
 
@@ -316,6 +455,7 @@ export class AutoLevelingEngine {
   }
 
   async start(): Promise<void> {
+    // Fetch configuration
     const cfg = this.deps.getConfig();
 
     dbg('start() called', {
@@ -327,99 +467,101 @@ export class AutoLevelingEngine {
       targetsCount: (cfg.init.targets ?? []).length,
     });
 
-    if (!cfg.enabled) {
-      this.deps.setRunState({ status: 'error', message: 'AutoLeveling is disabled in config' });
+    // Validate configuration and initiate state
+    if (!cfg.init?.trainingPath) {
+      this.deps.setRunState({ status: 'error', message: 'Training path is undefined' });
       return;
     }
 
+    this.trainingPathSteps = cfg.init.trainingPath.split(';').filter((x) => x?.trim()?.length > 0);
+    if (this.trainingPathSteps.length === 0) {
+      this.deps.setRunState({ status: 'error', message: 'Training path step length is 0' });
+      return;
+    }
+
+    // Set flags
     this.stopping = false;
     this.paused = false;
     this.injectedQueue = [];
     this.encounterLocked = false;
     this.lastEncounterMatch = null;
 
+    // Set allowed mobs
     this.targets = (cfg.init.targets ?? [])
-      .map((t) => ({ target: t, lookNameNorm: normLine(t.lookName) }))
-      .filter((x) => x.lookNameNorm.length > 0);
+      .map((t) => ({
+        target: t,
+        lookNameNorm: t.lookName,
+      }))
+      .filter((x) => x.lookNameNorm?.length > 0);
 
-    dbg('targets normalized', { count: this.targets.length });
+    if (this.targets.length === 0) {
+      dbg('Allowed mob length is 0, this will be a sightseeing tour');
+    }
 
+    // Let the games begin
     let round = 1;
     this.deps.setRunState({ status: 'running', round, step: 'start', actionIndex: 0 });
 
+    // Loop rounds forever, until the user asks for stop
     while (!this.stopping) {
-      const config = this.deps.getConfig();
-
       try {
-        await this.waitWhilePausedOrStopped();
+        this.deps.setRunState({ status: 'waiting' });
+        dbg('engine waiting for next round', {
+          roundDelay: cfg.roundLoopTimeMs,
+        });
 
-        dbg('round begin', { round });
+        // For each step, process (queue semantics)
+        while (this.trainingPathSteps.length > 0) {
+          // remove step immediately
+          const step = this.trainingPathSteps.shift()!;
 
-        await this.runTriplet(config.steps.start, 'start', round);
-
-        const pathSegments = parseTrainingPath(config.init.trainingPath);
-        dbg('training path parsed', { count: pathSegments.length });
-
-        if (pathSegments.length === 0) {
-          await this.runActions(config.steps.reset.endRound, 'reset.endRound', round);
-          await this.runActions(config.steps.reset.wait, 'reset.wait', round);
-        } else {
-          for (let i = 0; i < pathSegments.length; i++) {
-            if (this.stopping) break;
-
+          // If the user has requested that we pause or stop, wait until they release
+          try {
             await this.waitWhilePausedOrStopped();
+          } catch (err: any) {
+            dbg('engine stopping from waitWhilePausedOrStopped', { roundDelay: cfg.roundLoopTimeMs });
+            this.deps.setRunState({ status: 'stopping' });
+            break;
+          }
 
-            const seg = pathSegments[i];
+          // Execute the step
+          const mv = isMovementCommand(step);
+          const gate = mv.isMove ? this.waitForMovement(step, cfg.idleTimeoutMs) : null;
 
-            dbg('segment', {
-              round,
-              index: i,
-              seg,
-              isMove: isMovementCommand(seg).isMove,
-              encounterLocked: this.encounterLocked,
-              injectedQueueLen: this.injectedQueue.length,
-            });
+          await this.sendCommand(step);
 
-            await this.runActions(config.steps.move.pre, `move.pre`, round);
+          if (gate) {
+            const res = await gate;
 
-            await this.sendCommand(seg);
-
-            const mv = isMovementCommand(seg);
-            if (mv.isMove) {
-              const res = await this.waitForMovement(seg, config.idleTimeoutMs);
-              if (!res.ok) {
-                const msg = res.reasonLine ? `Movement failed: ${res.reasonLine}` : 'Movement failed';
-                warn('movement fatal', { cmd: seg, msg });
-                this.deps.setRunState({ status: 'error', message: msg });
-                this.stopping = true;
-                break;
-              }
-
-              await this.runActions(config.steps.move.post, `move.post`, round);
-
-              // Identify only after movement commands
-              await this.runTriplet(config.steps.identify, 'identify', round);
-            } else {
-              await this.runActions(config.steps.move.post, `move.post`, round);
+            // "ok" means succeeded OR failed, as long as it's not a timeout.
+            if (res.result === 'timeout') {
+              this.deps.setRunState({ status: 'error', message: res.reasonLine });
+              this.stopping = true;
+              break;
             }
 
-            // Always drain injected work between steps
-            await this.flushInjected(round);
+            if (res.result === 'failed') {
+              warn('movement failed (non-fatal)', { cmd: res.cmd, reasonLine: res.reasonLine });
+            } else {
+              dbg('movement succeeded', { cmd: res.cmd, room: res.room });
+            }
           }
 
-          if (!this.stopping) {
-            await this.runActions(config.steps.reset.endRound, 'reset.endRound', round);
-            await this.runActions(config.steps.reset.wait, 'reset.wait', round);
-          }
+          // Between steps, always allow injected encounter work to run
+          // TODO :: DEBUG INJECTED COMMANDS
+          await this.flushInjected(round);
         }
 
-        if (this.stopping) break;
-
-        if (!this.deps.getConfig().loopRounds) {
-          dbg('loopRounds=false, exiting after round', { round });
+        // The user doesn't wish to loop rounds, so don't
+        if (!cfg.loopRounds) {
+          this.stopping = true;
           break;
         }
 
+        await this.delayMs(cfg.roundLoopTimeMs);
+
+        // Reset the round to run it back
+        this.trainingPathSteps = cfg.init.trainingPath.split(';').filter((x) => x?.trim()?.length > 0);
         round += 1;
         this.deps.setRunState({ status: 'running', round, step: 'start', actionIndex: 0 });
       } catch (e: any) {
@@ -430,12 +572,8 @@ export class AutoLevelingEngine {
       }
     }
 
-    if (!this.stopping) {
-      dbg('engine idle');
-      this.deps.setRunState({ status: 'idle' });
-    } else {
-      dbg('engine stopped');
-    }
+    dbg('engine stopped');
+    this.deps.setRunState({ status: 'idle' });
   }
 
   /* ----------------------------- core execution ----------------------------- */
@@ -447,13 +585,26 @@ export class AutoLevelingEngine {
     if (this.stopping) throw new Error('stopped');
   }
 
-  private async runTriplet(tri: { pre: AutoLevelAction[]; exec: AutoLevelAction[]; post: AutoLevelAction[] }, label: string, round: number) {
+  private async runTriplet(
+    tri: { pre: AutoLevelAction[]; exec: AutoLevelAction[]; post: AutoLevelAction[] },
+    label: string,
+    round: number,
+  ) {
+    dbg('runTriplet', {
+      label,
+      round,
+      pre: tri.pre?.length ?? 0,
+      exec: tri.exec?.length ?? 0,
+      post: tri.post?.length ?? 0,
+    });
     await this.runActions(tri.pre, `${label}.pre`, round);
     await this.runActions(tri.exec, `${label}.exec`, round);
     await this.runActions(tri.post, `${label}.post`, round);
   }
 
   private async runActions(actions: AutoLevelAction[], stepLabel: string, round: number) {
+    dbg('runActions begin', { stepLabel, round, count: actions?.length ?? 0 });
+
     for (let i = 0; i < (actions?.length ?? 0); i++) {
       if (this.stopping) return;
 
@@ -466,6 +617,8 @@ export class AutoLevelingEngine {
 
       await this.flushInjected(round);
     }
+
+    dbg('runActions end', { stepLabel, round });
   }
 
   private async execAction(a: AutoLevelAction, round: number): Promise<void> {
@@ -475,18 +628,22 @@ export class AutoLevelingEngine {
         return;
 
       case 'wait_ms':
+        dbg('wait_ms', { ms: a.ms, round });
         await this.delayMs(a.ms);
         return;
 
       case 'wait_text':
+        dbg('wait_text', { text: a.text, ci: !!a.caseInsensitive, timeoutMs: a.timeoutMs, round });
         await this.waitForText(a.text, !!a.caseInsensitive, a.timeoutMs);
         return;
 
       case 'wait_regex':
+        dbg('wait_regex', { pattern: a.pattern, flags: a.flags, timeoutMs: a.timeoutMs, round });
         await this.waitForRegex(a.pattern, a.flags, a.timeoutMs);
         return;
 
       case 'wait_fighting':
+        dbg('wait_fighting', { value: a.value, timeoutMs: a.timeoutMs, round, current: this.isFighting });
         await this.waitForFighting(a.value, a.timeoutMs);
         return;
 
@@ -513,25 +670,55 @@ export class AutoLevelingEngine {
 
   /* ----------------------------- movement gating ---------------------------- */
 
-  private waitForMovement(cmd: string, timeoutMs: number): Promise<MovementResult> {
+  private waitForMovement(cmdRaw: string, timeoutMs: number): Promise<MovementResult> {
+    const cmd = normCmd(cmdRaw);
+
+    // If a gate is already active, just wait for it to resolve.
+    // (No "pending" output; join the existing promise.)
     if (this.moveWait) {
-      warn('waitForMovement called but move already pending', { existing: this.moveWait.cmd, next: cmd });
-      return Promise.resolve({ ok: false, reasonLine: 'Internal error: move already pending', cmd });
+      dbg('movement gate join (already pending)', { pendingCmd: this.moveWait.cmd, nextCmd: cmd });
+      return this.moveWait.promise;
     }
 
-    return new Promise<MovementResult>((resolve, reject) => {
-      const t = Math.max(1000, timeoutMs || 5000);
+    const t = Math.max(1000, timeoutMs || 5000);
 
-      const timeoutId = setTimeout(() => {
-        if (!this.moveWait) return;
-        const r = this.moveWait.resolve;
-        this.moveWait = null;
-        warn('movement gate timeout', { cmd, timeoutMs: t });
-        r({ ok: false, reasonLine: 'Movement timed out', cmd });
-      }, t);
+    // expected dir for direction-only emitters (e.g. compass block)
+    const mv = isMovementCommand(cmd);
+    const expectedDir = mv.isMove ? mv.dir : undefined;
 
-      this.moveWait = { resolve, reject, timeoutId, startedAt: now(), cmd };
+    let resolveFn!: (r: MovementResult) => void;
+    let rejectFn!: (e: any) => void;
+
+    const promise = new Promise<MovementResult>((resolve, reject) => {
+      resolveFn = resolve;
+      rejectFn = reject;
     });
+
+    const timeoutId = setTimeout(() => {
+      if (!this.moveWait) return;
+
+      const expectedCmd = this.moveWait.cmd;
+      const resolve2 = this.moveWait.resolve;
+
+      this.moveWait = null;
+
+      warn('movement gate timeout', { cmd: expectedCmd, dir: expectedDir, timeoutMs: t });
+      resolve2({ result: 'timeout', cmd: expectedCmd, reasonLine: 'Movement timed out' });
+    }, t);
+
+    this.moveWait = {
+      promise,
+      resolve: resolveFn,
+      reject: rejectFn,
+      timeoutId,
+      startedAt: now(),
+      cmd,
+      dir: expectedDir,
+    };
+
+    dbg('movement gate start', { cmd, dir: expectedDir, timeoutMs: t });
+
+    return promise;
   }
 
   private clearMoveWaitTimer() {
@@ -555,11 +742,14 @@ export class AutoLevelingEngine {
     const needle = String(text ?? '');
     const ci = !!caseInsensitive;
 
+    dbg('waitForText arm', { needle, ci, timeoutMs });
+
     return new Promise<void>((resolve, reject) => {
       const t = timeoutMs != null ? Math.max(1, timeoutMs) : null;
       const timeoutId =
         t != null
           ? setTimeout(() => {
+              dbg('wait_text timeout', { needle, t });
               this.waitText = null;
               reject(new Error(`wait_text timeout: ${needle}`));
             }, t)
@@ -570,11 +760,13 @@ export class AutoLevelingEngine {
         text: needle,
         caseInsensitive: ci,
         resolve: () => {
+          dbg('wait_text resolved', { needle });
           this.clearWaitTimer(timeoutId);
           this.waitText = null;
           resolve();
         },
         reject: (e) => {
+          dbg('wait_text rejected', { needle, e });
           this.clearWaitTimer(timeoutId);
           this.waitText = null;
           reject(e);
@@ -596,11 +788,14 @@ export class AutoLevelingEngine {
     if (m) re = new RegExp(m[1], m[2] ?? '');
     else re = new RegExp(raw, String(flags ?? ''));
 
+    dbg('waitForRegex arm', { raw, re: String(re), timeoutMs });
+
     return new Promise<void>((resolve, reject) => {
       const t = timeoutMs != null ? Math.max(1, timeoutMs) : null;
       const timeoutId =
         t != null
           ? setTimeout(() => {
+              dbg('wait_regex timeout', { re: String(re), t });
               this.waitRegex = null;
               reject(new Error(`wait_regex timeout: ${re}`));
             }, t)
@@ -610,11 +805,13 @@ export class AutoLevelingEngine {
         kind: 'regex',
         re,
         resolve: () => {
+          dbg('wait_regex resolved', { re: String(this.waitRegex?.re) });
           this.clearWaitTimer(timeoutId);
           this.waitRegex = null;
           resolve();
         },
         reject: (e) => {
+          dbg('wait_regex rejected', { re: String(this.waitRegex?.re), e });
           this.clearWaitTimer(timeoutId);
           this.waitRegex = null;
           reject(e);
@@ -630,6 +827,7 @@ export class AutoLevelingEngine {
       const hay = this.waitText.caseInsensitive ? line.toLowerCase() : line;
       const needle = this.waitText.caseInsensitive ? this.waitText.text.toLowerCase() : this.waitText.text;
       if (needle.length > 0 && hay.includes(needle)) {
+        dbg('terminal matched wait_text', { needle });
         this.waitText.resolve();
         return;
       }
@@ -638,6 +836,7 @@ export class AutoLevelingEngine {
     if (this.waitRegex) {
       const line = String(text ?? '');
       if (this.waitRegex.re.test(line)) {
+        dbg('terminal matched wait_regex', { re: String(this.waitRegex.re) });
         this.waitRegex.resolve();
         return;
       }
@@ -651,13 +850,19 @@ export class AutoLevelingEngine {
       return Promise.reject(new Error('Only one wait can be active at a time'));
     }
 
-    if (this.isFighting === value) return Promise.resolve();
+    if (this.isFighting === value) {
+      dbg('waitForFighting immediate', { value });
+      return Promise.resolve();
+    }
+
+    dbg('waitForFighting arm', { value, timeoutMs });
 
     return new Promise<void>((resolve, reject) => {
       const t = timeoutMs != null ? Math.max(1, timeoutMs) : null;
       const timeoutId =
         t != null
           ? setTimeout(() => {
+              dbg('wait_fighting timeout', { value, t, current: this.isFighting });
               this.waitFighting = null;
               reject(new Error(`wait_fighting timeout: ${String(value)}`));
             }, t)
@@ -666,11 +871,13 @@ export class AutoLevelingEngine {
       this.waitFighting = {
         value,
         resolve: () => {
+          dbg('wait_fighting resolved', { value });
           this.clearWaitTimer(timeoutId);
           this.waitFighting = null;
           resolve();
         },
         reject: (e) => {
+          dbg('wait_fighting rejected', { value, e });
           this.clearWaitTimer(timeoutId);
           this.waitFighting = null;
           reject(e);
@@ -693,7 +900,6 @@ export class AutoLevelingEngine {
     // Engagement success
     if (this.engageWait && next === true) {
       const elapsed = now() - this.engageWait.startedAt;
-      // optional minimum delay isn't needed for success; but log the race timing
       dbg('engage success via isFighting', { elapsedMs: elapsed });
       this.resolveEngageWait({ ok: true });
     }
@@ -729,6 +935,8 @@ export class AutoLevelingEngine {
       w.timeoutId = null;
     }
 
+    dbg('resolveEngageWait', result);
+
     try {
       w.resolve(result);
     } catch {
@@ -738,11 +946,14 @@ export class AutoLevelingEngine {
 
   private waitForEngageOutcome(timeoutMs: number, minDelayMs: number): Promise<{ ok: boolean; reason?: string }> {
     if (this.engageWait) {
+      dbg('waitForEngageOutcome refused: already active');
       return Promise.resolve({ ok: false, reason: 'internal_engage_wait_exists' });
     }
 
     const startedAt = now();
     const t = Math.max(minDelayMs + 250, timeoutMs);
+
+    dbg('waitForEngageOutcome arm', { timeoutMs: t, minDelayMs });
 
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
@@ -824,7 +1035,6 @@ export class AutoLevelingEngine {
         continue;
       }
 
-      // timeout or internal; try next keyword
       dbg('engage attempt failed -> trying next keyword', { keyword, reason: r.reason });
     }
 
@@ -863,9 +1073,7 @@ export class AutoLevelingEngine {
       return;
     }
 
-    // Engage is now internal and owned by engine.
     this.injectedQueue.unshift({ kind: '__engage_target', target });
-
     this.encounterLocked = true;
 
     dbg('encounter injected', {
@@ -875,11 +1083,14 @@ export class AutoLevelingEngine {
   }
 
   private async flushInjected(round: number) {
+    if (this.injectedQueue.length > 0) dbg('flushInjected begin', { round, queueLen: this.injectedQueue.length });
+
     while (!this.stopping && this.injectedQueue.length > 0) {
       await this.waitWhilePausedOrStopped();
 
       const a = this.injectedQueue.shift()!;
 
+      /* TODO : DEBUG
       if ((a as any).kind === '__engage_target') {
         const eng = a as Extract<InjectedEngineAction, { kind: '__engage_target' }>;
         dbg('flushInjected engage', { target: eng.target.cleanName });
@@ -887,25 +1098,20 @@ export class AutoLevelingEngine {
         const ok = await this.engageTarget(eng.target, round);
 
         if (!ok) {
-          // Failed to engage; release the lock so we can detect future encounters.
           dbg('engage failed; releasing encounter lock', { target: eng.target.cleanName });
           this.encounterLocked = false;
           continue;
         }
 
-        // Engaged successfully.
-        // Run optional fight triplet (advanced actions), then ensure we wait for fighting to end.
         const cfg = this.deps.getConfig();
         await this.runTriplet(cfg.steps.fight, 'fight', round);
 
-        // If still fighting, wait for it to end (engine-owned safety)
         if (this.isFighting) {
           const gateTimeout = Math.max(1000, cfg.idleTimeoutMs || 30000);
           dbg('waiting for fighting=false to release encounter lock', { timeoutMs: gateTimeout });
           try {
             await this.waitForFighting(false, gateTimeout);
           } catch {
-            // If we time out here, it's safer to keep locked and surface an error.
             this.deps.setRunState({ status: 'error', message: 'Timed out waiting for fight to end' });
             this.stopping = true;
             return;
@@ -917,11 +1123,14 @@ export class AutoLevelingEngine {
         continue;
       }
 
-      // Normal actions in the injected queue
       const act = a as AutoLevelAction;
       this.deps.setRunState({ status: 'running', round, step: 'fight.injected', actionIndex: 0 });
+      dbg('flushInjected normal action', { act });
       await this.execAction(act, round);
+      */
     }
+
+    dbg('flushInjected end', { round });
   }
 
   /* ----------------------------- cleanup ----------------------------------- */
@@ -936,6 +1145,8 @@ export class AutoLevelingEngine {
   }
 
   private rejectAllWaits(err: any) {
+    dbg('rejectAllWaits', { err: String(err?.message ?? err ?? err) });
+
     if (this.moveWait) {
       this.clearMoveWaitTimer();
       const rej = this.moveWait.reject;

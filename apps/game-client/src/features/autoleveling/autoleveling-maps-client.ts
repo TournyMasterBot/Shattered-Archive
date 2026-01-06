@@ -1,5 +1,21 @@
 // apps/game-client/src/features/autoleveling/autoleveling-maps-client.ts
 
+/**
+ * Maps Client (continents/areas/beasts + IndexedDB cache)
+ * ------------------------------------------------------
+ * Intent:
+ * - Provide cached + remote loading of maps data for the autoleveling UI.
+ * - Cache is IndexedDB kv store:
+ *   - continentNames
+ *   - areaNames:<continentName>
+ *   - beasts:<areaName>
+ * - Remote endpoints are expected under /api/web/maps/...
+ *
+ * Note:
+ * - fetchTrainingPathsRemote is currently stubbed and returns [].
+ *   The UI still supports "trainingPath" as a freeform input.
+ */
+
 export type ContinentNamesResponse = { continentNames: string[] };
 export type AreaNamesResponse = { areaNames: string[] };
 
@@ -42,6 +58,37 @@ const DB_NAME = 'shatteredarchive-maps';
 const DB_VERSION = 1;
 const STORE = 'kv';
 
+/* ----------------------------- debug helpers ------------------------------ */
+
+const MAPS_LOG_PREFIX = '[autoleveling][maps]';
+
+function isAutoLevelingDebugEnabled(): boolean {
+  try {
+    if (typeof window !== 'undefined' && (window as any).__AUTOLEVELING_DEBUG__ === true) return true;
+
+    const v = typeof localStorage !== 'undefined' ? localStorage.getItem('autoleveling.debug') : null;
+    if (v === '1' || v === 'true') return true;
+    if (v === '0' || v === 'false') return false;
+
+    try {
+      const dev = typeof import.meta !== 'undefined' && !!(import.meta as any).env?.DEV;
+      return dev;
+    } catch {
+      return false;
+    }
+  } catch {
+    return false;
+  }
+}
+
+function mdbg(...args: any[]) {
+  if (!isAutoLevelingDebugEnabled()) return;
+  // eslint-disable-next-line no-console
+  console.debug(MAPS_LOG_PREFIX, ...args);
+}
+
+/* ------------------------------------------------------------------------- */
+
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
@@ -65,11 +112,16 @@ async function kvGet<T>(key: string): Promise<T | null> {
       const r = store.get(key);
       r.onsuccess = () => {
         const rec = r.result as KVRecord | undefined;
+        mdbg('kvGet', { key, hit: !!rec });
         resolve(rec?.value ?? null);
       };
-      r.onerror = () => resolve(null);
+      r.onerror = () => {
+        mdbg('kvGet error', { key });
+        resolve(null);
+      };
     });
-  } catch {
+  } catch (e) {
+    mdbg('kvGet exception', { key, e });
     return null;
   }
 }
@@ -81,26 +133,40 @@ async function kvSet(key: string, value: any): Promise<void> {
       const tx = db.transaction(STORE, 'readwrite');
       const store = tx.objectStore(STORE);
       store.put({ key, value, updatedAt: Date.now() } satisfies KVRecord);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => resolve();
-      tx.onabort = () => resolve();
+      tx.oncomplete = () => {
+        mdbg('kvSet', { key });
+        resolve();
+      };
+      tx.onerror = () => {
+        mdbg('kvSet error', { key });
+        resolve();
+      };
+      tx.onabort = () => {
+        mdbg('kvSet abort', { key });
+        resolve();
+      };
     });
-  } catch {
-    // ignore
+  } catch (e) {
+    mdbg('kvSet exception', { key, e });
   }
 }
 
 function normalizeKey(s: string): string {
-  return String(s ?? '').trim().toLowerCase();
+  return String(s ?? '')
+    .trim()
+    .toLowerCase();
 }
 
 async function fetchJson<T>(url: string, ms = 10000): Promise<T> {
   const ac = new AbortController();
   const t = window.setTimeout(() => ac.abort(), ms);
   try {
+    mdbg('fetchJson', { url, timeoutMs: ms });
     const r = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' }, signal: ac.signal });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return (await r.json()) as T;
+    const json = (await r.json()) as T;
+    mdbg('fetchJson ok', { url });
+    return json;
   } finally {
     window.clearTimeout(t);
   }
@@ -156,6 +222,8 @@ export type NamedTrainingPath = {
 };
 
 export async function fetchTrainingPathsRemote(_areaId: string): Promise<NamedTrainingPath[]> {
+  // TODO: wire to your server endpoint once available.
+  mdbg('fetchTrainingPathsRemote: stubbed (returns empty)', { areaId: _areaId });
   return [];
 }
 
