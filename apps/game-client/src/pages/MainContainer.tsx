@@ -27,6 +27,7 @@ import { useEquipmentCapture } from '../hooks/useEquipmentCapture';
 import { useEquipmentDeltas } from '../hooks/useEquipmentDeltas';
 
 import AutoLevelingModal from '../components/AutoLevelingModal';
+import { useAutoLeveling } from '../hooks/useAutoLeveling';
 
 export const MainContainer: React.FC = () => {
   useVisualViewportHeight();
@@ -72,6 +73,8 @@ export const MainContainer: React.FC = () => {
   useEquipmentCapture(connectionId);
   useEquipmentDeltas(connectionId);
 
+  const auto = useAutoLeveling(connectionId);
+
   React.useEffect(() => {
     pluginHost.setConnection(connectionId);
 
@@ -113,6 +116,8 @@ export const MainContainer: React.FC = () => {
         BottomPaneComponent={BottomPane}
         isConnected={gameConn.isConnected}
         sendRaw={gameConn.sendRaw}
+        autoLevelingActive={auto.config.enabled}
+        autoLevelRunState={auto.runState}
       />
 
       <UserStyleOverrideModal

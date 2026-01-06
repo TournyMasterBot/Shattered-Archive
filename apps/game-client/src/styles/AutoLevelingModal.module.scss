@@ -26,6 +26,9 @@
 
   display: flex;
   flex-direction: column;
+
+  /* Helps native form controls + dropdown popups follow dark theme where supported */
+  color-scheme: dark;
 }
 
 /* -------------------------------------------------
@@ -180,6 +183,30 @@
 .body {
   padding: 12px;
   overflow: auto;
+  flex: 1;
+
+  /* Dark scrollbars (where supported) */
+  scrollbar-color: #3a3a3a #141414;
+  scrollbar-width: thin;
+
+  &::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #141414;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #2f2f2f;
+    border: 2px solid #141414;
+    border-radius: 10px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #3a3a3a;
+  }
 }
 
 .section {
@@ -259,6 +286,9 @@
   font-size: 0.85rem;
   box-sizing: border-box;
 
+  /* Helps native controls render “dark” in Chromium */
+  color-scheme: dark;
+
   transition:
     border-color 120ms ease,
     box-shadow 120ms ease,
@@ -292,6 +322,28 @@
   resize: vertical;
   line-height: 1.25;
   white-space: pre;
+
+  scrollbar-color: #3a3a3a #141414;
+  scrollbar-width: thin;
+
+  &::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #141414;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #2f2f2f;
+    border: 2px solid #141414;
+    border-radius: 10px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #3a3a3a;
+  }
 }
 
 /* Select styling */
@@ -300,11 +352,53 @@
   appearance: none;
 }
 
-/* Checkbox styling */
+/* -------------------------------------------------
+   CHECKBOX (custom dark theme)
+-------------------------------------------------- */
+
 .checkbox {
-  width: 14px;
-  height: 14px;
-  accent-color: #8bc34a;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+
+  appearance: none;
+  -webkit-appearance: none;
+
+  background: #0f0f0f;
+  border: 1px solid #555;
+  display: inline-block;
+  vertical-align: middle;
+
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+
+  &:hover {
+    border-color: #6a6a6a;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: #8bc34a;
+    box-shadow: 0 0 0 1px rgba(139, 195, 74, 0.45);
+  }
+
+  &:checked {
+    background-color: #8bc34a;
+    border-color: #8bc34a;
+
+    /* SVG checkmark so it stays dark-themed */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.2 8.7l3 3.2L13 4.9' fill='none' stroke='%230b0b0b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 12px 12px;
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
 }
 
 /* -------------------------------------------------
@@ -338,6 +432,80 @@
   background: #141414;
   border: 1px solid #242424;
   border-radius: 8px;
+}
+
+.beastList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  background: #141414;
+  border: 1px solid #242424;
+  border-radius: 10px;
+  padding: 10px;
+
+  max-height: 260px;
+  overflow: auto;
+
+  scrollbar-color: #3a3a3a #141414;
+  scrollbar-width: thin;
+
+  &::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #141414;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #2f2f2f;
+    border: 2px solid #141414;
+    border-radius: 10px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #3a3a3a;
+  }
+}
+
+.beastRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 8px;
+  background: #131313;
+  border: 1px solid #242424;
+  border-radius: 8px;
+}
+
+.beastMain {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.beastName {
+  color: #f0f0f0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.beastMeta {
+  color: #cfcfcf;
+  font-size: 0.74rem;
+  opacity: 0.9;
+  line-height: 1.1;
+}
+
+.beastEmpty {
+  color: #cfcfcf;
+  font-size: 0.78rem;
+  opacity: 0.85;
 }
 
 /* -------------------------------------------------
@@ -559,6 +727,47 @@
 }
 
 /* -------------------------------------------------
+   RUN BAR (replaces confusing "Controls" section)
+-------------------------------------------------- */
+
+.runBar {
+  padding: 10px 12px;
+  background: #141414;
+  border-top: 1px solid #242424;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.runBarLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.runBarTitle {
+  color: #f0f0f0;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.runBarSub {
+  color: #cfcfcf;
+  font-size: 0.74rem;
+  opacity: 0.85;
+}
+
+.runBarRight {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* -------------------------------------------------
    RESPONSIVE
 -------------------------------------------------- */
 
@@ -597,4 +806,90 @@
   .lines {
     padding: 8px;
   }
+
+  .runBar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .runBarRight {
+    width: 100%;
+  }
+}
+
+.autoLevelButton {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #1a1a1a;
+  color: #f0f0f0;
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
+}
+
+.autoLevelButton:hover:not(:disabled) {
+  background: #242424;
+}
+
+.autoLevelButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.autoLevelButtonActive {
+  border-color: #8bc34a;
+  box-shadow: 0 0 0 1px rgba(139, 195, 74, 0.45);
+}
+
+/* stop button */
+.autoStopButton {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #1a1a1a;
+  color: #f0f0f0;
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
+}
+
+.autoStopButton:hover:not(:disabled) {
+  background: #242424;
+  border-color: #c94a4a;
+  box-shadow: 0 0 0 1px rgba(201, 74, 74, 0.35);
+}
+
+/* config button */
+.autoConfigButton {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #1a1a1a;
+  color: #f0f0f0;
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
+}
+
+.autoConfigButton:hover:not(:disabled) {
+  background: #242424;
 }

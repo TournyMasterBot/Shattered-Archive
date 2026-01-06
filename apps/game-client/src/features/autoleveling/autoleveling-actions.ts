@@ -1,3 +1,4 @@
+// apps\game-client\src\features\autoleveling\autoleveling-actions.ts
 import type { AutoLevelAction } from './autoleveling-types';
 
 function toLines(text: string): string[] {
@@ -12,6 +13,21 @@ export function parseActionsFromEditor(text: string): AutoLevelAction[] {
     const line = raw ?? '';
 
     const trimmed = line.trim();
+
+    if (trimmed.toLowerCase().startsWith('wait_fighting ')) {
+      const rest = trimmed.slice('wait_fighting '.length).trim();
+      const parts = rest.split(/\s+/g).filter(Boolean);
+      const vRaw = (parts[0] ?? '').toLowerCase();
+      const value = vRaw === 'true' || vRaw === '1' || vRaw === 'yes';
+      const tRaw = parts[1];
+      const timeoutMs = tRaw != null ? Number(tRaw) : undefined;
+      out.push({
+        kind: 'wait_fighting',
+        value,
+        timeoutMs: Number.isFinite(timeoutMs as any) ? Math.max(0, Math.floor(timeoutMs as any)) : undefined,
+      });
+      continue;
+    }
 
     if (trimmed.toLowerCase().startsWith('wait_ms ')) {
       const n = Number(trimmed.slice('wait_ms '.length).trim());
@@ -52,6 +68,10 @@ export function serializeActionsToEditor(actions: AutoLevelAction[]): string {
 
   for (const a of actions ?? []) {
     if (a.kind === 'send') lines.push(a.cmd ?? '');
+    else if (a.kind === 'wait_fighting') {
+      const base = `wait_fighting ${a.value ? 'true' : 'false'}`;
+      lines.push(a.timeoutMs != null ? `${base} ${a.timeoutMs}` : base);
+    }
     else if (a.kind === 'wait_ms') lines.push(`wait_ms ${a.ms}`);
     else if (a.kind === 'wait_text') lines.push(`wait_text ${a.text ?? ''}`);
     else if (a.kind === 'wait_regex') lines.push(`wait_regex /${a.pattern ?? ''}/${a.flags ?? 'i'}`);

@@ -3,7 +3,7 @@
 import type { AutoLevelConfig } from './autoleveling-types';
 import { createDefaultAutoLevelConfig } from './autoleveling-defaults';
 
-const KEY_PREFIX = 'autoleveling-config:';
+const KEY_PREFIX = 'autoleveling-config-v2:';
 
 function keyFor(connectionId: string): string {
   return `${KEY_PREFIX}${connectionId || 'default'}`;
@@ -16,21 +16,21 @@ function isObject(x: unknown): x is Record<string, unknown> {
 function coerceConfig(raw: unknown, fallback: AutoLevelConfig): AutoLevelConfig {
   if (!isObject(raw)) return fallback;
 
-  // Minimal version gate. If missing or wrong, fallback.
-  if (raw.version !== 1) return fallback;
+  // HARD gate: v2 only. Breaking change is intentional.
+  if (raw.version !== 2) return fallback;
 
-  // Shallow-merge to avoid “losing information” when new fields are added.
-  // (We keep unknown fields from raw, and fill missing fields from fallback.)
+  // Keep it conservative: fill missing fields from fallback, but do not attempt v1 migration here.
   return {
     ...fallback,
     ...raw,
     init: {
       ...fallback.init,
-      ...(isObject(raw.init) ? raw.init : {}),
+      ...(isObject(raw.init) ? (raw.init as any) : {}),
+      targets: Array.isArray((raw as any)?.init?.targets) ? ((raw as any).init.targets as any[]) : fallback.init.targets,
     },
     steps: {
       ...fallback.steps,
-      ...(isObject(raw.steps) ? raw.steps : {}),
+      ...(isObject(raw.steps) ? (raw.steps as any) : {}),
     },
   };
 }

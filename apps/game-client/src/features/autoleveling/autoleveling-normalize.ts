@@ -84,7 +84,7 @@ function normalizeDesiredBuffs(x: unknown): DesiredBuff[] {
 
 const VALID_STATS = new Set(['hpPct', 'mpPct', 'stamPct', 'hp', 'mp', 'stam']);
 const VALID_OPS = new Set(['>=', '>', '<=', '<']);
-const VALID_THROTTLES = new Set(['none', 'once_per_round', 'once_per_fight']);
+const VALID_THROTTLES = new Set(['none', 'once_per_round', 'once_per_fight', 'ability_cooldown']);
 
 function normalizeThresholds(x: unknown): AbilityThresholdRule[] {
   if (!Array.isArray(x)) return [];
@@ -100,6 +100,7 @@ function normalizeThresholds(x: unknown): AbilityThresholdRule[] {
 
       cmd: typeof r.cmd === 'string' ? r.cmd : '',
       throttle: VALID_THROTTLES.has(String(r.throttle)) ? (String(r.throttle) as any) : 'once_per_fight',
+      cooldownKey: typeof r.cooldownKey === 'string' ? r.cooldownKey : undefined,
     }))
     .filter((r) => r.cmd.trim().length > 0 || true);
 }

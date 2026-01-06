@@ -1,20 +1,52 @@
+// apps/game-client/src/components/CommandInput.tsx
 import React, { useCallback, useRef } from 'react';
 import styles from '../styles/CommandInput.module.scss';
 import { useGameCommand } from '../hooks/useGameCommand';
 import { useVoiceDictation } from '../hooks/useVoiceDictation';
 
+import type { AutoLevelRunState } from '../features/autoleveling/autoleveling-types';
+
 interface CommandInputProps {
   sendRaw: (data: string) => void;
   isConnected: boolean;
+
+  /** Opens the configuration modal (optional) */
   onOpenAutoLeveling?: () => void;
+
+  /** Whether autoleveling feature is enabled/configured */
   autoLevelingActive?: boolean;
+
+  /** Current run state (for Start/Pause/Resume labeling) */
+  autoLevelRunState?: AutoLevelRunState;
+
+  /** Optional direct callbacks; if omitted we dispatch events. */
+  onAutoLevelStart?: () => void;
+  onAutoLevelPause?: () => void;
+  onAutoLevelResume?: () => void;
+  onAutoLevelStop?: () => void;
+}
+
+function dispatchSafe(name: string, detail?: any) {
+  try {
+    window.dispatchEvent(new CustomEvent(name, { detail }));
+  } catch {
+    // ignore
+  }
 }
 
 export const CommandInput: React.FC<CommandInputProps> = ({
   sendRaw,
   isConnected,
+
   onOpenAutoLeveling,
+
   autoLevelingActive = false,
+  autoLevelRunState,
+
+  onAutoLevelStart,
+  onAutoLevelPause,
+  onAutoLevelResume,
+  onAutoLevelStop,
 }) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -59,7 +91,56 @@ export const CommandInput: React.FC<CommandInputProps> = ({
   });
 
   const micDisabled = !isConnected || !isSupported;
-  const autoDisabled = !isConnected || !onOpenAutoLeveling;
+
+  const state = autoLevelRunState?.status ?? 'idle';
+  const isRunning = state === 'running';
+  const isPaused = state === 'paused';
+  const isIdle = state === 'idle';
+
+  const autoDisabled = !isConnected || !autoLevelingActive;
+
+  const fireStart = () => (onAutoLevelStart ? onAutoLevelStart() : dispatchSafe('game:autoleveling-start'));
+  const firePause = () => (onAutoLevelPause ? onAutoLevelPause() : dispatchSafe('game:autoleveling-pause'));
+  const fireResume = () => (onAutoLevelResume ? onAutoLevelResume() : dispatchSafe('game:autoleveling-resume'));
+  const fireStop = () => (onAutoLevelStop ? onAutoLevelStop() : dispatchSafe('game:autoleveling-stop'));
+
+  const onAutoClick = () => {
+    if (autoDisabled) return;
+
+    if (isIdle) {
+      const ok = window.confirm('Begin auto leveling now?');
+      if (!ok) return;
+      fireStart();
+      return;
+    }
+
+    if (isRunning) {
+      firePause();
+      return;
+    }
+
+    if (isPaused) {
+      fireResume();
+      return;
+    }
+
+    // error/stopping fallback
+    const ok = window.confirm('Auto leveling is not idle. Start again?');
+    if (!ok) return;
+    fireStart();
+  };
+
+  const onStopClick = () => {
+    if (!isConnected) return;
+    if (isIdle) return;
+
+    const ok = window.confirm('Stop auto leveling? This ends the current run.');
+    if (!ok) return;
+
+    fireStop();
+  };
+
+  const autoLabel = isIdle ? 'Start auto level' : isRunning ? 'Pause auto level' : isPaused ? 'Resume auto level' : 'Auto level';
 
   return (
     <div className={styles.commandInputBar}>
@@ -89,15 +170,48 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 
       <button
         type="button"
-        className={`${styles.autoLevelButton} ${autoLevelingActive ? styles.autoLevelButtonActive : ''}`}
+        className={`${styles.autoLevelButton} ${!autoDisabled && !isIdle ? styles.autoLevelButtonActive : ''}`}
         onMouseDown={(e) => e.preventDefault()} // keep focus in input
-        onClick={() => onOpenAutoLeveling?.()}
+        onClick={onAutoClick}
         disabled={autoDisabled}
-        aria-label={autoDisabled ? 'Auto leveling unavailable' : 'Open auto leveling'}
-        title={!isConnected ? 'Connect to a server to use auto leveling' : 'Auto leveling'}
+        aria-label={autoDisabled ? 'Auto leveling unavailable' : autoLabel}
+        title={
+          !isConnected
+            ? 'Connect to a server to use auto leveling'
+            : !autoLevelingActive
+              ? 'Enable auto leveling first'
+              : autoLabel
+        }
       >
         ⚔️
       </button>
+
+      {!isIdle ? (
+        <button
+          type="button"
+          className={styles.autoStopButton}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onStopClick}
+          aria-label="Stop auto leveling"
+          title="Stop auto leveling"
+        >
+          ⏹
+        </button>
+      ) : null}
+
+      {onOpenAutoLeveling ? (
+        <button
+          type="button"
+          className={styles.autoConfigButton}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => onOpenAutoLeveling?.()}
+          disabled={!isConnected}
+          aria-label="Configure auto leveling"
+          title="Configure auto leveling"
+        >
+          ⚙️
+        </button>
+      ) : null}
 
       <button
         type="button"

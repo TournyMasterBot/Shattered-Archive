@@ -1,8 +1,11 @@
+// apps/game-client/src/features/autoleveling/autoleveling-types.ts
+
 export type AutoLevelAction =
   | { kind: 'send'; cmd: string }
   | { kind: 'wait_ms'; ms: number }
   | { kind: 'wait_text'; text: string; caseInsensitive?: boolean; timeoutMs?: number }
-  | { kind: 'wait_regex'; pattern: string; flags?: string; timeoutMs?: number };
+  | { kind: 'wait_regex'; pattern: string; flags?: string; timeoutMs?: number }
+  | { kind: 'wait_fighting'; value: boolean; timeoutMs?: number };
 
 export type AutoLevelPhaseTriplet = {
   pre: AutoLevelAction[];
@@ -11,69 +14,88 @@ export type AutoLevelPhaseTriplet = {
 };
 
 export type AutoLevelStepConfig = {
+  /**
+   * Optional end-to-end movement route, expressed as semicolon-separated commands.
+   * If present, this is treated as the primary movement path.
+   */
+  trainingPath?: string | null;
+
   start: AutoLevelPhaseTriplet;
   move: AutoLevelPhaseTriplet;
   identify: AutoLevelPhaseTriplet;
-  fight: {
-    pre: AutoLevelAction[];
-    exec: AutoLevelAction[];
-  };
+
+  /**
+   * Optional fight actions you want to run *after* engagement succeeds.
+   * (The engine now owns engagement: initiation command + keyword fallbacks.)
+   */
+  fight: AutoLevelPhaseTriplet;
+
   reset: {
     endRound: AutoLevelAction[];
     wait: AutoLevelAction[];
   };
 };
 
-export type DesiredBuff = {
-  id: string;
-  enabled: boolean;
-  cmd: string;
+/**
+ * The selected targets are stored as “rich” records so the engine has everything it needs
+ * without re-querying maps.
+ *
+ * - lookName is used for encounter detection (terminal includes match)
+ * - keywords are used for engagement attempts in order
+ */
+export type AutoLevelTarget = {
+  cleanName: string; // stable key
+  name: string; // display (may include ANSI)
+  lookName: string;
+  keywords: string[];
+
+  // helpful metadata for UI
+  level?: number;
+  damageDice?: string;
+  damageType?: string;
+  health?: number;
+
+  immunities?: string[];
+  resistances?: string[];
+  vulnerabilities?: string[];
+  affects?: string[];
+  offensiveTactics?: string[];
 };
 
-export type AbilityThresholdRule = {
-  id: string;
-  enabled: boolean;
+export type AutoLevelInitConfigV2 = {
+  /** Human-readable selection used by UI (optional but persisted). */
+  continentName?: string | null;
+  areaName?: string | null;
 
-  stat: 'hpPct' | 'mpPct' | 'stamPct' | 'hp' | 'mp' | 'stam';
-  op: '>=' | '>' | '<=' | '<';
-  value: number;
-
-  cmd: string;
-
-  throttle: 'none' | 'once_per_round' | 'once_per_fight' | 'ability_cooldown';
-
-  /**
-   * Used when throttle === 'ability_cooldown'
-   * If omitted, the engine will fall back to cmd as the key.
-   */
-  cooldownKey?: string;
-};
-
-export type AutoLevelInitConfig = {
+  /** IDs inferred from beasts response (persisted). */
   continentId: string | null;
   areaId: string | null;
-  trainingPathId: string | null;
-
-  desiredBuffs: DesiredBuff[];
-
-  /** Renamed in UI to “Fight Abilities” */
-  abilityThresholds: AbilityThresholdRule[];
-
-  /** One per line, used for flee/emergency sequences */
-  escapeCommands: string[];
 
   /**
-   * Cooldown lookup map (milliseconds).
-   * Example: { "bash": 3000, "kick": 1500 }
+   * The end-to-end movement path. Semicolon-separated commands.
    */
-  abilityCooldowns: Record<string, number>;
+  trainingPath?: string | null;
+
+  /**
+   * Optional. If blank, engine defaults to: "kill {name}"
+   * Supported placeholders:
+   *  - {name}  (preferred)
+   *  - {target} (back-compat)
+   *  - {keyword}
+   */
+  initiationCommand?: string | null;
+
+  /**
+   * Targets selected in UI.
+   */
+  targets: AutoLevelTarget[];
 };
 
 export type AutoLevelConfig = {
-  version: 1;
+  version: 2;
   enabled: boolean;
 
-  init: AutoLevelInitConfig;
+  init: AutoLevelInitConfigV2;
   steps: AutoLevelStepConfig;
 
   loopRounds: boolean;
@@ -85,5 +107,6 @@ export type AutoLevelConfig = {
 export type AutoLevelRunState =
   | { status: 'idle' }
   | { status: 'running'; round: number; step: string; actionIndex: number }
+  | { status: 'paused'; round: number; step: string; actionIndex: number }
   | { status: 'stopping' }
   | { status: 'error'; message: string };

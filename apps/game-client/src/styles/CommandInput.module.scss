@@ -1,4 +1,4 @@
-// apps\game-client\src\styles\CommandInput.module.scss
+// apps/game-client/src/styles/CommandInput.module.scss
 /* -------------------------------------------------
    COMMAND INPUT BAR
 -------------------------------------------------- */
@@ -47,13 +47,11 @@
    RECORDING STATES (INPUT)
 -------------------------------------------------- */
 
-/* Actively recording */
 .commandInputRecording {
   border-color: #c94a4a;
   box-shadow: 0 0 0 1px rgba(201, 74, 74, 0.55);
 }
 
-/* Wants recording, engine temporarily off */
 .commandInputRestarting {
   border-color: #d28b2a;
   box-shadow: 0 0 0 1px rgba(210, 139, 42, 0.55);
@@ -93,14 +91,12 @@
    MICROPHONE STATES
 -------------------------------------------------- */
 
-/* Actively recording */
 .micButtonRecording {
   border-color: #c94a4a;
   box-shadow: 0 0 0 1px rgba(201, 74, 74, 0.55);
   background: #2a1212;
 }
 
-/* Wants recording, engine restarting */
 .micButtonRestarting {
   border-color: #d28b2a;
   box-shadow: 0 0 0 1px rgba(210, 139, 42, 0.55);
@@ -114,8 +110,6 @@
 .recordingHint {
   position: absolute;
   right: 40px;
-
-  /* go UP instead of down */
   bottom: calc(100% + 4px);
 
   font-size: 0.72rem;
@@ -125,12 +119,9 @@
   text-overflow: ellipsis;
   max-width: 420px;
   pointer-events: none;
-
-  /* keep above nearby borders */
   z-index: 5;
 }
 
-/* Engine restarting */
 .recordingHintRestarting {
   color: #ffcf8a;
 }
@@ -142,8 +133,6 @@
 .micError {
   position: absolute;
   right: 40px;
-
-  /* stack error above hint */
   bottom: calc(100% + 1.35rem);
 
   font-size: 0.72rem;
@@ -177,6 +166,10 @@
   }
 }
 
+/* -------------------------------------------------
+   AUTO LEVELING BUTTONS
+-------------------------------------------------- */
+
 .autoLevelButton {
   flex-shrink: 0;
   padding: 4px 8px;
@@ -206,4 +199,39 @@
 .autoLevelButtonActive {
   border-color: #8bc34a;
   box-shadow: 0 0 0 1px rgba(139, 195, 74, 0.45);
+}
+
+/* paused state (distinct from active/running) */
+.autoLevelButtonPaused {
+  border-color: #d28b2a;
+  box-shadow: 0 0 0 1px rgba(210, 139, 42, 0.45);
+}
+
+/* stop button */
+.autoLevelStopButton {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #7a2a2a;
+  background: #1a1a1a;
+  color: #f0f0f0;
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
+}
+
+.autoLevelStopButton:hover:not(:disabled) {
+  background: #2a1212;
+  border-color: #c94a4a;
+  box-shadow: 0 0 0 1px rgba(201, 74, 74, 0.45);
+}
+
+.autoLevelStopButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

@@ -321,8 +321,42 @@ const service = createExpressService(webConfig, (app) => {
     });
   };
 
+  // GET /maps/area/:area/beasts -> { beasts: [...] }
+  const handleBeastsByArea = async (req: any, res: any) => {
+    const areaName = String(req.params?.areaName ?? '').trim();
+    if (areaName.length > 80) return res.status(400).json({ error: 'Invalid area' });
+
+    const key = req.path;
+    const cached = getCached(key);
+    if (cached !== null) {
+      res.setHeader('X-Maps-Source', 'cache');
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', `public, max-age=${maxAgeSeconds(MAPS_TTL_MS)}`);
+      return res.status(200).json(cached);
+    }
+
+    // upstream first (if configured)
+    const upstreamUrl = buildUpstreamUrl(`maps/area/${encodeURIComponent(areaName)}/beasts`);
+    if (upstreamUrl) {
+      const result = await fetchJsonWithTimeout(upstreamUrl, 10_000);
+      if (result.ok && result.json) {
+        setCached(key, result.json, MAPS_TTL_MS);
+        res.setHeader('X-Maps-Source', 'upstream');
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Cache-Control', `public, max-age=${maxAgeSeconds(MAPS_TTL_MS)}`);
+        return res.status(200).json(result.json);
+      }
+    }
+
+    res.setHeader('X-Maps-Source', 'offline');
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', `public, max-age=${maxAgeSeconds(MAPS_TTL_MS)}`);
+    return res.status(200).json({ beasts: [] });
+  };
+
   registerGet(app, basePath, '/maps/continent/names', handleContinentNames);
   registerGet(app, basePath, '/maps/continent/:continent/get-area-names', handleAreaNamesByContinent);
+  registerGet(app, basePath, '/maps/area/:areaName/beasts', handleBeastsByArea);
 });
 
 service
