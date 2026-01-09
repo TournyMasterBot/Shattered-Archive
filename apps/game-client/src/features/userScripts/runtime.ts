@@ -23,7 +23,7 @@ async function runJavascript(source: string, api: ScriptSandboxApi): Promise<voi
     const fn = new Function(
       'api',
       `"use strict";
-const { sendCommand, log, error, event } = api;
+const { sendCommand, log, error, event, writeTerminal } = api;
 try {
 ${source}
 } catch (err) {
@@ -36,7 +36,7 @@ ${source}
 
     await fn(api);
   } catch (err: any) {
-    api.error('[UserScript:JS] Failed to compile or execute script', err?.message ?? String(err));
+    api.error?.('[UserScript:JS] Failed to compile or execute script', err?.message ?? String(err));
   }
 }
 
@@ -56,7 +56,7 @@ async function runTypescript(source: string, api: ScriptSandboxApi): Promise<voi
 
     await runJavascript(outputText, api);
   } catch (err: any) {
-    api.error('[UserScript:TS] Failed to transpile or execute script', err?.message ?? String(err));
+    api.error?.('[UserScript:TS] Failed to transpile or execute script', err?.message ?? String(err));
   }
 }
 
@@ -127,7 +127,7 @@ export async function runUserScript(script: AnyUserScript, api: ScriptSandboxApi
     }
 
     default: {
-      api.error(`[UserScript] Unsupported language: ${String(lang)}`);
+      api.error?.(`[UserScript] Unsupported language: ${String(lang)}`);
       return;
     }
   }

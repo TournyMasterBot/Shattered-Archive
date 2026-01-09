@@ -1086,7 +1086,14 @@ export class AutoLevelingEngine {
     if (this.injectedQueue.length > 0) dbg('flushInjected begin', { round, queueLen: this.injectedQueue.length });
 
     while (!this.stopping && this.injectedQueue.length > 0) {
-      await this.waitWhilePausedOrStopped();
+      // If the user has requested that we pause or stop, wait until they release
+      try {
+        await this.waitWhilePausedOrStopped();
+      } catch (err: any) {
+        dbg('engine stopping from waitWhilePausedOrStopped', { round });
+        this.deps.setRunState({ status: 'stopping' });
+        break;
+      }
 
       const a = this.injectedQueue.shift()!;
 

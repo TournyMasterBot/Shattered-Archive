@@ -20,8 +20,8 @@ function createLuaState(): any {
 
 /**
  * Bridge ScriptSandboxApi into Lua as:
- *   - global table: api.log, api.error, api.sendCommand, api.httpGetJson
- *   - global fns:  log(...), error(...), sendCommand(...), httpGetJson(...)
+ *   - global table: api.log, api.error, api.sendCommand, api.httpGetJson, api.writeTerminal
+ *   - global fns:  log(...), error(...), sendCommand(...), httpGetJson(...), writeTerminal(...)
  */
 function pushApiAndGlobals(L: any, api: ScriptSandboxApi) {
   // ----- 1) api table -----
@@ -69,6 +69,15 @@ function pushApiAndGlobals(L: any, api: ScriptSandboxApi) {
     });
   }
 
+  // api.writeTerminal(dsl) – DSL-colored output → terminal bypass path
+  if (api.writeTerminal) {
+    setApiField('writeTerminal', (Linner) => {
+      const dsl = lua.lua_tojsstring(Linner, 1);
+      api.writeTerminal?.(dsl);
+      return 0;
+    });
+  }
+
   // expose table as global "api"
   lua.lua_setglobal(L, to_luastring('api'));
 
@@ -111,6 +120,15 @@ function pushApiAndGlobals(L: any, api: ScriptSandboxApi) {
         .catch((err) => {
           api.error?.('[Lua httpGetJson] failed', err instanceof Error ? err.message : String(err));
         });
+      return 0;
+    });
+  }
+
+  // writeTerminal(dsl)
+  if (api.writeTerminal) {
+    setGlobal('writeTerminal', (Linner) => {
+      const dsl = lua.lua_tojsstring(Linner, 1);
+      api.writeTerminal?.(dsl);
       return 0;
     });
   }

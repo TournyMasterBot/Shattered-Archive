@@ -52,10 +52,11 @@ function pyNone(): unknown {
 /**
  * Register bridge functions as Python builtins:
  *
- *  - log(*args)         → api.log(...)
- *  - error(*args)       → api.error(...)
- *  - sendCommand(cmd)   → api.sendCommand(cmd)
- *  - httpGetJson(url)   → api.httpGetJson(url) (fire-and-forget)
+ *  - log(*args)            → api.log(...)
+ *  - error(*args)          → api.error(...)
+ *  - sendCommand(cmd)      → api.sendCommand(cmd)
+ *  - httpGetJson(url)      → api.httpGetJson(url) (fire-and-forget)
+ *  - writeTerminal(dsl)    → api.writeTerminal(dsl)  (DSL-colored output → terminal)
  */
 function registerBuiltins(api: ScriptSandboxApi) {
   const sk = getSk();
@@ -100,6 +101,15 @@ function registerBuiltins(api: ScriptSandboxApi) {
       return pyNone();
     });
   }
+
+  // writeTerminal(dsl) – only if provided
+  if (api.writeTerminal) {
+    b.writeTerminal = new sk.builtin.func((pyDsl: unknown) => {
+      const dsl = String(pyToJs(pyDsl));
+      api.writeTerminal?.(dsl);
+      return pyNone();
+    });
+  }
 }
 
 /**
@@ -110,6 +120,7 @@ function registerBuiltins(api: ScriptSandboxApi) {
  *   log("Hello from Python")
  *   sendCommand("look")
  *   httpGetJson("https://api.github.com/...")
+ *   writeTerminal("{rHello{G world{x\\n")
  */
 export async function runPythonSourceInBrowser(source: string, api: ScriptSandboxApi): Promise<void> {
   const sk = getSk();

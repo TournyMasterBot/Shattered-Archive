@@ -311,12 +311,6 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
     setStepEditors(buildStepEditors(config));
   }, [config]);
 
-  const canStart = useMemo(() => {
-    const v = isConnected && socketReady && config.enabled && !hasChanges;
-    uiDbg('canStart computed', { isConnected, socketReady, enabled: config.enabled, hasChanges, canStart: v });
-    return v;
-  }, [isConnected, socketReady, config.enabled, hasChanges]);
-
   const showStop = useMemo(() => {
     const v =
       config.enabled &&
@@ -793,7 +787,6 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
                     uiDbg('start clicked');
                     start();
                   }}
-                  disabled={!canStart}
                   title={
                     hasChanges
                       ? 'Save or Discard changes before starting'
