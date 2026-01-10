@@ -8,7 +8,7 @@
  * - Gate movement using movement-succeeded/movement-failed events so automation doesn't outrun the client.
  * - Detect encounters from terminal text (lookName match) and inject an engagement+fight sequence.
  * - Own engagement:
- *   - For a detected target: try initiationCommand template with keywords until GMCP says fighting=true
+ *   - initiationCommand template + keyword attempts until GMCP says fighting=true
  *   - If terminal says "They aren't here", try next keyword immediately.
  * - Provide wait primitives for scripted actions:
  *   - wait_ms, wait_text, wait_regex, wait_fighting
@@ -17,7 +17,7 @@
  *  Round:
  *   A) start.pre -> start.exec -> start.post
  *   B) For each trainingPath segment (config.init.trainingPath split by ';', empty segments preserved):
- *       1) move.pre
+ *       1) move.pre -> move.exec
  *       2) send segment (dispatches game:send-command, plus game:movement-attempt for directionals)
  *       3) if segment is movement:
  *            waitForMovement(...) using game:movement-succeeded/failed
@@ -28,6 +28,7 @@
  *       4) flushInjected()  (may run injected encounter sequence)
  *   C) reset.endRound
  *   D) reset.wait
+ *   E) if loopRounds=true: set runState waiting + delay roundLoopTimeMs, then next round
  *
  * Encounter injection (async between any two actions/segments):
  * - on terminal-data: if lookName matches and not locked => inject __engage_target at front of queue, lock encounters
@@ -93,6 +94,18 @@ function warn(...args: any[]) {
   console.warn(ENG_LOG_PREFIX, ...args);
 }
 
+function normMatch(input: string): string {
+  return (
+    stripAnsi(String(input ?? ''))
+      .replace(/\r/g, '')
+      .toLowerCase()
+      // remove punctuation/symbols (keep letters/numbers/spaces)
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
+}
+
 /* ------------------------------------------------------------------------- */
 
 function stripAnsi(input: string): string {
@@ -120,8 +133,7 @@ function parseTrainingPath(path: string | null | undefined): string[] {
   const raw = String(path ?? '');
   if (!raw.trim()) return [];
   // preserve original segments (including empties)
-  const segs = raw.split(';').map((s) => s);
-  return segs;
+  return raw.split(';').map((s) => s);
 }
 
 const MOVE_DIRS = new Set(['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw', 'u', 'd', 'up', 'down']);
@@ -138,7 +150,10 @@ function applyInitiationTemplate(template: string, keyword: string): string {
   const k = String(keyword ?? '');
   const t = String(template ?? '');
   // Support {name} (preferred), plus some back-compat placeholders.
-  return t.replace(/\{name\}/g, k).replace(/\{target\}/g, k).replace(/\{keyword\}/g, k);
+  return t
+    .replace(/\{name\}/g, k)
+    .replace(/\{target\}/g, k)
+    .replace(/\{keyword\}/g, k);
 }
 
 function normCmd(cmd: string): string {
@@ -179,10 +194,7 @@ function normalizeDirToken(v: unknown): string | null {
 function extractEventMoveKey(detail: any): { cmd?: string; dir?: string; ts?: number; room?: any; reasonLine?: any } {
   const cmd = detail?.cmd != null ? normCmd(detail.cmd) : undefined;
 
-  const dir =
-    normalizeDirToken(detail?.dir) ??
-    normalizeDirToken(detail?.direction) ??
-    undefined;
+  const dir = normalizeDirToken(detail?.dir) ?? normalizeDirToken(detail?.direction) ?? undefined;
 
   const ts = typeof detail?.ts === 'number' ? detail.ts : undefined;
 
@@ -198,7 +210,6 @@ function extractEventMoveKey(detail: any): { cmd?: string; dir?: string; ts?: nu
 export class AutoLevelingEngine {
   private deps: EngineDeps;
 
-  private trainingPathSteps: string[] = [];
   private stopping = false;
   private paused = false;
 
@@ -259,7 +270,7 @@ export class AutoLevelingEngine {
   // cached targets for detection
   private targets: Array<{
     target: AutoLevelTarget;
-    lookNameNorm: string;
+    lookNameNorm: string; // normalized with normLine(...)
   }> = [];
 
   private boundOnTerminalData = (ev: Event) => {
@@ -401,7 +412,6 @@ export class AutoLevelingEngine {
     try {
       dbg('bind()');
       window.addEventListener('game:terminal-data', this.boundOnTerminalData as EventListener);
-
       window.addEventListener('game:movement-succeeded', this.boundOnMovementSucceeded as EventListener);
       window.addEventListener('game:movement-failed', this.boundOnMovementFailed as EventListener);
 
@@ -437,6 +447,9 @@ export class AutoLevelingEngine {
     this.paused = false;
     this.deps.setRunState({ status: 'stopping' });
 
+    // release encounter lock so future runs aren't stuck if stop occurs mid-encounter
+    this.encounterLocked = false;
+
     this.rejectAllWaits(new Error('stopped'));
   }
 
@@ -455,85 +468,86 @@ export class AutoLevelingEngine {
   }
 
   async start(): Promise<void> {
-    // Fetch configuration
-    const cfg = this.deps.getConfig();
+    const cfg0 = this.deps.getConfig();
 
     dbg('start() called', {
-      enabled: cfg.enabled,
-      loopRounds: cfg.loopRounds,
-      idleTimeoutMs: cfg.idleTimeoutMs,
-      trainingPath: cfg.init.trainingPath,
-      initiationCommand: cfg.init.initiationCommand,
-      targetsCount: (cfg.init.targets ?? []).length,
+      enabled: cfg0.enabled,
+      loopRounds: cfg0.loopRounds,
+      idleTimeoutMs: cfg0.idleTimeoutMs,
+      trainingPath: cfg0.init.trainingPath,
+      initiationCommand: cfg0.init.initiationCommand,
+      targetsCount: (cfg0.init.targets ?? []).length,
     });
 
-    // Validate configuration and initiate state
-    if (!cfg.init?.trainingPath) {
+    if (!cfg0.enabled) {
+      this.deps.setRunState({ status: 'error', message: 'Auto leveling is disabled' });
+      return;
+    }
+
+    if (!cfg0.init?.trainingPath) {
       this.deps.setRunState({ status: 'error', message: 'Training path is undefined' });
       return;
     }
 
-    this.trainingPathSteps = cfg.init.trainingPath.split(';').filter((x) => x?.trim()?.length > 0);
-    if (this.trainingPathSteps.length === 0) {
+    const initialSegs = parseTrainingPath(cfg0.init.trainingPath);
+    if (initialSegs.length === 0) {
       this.deps.setRunState({ status: 'error', message: 'Training path step length is 0' });
       return;
     }
 
-    // Set flags
+    // reset runtime flags/state
     this.stopping = false;
     this.paused = false;
     this.injectedQueue = [];
     this.encounterLocked = false;
     this.lastEncounterMatch = null;
 
-    // Set allowed mobs
-    this.targets = (cfg.init.targets ?? [])
+    // normalize targets for detection
+    this.targets = (cfg0.init.targets ?? [])
       .map((t) => ({
         target: t,
-        lookNameNorm: t.lookName,
+        lookNameNorm: normMatch(t.lookName), // was normLine(...)
       }))
-      .filter((x) => x.lookNameNorm?.length > 0);
+      .filter((x) => x.lookNameNorm.length > 0);
 
     if (this.targets.length === 0) {
       dbg('Allowed mob length is 0, this will be a sightseeing tour');
     }
 
-    // Let the games begin
     let round = 1;
-    this.deps.setRunState({ status: 'running', round, step: 'start', actionIndex: 0 });
 
-    // Loop rounds forever, until the user asks for stop
     while (!this.stopping) {
+      const cfg = this.deps.getConfig();
+
       try {
-        this.deps.setRunState({ status: 'waiting' });
-        dbg('engine waiting for next round', {
-          roundDelay: cfg.roundLoopTimeMs,
-        });
+        // A) start triplet
+        this.deps.setRunState({ status: 'running', round, step: 'start', actionIndex: 0 });
+        await this.runTriplet(cfg.steps.start, 'start', round);
 
-        // For each step, process (queue semantics)
-        while (this.trainingPathSteps.length > 0) {
-          // remove step immediately
-          const step = this.trainingPathSteps.shift()!;
+        // B) training path segments
+        const segs = parseTrainingPath(cfg.init.trainingPath);
+        for (let segIndex = 0; segIndex < segs.length; segIndex++) {
+          if (this.stopping) break;
 
-          // If the user has requested that we pause or stop, wait until they release
-          try {
-            await this.waitWhilePausedOrStopped();
-          } catch (err: any) {
-            dbg('engine stopping from waitWhilePausedOrStopped', { roundDelay: cfg.roundLoopTimeMs });
-            this.deps.setRunState({ status: 'stopping' });
-            break;
-          }
+          await this.waitWhilePausedOrStopped();
 
-          // Execute the step
-          const mv = isMovementCommand(step);
-          const gate = mv.isMove ? this.waitForMovement(step, cfg.idleTimeoutMs) : null;
+          const segment = segs[segIndex] ?? '';
+          const mv = isMovementCommand(segment);
 
-          await this.sendCommand(step);
+          // move.pre + move.exec
+          await this.runActions(cfg.steps.move.pre, 'move.pre', round);
+          await this.runActions(cfg.steps.move.exec, 'move.exec', round);
+
+          // gate movement (if directional) before sending the segment
+          const gate = mv.isMove ? this.waitForMovement(segment, cfg.idleTimeoutMs) : null;
+
+          // send the segment itself
+          this.deps.setRunState({ status: 'running', round, step: 'move.segment', actionIndex: segIndex });
+          await this.sendCommand(segment);
 
           if (gate) {
             const res = await gate;
 
-            // "ok" means succeeded OR failed, as long as it's not a timeout.
             if (res.result === 'timeout') {
               this.deps.setRunState({ status: 'error', message: res.reasonLine });
               this.stopping = true;
@@ -547,23 +561,37 @@ export class AutoLevelingEngine {
             }
           }
 
-          // Between steps, always allow injected encounter work to run
-          // TODO :: DEBUG INJECTED COMMANDS
+          // move.post
+          await this.runActions(cfg.steps.move.post, 'move.post', round);
+
+          // identify triplet only after movement segments (as per design comment)
+          if (mv.isMove) {
+            await this.runTriplet(cfg.steps.identify, 'identify', round);
+          }
+
+          // always allow injected encounter work between segments
           await this.flushInjected(round);
         }
 
-        // The user doesn't wish to loop rounds, so don't
+        if (this.stopping) break;
+
+        // C) reset.endRound
+        await this.runActions(cfg.steps.reset.endRound, 'reset.endRound', round);
+
+        // D) reset.wait
+        await this.runActions(cfg.steps.reset.wait, 'reset.wait', round);
+
+        // E) loop control
         if (!cfg.loopRounds) {
           this.stopping = true;
           break;
         }
 
+        this.deps.setRunState({ status: 'waiting' });
+        dbg('engine waiting for next round', { roundDelay: cfg.roundLoopTimeMs });
         await this.delayMs(cfg.roundLoopTimeMs);
 
-        // Reset the round to run it back
-        this.trainingPathSteps = cfg.init.trainingPath.split(';').filter((x) => x?.trim()?.length > 0);
         round += 1;
-        this.deps.setRunState({ status: 'running', round, step: 'start', actionIndex: 0 });
       } catch (e: any) {
         const msg = String(e?.message ?? e ?? 'AutoLeveling error');
         warn('fatal error', msg);
@@ -674,7 +702,6 @@ export class AutoLevelingEngine {
     const cmd = normCmd(cmdRaw);
 
     // If a gate is already active, just wait for it to resolve.
-    // (No "pending" output; join the existing promise.)
     if (this.moveWait) {
       dbg('movement gate join (already pending)', { pendingCmd: this.moveWait.cmd, nextCmd: cmd });
       return this.moveWait.promise;
@@ -1022,7 +1049,6 @@ export class AutoLevelingEngine {
       // Wait for either:
       // - terminal says "They aren't here" (handled by onTerminalEngageHeuristics)
       // - isFighting becomes true (handled by setIsFighting)
-      // With a small GMCP grace (500ms) before concluding it didn't happen.
       const r = await this.waitForEngageOutcome(attemptTimeout, gmcpGraceMs);
 
       if (r.ok) {
@@ -1050,13 +1076,14 @@ export class AutoLevelingEngine {
 
     if (!this.targets || this.targets.length === 0) return;
 
-    const clean = normLine(textRaw);
+    const clean = normMatch(textRaw);
     if (!clean) return;
 
     for (let i = 0; i < this.targets.length; i++) {
       const t = this.targets[i];
       if (!t.lookNameNorm) continue;
 
+      // clean is normalized; lookNameNorm is normalized => reliable match
       if (clean.includes(t.lookNameNorm)) {
         this.lastEncounterMatch = { targetCleanName: t.target.cleanName, lookName: t.target.lookName, at: now() };
         dbg('encounter detected (lookName match)', this.lastEncounterMatch);
@@ -1086,18 +1113,10 @@ export class AutoLevelingEngine {
     if (this.injectedQueue.length > 0) dbg('flushInjected begin', { round, queueLen: this.injectedQueue.length });
 
     while (!this.stopping && this.injectedQueue.length > 0) {
-      // If the user has requested that we pause or stop, wait until they release
-      try {
-        await this.waitWhilePausedOrStopped();
-      } catch (err: any) {
-        dbg('engine stopping from waitWhilePausedOrStopped', { round });
-        this.deps.setRunState({ status: 'stopping' });
-        break;
-      }
+      await this.waitWhilePausedOrStopped();
 
       const a = this.injectedQueue.shift()!;
 
-      /* TODO : DEBUG
       if ((a as any).kind === '__engage_target') {
         const eng = a as Extract<InjectedEngineAction, { kind: '__engage_target' }>;
         dbg('flushInjected engage', { target: eng.target.cleanName });
@@ -1113,6 +1132,7 @@ export class AutoLevelingEngine {
         const cfg = this.deps.getConfig();
         await this.runTriplet(cfg.steps.fight, 'fight', round);
 
+        // Ensure combat has ended before releasing lock
         if (this.isFighting) {
           const gateTimeout = Math.max(1000, cfg.idleTimeoutMs || 30000);
           dbg('waiting for fighting=false to release encounter lock', { timeoutMs: gateTimeout });
@@ -1130,11 +1150,11 @@ export class AutoLevelingEngine {
         continue;
       }
 
+      // injected normal action
       const act = a as AutoLevelAction;
       this.deps.setRunState({ status: 'running', round, step: 'fight.injected', actionIndex: 0 });
       dbg('flushInjected normal action', { act });
       await this.execAction(act, round);
-      */
     }
 
     dbg('flushInjected end', { round });

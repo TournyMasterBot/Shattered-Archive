@@ -920,7 +920,6 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
                       setDraft((p) => ({ ...p, init: { ...p.init, trainingPath: e.target.value || null } }));
                     }}
                     placeholder={loadingTrainingPaths ? 'Loading…' : 'n;n;n;w;w'}
-                    disabled={!draft.init.areaId || loadingTrainingPaths}
                   />
                   <datalist id="autoleveling-training-paths">
                     {trainingPaths.map((p, i) => (

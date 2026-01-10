@@ -56,7 +56,7 @@ function toLines(text: string): string[] {
 export function parseActionsFromEditor(text: string): AutoLevelAction[] {
   const lines = toLines(text);
 
-  adbg('parseActionsFromEditor', { lines: lines.length });
+  //adbg('parseActionsFromEditor', { lines: lines.length });
 
   const out: AutoLevelAction[] = [];
   for (const raw of lines) {
@@ -109,7 +109,7 @@ export function parseActionsFromEditor(text: string): AutoLevelAction[] {
     out.push({ kind: 'send', cmd: line });
   }
 
-  adbg('parseActionsFromEditor done', { actions: out.length });
+  //adbg('parseActionsFromEditor done', { actions: out.length });
   return out;
 }
 
