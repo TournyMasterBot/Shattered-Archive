@@ -10,6 +10,7 @@ export const ROUTED_WINDOW_EVENTS: string[] = [
   'event:wield:secondary',
   'event:gear:wear',
   'event:gear:remove',
+  'event:flee',
   // Raw GMCP events emitted from the game
   'game:tick',
   'game:char-data',

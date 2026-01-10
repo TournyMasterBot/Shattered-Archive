@@ -129,13 +129,6 @@ function dispatchSafe(name: string, detail?: any) {
   }
 }
 
-function parseTrainingPath(path: string | null | undefined): string[] {
-  const raw = String(path ?? '');
-  if (!raw.trim()) return [];
-  // preserve original segments (including empties)
-  return raw.split(';').map((s) => s);
-}
-
 const MOVE_DIRS = new Set(['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw', 'u', 'd', 'up', 'down']);
 
 function isMovementCommand(cmd: string): { isMove: boolean; dir?: string } {
@@ -150,10 +143,7 @@ function applyInitiationTemplate(template: string, keyword: string): string {
   const k = String(keyword ?? '');
   const t = String(template ?? '');
   // Support {name} (preferred), plus some back-compat placeholders.
-  return t
-    .replace(/\{name\}/g, k)
-    .replace(/\{target\}/g, k)
-    .replace(/\{keyword\}/g, k);
+  return t.replace(/\{name\}/g, k).replace(/\{target\}/g, k).replace(/\{keyword\}/g, k);
 }
 
 function normCmd(cmd: string): string {
@@ -209,6 +199,8 @@ function extractEventMoveKey(detail: any): { cmd?: string; dir?: string; ts?: nu
 
 export class AutoLevelingEngine {
   private deps: EngineDeps;
+
+  private trainingPathSteps: string[] = [];
 
   private stopping = false;
   private paused = false;
@@ -270,10 +262,13 @@ export class AutoLevelingEngine {
   // cached targets for detection
   private targets: Array<{
     target: AutoLevelTarget;
-    lookNameNorm: string; // normalized with normLine(...)
+    lookNameNorm: string; // normalized with normMatch(...)
   }> = [];
 
   private boundOnTerminalData = (ev: Event) => {
+    if(this.stopping || this.paused) {
+      return;
+    }
     const ce = ev as CustomEvent<any>;
     const textRaw = ce?.detail?.text;
     if (textRaw === undefined || textRaw === null) return;
@@ -382,7 +377,18 @@ export class AutoLevelingEngine {
     });
   };
 
+  private boundOnFlee = (ev: Event) => {
+    if (this.stopping || this.paused) return;
+
+    const ce = ev as CustomEvent<any>;
+    dbg('game:flee observed -> pausing engine', { detail: ce?.detail });
+    this.pause();    
+  };
+
   private boundOnCharDataFighting = (ev: Event) => {
+    if(this.stopping || this.paused) {
+      return;
+    }
     const ce = ev as CustomEvent<any>;
     const d = ce?.detail;
 
@@ -411,14 +417,17 @@ export class AutoLevelingEngine {
   bind() {
     try {
       dbg('bind()');
+      // Global terminal data
       window.addEventListener('game:terminal-data', this.boundOnTerminalData as EventListener);
-      window.addEventListener('game:movement-succeeded', this.boundOnMovementSucceeded as EventListener);
-      window.addEventListener('game:movement-failed', this.boundOnMovementFailed as EventListener);
-
       // GMCP-derived combat state (authoritative)
       window.addEventListener('game:char-data', this.boundOnCharDataFighting as EventListener);
       window.addEventListener('game:gmcp-char-data', this.boundOnCharDataFighting as EventListener);
       window.addEventListener('gmcp:char_data', this.boundOnCharDataFighting as EventListener);
+
+      // Custom events to help power the engine
+      window.addEventListener('game:movement-succeeded', this.boundOnMovementSucceeded as EventListener);
+      window.addEventListener('game:movement-failed', this.boundOnMovementFailed as EventListener);
+      window.addEventListener('game:flee', this.boundOnFlee as EventListener);
     } catch (e) {
       warn('bind failed (ignored)', e);
     }
@@ -429,13 +438,12 @@ export class AutoLevelingEngine {
       dbg('unbind()');
 
       window.removeEventListener('game:terminal-data', this.boundOnTerminalData as EventListener);
-
-      window.removeEventListener('game:movement-succeeded', this.boundOnMovementSucceeded as EventListener);
-      window.removeEventListener('game:movement-failed', this.boundOnMovementFailed as EventListener);
-
       window.removeEventListener('game:char-data', this.boundOnCharDataFighting as EventListener);
       window.removeEventListener('game:gmcp-char-data', this.boundOnCharDataFighting as EventListener);
       window.removeEventListener('gmcp:char_data', this.boundOnCharDataFighting as EventListener);
+      window.removeEventListener('game:movement-succeeded', this.boundOnMovementSucceeded as EventListener);
+      window.removeEventListener('game:movement-failed', this.boundOnMovementFailed as EventListener);
+      window.removeEventListener('game:flee', this.boundOnFlee as EventListener);
     } catch (e) {
       warn('unbind failed (ignored)', e);
     }
@@ -458,6 +466,7 @@ export class AutoLevelingEngine {
     if (this.paused) return;
     dbg('pause()');
     this.paused = true;
+    this.deps.setRunState({ status: 'paused' } as any);
   }
 
   resume() {
@@ -468,29 +477,31 @@ export class AutoLevelingEngine {
   }
 
   async start(): Promise<void> {
-    const cfg0 = this.deps.getConfig();
+    // ✅ single consistent cfg
+    const cfg = this.deps.getConfig();
 
     dbg('start() called', {
-      enabled: cfg0.enabled,
-      loopRounds: cfg0.loopRounds,
-      idleTimeoutMs: cfg0.idleTimeoutMs,
-      trainingPath: cfg0.init.trainingPath,
-      initiationCommand: cfg0.init.initiationCommand,
-      targetsCount: (cfg0.init.targets ?? []).length,
+      enabled: cfg.enabled,
+      loopRounds: cfg.loopRounds,
+      idleTimeoutMs: cfg.idleTimeoutMs,
+      trainingPath: cfg.init.trainingPath,
+      initiationCommand: cfg.init.initiationCommand,
+      targetsCount: (cfg.init.targets ?? []).length,
     });
 
-    if (!cfg0.enabled) {
+    if (!cfg.enabled) {
       this.deps.setRunState({ status: 'error', message: 'Auto leveling is disabled' });
       return;
     }
 
-    if (!cfg0.init?.trainingPath) {
+    if (!cfg.init?.trainingPath) {
       this.deps.setRunState({ status: 'error', message: 'Training path is undefined' });
       return;
     }
 
-    const initialSegs = parseTrainingPath(cfg0.init.trainingPath);
-    if (initialSegs.length === 0) {
+    // ✅ restored original queue init (filtering empties)
+    this.trainingPathSteps = cfg.init.trainingPath.split(';').filter((x) => x?.trim()?.length > 0);
+    if (this.trainingPathSteps.length === 0) {
       this.deps.setRunState({ status: 'error', message: 'Training path step length is 0' });
       return;
     }
@@ -503,10 +514,10 @@ export class AutoLevelingEngine {
     this.lastEncounterMatch = null;
 
     // normalize targets for detection
-    this.targets = (cfg0.init.targets ?? [])
+    this.targets = (cfg.init.targets ?? [])
       .map((t) => ({
         target: t,
-        lookNameNorm: normMatch(t.lookName), // was normLine(...)
+        lookNameNorm: normMatch(t.lookName),
       }))
       .filter((x) => x.lookNameNorm.length > 0);
 
@@ -514,36 +525,33 @@ export class AutoLevelingEngine {
       dbg('Allowed mob length is 0, this will be a sightseeing tour');
     }
 
+    // Let the games begin
     let round = 1;
+    this.deps.setRunState({ status: 'running', round, step: 'start', actionIndex: 0 });
 
     while (!this.stopping) {
-      const cfg = this.deps.getConfig();
-
       try {
-        // A) start triplet
-        this.deps.setRunState({ status: 'running', round, step: 'start', actionIndex: 0 });
-        await this.runTriplet(cfg.steps.start, 'start', round);
+        this.deps.setRunState({ status: 'waiting' });
+        dbg('engine waiting for next round', {
+          roundDelay: cfg.roundLoopTimeMs,
+        });
 
-        // B) training path segments
-        const segs = parseTrainingPath(cfg.init.trainingPath);
-        for (let segIndex = 0; segIndex < segs.length; segIndex++) {
-          if (this.stopping) break;
+        // ✅ restored original queue loop
+        while (this.trainingPathSteps.length > 0) {
+          const step = this.trainingPathSteps.shift()!;
 
-          await this.waitWhilePausedOrStopped();
+          try {
+            await this.waitWhilePausedOrStopped();
+          } catch (err: any) {
+            dbg('engine stopping from waitWhilePausedOrStopped', { roundDelay: cfg.roundLoopTimeMs });
+            this.deps.setRunState({ status: 'stopping' });
+            break;
+          }
 
-          const segment = segs[segIndex] ?? '';
-          const mv = isMovementCommand(segment);
+          const mv = isMovementCommand(step);
+          const gate = mv.isMove ? this.waitForMovement(step, cfg.idleTimeoutMs) : null;
 
-          // move.pre + move.exec
-          await this.runActions(cfg.steps.move.pre, 'move.pre', round);
-          await this.runActions(cfg.steps.move.exec, 'move.exec', round);
-
-          // gate movement (if directional) before sending the segment
-          const gate = mv.isMove ? this.waitForMovement(segment, cfg.idleTimeoutMs) : null;
-
-          // send the segment itself
-          this.deps.setRunState({ status: 'running', round, step: 'move.segment', actionIndex: segIndex });
-          await this.sendCommand(segment);
+          await this.sendCommand(step);
 
           if (gate) {
             const res = await gate;
@@ -561,37 +569,20 @@ export class AutoLevelingEngine {
             }
           }
 
-          // move.post
-          await this.runActions(cfg.steps.move.post, 'move.post', round);
-
-          // identify triplet only after movement segments (as per design comment)
-          if (mv.isMove) {
-            await this.runTriplet(cfg.steps.identify, 'identify', round);
-          }
-
-          // always allow injected encounter work between segments
           await this.flushInjected(round);
         }
 
-        if (this.stopping) break;
-
-        // C) reset.endRound
-        await this.runActions(cfg.steps.reset.endRound, 'reset.endRound', round);
-
-        // D) reset.wait
-        await this.runActions(cfg.steps.reset.wait, 'reset.wait', round);
-
-        // E) loop control
         if (!cfg.loopRounds) {
           this.stopping = true;
           break;
         }
 
-        this.deps.setRunState({ status: 'waiting' });
-        dbg('engine waiting for next round', { roundDelay: cfg.roundLoopTimeMs });
         await this.delayMs(cfg.roundLoopTimeMs);
 
+        // ✅ restored original repopulate
+        this.trainingPathSteps = cfg.init.trainingPath.split(';').filter((x) => x?.trim()?.length > 0);
         round += 1;
+        this.deps.setRunState({ status: 'running', round, step: 'start', actionIndex: 0 });
       } catch (e: any) {
         const msg = String(e?.message ?? e ?? 'AutoLeveling error');
         warn('fatal error', msg);
@@ -1083,7 +1074,6 @@ export class AutoLevelingEngine {
       const t = this.targets[i];
       if (!t.lookNameNorm) continue;
 
-      // clean is normalized; lookNameNorm is normalized => reliable match
       if (clean.includes(t.lookNameNorm)) {
         this.lastEncounterMatch = { targetCleanName: t.target.cleanName, lookName: t.target.lookName, at: now() };
         dbg('encounter detected (lookName match)', this.lastEncounterMatch);
@@ -1150,7 +1140,6 @@ export class AutoLevelingEngine {
         continue;
       }
 
-      // injected normal action
       const act = a as AutoLevelAction;
       this.deps.setRunState({ status: 'running', round, step: 'fight.injected', actionIndex: 0 });
       dbg('flushInjected normal action', { act });
