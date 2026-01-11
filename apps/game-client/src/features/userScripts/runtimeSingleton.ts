@@ -97,10 +97,18 @@ function hydrateRuntime(connectionId?: string | null) {
     if (!text) return;
     const lines = splitIntoLines(text);
     for (const line of lines) {
+      userScriptRuntime.dispatchEvent({ name: 'text:line', payload: { text: line } });
       if (line === 'You flee from combat!') {
         try {
           userScriptRuntime.dispatchEvent({ name: 'event:flee', payload: { text: line } });
           window.dispatchEvent(new CustomEvent('game:flee', { detail: line }));
+        } catch {
+          // ignore
+        }
+      } else if (line.includes('is DEAD!!')) {
+        try {
+          userScriptRuntime.dispatchEvent({ name: 'event:creature-death', payload: { text: line } });
+          window.dispatchEvent(new CustomEvent('game:creature-death', { detail: line }));
         } catch {
           // ignore
         }

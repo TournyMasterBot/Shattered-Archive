@@ -1,3 +1,4 @@
+// apps\game-client\src\hooks\useUserScriptSandbox.ts
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   AnyUserScript,
@@ -15,7 +16,7 @@ const STORAGE_KEY_PREFIX = 'shatteredArchive.userScripts.';
 
 type TimerMap = Record<string, number>;
 
-function getStorageKey(connectionId?: string | null) {
+export function getUserScriptStorageKey(connectionId?: string | null) {
   const safe = connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
   return `${STORAGE_KEY_PREFIX}${safe}`;
 }
@@ -304,7 +305,7 @@ export function useUserScriptSandbox(connectionId?: string | null) {
       return;
     }
 
-    const key = getStorageKey(connectionId);
+    const key = getUserScriptStorageKey(connectionId);
 
     try {
       const raw = window.localStorage.getItem(key);
@@ -327,7 +328,7 @@ export function useUserScriptSandbox(connectionId?: string | null) {
     if (!scripts) return;
     if (typeof window === 'undefined') return;
 
-    const key = getStorageKey(connectionId);
+    const key = getUserScriptStorageKey(connectionId);
 
     try {
       window.localStorage.setItem(key, JSON.stringify(scripts));
@@ -481,6 +482,43 @@ export function useUserScriptSandbox(connectionId?: string | null) {
     [pushError, connectionId],
   );
 
+  // Import/Export helpers (used by UI)
+  const replaceAllScripts = useCallback((nextScripts: AnyUserScript[]) => {
+    setScripts(() => [...(nextScripts ?? [])]);
+  }, []);
+
+  const mergeScripts = useCallback((incoming: AnyUserScript[]) => {
+    let imported = 0;
+    let skipped = 0;
+
+    setScripts((prev) => {
+      const base = prev ? [...prev] : [];
+      const byId = new Map<string, number>();
+      base.forEach((s, idx) => byId.set(s.id, idx));
+
+      for (const s of incoming ?? []) {
+        if (!s || typeof s.id !== 'string' || s.id.trim().length === 0) {
+          skipped++;
+          continue;
+        }
+
+        const idx = byId.get(s.id);
+        if (idx == null) {
+          base.push(s);
+          byId.set(s.id, base.length - 1);
+          imported++;
+        } else {
+          base[idx] = s;
+          imported++;
+        }
+      }
+
+      return base;
+    });
+
+    return { imported, skipped };
+  }, []);
+
   const safeScripts = scripts ?? [];
 
   return {
@@ -494,5 +532,7 @@ export function useUserScriptSandbox(connectionId?: string | null) {
     removeScript,
     setScriptEnabled,
     runScriptNow,
+    mergeScripts,
+    replaceAllScripts,
   };
 }

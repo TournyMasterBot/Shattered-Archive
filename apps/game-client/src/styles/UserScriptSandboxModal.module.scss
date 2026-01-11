@@ -48,6 +48,29 @@
   font-weight: 600;
 }
 
+.headerButtons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  margin-right: 8px;
+}
+
+.headerActionButton {
+  border: none;
+  background: #2a2a2a;
+  color: #ddd;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+
+  &:hover {
+    background: #3a3a3a;
+    color: #fff;
+  }
+}
+
 .closeButton {
   border: none;
   background: transparent;
@@ -517,6 +540,10 @@
     flex-wrap: wrap;
     align-items: flex-start;
   }
+
+  .headerButtons {
+    display: none;
+  }
 }
 
 @media (max-width: 540px) {
@@ -535,4 +562,348 @@
   .editorPane {
     max-height: 65%;
   }
+}
+
+/* ---------------- Import/Export Modal ---------------- */
+
+.ieBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 6000;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ieModal {
+  width: 920px;
+  max-width: 96vw;
+  height: 640px;
+  max-height: 92vh;
+
+  background: #0f0f0f;
+  border: 1px solid #333;
+  border-radius: 6px;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.9);
+}
+
+.ieHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 8px 12px;
+  background: #181818;
+  border-bottom: 1px solid #333;
+}
+
+.ieTitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #e6e6e6;
+}
+
+.ieCloseButton {
+  border: none;
+  background: transparent;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 2px 6px;
+
+  &:hover {
+    color: #fff;
+    background: #333;
+    border-radius: 3px;
+  }
+}
+
+.ieBody {
+  flex: 1;
+  min-height: 0;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ieHintRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ieHint {
+  font-size: 0.75rem;
+  color: #bbb;
+}
+
+.ieMono {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.72rem;
+  color: #ddd;
+}
+
+.ieControlsRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ieSearch {
+  flex: 1;
+  min-width: 240px;
+  background: #131313;
+  border: 1px solid #333;
+  border-radius: 3px;
+  padding: 6px 8px;
+  color: #e0e0e0;
+  font-size: 0.75rem;
+  outline: none;
+
+  &:focus {
+    border-color: #4a7ad8;
+  }
+}
+
+.ieKindToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #ccc;
+
+  input {
+    margin: 0;
+  }
+}
+
+.ieSmallButton {
+  border: none;
+  background: #2a2a2a;
+  color: #ddd;
+  font-size: 0.75rem;
+  padding: 5px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+
+  &:hover {
+    background: #3a3a3a;
+    color: #fff;
+  }
+}
+
+.ieList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  border: 1px solid #333;
+  border-radius: 4px;
+  background: #0b0b0b;
+}
+
+.ieRow {
+  display: flex;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #1f1f1f;
+  cursor: pointer;
+
+  &:hover {
+    background: #141414;
+  }
+
+  input {
+    margin-top: 3px;
+  }
+}
+
+.ieRowMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.ieRowTitle {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.ieRowName {
+  color: #e8e8e8;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.ieRowKind {
+  font-size: 0.7rem;
+  color: #aaa;
+  border: 1px solid #333;
+  background: #151515;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.ieRowDisabled {
+  font-size: 0.7rem;
+  color: #999;
+}
+
+.ieRowSub {
+  margin-top: 3px;
+  color: #bdbdbd;
+  font-size: 0.72rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ieEmpty {
+  padding: 12px;
+  color: #888;
+  font-size: 0.8rem;
+}
+
+.ieFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ieFooterLeft {
+  color: #bbb;
+  font-size: 0.75rem;
+}
+
+.iePrimaryButton {
+  border: none;
+  background: #2b4a2b;
+  color: #d6f5d6;
+  font-size: 0.78rem;
+  padding: 7px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover:not([disabled]) {
+    background: #356335;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.ieImportRow {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+}
+
+.ieImportCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ieSectionTitle {
+  font-size: 0.75rem;
+  color: #ccc;
+  margin-bottom: 4px;
+}
+
+.ieTextarea {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  resize: none;
+  border-radius: 4px;
+  border: 1px solid #333;
+  background: #050505;
+  color: #e0e0e0;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.72rem;
+  padding: 8px;
+  outline: none;
+
+  &:focus {
+    border-color: #4a7ad8;
+  }
+}
+
+.ieFileInput {
+  font-size: 0.75rem;
+  color: #ccc;
+}
+
+.ieRadioRow {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  color: #ddd;
+  font-size: 0.75rem;
+
+  input {
+    margin: 0;
+  }
+}
+
+.ieParseInfo {
+  margin-top: 10px;
+  font-size: 0.75rem;
+  color: #bbb;
+}
+
+.ieItemsBox {
+  margin-top: 8px;
+  border: 1px solid #333;
+  border-radius: 4px;
+  background: #0b0b0b;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.ieItemRow {
+  display: flex;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #1f1f1f;
+
+  input {
+    margin-top: 3px;
+  }
+}
+
+.ieItemText {
+  min-width: 0;
+  flex: 1;
+}
+
+.ieItemSub {
+  color: #aaa;
+  font-size: 0.72rem;
+  margin-top: 2px;
+}
+
+.ieErrorText {
+  color: #f0a0a0;
+}
+
+.ieResultText {
+  margin-top: 10px;
+  color: #d6f5d6;
+}
+
+.ieMuted {
+  color: #888;
+  font-size: 0.75rem;
 }
