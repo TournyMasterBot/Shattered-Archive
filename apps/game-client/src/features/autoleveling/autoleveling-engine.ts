@@ -143,7 +143,10 @@ function applyInitiationTemplate(template: string, keyword: string): string {
   const k = String(keyword ?? '');
   const t = String(template ?? '');
   // Support {name} (preferred), plus some back-compat placeholders.
-  return t.replace(/\{name\}/g, k).replace(/\{target\}/g, k).replace(/\{keyword\}/g, k);
+  return t
+    .replace(/\{name\}/g, k)
+    .replace(/\{target\}/g, k)
+    .replace(/\{keyword\}/g, k);
 }
 
 function normCmd(cmd: string): string {
@@ -266,7 +269,7 @@ export class AutoLevelingEngine {
   }> = [];
 
   private boundOnTerminalData = (ev: Event) => {
-    if(this.stopping || this.paused) {
+    if (this.stopping || this.paused) {
       return;
     }
     const ce = ev as CustomEvent<any>;
@@ -382,11 +385,11 @@ export class AutoLevelingEngine {
 
     const ce = ev as CustomEvent<any>;
     dbg('game:flee observed -> pausing engine', { detail: ce?.detail });
-    this.pause();    
+    this.pause();
   };
 
   private boundOnCharDataFighting = (ev: Event) => {
-    if(this.stopping || this.paused) {
+    if (this.stopping || this.paused) {
       return;
     }
     const ce = ev as CustomEvent<any>;

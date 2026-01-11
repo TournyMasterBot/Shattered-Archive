@@ -10,6 +10,8 @@ import {
 } from '../features/userScripts/types';
 import styles from '../styles/UserScriptSandboxModal.module.scss';
 import { ROUTED_WINDOW_EVENTS } from '../features/plugins/routed-gmcp-events';
+import { useGlobalScripts } from '../hooks/useGlobalScripts';
+import { useUserVariables } from '../hooks/useUserVariables';
 
 interface UserScriptSandboxModalProps {
   isOpen: boolean;
@@ -141,7 +143,10 @@ function tryParseExportFile(text: string): { ok: true; file: ExportFileV1 } | { 
         key: it.key,
         format: 'json',
         kind: 'userScripts',
-        selection: isObject(it.selection) && Array.isArray((it.selection as any).ids) ? { ids: (it.selection as any).ids } : undefined,
+        selection:
+          isObject(it.selection) && Array.isArray((it.selection as any).ids)
+            ? { ids: (it.selection as any).ids }
+            : undefined,
         strategyHint: it.strategyHint === 'mergeById' ? 'mergeById' : undefined,
         value: validScripts,
       });
@@ -169,7 +174,14 @@ type ImportExportModalProps = {
   onImport: (incoming: AnyUserScript[], mode: ImportMode) => { imported: number; skipped: number };
 };
 
-const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, mode, onClose, connectionId, scripts, onImport }) => {
+const ImportExportModal: React.FC<ImportExportModalProps> = ({
+  isOpen,
+  mode,
+  onClose,
+  connectionId,
+  scripts,
+  onImport,
+}) => {
   const storageKey = useMemo(() => getUserScriptStorageKey(connectionId), [connectionId]);
 
   // Export selection
@@ -196,7 +208,7 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, mode, onC
       .filter((s) => exportKindFilter[s.kind])
       .filter((s) => {
         if (!q) return true;
-        const hay = `${s.name} ${s.kind} ${s.id} ${(s.kind === 'alias' ? (s as AliasScript).alias : '')}`.toLowerCase();
+        const hay = `${s.name} ${s.kind} ${s.id} ${s.kind === 'alias' ? (s as AliasScript).alias : ''}`.toLowerCase();
         return hay.includes(q);
       })
       .slice()
@@ -307,7 +319,10 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, mode, onC
 
     const incoming = matching.flatMap((it) => it.value).filter(isValidUserScript);
 
-    const skipped = matching.reduce((acc, it) => acc + (it.value.length - it.value.filter(isValidUserScript).length), 0);
+    const skipped = matching.reduce(
+      (acc, it) => acc + (it.value.length - it.value.filter(isValidUserScript).length),
+      0,
+    );
 
     const res = onImport(incoming, importMode);
     setImportResult({ imported: res.imported, skipped: res.skipped + skipped });
@@ -379,7 +394,11 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, mode, onC
             <div className={styles.ieList}>
               {filteredScripts.map((s) => (
                 <label key={s.id} className={styles.ieRow}>
-                  <input type="checkbox" checked={!!selectedIds[s.id]} onChange={(e) => toggleOne(s.id, e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    checked={!!selectedIds[s.id]}
+                    onChange={(e) => toggleOne(s.id, e.target.checked)}
+                  />
                   <div className={styles.ieRowMain}>
                     <div className={styles.ieRowTitle}>
                       <span className={styles.ieRowName}>{s.name}</span>
@@ -465,7 +484,12 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, mode, onC
                   Import mode
                 </div>
                 <label className={styles.ieRadioRow}>
-                  <input type="radio" name="importMode" checked={importMode === 'merge'} onChange={() => setImportMode('merge')} />
+                  <input
+                    type="radio"
+                    name="importMode"
+                    checked={importMode === 'merge'}
+                    onChange={() => setImportMode('merge')}
+                  />
                   <span>Merge (by id)</span>
                 </label>
                 <label className={styles.ieRadioRow}>
@@ -556,7 +580,11 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
     replaceAllScripts,
   } = useUserScriptSandbox(connectionId);
 
-  const [activeTab, setActiveTab] = useState<'triggers' | 'aliases' | 'timers'>('triggers');
+  // NEW: globals + named variables (for "{NAME}" templates)
+  const globalMgr = useGlobalScripts(connectionId);
+  const namedVars = useUserVariables(connectionId);
+
+  const [activeTab, setActiveTab] = useState<'triggers' | 'aliases' | 'timers' | 'globals' | 'variables'>('triggers');
 
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
   const [editorName, setEditorName] = useState<string>('');
@@ -588,6 +616,16 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
   const [modalWidth, setModalWidth] = useState<number>(900);
   const [modalHeight, setModalHeight] = useState<number>(600);
 
+  // NEW: Globals tab UI state
+  const [globalLanguage, setGlobalLanguage] = useState<'javascript' | 'lua' | 'python' | 'typescript'>('javascript');
+  const [globalDraft, setGlobalDraft] = useState<string>('');
+  const [globalVarKey, setGlobalVarKey] = useState<string>('');
+  const [globalVarValue, setGlobalVarValue] = useState<string>('');
+
+  // NEW: Variables tab UI state
+  const [namedVarKey, setNamedVarKey] = useState<string>('');
+  const [namedVarValue, setNamedVarValue] = useState<string>('');
+
   // Track viewport size
   useEffect(() => {
     const handleResize = () => {
@@ -613,6 +651,13 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       setTimerIntervalSeconds('');
       setIeOpen(false);
       setIeMode('export');
+
+      setGlobalLanguage('javascript');
+      setGlobalDraft('');
+      setGlobalVarKey('');
+      setGlobalVarValue('');
+      setNamedVarKey('');
+      setNamedVarValue('');
     }
   }, [isOpen]);
 
@@ -629,6 +674,12 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
     setAliasKey('');
     setTimerIntervalSeconds('');
   }, [activeTab]);
+
+  // Keep global draft synced to chosen language (only when switching language)
+  useEffect(() => {
+    const src = globalMgr.sources?.[globalLanguage] ?? '';
+    setGlobalDraft(src);
+  }, [globalLanguage, globalMgr.sources]);
 
   // ------------- Derived values -------------
 
@@ -672,6 +723,8 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
           triggerOmitFromOutput !== baseTriggerOmitFromOutput)) ||
       (selectedScript.kind === 'timer' && timerIntervalSeconds !== baseTimerIntervalSeconds) ||
       (selectedScript.kind === 'alias' && aliasKey !== baseAliasKey));
+
+  const hasGlobalDraftChanges = (globalMgr.sources?.[globalLanguage] ?? '') !== (globalDraft ?? '');
 
   if (!isOpen) {
     return null;
@@ -742,7 +795,7 @@ look`,
       });
       handleSelectScript(s);
       setActiveTab('aliases');
-    } else {
+    } else if (activeTab === 'timers') {
       const s = createTimer({
         name: 'New Timer',
         enabled: false,
@@ -927,6 +980,216 @@ look`,
     return { imported: res.imported, skipped: res.skipped + skipped };
   };
 
+  const renderGlobalsTab = () => {
+    const varsEntries = Object.entries(globalMgr.vars ?? {}).sort(([a], [b]) => a.localeCompare(b));
+
+    return (
+      <div className={styles.body} style={{ flexDirection: 'column' }}>
+        <div className={styles.editorPane} style={{ borderRight: 'none' as any }}>
+          <div className={styles.editorHeader}>
+            <div className={styles.title} style={{ marginRight: 10 }}>
+              Global Scripts
+            </div>
+
+            <label className={styles.languageLabel}>
+              <select
+                className={styles.languageSelect}
+                value={globalLanguage}
+                onChange={(e) => setGlobalLanguage(e.target.value as any)}
+              >
+                <option value="javascript">JavaScript</option>
+                <option value="typescript">TypeScript</option>
+                <option value="lua">Lua</option>
+                <option value="python">Python</option>
+              </select>
+            </label>
+
+            {hasGlobalDraftChanges && <span className={styles.draftIndicator}>Unsaved changes</span>}
+
+            <button
+              type="button"
+              className={styles.saveButton}
+              onClick={() => globalMgr.saveSource(globalLanguage, globalDraft)}
+              disabled={!hasGlobalDraftChanges}
+            >
+              Save
+            </button>
+          </div>
+
+          <div className={styles.ieMuted} style={{ marginBottom: 8 }}>
+            Call a function from any script using:{' '}
+            <span className={styles.ieMono}>{`global.${globalLanguage}.myFunction`}</span>
+            <br />
+            For Lua/Python, dotted names map to underscores. Example:{' '}
+            <span className={styles.ieMono}>global.lua.foo.bar</span> →{' '}
+            <span className={styles.ieMono}>foo_bar(argsJson)</span>
+          </div>
+
+          <textarea
+            className={styles.editorTextarea}
+            value={globalDraft}
+            onChange={(e) => setGlobalDraft(e.target.value)}
+            spellCheck={false}
+          />
+
+          <div className={styles.ieMuted} style={{ marginTop: 10 }}>
+            Global Variables (persisted, cached in memory)
+          </div>
+
+          <div className={styles.triggerConfigRow} style={{ marginTop: 6 }}>
+            <label className={styles.configLabel}>
+              Key
+              <input
+                type="text"
+                className={styles.configInput}
+                value={globalVarKey}
+                onChange={(e) => setGlobalVarKey(e.target.value)}
+                placeholder="e.g. lastTarget"
+              />
+            </label>
+
+            <label className={styles.configLabel} style={{ flex: 1 }}>
+              Value (string or JSON)
+              <input
+                type="text"
+                className={styles.configInput}
+                value={globalVarValue}
+                onChange={(e) => setGlobalVarValue(e.target.value)}
+                placeholder='e.g. "orc" or {"hp":12}'
+              />
+            </label>
+
+            <button
+              type="button"
+              className={styles.saveButton}
+              onClick={() => {
+                const k = globalVarKey.trim();
+                if (!k) return;
+
+                // Store JSON when valid, otherwise store raw string
+                let v: any = globalVarValue;
+                try {
+                  v = JSON.parse(globalVarValue);
+                } catch {
+                  // keep string
+                }
+
+                globalMgr.setVar(k, v);
+                setGlobalVarKey('');
+                setGlobalVarValue('');
+              }}
+            >
+              Set
+            </button>
+          </div>
+
+          <div className={styles.ieItemsBox} style={{ marginTop: 8, maxHeight: 220 }}>
+            {varsEntries.length === 0 ? (
+              <div className={styles.ieEmpty}>No global variables yet.</div>
+            ) : (
+              varsEntries.map(([k, v]) => (
+                <div key={k} className={styles.ieItemRow}>
+                  <div className={styles.ieItemText}>
+                    <div className={styles.ieMono}>{k}</div>
+                    <div className={styles.ieItemSub}>{typeof v === 'string' ? v : JSON.stringify(v)}</div>
+                  </div>
+                  <button type="button" className={styles.ieSmallButton} onClick={() => globalMgr.removeVar(k)}>
+                    Delete
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderVariablesTab = () => {
+    const entries = Object.entries(namedVars.vars ?? {}).sort(([a], [b]) => a.localeCompare(b));
+
+    return (
+      <div className={styles.body} style={{ flexDirection: 'column' }}>
+        <div className={styles.editorPane} style={{ borderRight: 'none' as any }}>
+          <div className={styles.editorHeader}>
+            <div className={styles.title} style={{ marginRight: 10 }}>
+              Named Variables
+            </div>
+          </div>
+
+          <div className={styles.ieMuted} style={{ marginBottom: 8 }}>
+            Use variables in trigger match text and alias commands with:
+            <br />
+            <span className={styles.ieMono}>{'{VARIABLE}'}</span>
+          </div>
+
+          <div className={styles.triggerConfigRow}>
+            <label className={styles.configLabel}>
+              Name
+              <input
+                type="text"
+                className={styles.configInput}
+                value={namedVarKey}
+                onChange={(e) => setNamedVarKey(e.target.value)}
+                placeholder="e.g. TARGET"
+              />
+            </label>
+
+            <label className={styles.configLabel} style={{ flex: 1 }}>
+              Value
+              <input
+                type="text"
+                className={styles.configInput}
+                value={namedVarValue}
+                onChange={(e) => setNamedVarValue(e.target.value)}
+                placeholder="e.g. orc guard"
+              />
+            </label>
+
+            <button
+              type="button"
+              className={styles.saveButton}
+              onClick={() => {
+                const k = namedVarKey.trim();
+                if (!k) return;
+                namedVars.setVar(k, namedVarValue ?? '');
+                setNamedVarKey('');
+                setNamedVarValue('');
+              }}
+            >
+              Save
+            </button>
+          </div>
+
+          <div className={styles.ieItemsBox} style={{ marginTop: 8, maxHeight: 320 }}>
+            {entries.length === 0 ? (
+              <div className={styles.ieEmpty}>No named variables yet.</div>
+            ) : (
+              entries.map(([k, v]) => (
+                <div key={k} className={styles.ieItemRow}>
+                  <div className={styles.ieItemText}>
+                    <div className={styles.ieMono}>{k}</div>
+                    <div className={styles.ieItemSub}>{v}</div>
+                  </div>
+                  <button type="button" className={styles.ieSmallButton} onClick={() => namedVars.removeVar(k)}>
+                    Delete
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className={styles.ieMuted} style={{ marginTop: 10 }}>
+            Note: the matching engine that expands these variables must be applied where triggers and aliases are
+            matched against incoming text/user input.
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const showScriptTabs = activeTab === 'triggers' || activeTab === 'aliases' || activeTab === 'timers';
+
   return (
     <div className={styles.backdrop}>
       <div className={styles.modal} style={modalStyle}>
@@ -985,190 +1248,215 @@ look`,
           >
             Timers
           </button>
-          <button type="button" className={styles.newButton} onClick={handleNewScript}>
-            + New
+
+          <button
+            type="button"
+            className={`${styles.tab} ${activeTab === 'globals' ? styles.tabActive : ''}`}
+            onClick={() => setActiveTab('globals')}
+          >
+            Globals
           </button>
+
+          <button
+            type="button"
+            className={`${styles.tab} ${activeTab === 'variables' ? styles.tabActive : ''}`}
+            onClick={() => setActiveTab('variables')}
+          >
+            Variables
+          </button>
+
+          {showScriptTabs && (
+            <button type="button" className={styles.newButton} onClick={handleNewScript}>
+              + New
+            </button>
+          )}
         </div>
 
-        <div className={styles.body}>
-          <div className={styles.listPane}>
-            {scriptsOfKind(activeTab === 'triggers' ? 'trigger' : activeTab === 'aliases' ? 'alias' : 'timer').map(
-              (script) => (
-                <button
-                  key={script.id}
-                  type="button"
-                  className={`${styles.scriptItem} ${selectedScriptId === script.id ? styles.scriptItemActive : ''}`}
-                  onClick={() => handleSelectScript(script)}
-                >
-                  <span className={styles.scriptName}>{script.name}</span>
-                  {!script.enabled && <span className={styles.scriptDisabled}>· disabled</span>}
-                  <input
-                    type="checkbox"
-                    className={styles.enabledCheckbox}
-                    checked={script.enabled}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      handleToggleEnabled(script);
-                    }}
-                    title={script.enabled ? 'Click to disable' : 'Click to enable'}
-                  />
-                </button>
-              ),
-            )}
-          </div>
-
-          <div className={styles.editorPane}>
-            {selectedScript ? (
-              <>
-                <div className={styles.editorHeader}>
-                  <input
-                    className={styles.nameInput}
-                    value={editorName}
-                    onChange={(e) => setEditorName(e.target.value)}
-                    placeholder="Script name"
-                  />
-
-                  <label className={styles.languageLabel}>
-                    <select
-                      className={styles.languageSelect}
-                      value={editorLanguage}
-                      onChange={(e) => setEditorLanguage(e.target.value as UserScriptLanguage)}
-                    >
-                      <option value="text">Plain text</option>
-                      <option value="javascript">JavaScript</option>
-                      <option value="lua">Lua</option>
-                      <option value="python">Python</option>
-                      <option value="typescript">TypeScript</option>
-                    </select>
-                  </label>
-
-                  {hasDraftChanges && <span className={styles.draftIndicator}>Unsaved changes</span>}
-
-                  <button type="button" className={styles.testButton} onClick={handleTestScript}>
-                    Test
-                  </button>
-
-                  {hasDraftChanges && (
-                    <button type="button" className={styles.testDraftButton} onClick={handleTestDraftScript}>
-                      Test Draft
-                    </button>
-                  )}
-
+        {activeTab === 'globals' ? (
+          renderGlobalsTab()
+        ) : activeTab === 'variables' ? (
+          renderVariablesTab()
+        ) : (
+          <div className={styles.body}>
+            <div className={styles.listPane}>
+              {scriptsOfKind(activeTab === 'triggers' ? 'trigger' : activeTab === 'aliases' ? 'alias' : 'timer').map(
+                (script) => (
                   <button
+                    key={script.id}
                     type="button"
-                    className={styles.discardButton}
-                    onClick={handleDiscardDraft}
-                    disabled={!hasDraftChanges}
+                    className={`${styles.scriptItem} ${selectedScriptId === script.id ? styles.scriptItemActive : ''}`}
+                    onClick={() => handleSelectScript(script)}
                   >
-                    Discard Draft
+                    <span className={styles.scriptName}>{script.name}</span>
+                    {!script.enabled && <span className={styles.scriptDisabled}>· disabled</span>}
+                    <input
+                      type="checkbox"
+                      className={styles.enabledCheckbox}
+                      checked={script.enabled}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        handleToggleEnabled(script);
+                      }}
+                      title={script.enabled ? 'Click to disable' : 'Click to enable'}
+                    />
                   </button>
+                ),
+              )}
+            </div>
 
-                  <button
-                    type="button"
-                    className={styles.saveButton}
-                    onClick={handleSaveScript}
-                    disabled={!hasDraftChanges}
-                  >
-                    Save
-                  </button>
+            <div className={styles.editorPane}>
+              {selectedScript ? (
+                <>
+                  <div className={styles.editorHeader}>
+                    <input
+                      className={styles.nameInput}
+                      value={editorName}
+                      onChange={(e) => setEditorName(e.target.value)}
+                      placeholder="Script name"
+                    />
 
-                  <button type="button" className={styles.deleteButton} onClick={handleDeleteScript}>
-                    Delete
-                  </button>
-                </div>
-
-                {selectedScript.kind === 'trigger' && (
-                  <div className={styles.triggerConfigRow}>
-                    <label className={styles.configLabel}>
-                      Event:
+                    <label className={styles.languageLabel}>
                       <select
-                        className={styles.configSelect}
-                        value={triggerEventName}
-                        onChange={(e) => setTriggerEventName(e.target.value)}
+                        className={styles.languageSelect}
+                        value={editorLanguage}
+                        onChange={(e) => setEditorLanguage(e.target.value as UserScriptLanguage)}
                       >
-                        {ROUTED_WINDOW_EVENTS.map((evt) => (
-                          <option key={evt} value={evt}>
-                            {evt}
-                          </option>
-                        ))}
+                        <option value="text">Plain text</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="lua">Lua</option>
+                        <option value="python">Python</option>
+                        <option value="typescript">TypeScript</option>
                       </select>
                     </label>
 
-                    <label className={styles.configLabel}>
-                      Match text:
-                      <input
-                        type="text"
-                        className={styles.configInput}
-                        value={triggerMatchText}
-                        onChange={(e) => setTriggerMatchText(e.target.value)}
-                        placeholder="Text that should fire this trigger"
-                      />
-                    </label>
+                    {hasDraftChanges && <span className={styles.draftIndicator}>Unsaved changes</span>}
 
-                    <label className={styles.configLabel}>
-                      Test input
-                      <input
-                        type="text"
-                        className={styles.configInput}
-                        value={triggerTestInput}
-                        onChange={(e) => setTriggerTestInput(e.target.value)}
-                        placeholder="Simulated event payload"
-                      />
-                    </label>
+                    <button type="button" className={styles.testButton} onClick={handleTestScript}>
+                      Test
+                    </button>
 
-                    <label className={`${styles.enabledToggle} ${styles.omitToggle}`}>
-                      <input
-                        type="checkbox"
-                        checked={triggerOmitFromOutput}
-                        onChange={(e) => setTriggerOmitFromOutput(e.target.checked)}
-                      />
-                      <span>Omit from output</span>
-                    </label>
+                    {hasDraftChanges && (
+                      <button type="button" className={styles.testDraftButton} onClick={handleTestDraftScript}>
+                        Test Draft
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      className={styles.discardButton}
+                      onClick={handleDiscardDraft}
+                      disabled={!hasDraftChanges}
+                    >
+                      Discard Draft
+                    </button>
+
+                    <button
+                      type="button"
+                      className={styles.saveButton}
+                      onClick={handleSaveScript}
+                      disabled={!hasDraftChanges}
+                    >
+                      Save
+                    </button>
+
+                    <button type="button" className={styles.deleteButton} onClick={handleDeleteScript}>
+                      Delete
+                    </button>
                   </div>
-                )}
 
-                {selectedScript.kind === 'alias' && (
-                  <div className={styles.timerConfigRow}>
-                    <label className={styles.configLabel}>
-                      Game Input Command
-                      <input
-                        type="text"
-                        className={styles.configInput}
-                        value={aliasKey}
-                        onChange={(e) => setAliasKey(e.target.value)}
-                        placeholder="command to type"
-                      />
-                    </label>
-                  </div>
-                )}
+                  {selectedScript.kind === 'trigger' && (
+                    <div className={styles.triggerConfigRow}>
+                      <label className={styles.configLabel}>
+                        Event:
+                        <select
+                          className={styles.configSelect}
+                          value={triggerEventName}
+                          onChange={(e) => setTriggerEventName(e.target.value)}
+                        >
+                          {ROUTED_WINDOW_EVENTS.map((evt) => (
+                            <option key={evt} value={evt}>
+                              {evt}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
 
-                {selectedScript.kind === 'timer' && (
-                  <div className={styles.timerConfigRow}>
-                    <label className={styles.configLabel}>
-                      Interval (seconds):
-                      <input
-                        type="number"
-                        min={1}
-                        className={styles.configInput}
-                        value={timerIntervalSeconds}
-                        onChange={(e) => setTimerIntervalSeconds(e.target.value)}
-                      />
-                    </label>
-                  </div>
-                )}
+                      <label className={styles.configLabel}>
+                        Match text:
+                        <input
+                          type="text"
+                          className={styles.configInput}
+                          value={triggerMatchText}
+                          onChange={(e) => setTriggerMatchText(e.target.value)}
+                          placeholder="Text that should fire this trigger"
+                        />
+                      </label>
 
-                <textarea
-                  className={styles.editorTextarea}
-                  value={editorSource}
-                  onChange={(e) => setEditorSource(e.target.value)}
-                  spellCheck={false}
-                />
-              </>
-            ) : (
-              <div className={styles.emptyEditor}>Select a script or create a new one to edit.</div>
-            )}
+                      <label className={styles.configLabel}>
+                        Test input
+                        <input
+                          type="text"
+                          className={styles.configInput}
+                          value={triggerTestInput}
+                          onChange={(e) => setTriggerTestInput(e.target.value)}
+                          placeholder="Simulated event payload"
+                        />
+                      </label>
+
+                      <label className={`${styles.enabledToggle} ${styles.omitToggle}`}>
+                        <input
+                          type="checkbox"
+                          checked={triggerOmitFromOutput}
+                          onChange={(e) => setTriggerOmitFromOutput(e.target.checked)}
+                        />
+                        <span>Omit from output</span>
+                      </label>
+                    </div>
+                  )}
+
+                  {selectedScript.kind === 'alias' && (
+                    <div className={styles.timerConfigRow}>
+                      <label className={styles.configLabel}>
+                        Game Input Command
+                        <input
+                          type="text"
+                          className={styles.configInput}
+                          value={aliasKey}
+                          onChange={(e) => setAliasKey(e.target.value)}
+                          placeholder="command to type"
+                        />
+                      </label>
+                    </div>
+                  )}
+
+                  {selectedScript.kind === 'timer' && (
+                    <div className={styles.timerConfigRow}>
+                      <label className={styles.configLabel}>
+                        Interval (seconds):
+                        <input
+                          type="number"
+                          min={1}
+                          className={styles.configInput}
+                          value={timerIntervalSeconds}
+                          onChange={(e) => setTimerIntervalSeconds(e.target.value)}
+                        />
+                      </label>
+                    </div>
+                  )}
+
+                  <textarea
+                    className={styles.editorTextarea}
+                    value={editorSource}
+                    onChange={(e) => setEditorSource(e.target.value)}
+                    spellCheck={false}
+                  />
+                </>
+              ) : (
+                <div className={styles.emptyEditor}>Select a script or create a new one to edit.</div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {errors.length > 0 && (
           <div className={styles.errorPanel}>

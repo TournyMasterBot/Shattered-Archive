@@ -189,27 +189,27 @@ export class UserScriptRuntime {
 ---------------------------------------------------------- */
 
 const DSL_ANSI_COLORS: Record<string, string> = {
-  '{r': '\u001b[31m',  // red
-  '{R': '\u001b[91m',  // Lt Red
+  '{r': '\u001b[31m', // red
+  '{R': '\u001b[91m', // Lt Red
 
-  '{g': '\u001b[32m',  // green
-  '{G': '\u001b[92m',  // Lt Green
+  '{g': '\u001b[32m', // green
+  '{G': '\u001b[92m', // Lt Green
 
-  '{y': '\u001b[33m',  // yellow
-  '{Y': '\u001b[93m',  // Lt Yellow
+  '{y': '\u001b[33m', // yellow
+  '{Y': '\u001b[93m', // Lt Yellow
 
-  '{b': '\u001b[34m',  // blue
-  '{B': '\u001b[94m',  // Lt Blue
+  '{b': '\u001b[34m', // blue
+  '{B': '\u001b[94m', // Lt Blue
 
-  '{m': '\u001b[35m',  // magenta
-  '{M': '\u001b[95m',  // Lt Magenta
+  '{m': '\u001b[35m', // magenta
+  '{M': '\u001b[95m', // Lt Magenta
 
-  '{c': '\u001b[36m',  // cyan
-  '{C': '\u001b[96m',  // Lt Cyan
+  '{c': '\u001b[36m', // cyan
+  '{C': '\u001b[96m', // Lt Cyan
 
-  '{D': '\u001b[30m',  // black
-  '{w': '\u001b[37m',  // Grey
-  '{W': '\u001b[97m',  // Lt White
+  '{D': '\u001b[30m', // black
+  '{w': '\u001b[37m', // Grey
+  '{W': '\u001b[97m', // Lt White
 
   '{o': '\u001b[38;5;208m', // orange
   '{n': '\u001b[38;5;130m', // brown

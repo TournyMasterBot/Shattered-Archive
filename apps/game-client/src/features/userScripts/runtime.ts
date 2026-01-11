@@ -12,6 +12,30 @@ import {
 import { runLuaSourceInBrowser } from './luaRuntime';
 import { runPythonSourceInBrowser } from './pythonRuntime';
 
+function isGlobalIdentifierLine(line: string): boolean {
+  // For plain-text scripts, allow a line that is exactly a global identifier
+  // to invoke the global runtime instead of sending it to the game.
+  //
+  // Examples:
+  //   global.javascript.foo
+  //   global.lua.bar
+  //   global.python.baz
+  //   global.typescript.qux
+  //
+  // NOTE: we do NOT trim/normalize the line; we only match if the trimmed line
+  // is identical (meaning no leading/trailing whitespace).
+  const trimmed = line.trim();
+  if (trimmed !== line) return false;
+
+  if (!trimmed.startsWith('global.')) return false;
+
+  const parts = trimmed.split('.');
+  if (parts.length < 3) return false;
+
+  const lang = parts[1];
+  return lang === 'javascript' || lang === 'lua' || lang === 'python' || lang === 'typescript';
+}
+
 /**
  * Core JS sandbox runner.
  *
@@ -23,7 +47,19 @@ async function runJavascript(source: string, api: ScriptSandboxApi): Promise<voi
     const fn = new Function(
       'api',
       `"use strict";
-const { sendCommand, log, error, event, writeTerminal } = api;
+const {
+  sendCommand,
+  log,
+  error,
+  event,
+  writeTerminal,
+  httpGetJson,
+  runGlobal,
+  getGlobalVar,
+  setGlobalVar,
+  deleteGlobalVar,
+  getNamedVar
+} = api;
 try {
 ${source}
 } catch (err) {
@@ -75,6 +111,16 @@ async function runPlainText(source: string, api: ScriptSandboxApi): Promise<void
   const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
 
   for (const line of lines) {
+    // NEW: allow a plain-text line to call a global script by identifier.
+    if (api.runGlobal && isGlobalIdentifierLine(line)) {
+      try {
+        await api.runGlobal(line);
+      } catch (err) {
+        api.error?.('[UserScript:text] global invocation failed', err instanceof Error ? err.message : String(err));
+      }
+      continue;
+    }
+
     api.sendCommand(line);
   }
 }

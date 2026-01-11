@@ -11,6 +11,9 @@ import {
 } from '../features/userScripts/types';
 import { runUserScript, runTimerScript } from '../features/userScripts/runtime';
 import { setOmitRules } from '../features/userScripts/triggerOmitStore';
+import { invokeGlobalById } from '../features/userScripts/globalRuntime';
+import { getGlobalVar, setGlobalVar, deleteGlobalVar } from '../features/userScripts/globalScriptsStore';
+import { getUserVariablesSnapshot } from '../features/userScripts/userVariablesStore';
 
 const STORAGE_KEY_PREFIX = 'shatteredArchive.userScripts.';
 
@@ -188,6 +191,27 @@ function makeApiBase(
         console.error('[UserScriptSandbox writeTerminal] failed', err);
       }
     },
+
+    // NEW: invoke global scripts by identifier
+    runGlobal: async (globalId: string, args?: unknown) => {
+      try {
+        return await invokeGlobalById(connectionId ?? 'default', globalId, api, args);
+      } catch (err) {
+        api.error?.('[UserScript runGlobal] failed', err instanceof Error ? err.message : String(err));
+        return undefined;
+      }
+    },
+
+    // NEW: global variable KV store
+    getGlobalVar: (key: string) => getGlobalVar(connectionId ?? 'default', key),
+    setGlobalVar: (key: string, value: unknown) => setGlobalVar(connectionId ?? 'default', key, value),
+    deleteGlobalVar: (key: string) => deleteGlobalVar(connectionId ?? 'default', key),
+
+    // NEW: named variables for "{NAME}" (trigger/alias templates)
+    getNamedVar: (name: string) => {
+      const vars = getUserVariablesSnapshot(connectionId ?? 'default');
+      return vars?.[name];
+    },
   };
 
   // Allow overrides if the hook wants to inject a custom sender/log/error/writeTerminal
@@ -196,6 +220,11 @@ function makeApiBase(
   if (extra?.error) api.error = extra.error;
   if (extra?.event) api.event = extra.event;
   if (extra?.writeTerminal) api.writeTerminal = extra.writeTerminal;
+  if (extra?.runGlobal) api.runGlobal = extra.runGlobal;
+  if (extra?.getGlobalVar) api.getGlobalVar = extra.getGlobalVar;
+  if (extra?.setGlobalVar) api.setGlobalVar = extra.setGlobalVar;
+  if (extra?.deleteGlobalVar) api.deleteGlobalVar = extra.deleteGlobalVar;
+  if (extra?.getNamedVar) api.getNamedVar = extra.getNamedVar;
 
   api.httpGetJson = async (
     url: string,

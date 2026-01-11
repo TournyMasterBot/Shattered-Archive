@@ -312,9 +312,7 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
   }, [config]);
 
   const showStop = useMemo(() => {
-    const v =
-      config.enabled &&
-      (runState.status === 'running');
+    const v = config.enabled && runState.status === 'running';
     uiDbg('showStop computed', { enabled: config.enabled, status: runState.status, showStop: v });
     return v;
   }, [config.enabled, runState.status]);

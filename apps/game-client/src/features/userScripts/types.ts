@@ -128,4 +128,27 @@ export interface ScriptSandboxApi {
       body?: unknown;
     },
   ) => Promise<unknown>;
+
+  /**
+   * Run a global script function by identifier, e.g.:
+   *   - "global.javascript.foo"
+   *   - "global.lua.bar"
+   *   - "global.python.baz"
+   *   - "global.typescript.qux"
+   *
+   * The "{thing}" portion is resolved inside the global file for that language.
+   */
+  runGlobal?: (globalId: string, args?: unknown) => Promise<unknown>;
+
+  /**
+   * Global key/value store (persisted to localStorage, cached in memory).
+   */
+  getGlobalVar?: (key: string) => unknown;
+  setGlobalVar?: (key: string, value: unknown) => void;
+  deleteGlobalVar?: (key: string) => void;
+
+  /**
+   * Named variables used for trigger/alias template expansion: "{NAME}"
+   */
+  getNamedVar?: (name: string) => string | undefined;
 }
