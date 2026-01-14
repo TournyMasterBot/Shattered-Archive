@@ -1,65 +1,75 @@
-# Python User Script Bridge
+# Python User Scripts
 
-## Provided Module
-Your script automatically receives:
+Python scripts run in the browser via Skulpt and have a bridge API exposed as Python builtins.
+
+---
+
+## Available API (Python)
+
+You can call these directly:
+
+- `log(*args)`
+- `error(*args)`
+- `sendCommand(cmd: str)`
+- `writeTerminal(dsl: str)` *(optional)*
+- `runGlobal(id: str, args: object = None)` *(optional; fire-and-forget)*
+- `getGlobalVar(key: str) -> str` *(returns JSON/string; empty if missing)*
+- `setGlobalVar(key: str, value)`
+- `deleteGlobalVar(key: str)`
+- `getNamedVar(name: str) -> str` *(empty if missing)*
+
+Also available:
+- `httpGetJson(url: str)` *(fire-and-forget; logs result asynchronously if available)*
+
+**Important:** In Python, `httpGetJson()` does **not** return a value. It triggers a request and logs results via `log(...)` when the fetch completes.
+
+---
+
+## Example: Alias-like script using variables + globals
 
 ```python
-from dsl_bridge import log, error, sendCommand, httpGet, httpGetJson, event
+t = getNamedVar("TARGET") or "rat"
+writeTerminal("{W[gtest]{x TARGET=%s\n" % t)
+
+setGlobalVar("LAST_TARGET", t)
+
+runGlobal("global.javascript.core.echo", {"text": "Hello from Python"})
 ```
 
-## Example
+---
+
+## Python Global scripts
+
+Python globals are defined in **Globals → Python**.
+
+Calling:
+- `runGlobal("global.python.core.echo", { ... })`
+
+will invoke Python function:
+- `core_echo(args)`
+
+Where `args` is:
+- a Python dict (if args was JSON),
+- a string (if not JSON),
+- or `None` (if no args).
+
+### Example: Globals → Python
+
 ```python
-log("Python script running")
+def core_echo(args):
+    text = ""
+    if isinstance(args, dict):
+        text = str(args.get("text", ""))
+    writeTerminal("{G[Py global]{x echo: %s\n" % text)
 
-repo = httpGetJson("https://api.github.com/repos/octocat/hello-world")
-log(str(repo))
-
-sendCommand("look")
+def core_attackTarget(args):
+    t = getNamedVar("TARGET") or "rat"
+    sendCommand("kill %s" % t)
 ```
 
-## More Involved Example
-```python
-log("Python script starting up")
+---
 
-# Simple state
-counter = 0
-total = 0
+## Tips
 
-# Simulate some work
-for i in range(1, 6):
-    counter += 1
-    total += i
-
-    log("Loop iteration", {
-        "iteration": i,
-        "counter": counter,
-        "running_total": total,
-    })
-
-    # Every 2 iterations, emit a command
-    if i % 2 == 0:
-        cmd = "look"
-        log("Issuing command to game", cmd)
-        sendCommand(cmd)
-
-# Conditional logging
-if total > 10:
-    log("Total exceeded threshold", total)
-else:
-    error("Total did not reach expected threshold", total)
-
-# Demonstrate string formatting
-player = "Adventurer"
-level = 12
-log("Player status: %s (level %d)" % (player, level))
-
-# Optional async HTTP example (fire-and-forget)
-try:
-    httpGetJson("https://api.github.com/repos/TournyMasterBot/Shattered-Archive")
-    log("Requested project metadata from GitHub API")
-except:
-    # Skulpt exceptions still route here if something goes wrong early
-    error("Failed to initiate httpGetJson request")
-
-log("Python script finished")
-```
+- Use `writeTerminal("{x\n")` at the end of colored output to reset formatting.
+- When sharing state across scripts, prefer Global Variables (`setGlobalVar`) over Python module globals, because globals are per-connection and language-agnostic.

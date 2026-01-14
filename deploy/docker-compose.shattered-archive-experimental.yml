@@ -1,3 +1,6 @@
+# docker ps --format "table {{.Names}}\t{{.Status}}"
+# docker exec -it shatteredarchive-nginx sh -lc 'command -v wget || command -v curl || echo "no wget/curl"'
+
 # This file is for experimental testing by the Shattered Archive developers
 # This file should not be used for live testing
 name: shatteredarchive
@@ -18,11 +21,18 @@ services:
     container_name: shatteredarchive-nginx
     stdin_open: true
     tty: true
+
+    # OPTIONAL (recommended): wait for servers to be healthy
     depends_on:
-      - game-client
-      - web-client
-      - game-server
-      - web-server
+      game-client:
+        condition: service_started
+      web-client:
+        condition: service_started
+      game-server:
+        condition: service_healthy
+      web-server:
+        condition: service_healthy
+
     ports:
       - "80:80"
       - "443:443"
@@ -46,6 +56,15 @@ services:
           - web-client.shatteredarchive.dev
           - game-server.shatteredarchive.dev
           - web-server.shatteredarchive.dev
+
+    healthcheck:
+      # If wget is not available in your nginx image, replace with:
+      # test: ["CMD-SHELL", "curl -fsS http://localhost/ >/dev/null || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider --max-redirect=0 http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
 
   ############################################################
   # CLIENTS
@@ -119,6 +138,18 @@ services:
         aliases:
           - game-server.shatteredarchive.dev
 
+    healthcheck:
+      # TCP port open check without curl/wget
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(31000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
   web-server:
     build:
       context: ..
@@ -144,6 +175,17 @@ services:
       shatteredarchive:
         aliases:
           - web-server.shatteredarchive.dev
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(41000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
 
 volumes:
   nginx-logrotate-state:

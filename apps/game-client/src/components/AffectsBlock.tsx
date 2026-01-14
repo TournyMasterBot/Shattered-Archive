@@ -1,3 +1,4 @@
+// apps\game-client\src\components\AffectsBlock.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import styles from '../styles/LayoutShell.module.scss';
 import { useAffectsBlock } from '../hooks/useAffectsBlock';

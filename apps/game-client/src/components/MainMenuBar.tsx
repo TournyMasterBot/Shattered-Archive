@@ -13,6 +13,7 @@ interface MainMenuBarProps {
   onOpenPlugins: () => void;
   onOpenLibrary: () => void;
   onOpenEquipment: () => void;
+  onOpenAutoLeveling: () => void;
 }
 
 export const MainMenuBar: React.FC<MainMenuBarProps> = ({
@@ -22,6 +23,7 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
   onOpenPlugins,
   onOpenLibrary,
   onOpenEquipment,
+  onOpenAutoLeveling,
 }) => {
   const {
     openRootMenu,
@@ -154,6 +156,19 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
             >
               Equipment…
             </div>
+
+            {/*Work in progress
+            <div
+              className={styles.subMenuItem}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeAllMenus();
+                onOpenAutoLeveling();
+              }}
+            >
+              Auto Leveling…
+            </div>
+            */}
           </div>
         </div>
 

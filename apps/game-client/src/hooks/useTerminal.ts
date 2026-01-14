@@ -1,4 +1,3 @@
-// apps\game-client\src\hooks\useTerminal.ts
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
@@ -157,6 +156,11 @@ export function useTerminal() {
 
     viewport?.addEventListener('scroll', handleScroll);
 
+    // ------------------------------------------------------------
+    // 1) Normal pipeline: game:terminal-data
+    //    - used for raw network/game output
+    //    - passes through omit + per-line filtering
+    // ------------------------------------------------------------
     const handleTerminalData = (ev: Event) => {
       const e = ev as CustomEvent<{ text: string }>;
       const text = e.detail?.text ?? '';
@@ -202,7 +206,31 @@ export function useTerminal() {
       }
     };
 
+    // ------------------------------------------------------------
+    // 2) Script pipeline: game:terminal-data-script
+    //    - bypasses omit & line filtering entirely
+    //    - expects text ALREADY encoded as ANSI for xterm
+    // ------------------------------------------------------------
+    const handleScriptTerminalData = (ev: Event) => {
+      const e = ev as CustomEvent<{ text: string }>;
+      const text = e.detail?.text ?? '';
+      const t = termRef.current;
+      if (!text || !t) return;
+
+      // Direct write: no omit, no splitting
+      t.write(text);
+
+      if (autoScrollRef.current) {
+        try {
+          t.scrollToBottom();
+        } catch {
+          // ignore
+        }
+      }
+    };
+
     window.addEventListener('game:terminal-data', handleTerminalData as EventListener);
+    window.addEventListener('game:terminal-data-script', handleScriptTerminalData as EventListener);
 
     const handleResize = () => {
       requestAnimationFrame(() => {
@@ -224,6 +252,7 @@ export function useTerminal() {
     return () => {
       viewport?.removeEventListener('scroll', handleScroll);
       window.removeEventListener('game:terminal-data', handleTerminalData as EventListener);
+      window.removeEventListener('game:terminal-data-script', handleScriptTerminalData as EventListener);
       window.removeEventListener('resize', handleResize);
       document.removeEventListener('focusin', onFocusInCapture, true);
 

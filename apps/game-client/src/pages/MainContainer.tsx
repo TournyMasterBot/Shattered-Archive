@@ -1,4 +1,3 @@
-// apps\game-client\src\pages\MainContainer.tsx
 import React from 'react';
 import styles from '../styles/MainContainer.module.scss';
 import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight';
@@ -27,6 +26,9 @@ import EquipmentModal from '../components/EquipmentModal';
 import { useEquipmentCapture } from '../hooks/useEquipmentCapture';
 import { useEquipmentDeltas } from '../hooks/useEquipmentDeltas';
 
+import AutoLevelingModal from '../components/AutoLevelingModal';
+import { useAutoLeveling } from '../hooks/useAutoLeveling';
+
 export const MainContainer: React.FC = () => {
   useVisualViewportHeight();
   const main = useMainContainer();
@@ -48,14 +50,15 @@ export const MainContainer: React.FC = () => {
 
   const [isScriptModalOpen, setIsScriptModalOpen] = React.useState(false);
   const [isPluginsModalOpen, setIsPluginsModalOpen] = React.useState(false);
+  const [isAutoLevelingModalOpen, setIsAutoLevelingModalOpen] = React.useState(false);
 
   const handleOpenCustomStyles = () => openStyleModal();
   const handleOpenScriptSandbox = () => setIsScriptModalOpen(true);
   const handleOpenConnect = () => main.openConnectModal();
   const handleOpenPlugins = () => setIsPluginsModalOpen(true);
   const handleOpenLibrary = () => main.openLibraryModal();
-
   const handleOpenEquipment = () => main.openEquipmentModal();
+  const handleOpenAutoLeveling = () => setIsAutoLevelingModalOpen(true);
 
   const connectionId = React.useMemo(() => {
     const host = gameConn.currentHost;
@@ -69,6 +72,8 @@ export const MainContainer: React.FC = () => {
   const plugins = usePlugins(connectionId);
   useEquipmentCapture(connectionId);
   useEquipmentDeltas(connectionId);
+
+  const auto = useAutoLeveling(connectionId);
 
   React.useEffect(() => {
     pluginHost.setConnection(connectionId);
@@ -99,6 +104,7 @@ export const MainContainer: React.FC = () => {
         onOpenPlugins={handleOpenPlugins}
         onOpenLibrary={handleOpenLibrary}
         onOpenEquipment={handleOpenEquipment}
+        onOpenAutoLeveling={handleOpenAutoLeveling}
       />
 
       <FocusBar />
@@ -110,6 +116,8 @@ export const MainContainer: React.FC = () => {
         BottomPaneComponent={BottomPane}
         isConnected={gameConn.isConnected}
         sendRaw={gameConn.sendRaw}
+        autoLevelingActive={auto.config.enabled}
+        autoLevelRunState={auto.runState}
       />
 
       <UserStyleOverrideModal
@@ -160,6 +168,13 @@ export const MainContainer: React.FC = () => {
         isOpen={main.isEquipmentModalOpen}
         onClose={main.closeEquipmentModal}
         connectionId={connectionId}
+      />
+
+      <AutoLevelingModal
+        isOpen={isAutoLevelingModalOpen}
+        onClose={() => setIsAutoLevelingModalOpen(false)}
+        connectionId={connectionId}
+        isConnected={gameConn.isConnected}
       />
     </div>
   );

@@ -80,10 +80,38 @@ export interface TriggerContextEvent {
  * We can grow this over time.
  */
 export interface ScriptSandboxApi {
+  /**
+   * Send a line of text as a game command.
+   */
   sendCommand: (cmd: string) => void;
+
+  /**
+   * Current event context (for triggers, aliases, timers).
+   */
   event?: TriggerContextEvent;
+
+  /**
+   * Logging helpers routed to your UI / console.
+   */
   log: (...args: unknown[]) => void;
   error: (...args: unknown[]) => void;
+
+  /**
+   * Write DSL-colored text directly to the terminal.
+   *
+   * This should accept the DSL codes:
+   *   - Colors: {r {R {g {G {y {Y {b {B {m {M {c {C {D {w {W
+   *   - Extended: {o {n {p {u
+   *   - Reset: {x  (use this at the end of the line to clear styles)
+   *   - Attributes: {! {- {& {_
+   *   - Literal '{': '{{'
+   *
+   * Implementation (outside this type) is expected to:
+   *   - Convert DSL → ANSI for xterm
+   *   - Emit a bypass event (e.g. game:terminal-data-script)
+   *     that does NOT go through omit/line filtering.
+   */
+  writeTerminal?: (dsl: string) => void;
 
   /**
    * Bridge HTTP helper.
@@ -100,4 +128,27 @@ export interface ScriptSandboxApi {
       body?: unknown;
     },
   ) => Promise<unknown>;
+
+  /**
+   * Run a global script function by identifier, e.g.:
+   *   - "global.javascript.foo"
+   *   - "global.lua.bar"
+   *   - "global.python.baz"
+   *   - "global.typescript.qux"
+   *
+   * The "{thing}" portion is resolved inside the global file for that language.
+   */
+  runGlobal?: (globalId: string, args?: unknown) => Promise<unknown>;
+
+  /**
+   * Global key/value store (persisted to localStorage, cached in memory).
+   */
+  getGlobalVar?: (key: string) => unknown;
+  setGlobalVar?: (key: string, value: unknown) => void;
+  deleteGlobalVar?: (key: string) => void;
+
+  /**
+   * Named variables used for trigger/alias template expansion: "{NAME}"
+   */
+  getNamedVar?: (name: string) => string | undefined;
 }
