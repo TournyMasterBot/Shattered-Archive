@@ -215,16 +215,40 @@ function uniqStrings(input: string[] | null | undefined): string[] {
   return out;
 }
 
+function beastStableKey(b: Beast): string {
+  // Intent:
+  // - Provide a stable, non-empty key for UI selection + persistence.
+  // - Some API rows may have empty cleanName (seen in logs), which breaks controlled checkbox state.
+  // - Priority: cleanName -> filepath -> lookName -> name.
+  const clean = String((b as any).cleanName ?? '').trim();
+  if (clean) return clean;
+
+  const filepath = String((b as any).filepath ?? '').trim();
+  if (filepath) return filepath;
+
+  const lookName = String((b as any).lookName ?? '').trim();
+  if (lookName) return lookName;
+
+  const name = String((b as any).name ?? '').trim();
+  if (name) return name;
+
+  return '';
+}
+
 function beastToTarget(b: Beast): AutoLevelTarget {
   // Intent:
   // - Convert an API "Beast" record into a persisted AutoLevelTarget.
   // - Targets are stored rich so the engine can operate without re-fetching maps.
   // - keywords are computed from firstKeyword (if provided by API shape).
+  //
+  // Important:
+  // - cleanName is used as the *stable key* for UI selection.
+  // - Some beasts can have empty cleanName; we fall back to filepath/lookName/name to keep checkboxes controlled.
   const firstKeyword = (b as any).firstKeyword;
   const keywords = keywordsFromFirstKeyword(firstKeyword);
 
   return {
-    cleanName: String(b.cleanName ?? ''),
+    cleanName: beastStableKey(b),
     name: String(b.name ?? ''),
     lookName: String(b.lookName ?? ''),
     keywords,
@@ -570,8 +594,10 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
   );
 
   const isSelected = useCallback(
-    (cleanName: string) => {
-      return selectedTargets.some((t) => t.cleanName === cleanName);
+    (targetKey: string) => {
+      const key = String(targetKey ?? '').trim();
+      if (!key) return false;
+      return selectedTargets.some((t) => String(t.cleanName ?? '').trim() === key);
     },
     [selectedTargets],
   );
@@ -580,16 +606,23 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
     const t = beastToTarget(b);
 
     uiDbg('toggleTarget', {
-      cleanName: t.cleanName,
+      key: t.cleanName,
+      cleanName: String((b as any).cleanName ?? ''),
+      filepath: String((b as any).filepath ?? ''),
       lookName: t.lookName,
       keywords: t.keywords,
     });
 
+    if (!String(t.cleanName ?? '').trim()) {
+      uiWarn('toggleTarget blocked: empty key (cleanName/file/lookup/name all empty?)', { beast: b });
+      return;
+    }
+
     setDraft((prev) => {
       const cur = prev.init.targets ?? [];
-      const exists = cur.some((x) => x.cleanName === t.cleanName);
+      const exists = cur.some((x) => String(x.cleanName ?? '').trim() === t.cleanName);
 
-      const next = exists ? cur.filter((x) => x.cleanName !== t.cleanName) : [...cur, t];
+      const next = exists ? cur.filter((x) => String(x.cleanName ?? '').trim() !== t.cleanName) : [...cur, t];
 
       uiDbg('toggleTarget applied', { exists, prevCount: cur.length, nextCount: next.length });
 
@@ -598,7 +631,9 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
   }, []);
 
   const selectAllTargets = useCallback(() => {
-    const next = beasts.map(beastToTarget).filter((t) => t.cleanName && t.lookName && (t.keywords?.length ?? 0) > 0);
+    const next = beasts
+      .map(beastToTarget)
+      .filter((t) => String(t.cleanName ?? '').trim() && t.lookName && (t.keywords?.length ?? 0) > 0);
 
     uiDbg('selectAllTargets', {
       beastsCount: beasts.length,
@@ -611,7 +646,7 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
     });
 
     const byId = new Map<string, AutoLevelTarget>();
-    for (const t of next) byId.set(t.cleanName, t);
+    for (const t of next) byId.set(String(t.cleanName).trim(), t);
 
     uiDbg('selectAllTargets unique by cleanName', { uniqueCount: byId.size });
 
@@ -989,13 +1024,14 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
                   <div className={styles.beastEmpty}>No targets returned for this area.</div>
                 ) : (
                   beasts.map((b, i) => {
-                    const checked = isSelected(b.cleanName);
+                    const key = beastStableKey(b);
+                    const checked = isSelected(key);
                     const firstKeyword =
                       (b as any).firstKeyword ?? (b as any).first_keyword ?? (b as any).firstkeyword ?? null;
                     const computedKeywords = keywordsFromFirstKeyword(firstKeyword);
 
                     return (
-                      <div key={`${b.cleanName}:${i}`} className={styles.beastRow}>
+                      <div key={`${key || 'beast'}:${i}`} className={styles.beastRow}>
                         <input
                           className={styles.checkbox}
                           type="checkbox"
@@ -1012,6 +1048,10 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
                           <details style={{ marginTop: 6 }}>
                             <summary style={{ cursor: 'pointer' }}>Details</summary>
                             <div className={styles.help}>
+                              <div>
+                                <b>key:</b> <code>{key}</code>
+                              </div>
+
                               <div>
                                 <b>lookName:</b> <code>{b.lookName}</code>
                               </div>

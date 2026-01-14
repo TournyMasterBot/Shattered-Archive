@@ -369,6 +369,12 @@
   display: inline-block;
   vertical-align: middle;
 
+  /* make the "checked" rendering more reliable across engines */
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 12px 12px;
+  background-image: none;
+
   transition:
     background 120ms ease,
     border-color 120ms ease,
@@ -385,14 +391,11 @@
   }
 
   &:checked {
-    background-color: #8bc34a;
+    background: #8bc34a;
     border-color: #8bc34a;
 
     /* SVG checkmark so it stays dark-themed */
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.2 8.7l3 3.2L13 4.9' fill='none' stroke='%230b0b0b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 12px 12px;
   }
 
   &:disabled {

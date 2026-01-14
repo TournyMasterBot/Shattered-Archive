@@ -157,6 +157,7 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
               Equipment…
             </div>
 
+            {/*Work in progress
             <div
               className={styles.subMenuItem}
               onClick={(e) => {
@@ -167,6 +168,7 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
             >
               Auto Leveling…
             </div>
+            */}
           </div>
         </div>
 
