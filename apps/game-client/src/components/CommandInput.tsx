@@ -97,6 +97,9 @@ export const CommandInput: React.FC<CommandInputProps> = ({
   const isPaused = state === 'paused';
   const isIdle = state === 'idle';
 
+  // Only treat these as "active sessions" where showing STOP makes sense.
+  const isActiveSession = false;// disabled for nowstate === 'running' || state === 'paused' || state === 'waiting' || state === 'resting';
+
   const autoDisabled = !isConnected || !autoLevelingActive;
 
   const fireStart = () => (onAutoLevelStart ? onAutoLevelStart() : dispatchSafe('game:autoleveling-start'));
@@ -132,7 +135,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 
   const onStopClick = () => {
     if (!isConnected) return;
-    if (isIdle) return;
+    if (!isActiveSession) return;
 
     const ok = window.confirm('Stop auto leveling? This ends the current run.');
     if (!ok) return;
@@ -147,6 +150,14 @@ export const CommandInput: React.FC<CommandInputProps> = ({
       : isPaused
         ? 'Resume auto level'
         : 'Auto level';
+
+  const autoBtnStateClass = !autoDisabled
+    ? isRunning
+      ? styles.autoLevelButtonActive
+      : isPaused
+        ? styles.autoLevelButtonPaused
+        : ''
+    : '';
 
   return (
     <div className={styles.commandInputBar}>
@@ -176,7 +187,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 
       <button
         type="button"
-        className={`${styles.autoLevelButton} ${!autoDisabled && !isIdle ? styles.autoLevelButtonActive : ''}`}
+        className={`${styles.autoLevelButton} ${autoBtnStateClass}`}
         onMouseDown={(e) => e.preventDefault()} // keep focus in input
         onClick={onAutoClick}
         disabled={autoDisabled}
@@ -192,10 +203,10 @@ export const CommandInput: React.FC<CommandInputProps> = ({
         ⚔️
       </button>
 
-      {!isIdle ? (
+      {isActiveSession ? (
         <button
           type="button"
-          className={styles.autoStopButton}
+          className={styles.autoLevelStopButton}
           onMouseDown={(e) => e.preventDefault()}
           onClick={onStopClick}
           aria-label="Stop auto leveling"

@@ -1,8 +1,8 @@
-// apps\game-client\src\features\userScripts\runtimeSingleton.ts
 import { getAccessibilitySettings } from '../accessibility/accessibility-settings-store';
 import { UserScriptRuntime } from './userScriptRuntime';
 import type { AnyUserScript } from './types';
 import { ROUTED_WINDOW_EVENTS } from '../plugins/routed-gmcp-events';
+import { emitDamageEvent, parseDamageLine } from '../combat/damage/damage-events';
 
 const settings = getAccessibilitySettings();
 
@@ -95,9 +95,14 @@ function hydrateRuntime(connectionId?: string | null) {
 
     const text = String(detail?.text ?? '');
     if (!text) return;
+
     const lines = splitIntoLines(text);
     for (const line of lines) {
+      // base line trigger
       userScriptRuntime.dispatchEvent({ name: 'text:line', payload: { text: line } });
+
+      
+
       if (line === 'You flee from combat!') {
         try {
           userScriptRuntime.dispatchEvent({ name: 'event:flee', payload: { text: line } });
@@ -109,6 +114,16 @@ function hydrateRuntime(connectionId?: string | null) {
         try {
           userScriptRuntime.dispatchEvent({ name: 'event:creature-death', payload: { text: line } });
           window.dispatchEvent(new CustomEvent('game:creature-death', { detail: line }));
+        } catch {
+          // ignore
+        }
+      } else {
+        // damage trigger
+        try {
+          const dmg = parseDamageLine(line);
+          if (dmg) {
+            emitDamageEvent((e) => userScriptRuntime.dispatchEvent(e), dmg);
+          }
         } catch {
           // ignore
         }

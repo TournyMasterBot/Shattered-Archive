@@ -13,6 +13,7 @@ export const ROUTED_WINDOW_EVENTS: string[] = [
   'event:gear:remove',
   'event:flee',
   'event:creature-death',
+  'event:damage',
   // Raw GMCP events emitted from the game
   'game:tick',
   'game:char-data',

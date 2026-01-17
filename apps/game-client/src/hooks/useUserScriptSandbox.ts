@@ -10,7 +10,7 @@ import {
   UserScriptKind,
 } from '../features/userScripts/types';
 import { runUserScript, runTimerScript } from '../features/userScripts/runtime';
-import { setOmitRules } from '../features/userScripts/triggerOmitStore';
+import { OmitRule, setOmitRules } from '../features/userScripts/triggerOmitStore';
 import { invokeGlobalById } from '../features/userScripts/globalRuntime';
 import { getGlobalVar, setGlobalVar, deleteGlobalVar } from '../features/userScripts/globalScriptsStore';
 import { getUserVariablesSnapshot } from '../features/userScripts/userVariablesStore';
@@ -385,12 +385,24 @@ export function useUserScriptSandbox(connectionId?: string | null) {
       .filter((s) => s.kind === 'trigger' && s.enabled)
       .filter((s: any) => !!s.omitFromOutput)
       .flatMap((s: any) => {
-        const matchText = s.matchText || '';
-        // support both block + line
-        return [
-          { id: `${s.id}:line`, eventName: 'text:line', matchText, caseInsensitive: true },
-          { id: `${s.id}:block`, eventName: 'game:terminal-data', matchText, caseInsensitive: true },
-        ];
+        const matchText = String(s.matchText ?? '').trim();
+        const eventName = String(s.eventName ?? '').trim();
+
+        // ✅ normal text omit
+        if (matchText.length > 0) {
+          return [
+            { id: `${s.id}:line`, eventName: 'text:line', matchText, caseInsensitive: true },
+            { id: `${s.id}:block`, eventName: 'game:terminal-data', matchText, caseInsensitive: true },
+          ];
+        }
+
+        // ✅ NEW: blank matchText = omit the line(s) that trigger THIS event
+        // (only works for event:* types)
+        if (eventName.startsWith('event:')) {
+          return [{ id: `${s.id}:event`, eventName, matchText: '' }];
+        }
+
+        return [];
       });
 
     setOmitRules(omitRules);
