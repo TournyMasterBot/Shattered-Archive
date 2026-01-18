@@ -1,7 +1,9 @@
+// apps/game-client/src/hooks/useTerminal.ts
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import { shouldOmitLine } from '../features/userScripts/triggerOmitStore';
+
+import { ShatteredArchiveTerminal } from '../features/terminal/shatteredArchiveTerminal';
 
 export function useTerminal() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -40,7 +42,7 @@ export function useTerminal() {
     }
 
     term.open(container);
-    // term.write('\x1b[0m');
+
     // ============================================================
     // 🔒 ANDROID / MOBILE HARD STOP: NO FOCUS, NO KEYBOARD
     // ============================================================
@@ -148,89 +150,36 @@ export function useTerminal() {
       if (atBottom) {
         autoScrollRef.current = true;
         setShowJump(false);
+
+        // optional: tell singleton we are live
+        try {
+          ShatteredArchiveTerminal.Instance.setAutoScroll(true);
+        } catch {
+          // ignore
+        }
       } else {
         autoScrollRef.current = false;
         setShowJump(true);
+
+        // optional: tell singleton to stop auto-scroll
+        try {
+          ShatteredArchiveTerminal.Instance.setAutoScroll(false);
+        } catch {
+          // ignore
+        }
       }
     };
 
     viewport?.addEventListener('scroll', handleScroll);
 
-    // ------------------------------------------------------------
-    // 1) Normal pipeline: game:terminal-data
-    //    - used for raw network/game output
-    //    - passes through omit + per-line filtering
-    // ------------------------------------------------------------
-    const handleTerminalData = (ev: Event) => {
-      const e = ev as CustomEvent<{ text: string }>;
-      const text = e.detail?.text ?? '';
-      const t = termRef.current;
-      if (!text || !t) return;
+    // ============================================================
+    // ✅ Attach terminal runtime singleton (writes happen there now)
+    // ============================================================
+    ShatteredArchiveTerminal.Instance.attach(term, fitAddon);
 
-      if (shouldOmitLine('game:terminal-data', text)) return;
-
-      let start = 0;
-      let out: string | null = null;
-
-      for (let i = 0; i <= text.length; i++) {
-        const ch = i < text.length ? text.charCodeAt(i) : 10;
-        if (ch === 10 || i === text.length) {
-          const rawEnd = i < text.length ? i + 1 : i;
-
-          let end = i;
-          if (end > start && text.charCodeAt(end - 1) === 13) end--;
-
-          const line = end > start ? text.slice(start, end) : '';
-          const rawLine = text.slice(start, rawEnd);
-
-          const omit = line.length > 0 && shouldOmitLine('text:line', line);
-
-          if (omit) {
-            if (out === null) out = text.slice(0, start);
-          } else if (out !== null) {
-            out += rawLine;
-          }
-
-          start = i + 1;
-        }
-      }
-
-      t.write(out ?? text);
-
-      if (autoScrollRef.current) {
-        try {
-          t.scrollToBottom();
-        } catch {
-          // ignore
-        }
-      }
-    };
-
-    // ------------------------------------------------------------
-    // 2) Script pipeline: game:terminal-data-script
-    //    - bypasses omit & line filtering entirely
-    //    - expects text ALREADY encoded as ANSI for xterm
-    // ------------------------------------------------------------
-    const handleScriptTerminalData = (ev: Event) => {
-      const e = ev as CustomEvent<{ text: string }>;
-      const text = e.detail?.text ?? '';
-      const t = termRef.current;
-      if (!text || !t) return;
-
-      // Direct write: no omit, no splitting
-      t.write(text);
-
-      if (autoScrollRef.current) {
-        try {
-          t.scrollToBottom();
-        } catch {
-          // ignore
-        }
-      }
-    };
-
-    window.addEventListener('game:terminal-data', handleTerminalData as EventListener);
-    window.addEventListener('game:terminal-data-script', handleScriptTerminalData as EventListener);
+    // ============================================================
+    // Resize -> fit terminal
+    // ============================================================
 
     const handleResize = () => {
       requestAnimationFrame(() => {
@@ -251,8 +200,6 @@ export function useTerminal() {
 
     return () => {
       viewport?.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('game:terminal-data', handleTerminalData as EventListener);
-      window.removeEventListener('game:terminal-data-script', handleScriptTerminalData as EventListener);
       window.removeEventListener('resize', handleResize);
       document.removeEventListener('focusin', onFocusInCapture, true);
 
@@ -263,6 +210,13 @@ export function useTerminal() {
       xtermRoot?.removeEventListener('focusin', blurActive, true);
       helper?.removeEventListener('focus', blurActive, true);
       helper?.removeEventListener('focusin', blurActive, true);
+
+      // Detach singleton references
+      try {
+        ShatteredArchiveTerminal.Instance.detach();
+      } catch {
+        // ignore
+      }
 
       term.dispose();
       termRef.current = null;
@@ -278,6 +232,13 @@ export function useTerminal() {
       term.scrollToBottom();
       autoScrollRef.current = true;
       setShowJump(false);
+
+      // optional: tell singleton
+      try {
+        ShatteredArchiveTerminal.Instance.setAutoScroll(true);
+      } catch {
+        // ignore
+      }
     } catch {
       // ignore
     }

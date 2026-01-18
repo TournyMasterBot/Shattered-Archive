@@ -5,6 +5,7 @@ import styles from '../styles/LibraryModal.module.scss';
 import useLibrary from '../hooks/useLibrary';
 import { renderDslToHtml } from '../features/library/renderDslColorPreviewHtml';
 import type { LibraryBook, LibraryBookPage, LibraryNote, UserNote, NoteSpool } from '../features/library/library-types';
+import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 
 interface LibraryModalProps {
   isOpen: boolean;
@@ -59,11 +60,7 @@ function splitLinesPreserveBlanks(text: string): string[] {
 }
 
 function sendGameCommand(cmd: string): void {
-  window.dispatchEvent(
-    new CustomEvent('game:send-command', {
-      detail: { cmd },
-    }),
-  );
+  DispatchEvent('game:send-command', { cmd });
 }
 
 function sortedDefinedPages(book: LibraryBook): LibraryBookPage[] {

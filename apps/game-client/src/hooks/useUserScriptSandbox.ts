@@ -14,6 +14,7 @@ import { setOmitRules } from '../features/userScripts/triggerOmitStore';
 import { invokeGlobalById } from '../features/userScripts/globalRuntime';
 import { getGlobalVar, setGlobalVar, deleteGlobalVar } from '../features/userScripts/globalScriptsStore';
 import { getUserVariablesSnapshot } from '../features/userScripts/userVariablesStore';
+import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 
 const STORAGE_KEY_PREFIX = 'shatteredArchive.userScripts.';
 
@@ -151,17 +152,7 @@ function makeApiBase(
 ): ScriptSandboxApi {
   const api: ScriptSandboxApi = {
     sendCommand: (cmd: string) => {
-      // Primary behavior: emit a browser event so useGameConnection can handle it.
-      try {
-        window.dispatchEvent(
-          new CustomEvent('game:send-command', {
-            detail: { cmd, connectionId: connectionId ?? null },
-          }),
-        );
-      } catch {
-        // Fallback if window is not available
-        console.log(`[UserScript sendCommand fallback] (${script.name})`, cmd);
-      }
+      DispatchEvent('game:send-command', { cmd, connectionId });
     },
     log: (...args: unknown[]) => {
       console.log(`[UserScript:${script.name}]`, ...args);
@@ -178,15 +169,10 @@ function makeApiBase(
 
       try {
         const ansi = dslToAnsi(dsl);
-        window.dispatchEvent(
-          new CustomEvent('game:terminal-data-script', {
-            detail: {
-              text: ansi,
-              __fromUserScript: true,
-              connectionId: connectionId ?? null,
-            },
-          }),
-        );
+        DispatchEvent('shatteredarchive:write-terminal', {
+          rawText: ansi,
+          fromUserScript: true
+        })
       } catch (err) {
         console.error('[UserScriptSandbox writeTerminal] failed', err);
       }

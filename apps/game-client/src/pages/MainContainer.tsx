@@ -28,11 +28,17 @@ import { useEquipmentDeltas } from '../hooks/useEquipmentDeltas';
 
 import AutoLevelingModal from '../components/AutoLevelingModal';
 import { useAutoLeveling } from '../hooks/useAutoLeveling';
+import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
+import { useTerminal } from '../hooks/useTerminal';
+import { ShatteredArchiveTerminal } from '../features/terminal/shatteredArchiveTerminal';
 
 export const MainContainer: React.FC = () => {
   useVisualViewportHeight();
   const main = useMainContainer();
   const gameConn = useGameConnection();
+  // Instantiate the user script runtime
+  const userScriptRuntime = RuntimeSingleton.Instance.GetUserScriptRuntime;
+  const terminal = ShatteredArchiveTerminal.Instance;
   applyCssToDom(getAppliedCss());
 
   const { layoutVars, handleVerticalResizeMouseDown, handleHorizontalResizeMouseDown } = useLayoutSizing();

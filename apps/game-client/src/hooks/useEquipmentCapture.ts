@@ -129,10 +129,10 @@ export function useEquipmentCapture(connectionId: string) {
 
     window.addEventListener('game:terminal-data', onTerminal as EventListener);
     return () => {
-      console.debug(`[eq-capture] hook unmounted (${EQ_CAPTURE_VERSION})`, {
+      /*console.debug(`[eq-capture] hook unmounted (${EQ_CAPTURE_VERSION})`, {
         connectionId,
         seenAnyEq: seenAnyEq.current,
-      });
+      });*/
       clearIdleTimer();
       window.removeEventListener('game:terminal-data', onTerminal as EventListener);
     };

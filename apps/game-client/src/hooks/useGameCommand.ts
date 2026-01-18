@@ -1,9 +1,10 @@
 // apps/game-client/src/hooks/useGameCommand.ts
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
-import { userScriptRuntime } from '../features/userScripts/runtimeSingleton';
+import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
 import { preprocessOutgoingCommand } from '../features/accessibility/accessibility-command';
 import { OutboundQueue } from '../features/commands/outbount-queue';
+import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 
 interface UseGameCommandOptions {
   sendRaw: (data: string) => void;
@@ -47,18 +48,18 @@ export function useGameCommand(options: UseGameCommandOptions): UseGameCommandRe
       if (!isConnected) return;
 
       try {
-        window.dispatchEvent(new CustomEvent('game:command-sent', { detail: { text: line } }));
+        DispatchEvent('game:command-sent', {
+          text:line
+        });
       } catch {
         // ignore
       }
 
-      if (userScriptRuntime) {
-        userScriptRuntime.executeAlias(line);
+      if (RuntimeSingleton.Runtime) {
+        RuntimeSingleton.Runtime.executeAlias(line);
       } else {
         sendRaw(line);
       }
-
-      // IMPORTANT: do NOT save to history here (this is per-line after splitting)
     };
   }, [isConnected, sendRaw]);
 

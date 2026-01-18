@@ -213,7 +213,7 @@ This guard applies only to the books editor, because page navigation is the most
 
 LibraryModal sends commands through:
 
-- `window.dispatchEvent(new CustomEvent('game:send-command', { detail: { cmd } }))`
+- `DispatchEvent('game:send-command', { cmd, connectionId });`
 
 So the UI is not directly writing to a socket; it is raising an event that the game client listens to.
 

@@ -2,6 +2,15 @@
 
 import { AnyUserScript, ScriptErrorInfo, ScriptSandboxApi, TriggerContextEvent } from './types';
 import { runUserScript } from './runtime';
+import {
+  DispatchEvent,
+  ListenEvent,
+  ListenRedispatch,
+} from '../event-emitter/event-dispatcher';
+
+const STORAGE_KEY_PREFIX = 'shatteredArchive.userScripts.';
+
+let windowEventsRegistered: boolean = false;
 
 export type SendCommandFn = (cmd: string) => void;
 
@@ -13,7 +22,9 @@ export interface UserScriptRuntimeOptions {
 
 function normalizeSplitChar(v: string | undefined): string {
   const s = (v ?? ';').trim();
-  if (!s) return ';';
+  if (!s) { 
+    return ';';
+  }
   return s.slice(0, 1);
 }
 
@@ -29,20 +40,64 @@ export class UserScriptRuntime {
     this.sendCommand =
       options.sendCommand ??
       ((cmd) => {
-        try {
-          window.dispatchEvent(
-            new CustomEvent('game:send-command', {
-              detail: { cmd },
-            }),
-          );
-        } catch {
-          console.log('[UserScriptRuntime] sendCommand (fallback):', cmd);
-        }
+        DispatchEvent('game:send-command', { cmd });
       });
 
     this.onScriptError = options.onScriptError;
     this.lastTick = Date.now();
     this.aliasSplitChar = normalizeSplitChar(options.aliasSplitChar);
+
+    this.attachWindowEvents();
+  }
+
+  private attachWindowEvents() {
+    // Don't double attach
+    if (windowEventsRegistered) {
+      console.warn('Prevented double-window-attach request in userScriptRuntime');
+      return;
+    }
+
+    console.log('Attaching user script runtime events');
+
+    ListenEvent<any>('shatteredarchive:raw-data', (payload) => {
+      void this.processRawEvent(payload);
+    });
+
+    // ✅ GMCP -> (if you want to forward it somewhere else)
+    // ListenRedispatch('shatteredarchive:gmcp-data', 'shatteredarchive:gmcp-dispatch');
+    ListenRedispatch('shatteredarchive:gmcp-data', 'shatteredarchive:write-console', {
+      fromUserScript: false,
+    });
+
+    windowEventsRegistered = true;
+  }
+
+  getStorageKey(connectionId?: string | null) {
+    const safe = connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
+    return `${STORAGE_KEY_PREFIX}${safe}`;
+  }
+
+  loadScriptsFromStorage(connectionId?: string | null): AnyUserScript[] {
+    try {
+      const raw = window.localStorage.getItem(this.getStorageKey(connectionId));
+      if (!raw) {
+        console.log('User scripts not found. Returning default', {
+          connectionId,
+        });
+        return [];
+      }
+      const parsed = JSON.parse(raw);
+      console.log('Successfully loaded user scripts', {
+        connectionId,
+      });
+      return Array.isArray(parsed) ? (parsed as AnyUserScript[]) : [];
+    } catch (err) {
+      console.error('Failed to load user scripts. Returning default', {
+        connectionId,
+        err,
+      });
+      return [];
+    }
   }
 
   setAliasSplitChar(next: string | undefined): void {
@@ -67,6 +122,60 @@ export class UserScriptRuntime {
 
   getAllScripts(): AnyUserScript[] {
     return Array.from(this.scripts.values());
+  }
+
+  async processRawEvent(payload: any): Promise<void> {
+    const rawText = String(payload?.rawText ?? '');
+    const haystack = rawText.toLowerCase();
+
+    const triggers = Array.from(this.scripts.values()).filter(
+      (s): s is any => s.enabled === true && s.kind === 'trigger',
+    );
+
+    for (const script of triggers) {
+      const matchText = String(script.matchText ?? '').trim();
+      if (!matchText) {
+        continue;
+      }
+
+      const needle = matchText.toLowerCase();
+
+      if (haystack.includes(needle)) {
+        const triggerScriptPayload = {
+          event: {
+            name: script.eventName,
+            payload: {
+              ...payload,
+              fromUserScript: true
+            },
+          },
+        }
+        console.log('✅ Trigger text matched', { 
+          needle: matchText,
+          triggerScriptPayload
+        });
+        this.executeScript(script, triggerScriptPayload);
+      }
+    }
+
+    /* Alias and timers should be handled from a different event
+      // Handle Alias
+      else if (script.kind === 'alias') {
+        const aliasKey = (script.alias ?? '').trim().toLowerCase();
+        console.log('Comparing matchtext for alias', {
+          payload,
+          aliasKey
+        });
+      }
+      // Handle Timers
+      else if (script.kind === 'timer') {
+      }
+      */
+
+    // ✅ apply filtering / recoloring / omit logic here
+
+    // ✅ forward to terminal
+    DispatchEvent('shatteredarchive:write-terminal', payload);
   }
 
   dispatchEvent(event: TriggerContextEvent): void {
@@ -143,22 +252,16 @@ export class UserScriptRuntime {
       event: extraContext?.event,
       log: (...args: unknown[]) => console.log(`[Script:${script.name}]`, ...args),
       error: (...args: unknown[]) => console.error(`[Script:${script.name}]`, ...args),
-
-      // NEW: available for triggers, aliases, timers
       writeTerminal: (dsl: string) => {
         if (!dsl) return;
 
         try {
           const ansi = dslToAnsi(dsl);
 
-          window.dispatchEvent(
-            new CustomEvent('game:terminal-data-script', {
-              detail: {
-                text: ansi,
-                __fromUserScript: true,
-              },
-            }),
-          );
+          DispatchEvent('shatteredarchive:write-terminal', {
+            rawText: ansi,
+            fromUserScript: true,
+          });
         } catch (err) {
           console.error('[Script:writeTerminal] failed', err);
         }

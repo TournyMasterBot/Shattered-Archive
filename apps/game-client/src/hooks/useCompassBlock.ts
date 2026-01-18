@@ -1,6 +1,7 @@
 // apps/game-client/src/hooks/useCompassBlock.ts
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getRoomData, setRoomData } from '../features/room/roomDataStore';
+import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 
 export type CompassDirection = 'NW' | 'N' | 'NE' | 'W' | 'E' | 'SW' | 'S' | 'SE' | 'U' | 'D';
 
@@ -106,12 +107,7 @@ export function useCompassBlock() {
     if (!cmd) return;
 
     pendingMoveRef.current = dir;
-
-    window.dispatchEvent(
-      new CustomEvent('game:send-command', {
-        detail: { cmd },
-      }),
-    );
+    DispatchEvent('game:send-command', { cmd });
 
     if (pendingTimerRef.current) {
       window.clearTimeout(pendingTimerRef.current);
@@ -119,11 +115,7 @@ export function useCompassBlock() {
 
     pendingTimerRef.current = window.setTimeout(() => {
       if (pendingMoveRef.current === dir) {
-        window.dispatchEvent(
-          new CustomEvent('game:movement-failed', {
-            detail: { direction: dir },
-          }),
-        );
+        DispatchEvent('game:movement-failed', { cmd, direction: dir });
         pendingMoveRef.current = null;
       }
     }, 1200);

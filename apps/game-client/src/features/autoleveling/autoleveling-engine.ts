@@ -38,6 +38,7 @@
  *    - if engage fails, unlock and continue
  */
 
+import { DispatchEvent } from '../event-emitter/event-dispatcher';
 import type { AutoLevelAction, AutoLevelConfig, AutoLevelRunState, AutoLevelTarget } from './autoleveling-types';
 
 type EngineDeps = {
@@ -680,10 +681,9 @@ export class AutoLevelingEngine {
 
     const mv = isMovementCommand(cmd);
     if (mv.isMove) {
-      dispatchSafe('game:movement-attempt', { cmd, dir: mv.dir });
+      DispatchEvent('game:movement-attempt', { cmd, dir: mv.dir });
     }
-
-    dispatchSafe('game:send-command', { cmd });
+    DispatchEvent('game:send-command', { cmd });
   }
 
   private delayMs(ms: number): Promise<void> {

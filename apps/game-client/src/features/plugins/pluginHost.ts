@@ -5,6 +5,7 @@ import { applyPluginBaseCss, removePluginBaseCss } from './pluginCss';
 import { startPluginBundledScripts } from './pluginScriptRunner';
 import { normalizePluginModule } from './normalizePluginModule';
 import { ROUTED_WINDOW_EVENTS } from './routed-gmcp-events';
+import { DispatchEvent } from '../event-emitter/event-dispatcher';
 
 type PluginCleanup = {
   api?: PluginRuntimeApi;
@@ -110,11 +111,7 @@ function makeDefaultApi(connectionId: string, pluginId: PluginId, module: IPlugi
     pluginId,
 
     sendCommand: (cmd: string) => {
-      window.dispatchEvent(
-        new CustomEvent('game:send-command', {
-          detail: { cmd, connectionId },
-        }),
-      );
+      DispatchEvent('game:send-command', { cmd, connectionId });
     },
 
     log: (...args: unknown[]) => {

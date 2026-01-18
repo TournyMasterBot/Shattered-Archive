@@ -108,7 +108,7 @@ export interface ScriptSandboxApi {
    *
    * Implementation (outside this type) is expected to:
    *   - Convert DSL → ANSI for xterm
-   *   - Emit a bypass event (e.g. game:terminal-data-script)
+   *   - Emit a bypass event (e.g. shatteredarchive:write-terminal)
    *     that does NOT go through omit/line filtering.
    */
   writeTerminal?: (dsl: string) => void;

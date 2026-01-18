@@ -127,6 +127,6 @@ export function serializeActionsToEditor(actions: AutoLevelAction[]): string {
   }
 
   const out = lines.join('\n');
-  adbg('serializeActionsToEditor', { actions: actions?.length ?? 0, lines: lines.length, chars: out.length });
+  //adbg('serializeActionsToEditor', { actions: actions?.length ?? 0, lines: lines.length, chars: out.length });
   return out;
 }

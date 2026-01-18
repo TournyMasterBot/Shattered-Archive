@@ -1,54 +1,184 @@
-// apps\game-client\src\features\userScripts\runtimeSingleton.ts
-import { getAccessibilitySettings } from '../accessibility/accessibility-settings-store';
+// apps/game-client/src/features/userScripts/runtimeSingleton.ts
+import { AccessibilitySettings, getAccessibilitySettings } from '../accessibility/accessibility-settings-store';
 import { UserScriptRuntime } from './userScriptRuntime';
-import type { AnyUserScript } from './types';
-import { ROUTED_WINDOW_EVENTS } from '../plugins/routed-gmcp-events';
+import { ListenRedispatch, ListenRedispatchMap } from '../event-emitter/event-dispatcher';
 
-const settings = getAccessibilitySettings();
+let windowEventsRegistered = false;
 
-export const userScriptRuntime = new UserScriptRuntime({
-  aliasSplitChar: settings.commandSplitChar,
+// ✅ matches what useGameConnection emits right now
+type GameRemoteServerRaw = {
+  type: 'raw';
+  receivedTimestamp: string;
+  payload: string;
+};
+
+type GameRemoteServerGmcp = {
+  type: 'gmcp';
+  receivedTimestamp: string;
+  payload: string;
+};
+
+type GameRemoteServerError = {
+  type: 'error';
+  payload: {
+    receivedTimestamp: string;
+    message: string;
+  };
+};
+
+type GameRemoteServerClose = {
+  type: 'socket-closed' | 'server-closed';
+  payload: {
+    receivedTimestamp: string;
+    reason?: string;
+  };
+};
+
+// re-dispatch shapes
+type ShatteredArchiveRawData = {
+  rawText: string;
+  userText: string;
+  fromUserScript: false;
+};
+
+type ShatteredArchiveGmcpData = {
+  rawText: string;
+  fromUserScript: false;
+};
+
+type ShatteredArchiveServerError = {
+  message: string;
+};
+
+type ShatteredArchiveServerClosed = {
+  reason?: string;
+};
+
+export class RuntimeSingleton {
+  private static _instance: RuntimeSingleton | null = null;
+
+  public static get Instance(): RuntimeSingleton {
+    if (!RuntimeSingleton._instance) RuntimeSingleton._instance = new RuntimeSingleton();
+    return RuntimeSingleton._instance;
+  }
+
+  public static get Runtime(): UserScriptRuntime {
+    return RuntimeSingleton.Instance.GetUserScriptRuntime;
+  }
+
+  private userScriptRuntime: UserScriptRuntime;
+  private settings: AccessibilitySettings = getAccessibilitySettings();
+
+  private constructor() {
+    this.userScriptRuntime = new UserScriptRuntime({
+      aliasSplitChar: this.settings.commandSplitChar,
+    });
+
+    this.hydrateRuntime('default');
+    this.attachWindowEvents();
+  }
+
+  public get GetUserScriptRuntime(): UserScriptRuntime {
+    return this.userScriptRuntime;
+  }
+
+  private hydrateRuntime(connectionId?: string | null) {
+    this.userScriptRuntime.clear();
+    const scripts = this.userScriptRuntime.loadScriptsFromStorage(connectionId);
+    for (const s of scripts) this.userScriptRuntime.upsertScript(s);
+  }
+
+  private attachWindowEvents(): void {
+    if (windowEventsRegistered) {
+      console.warn('Prevented double-window-attach request in runtimeSingleton');
+      return;
+    }
+
+    console.log('Attaching runtime singleton window events');
+
+    // ✅ RAW -> shatteredarchive:raw-data (mapped)
+    ListenRedispatchMap<GameRemoteServerRaw, ShatteredArchiveRawData>(
+      'game:remote-server:raw',
+      'shatteredarchive:raw-data',
+      (detail) => ({
+        rawText: detail.payload,
+        userText: detail.payload,
+        fromUserScript: false,
+      }),
+    );
+
+    // ✅ GMCP -> shatteredarchive:gmcp-data (mapped)
+    ListenRedispatchMap<GameRemoteServerGmcp, ShatteredArchiveGmcpData>(
+      'game:remote-server:gmcp',
+      'shatteredarchive:gmcp-data',
+      (detail) => ({
+        rawText: detail.payload,
+        fromUserScript: false,
+      }),
+    );
+
+    // ERROR -> shatteredarchive:server-error
+    ListenRedispatchMap<GameRemoteServerError, ShatteredArchiveServerError>(
+      'game:remote-server:error',
+      'shatteredarchive:server-error',
+      (detail) => ({
+        message: detail.payload?.message ?? 'Unknown server error',
+      }),
+    );
+
+    // CLOSE -> shatteredarchive:server-closed
+    ListenRedispatchMap<GameRemoteServerClose, ShatteredArchiveServerClosed>(
+      'game:remote-server:close',
+      'shatteredarchive:server-closed',
+      (detail) => ({
+        reason: detail.payload?.reason,
+      }),
+    );
+
+    // Connection changed -> hydrate scripts
+    window.addEventListener('shatteredarchive:connection-changed', (e: any) => {
+      const nextId = e?.detail?.connectionId ?? 'default';
+      this.hydrateRuntime(nextId);
+    });
+
+    window.addEventListener('shatteredarchive:userScripts-updated', (e: any) => {
+      const connectionId = e?.detail?.connectionId ?? 'default';
+      this.hydrateRuntime(connectionId);
+    });
+
+    windowEventsRegistered = true;
+  }
+}
+
+//
+
+/*
+(function initUserScriptRuntimeHydration() {
+  // Initialze the runtime with a default connection
+  hydrateRuntime('default');
+
+  // Add listener for connection changed to change the hydrated connection
+  window.addEventListener('shatteredarchive:connection-changed', (e: any) => {
+    const nextId = e?.detail?.connectionId ?? 'default';
+    hydrateRuntime(nextId);
+  });
+
+  // Add listener for game userscripts being updated
+  window.addEventListener('shatteredarchive:userScripts-updated', (e: any) => {
+    const connectionId = e?.detail?.connectionId ?? 'default';
+    hydrateRuntime(connectionId);
+  });
+
+  // TMB TODO : Add listener for data from web socket
 });
+*/
 
+/*
 window.addEventListener('sa:accessibility-updated', (e: any) => {
   const next = e?.detail;
   userScriptRuntime.setAliasSplitChar(next?.commandSplitChar);
 });
 
-const STORAGE_KEY_PREFIX = 'shatteredArchive.userScripts.';
-
-function getStorageKey(connectionId?: string | null) {
-  const safe = connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
-  return `${STORAGE_KEY_PREFIX}${safe}`;
-}
-
-function loadScriptsFromStorage(connectionId?: string | null): AnyUserScript[] {
-  try {
-    const raw = window.localStorage.getItem(getStorageKey(connectionId));
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as AnyUserScript[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function hydrateRuntime(connectionId?: string | null) {
-  // Replace runtime scripts with what’s in storage for this connection
-  userScriptRuntime.clear();
-
-  const scripts = loadScriptsFromStorage(connectionId);
-  for (const s of scripts) {
-    userScriptRuntime.upsertScript(s);
-  }
-}
-
-/**
- * Keep runtime synced with:
- * - initial page load
- * - connection changes
- * - sandbox saves (localStorage writes)
- */
 (function initUserScriptRuntimeHydration() {
   // initial hydrate (default connection)
   hydrateRuntime('default');
@@ -65,13 +195,6 @@ function hydrateRuntime(connectionId?: string | null) {
 
     // key format: shatteredArchive.userScripts.{connectionId}
     const connectionId = e.key.slice(STORAGE_KEY_PREFIX.length) || 'default';
-    hydrateRuntime(connectionId);
-  });
-
-  // Same-tab writes do not trigger `storage`, so we also provide a manual event hook.
-  // We’ll fire this from useUserScriptSandbox when it saves.
-  window.addEventListener('game:userScripts-updated', (e: any) => {
-    const connectionId = e?.detail?.connectionId ?? 'default';
     hydrateRuntime(connectionId);
   });
 
@@ -128,3 +251,4 @@ function hydrateRuntime(connectionId?: string | null) {
     });
   }
 })();
+*/

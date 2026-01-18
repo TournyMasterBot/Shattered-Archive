@@ -110,9 +110,9 @@ export function useAutoLeveling(connectionId: string) {
   }, []);
 
   const [runState, setRunState] = useState<AutoLevelRunState>({ status: 'idle' });
-  useEffect(() => {
+  /*useEffect(() => {
     hdbg('runState updated', runState);
-  }, [runState]);
+  }, [runState]);*/
 
   const engineRef = useRef<AutoLevelingEngine | null>(null);
 

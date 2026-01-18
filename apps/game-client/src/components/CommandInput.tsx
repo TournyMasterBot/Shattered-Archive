@@ -26,14 +26,6 @@ interface CommandInputProps {
   onAutoLevelStop?: () => void;
 }
 
-function dispatchSafe(name: string, detail?: any) {
-  try {
-    window.dispatchEvent(new CustomEvent(name, { detail }));
-  } catch {
-    // ignore
-  }
-}
-
 export const CommandInput: React.FC<CommandInputProps> = ({
   sendRaw,
   isConnected,
@@ -99,14 +91,14 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 
   const autoDisabled = !isConnected || !autoLevelingActive;
 
-  const fireStart = () => (onAutoLevelStart ? onAutoLevelStart() : dispatchSafe('game:autoleveling-start'));
-  const firePause = () => (onAutoLevelPause ? onAutoLevelPause() : dispatchSafe('game:autoleveling-pause'));
-  const fireResume = () => (onAutoLevelResume ? onAutoLevelResume() : dispatchSafe('game:autoleveling-resume'));
-  const fireStop = () => (onAutoLevelStop ? onAutoLevelStop() : dispatchSafe('game:autoleveling-stop'));
+  //const fireStart = () => (onAutoLevelStart ? onAutoLevelStart() : DispatchEvent('game:autoleveling-start', {}));
+  //const firePause = () => (onAutoLevelPause ? onAutoLevelPause() : DispatchEvent('game:autoleveling-pause', {}));
+  //const fireResume = () => (onAutoLevelResume ? onAutoLevelResume() : DispatchEvent('game:autoleveling-resume', {}));
+  //const fireStop = () => (onAutoLevelStop ? onAutoLevelStop() : DispatchEvent('game:autoleveling-stop', {}));
 
   const onAutoClick = () => {
     if (autoDisabled) return;
-
+/*
     if (isIdle) {
       const ok = window.confirm('Begin auto leveling now?');
       if (!ok) return;
@@ -127,8 +119,9 @@ export const CommandInput: React.FC<CommandInputProps> = ({
     // error/stopping fallback
     const ok = window.confirm('Auto leveling is not idle. Start again?');
     if (!ok) return;
-    fireStart();
+    fireStart(); */
   };
+ 
 
   const onStopClick = () => {
     if (!isConnected) return;
@@ -137,7 +130,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
     const ok = window.confirm('Stop auto leveling? This ends the current run.');
     if (!ok) return;
 
-    fireStop();
+    //fireStop();
   };
 
   const autoLabel = isIdle
