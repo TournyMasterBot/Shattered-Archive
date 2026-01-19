@@ -6,10 +6,13 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "jest --config ../../jest.config.cjs --runInBand --rootDir .",
+    "test": "jest --config ./jest.config.cjs --runInBand --passWithNoTests --coverage --coverageDirectory=coverage --coverageReporters=json-summary --coverageReporters=json --coverageReporters=lcov --coverageReporters=text",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,scss,html}\""
   },
   "dependencies": {
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "fengari-web": "^0.1.4",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },

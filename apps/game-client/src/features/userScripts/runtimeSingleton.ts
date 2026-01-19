@@ -1,9 +1,8 @@
 // apps/game-client/src/features/userScripts/runtimeSingleton.ts
+
 import { AccessibilitySettings, getAccessibilitySettings } from '../accessibility/accessibility-settings-store';
 import { UserScriptRuntime } from './userScriptRuntime';
-import { ListenRedispatch, ListenRedispatchMap } from '../event-emitter/event-dispatcher';
-
-let windowEventsRegistered = false;
+import { ListenEvent, ListenRedispatchMap } from '../event-emitter/event-dispatcher';
 
 // ✅ matches what useGameConnection emits right now
 type GameRemoteServerRaw = {
@@ -69,6 +68,12 @@ export class RuntimeSingleton {
   private userScriptRuntime: UserScriptRuntime;
   private settings: AccessibilitySettings = getAccessibilitySettings();
 
+  /**
+   * Optional: keep unsubscribe handles around (not required, but nice for cleanup/tests).
+   * Your Listen* helpers are already HMR-safe because they dedupe by key.
+   */
+  private disposers: Array<() => void> = [];
+
   private constructor() {
     this.userScriptRuntime = new UserScriptRuntime({
       aliasSplitChar: this.settings.commandSplitChar,
@@ -89,66 +94,89 @@ export class RuntimeSingleton {
   }
 
   private attachWindowEvents(): void {
-    if (windowEventsRegistered) {
-      console.warn('Prevented double-window-attach request in runtimeSingleton');
-      return;
-    }
+    // NOTE:
+    // We do NOT need a module-level "windowEventsRegistered" flag anymore.
+    // ListenEvent / ListenRedispatchMap are HMR-safe and dedupe by `options.key`.
 
     console.log('Attaching runtime singleton window events');
 
     // ✅ RAW -> shatteredarchive:raw-data (mapped)
-    ListenRedispatchMap<GameRemoteServerRaw, ShatteredArchiveRawData>(
-      'game:remote-server:raw',
-      'shatteredarchive:raw-data',
-      (detail) => ({
-        rawText: detail.payload,
-        userText: detail.payload,
-        fromUserScript: false,
-      }),
+    this.disposers.push(
+      ListenRedispatchMap<GameRemoteServerRaw, ShatteredArchiveRawData>(
+        'game:remote-server:raw',
+        'shatteredarchive:raw-data',
+        (detail) => ({
+          rawText: detail.payload,
+          userText: detail.payload,
+          fromUserScript: false,
+        }),
+        { key: 'runtimeSingleton::redispatch::raw' },
+      ),
     );
 
     // ✅ GMCP -> shatteredarchive:gmcp-data (mapped)
-    ListenRedispatchMap<GameRemoteServerGmcp, ShatteredArchiveGmcpData>(
-      'game:remote-server:gmcp',
-      'shatteredarchive:gmcp-data',
-      (detail) => ({
-        rawText: detail.payload,
-        fromUserScript: false,
-      }),
+    this.disposers.push(
+      ListenRedispatchMap<GameRemoteServerGmcp, ShatteredArchiveGmcpData>(
+        'game:remote-server:gmcp',
+        'shatteredarchive:gmcp-data',
+        (detail) => ({
+          rawText: detail.payload,
+          fromUserScript: false,
+        }),
+        { key: 'runtimeSingleton::redispatch::gmcp' },
+      ),
     );
 
     // ERROR -> shatteredarchive:server-error
-    ListenRedispatchMap<GameRemoteServerError, ShatteredArchiveServerError>(
-      'game:remote-server:error',
-      'shatteredarchive:server-error',
-      (detail) => ({
-        message: detail.payload?.message ?? 'Unknown server error',
-      }),
+    this.disposers.push(
+      ListenRedispatchMap<GameRemoteServerError, ShatteredArchiveServerError>(
+        'game:remote-server:error',
+        'shatteredarchive:server-error',
+        (detail) => ({
+          message: detail.payload?.message ?? 'Unknown server error',
+        }),
+        { key: 'runtimeSingleton::redispatch::error' },
+      ),
     );
 
     // CLOSE -> shatteredarchive:server-closed
-    ListenRedispatchMap<GameRemoteServerClose, ShatteredArchiveServerClosed>(
-      'game:remote-server:close',
-      'shatteredarchive:server-closed',
-      (detail) => ({
-        reason: detail.payload?.reason,
-      }),
+    this.disposers.push(
+      ListenRedispatchMap<GameRemoteServerClose, ShatteredArchiveServerClosed>(
+        'game:remote-server:close',
+        'shatteredarchive:server-closed',
+        (detail) => ({
+          reason: detail.payload?.reason,
+        }),
+        { key: 'runtimeSingleton::redispatch::close' },
+      ),
     );
 
     // Connection changed -> hydrate scripts
-    window.addEventListener('shatteredarchive:connection-changed', (e: any) => {
-      const nextId = e?.detail?.connectionId ?? 'default';
-      this.hydrateRuntime(nextId);
-    });
+    this.disposers.push(
+      ListenEvent<{ connectionId?: string }>(
+        'shatteredarchive:connection-changed',
+        (payload) => {
+          const nextId = payload?.connectionId ?? 'default';
+          this.hydrateRuntime(nextId);
+        },
+        { key: 'runtimeSingleton::window::connection-changed' },
+      ),
+    );
 
-    window.addEventListener('shatteredarchive:userScripts-updated', (e: any) => {
-      const connectionId = e?.detail?.connectionId ?? 'default';
-      this.hydrateRuntime(connectionId);
-    });
-
-    windowEventsRegistered = true;
+    // UserScripts updated -> hydrate scripts
+    this.disposers.push(
+      ListenEvent<{ connectionId?: string }>(
+        'shatteredarchive:userScripts-updated',
+        (payload) => {
+          const connectionId = payload?.connectionId ?? 'default';
+          this.hydrateRuntime(connectionId);
+        },
+        { key: 'runtimeSingleton::window::userScripts-updated' },
+      ),
+    );
   }
 }
+
 
 //
 
@@ -189,14 +217,14 @@ window.addEventListener('sa:accessibility-updated', (e: any) => {
   });
 
   // Listen to any localStorage update (including other tabs and same tab via manual dispatch)
-  window.addEventListener('storage', (e: StorageEvent) => {
-    if (!e.key) return;
-    if (!e.key.startsWith(STORAGE_KEY_PREFIX)) return;
+    window.addEventListener('storage', (e: StorageEvent) => {
+      if (!e.key) return;
+      if (!e.key.startsWith(STORAGE_KEY_PREFIX)) return;
 
-    // key format: shatteredArchive.userScripts.{connectionId}
-    const connectionId = e.key.slice(STORAGE_KEY_PREFIX.length) || 'default';
-    hydrateRuntime(connectionId);
-  });
+      // key format: shatteredArchive.userScripts.{connectionId}
+      const connectionId = e.key.slice(STORAGE_KEY_PREFIX.length) || 'default';
+      hydrateRuntime(connectionId);
+    });
 
   function splitIntoLines(chunk: string): string[] {
     // normalize to \n, then split; keep it simple and stable

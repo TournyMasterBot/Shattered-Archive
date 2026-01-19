@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { ListenEvent } from '../event-emitter/event-dispatcher';
 
 const DEFAULT_TICK_DURATION = 41;
 
@@ -99,9 +100,13 @@ function createStore(): TickStore {
           store.publishIfChanged(nextTime, nextRemaining);
         };
 
-        window.addEventListener('game:tick', onTick as EventListener);
-        (store as any)._onTick = onTick;
-        store.tickListenerAttached = true;
+        ListenEvent<any>('shatteredarchive:write-terminal', (payload) => {
+          console.log('tick received', {
+            ...payload,
+          });
+          (store as any)._onTick = onTick;
+          store.tickListenerAttached = true;
+        });
       }
 
       if (store.intervalId == null) {

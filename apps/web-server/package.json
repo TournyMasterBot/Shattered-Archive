@@ -12,10 +12,13 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@shatteredarchive/types-server": "workspace:*",
     "@shatteredarchive/services-server": "workspace:*",
+    "@shatteredarchive/types-server": "workspace:*",
     "@shatteredarchive/utils-global": "workspace:*",
     "@shatteredarchive/utils-server": "workspace:*",
-    "express": "^5.2.1"
+    "ansi-to-html": "^0.7.2",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "winston": "^3.19.0"
   }
 }

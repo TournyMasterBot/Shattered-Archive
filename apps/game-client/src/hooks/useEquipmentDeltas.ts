@@ -237,10 +237,10 @@ export function useEquipmentDeltas(connectionId: string) {
       }
     };
 
-    window.addEventListener('game:terminal-data', onTerminal as EventListener);
+    // TMB TODO : window.addEventListener('game:terminal-data', onTerminal as EventListener);
     return () => {
-      console.debug('[eq-delta] hook unmounted', { connectionId });
-      window.removeEventListener('game:terminal-data', onTerminal as EventListener);
+      //console.debug('[eq-delta] hook unmounted', { connectionId });
+      // TMB TODO : window.removeEventListener('game:terminal-data', onTerminal as EventListener);
     };
   }, [connectionId]);
 }

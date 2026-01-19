@@ -79,16 +79,12 @@ function makeDefaultApi(connectionId: string, pluginId: PluginId, module: IPlugi
 
   const emitTerminalText = (text: string, kind: 'log' | 'error') => {
     try {
-      window.dispatchEvent(
-        new CustomEvent('game:terminal-data', {
-          detail: {
-            text,
-            __fromPlugin: true,
-            pluginId,
-            kind,
-          },
-        }),
-      );
+      DispatchEvent('shatteredarchive:write-terminal', {
+        rawText: text,
+        kind,
+        fromUserScript: true,
+        fromPlugin: true
+      });
     } catch {
       // ignore if window isn't available
     }

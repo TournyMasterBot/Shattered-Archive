@@ -11,9 +11,15 @@
 
 import type { AutoLevelConfig } from './autoleveling-types';
 
+/**
+ * Kept as a constant so other modules can reference it without importing the full config.
+ * NOTE: Must match the version returned by createDefaultAutoLevelConfig().
+ */
+export const AUTOLEVELING_CONFIG_VERSION = 2;
+
 export function createDefaultAutoLevelConfig(): AutoLevelConfig {
   return {
-    version: 2,
+    version: AUTOLEVELING_CONFIG_VERSION,
 
     enabled: false,
     loopRounds: true,

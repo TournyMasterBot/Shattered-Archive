@@ -2,10 +2,10 @@
 import type { Terminal as XTerm } from '@xterm/xterm';
 import type { FitAddon } from '@xterm/addon-fit';
 import { ListenEvent } from '../event-emitter/event-dispatcher';
+import { StripAnsi } from '@shatteredarchive/utils-client';
 
 export type WriteTerminalPayload = {
   rawText: string; // required for writes
-  userText?: string; // ignored by terminal
   fromUserScript?: boolean;
   receivedTimestamp?: string;
 };
@@ -30,7 +30,6 @@ export class ShatteredArchiveTerminal {
   }
 
   public attach(term: XTerm, fitAddon: FitAddon): void {
-    // ✅ only store refs
     this.term = term;
     this.fit = fitAddon;
   }
@@ -71,11 +70,15 @@ export class ShatteredArchiveTerminal {
       const t = this.term;
       if (!t) return;
 
-      const raw = payload.userText;
-      if (!raw) return;
+      const raw = payload.rawText;
+      if (!raw) {
+        return;
+      }
+
+      const cleanText =  StripAnsi(raw);
 
       console.log("shatteredarchive:write-console", {
-        raw
+        cleanText
       });
     });
 

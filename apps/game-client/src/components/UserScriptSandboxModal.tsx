@@ -592,7 +592,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
   const [editorLanguage, setEditorLanguage] = useState<UserScriptLanguage>('text');
 
   // Trigger-specific state
-  const [triggerEventName, setTriggerEventName] = useState<string>('game:terminal-data');
+  const [triggerEventName, setTriggerEventName] = useState<string>('event:line');
   const [triggerMatchText, setTriggerMatchText] = useState<string>('');
   const [triggerTestInput, setTriggerTestInput] = useState<string>('');
   const [triggerOmitFromOutput, setTriggerOmitFromOutput] = useState<boolean>(false);
@@ -643,7 +643,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       setEditorName('');
       setEditorSource('');
       setEditorLanguage('text');
-      setTriggerEventName('game:terminal-data');
+      setTriggerEventName('event:line');
       setTriggerMatchText('');
       setTriggerTestInput('');
       setTriggerOmitFromOutput(false);
@@ -667,7 +667,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
     setEditorName('');
     setEditorSource('');
     setEditorLanguage('text');
-    setTriggerEventName('game:terminal-data');
+    setTriggerEventName('event:line');
     setTriggerMatchText('');
     setTriggerTestInput('');
     setTriggerOmitFromOutput(false);
@@ -691,8 +691,8 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
 
   const baseTriggerEventName =
     selectedScript && selectedScript.kind === 'trigger'
-      ? ((selectedScript as TriggerScript).eventName ?? 'game:terminal-data')
-      : 'game:terminal-data';
+      ? ((selectedScript as TriggerScript).eventName ?? 'event:line')
+      : 'event:line';
 
   const baseTriggerMatchText =
     selectedScript && selectedScript.kind === 'trigger' ? ((selectedScript as TriggerScript).matchText ?? '') : '';
@@ -740,7 +740,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
 
     if (script.kind === 'trigger') {
       const trig = script as TriggerScript;
-      setTriggerEventName(trig.eventName ?? 'game:terminal-data');
+      setTriggerEventName(trig.eventName ?? 'event:line');
       setTriggerMatchText(trig.matchText ?? '');
       setTriggerOmitFromOutput(!!trig.omitFromOutput);
       setAliasKey('');
@@ -749,19 +749,19 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       const t = script as TimerScript;
       const secs = t.intervalMs ? Math.round(t.intervalMs / 1000) : 5;
       setTimerIntervalSeconds(String(secs));
-      setTriggerEventName('game:terminal-data');
+      setTriggerEventName('event:line');
       setTriggerMatchText('');
       setTriggerOmitFromOutput(false);
       setAliasKey('');
     } else if (script.kind === 'alias') {
       const a = script as AliasScript;
       setAliasKey(a.alias ?? '');
-      setTriggerEventName('game:terminal-data');
+      setTriggerEventName('event:line');
       setTriggerMatchText('');
       setTriggerOmitFromOutput(false);
       setTimerIntervalSeconds('');
     } else {
-      setTriggerEventName('game:terminal-data');
+      setTriggerEventName('event:line');
       setTriggerMatchText('');
       setTriggerOmitFromOutput(false);
       setAliasKey('');
@@ -779,7 +779,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
         language: 'text',
         source: `say Trigger fired
 look`,
-        eventName: 'game:terminal-data',
+        eventName: 'event:line',
         matchText: '',
         omitFromOutput: false,
       });
@@ -820,7 +820,7 @@ look`,
 
     if (updated.kind === 'trigger') {
       const trig = updated as TriggerScript;
-      trig.eventName = triggerEventName || 'game:terminal-data';
+      trig.eventName = triggerEventName || 'event:line';
       trig.matchText = triggerMatchText || '';
       trig.omitFromOutput = !!triggerOmitFromOutput;
     } else if (updated.kind === 'timer') {
@@ -863,7 +863,7 @@ look`,
     setEditorName('');
     setEditorSource('');
     setEditorLanguage('text');
-    setTriggerEventName('game:terminal-data');
+    setTriggerEventName('event:line');
     setTriggerMatchText('');
     setTriggerTestInput('');
     setTriggerOmitFromOutput(false);
@@ -903,7 +903,7 @@ look`,
 
     if (draft.kind === 'trigger') {
       const trig = draft as TriggerScript;
-      trig.eventName = triggerEventName || 'game:terminal-data';
+      trig.eventName = triggerEventName || 'event:line';
       trig.matchText = triggerMatchText || '';
       trig.omitFromOutput = !!triggerOmitFromOutput;
     } else if (draft.kind === 'timer') {
@@ -919,7 +919,7 @@ look`,
       draft.kind === 'trigger'
         ? {
             event: {
-              name: triggerEventName || 'game:terminal-data',
+              name: triggerEventName || 'event:line',
               payload: triggerTestInput,
             },
           }

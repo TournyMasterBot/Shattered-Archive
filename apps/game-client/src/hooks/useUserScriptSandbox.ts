@@ -374,8 +374,8 @@ export function useUserScriptSandbox(connectionId?: string | null) {
         const matchText = s.matchText || '';
         // support both block + line
         return [
-          { id: `${s.id}:line`, eventName: 'text:line', matchText, caseInsensitive: true },
-          { id: `${s.id}:block`, eventName: 'game:terminal-data', matchText, caseInsensitive: true },
+          { id: `${s.id}:line`, eventName: 'event:line', matchText, caseInsensitive: true },
+          //{ id: `${s.id}:block`, eventName: 'game:terminal-data', matchText, caseInsensitive: true },
         ];
       });
 

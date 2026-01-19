@@ -18,5 +18,8 @@
       "types": "./dist/ansi-to-html.d.ts",
       "default": "./dist/ansi-to-html.js"
     }
+  },
+  "dependencies": {
+    "ansi-to-html": "^0.7.2"
   }
 }

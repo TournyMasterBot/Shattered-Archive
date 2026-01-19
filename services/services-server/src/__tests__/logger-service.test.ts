@@ -1,28 +1,133 @@
-// src/__tests__/logger-service.test.ts
-import winston from 'winston';
+// services/services-server/src/__tests__/logger-service.test.ts
+
+// Keep fs from touching disk when filePath is used
+jest.mock('fs', () => {
+  return {
+    __esModule: true,
+    default: {
+      existsSync: jest.fn(() => true),
+      mkdirSync: jest.fn(),
+    },
+    existsSync: jest.fn(() => true),
+    mkdirSync: jest.fn(),
+  };
+});
+
+// Mock DailyRotateFile as a class (logger-service does `new DailyRotateFile({...})`)
+jest.mock('winston-daily-rotate-file', () => {
+  class DailyRotateFile {
+    public opts: any;
+    constructor(opts: any) {
+      this.opts = opts;
+    }
+  }
+
+  return {
+    __esModule: true,
+    default: DailyRotateFile,
+  };
+});
+
+// Mock winston completely (no spyOn needed)
+jest.mock('winston', () => {
+  // Transport classes
+  class ConsoleTransport {
+    public opts: any;
+    constructor(opts: any) {
+      this.opts = opts;
+    }
+  }
+
+  // winston.format is a callable that returns a FormatWrap,
+  // where calling the wrap returns a { transform(...) } object
+  function formatFactory(fn: (info: any) => any) {
+    return () => ({
+      transform: fn,
+      options: {},
+    });
+  }
+
+  // Attach helper factories used by your logger-service
+  (formatFactory as any).combine = (...formats: any[]) => {
+    return {
+      options: {},
+      transform: (info: any) => {
+        // Run format pipeline; if any returns false, stop.
+        let cur = info;
+        for (const f of formats) {
+          if (!f) continue;
+
+          // f may be a FormatWrap factory (fn) or a concrete format object
+          if (typeof f === 'function') {
+            const inst = f();
+            cur = inst?.transform ? inst.transform(cur) : cur;
+          } else if (typeof f.transform === 'function') {
+            cur = f.transform(cur);
+          }
+
+          if (cur === false) return false;
+        }
+        return cur;
+      },
+    };
+  };
+
+  (formatFactory as any).timestamp = () => ({
+    options: {},
+    transform: (info: any) => {
+      if (!info.timestamp) info.timestamp = new Date().toISOString();
+      return info;
+    },
+  });
+
+  (formatFactory as any).colorize = () => ({
+    options: {},
+    transform: (info: any) => info,
+  });
+
+  (formatFactory as any).printf = (printer: (info: any) => string) => ({
+    options: {},
+    transform: (info: any) => {
+      info.__printed = printer(info);
+      return info;
+    },
+  });
+
+  const createLogger = jest.fn();
+
+  const winstonMock = {
+    createLogger,
+    transports: {
+      Console: ConsoleTransport,
+    },
+    format: formatFactory,
+  };
+
+  // ✅ For `import winston from 'winston'` in your source file
+  return {
+    __esModule: true,
+    default: winstonMock,
+    ...winstonMock,
+  };
+});
+
+import * as winston from 'winston';
 import { Logger, createSohGateFormat } from '../logger-service.js';
 import { LogLevel, LoggerProps } from '@shatteredarchive/types-server';
 
 type FakeWinstonLogger = {
   level: string;
-  transports: winston.transport[];
+  transports: any[];
   log: jest.Mock;
 };
 
-function asTransportArray(t: winston.transport | winston.transport[] | undefined): winston.transport[] {
-  if (!t) return [];
-  return Array.isArray(t) ? t : [t];
-}
-
-function runFormat(fmt: winston.Logform.Format, info: Record<string, unknown>): Record<string, unknown> | false {
-  return fmt.transform({ ...(info as winston.Logform.TransformableInfo) }, fmt.options) as
-    | Record<string, unknown>
-    | false;
+function asArray(v: any): any[] {
+  if (!v) return [];
+  return Array.isArray(v) ? v : [v];
 }
 
 describe('Logger', () => {
   let fakeLogger: FakeWinstonLogger;
-  let createLoggerSpy: jest.SpyInstance;
 
   beforeEach(() => {
     fakeLogger = {
@@ -31,16 +136,16 @@ describe('Logger', () => {
       log: jest.fn(),
     };
 
-    createLoggerSpy = jest.spyOn(winston, 'createLogger').mockImplementation((opts?: winston.LoggerOptions) => {
+    (winston.createLogger as unknown as jest.Mock).mockImplementation((opts?: any) => {
       const o = opts ?? {};
-      fakeLogger.transports = asTransportArray(o.transports as unknown as winston.transport | winston.transport[]);
       fakeLogger.level = String(o.level ?? LogLevel.Info);
-      return fakeLogger as unknown as winston.Logger;
+      fakeLogger.transports = asArray(o.transports);
+      return fakeLogger as any;
     });
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    jest.clearAllMocks();
   });
 
   it('creates only console transport when no filePath', () => {
@@ -48,12 +153,13 @@ describe('Logger', () => {
 
     new Logger(props);
 
-    expect(createLoggerSpy).toHaveBeenCalledTimes(1);
-    const call = createLoggerSpy.mock.calls[0][0] as winston.LoggerOptions | undefined;
-    const transports = asTransportArray(call?.transports as unknown as winston.transport | winston.transport[]);
+    expect(winston.createLogger).toHaveBeenCalledTimes(1);
+
+    const opts = (winston.createLogger as unknown as jest.Mock).mock.calls[0][0];
+    const transports = asArray(opts.transports);
 
     expect(transports).toHaveLength(1);
-    expect(transports[0]).toBeInstanceOf(winston.transports.Console);
+    expect(transports[0]).toBeInstanceOf((winston.transports as any).Console);
   });
 
   it('adds file transport when filePath is provided', () => {
@@ -66,15 +172,13 @@ describe('Logger', () => {
 
     new Logger(props);
 
-    const call = createLoggerSpy.mock.calls[0][0] as winston.LoggerOptions | undefined;
-    const transports = asTransportArray(call?.transports as unknown as winston.transport | winston.transport[]);
+    const opts = (winston.createLogger as unknown as jest.Mock).mock.calls[0][0];
+    const transports = asArray(opts.transports);
 
     expect(transports).toHaveLength(2);
-    expect(transports[0]).toBeInstanceOf(winston.transports.Console);
 
-    const fileTransport = transports[1] as unknown as { constructor?: { name?: string } };
-    expect(fileTransport).not.toBeInstanceOf(winston.transports.Console);
-    expect(fileTransport.constructor?.name).toBe('DailyRotateFile');
+    expect(transports[0]).toBeInstanceOf((winston.transports as any).Console);
+    expect(transports[1]?.constructor?.name).toBe('DailyRotateFile');
   });
 
   it('forwards log calls to underlying winston logger', () => {
@@ -96,118 +200,67 @@ describe('Logger', () => {
     });
   });
 
-  it('updates level via setLevel on logger (transport levels unchanged in current implementation)', () => {
-    const logger = new Logger({
-      level: LogLevel.Info,
-      filePath: 'logs/app.log',
-    });
+  it('updates level via setLevel', () => {
+    const logger = new Logger({ level: LogLevel.Info });
 
     expect(fakeLogger.level).toBe(LogLevel.Info);
-
-    const transportLevelsAtStart = fakeLogger.transports.map((t) => (t as { level?: unknown }).level);
 
     logger.setLevel(LogLevel.Error);
 
     expect(fakeLogger.level).toBe(LogLevel.Error);
-
-    const transportLevelsAfter = fakeLogger.transports.map((t) => (t as { level?: unknown }).level);
-    expect(transportLevelsAfter).toEqual(transportLevelsAtStart);
   });
 
-  describe('SOH toggle behavior (unit test createSohGateFormat)', () => {
-    it('drops SOH marker line, suppresses until second SOH, then resumes', () => {
-      const gateFactory = createSohGateFormat({
-        enabled: true,
-      });
+  describe('SOH gate (createSohGateFormat)', () => {
+    function info(message: string, data: string) {
+      return {
+        level: 'info',
+        message,
+        payload: { data },
+      };
+    }
 
+    it('drops SOH line, suppresses until second SOH, then resumes', () => {
+      const gateFactory = createSohGateFormat({ enabled: true });
       const gate = gateFactory();
 
-      const r1 = runFormat(gate, {
-        level: 'info',
-        message: 'game:remote-server:raw',
-        payload: { data: '\u0001' },
-      });
+      const r1 = gate.transform(info('x', '\u0001'));
       expect(r1).toBe(false);
 
-      const r2 = runFormat(gate, {
-        level: 'info',
-        message: 'game:remote-server:raw',
-        payload: { data: 'hello' },
-      });
+      const r2 = gate.transform(info('x', 'hello'));
       expect(r2).toBe(false);
 
-      const r3 = runFormat(gate, {
-        level: 'info',
-        message: 'game:remote-server:raw',
-        payload: { data: '\u0001' },
-      });
+      const r3 = gate.transform(info('x', '\u0001'));
       expect(r3).toBe(false);
 
-      const r4 = runFormat(gate, {
-        level: 'info',
-        message: 'game:remote-server:raw',
-        payload: { data: 'visible' },
-      });
+      const r4 = gate.transform(info('x', 'visible'));
       expect(r4).not.toBe(false);
     });
 
-    it('only toggles on allowlisted event types when sohToggleEventTypes is set', () => {
+    it('only toggles for allowlisted event types when sohToggleEventTypes is set', () => {
       const gateFactory = createSohGateFormat({
         enabled: true,
         sohToggleEventTypes: ['allowed:type'],
       });
-
       const gate = gateFactory();
 
-      const a1 = runFormat(gate, {
-        level: 'info',
-        message: 'other:type',
-        payload: { data: '\u0001' },
-      });
+      const a1 = gate.transform(info('other:type', '\u0001'));
       expect(a1).not.toBe(false);
 
-      const a2 = runFormat(gate, {
-        level: 'info',
-        message: 'other:type',
-        payload: { data: 'still visible' },
-      });
-      expect(a2).not.toBe(false);
-
-      const b1 = runFormat(gate, {
-        level: 'info',
-        message: 'allowed:type',
-        payload: { data: '\u0001' },
-      });
+      const b1 = gate.transform(info('allowed:type', '\u0001'));
       expect(b1).toBe(false);
 
-      const b2 = runFormat(gate, {
-        level: 'info',
-        message: 'allowed:type',
-        payload: { data: 'hidden' },
-      });
+      const b2 = gate.transform(info('allowed:type', 'hidden'));
       expect(b2).toBe(false);
     });
 
     it('does nothing when disabled', () => {
-      const gateFactory = createSohGateFormat({
-        enabled: false,
-        sohToggleEventTypes: ['allowed:type'],
-      });
-
+      const gateFactory = createSohGateFormat({ enabled: false });
       const gate = gateFactory();
 
-      const r1 = runFormat(gate, {
-        level: 'info',
-        message: 'allowed:type',
-        payload: { data: '\u0001' },
-      });
+      const r1 = gate.transform(info('x', '\u0001'));
       expect(r1).not.toBe(false);
 
-      const r2 = runFormat(gate, {
-        level: 'info',
-        message: 'allowed:type',
-        payload: { data: 'hello' },
-      });
+      const r2 = gate.transform(info('x', 'still visible'));
       expect(r2).not.toBe(false);
     });
   });

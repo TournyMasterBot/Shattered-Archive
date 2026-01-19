@@ -417,7 +417,7 @@ export function useMainContainer() {
     if (typeof window !== 'undefined') {
       try {
         initBrowserLuaRunner();
-        console.log('[Lua] Browser Lua runtime initialized');
+        //console.log('[Lua] Browser Lua runtime initialized');
       } catch (err) {
         console.error('[Lua] Failed to initialize Lua runtime:', err);
       }

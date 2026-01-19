@@ -201,7 +201,9 @@ export function createRollerPlugin(): IPluginModule {
     },
 
     onEvent: (api: PluginRuntimeApi, evt) => {
-      if (!evt || evt.name !== 'game:terminal-data') return;
+      if (!evt || evt.name !== 'event:line') {
+        return;
+      }
 
       const cfg = getConfigFromApi(api);
       const debug = readBool(cfg, 'debug', false);

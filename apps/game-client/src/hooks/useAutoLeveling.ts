@@ -50,12 +50,14 @@ function isAutoLevelingDebugEnabled(): boolean {
 }
 
 function hdbg(...args: any[]) {
+  return;
   if (!isAutoLevelingDebugEnabled()) return;
   // eslint-disable-next-line no-console
   console.debug(HOOK_LOG_PREFIX, ...args);
 }
 
 function hwarn(...args: any[]) {
+  return;
   if (!isAutoLevelingDebugEnabled()) return;
   // eslint-disable-next-line no-console
   console.warn(HOOK_LOG_PREFIX, ...args);

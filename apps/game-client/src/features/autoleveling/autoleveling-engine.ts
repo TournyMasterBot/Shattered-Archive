@@ -84,6 +84,7 @@ function isAutoLevelingDebugEnabled(): boolean {
 }
 
 function dbg(...args: any[]) {
+  return;
   if (!isAutoLevelingDebugEnabled()) return;
   // eslint-disable-next-line no-console
   console.debug(ENG_LOG_PREFIX, ...args);
@@ -419,6 +420,7 @@ export class AutoLevelingEngine {
   }
 
   bind() {
+    /*
     try {
       dbg('bind()');
       // Global terminal data
@@ -435,10 +437,12 @@ export class AutoLevelingEngine {
     } catch (e) {
       warn('bind failed (ignored)', e);
     }
+    */
   }
 
   unbind() {
-    try {
+    /*try {
+      
       dbg('unbind()');
 
       window.removeEventListener('game:terminal-data', this.boundOnTerminalData as EventListener);
@@ -451,6 +455,7 @@ export class AutoLevelingEngine {
     } catch (e) {
       warn('unbind failed (ignored)', e);
     }
+      */
   }
 
   stop() {

@@ -13,7 +13,7 @@ export function emitScriptTerminal(text: string): void {
   if (!text) return;
 
   try {
-    DispatchEvent('shatteredarchive:write', {
+    DispatchEvent('shatteredarchive:write-terminal', {
       rawText: text,
     });
   } catch {

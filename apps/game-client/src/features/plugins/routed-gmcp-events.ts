@@ -1,10 +1,6 @@
 // apps\game-client\src\features\plugins\routed-gmcp-events.ts
 export const ROUTED_WINDOW_EVENTS: string[] = [
-  // Raw messages from server
-  'game:terminal-data',
-  'text:line',
-  'game:socket-open',
-  'game:socket-closed',
+  'event:line',
   // Custom ShatteredArchive events
   'event:disarm',
   'event:wield:primary',

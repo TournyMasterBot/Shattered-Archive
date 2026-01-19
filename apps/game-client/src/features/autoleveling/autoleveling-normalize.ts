@@ -1,12 +1,10 @@
 // apps/game-client/src/features/autoleveling/autoleveling-normalize.ts
 import type {
-  AbilityThresholdRule,
   AutoLevelAction,
   AutoLevelConfig,
   AutoLevelPhaseTriplet,
   AutoLevelRunState,
   AutoLevelStepConfig,
-  DesiredBuff,
 } from './autoleveling-types';
 import { createDefaultAutoLevelConfig } from './autoleveling-defaults';
 
@@ -60,7 +58,7 @@ function normalizeSteps(x: unknown, fallback: AutoLevelStepConfig): AutoLevelSte
   const identify = normalizeTriplet(x.identify, fallback.identify);
 
   const fight = isObj(x.fight)
-    ? { pre: normalizeActions(x.fight.pre), exec: normalizeActions(x.fight.exec) }
+    ? { pre: normalizeActions(x.fight.pre), exec: normalizeActions(x.fight.exec), post: normalizeActions(x.fight.post) }
     : fallback.fight;
 
   const reset = isObj(x.reset)
@@ -68,41 +66,6 @@ function normalizeSteps(x: unknown, fallback: AutoLevelStepConfig): AutoLevelSte
     : fallback.reset;
 
   return { start, move, identify, fight, reset };
-}
-
-function normalizeDesiredBuffs(x: unknown): DesiredBuff[] {
-  if (!Array.isArray(x)) return [];
-  return x
-    .filter((b) => isObj(b))
-    .map((b) => ({
-      id: typeof b.id === 'string' && b.id ? b.id : newId(),
-      enabled: asBool(b.enabled, true),
-      cmd: typeof b.cmd === 'string' ? b.cmd : '',
-    }))
-    .filter((b) => b.cmd.trim().length > 0 || true); // keep empty rows if you want; currently keeps all
-}
-
-const VALID_STATS = new Set(['hpPct', 'mpPct', 'stamPct', 'hp', 'mp', 'stam']);
-const VALID_OPS = new Set(['>=', '>', '<=', '<']);
-const VALID_THROTTLES = new Set(['none', 'once_per_round', 'once_per_fight', 'ability_cooldown']);
-
-function normalizeThresholds(x: unknown): AbilityThresholdRule[] {
-  if (!Array.isArray(x)) return [];
-  return x
-    .filter((r) => isObj(r))
-    .map((r) => ({
-      id: typeof r.id === 'string' && r.id ? r.id : newId(),
-      enabled: asBool(r.enabled, true),
-
-      stat: VALID_STATS.has(String(r.stat)) ? (String(r.stat) as any) : 'hpPct',
-      op: VALID_OPS.has(String(r.op)) ? (String(r.op) as any) : '>=',
-      value: asNum(r.value, 0),
-
-      cmd: typeof r.cmd === 'string' ? r.cmd : '',
-      throttle: VALID_THROTTLES.has(String(r.throttle)) ? (String(r.throttle) as any) : 'once_per_fight',
-      cooldownKey: typeof r.cooldownKey === 'string' ? r.cooldownKey : undefined,
-    }))
-    .filter((r) => r.cmd.trim().length > 0 || true);
 }
 
 function normalizeEscapeCommands(x: unknown): string[] {
@@ -124,7 +87,6 @@ function normalizeAutoLevelConfig(raw: AutoLevelConfig): AutoLevelConfig {
       ...def.init,
       ...(raw as any).init,
       abilityCooldowns: {
-        ...def.init.abilityCooldowns,
         ...((raw as any).init?.abilityCooldowns ?? {}),
       },
     },
