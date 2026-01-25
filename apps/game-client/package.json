@@ -18,9 +18,9 @@
     "@shatteredarchive/types-global": "workspace:*",
     "@shatteredarchive/utils-client": "workspace:*",
     "@shatteredarchive/utils-global": "workspace:*",
-    "@testing-library/react": "^16.3.1",
+    "@testing-library/react": "^16.3.2",
     "@types/testing-library__react": "10.2.0",
     "@vitejs/plugin-react-swc": "^4.2.2",
-    "vite": "^7.3.0"
+    "vite": "^7.3.1"
   }
 }
