@@ -1,28 +1,29 @@
 // apps/game-client/src/features/userScripts/userScriptRuntime.ts
 
-import { AnyUserScript, ScriptErrorInfo, ScriptSandboxApi, TriggerContextEvent } from './types';
+import { AnyUserScript, ScriptSandboxApi, TriggerContextEvent } from './types';
 import { runUserScript } from './runtime';
-import {
-  DispatchEvent,
-  ListenEvent,
-  ListenRedispatch,
-} from '../event-emitter/event-dispatcher';
+import { DispatchEvent, ListenEvent, ListenRedispatch } from '../event-emitter/event-dispatcher';
+import { SendCommandFn } from '../../types/userscript-types/send-command-function';
+import { ScriptErrorInfo } from '../../types/userscript-types/script-error-info';
+import { UserScriptRuntimeOptions } from '../../types/userscript-types/user-script-runtime-options';
+import { ProbeOpponentConditionLine } from '../combat/probe-opponent-condition';
+import { TickData, CharData } from '@shatteredarchive/types-global';
+import { probeChatRange } from '../chat/chat-probe';
+import { stripAnsi } from '../autoleveling/autoleveling-text';
 
-const STORAGE_KEY_PREFIX = 'shatteredArchive.userScripts.';
+export const STORAGE_KEY_PREFIX_USERSCRIPTS = 'shatteredArchive.userScripts.';
 
-let windowEventsRegistered: boolean = false;
-
-export type SendCommandFn = (cmd: string) => void;
-
-export interface UserScriptRuntimeOptions {
-  sendCommand?: SendCommandFn;
-  onScriptError?: (err: ScriptErrorInfo) => void;
-  aliasSplitChar?: string;
-}
+const tickPhrase = 'tick ';
+const charDataPhrase = 'char_data ';
+const roomDataPhrase = 'room_data ';
+const removeAffectPhrase = 'remove_affect ';
+const addAffectPhrase = 'add_affect ';
+const affectDataPhrase = 'affect_data ';
+const loginDataPhrase = 'login_data ';
 
 function normalizeSplitChar(v: string | undefined): string {
   const s = (v ?? ';').trim();
-  if (!s) { 
+  if (!s) {
     return ';';
   }
   return s.slice(0, 1);
@@ -40,7 +41,7 @@ export class UserScriptRuntime {
     this.sendCommand =
       options.sendCommand ??
       ((cmd) => {
-        DispatchEvent('game:send-command', { cmd });
+        DispatchEvent('shatteredarchive:send-command', { cmd });
       });
 
     this.onScriptError = options.onScriptError;
@@ -51,30 +52,26 @@ export class UserScriptRuntime {
   }
 
   private attachWindowEvents() {
-    // Don't double attach
-    if (windowEventsRegistered) {
-      console.warn('Prevented double-window-attach request in userScriptRuntime');
-      return;
-    }
-
     console.log('Attaching user script runtime events');
 
     ListenEvent<any>('shatteredarchive:raw-data', (payload) => {
       void this.processRawEvent(payload);
     });
 
-    // ✅ GMCP -> (if you want to forward it somewhere else)
-    // ListenRedispatch('shatteredarchive:gmcp-data', 'shatteredarchive:gmcp-dispatch');
+    // GMCP -> parse + emit real events
+    ListenEvent<any>('shatteredarchive:gmcp-data', (payload) => {
+      void this.processGmcpEvent(payload);
+    });
+
+    // gmcp console logger
     ListenRedispatch('shatteredarchive:gmcp-data', 'shatteredarchive:write-console', {
       fromUserScript: false,
     });
-
-    windowEventsRegistered = true;
   }
 
   getStorageKey(connectionId?: string | null) {
     const safe = connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
-    return `${STORAGE_KEY_PREFIX}${safe}`;
+    return `${STORAGE_KEY_PREFIX_USERSCRIPTS}${safe}`;
   }
 
   loadScriptsFromStorage(connectionId?: string | null): AnyUserScript[] {
@@ -116,8 +113,18 @@ export class UserScriptRuntime {
     this.scripts.set(script.id, script);
   }
 
+  upsertScriptAndSave(script: AnyUserScript, connectionId?: string | null): void {
+    this.upsertScript(script);
+    this.saveScriptsToStorage(connectionId);
+  }
+
   removeScript(id: string): void {
     this.scripts.delete(id);
+  }
+
+  removeScriptAndSave(id: string, connectionId?: string | null): void {
+    this.removeScript(id);
+    this.saveScriptsToStorage(connectionId);
   }
 
   getAllScripts(): AnyUserScript[] {
@@ -126,58 +133,150 @@ export class UserScriptRuntime {
 
   async processRawEvent(payload: any): Promise<void> {
     const rawText = String(payload?.rawText ?? '');
+    await this.processForSpecialLines(rawText);
+
     const haystack = rawText.toLowerCase();
 
     const triggers = Array.from(this.scripts.values()).filter(
       (s): s is any => s.enabled === true && s.kind === 'trigger',
     );
 
+    let omitOriginalLine = false;
+
     for (const script of triggers) {
       const matchText = String(script.matchText ?? '').trim();
-      if (!matchText) {
+      const isPlaintext = script.language === 'plaintext';
+      const dontRequireMatchText = (script as any).dontRequireMatchText === true;
+
+      // 1) Skip execution if match text is blank and the language is plaintext
+      if (!matchText && isPlaintext) {
         continue;
       }
 
-      const needle = matchText.toLowerCase();
-
-      if (haystack.includes(needle)) {
-        const triggerScriptPayload = {
-          event: {
-            name: script.eventName,
-            payload: {
-              ...payload,
-              fromUserScript: true
-            },
-          },
-        }
-        console.log('✅ Trigger text matched', { 
-          needle: matchText,
-          triggerScriptPayload
-        });
-        this.executeScript(script, triggerScriptPayload);
+      if (!matchText && !dontRequireMatchText) {
+        continue;
       }
+
+      // 2) If match text exists, it must match
+      if (matchText) {
+        const needle = matchText.toLowerCase();
+        if (!haystack.includes(needle)) {
+          continue;
+        }
+      }
+      // 3) If no match text exists (and not plaintext), execute the script
+
+      const triggerScriptPayload = {
+        event: {
+          name: script.eventName,
+          payload: {
+            ...payload,
+            fromUserScript: true,
+          },
+        },
+      };
+
+      console.log('✅ Trigger fired', {
+        matchText,
+        script,
+        triggerScriptPayload,
+      });
+
+      if ((script as any).omitFromOutput === true) {
+        omitOriginalLine = true;
+      }
+
+      this.executeScript(script, triggerScriptPayload);
     }
 
-    /* Alias and timers should be handled from a different event
-      // Handle Alias
-      else if (script.kind === 'alias') {
-        const aliasKey = (script.alias ?? '').trim().toLowerCase();
-        console.log('Comparing matchtext for alias', {
-          payload,
-          aliasKey
+    // forward to terminal
+    if (!omitOriginalLine) {
+      let end = rawText.length;
+
+      if (end > 0 && rawText.charCodeAt(end - 1) === 10 /* \n */) end--;
+      if (end > 0 && rawText.charCodeAt(end - 1) === 13 /* \r */) end--;
+
+      const match = probeChatRange(rawText, 0, end);
+
+      if (match.isChat) {
+        DispatchEvent('shatteredarchive:chat-line', {
+          rawText,
+          receivedTimestamp: payload?.receivedTimestamp,
+          ...match,
         });
       }
-      // Handle Timers
-      else if (script.kind === 'timer') {
-      }
-      */
 
-    // ✅ apply filtering / recoloring / omit logic here
-
-    // ✅ forward to terminal
-    DispatchEvent('shatteredarchive:write-terminal', payload);
+      DispatchEvent('shatteredarchive:write-terminal', payload);
+    }
   }
 
+  async processForSpecialLines(line: string) {
+    // Creature death
+    if (line.indexOf('is DEAD!!') > -1) {
+      DispatchEvent('event:creature-death', {
+        text: line,
+      });
+      return;
+    } else if (line.indexOf('You flee from combat!') > -1) {
+      DispatchEvent('event:flee', {
+        text: line,
+      });
+      return;
+    }
+
+    const opp = ProbeOpponentConditionLine(line);
+    if (opp) {
+      DispatchEvent('event:fighting:opponent', {
+        ...opp,
+      });
+    }
+  }
+
+  processGmcpEvent(payload: any): void {
+    const rawText = String(payload?.rawText ?? '');
+
+    try {
+      // Handle Ticks
+      if (rawText.startsWith(tickPhrase)) {
+        this.dispatchGmcpEvent('game:tick', tickPhrase.length, rawText);
+        return;
+      } else if (rawText.startsWith(charDataPhrase)) {
+        this.dispatchGmcpEvent('game:char-data', charDataPhrase.length, rawText);
+        return;
+      } else if (rawText.startsWith(roomDataPhrase)) {
+        this.dispatchGmcpEvent('game:room-data', roomDataPhrase.length, rawText);
+        return;
+      } else if (rawText.startsWith(affectDataPhrase)) {
+        this.dispatchGmcpEvent('game:affect-trueup', affectDataPhrase.length, rawText);
+        return;
+      } else if (rawText.startsWith(addAffectPhrase)) {
+        this.dispatchGmcpEvent('game:affect-added', addAffectPhrase.length, rawText);
+        return;
+      } else if (rawText.startsWith(removeAffectPhrase)) {
+        this.dispatchGmcpEvent('game:affect-removed', removeAffectPhrase.length, rawText);
+        return;
+      } else if (rawText.startsWith(loginDataPhrase)) {
+        this.dispatchGmcpEvent('game:character-login', loginDataPhrase.length, rawText);
+        return;
+      } else {
+        console.warn('Unknown GMCP event', {
+          rawText,
+        });
+      }
+    } catch (err) {
+      console.warn('[GMCP] Failed to parse payload', { rawText, err });
+    }
+
+    return;
+  }
+
+  dispatchGmcpEvent<T extends object>(eventName: string, length: number, rawText: string): void {
+    const jsonPart = rawText.slice(length).trim();
+    const data = JSON.parse(jsonPart) as T;
+    DispatchEvent(eventName, data);
+  }
+
+  /*
   dispatchEvent(event: TriggerContextEvent): void {
     for (const script of this.scripts.values()) {
       if (script.kind !== 'trigger' || !script.enabled) continue;
@@ -194,6 +293,7 @@ export class UserScriptRuntime {
       this.executeScript(script, { event });
     }
   }
+  */
 
   executeAlias(input: string): boolean {
     const line = input ?? '';
@@ -253,7 +353,9 @@ export class UserScriptRuntime {
       log: (...args: unknown[]) => console.log(`[Script:${script.name}]`, ...args),
       error: (...args: unknown[]) => console.error(`[Script:${script.name}]`, ...args),
       writeTerminal: (dsl: string) => {
-        if (!dsl) return;
+        if (!dsl) {
+          return;
+        }
 
         try {
           const ansi = dslToAnsi(dsl);
@@ -281,9 +383,27 @@ export class UserScriptRuntime {
         timestamp: Date.now(),
       };
 
-      if (this.onScriptError) this.onScriptError(errorInfo);
-      else console.error('[UserScriptRuntime] error', errorInfo);
+      if (this.onScriptError) {
+        this.onScriptError(errorInfo);
+      } else {
+        console.error('[UserScriptRuntime] error', errorInfo);
+      }
     });
+  }
+
+  private saveScriptsToStorage(connectionId?: string | null): void {
+    try {
+      const key = this.getStorageKey(connectionId);
+      const scripts = this.getAllScripts();
+
+      window.localStorage.setItem(key, JSON.stringify(scripts));
+
+      DispatchEvent<{ connectionId?: string }>('shatteredarchive:userScripts-updated', {
+        connectionId: connectionId ?? 'default',
+      });
+    } catch (err) {
+      console.error('Failed to save user scripts', { connectionId, err });
+    }
   }
 }
 

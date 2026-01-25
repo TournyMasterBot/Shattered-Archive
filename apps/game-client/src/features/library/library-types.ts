@@ -1,3 +1,4 @@
+// apps\game-client\src\features\library\library-types.ts
 export type LibraryId = string;
 
 export interface LibraryNote {

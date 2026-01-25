@@ -5,7 +5,7 @@ import { applyPluginBaseCss, removePluginBaseCss } from './pluginCss';
 import { startPluginBundledScripts } from './pluginScriptRunner';
 import { normalizePluginModule } from './normalizePluginModule';
 import { ROUTED_WINDOW_EVENTS } from './routed-gmcp-events';
-import { DispatchEvent } from '../event-emitter/event-dispatcher';
+import { DispatchEvent, ListenEvent } from '../event-emitter/event-dispatcher';
 
 type PluginCleanup = {
   api?: PluginRuntimeApi;
@@ -25,13 +25,27 @@ type HostState = {
 
 function makeDefaultApi(connectionId: string, pluginId: PluginId, module: IPluginModule): PluginRuntimeApi {
   const onEvent: PluginRuntimeApi['onEvent'] = (eventName, handler) => {
-    const fn = (ev: Event) => {
-      const ce = ev as CustomEvent;
-      handler((ce as any)?.detail);
-    };
+    // Build a stable, HMR-safe dedupe key for this subscription.
+    // If the same plugin registers the same event multiple times (or via HMR),
+    // the dispatcher registry will replace the old listener automatically.
+    const key = `pluginRuntimeApi::onEvent::${String(eventName)}`;
 
-    window.addEventListener(eventName, fn as EventListener);
-    return () => window.removeEventListener(eventName, fn as EventListener);
+    // ListenEvent hands us the CustomEvent.detail already
+    const dispose = ListenEvent<any>(
+      eventName,
+      (payload) => {
+        handler(payload);
+      },
+      { key },
+    );
+
+    return () => {
+      try {
+        dispose?.();
+      } catch {
+        // ignore
+      }
+    };
   };
 
   const httpGetJson: PluginRuntimeApi['httpGetJson'] = async (url, options) => {
@@ -81,9 +95,12 @@ function makeDefaultApi(connectionId: string, pluginId: PluginId, module: IPlugi
     try {
       DispatchEvent('shatteredarchive:write-terminal', {
         rawText: text,
+        // TODO : Consider cleaning this text output -- but don't remove it
+        // as would be a breaking change.
+        text: text,
         kind,
         fromUserScript: true,
-        fromPlugin: true
+        fromPlugin: true,
       });
     } catch {
       // ignore if window isn't available
@@ -107,7 +124,7 @@ function makeDefaultApi(connectionId: string, pluginId: PluginId, module: IPlugi
     pluginId,
 
     sendCommand: (cmd: string) => {
-      DispatchEvent('game:send-command', { cmd, connectionId });
+      DispatchEvent('shatteredarchive:send-command', { cmd, connectionId });
     },
 
     log: (...args: unknown[]) => {

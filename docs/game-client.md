@@ -19,9 +19,9 @@
   - [`game:telnet-raw-chunk`](#gametelnet-raw-chunk)
   - [`game:telnet-raw-line`](#gametelnet-raw-line)
   - [`game:chat-line`](#gamechat-line)
-  - [`game:movement-attempt`](#gamemovement-attempt)
-  - [`game:movement-failed`](#gamemovement-failed)
-  - [`game:movement-succeeded`](#gamemovement-succeeded)
+  - [`shatteredarchive:movement-attempt`](#shatteredarchivemovement-attempt)
+  - [`shatteredarchive:movement-failed`](#shatteredarchivemovement-failed)
+  - [`shatteredarchive:movement-succeeded`](#shatteredarchivemovement-succeeded)
   - [`game:gmcp`](#gamegmcp)
 
 # Overview
@@ -73,10 +73,16 @@ This document describes the **custom DOM events** emitted by the Shattered Archi
 All events are dispatched on `window` using `CustomEvent`.
 
 ```ts
-window.addEventListener('<event-name>', (ev) => {
-  const ce = ev as CustomEvent<any>;
-  console.log(ce.detail);
-});
+ListenEvent<any>(
+    '<event-name>',
+    (payload) => {
+      const text: string = payload?.text ?? '';
+      void tryBeepForLine(text, settingsCache);
+    },
+    {
+      key: 'audio-runtime:game:telnet-raw-line',
+    },
+  );
 ```
 
 ---
@@ -227,7 +233,7 @@ Emitted when a TELNET line is detected as player/NPC chat.
 
 ---
 
-## `game:movement-attempt`
+## `shatteredarchive:movement-attempt`
 
 **Purpose**
 Indicates that the user attempted to move (e.g. via compass or command).
@@ -245,12 +251,12 @@ Indicates that the user attempted to move (e.g. via compass or command).
 
 **Notes**
 
-* Fired immediately before `game:send-command`
+* Fired immediately before `shatteredarchive:send-command`
 * No success or failure implied
 
 ---
 
-## `game:movement-failed`
+## `shatteredarchive:movement-failed`
 
 **Purpose**
 Emitted when a recent movement attempt is inferred to have failed.
@@ -273,7 +279,7 @@ Emitted when a recent movement attempt is inferred to have failed.
 
 ---
 
-## `game:movement-succeeded`
+## `shatteredarchive:movement-succeeded`
 
 **Purpose**
 Emitted when a movement attempt results in a successful room change.

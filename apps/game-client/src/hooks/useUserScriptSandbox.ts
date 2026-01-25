@@ -5,16 +5,16 @@ import {
   TriggerScript,
   AliasScript,
   TimerScript,
-  ScriptErrorInfo,
   ScriptSandboxApi,
-  UserScriptKind,
 } from '../features/userScripts/types';
 import { runUserScript, runTimerScript } from '../features/userScripts/runtime';
 import { setOmitRules } from '../features/userScripts/triggerOmitStore';
 import { invokeGlobalById } from '../features/userScripts/globalRuntime';
 import { getGlobalVar, setGlobalVar, deleteGlobalVar } from '../features/userScripts/globalScriptsStore';
 import { getUserVariablesSnapshot } from '../features/userScripts/userVariablesStore';
-import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
+import { DispatchEvent, ListenEvent } from '../features/event-emitter/event-dispatcher';
+import { UserScriptKind } from '../types/userscript-types/user-script-kind';
+import { ScriptErrorInfo } from '../types/userscript-types/script-error-info';
 
 const STORAGE_KEY_PREFIX = 'shatteredArchive.userScripts.';
 
@@ -152,7 +152,7 @@ function makeApiBase(
 ): ScriptSandboxApi {
   const api: ScriptSandboxApi = {
     sendCommand: (cmd: string) => {
-      DispatchEvent('game:send-command', { cmd, connectionId });
+      DispatchEvent('shatteredarchive:send-command', { cmd, connectionId });
     },
     log: (...args: unknown[]) => {
       console.log(`[UserScript:${script.name}]`, ...args);
@@ -162,7 +162,7 @@ function makeApiBase(
     },
     event: extra?.event,
 
-    // NEW: allow scripts tested in the sandbox to write DSL-colored text
+    // allow scripts tested in the sandbox to write DSL-colored text
     // directly to the xterm terminal via bypass event.
     writeTerminal: (dsl: string) => {
       if (!dsl) return;
@@ -171,14 +171,14 @@ function makeApiBase(
         const ansi = dslToAnsi(dsl);
         DispatchEvent('shatteredarchive:write-terminal', {
           rawText: ansi,
-          fromUserScript: true
-        })
+          fromUserScript: true,
+        });
       } catch (err) {
         console.error('[UserScriptSandbox writeTerminal] failed', err);
       }
     },
 
-    // NEW: invoke global scripts by identifier
+    // invoke global scripts by identifier
     runGlobal: async (globalId: string, args?: unknown) => {
       try {
         return await invokeGlobalById(connectionId ?? 'default', globalId, api, args);
@@ -188,15 +188,15 @@ function makeApiBase(
       }
     },
 
-    // NEW: global variable KV store
+    // global variable KV store
     getGlobalVar: (key: string) => getGlobalVar(connectionId ?? 'default', key),
     setGlobalVar: (key: string, value: unknown) => setGlobalVar(connectionId ?? 'default', key, value),
     deleteGlobalVar: (key: string) => deleteGlobalVar(connectionId ?? 'default', key),
 
-    // NEW: named variables for "{NAME}" (trigger/alias templates)
+    // named variables for "{NAME}" (trigger/alias templates)
     getNamedVar: (name: string) => {
       const vars = getUserVariablesSnapshot(connectionId ?? 'default');
-      return vars?.[name];
+      return (vars as any)?.[name];
     },
   };
 
@@ -274,7 +274,7 @@ function makeApiBase(
 export function useUserScriptSandbox(connectionId?: string | null) {
   const [scripts, setScripts] = useState<AnyUserScript[] | null>(null);
   const [errors, setErrors] = useState<ScriptErrorInfo[]>([]);
-  const timersRef = useRef<TimerMap>({});
+  const timersRef = useRef<Record<string, number>>({});
   const [socketReady, setSocketReady] = useState(false);
 
   const pushError = useCallback((info: ScriptErrorInfo) => {
@@ -293,20 +293,38 @@ export function useUserScriptSandbox(connectionId?: string | null) {
 
   // Track socket open/closed from useGameConnection
   useEffect(() => {
-    const handleOpen = () => setSocketReady(true);
-    const handleClosed = () => setSocketReady(false);
+    let disposeOpen: (() => void) | null = null;
+    let disposeClose: (() => void) | null = null;
 
     try {
-      window.addEventListener('game:socket-open', handleOpen as EventListener);
-      window.addEventListener('game:socket-closed', handleClosed as EventListener);
+      disposeOpen = ListenEvent<any>(
+        'game:remote-server:open',
+        () => {
+          setSocketReady(true);
+        },
+        { key: 'useUserScriptSandbox::socket::open' },
+      );
+
+      disposeClose = ListenEvent<any>(
+        'game:remote-server:close',
+        () => {
+          setSocketReady(false);
+        },
+        { key: 'useUserScriptSandbox::socket::close' },
+      );
     } catch {
-      // ignore (SSR)
+      // ignore (SSR / tests)
     }
 
     return () => {
       try {
-        window.removeEventListener('game:socket-open', handleOpen as EventListener);
-        window.removeEventListener('game:socket-closed', handleClosed as EventListener);
+        disposeOpen?.();
+      } catch {
+        // ignore
+      }
+
+      try {
+        disposeClose?.();
       } catch {
         // ignore
       }
@@ -339,28 +357,28 @@ export function useUserScriptSandbox(connectionId?: string | null) {
   }, [connectionId]);
 
   // Persist to localStorage whenever scripts change, but only after hydration
+  const didHydrateRef = useRef(false);
   useEffect(() => {
     if (!scripts) return;
     if (typeof window === 'undefined') return;
 
     const key = getUserScriptStorageKey(connectionId);
+    if (!didHydrateRef.current) {
+      didHydrateRef.current = true;
+      return;
+    }
 
     try {
       window.localStorage.setItem(key, JSON.stringify(scripts));
-      try {
-        window.dispatchEvent(
-          new CustomEvent('game:userScripts-updated', {
-            detail: { connectionId: connectionId ?? 'default' },
-          }),
-        );
-      } catch {
-        // ignore
-      }
+      DispatchEvent('shatteredarchive:userScripts-updated', {
+        connectionId,
+      });
     } catch (err) {
       console.error('[UserScriptSandbox] Failed to save scripts:', err);
     }
   }, [scripts, connectionId]);
 
+  // TMB TODO : REVIEW THIS OMISSION LOGIC AFTER FLOW CHANGES
   useEffect(() => {
     if (!scripts) {
       setOmitRules([]);
@@ -371,12 +389,12 @@ export function useUserScriptSandbox(connectionId?: string | null) {
       .filter((s) => s.kind === 'trigger' && s.enabled)
       .filter((s: any) => !!s.omitFromOutput)
       .flatMap((s: any) => {
-        const matchText = s.matchText || '';
-        // support both block + line
-        return [
-          { id: `${s.id}:line`, eventName: 'event:line', matchText, caseInsensitive: true },
-          //{ id: `${s.id}:block`, eventName: 'game:terminal-data', matchText, caseInsensitive: true },
-        ];
+        const matchText = String(s.matchText ?? '').trim();
+
+        // SAFETY: never allow blank matchText omit rules (would gag everything)
+        if (!matchText) return [];
+
+        return [{ id: `${s.id}:line`, eventName: 'shatteredarchive:raw-data', matchText, caseInsensitive: true }];
       });
 
     setOmitRules(omitRules);

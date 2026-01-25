@@ -48,8 +48,8 @@ export function useGameCommand(options: UseGameCommandOptions): UseGameCommandRe
       if (!isConnected) return;
 
       try {
-        DispatchEvent('game:command-sent', {
-          text:line
+        DispatchEvent('shatteredarchive:command-sent', {
+          text: line,
         });
       } catch {
         // ignore

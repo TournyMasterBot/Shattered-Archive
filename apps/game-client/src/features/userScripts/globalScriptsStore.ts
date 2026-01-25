@@ -1,5 +1,7 @@
 // apps/game-client/src/features/userScripts/globalScriptsStore.ts
 
+import { DispatchEvent } from '../event-emitter/event-dispatcher';
+
 export type GlobalScriptLanguage = 'javascript' | 'lua' | 'python' | 'typescript';
 
 const GLOBAL_SCRIPTS_KEY_PREFIX = 'shatteredArchive.userGlobalScripts.';
@@ -139,9 +141,9 @@ export function setGlobalScriptSource(
 
   try {
     writeJson(key, payload);
-    window.dispatchEvent(
-      new CustomEvent('game:globalScripts-updated', { detail: { connectionId: safeConnectionId(connectionId) } }),
-    );
+    DispatchEvent('shatteredarchive:globalScripts-updated', {
+      connectionId: safeConnectionId(connectionId),
+    });
   } catch {
     // ignore
   }
@@ -176,7 +178,9 @@ function scheduleVarsSave(key: string) {
 
     try {
       writeJson(key, payload);
-      window.dispatchEvent(new CustomEvent('game:globalVars-updated', { detail: { key } }));
+      DispatchEvent('shatteredarchive:globalVars-updated', {
+        key,
+      });
     } catch {
       // ignore
     }

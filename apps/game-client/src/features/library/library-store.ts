@@ -1,3 +1,4 @@
+// apps\game-client\src\features\library\library-store.ts
 import type { LibraryBook, LibraryBookPage, LibraryNote, NoteSpool, UserNote } from './library-types';
 
 const DB_NAME = 'shatteredArchive.library';

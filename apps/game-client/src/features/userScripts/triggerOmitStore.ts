@@ -1,8 +1,8 @@
 // apps\game-client\src\features\userScripts\triggerOmitStore.ts
 export type OmitRule = {
   id: string;
-  eventName: string; // "text:line" etc
-  matchText: string; // substring match
+  eventName: string;
+  matchText: string;
   caseInsensitive?: boolean;
 };
 

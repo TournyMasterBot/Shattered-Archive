@@ -2,13 +2,6 @@
 import { DispatchEvent } from '../event-emitter/event-dispatcher';
 import { renderDslToAnsi } from './dslToAnsi';
 
-/**
- * Emit raw ANSI text directly to the xterm terminal bypass path.
- *
- * This writes to the same xterm instance used by useTerminal,
- * but via the `shatteredarchive:write-terminal` event that does NOT go
- * through omit/line filtering.
- */
 export function emitScriptTerminal(text: string): void {
   if (!text) return;
 

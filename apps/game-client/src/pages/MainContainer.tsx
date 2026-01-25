@@ -1,3 +1,4 @@
+// apps\game-client\src\pages\MainContainer.tsx
 import React from 'react';
 import styles from '../styles/MainContainer.module.scss';
 import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight';
@@ -31,6 +32,7 @@ import { useAutoLeveling } from '../hooks/useAutoLeveling';
 import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
 import { useTerminal } from '../hooks/useTerminal';
 import { ShatteredArchiveTerminal } from '../features/terminal/shatteredArchiveTerminal';
+import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 
 export const MainContainer: React.FC = () => {
   useVisualViewportHeight();
@@ -74,6 +76,17 @@ export const MainContainer: React.FC = () => {
     if (host.includes('dsl-mud')) return 'dsl-mud';
     return `${host}:${port}`;
   }, [gameConn.currentHost, gameConn.currentPort]);
+
+  React.useEffect(() => {
+    if (!connectionId) {
+      return;
+    }
+    DispatchEvent('shatteredarchive:connection-changed', {
+      connectionId,
+      host: gameConn.currentHost,
+      port: gameConn.currentPort,
+    });
+  }, [connectionId, gameConn.currentHost, gameConn.currentPort]);
 
   const plugins = usePlugins(connectionId);
   useEquipmentCapture(connectionId);

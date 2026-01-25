@@ -49,12 +49,10 @@ jest.mock('./userScriptRuntime', () => {
 // event dispatcher mock
 jest.mock('../event-emitter/event-dispatcher', () => {
   return {
-    ListenRedispatchMap: jest.fn(
-      (sourceEvent: string, destEvent: string, mapper: any, options?: { key?: string }) => {
-        redispatchCalls.push({ sourceEvent, destEvent, mapper, options });
-        return () => {};
-      },
-    ),
+    ListenRedispatchMap: jest.fn((sourceEvent: string, destEvent: string, mapper: any, options?: { key?: string }) => {
+      redispatchCalls.push({ sourceEvent, destEvent, mapper, options });
+      return () => {};
+    }),
 
     ListenEvent: jest.fn((name: string, handler: (payload: any) => void, options?: { key?: string }) => {
       listenEventCalls.push({ name, handler, options });

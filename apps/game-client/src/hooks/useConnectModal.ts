@@ -7,8 +7,8 @@ type SavedConnection = {
   host: string;
   port: number;
   lastUsedAt: number;
-  autoEnableGmcp?: boolean; // optional for backward compatibility
-  isBuiltin?: boolean; // new: marks non-removable defaults
+  autoEnableGmcp?: boolean;
+  isBuiltin?: boolean; // marks non-removable defaults
 };
 
 const STORAGE_KEY = 'shatteredArchive.connections';
@@ -202,7 +202,7 @@ export function useConnectModal({
       } else {
         const newConn: SavedConnection = {
           id: `conn_${now}_${Math.random().toString(36).slice(2)}`,
-          name: key, // future: rename UI
+          name: key,
           host: trimmedHost,
           port: parsedPort,
           lastUsedAt: now,

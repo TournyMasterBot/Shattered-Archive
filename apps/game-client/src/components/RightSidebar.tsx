@@ -11,6 +11,7 @@ import {
   type EnemyUiState,
   type OpponentStatusDetail,
 } from '../features/combat/opponent-types';
+import { ListenDomEvent, ListenEvent } from '../features/event-emitter/event-dispatcher';
 
 /* ---------------- Status block (tick + vitals + enemy + ancillary) ---------------- */
 
@@ -68,15 +69,24 @@ const StatusBlock: React.FC = () => {
   useEffect(() => {
     if (!hudMenuOpen) return;
 
-    const onDown = (e: MouseEvent) => {
-      const wrap = hudMenuWrapRef.current;
-      if (!wrap) return;
-      if (wrap.contains(e.target as Node)) return;
-      setHudMenuOpen(false);
-    };
+    const dispose = ListenDomEvent<MouseEvent>(
+      'mousedown',
+      (e) => {
+        const wrap = hudMenuWrapRef.current;
+        if (!wrap) return;
+        if (wrap.contains(e.target as Node)) return;
+        setHudMenuOpen(false);
+      },
+      { key: 'RightSidebar::StatusBlock::hudMenu::mousedown' },
+    );
 
-    window.addEventListener('mousedown', onDown);
-    return () => window.removeEventListener('mousedown', onDown);
+    return () => {
+      try {
+        dispose?.();
+      } catch {
+        // ignore
+      }
+    };
   }, [hudMenuOpen]);
 
   // Enemy UI state (last known)
@@ -99,41 +109,46 @@ const StatusBlock: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const handler = (ev: Event) => {
-      const ce = ev as CustomEvent<OpponentStatusDetail>;
-      const d = ce.detail;
-      if (!d || !Number.isFinite(d.pct)) return;
+    const dispose = ListenEvent<OpponentStatusDetail>(
+      'event:fighting:opponent',
+      (d) => {
+        if (!d || !Number.isFinite(d.pct)) return;
 
-      setEnemyUi((prev) => {
-        const prevSeen = prev.lastSeenTs > 0;
-        const prevPct = prevSeen ? prev.pct : d.pct;
-        const nextPct = d.pct;
+        setEnemyUi((prev) => {
+          const prevSeen = prev.lastSeenTs > 0;
+          const prevPct = prevSeen ? prev.pct : d.pct;
+          const nextPct = d.pct;
 
-        // If enemy pct decreased, show pulsing "damage chunk" over the lost segment.
-        if (nextPct < prevPct) {
-          const left = Math.max(0, Math.min(100, nextPct));
-          const width = Math.max(0, Math.min(100 - left, prevPct - nextPct));
+          // If enemy pct decreased, show pulsing "damage chunk" over the lost segment.
+          if (nextPct < prevPct) {
+            const left = Math.max(0, Math.min(100, nextPct));
+            const width = Math.max(0, Math.min(100 - left, prevPct - nextPct));
 
-          if (width > 0.05) {
-            setDamageChunk({ leftPct: left, widthPct: width, key: d.ts || Date.now() });
+            if (width > 0.05) {
+              setDamageChunk({ leftPct: left, widthPct: width, key: d.ts || Date.now() });
 
-            if (chunkTimerRef.current) window.clearTimeout(chunkTimerRef.current);
-            chunkTimerRef.current = window.setTimeout(() => setDamageChunk(null), 4500);
+              if (chunkTimerRef.current) window.clearTimeout(chunkTimerRef.current);
+              chunkTimerRef.current = window.setTimeout(() => setDamageChunk(null), 4500);
+            }
           }
-        }
 
-        return {
-          lastSeenTs: d.ts || Date.now(),
-          label: d.label?.trim() || prev.label || 'Enemy',
-          pct: nextPct,
-          statusText: formatOpponentStatusText(d.pct, d.minPct, d.maxPct),
-        };
-      });
-    };
+          return {
+            lastSeenTs: d.ts || Date.now(),
+            label: d.label?.trim() || prev.label || 'Enemy',
+            pct: nextPct,
+            statusText: formatOpponentStatusText(d.pct, d.minPct, d.maxPct),
+          };
+        });
+      },
+      { key: 'RightSidebar::StatusBlock::opponent' },
+    );
 
-    window.addEventListener('event:fighting:opponent', handler as EventListener);
     return () => {
-      window.removeEventListener('event:fighting:opponent', handler as EventListener);
+      try {
+        dispose?.();
+      } catch {
+        // ignore
+      }
       if (chunkTimerRef.current) window.clearTimeout(chunkTimerRef.current);
     };
   }, []);

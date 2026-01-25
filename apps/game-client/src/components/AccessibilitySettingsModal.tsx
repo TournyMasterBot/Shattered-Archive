@@ -9,6 +9,7 @@ import {
 
 // apply/remove high-contrast CSS via your existing CSS override pipeline
 import { setHighContrastEnabled } from '../features/userStyles/userStyleOverrideStore';
+import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 
 type TabId = 'vision' | 'input' | 'about';
 
@@ -64,11 +65,9 @@ export const AccessibilitySettingsModal: React.FC<AccessibilitySettingsModalProp
 
     // If preview was on, keep the visual consistent after save:
     // - preview injection can remain until modal closes; we clear on close below.
-    try {
-      window.dispatchEvent(new CustomEvent('sa:accessibility-updated', { detail: next }));
-    } catch {
-      // ignore
-    }
+    DispatchEvent('shatteredarchive:accessibility-updated', {
+      next,
+    });
 
     onClose();
   };

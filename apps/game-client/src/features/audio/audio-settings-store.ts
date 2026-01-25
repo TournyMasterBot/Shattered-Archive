@@ -1,3 +1,4 @@
+// apps\game-client\src\features\audio\audio-settings-store.ts
 export type BeepSound =
   | {
       kind: 'osc';

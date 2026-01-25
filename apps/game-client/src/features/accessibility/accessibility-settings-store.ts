@@ -1,3 +1,4 @@
+// apps\game-client\src\features\accessibility\accessibility-settings-store.ts
 export type AccessibilitySettings = {
   fontScale: number; // 0.8..1.6
   preferHighContrast: boolean;

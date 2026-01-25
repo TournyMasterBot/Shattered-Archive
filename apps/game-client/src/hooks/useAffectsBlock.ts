@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import type { AffectData } from '@shatteredarchive/types-global';
 import { useTickData } from './useTickData';
+import { ListenEvent } from '../features/event-emitter/event-dispatcher';
 
 function sortByDurationThenName(a: AffectData, b: AffectData) {
   const dd = a.d - b.d;
@@ -44,51 +45,57 @@ export function useAffectsBlock() {
   const { timeOfDay } = useTickData();
 
   useEffect(() => {
-    const onTrueUp = (ev: Event) => {
-      const ce = ev as CustomEvent<any>;
+    const offTrueUp = ListenEvent<any>(
+      'game:affects-trueup',
+      (payload) => {
+        const affectsPayload = Array.isArray(payload) ? payload : payload?.affects;
+        setAffects(normalizeAffects(affectsPayload));
+      },
+      { key: 'useAffectsBlock:shatteredarchive:affects-trueup' },
+    );
 
-      const affectsPayload = Array.isArray(ce.detail) ? ce.detail : ce.detail?.affects;
+    const offAdd = ListenEvent<any>(
+      'game:affect-added',
+      (payload) => {
+        const added = payload?.affect ?? payload;
+        if (!isAffectData(added)) return;
 
-      setAffects(normalizeAffects(affectsPayload));
-    };
+        setAffects((prev) => normalizeAffects([...prev, added]));
+      },
+      { key: 'useAffectsBlock:shatteredarchive:affect-added' },
+    );
 
-    const onAdd = (ev: Event) => {
-      const ce = ev as CustomEvent<any>;
+    const offRemoved = ListenEvent<any>(
+      'game:affect-removed',
+      (payload) => {
+        const name = String(payload?.n ?? '').trim();
+        if (!name) return;
 
-      const added = ce.detail?.affect ?? ce.detail;
-
-      if (!isAffectData(added)) return;
-
-      setAffects((prev) => normalizeAffects([...prev, added]));
-    };
-
-    const onRemoved = (ev: Event) => {
-      const ce = ev as CustomEvent<any>;
-      const name = String(ce.detail?.n ?? '').trim();
-      if (!name) return;
-
-      // Removes ALL items with that name
-      setAffects((prev) => normalizeAffects(prev.filter((a) => a.n !== name)));
-    };
-
-    window.addEventListener('game:affects-trueup', onTrueUp as EventListener);
-    window.addEventListener('game:affect-added', onAdd as EventListener);
-    window.addEventListener('game:affect-removed', onRemoved as EventListener);
+        // Removes ALL items with that name
+        setAffects((prev) => normalizeAffects(prev.filter((a) => a.n !== name)));
+      },
+      { key: 'useAffectsBlock:shatteredarchive:affect-removed' },
+    );
 
     return () => {
-      window.removeEventListener('game:affects-trueup', onTrueUp as EventListener);
-      window.removeEventListener('game:affect-added', onAdd as EventListener);
-      window.removeEventListener('game:affect-removed', onRemoved as EventListener);
+      offTrueUp();
+      offAdd();
+      offRemoved();
     };
   }, []);
 
   useEffect(() => {
-    const onTick = () => {
-      setAffects((prev) => normalizeAffects(prev.map((a) => ({ ...a, d: a.d - 1 }))));
-    };
+    const offTick = ListenEvent<any>(
+      'game:tick',
+      () => {
+        setAffects((prev) => normalizeAffects(prev.map((a) => ({ ...a, d: a.d - 1 }))));
+      },
+      { key: 'useAffectsBlock:shatteredarchive:tick' },
+    );
 
-    window.addEventListener('game:tick', onTick as EventListener);
-    return () => window.removeEventListener('game:tick', onTick as EventListener);
+    return () => {
+      offTick();
+    };
   }, []);
 
   return { affects, timeOfDay };

@@ -4,6 +4,7 @@ import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 
 import { ShatteredArchiveTerminal } from '../features/terminal/shatteredArchiveTerminal';
+import { registerListener, unregisterListener } from '../features/event-emitter/event-dispatcher';
 
 export function useTerminal() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -18,7 +19,7 @@ export function useTerminal() {
 
     const term = new XTerm({
       convertEol: true,
-      disableStdin: true, // external input box handles typing
+      disableStdin: true,
       fontFamily: 'monospace',
       fontSize: isSmall ? 12 : 14,
       cursorBlink: false,
@@ -55,16 +56,16 @@ export function useTerminal() {
       }
     };
 
-    // 1) xterm root itself is focusable (tabindex=0)
     const xtermRoot = container.querySelector('.xterm') as HTMLElement | null;
     if (xtermRoot) {
       xtermRoot.tabIndex = -1;
       xtermRoot.setAttribute('tabindex', '-1');
-      xtermRoot.addEventListener('focus', blurActive, true);
-      xtermRoot.addEventListener('focusin', blurActive, true);
+
+      registerListener('useTerminal::xtermRoot::focus', xtermRoot, 'focus', blurActive as any, true);
+
+      registerListener('useTerminal::xtermRoot::focusin', xtermRoot, 'focusin', blurActive as any, true);
     }
 
-    // 2) Kill the helper textarea (main Android keyboard trigger)
     const helper = container.querySelector('.xterm-helper-textarea') as HTMLTextAreaElement | null;
     if (helper) {
       helper.tabIndex = -1;
@@ -84,25 +85,25 @@ export function useTerminal() {
       helper.style.width = '1px';
       helper.style.height = '1px';
 
-      helper.addEventListener('focus', blurActive, true);
-      helper.addEventListener('focusin', blurActive, true);
+      registerListener('useTerminal::helper::focus', helper, 'focus', blurActive as any, true);
+
+      registerListener('useTerminal::helper::focusin', helper, 'focusin', blurActive as any, true);
     }
 
-    // 3) Block focus at the container level (tap / click)
     const preventPointerFocus = (e: Event) => {
       e.preventDefault();
     };
 
-    container.addEventListener('pointerdown', preventPointerFocus, {
-      capture: true,
-      passive: false,
-    });
-    container.addEventListener('touchstart', preventPointerFocus, {
+    registerListener('useTerminal::container::pointerdown', container, 'pointerdown', preventPointerFocus as any, {
       capture: true,
       passive: false,
     });
 
-    // 4) Global safety net: if ANYTHING inside terminal focuses, blur it
+    registerListener('useTerminal::container::touchstart', container, 'touchstart', preventPointerFocus as any, {
+      capture: true,
+      passive: false,
+    });
+
     const onFocusInCapture = (e: FocusEvent) => {
       const target = e.target as HTMLElement | null;
       if (!target) return;
@@ -115,9 +116,8 @@ export function useTerminal() {
       }
     };
 
-    document.addEventListener('focusin', onFocusInCapture, true);
+    registerListener('useTerminal::document::focusinCapture', document, 'focusin', onFocusInCapture as any, true);
 
-    // Ensure starting state is unfocused
     blurActive();
     try {
       term.blur();
@@ -151,7 +151,6 @@ export function useTerminal() {
         autoScrollRef.current = true;
         setShowJump(false);
 
-        // optional: tell singleton we are live
         try {
           ShatteredArchiveTerminal.Instance.setAutoScroll(true);
         } catch {
@@ -161,7 +160,6 @@ export function useTerminal() {
         autoScrollRef.current = false;
         setShowJump(true);
 
-        // optional: tell singleton to stop auto-scroll
         try {
           ShatteredArchiveTerminal.Instance.setAutoScroll(false);
         } catch {
@@ -170,11 +168,11 @@ export function useTerminal() {
       }
     };
 
-    viewport?.addEventListener('scroll', handleScroll);
+    if (viewport) {
+      registerListener('useTerminal::viewport::scroll', viewport, 'scroll', handleScroll as any);
+    }
 
-    // ============================================================
-    // ✅ Attach terminal runtime singleton (writes happen there now)
-    // ============================================================
+    // Attach terminal runtime singleton
     ShatteredArchiveTerminal.Instance.attach(term, fitAddon);
 
     // ============================================================
@@ -192,24 +190,48 @@ export function useTerminal() {
       });
     };
 
-    window.addEventListener('resize', handleResize);
+    registerListener('useTerminal::window::resize', window, 'resize', handleResize as any);
 
     // ============================================================
     // Cleanup
     // ============================================================
 
     return () => {
-      viewport?.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleResize);
-      document.removeEventListener('focusin', onFocusInCapture, true);
+      // viewport scroll
+      if (viewport) {
+        unregisterListener('useTerminal::viewport::scroll', viewport, 'scroll', handleScroll as any);
+      }
 
-      container.removeEventListener('pointerdown', preventPointerFocus, { capture: true } as any);
-      container.removeEventListener('touchstart', preventPointerFocus, { capture: true } as any);
+      // resize
+      unregisterListener('useTerminal::window::resize', window, 'resize', handleResize as any);
 
-      xtermRoot?.removeEventListener('focus', blurActive, true);
-      xtermRoot?.removeEventListener('focusin', blurActive, true);
-      helper?.removeEventListener('focus', blurActive, true);
-      helper?.removeEventListener('focusin', blurActive, true);
+      // document focusin capture
+      unregisterListener('useTerminal::document::focusinCapture', document, 'focusin', onFocusInCapture as any, true);
+
+      // container pointer/touch capture
+      unregisterListener('useTerminal::container::pointerdown', container, 'pointerdown', preventPointerFocus as any, {
+        capture: true,
+        passive: false,
+      });
+
+      unregisterListener('useTerminal::container::touchstart', container, 'touchstart', preventPointerFocus as any, {
+        capture: true,
+        passive: false,
+      });
+
+      // xtermRoot focus blockers
+      if (xtermRoot) {
+        unregisterListener('useTerminal::xtermRoot::focus', xtermRoot, 'focus', blurActive as any, true);
+
+        unregisterListener('useTerminal::xtermRoot::focusin', xtermRoot, 'focusin', blurActive as any, true);
+      }
+
+      // helper textarea focus blockers
+      if (helper) {
+        unregisterListener('useTerminal::helper::focus', helper, 'focus', blurActive as any, true);
+
+        unregisterListener('useTerminal::helper::focusin', helper, 'focusin', blurActive as any, true);
+      }
 
       // Detach singleton references
       try {
@@ -233,7 +255,6 @@ export function useTerminal() {
       autoScrollRef.current = true;
       setShowJump(false);
 
-      // optional: tell singleton
       try {
         ShatteredArchiveTerminal.Instance.setAutoScroll(true);
       } catch {

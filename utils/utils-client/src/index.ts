@@ -3,4 +3,4 @@ export function greetClient(name: string): string {
 }
 
 export * from './ansi-to-html.js';
-export * from './strip-ansi.js'
+export * from './strip-ansi.js';

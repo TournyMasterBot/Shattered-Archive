@@ -1,3 +1,4 @@
+// apps\game-client\src\features\plugins\core-plugins\roller.plugin.ts
 import type { IPluginModule, PluginExportInfo, PluginRuntimeApi } from '@shatteredarchive/types-client';
 
 type ParsedRoll = {

@@ -46,7 +46,7 @@ export type EquipmentSlotSnapshot = {
 
 export type EquipmentSnapshot = {
   updatedAt: number;
-  // ✅ MUST be partial because not every tag always appears
+  // MUST be partial because not every tag always appears
   slots: Partial<Record<EqSlot, EquipmentSlotSnapshot>>;
   allLines: string[];
 };

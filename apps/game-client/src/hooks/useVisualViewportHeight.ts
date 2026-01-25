@@ -1,5 +1,6 @@
 // apps/game-client/src/hooks/useVisualViewportHeight.ts
 import { useEffect } from 'react';
+import { ListenDomEvent, ListenTargetDomEvent } from '../features/event-emitter/event-dispatcher';
 
 export function useVisualViewportHeight(): void {
   useEffect(() => {
@@ -13,23 +14,36 @@ export function useVisualViewportHeight(): void {
       document.documentElement.style.setProperty('--app-height', `${h}px`);
     };
 
+    // initial paint
     set();
 
     const vv = window.visualViewport;
-    if (vv) {
-      vv.addEventListener('resize', set);
-      vv.addEventListener('scroll', set); // iOS can change vv on scroll too
-    }
-    window.addEventListener('resize', set);
-    window.addEventListener('orientationchange', set);
+
+    const offVvResize = vv
+      ? ListenTargetDomEvent<Event>(vv, 'resize', () => set(), {
+          key: 'useVisualViewportHeight:visualViewport:resize',
+        })
+      : null;
+
+    const offVvScroll = vv
+      ? ListenTargetDomEvent<Event>(vv, 'scroll', () => set(), {
+          key: 'useVisualViewportHeight:visualViewport:scroll',
+        })
+      : null;
+
+    const offWindowResize = ListenDomEvent<Event>('resize', () => set(), {
+      key: 'useVisualViewportHeight:window:resize',
+    });
+
+    const offOrientation = ListenDomEvent<Event>('orientationchange', () => set(), {
+      key: 'useVisualViewportHeight:window:orientationchange',
+    });
 
     return () => {
-      if (vv) {
-        vv.removeEventListener('resize', set);
-        vv.removeEventListener('scroll', set);
-      }
-      window.removeEventListener('resize', set);
-      window.removeEventListener('orientationchange', set);
+      offVvResize?.();
+      offVvScroll?.();
+      offWindowResize();
+      offOrientation();
     };
   }, []);
 }

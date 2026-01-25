@@ -14,8 +14,10 @@ export enum UserScriptEvents {}
  */
 
 type ListenerEntry = {
+  target: EventTarget;
   name: string;
   listener: EventListener;
+  options?: boolean | AddEventListenerOptions;
   stack?: string;
 };
 
@@ -46,9 +48,7 @@ function getStackTrace(): string | undefined {
 
 function shouldTraceDispatch(): boolean {
   try {
-    // Set: localStorage.setItem('sa.events.trace', '1')
-    // Unset: localStorage.removeItem('sa.events.trace')
-    return String(window.localStorage.getItem('sa.events.trace') ?? '') === '1';
+    return String(window.localStorage.getItem('shatteredarchive.events.trace') ?? '') === '1';
   } catch {
     return false;
   }
@@ -80,37 +80,59 @@ function defaultKey(name: string, suffix?: string): string {
   return suffix ? `${name}::${suffix}` : `${name}`;
 }
 
-function registerListener(key: string, name: string, listener: EventListener, captureStack?: boolean) {
+export function registerListener(
+  key: string,
+  target: EventTarget,
+  name: string,
+  listener: EventListener,
+  options?: boolean | AddEventListenerOptions,
+  captureStack?: boolean,
+) {
   const registry = getRegistry();
 
   // If something is already registered under this key, remove it first (HMR-safe)
   const existing = registry.listeners.get(key);
   if (existing) {
     try {
-      window.removeEventListener(existing.name, existing.listener);
+      existing.target.removeEventListener(existing.name, existing.listener, existing.options as any);
     } catch {
       // ignore
     }
     registry.listeners.delete(key);
   }
 
+  // Store + attach
   registry.listeners.set(key, {
+    target,
     name,
     listener,
+    options,
     stack: captureStack ? getStackTrace() : undefined,
   });
+
+  try {
+    target.addEventListener(name, listener, options as any);
+  } catch {
+    // ignore
+  }
 }
 
-function unregisterListener(key: string, name: string, listener: EventListener) {
+export function unregisterListener(
+  key: string,
+  target: EventTarget,
+  name: string,
+  listener: EventListener,
+  options?: boolean | AddEventListenerOptions,
+) {
   const registry = getRegistry();
 
   const existing = registry.listeners.get(key);
-  if (existing && existing.name === name && existing.listener === listener) {
+  if (existing && existing.target === target && existing.name === name && existing.listener === listener) {
     registry.listeners.delete(key);
   }
 
   try {
-    window.removeEventListener(name, listener);
+    target.removeEventListener(name, listener, options as any);
   } catch {
     // ignore
   }
@@ -125,8 +147,6 @@ function unregisterListener(key: string, name: string, listener: EventListener) 
 export function DispatchEvent<T extends object>(name: string, payload: T) {
   try {
     if (shouldTraceDispatch()) {
-      // Gives you a "source" trace without changing event contracts.
-      // This is the closest thing to "who called DispatchEvent?"
       console.debug(`[DispatchEvent] ${name}`, payload, new Error('DispatchEvent trace').stack);
     }
 
@@ -169,11 +189,10 @@ export function ListenOnce<T>(name: string, handler: (payload: T) => void, optio
     handler(ce.detail);
 
     // remove self
-    unregisterListener(key, name, listener as EventListener);
+    unregisterListener(key, window, name, listener as EventListener);
   };
 
-  registerListener(key, name, listener as EventListener, options?.captureStack);
-  window.addEventListener(name, listener as EventListener);
+  registerListener(key, window, name, listener as EventListener, undefined, options?.captureStack);
 }
 
 export function ListenEvent<T>(name: string, handler: (payload: T) => void, options?: ListenOptions): () => void {
@@ -184,11 +203,10 @@ export function ListenEvent<T>(name: string, handler: (payload: T) => void, opti
     handler(ce.detail);
   };
 
-  registerListener(key, name, listener as EventListener, options?.captureStack);
-  window.addEventListener(name, listener as EventListener);
+  registerListener(key, window, name, listener as EventListener, undefined, options?.captureStack);
 
   return () => {
-    unregisterListener(key, name, listener as EventListener);
+    unregisterListener(key, window, name, listener as EventListener);
   };
 }
 
@@ -207,11 +225,10 @@ export function ListenEventAsync<T>(
     });
   };
 
-  registerListener(key, name, listener as EventListener, options?.captureStack);
-  window.addEventListener(name, listener as EventListener);
+  registerListener(key, window, name, listener as EventListener, undefined, options?.captureStack);
 
   return () => {
-    unregisterListener(key, name, listener as EventListener);
+    unregisterListener(key, window, name, listener as EventListener);
   };
 }
 
@@ -231,11 +248,10 @@ export function ListenRedispatch<TIn extends object, TExtra extends object = {}>
     RedispatchEvent<TIn, TExtra>(ev, toName, extra);
   };
 
-  registerListener(key, fromName, listener as EventListener, options?.captureStack);
-  window.addEventListener(fromName, listener as EventListener);
+  registerListener(key, window, fromName, listener as EventListener, undefined, options?.captureStack);
 
   return () => {
-    unregisterListener(key, fromName, listener as EventListener);
+    unregisterListener(key, window, fromName, listener as EventListener);
   };
 }
 
@@ -256,11 +272,49 @@ export function ListenRedispatchMap<TIn extends object, TOut extends object>(
     DispatchEvent<TOut>(toName, map(detail));
   };
 
-  registerListener(key, fromName, listener as EventListener, options?.captureStack);
-  window.addEventListener(fromName, listener as EventListener);
+  registerListener(key, window, fromName, listener as EventListener, undefined, options?.captureStack);
 
   return () => {
-    unregisterListener(key, fromName, listener as EventListener);
+    unregisterListener(key, window, fromName, listener as EventListener);
+  };
+}
+
+export function ListenDomEvent<E extends Event>(
+  name: string,
+  handler: (ev: E) => void,
+  options?: ListenOptions,
+): () => void {
+  const key = options?.key ?? defaultKey(name, 'dom');
+
+  const listener = (ev: Event) => {
+    handler(ev as E);
+  };
+
+  registerListener(key, window, name, listener as EventListener, undefined, options?.captureStack);
+
+  return () => {
+    unregisterListener(key, window, name, listener as EventListener);
+  };
+}
+
+export function ListenTargetDomEvent<E extends Event>(
+  target: EventTarget,
+  name: string,
+  handler: (ev: E) => void,
+  options?: ListenOptions & {
+    listenerOptions?: boolean | AddEventListenerOptions;
+  },
+): () => void {
+  const key = options?.key ?? `${name}::target`;
+
+  const listener = (ev: Event) => {
+    handler(ev as E);
+  };
+
+  registerListener(key, target, name, listener as EventListener, options?.listenerOptions, options?.captureStack);
+
+  return () => {
+    unregisterListener(key, target, name, listener as EventListener, options?.listenerOptions);
   };
 }
 
@@ -268,7 +322,6 @@ export function ListenRedispatchMap<TIn extends object, TOut extends object>(
  * ------------------------------------------------------------
  * Debug helper (optional)
  * ------------------------------------------------------------
- * Not required, but can be useful.
  */
 export function __debugDumpListeners(): Array<{ key: string; name: string; hasStack: boolean }> {
   const registry = getRegistry();

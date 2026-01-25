@@ -151,10 +151,10 @@ export function useGameConnection(): UseGameConnectionResult {
   }, []);
 
   // -----------------------------------------------------------------------
-  // Outbound bridge: game:send-command -> websocket "data"
+  // Outbound bridge: shatteredarchive:send-command -> websocket "data"
   // -----------------------------------------------------------------------
   useEffect(() => {
-    const unbind = ListenEvent<{ cmd: string }>('game:send-command', (payload) => {
+    const unbind = ListenEvent<{ cmd: string }>('shatteredarchive:send-command', (payload) => {
       const cmd = payload?.cmd ?? '';
       sendTelnetData(cmd);
     });

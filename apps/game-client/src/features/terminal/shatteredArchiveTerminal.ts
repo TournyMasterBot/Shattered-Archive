@@ -75,10 +75,10 @@ export class ShatteredArchiveTerminal {
         return;
       }
 
-      const cleanText =  StripAnsi(raw);
+      const cleanText = StripAnsi(raw);
 
-      console.log("shatteredarchive:write-console", {
-        cleanText
+      console.log('shatteredarchive:write-console', {
+        cleanText,
       });
     });
 

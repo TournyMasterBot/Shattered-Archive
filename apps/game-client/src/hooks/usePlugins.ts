@@ -69,7 +69,7 @@ export function usePlugins(connectionId?: string | null) {
     setPlugins(loadFromStorage(connectionId));
   }, [connectionId]);
 
-  // ✅ Persist immediately with the computed "next" value (no effect-race)
+  // Persist immediately with the computed "next" value (no effect-race)
   const setPluginsPersist = useCallback((updater: (prev: InstalledPluginRecord[]) => InstalledPluginRecord[]) => {
     setPlugins((prev) => {
       const next = updater(prev);

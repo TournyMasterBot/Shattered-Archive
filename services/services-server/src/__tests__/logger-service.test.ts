@@ -103,7 +103,6 @@ jest.mock('winston', () => {
     format: formatFactory,
   };
 
-  // ✅ For `import winston from 'winston'` in your source file
   return {
     __esModule: true,
     default: winstonMock,

@@ -1,3 +1,4 @@
+// apps\game-client\src\hooks\usePluginCssOverrides.ts
 import { useEffect, useState } from 'react';
 
 const PLUGIN_CSS_KEY_PREFIX = 'shatteredArchive.pluginCssOverride.';

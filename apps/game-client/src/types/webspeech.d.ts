@@ -1,3 +1,4 @@
+// apps\game-client\src\types\webspeech.d.ts
 // Minimal Web Speech API typings for Chromium (SpeechRecognition / webkitSpeechRecognition)
 
 type SpeechRecognitionErrorCode =

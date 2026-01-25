@@ -1,16 +1,9 @@
 // apps/game-client/src/features/userScripts/runtime.ts
 import ts from 'typescript';
-import {
-  AnyUserScript,
-  AliasScript,
-  TimerScript,
-  TriggerScript,
-  ScriptSandboxApi,
-  ScriptErrorInfo,
-  UserScriptLanguage,
-} from './types';
+import { AnyUserScript, AliasScript, TimerScript, TriggerScript, ScriptSandboxApi, UserScriptLanguage } from './types';
 import { runLuaSourceInBrowser } from './luaRuntime';
 import { runPythonSourceInBrowser } from './pythonRuntime';
+import { ScriptErrorInfo } from '../../types/userscript-types/script-error-info';
 
 function isGlobalIdentifierLine(line: string): boolean {
   // For plain-text scripts, allow a line that is exactly a global identifier
@@ -111,7 +104,7 @@ async function runPlainText(source: string, api: ScriptSandboxApi): Promise<void
   const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
 
   for (const line of lines) {
-    // NEW: allow a plain-text line to call a global script by identifier.
+    // allow a plain-text line to call a global script by identifier.
     if (api.runGlobal && isGlobalIdentifierLine(line)) {
       try {
         await api.runGlobal(line);
@@ -132,7 +125,9 @@ export async function runUserScript(script: AnyUserScript, api: ScriptSandboxApi
   const lang: UserScriptLanguage = script.language;
 
   // Disabled scripts do nothing
-  if (!script.enabled) return;
+  if (!script.enabled) {
+    return;
+  }
 
   // For plain text scripts, we intentionally allow empty/whitespace-only source
   // because blank lines are meaningful (they should be sent as-is).
@@ -227,7 +222,7 @@ export async function runTimerScript(script: TimerScript, baseApi: ScriptSandbox
   const api: ScriptSandboxApi = {
     ...baseApi,
     event: {
-      name: 'timer:tick',
+      name: 'game:tick',
       payload: { intervalMs: script.intervalMs },
     },
   };

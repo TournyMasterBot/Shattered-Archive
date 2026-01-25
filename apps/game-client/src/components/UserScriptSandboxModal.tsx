@@ -12,6 +12,7 @@ import styles from '../styles/UserScriptSandboxModal.module.scss';
 import { ROUTED_WINDOW_EVENTS } from '../features/plugins/routed-gmcp-events';
 import { useGlobalScripts } from '../hooks/useGlobalScripts';
 import { useUserVariables } from '../hooks/useUserVariables';
+import { ListenDomEvent } from '../features/event-emitter/event-dispatcher';
 
 interface UserScriptSandboxModalProps {
   isOpen: boolean;
@@ -50,9 +51,9 @@ function safeFileStamp() {
   // YYYYMMDD-HHMMSS (local-ish, but fine for filename)
   const d = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(
-    d.getSeconds(),
-  )}`;
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(
+    d.getMinutes(),
+  )}${pad(d.getSeconds())}`;
 }
 
 function downloadJson(filename: string, jsonText: string) {
@@ -100,8 +101,12 @@ function isValidUserScript(v: unknown): v is AnyUserScript {
   if (kind === 'trigger') {
     const eventName = (v as any).eventName;
     const matchText = (v as any).matchText;
+    const dontRequireMatchText = (v as any).dontRequireMatchText;
+
     if (typeof eventName !== 'string') return false;
     if (typeof matchText !== 'string') return false;
+    if (dontRequireMatchText !== undefined && typeof dontRequireMatchText !== 'boolean') return false;
+
     return true;
   }
 
@@ -125,37 +130,39 @@ function tryParseExportFile(text: string): { ok: true; file: ExportFileV1 } | { 
     const parsed = JSON.parse(text);
 
     if (!isObject(parsed)) return { ok: false, error: 'Root JSON must be an object.' };
-    if (parsed.schema !== 'shatteredArchive.export.v1') return { ok: false, error: 'Unsupported schema.' };
-    if (!Array.isArray(parsed.items)) return { ok: false, error: 'Missing items array.' };
+    if ((parsed as any).schema !== 'shatteredArchive.export.v1') return { ok: false, error: 'Unsupported schema.' };
+    if (!Array.isArray((parsed as any).items)) return { ok: false, error: 'Missing items array.' };
 
     const items: ExportFileV1['items'] = [];
-    for (const it of parsed.items) {
+    for (const it of (parsed as any).items) {
       if (!isObject(it)) return { ok: false, error: 'Invalid item shape.' };
-      if (it.storage !== 'localStorage') return { ok: false, error: 'Unsupported storage type.' };
-      if (it.format !== 'json') return { ok: false, error: 'Unsupported format.' };
-      if (it.kind !== 'userScripts') return { ok: false, error: 'Unsupported kind.' };
-      if (typeof it.key !== 'string' || it.key.trim().length === 0) return { ok: false, error: 'Invalid key.' };
-      if (!Array.isArray(it.value)) return { ok: false, error: 'Invalid value (expected array).' };
+      if ((it as any).storage !== 'localStorage') return { ok: false, error: 'Unsupported storage type.' };
+      if ((it as any).format !== 'json') return { ok: false, error: 'Unsupported format.' };
+      if ((it as any).kind !== 'userScripts') return { ok: false, error: 'Unsupported kind.' };
+      if (typeof (it as any).key !== 'string' || (it as any).key.trim().length === 0)
+        return { ok: false, error: 'Invalid key.' };
+      if (!Array.isArray((it as any).value)) return { ok: false, error: 'Invalid value (expected array).' };
 
-      const validScripts = it.value.filter(isValidUserScript);
+      const validScripts = (it as any).value.filter(isValidUserScript);
+
       items.push({
         storage: 'localStorage',
-        key: it.key,
+        key: (it as any).key,
         format: 'json',
         kind: 'userScripts',
         selection:
-          isObject(it.selection) && Array.isArray((it.selection as any).ids)
-            ? { ids: (it.selection as any).ids }
+          isObject((it as any).selection) && Array.isArray(((it as any).selection as any).ids)
+            ? { ids: ((it as any).selection as any).ids }
             : undefined,
-        strategyHint: it.strategyHint === 'mergeById' ? 'mergeById' : undefined,
+        strategyHint: (it as any).strategyHint === 'mergeById' ? 'mergeById' : undefined,
         value: validScripts,
       });
     }
 
     const file: ExportFileV1 = {
       schema: 'shatteredArchive.export.v1',
-      exportedAt: typeof parsed.exportedAt === 'string' ? parsed.exportedAt : nowIso(),
-      app: typeof parsed.app === 'string' ? parsed.app : undefined,
+      exportedAt: typeof (parsed as any).exportedAt === 'string' ? (parsed as any).exportedAt : nowIso(),
+      app: typeof (parsed as any).app === 'string' ? (parsed as any).app : undefined,
       items,
     };
 
@@ -310,8 +317,6 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
   const handleImportApply = () => {
     if (!importFile) return;
 
-    // For now: only apply items matching THIS connection's userScripts key.
-    // (Later: you can add a key picker / remap UI.)
     const eligible = importFile.items.filter((it) => importItemEnabled[it.key]);
 
     const targetKey = storageKey;
@@ -580,7 +585,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
     replaceAllScripts,
   } = useUserScriptSandbox(connectionId);
 
-  // NEW: globals + named variables (for "{NAME}" templates)
+  // globals + named variables (for "{NAME}" templates)
   const globalMgr = useGlobalScripts(connectionId);
   const namedVars = useUserVariables(connectionId);
 
@@ -596,6 +601,9 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
   const [triggerMatchText, setTriggerMatchText] = useState<string>('');
   const [triggerTestInput, setTriggerTestInput] = useState<string>('');
   const [triggerOmitFromOutput, setTriggerOmitFromOutput] = useState<boolean>(false);
+
+  // per-trigger option
+  const [triggerDontRequireMatchText, setTriggerDontRequireMatchText] = useState<boolean>(false);
 
   // Alias-specific state
   const [aliasKey, setAliasKey] = useState<string>('');
@@ -616,24 +624,33 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
   const [modalWidth, setModalWidth] = useState<number>(900);
   const [modalHeight, setModalHeight] = useState<number>(600);
 
-  // NEW: Globals tab UI state
+  // Globals tab UI state
   const [globalLanguage, setGlobalLanguage] = useState<'javascript' | 'lua' | 'python' | 'typescript'>('javascript');
   const [globalDraft, setGlobalDraft] = useState<string>('');
   const [globalVarKey, setGlobalVarKey] = useState<string>('');
   const [globalVarValue, setGlobalVarValue] = useState<string>('');
 
-  // NEW: Variables tab UI state
+  // Variables tab UI state
   const [namedVarKey, setNamedVarKey] = useState<string>('');
   const [namedVarValue, setNamedVarValue] = useState<string>('');
 
-  // Track viewport size
+  // Track viewport size (HMR-safe)
   useEffect(() => {
     const handleResize = () => {
       if (typeof window === 'undefined') return;
       setIsSmallScreen(window.innerWidth <= 768);
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+
+    // run once immediately
+    handleResize();
+
+    const offResize = ListenDomEvent<Event>('resize', () => handleResize(), {
+      key: 'UserScriptSandboxModal:window:resize',
+    });
+
+    return () => {
+      offResize();
+    };
   }, []);
 
   // Reset all editor state when modal closes
@@ -643,10 +660,13 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       setEditorName('');
       setEditorSource('');
       setEditorLanguage('text');
+
       setTriggerEventName('event:line');
       setTriggerMatchText('');
       setTriggerTestInput('');
       setTriggerOmitFromOutput(false);
+      setTriggerDontRequireMatchText(false);
+
       setAliasKey('');
       setTimerIntervalSeconds('');
       setIeOpen(false);
@@ -667,10 +687,13 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
     setEditorName('');
     setEditorSource('');
     setEditorLanguage('text');
+
     setTriggerEventName('event:line');
     setTriggerMatchText('');
     setTriggerTestInput('');
     setTriggerOmitFromOutput(false);
+    setTriggerDontRequireMatchText(false);
+
     setAliasKey('');
     setTimerIntervalSeconds('');
   }, [activeTab]);
@@ -700,6 +723,11 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
   const baseTriggerOmitFromOutput =
     selectedScript && selectedScript.kind === 'trigger' ? !!(selectedScript as TriggerScript).omitFromOutput : false;
 
+  const baseTriggerDontRequireMatchText =
+    selectedScript && selectedScript.kind === 'trigger'
+      ? !!(selectedScript as TriggerScript).dontRequireMatchText
+      : false;
+
   const baseTimerIntervalSeconds =
     selectedScript && selectedScript.kind === 'timer'
       ? String(
@@ -720,7 +748,8 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       (selectedScript.kind === 'trigger' &&
         (triggerEventName !== baseTriggerEventName ||
           triggerMatchText !== baseTriggerMatchText ||
-          triggerOmitFromOutput !== baseTriggerOmitFromOutput)) ||
+          triggerOmitFromOutput !== baseTriggerOmitFromOutput ||
+          triggerDontRequireMatchText !== baseTriggerDontRequireMatchText)) ||
       (selectedScript.kind === 'timer' && timerIntervalSeconds !== baseTimerIntervalSeconds) ||
       (selectedScript.kind === 'alias' && aliasKey !== baseAliasKey));
 
@@ -743,27 +772,38 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       setTriggerEventName(trig.eventName ?? 'event:line');
       setTriggerMatchText(trig.matchText ?? '');
       setTriggerOmitFromOutput(!!trig.omitFromOutput);
+      setTriggerDontRequireMatchText(!!trig.dontRequireMatchText);
+
       setAliasKey('');
       setTimerIntervalSeconds('');
     } else if (script.kind === 'timer') {
       const t = script as TimerScript;
       const secs = t.intervalMs ? Math.round(t.intervalMs / 1000) : 5;
+
       setTimerIntervalSeconds(String(secs));
+
       setTriggerEventName('event:line');
       setTriggerMatchText('');
       setTriggerOmitFromOutput(false);
+      setTriggerDontRequireMatchText(false);
+
       setAliasKey('');
     } else if (script.kind === 'alias') {
       const a = script as AliasScript;
       setAliasKey(a.alias ?? '');
+
       setTriggerEventName('event:line');
       setTriggerMatchText('');
       setTriggerOmitFromOutput(false);
+      setTriggerDontRequireMatchText(false);
+
       setTimerIntervalSeconds('');
     } else {
       setTriggerEventName('event:line');
       setTriggerMatchText('');
       setTriggerOmitFromOutput(false);
+      setTriggerDontRequireMatchText(false);
+
       setAliasKey('');
       setTimerIntervalSeconds('');
     }
@@ -782,7 +822,9 @@ look`,
         eventName: 'event:line',
         matchText: '',
         omitFromOutput: false,
+        dontRequireMatchText: false,
       });
+
       handleSelectScript(s);
       setActiveTab('triggers');
     } else if (activeTab === 'aliases') {
@@ -823,6 +865,7 @@ look`,
       trig.eventName = triggerEventName || 'event:line';
       trig.matchText = triggerMatchText || '';
       trig.omitFromOutput = !!triggerOmitFromOutput;
+      trig.dontRequireMatchText = !!triggerDontRequireMatchText;
     } else if (updated.kind === 'timer') {
       const secs = Number(timerIntervalSeconds);
       const clampedSecs = Number.isFinite(secs) && secs > 0 ? secs : 5;
@@ -846,6 +889,7 @@ look`,
       setTriggerEventName(baseTriggerEventName);
       setTriggerMatchText(baseTriggerMatchText);
       setTriggerOmitFromOutput(baseTriggerOmitFromOutput);
+      setTriggerDontRequireMatchText(baseTriggerDontRequireMatchText);
     } else if (selectedScript.kind === 'timer') {
       setTimerIntervalSeconds(baseTimerIntervalSeconds);
     } else if (selectedScript.kind === 'alias') {
@@ -863,10 +907,13 @@ look`,
     setEditorName('');
     setEditorSource('');
     setEditorLanguage('text');
+
     setTriggerEventName('event:line');
     setTriggerMatchText('');
     setTriggerTestInput('');
     setTriggerOmitFromOutput(false);
+    setTriggerDontRequireMatchText(false);
+
     setAliasKey('');
     setTimerIntervalSeconds('');
   };
@@ -906,6 +953,7 @@ look`,
       trig.eventName = triggerEventName || 'event:line';
       trig.matchText = triggerMatchText || '';
       trig.omitFromOutput = !!triggerOmitFromOutput;
+      trig.dontRequireMatchText = !!triggerDontRequireMatchText;
     } else if (draft.kind === 'timer') {
       const secs = Number(timerIntervalSeconds);
       const clampedSecs = Number.isFinite(secs) && secs > 0 ? secs : 5;
@@ -1403,14 +1451,26 @@ look`,
                         />
                       </label>
 
-                      <label className={`${styles.enabledToggle} ${styles.omitToggle}`}>
-                        <input
-                          type="checkbox"
-                          checked={triggerOmitFromOutput}
-                          onChange={(e) => setTriggerOmitFromOutput(e.target.checked)}
-                        />
-                        <span>Omit from output</span>
-                      </label>
+                      {/* toggle group is anchored to the right */}
+                      <div className={styles.triggerToggleGroup}>
+                        <label className={`${styles.enabledToggle} ${styles.omitToggle}`}>
+                          <input
+                            type="checkbox"
+                            checked={triggerOmitFromOutput}
+                            onChange={(e) => setTriggerOmitFromOutput(e.target.checked)}
+                          />
+                          <span>Omit from output</span>
+                        </label>
+
+                        <label className={`${styles.enabledToggle} ${styles.omitToggle}`}>
+                          <input
+                            type="checkbox"
+                            checked={triggerDontRequireMatchText}
+                            onChange={(e) => setTriggerDontRequireMatchText(e.target.checked)}
+                          />
+                          <span>Don’t require match text</span>
+                        </label>
+                      </div>
                     </div>
                   )}
 

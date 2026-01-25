@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import styles from '../styles/GraphicsSettingsModal.module.scss';
+import { DispatchEvent, ListenDomEvent } from '../features/event-emitter/event-dispatcher';
 
 export interface GraphicsSettingsModalProps {
   isOpen: boolean;
@@ -77,12 +78,22 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
 
   // Track viewport size (same pattern as your ScriptSandbox)
   useEffect(() => {
-    const handleResize = () => {
-      if (typeof window === 'undefined') return;
-      setIsSmallScreen(window.innerWidth <= 768);
+    const disposeResize = ListenDomEvent<UIEvent>(
+      'resize',
+      () => {
+        if (typeof window === 'undefined') return;
+        setIsSmallScreen(window.innerWidth <= 768);
+      },
+      { key: 'UserScriptSandboxModal::window::resize' },
+    );
+
+    return () => {
+      try {
+        disposeResize?.();
+      } catch {
+        // ignore
+      }
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Reset draft on open/close
@@ -115,11 +126,9 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
 
     // Optional: broadcast so other parts of the app can react without prop plumbing.
     // (No one has to listen yet.)
-    try {
-      window.dispatchEvent(new CustomEvent('game:graphics-config-changed', { detail: next }));
-    } catch {
-      // ignore
-    }
+    DispatchEvent('shatteredarchive:graphics-config-changed', {
+      next,
+    });
   };
 
   const handleDiscard = () => {
@@ -137,12 +146,9 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
     const fresh = loadConfig();
     setConfig(fresh);
     setDraft(fresh);
-
-    try {
-      window.dispatchEvent(new CustomEvent('game:graphics-config-changed', { detail: fresh }));
-    } catch {
-      // ignore
-    }
+    DispatchEvent('shatteredarchive:graphics-config-changed', {
+      fresh,
+    });
   };
 
   const navItems: Array<{ key: GraphicsNavKey; label: string; hint?: string }> = [

@@ -60,7 +60,7 @@ function splitLinesPreserveBlanks(text: string): string[] {
 }
 
 function sendGameCommand(cmd: string): void {
-  DispatchEvent('game:send-command', { cmd });
+  DispatchEvent('shatteredarchive:send-command', { cmd });
 }
 
 function sortedDefinedPages(book: LibraryBook): LibraryBookPage[] {
@@ -687,7 +687,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
     return Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0], undefined, { sensitivity: 'base' }));
   }, [lib.userNotes]);
 
-  // ✅ IMPORTANT: return null ONLY AFTER ALL HOOKS HAVE RUN
+  // IMPORTANT: return null ONLY AFTER ALL HOOKS HAVE RUN
   if (!isOpen) return null;
 
   const showList = tab === 'parchment' || tab === 'notes' || tab === 'books';

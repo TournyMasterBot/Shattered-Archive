@@ -230,10 +230,15 @@ export function useLayoutSizing() {
   const handleVerticalResizeMouseDown = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       e.preventDefault();
+
       const startX = e.clientX;
       const startWidth = rightWidth;
 
+      let isActive = true;
+
       const onMouseMove = (ev: MouseEvent) => {
+        if (!isActive) return;
+
         const delta = startX - ev.clientX;
         let nextWidth = startWidth + delta;
         nextWidth = Math.min(MAX_RIGHT_WIDTH, Math.max(MIN_RIGHT_WIDTH, nextWidth));
@@ -241,6 +246,9 @@ export function useLayoutSizing() {
       };
 
       const onMouseUp = () => {
+        if (!isActive) return;
+        isActive = false;
+
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('mouseup', onMouseUp);
       };
@@ -353,8 +361,8 @@ export function useUserCssOverrides() {
       applyCombinedCss(userCssApplied);
     };
 
-    window.addEventListener('sa:accessibility-updated', onUpdated);
-    return () => window.removeEventListener('sa:accessibility-updated', onUpdated);
+    window.addEventListener('shatteredarchive:accessibility-updated', onUpdated);
+    return () => window.removeEventListener('shatteredarchive:accessibility-updated', onUpdated);
   }, [userCssApplied]);
 
   const openStyleModal = () => setIsStyleModalOpen(true);

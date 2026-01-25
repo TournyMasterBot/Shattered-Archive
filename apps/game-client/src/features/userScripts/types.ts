@@ -2,8 +2,6 @@
 
 export type UserScriptLanguage = 'javascript' | 'lua' | 'python' | 'typescript' | 'text';
 
-export type UserScriptKind = 'trigger' | 'alias' | 'timer';
-
 export interface BaseUserScript {
   id: string;
   name: string;
@@ -27,6 +25,8 @@ export interface TriggerScript extends BaseUserScript {
    * while still allowing actions to run.
    */
   omitFromOutput?: boolean;
+  /** When true, match text can be blank */
+  dontRequireMatchText?: boolean;
 }
 
 /**
@@ -56,15 +56,6 @@ export interface TimerScript extends BaseUserScript {
 }
 
 export type AnyUserScript = TriggerScript | AliasScript | TimerScript;
-
-export interface ScriptErrorInfo {
-  scriptId: string;
-  scriptName: string;
-  kind: UserScriptKind;
-  message: string;
-  stack?: string;
-  timestamp: number;
-}
 
 /**
  * Payload passed to trigger handlers when an event fires.

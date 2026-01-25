@@ -1,5 +1,6 @@
 // apps/game-client/src/hooks/useRightPaneHud.ts
 import { useEffect, useState } from 'react';
+import { ListenEvent } from '../features/event-emitter/event-dispatcher';
 
 /** Re-export so existing imports keep working */
 export { useTickTimer } from './useTickTimer';
@@ -94,17 +95,33 @@ export function useVitalsState(): VitalsState {
   });
 
   useEffect(() => {
-    const handler = (ev: Event) => {
-      const d = getDetail(ev);
-      setVitals((prev) => applyVitalsPatch(prev, d));
-    };
+    const disposeVitals = ListenEvent<any>(
+      'game:gmcp-vitals',
+      (payload) => {
+        setVitals((prev) => applyVitalsPatch(prev, payload));
+      },
+      { key: 'useVitalsState::game:gmcp-vitals' },
+    );
 
-    window.addEventListener('game:gmcp-vitals', handler as EventListener);
-    window.addEventListener('game:char-data', handler as EventListener);
+    const disposeChar = ListenEvent<any>(
+      'game:char-data',
+      (payload) => {
+        setVitals((prev) => applyVitalsPatch(prev, payload));
+      },
+      { key: 'useVitalsState::game:char-data' },
+    );
 
     return () => {
-      window.removeEventListener('game:gmcp-vitals', handler as EventListener);
-      window.removeEventListener('game:char-data', handler as EventListener);
+      try {
+        disposeVitals?.();
+      } catch {
+        // ignore
+      }
+      try {
+        disposeChar?.();
+      } catch {
+        // ignore
+      }
     };
   }, []);
 
@@ -113,11 +130,6 @@ export function useVitalsState(): VitalsState {
 
 /**
  * Enemy HUD state.
- *
- * Expect events like:
- *   window.dispatchEvent(new CustomEvent("dsl:enemy-hp", {
- *     detail: { visible: true, label: "an angry kobold", pct: 45, statusText: "wounded" }
- *   }));
  */
 export function useEnemyHudState(): EnemyHudState {
   const [state, setState] = useState<EnemyHudState>({
@@ -127,29 +139,40 @@ export function useEnemyHudState(): EnemyHudState {
     statusText: '',
   });
 
+  // TMB TODO : This is probably the wrong event to listen to now,
+  // review for correct event
   useEffect(() => {
-    const handler = (ev: Event) => {
-      const detail = getDetail(ev);
-      const d = isRecord(detail) ? detail : {};
+    const dispose = ListenEvent<any>(
+      'event:enemy-hp',
+      (payload) => {
+        // payload is CustomEvent.detail
+        const d = isRecord(payload) ? payload : {};
 
-      const visible = typeof d.visible === 'boolean' ? d.visible : undefined;
-      const label = typeof d.label === 'string' ? d.label : undefined;
+        const visible = typeof d.visible === 'boolean' ? d.visible : undefined;
+        const label = typeof d.label === 'string' ? d.label : undefined;
 
-      const pctRaw = typeof d.pct === 'number' ? d.pct : toNum(d.pct);
-      const pct = typeof pctRaw === 'number' ? Math.max(0, Math.min(100, pctRaw)) : undefined;
+        const pctRaw = typeof d.pct === 'number' ? d.pct : toNum(d.pct);
+        const pct = typeof pctRaw === 'number' ? Math.max(0, Math.min(100, pctRaw)) : undefined;
 
-      const statusText = typeof d.statusText === 'string' ? d.statusText : undefined;
+        const statusText = typeof d.statusText === 'string' ? d.statusText : undefined;
 
-      setState((prev) => ({
-        visible: visible ?? prev.visible,
-        label: label ?? prev.label,
-        pct: pct ?? prev.pct,
-        statusText: statusText ?? prev.statusText,
-      }));
+        setState((prev) => ({
+          visible: visible ?? prev.visible,
+          label: label ?? prev.label,
+          pct: pct ?? prev.pct,
+          statusText: statusText ?? prev.statusText,
+        }));
+      },
+      { key: 'useEnemyHpState::dsl:enemy-hp' },
+    );
+
+    return () => {
+      try {
+        dispose?.();
+      } catch {
+        // ignore
+      }
     };
-
-    window.addEventListener('dsl:enemy-hp', handler as EventListener);
-    return () => window.removeEventListener('dsl:enemy-hp', handler as EventListener);
   }, []);
 
   return state;
@@ -167,65 +190,84 @@ export function useAffectsState(): AffectEntry[] {
   const [affects, setAffects] = useState<AffectEntry[]>([]);
 
   useEffect(() => {
-    const syncHandler = (ev: Event) => {
-      const detail = getDetail(ev);
-      const d = isRecord(detail) ? detail : {};
-      const raw = d.affects;
+    const disposeSync = ListenEvent<any>(
+      'game:affects-sync',
+      (payload) => {
+        // payload is CustomEvent.detail
+        const d = isRecord(payload) ? payload : {};
+        const raw = (d as any).affects;
 
-      const list: AffectEntry[] = Array.isArray(raw)
-        ? raw
-            .filter((x): x is AnyRecord => isRecord(x))
-            .map((x) => ({
-              id: typeof x.id === 'string' ? x.id : '',
-              name: typeof x.name === 'string' ? x.name : '',
-              summary: typeof x.summary === 'string' ? x.summary : undefined,
-            }))
-            .filter((x) => x.id.length > 0 && x.name.length > 0)
-        : [];
+        const list: AffectEntry[] = Array.isArray(raw)
+          ? raw
+              .filter((x): x is AnyRecord => isRecord(x))
+              .map((x) => ({
+                id: typeof x.id === 'string' ? x.id : '',
+                name: typeof x.name === 'string' ? x.name : '',
+                summary: typeof x.summary === 'string' ? x.summary : undefined,
+              }))
+              .filter((x) => x.id.length > 0 && x.name.length > 0)
+          : [];
 
-      setAffects(list);
-    };
+        setAffects(list);
+      },
+      { key: 'useAffectsState::dsl:affects-sync' },
+    );
 
-    const addHandler = (ev: Event) => {
-      const detail = getDetail(ev);
-      const d = isRecord(detail) ? detail : {};
-      const raw = d.affect;
+    const disposeAdd = ListenEvent<any>(
+      'game:affects-add',
+      (payload) => {
+        const d = isRecord(payload) ? payload : {};
+        const raw = (d as any).affect;
 
-      if (!isRecord(raw)) return;
+        if (!isRecord(raw)) return;
 
-      const a: AffectEntry = {
-        id: typeof raw.id === 'string' ? raw.id : '',
-        name: typeof raw.name === 'string' ? raw.name : '',
-        summary: typeof raw.summary === 'string' ? raw.summary : undefined,
-      };
+        const a: AffectEntry = {
+          id: typeof raw.id === 'string' ? raw.id : '',
+          name: typeof raw.name === 'string' ? raw.name : '',
+          summary: typeof raw.summary === 'string' ? raw.summary : undefined,
+        };
 
-      if (!a.id || !a.name) return;
+        if (!a.id || !a.name) return;
 
-      setAffects((prev) => {
-        const idx = prev.findIndex((x) => x.id === a.id);
-        if (idx === -1) return [...prev, a];
-        const next = [...prev];
-        next[idx] = a;
-        return next;
-      });
-    };
+        setAffects((prev) => {
+          const idx = prev.findIndex((x) => x.id === a.id);
+          if (idx === -1) return [...prev, a];
+          const next = [...prev];
+          next[idx] = a;
+          return next;
+        });
+      },
+      { key: 'useAffectsState::dsl:affects-add' },
+    );
 
-    const removeHandler = (ev: Event) => {
-      const detail = getDetail(ev);
-      const d = isRecord(detail) ? detail : {};
-      const id = typeof d.id === 'string' ? d.id : '';
-      if (!id) return;
-      setAffects((prev) => prev.filter((a) => a.id !== id));
-    };
+    const disposeRemove = ListenEvent<any>(
+      'game:affects-remove',
+      (payload) => {
+        const d = isRecord(payload) ? payload : {};
+        const id = typeof (d as any).id === 'string' ? String((d as any).id) : '';
+        if (!id) return;
 
-    window.addEventListener('dsl:affects-sync', syncHandler as EventListener);
-    window.addEventListener('dsl:affects-add', addHandler as EventListener);
-    window.addEventListener('dsl:affects-remove', removeHandler as EventListener);
+        setAffects((prev) => prev.filter((a) => a.id !== id));
+      },
+      { key: 'useAffectsState::dsl:affects-remove' },
+    );
 
     return () => {
-      window.removeEventListener('dsl:affects-sync', syncHandler as EventListener);
-      window.removeEventListener('dsl:affects-add', addHandler as EventListener);
-      window.removeEventListener('dsl:affects-remove', removeHandler as EventListener);
+      try {
+        disposeSync?.();
+      } catch {
+        // ignore
+      }
+      try {
+        disposeAdd?.();
+      } catch {
+        // ignore
+      }
+      try {
+        disposeRemove?.();
+      } catch {
+        // ignore
+      }
     };
   }, []);
 
@@ -236,48 +278,57 @@ export function useAffectsState(): AffectEntry[] {
  * Compass exits.
  *
  * Expect:
- *   window.dispatchEvent(new CustomEvent("dsl:room-exits", {
- *     detail: { exits: ["N","E","S","D"] }
+ *   DispatchEvent('dsl:room-exits', {
+ *    { exits: ["N","E","S","D"] }
  *   }));
  */
 export function useCompassState(): CompassState {
   const [exits, setExits] = useState<Set<CompassDirection>>(new Set());
 
   useEffect(() => {
-    const handler = (ev: Event) => {
-      const detail = getDetail(ev);
-      const d = isRecord(detail) ? detail : {};
-      const raw = d.exits;
+    const dispose = ListenEvent<any>(
+      'dsl:room-exits',
+      (payload) => {
+        // payload is CustomEvent.detail
+        const d = isRecord(payload) ? payload : {};
+        const raw = (d as any).exits;
 
-      if (!Array.isArray(raw)) {
-        setExits(new Set());
-        return;
-      }
-
-      const next = new Set<CompassDirection>();
-      for (const dir of raw) {
-        const up = String(dir).toUpperCase();
-        if (
-          up === 'N' ||
-          up === 'S' ||
-          up === 'E' ||
-          up === 'W' ||
-          up === 'NE' ||
-          up === 'NW' ||
-          up === 'SE' ||
-          up === 'SW' ||
-          up === 'U' ||
-          up === 'D'
-        ) {
-          next.add(up as CompassDirection);
+        if (!Array.isArray(raw)) {
+          setExits(new Set());
+          return;
         }
+
+        const next = new Set<CompassDirection>();
+        for (const dir of raw) {
+          const up = String(dir).toUpperCase();
+          if (
+            up === 'N' ||
+            up === 'S' ||
+            up === 'E' ||
+            up === 'W' ||
+            up === 'NE' ||
+            up === 'NW' ||
+            up === 'SE' ||
+            up === 'SW' ||
+            up === 'U' ||
+            up === 'D'
+          ) {
+            next.add(up as CompassDirection);
+          }
+        }
+
+        setExits(next);
+      },
+      { key: 'useCompassState::dsl:room-exits' },
+    );
+
+    return () => {
+      try {
+        dispose?.();
+      } catch {
+        // ignore
       }
-
-      setExits(next);
     };
-
-    window.addEventListener('dsl:room-exits', handler as EventListener);
-    return () => window.removeEventListener('dsl:room-exits', handler as EventListener);
   }, []);
 
   return { exits };

@@ -1,5 +1,7 @@
 // apps/game-client/src/features/userScripts/userVariablesStore.ts
 
+import { DispatchEvent } from '../event-emitter/event-dispatcher';
+
 const USER_VARS_KEY_PREFIX = 'shatteredArchive.userVariables.';
 
 export type NamedVariables = Record<string, string>;
@@ -79,9 +81,9 @@ export function setNamedVariable(connectionId: string | null | undefined, name: 
 
   try {
     writeJson(key, current);
-    window.dispatchEvent(
-      new CustomEvent('game:userVariables-updated', { detail: { connectionId: safeConnectionId(connectionId) } }),
-    );
+    DispatchEvent('shatteredarchive:userVariables-updated', {
+      connectionId: safeConnectionId(connectionId),
+    });
   } catch {
     // ignore
   }
@@ -98,9 +100,9 @@ export function deleteNamedVariable(connectionId: string | null | undefined, nam
 
   try {
     writeJson(key, current);
-    window.dispatchEvent(
-      new CustomEvent('game:userVariables-updated', { detail: { connectionId: safeConnectionId(connectionId) } }),
-    );
+    DispatchEvent('game:userVariables-updated', {
+      connectionId: safeConnectionId(connectionId),
+    });
   } catch {
     // ignore
   }

@@ -1,3 +1,4 @@
+// apps\game-client\src\features\equipment\eq-delta-parse.ts
 import type { EqSlot } from './equipment-types';
 import { stripItemStatusPrefixes } from './equipment-text';
 

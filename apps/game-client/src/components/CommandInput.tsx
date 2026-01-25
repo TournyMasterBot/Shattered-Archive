@@ -3,28 +3,7 @@ import React, { useCallback, useRef } from 'react';
 import styles from '../styles/CommandInput.module.scss';
 import { useGameCommand } from '../hooks/useGameCommand';
 import { useVoiceDictation } from '../hooks/useVoiceDictation';
-
-import type { AutoLevelRunState } from '../features/autoleveling/autoleveling-types';
-
-interface CommandInputProps {
-  sendRaw: (data: string) => void;
-  isConnected: boolean;
-
-  /** Opens the configuration modal (optional) */
-  onOpenAutoLeveling?: () => void;
-
-  /** Whether autoleveling feature is enabled/configured */
-  autoLevelingActive?: boolean;
-
-  /** Current run state (for Start/Pause/Resume labeling) */
-  autoLevelRunState?: AutoLevelRunState;
-
-  /** Optional direct callbacks; if omitted we dispatch events. */
-  onAutoLevelStart?: () => void;
-  onAutoLevelPause?: () => void;
-  onAutoLevelResume?: () => void;
-  onAutoLevelStop?: () => void;
-}
+import { CommandInputProps } from '../types/chat-types/command-input-props';
 
 export const CommandInput: React.FC<CommandInputProps> = ({
   sendRaw,
@@ -91,14 +70,14 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 
   const autoDisabled = !isConnected || !autoLevelingActive;
 
-  //const fireStart = () => (onAutoLevelStart ? onAutoLevelStart() : DispatchEvent('game:autoleveling-start', {}));
-  //const firePause = () => (onAutoLevelPause ? onAutoLevelPause() : DispatchEvent('game:autoleveling-pause', {}));
-  //const fireResume = () => (onAutoLevelResume ? onAutoLevelResume() : DispatchEvent('game:autoleveling-resume', {}));
-  //const fireStop = () => (onAutoLevelStop ? onAutoLevelStop() : DispatchEvent('game:autoleveling-stop', {}));
+  //const fireStart = () => (onAutoLevelStart ? onAutoLevelStart() : DispatchEvent('shatteredarchive:autoleveling-start', {}));
+  //const firePause = () => (onAutoLevelPause ? onAutoLevelPause() : DispatchEvent('shatteredarchive:autoleveling-pause', {}));
+  //const fireResume = () => (onAutoLevelResume ? onAutoLevelResume() : DispatchEvent('shatteredarchive:autoleveling-resume', {}));
+  //const fireStop = () => (onAutoLevelStop ? onAutoLevelStop() : DispatchEvent('shatteredarchive:autoleveling-stop', {}));
 
   const onAutoClick = () => {
     if (autoDisabled) return;
-/*
+    /*
     if (isIdle) {
       const ok = window.confirm('Begin auto leveling now?');
       if (!ok) return;
@@ -121,7 +100,6 @@ export const CommandInput: React.FC<CommandInputProps> = ({
     if (!ok) return;
     fireStart(); */
   };
- 
 
   const onStopClick = () => {
     if (!isConnected) return;

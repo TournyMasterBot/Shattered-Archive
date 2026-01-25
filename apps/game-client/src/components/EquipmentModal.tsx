@@ -89,8 +89,10 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ isOpen, onClose,
     void setHotbarDockMode(connectionId, mode);
   };
 
-  // ✅ Hooks are done; safe to early-return now.
-  if (!isOpen) return null;
+  // Hooks are done; safe to early-return now.
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <div className={styles.backdrop} role="dialog" aria-modal="true" onMouseDown={onClose}>

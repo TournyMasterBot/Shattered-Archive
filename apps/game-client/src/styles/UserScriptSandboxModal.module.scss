@@ -198,7 +198,6 @@
   opacity: 0.7;
 }
 
-/* ✅ Add this back: checkbox in list items */
 .enabledCheckbox {
   margin-left: 6px;
   cursor: pointer;
@@ -255,7 +254,6 @@
   }
 }
 
-/* ✅ Added: slightly separated omit toggle so it reads like config, not header */
 .omitToggle {
   margin-left: auto;
   padding: 2px 6px;
@@ -350,6 +348,54 @@
   align-items: center;
   margin-bottom: 8px;
   font-size: 0.75rem;
+
+  /* IMPORTANT: allow wrapping even on desktop */
+  flex-wrap: wrap;
+}
+
+/* keeps toggles together and pinned right */
+.triggerToggleGroup {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Enabled toggle */
+.enabledToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: #ccc;
+
+  input {
+    margin: 0;
+  }
+}
+
+/* Make omitToggle look like a small pill, but DO NOT push it right */
+.omitToggle {
+  margin-left: 0;
+  padding: 2px 6px;
+  border: 1px solid #333;
+  background: #181818;
+  border-radius: 3px;
+}
+
+/* ... keep everything below unchanged ... */
+
+@media (max-width: 768px) {
+  .triggerConfigRow {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .triggerToggleGroup {
+    margin-left: 0;
+    width: 100%;
+  }
 }
 
 .configLabel {
@@ -531,7 +577,6 @@
     max-width: 40%;
   }
 
-  /* ✅ On smaller screens, don't force omit toggle to the far edge */
   .omitToggle {
     margin-left: 0;
   }
