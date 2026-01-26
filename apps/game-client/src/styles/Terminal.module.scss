@@ -3,15 +3,18 @@
 /* Terminal container inside play area */
 .playAreaTerminalWrapper {
   width: 100%;
-  flex: 1; /* take remaining vertical space above input */
-  min-height: 0; /* allow the xterm viewport to shrink properly */
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
   position: relative;
   overflow: hidden;
+  display: flex;
 }
 
 .playAreaTerminal {
-  width: 100%;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
   overflow: hidden;
 }
 

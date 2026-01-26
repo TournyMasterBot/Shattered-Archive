@@ -32,6 +32,7 @@ export class ShatteredArchiveTerminal {
   public attach(term: XTerm, fitAddon: FitAddon): void {
     this.term = term;
     this.fit = fitAddon;
+    this.Fit();
   }
 
   public detach(): void {
@@ -42,6 +43,17 @@ export class ShatteredArchiveTerminal {
 
   public setAutoScroll(enabled: boolean): void {
     this.autoScroll = !!enabled;
+  }
+
+  public Fit(): void {
+    const f = this.fit;
+    if (!f) return;
+
+    try {
+      f.fit();
+    } catch {
+      // ignore
+    }
   }
 
   private attachWindowEvents(): void {
@@ -57,7 +69,6 @@ export class ShatteredArchiveTerminal {
       t.write(raw);
 
       if (this.autoScroll) {
-        // scroll can still occasionally be touchy, so keep it guarded
         try {
           t.scrollToBottom();
         } catch {
@@ -71,9 +82,7 @@ export class ShatteredArchiveTerminal {
       if (!t) return;
 
       const raw = payload.rawText;
-      if (!raw) {
-        return;
-      }
+      if (!raw) return;
 
       const cleanText = StripAnsi(raw);
 

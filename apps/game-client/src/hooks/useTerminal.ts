@@ -23,6 +23,7 @@ export function useTerminal() {
       fontFamily: 'monospace',
       fontSize: isSmall ? 12 : 14,
       cursorBlink: false,
+      cursorInactiveStyle: 'none',
       scrollback: 5000,
       theme: {
         background: '#000000',
@@ -45,85 +46,32 @@ export function useTerminal() {
     term.open(container);
 
     // ============================================================
-    // 🔒 ANDROID / MOBILE HARD STOP: NO FOCUS, NO KEYBOARD
+    // ✅ ALLOW SELECTION, BUT PREVENT MOBILE KEYBOARD
     // ============================================================
 
-    const blurActive = () => {
-      try {
-        (document.activeElement as HTMLElement | null)?.blur?.();
-      } catch {
-        // ignore
-      }
-    };
+    // IMPORTANT:
+    // - DO NOT preventDefault pointerdown/touchstart on container
+    // - DO NOT blur focus inside terminal (breaks selection)
+    // - Instead: neuter the helper textarea inputmode
+    const applyNoKeyboardToXtermTextarea = () => {
+      const helper = container.querySelector('.xterm-helper-textarea') as HTMLTextAreaElement | null;
+      if (!helper) return;
 
-    const xtermRoot = container.querySelector('.xterm') as HTMLElement | null;
-    if (xtermRoot) {
-      xtermRoot.tabIndex = -1;
-      xtermRoot.setAttribute('tabindex', '-1');
-
-      registerListener('useTerminal::xtermRoot::focus', xtermRoot, 'focus', blurActive as any, true);
-
-      registerListener('useTerminal::xtermRoot::focusin', xtermRoot, 'focusin', blurActive as any, true);
-    }
-
-    const helper = container.querySelector('.xterm-helper-textarea') as HTMLTextAreaElement | null;
-    if (helper) {
       helper.tabIndex = -1;
       helper.setAttribute('tabindex', '-1');
       helper.setAttribute('readonly', 'true');
+
       helper.setAttribute('inputmode', 'none');
       helper.setAttribute('autocomplete', 'off');
       helper.setAttribute('autocorrect', 'off');
       helper.setAttribute('autocapitalize', 'off');
       helper.setAttribute('spellcheck', 'false');
-
-      helper.style.pointerEvents = 'none';
-      helper.style.opacity = '0';
-      helper.style.position = 'fixed';
-      helper.style.left = '-10000px';
-      helper.style.top = '0';
-      helper.style.width = '1px';
-      helper.style.height = '1px';
-
-      registerListener('useTerminal::helper::focus', helper, 'focus', blurActive as any, true);
-
-      registerListener('useTerminal::helper::focusin', helper, 'focusin', blurActive as any, true);
-    }
-
-    const preventPointerFocus = (e: Event) => {
-      e.preventDefault();
     };
 
-    registerListener('useTerminal::container::pointerdown', container, 'pointerdown', preventPointerFocus as any, {
-      capture: true,
-      passive: false,
-    });
-
-    registerListener('useTerminal::container::touchstart', container, 'touchstart', preventPointerFocus as any, {
-      capture: true,
-      passive: false,
-    });
-
-    const onFocusInCapture = (e: FocusEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (!target) return;
-
-      // Allow your real command input to keep focus
-      if (target.id === 'game-command-input') return;
-
-      if (container.contains(target)) {
-        blurActive();
-      }
-    };
-
-    registerListener('useTerminal::document::focusinCapture', document, 'focusin', onFocusInCapture as any, true);
-
-    blurActive();
-    try {
-      term.blur();
-    } catch {
-      // ignore
-    }
+    applyNoKeyboardToXtermTextarea();
+    const helperTick = window.setTimeout(() => {
+      applyNoKeyboardToXtermTextarea();
+    }, 0);
 
     // ============================================================
     // Layout / scrolling / data handling
@@ -183,7 +131,6 @@ export function useTerminal() {
       requestAnimationFrame(() => {
         try {
           fitRef.current?.fit();
-          termRef.current?.scrollToBottom();
         } catch {
           // ignore
         }
@@ -197,43 +144,14 @@ export function useTerminal() {
     // ============================================================
 
     return () => {
-      // viewport scroll
       if (viewport) {
         unregisterListener('useTerminal::viewport::scroll', viewport, 'scroll', handleScroll as any);
       }
 
-      // resize
       unregisterListener('useTerminal::window::resize', window, 'resize', handleResize as any);
 
-      // document focusin capture
-      unregisterListener('useTerminal::document::focusinCapture', document, 'focusin', onFocusInCapture as any, true);
+      window.clearTimeout(helperTick);
 
-      // container pointer/touch capture
-      unregisterListener('useTerminal::container::pointerdown', container, 'pointerdown', preventPointerFocus as any, {
-        capture: true,
-        passive: false,
-      });
-
-      unregisterListener('useTerminal::container::touchstart', container, 'touchstart', preventPointerFocus as any, {
-        capture: true,
-        passive: false,
-      });
-
-      // xtermRoot focus blockers
-      if (xtermRoot) {
-        unregisterListener('useTerminal::xtermRoot::focus', xtermRoot, 'focus', blurActive as any, true);
-
-        unregisterListener('useTerminal::xtermRoot::focusin', xtermRoot, 'focusin', blurActive as any, true);
-      }
-
-      // helper textarea focus blockers
-      if (helper) {
-        unregisterListener('useTerminal::helper::focus', helper, 'focus', blurActive as any, true);
-
-        unregisterListener('useTerminal::helper::focusin', helper, 'focusin', blurActive as any, true);
-      }
-
-      // Detach singleton references
       try {
         ShatteredArchiveTerminal.Instance.detach();
       } catch {

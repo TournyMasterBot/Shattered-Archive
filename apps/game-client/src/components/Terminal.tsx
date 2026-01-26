@@ -3,26 +3,86 @@ import React from 'react';
 import '@xterm/xterm/css/xterm.css';
 import styles from '../styles/Terminal.module.scss';
 import { useTerminal } from '../hooks/useTerminal';
+import { ShatteredArchiveTerminal } from '../features/terminal/shatteredArchiveTerminal';
 
 export const Terminal: React.FC = () => {
   const { containerRef, showJump, handleJumpToLive } = useTerminal();
+
+  const downPosRef = React.useRef<{ x: number; y: number } | null>(null);
+  const didDragRef = React.useRef(false);
+
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    let raf = 0;
+
+    const scheduleFit = () => {
+      if (raf) return;
+
+      raf = window.requestAnimationFrame(() => {
+        raf = 0;
+
+        if (el.clientWidth < 50 || el.clientHeight < 50) {
+          scheduleFit();
+          return;
+        }
+
+        ShatteredArchiveTerminal.Instance.Fit();
+      });
+    };
+
+    scheduleFit();
+
+    const ro = new ResizeObserver(() => scheduleFit());
+    ro.observe(el);
+
+    if (el.parentElement) {
+      ro.observe(el.parentElement);
+    }
+
+    const onWindowResize = () => scheduleFit();
+    window.addEventListener('resize', onWindowResize);
+    window.addEventListener('orientationchange', onWindowResize);
+
+    return () => {
+      window.removeEventListener('resize', onWindowResize);
+      window.removeEventListener('orientationchange', onWindowResize);
+      ro.disconnect();
+
+      if (raf) window.cancelAnimationFrame(raf);
+    };
+  }, [containerRef]);
+
+  const focusCommandInput = () => {
+    const input = document.getElementById('game-command-input') as HTMLInputElement | null;
+    input?.focus();
+  };
 
   return (
     <div
       className={styles.playAreaTerminalWrapper}
       onPointerDownCapture={(e) => {
-        // Prevent xterm from focusing its hidden textarea (keyboard on mobile).
-        // Capture ensures we win before xterm handlers.
-        e.preventDefault();
+        downPosRef.current = { x: e.clientX, y: e.clientY };
+        didDragRef.current = false;
       }}
-      onTouchStartCapture={(e) => {
-        // Some Android browsers still need touchstart.
-        e.preventDefault();
+      onPointerMoveCapture={(e) => {
+        if (!downPosRef.current) return;
+
+        const dx = Math.abs(e.clientX - downPosRef.current.x);
+        const dy = Math.abs(e.clientY - downPosRef.current.y);
+
+        if (dx > 3 || dy > 3) {
+          didDragRef.current = true;
+        }
       }}
-      onClick={() => {
-        // Optional: tap terminal => focus command input
-        const input = document.getElementById('game-command-input') as HTMLInputElement | null;
-        input?.focus();
+      onPointerUpCapture={() => {
+        if (!didDragRef.current) {
+          focusCommandInput();
+        }
+
+        downPosRef.current = null;
+        didDragRef.current = false;
       }}
     >
       <div id="play-area-terminal-root" ref={containerRef} className={styles.playAreaTerminal} />
