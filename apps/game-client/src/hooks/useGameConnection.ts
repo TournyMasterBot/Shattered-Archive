@@ -1,6 +1,7 @@
 // apps/game-client/src/hooks/useGameConnection.ts
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DispatchEvent, ListenEvent } from '../features/event-emitter/event-dispatcher';
+import { dslToAnsi } from '../features/chat/dsl-to-ansi';
 
 export interface UseGameConnectionResult {
   isConnected: boolean;
@@ -156,6 +157,10 @@ export function useGameConnection(): UseGameConnectionResult {
   useEffect(() => {
     const unbind = ListenEvent<{ cmd: string }>('shatteredarchive:send-command', (payload) => {
       const cmd = payload?.cmd ?? '';
+      const ansi = dslToAnsi(`{D> ${cmd}{x\n\n`);
+      DispatchEvent("shatteredarchive:write-terminal", {
+        rawText: ansi
+      })
       sendTelnetData(cmd);
     });
 
