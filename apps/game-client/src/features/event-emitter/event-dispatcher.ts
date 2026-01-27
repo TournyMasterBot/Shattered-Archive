@@ -1,76 +1,9 @@
 // apps/game-client/src/features/event-emitter/event-dispatcher.ts
 
-export enum AllEvents {}
-export enum ServiceEvents {}
-export enum UserScriptEvents {}
-
-/**
- * ------------------------------------------------------------
- * HMR-safe listener registry
- *
- * Browsers provide NO way to ask "is this already subscribed?"
- * so we keep our own registry on globalThis so it survives HMR.
- * ------------------------------------------------------------
- */
-
-type ListenerEntry = {
-  target: EventTarget;
-  name: string;
-  listener: EventListener;
-  options?: boolean | AddEventListenerOptions;
-  stack?: string;
-};
-
-type Registry = {
-  listeners: Map<string, ListenerEntry>;
-};
-
-const REGISTRY_KEY = '__shatteredArchive_event_dispatcher_registry__';
-
-function getRegistry(): Registry {
-  const g = globalThis as any;
-  if (!g[REGISTRY_KEY]) {
-    g[REGISTRY_KEY] = {
-      listeners: new Map<string, ListenerEntry>(),
-    } as Registry;
-  }
-  return g[REGISTRY_KEY] as Registry;
-}
-
-function getStackTrace(): string | undefined {
-  try {
-    const err = new Error('listener stack');
-    return err.stack;
-  } catch {
-    return undefined;
-  }
-}
-
-function shouldTraceDispatch(): boolean {
-  try {
-    return String(window.localStorage.getItem('shatteredarchive.events.trace') ?? '') === '1';
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Optional options bag for dedupe/debug.
- * If you don't pass options, nothing changes from your original behavior.
- */
-type ListenOptions = {
-  /**
-   * Unique key used to dedupe this subscription across HMR reloads.
-   * If provided, we will auto-unsubscribe any prior listener with the same key.
-   */
-  key?: string;
-
-  /**
-   * Capture a stack trace for debug visibility.
-   * Useful to see who registered a listener.
-   */
-  captureStack?: boolean;
-};
+import { ListenOptions } from "../../types/event-emitter-types/event-listen-options";
+import { getRegistry } from "./event-get-registry";
+import { getStackTrace } from "./event-get-stack-trace";
+import { shouldTraceDispatch } from "./event-should-trace-dispatch";
 
 /**
  * Default keys so callers don't have to invent them.

@@ -11,6 +11,7 @@ import { TickData, CharData } from '@shatteredarchive/types-global';
 import { probeChatRange } from '../chat/chat-probe';
 import { stripAnsi } from '../autoleveling/autoleveling-text';
 import { dslToAnsi } from '../chat/dsl-to-ansi';
+import { DamageEventPayload, parseDamageLine, parseDamageSource, tryParseTarget } from '../combat/damage/damage-map';
 
 export const STORAGE_KEY_PREFIX_USERSCRIPTS = 'shatteredArchive.userScripts.';
 
@@ -230,7 +231,36 @@ export class UserScriptRuntime {
       DispatchEvent('event:fighting:opponent', {
         ...opp,
       });
+      return;
     }
+
+    const damage = this.processForDamageLine(line);
+    if (damage) {
+      DispatchEvent('event:damage', {
+        ...damage,
+      });
+      return;
+    }
+  }
+
+  processForDamageLine(line: string): DamageEventPayload | null {
+    const parsed = parseDamageLine(line);
+    if (!parsed) return null;
+
+    // tokenStartIndex = where the ansi token begins, not word index
+    // we can compute it from parsed.token + parsed.index, but easiest:
+    const tokenStartIndex = line.indexOf(parsed.token);
+    const source = tokenStartIndex !== -1 ? parseDamageSource(line, tokenStartIndex) : null;
+
+    return {
+      key: parsed.key,
+      amount: parsed.value,
+      index: parsed.index,
+      token: parsed.token,
+      line,
+      source: source ?? undefined,
+      target: tryParseTarget(stripAnsi(line)) ?? undefined,
+    };
   }
 
   processGmcpEvent(payload: any): void {

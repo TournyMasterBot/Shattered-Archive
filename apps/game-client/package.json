@@ -15,7 +15,8 @@
     "@xterm/xterm": "^6.0.0",
     "fengari-web": "^0.1.4",
     "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react-dom": "^19.2.3",
+    "skulpt": "^1.2.0"
   },
   "devDependencies": {
     "@shatteredarchive/types-client": "workspace:*",

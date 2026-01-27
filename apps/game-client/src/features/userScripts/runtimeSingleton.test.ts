@@ -15,8 +15,15 @@ type ListenEventCall = {
   options?: { key?: string };
 };
 
+type ListenDomEventCall = {
+  name: string;
+  handler: (ev: any) => void;
+  options?: { key?: string };
+};
+
 const redispatchCalls: RedispatchCall[] = [];
 const listenEventCalls: ListenEventCall[] = [];
+const listenDomEventCalls: ListenDomEventCall[] = [];
 
 // ---- Mocks ----
 
@@ -29,18 +36,30 @@ jest.mock('../accessibility/accessibility-settings-store', () => {
   };
 });
 
+// chat store mock (prevents side effects and noisy imports)
+jest.mock('../chat/chat-store', () => ({
+  appendChatRaw: jest.fn(),
+}));
+
 // UserScriptRuntime mock
 const clearMock = jest.fn();
 const loadScriptsFromStorageMock = jest.fn();
 const upsertScriptMock = jest.fn();
+const getStorageKeyMock = jest.fn();
+const setAliasSplitCharMock = jest.fn();
 
 jest.mock('./userScriptRuntime', () => {
   return {
+    // runtimeSingleton.ts imports this
+    STORAGE_KEY_PREFIX_USERSCRIPTS: 'userscripts:',
+
     UserScriptRuntime: jest.fn().mockImplementation(() => {
       return {
         clear: clearMock,
         loadScriptsFromStorage: loadScriptsFromStorageMock,
         upsertScript: upsertScriptMock,
+        getStorageKey: getStorageKeyMock,
+        setAliasSplitChar: setAliasSplitCharMock,
       };
     }),
   };
@@ -58,6 +77,11 @@ jest.mock('../event-emitter/event-dispatcher', () => {
       listenEventCalls.push({ name, handler, options });
       return () => {};
     }),
+
+    ListenDomEvent: jest.fn((name: string, handler: (ev: any) => void, options?: { key?: string }) => {
+      listenDomEventCalls.push({ name, handler, options });
+      return () => {};
+    }),
   };
 });
 
@@ -68,12 +92,19 @@ describe('RuntimeSingleton', () => {
 
     redispatchCalls.length = 0;
     listenEventCalls.length = 0;
+    listenDomEventCalls.length = 0;
 
     // default scripts for hydration
     loadScriptsFromStorageMock.mockReturnValue([
       { id: 's1', name: 'script1', code: 'echo 1' },
       { id: 's2', name: 'script2', code: 'echo 2' },
     ]);
+
+    // hydrateRuntime() calls getStorageKey(connectionId) + localStorage.getItem(key)
+    getStorageKeyMock.mockImplementation((connectionId?: string | null) => `userscripts:${connectionId ?? 'default'}`);
+
+    // deterministic localStorage behavior for the hydration short-circuit logic
+    jest.spyOn(window.localStorage.__proto__, 'getItem').mockImplementation(() => '');
 
     // silence noisy logs during tests
     jest.spyOn(console, 'log').mockImplementation(() => {});
@@ -122,6 +153,7 @@ describe('RuntimeSingleton', () => {
     void RuntimeSingleton.Instance;
 
     // hydrateRuntime('default'):
+    expect(getStorageKeyMock).toHaveBeenCalledWith('default');
     expect(clearMock).toHaveBeenCalledTimes(1);
     expect(loadScriptsFromStorageMock).toHaveBeenCalledTimes(1);
     expect(loadScriptsFromStorageMock).toHaveBeenCalledWith('default');
@@ -161,9 +193,10 @@ describe('RuntimeSingleton', () => {
       payload: 'hello',
     });
 
+    // runtimeSingleton.ts maps `text` (not `userText`)
     expect(mapped).toEqual({
       rawText: 'hello',
-      userText: 'hello',
+      text: 'hello',
       fromUserScript: false,
     });
   });
@@ -259,10 +292,14 @@ describe('RuntimeSingleton', () => {
     const { RuntimeSingleton } = importSingleton();
     void RuntimeSingleton.Instance;
 
-    // These are the two ListenEvent subscriptions in runtimeSingleton.ts
+    // these include *all* ListenEvent calls from runtimeSingleton.ts (not just 2 anymore)
     const keys = listenEventCalls.map((c) => c.options?.key);
 
     expect(keys).toContain('runtimeSingleton::window::connection-changed');
     expect(keys).toContain('runtimeSingleton::window::userScripts-updated');
+
+    // also present in runtimeSingleton.ts now
+    expect(keys).toContain('runtimeSingleton::window::accessibility-updated');
+    expect(keys).toContain('runtimeSingleton::chat::shatteredarchive:chat-line');
   });
 });
