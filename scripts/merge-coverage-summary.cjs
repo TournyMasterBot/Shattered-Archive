@@ -1,64 +1,60 @@
-/* scripts/merge-coverage-summary.cjs */
-const fs = require("fs");
-const path = require("path");
+/* eslint-disable no-console */
+const fs = require('fs');
+const path = require('path');
 
-function walk(dir) {
-  const out = [];
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...walk(p));
-    else out.push(p);
+const SKIP_DIRS = new Set(['node_modules', 'dist', '.git']);
+
+function walk(dir, out = []) {
+  for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (SKIP_DIRS.has(ent.name)) continue;
+    const full = path.join(dir, ent.name);
+    if (ent.isDirectory()) walk(full, out);
+    else out.push(full);
   }
   return out;
 }
 
-function safeReadJson(p) {
-  try {
-    return JSON.parse(fs.readFileSync(p, "utf8"));
-  } catch {
-    return null;
+function findPackageRoot(startDir) {
+  let cur = startDir;
+  while (cur && cur !== path.dirname(cur)) {
+    const pj = path.join(cur, 'package.json');
+    if (fs.existsSync(pj)) return cur;
+    cur = path.dirname(cur);
   }
+  return null;
+}
+
+function rel(p) {
+  return './' + path.relative(process.cwd(), p).replace(/\\/g, '/');
 }
 
 const repoRoot = process.cwd();
 const allFiles = walk(repoRoot);
 
 const summaries = allFiles
-  .filter((p) => p.endsWith(path.join("coverage", "coverage-summary.json")))
-  .map((p) => ({ p, json: safeReadJson(p) }))
-  .filter((x) => x.json && x.json.total);
+  .filter((p) => p.endsWith(path.join('coverage', 'coverage-summary.json')))
+  // ignore merged overall file at repo root if present
+  .filter((p) => path.normalize(p) !== path.normalize(path.join(repoRoot, 'coverage', 'coverage-summary.json')));
 
-if (summaries.length === 0) {
-  console.log("No coverage-summary.json files found.");
-  process.exit(0);
+const lines = [];
+for (const summaryPath of summaries) {
+  const pkgRoot = findPackageRoot(path.dirname(summaryPath));
+  if (!pkgRoot) continue;
+
+  let title = path.basename(pkgRoot);
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(pkgRoot, 'package.json'), 'utf8'));
+    title = pkg.name || title;
+  } catch {}
+
+  lines.push(`${title}, ${rel(summaryPath)}`);
 }
 
-const metrics = ["lines", "statements", "functions", "branches"];
+lines.sort((a, b) => a.localeCompare(b));
 
-const merged = { total: {} };
-for (const m of metrics) {
-  merged.total[m] = { total: 0, covered: 0, skipped: 0, pct: 0 };
+if (!lines.length) {
+  console.error('No per-workspace coverage-summary.json files found.');
+  process.exit(1);
 }
 
-for (const { p, json } of summaries) {
-  const t = json.total;
-  for (const m of metrics) {
-    if (!t[m]) continue;
-    merged.total[m].total += t[m].total || 0;
-    merged.total[m].covered += t[m].covered || 0;
-    merged.total[m].skipped += t[m].skipped || 0;
-  }
-}
-
-for (const m of metrics) {
-  const x = merged.total[m];
-  x.pct = x.total > 0 ? (x.covered / x.total) * 100 : 0;
-}
-
-const outDir = path.join(repoRoot, "coverage");
-fs.mkdirSync(outDir, { recursive: true });
-
-const outPath = path.join(outDir, "coverage-summary.json");
-fs.writeFileSync(outPath, JSON.stringify(merged, null, 2), "utf8");
-
-console.log(`Merged ${summaries.length} coverage summaries -> ${outPath}`);
+console.log(lines.join('\n'));

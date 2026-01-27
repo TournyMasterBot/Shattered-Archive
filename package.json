@@ -18,6 +18,7 @@
     "build:utils": "",
     "build:utils:client": "",
     "build:utils:server": "",
+    "test:coverage": "jest --config jest.config.cjs --runInBand --passWithNoTests --coverage --coverageReporters=json-summary",
     "dev": "concurrently \"pnpm dev:web-server\" \"pnpm dev:game-server\" \"pnpm dev:web-client\" \"pnpm dev:game-client\"",
     "start": "concurrently \"pnpm start:web-server\" \"pnpm start:game-server\" \"pnpm start:web-client\" \"pnpm start:game-client\"",
     "dev:web-client": "pnpm --filter @shatteredarchive/web-client dev",
