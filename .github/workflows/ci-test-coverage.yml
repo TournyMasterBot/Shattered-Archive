@@ -44,7 +44,6 @@ jobs:
       - name: Build
         run: pnpm -r run build
 
-      # Run ONCE from repo root so the jest.config.cjs patterns make sense
       - name: Run Jest (root) with coverage
         env:
           CI: "true"
@@ -56,31 +55,15 @@ jobs:
         run: |
           echo "=== coverage dirs ==="
           ls -la coverage || true
-          echo "=== coverage/server ==="
-          ls -la coverage/server || true
-          echo "=== coverage/client ==="
-          ls -la coverage/client || true
+          echo "=== find coverage-final.json ==="
+          find . -type f -name "coverage-final.json" -print || true
           echo "=== find coverage-summary.json ==="
           find . -type f -name "coverage-summary.json" -print || true
 
-      - name: Build coverage file list (monorepo)
+      - name: Build coverage-summary.json from coverage-final.json
         if: always()
-        id: covlist
         shell: bash
-        run: |
-          set -euo pipefail
-          tmp="$(mktemp)"
-          node scripts/list-coverage-summaries.cjs > "$tmp"
-
-          {
-            echo "multiple_files<<EOF"
-            cat "$tmp"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Merge workspace coverage summaries (overall)
-        if: always()
-        run: node scripts/merge-coverage-summary.cjs
+        run: node scripts/coverage-final-to-summary.cjs
 
       - name: Add overall coverage summary to run
         if: always()
@@ -90,7 +73,7 @@ jobs:
 
           if [ ! -f coverage/coverage-summary.json ]; then
             echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "No coverage/coverage-summary.json found (overall). Check merge script output." >> "$GITHUB_STEP_SUMMARY"
+            echo "No coverage/coverage-summary.json found. Check coverage-final-to-summary step." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
@@ -126,7 +109,7 @@ jobs:
             coverage/
             **/coverage/
 
-      - name: Comment coverage on PR (per workspace)
+      - name: Comment coverage on PR (overall)
         if: github.event_name == 'pull_request'
         uses: MishaKav/jest-coverage-comment@v1
         with:
@@ -134,4 +117,4 @@ jobs:
           unique-id-for-comment: ci-test-coverage
           create-new-comment: false
           hide-comment: false
-          multiple-files: ${{ steps.covlist.outputs.multiple_files }}
+          coverage-summary-path: coverage/coverage-summary.json
