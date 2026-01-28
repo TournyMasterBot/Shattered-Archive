@@ -50,6 +50,19 @@ jobs:
           CI: "true"
         run: pnpm test:coverage
 
+      - name: Debug show coverage files
+        if: always()
+        shell: bash
+        run: |
+          echo "=== coverage dirs ==="
+          ls -la coverage || true
+          echo "=== coverage/server ==="
+          ls -la coverage/server || true
+          echo "=== coverage/client ==="
+          ls -la coverage/client || true
+          echo "=== find coverage-summary.json ==="
+          find . -type f -name "coverage-summary.json" -print || true
+
       - name: Build coverage file list (monorepo)
         if: always()
         id: covlist
