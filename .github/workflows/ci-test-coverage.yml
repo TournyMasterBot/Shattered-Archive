@@ -68,12 +68,35 @@ jobs:
         shell: bash
         run: |
           echo "### Test & Coverage (Overall)" >> "$GITHUB_STEP_SUMMARY"
-          if [ -f coverage/coverage-summary.json ]; then
-            node -e "const fs=require('fs'); const p='coverage/coverage-summary.json'; const s=JSON.parse(fs.readFileSync(p,'utf8')).total; const fmt=v=>`${((v.pct??0)).toFixed(2)}%`; const lines=['','| Metric | % | Covered / Total |','|---|---:|---:|',`| Lines | ${fmt(s.lines)} | ${s.lines.covered}/${s.lines.total} |`,`| Statements | ${fmt(s.statements)} | ${s.statements.covered}/${s.statements.total} |`,`| Functions | ${fmt(s.functions)} | ${s.functions.covered}/${s.functions.total} |`,`| Branches | ${fmt(s.branches)} | ${s.branches.covered}/${s.branches.total} |`]; fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n')+'\n');"
-          else
+
+          if [ ! -f coverage/coverage-summary.json ]; then
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "No coverage/coverage-summary.json found (overall). Check merge script output." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
           fi
+
+          cat > /tmp/write-coverage-summary.mjs <<'EOF'
+          import fs from 'fs';
+
+          const p = 'coverage/coverage-summary.json';
+          const s = JSON.parse(fs.readFileSync(p, 'utf8')).total;
+
+          const fmt = (v) => `${Number(v?.pct ?? 0).toFixed(2)}%`;
+
+          const lines = [
+            '',
+            '| Metric | % | Covered / Total |',
+            '|---|---:|---:|',
+            `| Lines | ${fmt(s.lines)} | ${s.lines.covered}/${s.lines.total} |`,
+            `| Statements | ${fmt(s.statements)} | ${s.statements.covered}/${s.statements.total} |`,
+            `| Functions | ${fmt(s.functions)} | ${s.functions.covered}/${s.functions.total} |`,
+            `| Branches | ${fmt(s.branches)} | ${s.branches.covered}/${s.branches.total} |`,
+          ];
+
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
+          EOF
+
+          node /tmp/write-coverage-summary.mjs
 
       - name: Upload coverage artifact
         if: always()
