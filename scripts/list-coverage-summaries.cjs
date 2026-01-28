@@ -1,19 +1,47 @@
-/* eslint-disable no-console */
+\
+/**
+ * scripts/list-coverage-summaries.cjs
+ *
+ * Prints lines in the format required by MishaKav/jest-coverage-comment:
+ *   Title, ./path/to/coverage-summary.json
+ *
+ * Includes "Overall" first if coverage/coverage-summary.json exists.
+ * Then includes per-workspace summaries created by split-coverage-final.cjs.
+ */
+
 const fs = require('fs');
+const path = require('path');
 
-const files = [
-  ['server', './coverage/server/coverage-summary.json'],
-  ['client', './coverage/client/coverage-summary.json'],
-];
-
-const out = [];
-for (const [title, p] of files) {
-  if (fs.existsSync(p)) out.push(`${title}, ${p}`);
+function exists(p) {
+  try {
+    return fs.existsSync(p);
+  } catch {
+    return false;
+  }
 }
 
-if (!out.length) {
-  console.error('No coverage summaries found at coverage/server or coverage/client.');
-  process.exit(1);
+function main() {
+  const out = [];
+
+  const overall = path.join(process.cwd(), 'coverage', 'coverage-summary.json');
+  if (exists(overall)) {
+    out.push('Overall, ./coverage/coverage-summary.json');
+  }
+
+  const idx = path.join(process.cwd(), 'coverage', 'workspaces', 'index.json');
+  if (exists(idx)) {
+    const entries = JSON.parse(fs.readFileSync(idx, 'utf8'));
+    for (const e of entries) {
+      out.push(`${e.bucket}, ./${e.path}`);
+    }
+  }
+
+  if (!out.length) {
+    console.error('No coverage summaries found. Did split-coverage-final.cjs run?');
+    process.exit(1);
+  }
+
+  process.stdout.write(out.join('\\n'));
 }
 
-console.log(out.join('\n'));
+main();

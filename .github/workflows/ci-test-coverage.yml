@@ -44,24 +44,39 @@ jobs:
       - name: Build
         run: pnpm -r run build
 
+      # Run ONCE from repo root so the jest.config.cjs patterns make sense
       - name: Run Jest (root) with coverage
         env:
           CI: "true"
-        run: pnpm test:coverage
+        run: pnpm exec jest --config ./jest.config.cjs --runInBand --coverage --coverageReporters=json --coverageReporters=json-summary
 
-      - name: Debug show coverage files
+      # Convert + split coverage/coverage-final.json into:
+      #   - coverage/coverage-summary.json (overall)
+      #   - coverage/workspaces/<slug>/coverage-summary.json (per workspace bucket)
+      - name: Split coverage-final.json into per-workspace summaries
         if: always()
+        run: node scripts/split-coverage-final.cjs
+
+      - name: Build multiple-files list for PR comment
+        if: always()
+        id: covlist
         shell: bash
         run: |
-          echo "=== coverage dirs ==="
-          ls -la coverage || true
-          echo "=== find coverage-final.json ==="
-          find . -type f -name "coverage-final.json" -print || true
-          echo "=== find coverage-summary.json ==="
-          find . -type f -name "coverage-summary.json" -print || true
+          tmp="$(mktemp)"
 
-      - name: Build coverage-summary.json from coverage-final.json
-        run: node scripts/coverage-final-to-summary.cjs
+          # Always write a value so GITHUB_OUTPUT doesn't error on missing delimiter.
+          if node scripts/list-coverage-summaries.cjs > "$tmp"; then
+            :
+          else
+            echo "No coverage summaries found (continuing)." >&2
+            : > "$tmp"
+          fi
+
+          {
+            echo "multiple_files<<EOF"
+            cat "$tmp"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Add overall coverage summary to run
         if: always()
@@ -71,32 +86,31 @@ jobs:
 
           if [ ! -f coverage/coverage-summary.json ]; then
             echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "No coverage/coverage-summary.json found. Check coverage-final-to-summary step." >> "$GITHUB_STEP_SUMMARY"
+            echo "No coverage/coverage-summary.json found. Check split-coverage-final step." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
-          cat > /tmp/write-coverage-summary.mjs <<'EOF'
-          import fs from 'fs';
+          node <<'NODE'
+          const fs = require('fs');
 
           const p = 'coverage/coverage-summary.json';
           const s = JSON.parse(fs.readFileSync(p, 'utf8')).total;
 
-          const fmt = (v) => `${Number(v?.pct ?? 0).toFixed(2)}%`;
+          const fmtPct = (v) => `${Number(v?.pct ?? 0).toFixed(2)}%`;
+          const fmtRatio = (v) => `${v?.covered ?? 0}/${v?.total ?? 0}`;
 
           const lines = [
             '',
             '| Metric | % | Covered / Total |',
             '|---|---:|---:|',
-            `| Lines | ${fmt(s.lines)} | ${s.lines.covered}/${s.lines.total} |`,
-            `| Statements | ${fmt(s.statements)} | ${s.statements.covered}/${s.statements.total} |`,
-            `| Functions | ${fmt(s.functions)} | ${s.functions.covered}/${s.functions.total} |`,
-            `| Branches | ${fmt(s.branches)} | ${s.branches.covered}/${s.branches.total} |`,
+            `| Lines | ${fmtPct(s.lines)} | ${fmtRatio(s.lines)} |`,
+            `| Statements | ${fmtPct(s.statements)} | ${fmtRatio(s.statements)} |`,
+            `| Functions | ${fmtPct(s.functions)} | ${fmtRatio(s.functions)} |`,
+            `| Branches | ${fmtPct(s.branches)} | ${fmtRatio(s.branches)} |`,
           ];
 
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
-          EOF
-
-          node /tmp/write-coverage-summary.mjs
+          NODE
 
       - name: Upload coverage artifact
         if: always()
@@ -107,12 +121,18 @@ jobs:
             coverage/
             **/coverage/
 
-      - name: Comment coverage on PR (overall)
+      - name: Comment coverage on PR (per workspace)
         if: github.event_name == 'pull_request'
         uses: MishaKav/jest-coverage-comment@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Keep a stable single comment
           unique-id-for-comment: ci-test-coverage
           create-new-comment: false
           hide-comment: false
+
+          # Overall file (also used for the badge/outputs)
           coverage-summary-path: coverage/coverage-summary.json
+
+          # Per-workspace table
+          multiple-files: ${{ steps.covlist.outputs.multiple_files }}
