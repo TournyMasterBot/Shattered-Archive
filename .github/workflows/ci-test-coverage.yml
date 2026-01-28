@@ -61,8 +61,6 @@ jobs:
           find . -type f -name "coverage-summary.json" -print || true
 
       - name: Build coverage-summary.json from coverage-final.json
-        if: always()
-        shell: bash
         run: node scripts/coverage-final-to-summary.cjs
 
       - name: Add overall coverage summary to run
