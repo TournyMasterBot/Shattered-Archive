@@ -58,20 +58,17 @@ jobs:
         id: covlist
         shell: bash
         run: |
-          tmp="$(mktemp)"
+          set -euo pipefail
 
-          if node scripts/list-coverage-summaries.cjs > "$tmp"; then
-            :
-          else
-            echo "No coverage summaries found (continuing)." >&2
-            : > "$tmp"
-          fi
+          # Get list; if it fails, use empty.
+          list="$(node scripts/list-coverage-summaries.cjs 2>/dev/null || true)"
 
-          {
-            echo "multiple_files<<EOF"
-            cat "$tmp"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+          # Encode newlines for GITHUB_OUTPUT
+          list="${list//'%'/'%25'}"
+          list="${list//$'\n'/'%0A'}"
+          list="${list//$'\r'/'%0D'}"
+
+          echo "multiple_files=$list" >> "$GITHUB_OUTPUT"
 
       - name: Add overall coverage summary to run
         if: always()
