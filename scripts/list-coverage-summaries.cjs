@@ -1,4 +1,3 @@
-\
 /**
  * scripts/list-coverage-summaries.cjs
  *
@@ -41,7 +40,7 @@ function main() {
     process.exit(1);
   }
 
-  process.stdout.write(out.join('\\n'));
+  process.stdout.write(out.join('\n'));
 }
 
 main();

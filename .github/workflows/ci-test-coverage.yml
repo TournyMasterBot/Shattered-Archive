@@ -44,15 +44,11 @@ jobs:
       - name: Build
         run: pnpm -r run build
 
-      # Run ONCE from repo root so the jest.config.cjs patterns make sense
       - name: Run Jest (root) with coverage
         env:
           CI: "true"
         run: pnpm exec jest --config ./jest.config.cjs --runInBand --coverage --coverageReporters=json --coverageReporters=json-summary
 
-      # Convert + split coverage/coverage-final.json into:
-      #   - coverage/coverage-summary.json (overall)
-      #   - coverage/workspaces/<slug>/coverage-summary.json (per workspace bucket)
       - name: Split coverage-final.json into per-workspace summaries
         if: always()
         run: node scripts/split-coverage-final.cjs
@@ -64,7 +60,6 @@ jobs:
         run: |
           tmp="$(mktemp)"
 
-          # Always write a value so GITHUB_OUTPUT doesn't error on missing delimiter.
           if node scripts/list-coverage-summaries.cjs > "$tmp"; then
             :
           else
@@ -126,13 +121,8 @@ jobs:
         uses: MishaKav/jest-coverage-comment@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          # Keep a stable single comment
           unique-id-for-comment: ci-test-coverage
           create-new-comment: false
           hide-comment: false
-
-          # Overall file (also used for the badge/outputs)
           coverage-summary-path: coverage/coverage-summary.json
-
-          # Per-workspace table
           multiple-files: ${{ steps.covlist.outputs.multiple_files }}

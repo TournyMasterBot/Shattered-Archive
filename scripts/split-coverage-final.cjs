@@ -1,4 +1,3 @@
-\
 /**
  * scripts/split-coverage-final.cjs
  *
@@ -155,7 +154,7 @@ function main() {
 
   ensureDir(OUT_WORKSPACES_DIR);
 
-  const workspaceAgg = new Map(); // bucket -> { total: metrics }
+  const workspaceAgg = new Map();
   let overallAgg = {
     total: {
       lines: metric(0, 0),
