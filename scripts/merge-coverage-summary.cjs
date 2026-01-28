@@ -14,47 +14,56 @@ function walk(dir, out = []) {
   return out;
 }
 
-function findPackageRoot(startDir) {
-  let cur = startDir;
-  while (cur && cur !== path.dirname(cur)) {
-    const pj = path.join(cur, 'package.json');
-    if (fs.existsSync(pj)) return cur;
-    cur = path.dirname(cur);
+function safeReadJson(p) {
+  try {
+    return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch {
+    return null;
   }
-  return null;
 }
 
-function rel(p) {
-  return './' + path.relative(process.cwd(), p).replace(/\\/g, '/');
+function pct(covered, total) {
+  if (!total) return 0;
+  return (covered / total) * 100;
 }
 
 const repoRoot = process.cwd();
 const allFiles = walk(repoRoot);
 
+const mergedOut = path.join(repoRoot, 'coverage', 'coverage-summary.json');
+
 const summaries = allFiles
   .filter((p) => p.endsWith(path.join('coverage', 'coverage-summary.json')))
-  // ignore merged overall file at repo root if present
-  .filter((p) => path.normalize(p) !== path.normalize(path.join(repoRoot, 'coverage', 'coverage-summary.json')));
+  .filter((p) => path.normalize(p) !== path.normalize(mergedOut));
 
-const lines = [];
-for (const summaryPath of summaries) {
-  const pkgRoot = findPackageRoot(path.dirname(summaryPath));
-  if (!pkgRoot) continue;
+const metrics = ['lines', 'statements', 'functions', 'branches'];
 
-  let title = path.basename(pkgRoot);
-  try {
-    const pkg = JSON.parse(fs.readFileSync(path.join(pkgRoot, 'package.json'), 'utf8'));
-    title = pkg.name || title;
-  } catch {}
+const agg = {};
+for (const m of metrics) agg[m] = { total: 0, covered: 0, skipped: 0, pct: 0 };
 
-  lines.push(`${title}, ${rel(summaryPath)}`);
+let count = 0;
+for (const p of summaries) {
+  const json = safeReadJson(p);
+  const total = json?.total;
+  if (!total) continue;
+
+  let hasAny = false;
+  for (const m of metrics) {
+    const e = total[m];
+    if (!e) continue;
+    agg[m].total += Number(e.total || 0);
+    agg[m].covered += Number(e.covered || 0);
+    agg[m].skipped += Number(e.skipped || 0);
+    hasAny = true;
+  }
+  if (hasAny) count++;
 }
 
-lines.sort((a, b) => a.localeCompare(b));
-
-if (!lines.length) {
-  console.error('No per-workspace coverage-summary.json files found.');
-  process.exit(1);
+for (const m of metrics) {
+  agg[m].pct = Number(pct(agg[m].covered, agg[m].total).toFixed(2));
 }
 
-console.log(lines.join('\n'));
+fs.mkdirSync(path.dirname(mergedOut), { recursive: true });
+fs.writeFileSync(mergedOut, JSON.stringify({ total: agg, _meta: { mergedFrom: count } }, null, 2), 'utf8');
+
+console.log(`Merged ${count} coverage summaries -> ${path.relative(repoRoot, mergedOut)}`);

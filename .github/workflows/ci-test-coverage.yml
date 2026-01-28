@@ -55,9 +55,15 @@ jobs:
         id: covlist
         shell: bash
         run: |
-          echo "multiple_files<<EOF" >> "$GITHUB_OUTPUT"
-          node scripts/list-coverage-summaries.cjs >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          tmp="$(mktemp)"
+          node scripts/list-coverage-summaries.cjs > "$tmp"
+
+          {
+            echo "multiple_files<<EOF"
+            cat "$tmp"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Merge workspace coverage summaries (overall)
         if: always()
