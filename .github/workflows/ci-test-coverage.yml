@@ -53,22 +53,54 @@ jobs:
         if: always()
         run: node scripts/split-coverage-final.cjs
 
+      - name: Add per-project coverage table to run
+        if: always()
+        shell: bash
+        run: |
+          if [ ! -f coverage/workspaces/index.json ]; then
+            echo "No per-project index found." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          node <<'NODE'
+          const fs = require('fs');
+
+          const idx = JSON.parse(fs.readFileSync('coverage/workspaces/index.json','utf8'));
+
+          const fmtPct = (v) => `${Number(v?.pct ?? 0).toFixed(2)}%`;
+          const fmtRatio = (v) => `${v?.covered ?? 0}/${v?.total ?? 0}`;
+
+          let out = [];
+          out.push('\n### Test & Coverage (Per Project Bucket)');
+          out.push('\n| Bucket | Lines | Statements | Functions | Branches |');
+          out.push('|---|---:|---:|---:|---:|');
+
+          for (const e of idx) {
+            const s = JSON.parse(fs.readFileSync(e.path, 'utf8')).total;
+
+            const cell = (m) => `${fmtPct(m)} (${fmtRatio(m)})`;
+
+            out.push(`| ${e.bucket} | ${cell(s.lines)} | ${cell(s.statements)} | ${cell(s.functions)} | ${cell(s.branches)} |`);
+          }
+
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, out.join('\n') + '\n');
+          NODE
+
       - name: Build multiple-files list for PR comment
         if: always()
         id: covlist
         shell: bash
         run: |
           set -euo pipefail
-
-          # Get list; if it fails, use empty.
           list="$(node scripts/list-coverage-summaries.cjs 2>/dev/null || true)"
 
           # Encode newlines for GITHUB_OUTPUT
-          list="${list//'%'/'%25'}"
-          list="${list//$'\n'/'%0A'}"
-          list="${list//$'\r'/'%0D'}"
+          esc="${list//'%'/'%25'}"
+          esc="${esc//$'\n'/'%0A'}"
+          esc="${esc//$'\r'/'%0D'}"
 
-          echo "multiple_files=$list" >> "$GITHUB_OUTPUT"
+          echo "multiple_files=$esc" >> "$GITHUB_OUTPUT"
+          echo "has_multiple=$([ -n "$list" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
       - name: Add overall coverage summary to run
         if: always()
@@ -113,7 +145,7 @@ jobs:
             coverage/
             **/coverage/
 
-      - name: Comment coverage on PR (per workspace)
+      - name: Comment coverage on PR (overall + per project)
         if: github.event_name == 'pull_request'
         uses: MishaKav/jest-coverage-comment@v1
         with:
@@ -122,4 +154,4 @@ jobs:
           create-new-comment: false
           hide-comment: false
           coverage-summary-path: coverage/coverage-summary.json
-          multiple-files: ${{ steps.covlist.outputs.multiple_files }}
+          multiple-files: ${{ steps.covlist.outputs.has_multiple == 'true' && steps.covlist.outputs.multiple_files || '' }}

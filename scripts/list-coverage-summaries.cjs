@@ -21,7 +21,7 @@ function exists(p) {
 
 function main() {
   const out = [];
-
+  out.push('Overall (repo root), ./coverage/coverage-summary.json');
   const overall = path.join(process.cwd(), 'coverage', 'coverage-summary.json');
   if (exists(overall)) {
     out.push('Overall, ./coverage/coverage-summary.json');
