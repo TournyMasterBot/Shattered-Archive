@@ -597,7 +597,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
   const [editorLanguage, setEditorLanguage] = useState<UserScriptLanguage>('text');
 
   // Trigger-specific state
-  const [triggerEventName, setTriggerEventName] = useState<string>('event:line');
+  const [triggerEventName, setTriggerEventName] = useState<string>('shatteredarchive:raw-data');
   const [triggerMatchText, setTriggerMatchText] = useState<string>('');
   const [triggerTestInput, setTriggerTestInput] = useState<string>('');
   const [triggerOmitFromOutput, setTriggerOmitFromOutput] = useState<boolean>(false);
@@ -661,7 +661,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       setEditorSource('');
       setEditorLanguage('text');
 
-      setTriggerEventName('event:line');
+      setTriggerEventName('shatteredarchive:raw-data');
       setTriggerMatchText('');
       setTriggerTestInput('');
       setTriggerOmitFromOutput(false);
@@ -688,7 +688,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
     setEditorSource('');
     setEditorLanguage('text');
 
-    setTriggerEventName('event:line');
+    setTriggerEventName('shatteredarchive:raw-data');
     setTriggerMatchText('');
     setTriggerTestInput('');
     setTriggerOmitFromOutput(false);
@@ -714,8 +714,8 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
 
   const baseTriggerEventName =
     selectedScript && selectedScript.kind === 'trigger'
-      ? ((selectedScript as TriggerScript).eventName ?? 'event:line')
-      : 'event:line';
+      ? ((selectedScript as TriggerScript).eventName ?? 'shatteredarchive:raw-data')
+      : 'shatteredarchive:raw-data';
 
   const baseTriggerMatchText =
     selectedScript && selectedScript.kind === 'trigger' ? ((selectedScript as TriggerScript).matchText ?? '') : '';
@@ -769,7 +769,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
 
     if (script.kind === 'trigger') {
       const trig = script as TriggerScript;
-      setTriggerEventName(trig.eventName ?? 'event:line');
+      setTriggerEventName(trig.eventName ?? 'shatteredarchive:raw-data');
       setTriggerMatchText(trig.matchText ?? '');
       setTriggerOmitFromOutput(!!trig.omitFromOutput);
       setTriggerDontRequireMatchText(!!trig.dontRequireMatchText);
@@ -782,7 +782,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
 
       setTimerIntervalSeconds(String(secs));
 
-      setTriggerEventName('event:line');
+      setTriggerEventName('shatteredarchive:raw-data');
       setTriggerMatchText('');
       setTriggerOmitFromOutput(false);
       setTriggerDontRequireMatchText(false);
@@ -792,14 +792,14 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       const a = script as AliasScript;
       setAliasKey(a.alias ?? '');
 
-      setTriggerEventName('event:line');
+      setTriggerEventName('shatteredarchive:raw-data');
       setTriggerMatchText('');
       setTriggerOmitFromOutput(false);
       setTriggerDontRequireMatchText(false);
 
       setTimerIntervalSeconds('');
     } else {
-      setTriggerEventName('event:line');
+      setTriggerEventName('shatteredarchive:raw-data');
       setTriggerMatchText('');
       setTriggerOmitFromOutput(false);
       setTriggerDontRequireMatchText(false);
@@ -819,7 +819,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
         language: 'text',
         source: `say Trigger fired
 look`,
-        eventName: 'event:line',
+        eventName: 'shatteredarchive:raw-data',
         matchText: '',
         omitFromOutput: false,
         dontRequireMatchText: false,
@@ -862,7 +862,7 @@ look`,
 
     if (updated.kind === 'trigger') {
       const trig = updated as TriggerScript;
-      trig.eventName = triggerEventName || 'event:line';
+      trig.eventName = triggerEventName || 'shatteredarchive:raw-data';
       trig.matchText = triggerMatchText || '';
       trig.omitFromOutput = !!triggerOmitFromOutput;
       trig.dontRequireMatchText = !!triggerDontRequireMatchText;
@@ -908,7 +908,7 @@ look`,
     setEditorSource('');
     setEditorLanguage('text');
 
-    setTriggerEventName('event:line');
+    setTriggerEventName('shatteredarchive:raw-data');
     setTriggerMatchText('');
     setTriggerTestInput('');
     setTriggerOmitFromOutput(false);
@@ -950,7 +950,7 @@ look`,
 
     if (draft.kind === 'trigger') {
       const trig = draft as TriggerScript;
-      trig.eventName = triggerEventName || 'event:line';
+      trig.eventName = triggerEventName || 'shatteredarchive:raw-data';
       trig.matchText = triggerMatchText || '';
       trig.omitFromOutput = !!triggerOmitFromOutput;
       trig.dontRequireMatchText = !!triggerDontRequireMatchText;
@@ -967,7 +967,7 @@ look`,
       draft.kind === 'trigger'
         ? {
             event: {
-              name: triggerEventName || 'event:line',
+              name: triggerEventName || 'shatteredarchive:raw-data',
               payload: triggerTestInput,
             },
           }

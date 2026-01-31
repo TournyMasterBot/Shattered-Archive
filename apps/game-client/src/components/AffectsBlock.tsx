@@ -9,7 +9,7 @@ type AffectsUiSettings = {
   showAffects: boolean;
 };
 
-const STORAGE_KEY = 'sa.ui.affectsBlock';
+const STORAGE_KEY = 'shatteredarchive.ui.affectsBlock';
 
 function loadSettings(): AffectsUiSettings {
   try {

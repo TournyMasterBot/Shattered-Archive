@@ -202,7 +202,7 @@ export function createRollerPlugin(): IPluginModule {
     },
 
     onEvent: (api: PluginRuntimeApi, evt) => {
-      if (!evt || evt.name !== 'event:line') {
+      if (!evt || evt.name !== 'shatteredarchive:raw-data') {
         return;
       }
 

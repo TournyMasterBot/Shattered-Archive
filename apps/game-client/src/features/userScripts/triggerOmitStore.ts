@@ -34,13 +34,9 @@ export function shouldOmitLine(eventName: string, line: string): boolean {
   let lower: string | null = null;
 
   for (const r of compiled) {
-    if (r.eventName !== eventName) continue;
-
-    if (r.caseInsensitive) {
-      if (lower === null) lower = line.toLowerCase();
-      if (lower.includes(r.needle)) return true;
-    } else {
-      if (line.includes(r.needle)) return true;
+    lower = line.toLowerCase();
+    if(lower.includes(r.needle)) {
+      return true;
     }
   }
 

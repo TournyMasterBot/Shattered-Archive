@@ -43,7 +43,7 @@ function safeParseHud(json: string | null): HudToggles | null {
   }
 }
 
-const HUD_STORAGE_KEY = 'sa:hud:statusBlock';
+const HUD_STORAGE_KEY = 'shatteredarchive:hud:statusBlock';
 
 const StatusBlock: React.FC = () => {
   const { remaining, vitals, hpPct, mpPct, staPct, ancillary } = useStatusBlockViewModel();

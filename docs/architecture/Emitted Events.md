@@ -11,7 +11,7 @@ graph TB
   G -->|singleton listens| R
 
   R -->|split into lines| L["Line Splitter"]
-  L -->|dispatch| EL["event:line"]
+  L -->|dispatch| EL["shatteredarchive:raw-data"]
   L -->|detect| ED["Line-derived events"]
 
   EL --> S["User Scripts"]

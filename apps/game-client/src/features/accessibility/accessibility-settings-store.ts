@@ -18,7 +18,7 @@ export type AccessibilitySettings = {
   repeatLastPrefix: string; // default "&"
 };
 
-const KEY = 'sa.accessibility.settings.v1';
+const KEY = 'shatteredarchive.accessibility.settings.v1';
 
 const DEFAULTS: AccessibilitySettings = {
   fontScale: 1.0,

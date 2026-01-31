@@ -41,7 +41,9 @@ export const MainContainer: React.FC = () => {
   // Instantiate the user script runtime
   const userScriptRuntime = RuntimeSingleton.Instance.GetUserScriptRuntime;
   const terminal = ShatteredArchiveTerminal.Instance;
-  applyCssToDom(getAppliedCss());
+  React.useEffect(() => {
+    applyCssToDom(getAppliedCss());
+  }, []);
 
   const { layoutVars, handleVerticalResizeMouseDown, handleHorizontalResizeMouseDown } = useLayoutSizing();
 

@@ -14,6 +14,21 @@ import { ShatteredArchiveGmcpData } from '../../types/event-types/shattered-arch
 import { ShatteredArchiveServerError } from '../../types/event-types/shattered-archive-server-error';
 import { ShatteredArchiveServerClosed } from '../../types/event-types/shattered-archive-server-closed';
 
+declare global {
+  interface Window {
+    __SA_RUNTIME__?: {
+      runtime: UserScriptRuntime;
+      getScripts: () => any[];
+      getTriggers: () => any[];
+      getAliases: () => any[];
+      getTimers: () => any[];
+      reload: (connectionId?: string) => void;
+      rebuildTriggers: () => void;
+      dump: () => void;
+    };
+  }
+}
+
 export class RuntimeSingleton {
   private static _instance: RuntimeSingleton | null = null;
   private lastHydrateKey: string | null = null;
@@ -56,9 +71,8 @@ export class RuntimeSingleton {
     this.lastHydrateKey = key;
     this.lastHydrateJson = raw;
 
-    this.userScriptRuntime.clear();
     const scripts = this.userScriptRuntime.loadScriptsFromStorage(connectionId);
-    for (const s of scripts) this.userScriptRuntime.upsertScript(s);
+    this.userScriptRuntime.replaceAllScripts(scripts);
   }
 
   private attachWindowEvents(): void {
@@ -194,5 +208,51 @@ export class RuntimeSingleton {
         { key: 'runtimeSingleton::window::storage' },
       ),
     );
+
+    window.__SA_RUNTIME__ = {
+      runtime: this.userScriptRuntime,
+      getScripts: () => this.userScriptRuntime.getAllScripts(),
+      getTriggers: () => this.userScriptRuntime.getAllScripts().filter((s: any) => s.kind === 'trigger'),
+      getAliases: () => this.userScriptRuntime.getAllScripts().filter((s: any) => s.kind === 'alias'),
+      getTimers: () => this.userScriptRuntime.getAllScripts().filter((s: any) => s.kind === 'timer'),
+
+      reload: (connectionId?: string) => {
+        const id = connectionId ?? 'default';
+        this.hydrateRuntime(id);
+        console.log('[__SA_RUNTIME__] reloaded', { connectionId: id });
+      },
+
+      rebuildTriggers: () => {
+        // rebuildTriggerListeners is private, but you can expose a public wrapper if you want.
+        // Easiest: add a public method on UserScriptRuntime: `debugRebuildTriggers()`.
+        (this.userScriptRuntime as any).rebuildTriggerListeners?.();
+        console.log('[__SA_RUNTIME__] rebuildTriggers called');
+      },
+
+      dump: () => {
+        const all = this.userScriptRuntime.getAllScripts();
+        const byKind = all.reduce((acc: any, s: any) => {
+          acc[s.kind] = acc[s.kind] ?? [];
+          acc[s.kind].push(s);
+          return acc;
+        }, {});
+
+        console.group('[__SA_RUNTIME__] scripts');
+        console.log('count:', all.length);
+        console.log('byKind:', Object.fromEntries(Object.entries(byKind).map(([k, v]: any) => [k, v.length])));
+        console.table(
+          all.map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            kind: s.kind,
+            enabled: s.enabled,
+            eventName: s.kind === 'trigger' ? s.eventName : '',
+            matchText: s.kind === 'trigger' ? s.matchText : '',
+            omitFromOutput: s.kind === 'trigger' ? s.omitFromOutput : '',
+          })),
+        );
+        console.groupEnd();
+      },
+    };
   }
 }

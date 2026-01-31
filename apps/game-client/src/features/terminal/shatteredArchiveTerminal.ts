@@ -3,6 +3,7 @@ import type { Terminal as XTerm } from '@xterm/xterm';
 import type { FitAddon } from '@xterm/addon-fit';
 import { ListenEvent } from '../event-emitter/event-dispatcher';
 import { StripAnsi } from '@shatteredarchive/utils-client';
+import { shouldOmitLine } from '../userScripts/triggerOmitStore';
 
 export type WriteTerminalPayload = {
   rawText: string; // required for writes
@@ -65,6 +66,15 @@ export class ShatteredArchiveTerminal {
 
       const raw = payload.rawText;
       if (!raw) return;
+
+      console.log("Preparing to check terminal output", {
+        payload,
+        shouldOmit: shouldOmitLine('shatteredarchive:write-terminal', payload.rawText)
+      });
+
+      if (!payload.fromUserScript && shouldOmitLine('shatteredarchive:write-terminal', payload.rawText)) {
+        return;
+      }
 
       t.write(raw);
 

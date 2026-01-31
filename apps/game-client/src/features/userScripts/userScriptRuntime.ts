@@ -7,11 +7,11 @@ import { SendCommandFn } from '../../types/userscript-types/send-command-functio
 import { ScriptErrorInfo } from '../../types/userscript-types/script-error-info';
 import { UserScriptRuntimeOptions } from '../../types/userscript-types/user-script-runtime-options';
 import { ProbeOpponentConditionLine } from '../combat/probe-opponent-condition';
-import { TickData, CharData } from '@shatteredarchive/types-global';
 import { probeChatRange } from '../chat/chat-probe';
-import { stripAnsi } from '../autoleveling/autoleveling-text';
+import { normalizeForMatch, stripAnsi } from '../autoleveling/autoleveling-text';
 import { dslToAnsi } from '../chat/dsl-to-ansi';
 import { DamageEventPayload, parseDamageLine, parseDamageSource, tryParseTarget } from '../combat/damage/damage-map';
+import { ProbeLevelUpLine } from '../level/probe-level-up';
 
 export const STORAGE_KEY_PREFIX_USERSCRIPTS = 'shatteredArchive.userScripts.';
 
@@ -31,6 +31,22 @@ function normalizeSplitChar(v: string | undefined): string {
   return s.slice(0, 1);
 }
 
+function safeTrim(v: unknown): string {
+  return String(v ?? '').trim();
+}
+
+function pickMatchTextFromPayload(payload: any): string {
+  if (payload == null) return '';
+
+  if (typeof payload === 'string') return payload;
+
+  // common shapes in this codebase
+  if (typeof payload?.text === 'string') return payload.text;
+  if (typeof payload?.rawText === 'string') return payload.rawText;
+  if (typeof payload?.line === 'string') return payload.line;
+  return '';
+}
+
 export class UserScriptRuntime {
   private scripts: Map<string, AnyUserScript> = new Map();
   private readonly sendCommand: SendCommandFn;
@@ -38,6 +54,9 @@ export class UserScriptRuntime {
 
   private aliasSplitChar: string;
   private lastTick: number;
+
+  // per-trigger event listeners
+  private triggerUnsubs: Map<string, () => void> = new Map();
 
   constructor(options: UserScriptRuntimeOptions = {}) {
     this.sendCommand =
@@ -56,6 +75,7 @@ export class UserScriptRuntime {
   private attachWindowEvents() {
     console.log('Attaching user script runtime events');
 
+    // Raw text lines from the server
     ListenEvent<any>('shatteredarchive:raw-data', (payload) => {
       void this.processRawEvent(payload);
     });
@@ -69,6 +89,140 @@ export class UserScriptRuntime {
     ListenRedispatch('shatteredarchive:gmcp-data', 'shatteredarchive:write-console', {
       fromUserScript: false,
     });
+
+    // When the sandbox UI (or runtime itself) saves scripts, reload + rebuild listeners.
+    ListenEvent<any>('shatteredarchive:userScripts-updated', (payload) => {
+      const connectionId = payload?.connectionId;
+      this.reloadFromStorage(connectionId);
+    });
+  }
+
+  public replaceAllScripts(scripts: AnyUserScript[]): void {
+    this.scripts.clear();
+    for (const s of scripts ?? []) {
+      this.scripts.set(s.id, s);
+    }
+    this.rebuildTriggerListeners();
+  }
+
+  private reloadFromStorage(connectionId?: string | null) {
+    const loaded = this.loadScriptsFromStorage(connectionId);
+    this.scripts.clear();
+    for (const s of loaded) this.scripts.set(s.id, s);
+    this.rebuildTriggerListeners();
+  }
+
+  private rebuildTriggerListeners(): void {
+    // dispose old listeners
+    for (const off of this.triggerUnsubs.values()) {
+      try {
+        off();
+      } catch {}
+    }
+    this.triggerUnsubs.clear();
+
+    // Group enabled triggers by eventName
+    const byEvent = new Map<string, AnyUserScript[]>();
+
+    for (const script of this.scripts.values()) {
+      if (script.kind !== 'trigger') continue;
+      if (!script.enabled) continue;
+
+      const trig: any = script;
+      const eventName = safeTrim(trig.eventName);
+      if (!eventName) continue;
+
+      const dontRequireMatchText = trig.dontRequireMatchText === true;
+      const matchText = safeTrim(trig.matchText);
+
+      // If they didn't opt out, require matchText
+      if (!dontRequireMatchText && !matchText) continue;
+
+      const list = byEvent.get(eventName) ?? [];
+      list.push(script);
+      byEvent.set(eventName, list);
+      console.log('Listening for triggers', {
+        eventName,
+        list
+      });
+    }
+
+    // Attach 1 listener per eventName
+    for (const [eventName, scripts] of byEvent.entries()) {
+      const key = `UserScriptRuntime::triggers::${eventName}`;
+
+      const off = ListenEvent<any>(
+        eventName,
+        (payload) => {
+          console.log("Preparing to scrub scripts");
+          for (const s of scripts) {
+            // Re-check current state (scripts might have changed since this rebuild)
+            const current = this.scripts.get(s.id);
+            if (!current || current.kind !== 'trigger' || !current.enabled) continue;
+
+            const curTrig: any = current;
+            if (!this.triggerPassesMatch(curTrig, payload)) continue;
+
+            this.executeScript(current, {
+              event: { name: eventName, payload },
+            });
+          }
+        },
+        { key, captureStack: false },
+      );
+
+      // store unsub by eventName (since it's one per event)
+      this.triggerUnsubs.set(eventName, off);
+    }
+  }
+  private triggerPassesMatch(trig: any, payload: any): boolean {
+    const dontRequireMatchText = trig.dontRequireMatchText === true;
+    if(dontRequireMatchText) {
+      return true;
+    }
+    const matchText = safeTrim(trig.matchText);
+    if (!matchText) {
+      return dontRequireMatchText;
+    }
+
+    const text = pickMatchTextFromPayload(payload);
+    if (!text) return false;
+
+    const hay = text;
+    const needle = matchText;
+    console.log("Comparing needle haystack", {
+      hay,
+      needle
+    });
+
+    return hay.indexOf(needle) > -1;
+  }
+
+  private shouldOmitFromOutput(rawText: string): boolean {
+    const text = stripAnsi(rawText ?? '');
+
+    for (const s of this.scripts.values()) {
+      if (s.kind !== 'trigger' || !s.enabled) continue;
+
+      const trig: any = s;
+      if (trig.omitFromOutput !== true) continue;
+
+      const ev = safeTrim(trig.eventName);
+
+      // Only omit for raw line triggers (new + legacy)
+      if (ev !== 'shatteredarchive:raw-data') continue;
+
+      const matchText = safeTrim(trig.matchText);
+
+      // SAFETY: never omit with empty matchText (would gag everything)
+      if (!matchText) continue;
+
+      if (text.toLowerCase().includes(matchText.toLowerCase())) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   getStorageKey(connectionId?: string | null) {
@@ -109,10 +263,12 @@ export class UserScriptRuntime {
 
   clear(): void {
     this.scripts.clear();
+    this.rebuildTriggerListeners();
   }
 
   upsertScript(script: AnyUserScript): void {
     this.scripts.set(script.id, script);
+    this.rebuildTriggerListeners();
   }
 
   upsertScriptAndSave(script: AnyUserScript, connectionId?: string | null): void {
@@ -122,6 +278,7 @@ export class UserScriptRuntime {
 
   removeScript(id: string): void {
     this.scripts.delete(id);
+    this.rebuildTriggerListeners();
   }
 
   removeScriptAndSave(id: string, connectionId?: string | null): void {
@@ -135,120 +292,80 @@ export class UserScriptRuntime {
 
   async processRawEvent(payload: any): Promise<void> {
     const rawText = String(payload?.rawText ?? '');
+    console.log('Processing raw text', {
+      rawText,
+    });
+    // Derived/special events (damage, death, etc.)
     await this.processForSpecialLines(rawText);
 
-    const haystack = rawText.toLowerCase();
+    // forward to chat probe + terminal
+    let end = rawText.length;
 
-    const triggers = Array.from(this.scripts.values()).filter(
-      (s): s is any => s.enabled === true && s.kind === 'trigger',
-    );
+    if (end > 0 && rawText.charCodeAt(end - 1) === 10 /* \n */) end--;
+    if (end > 0 && rawText.charCodeAt(end - 1) === 13 /* \r */) end--;
 
-    let omitOriginalLine = false;
+    const match = probeChatRange(rawText, 0, end);
 
-    for (const script of triggers) {
-      const matchText = String(script.matchText ?? '').trim();
-      const isPlaintext = script.language === 'plaintext';
-      const dontRequireMatchText = (script as any).dontRequireMatchText === true;
-
-      // 1) Skip execution if match text is blank and the language is plaintext
-      if (!matchText && isPlaintext) {
-        continue;
-      }
-
-      if (!matchText && !dontRequireMatchText) {
-        continue;
-      }
-
-      // 2) If match text exists, it must match
-      if (matchText) {
-        const needle = matchText.toLowerCase();
-        if (!haystack.includes(needle)) {
-          continue;
-        }
-      }
-      // 3) If no match text exists (and not plaintext), execute the script
-
-      const triggerScriptPayload = {
-        event: {
-          name: script.eventName,
-          payload: {
-            ...payload,
-            fromUserScript: true,
-          },
-        },
-      };
-
-      console.log('✅ Trigger fired', {
-        matchText,
-        script,
-        triggerScriptPayload,
+    if (match.isChat && !this.shouldOmitFromOutput(rawText)) {
+      // If any enabled omit trigger matches, do not forward to the terminal
+      DispatchEvent('shatteredarchive:chat-line', {
+        rawText,
+        receivedTimestamp: payload?.receivedTimestamp,
+        ...match,
       });
-
-      if ((script as any).omitFromOutput === true) {
-        omitOriginalLine = true;
-      }
-
-      this.executeScript(script, triggerScriptPayload);
     }
 
-    // forward to terminal
-    if (!omitOriginalLine) {
-      let end = rawText.length;
-
-      if (end > 0 && rawText.charCodeAt(end - 1) === 10 /* \n */) end--;
-      if (end > 0 && rawText.charCodeAt(end - 1) === 13 /* \r */) end--;
-
-      const match = probeChatRange(rawText, 0, end);
-
-      if (match.isChat) {
-        DispatchEvent('shatteredarchive:chat-line', {
-          rawText,
-          receivedTimestamp: payload?.receivedTimestamp,
-          ...match,
-        });
-      }
-
-      DispatchEvent('shatteredarchive:write-terminal', payload);
-    }
+    DispatchEvent('shatteredarchive:write-terminal', payload);
   }
 
-  async processForSpecialLines(line: string) {
+  async processForSpecialLines(line: string): Promise<string | undefined> {
+    let eventName: string | undefined = undefined;
+
     // Creature death
     if (line.indexOf('is DEAD!!') > -1) {
-      DispatchEvent('event:creature-death', {
-        text: line,
-      });
-      return;
+      eventName = 'event:creature-death';
+      DispatchEvent(eventName, { text: line });
+      return eventName;
     } else if (line.indexOf('You flee from combat!') > -1) {
-      DispatchEvent('event:flee', {
-        text: line,
-      });
-      return;
+      eventName = 'event:flee';
+      DispatchEvent(eventName, { text: line });
+      return eventName;
     }
 
     const opp = ProbeOpponentConditionLine(line);
     if (opp) {
-      DispatchEvent('event:fighting:opponent', {
+      eventName = 'event:fighting:opponent';
+      DispatchEvent(eventName, {
         ...opp,
       });
-      return;
+      return eventName;
     }
 
     const damage = this.processForDamageLine(line);
     if (damage) {
-      DispatchEvent('event:damage', {
+      eventName = 'event:damage';
+      DispatchEvent(eventName, {
         ...damage,
       });
-      return;
+      return eventName;
     }
+
+    const levelUp = ProbeLevelUpLine(line);
+    if (levelUp) {
+      eventName = 'event:level-up';
+      DispatchEvent(eventName, {
+        ...levelUp,
+      });
+      return eventName;
+    }
+
+    return eventName;
   }
 
   processForDamageLine(line: string): DamageEventPayload | null {
     const parsed = parseDamageLine(line);
     if (!parsed) return null;
 
-    // tokenStartIndex = where the ansi token begins, not word index
-    // we can compute it from parsed.token + parsed.index, but easiest:
     const tokenStartIndex = line.indexOf(parsed.token);
     const source = tokenStartIndex !== -1 ? parseDamageSource(line, tokenStartIndex) : null;
 
@@ -267,7 +384,6 @@ export class UserScriptRuntime {
     const rawText = String(payload?.rawText ?? '');
 
     try {
-      // Handle Ticks
       if (rawText.startsWith(tickPhrase)) {
         this.dispatchGmcpEvent('game:tick', tickPhrase.length, rawText);
         return;
@@ -278,7 +394,8 @@ export class UserScriptRuntime {
         this.dispatchGmcpEvent('game:room-data', roomDataPhrase.length, rawText);
         return;
       } else if (rawText.startsWith(affectDataPhrase)) {
-        this.dispatchGmcpEvent('game:affect-trueup', affectDataPhrase.length, rawText);
+        // NOTE: keep this string consistent with ROUTED_WINDOW_EVENTS
+        this.dispatchGmcpEvent('game:affects-trueup', affectDataPhrase.length, rawText);
         return;
       } else if (rawText.startsWith(addAffectPhrase)) {
         this.dispatchGmcpEvent('game:affect-added', addAffectPhrase.length, rawText);
@@ -306,25 +423,6 @@ export class UserScriptRuntime {
     const data = JSON.parse(jsonPart) as T;
     DispatchEvent(eventName, data);
   }
-
-  /*
-  dispatchEvent(event: TriggerContextEvent): void {
-    for (const script of this.scripts.values()) {
-      if (script.kind !== 'trigger' || !script.enabled) continue;
-      if (script.eventName !== event.name) continue;
-
-      const trig: any = script;
-      const matchText = String(trig.matchText ?? '');
-      if (matchText) {
-        const p: any = event.payload;
-        const text = typeof p === 'string' ? p : String(p?.text ?? '');
-        if (!text.toLowerCase().includes(matchText.toLowerCase())) continue;
-      }
-
-      this.executeScript(script, { event });
-    }
-  }
-  */
 
   executeAlias(input: string): boolean {
     const line = input ?? '';
