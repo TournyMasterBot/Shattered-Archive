@@ -1,4 +1,3 @@
-// apps/game-client/src/components/UserStyleOverrideModal.tsx
 import React from 'react';
 import styles from '../styles/UserStylesOverrideModal.module.scss';
 
@@ -7,8 +6,8 @@ export interface UserStyleOverrideModalProps {
   appliedCss: string;
   draftCss: string;
   onChangeDraft: (css: string) => void;
-  onSave: () => void; // apply draft as active CSS
-  onPreview: () => void; // apply draft temporarily (no save)
+  onSave: (css: string) => void; // apply draft as active CSS
+  onPreview: (css: string) => void; // apply draft temporarily (no save)
   onDiscardDraft: () => void; // discard draft and revert to applied
   onClose: () => void; // close without changing applied/draft
 }
@@ -25,11 +24,16 @@ export const UserStyleOverrideModal: React.FC<UserStyleOverrideModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  const draftRef = React.useRef(draftCss);
+
+  React.useEffect(() => {
+    draftRef.current = draftCss;
+  }, [draftCss]);
+
   const hasUnsavedChanges = draftCss !== appliedCss;
 
   return (
     <div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Custom CSS overrides">
-      {/* NOTE: no overlay click handler → cannot close by clicking outside */}
       <div className={styles.modal}>
         <header className={styles.header}>
           <h2 className={styles.title}>Custom CSS Overrides</h2>
@@ -51,7 +55,11 @@ export const UserStyleOverrideModal: React.FC<UserStyleOverrideModalProps> = ({
           <textarea
             className={styles.textarea}
             value={draftCss}
-            onChange={(e) => onChangeDraft(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value;
+              draftRef.current = v;
+              onChangeDraft(v);
+            }}
             placeholder={`/* Example:
 /* Make all text neon green and bigger */
 body * {
@@ -93,11 +101,21 @@ button {
             Cancel
           </button>
 
-          <button type="button" className={styles.secondaryButton} onClick={onPreview} disabled={!hasUnsavedChanges}>
+          <button
+            type="button"
+            className={styles.secondaryButton}
+            onClick={() => onPreview(draftRef.current)}
+            disabled={!hasUnsavedChanges}
+          >
             Preview
           </button>
 
-          <button type="button" className={styles.primaryButton} onClick={onSave} disabled={!hasUnsavedChanges}>
+          <button
+            type="button"
+            className={styles.primaryButton}
+            onClick={() => onSave(draftRef.current)}
+            disabled={!hasUnsavedChanges}
+          >
             Save & Apply
           </button>
         </footer>

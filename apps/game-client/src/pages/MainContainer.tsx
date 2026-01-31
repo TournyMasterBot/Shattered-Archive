@@ -1,4 +1,3 @@
-// apps\game-client\src\pages\MainContainer.tsx
 import React from 'react';
 import styles from '../styles/MainContainer.module.scss';
 import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight';
@@ -38,9 +37,10 @@ export const MainContainer: React.FC = () => {
   useVisualViewportHeight();
   const main = useMainContainer();
   const gameConn = useGameConnection();
-  // Instantiate the user script runtime
+
   const userScriptRuntime = RuntimeSingleton.Instance.GetUserScriptRuntime;
   const terminal = ShatteredArchiveTerminal.Instance;
+
   React.useEffect(() => {
     applyCssToDom(getAppliedCss());
   }, []);
@@ -146,12 +146,12 @@ export const MainContainer: React.FC = () => {
         appliedCss={userCssApplied}
         draftCss={userCssDraft}
         onChangeDraft={setUserCssDraft}
-        onPreview={() => {
-          saveUserCss();
+        onPreview={(css) => {
+          saveUserCss(css);
           closeStyleModal();
         }}
-        onSave={() => {
-          saveUserCss();
+        onSave={(css) => {
+          saveUserCss(css);
           closeStyleModal();
         }}
         onDiscardDraft={() => {
@@ -167,11 +167,7 @@ export const MainContainer: React.FC = () => {
         connectionId={connectionId}
       />
 
-      <PluginsModal
-        isOpen={isPluginsModalOpen}
-        onClose={() => setIsPluginsModalOpen(false)}
-        connectionId={connectionId}
-      />
+      <PluginsModal isOpen={isPluginsModalOpen} onClose={() => setIsPluginsModalOpen(false)} connectionId={connectionId} />
 
       <ConnectModal
         isOpen={main.isConnectModalOpen}
@@ -185,11 +181,7 @@ export const MainContainer: React.FC = () => {
 
       <LibraryModal isOpen={main.isLibraryModalOpen} onClose={main.closeLibraryModal} connectionId={connectionId} />
 
-      <EquipmentModal
-        isOpen={main.isEquipmentModalOpen}
-        onClose={main.closeEquipmentModal}
-        connectionId={connectionId}
-      />
+      <EquipmentModal isOpen={main.isEquipmentModalOpen} onClose={main.closeEquipmentModal} connectionId={connectionId} />
 
       <AutoLevelingModal
         isOpen={isAutoLevelingModalOpen}

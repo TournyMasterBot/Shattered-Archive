@@ -1,4 +1,3 @@
-// apps\game-client\src\hooks\usePluginCssOverrides.ts
 import { useEffect, useState } from 'react';
 
 const PLUGIN_CSS_KEY_PREFIX = 'shatteredArchive.pluginCssOverride.';
@@ -56,9 +55,11 @@ export function usePluginCssOverrides(connectionId: string, pluginId: string) {
   const open = () => setIsOpen(true);
   const close = () => setIsOpen(false);
 
-  const save = () => {
-    const css = draftCss;
+  const save = (cssArg?: string) => {
+    const css = cssArg ?? draftCss;
+
     setAppliedCss(css);
+    setDraftCss(css);
     applyPluginUserCss(connectionId, pluginId, css);
 
     try {
