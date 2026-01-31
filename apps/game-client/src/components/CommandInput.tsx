@@ -144,7 +144,8 @@ export const CommandInput: React.FC<CommandInputProps> = ({
         }
         disabled={!isConnected}
       />
-
+      
+{/*
       <button
         type="button"
         className={`${styles.autoLevelButton} ${!autoDisabled && !isIdle ? styles.autoLevelButtonActive : ''}`}
@@ -163,6 +164,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
         ⚔️
       </button>
 
+        
       {!isIdle ? (
         <button
           type="button"
@@ -175,6 +177,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
           ⏹
         </button>
       ) : null}
+       */}
 
       {onOpenAutoLeveling ? (
         <button

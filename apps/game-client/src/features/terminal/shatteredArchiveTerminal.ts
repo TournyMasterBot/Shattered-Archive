@@ -66,11 +66,12 @@ export class ShatteredArchiveTerminal {
 
       const raw = payload.rawText;
       if (!raw) return;
-
+      /*DEBUG
       console.log("Preparing to check terminal output", {
         payload,
         shouldOmit: shouldOmitLine('shatteredarchive:write-terminal', payload.rawText)
       });
+      */
 
       if (!payload.fromUserScript && shouldOmitLine('shatteredarchive:write-terminal', payload.rawText)) {
         return;

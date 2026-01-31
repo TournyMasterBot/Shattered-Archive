@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
 import { preprocessOutgoingCommand } from '../features/accessibility/accessibility-command';
-import { OutboundQueue } from '../features/commands/outbount-queue';
+import { OutboundQueue } from '../features/commands/outbound-queue';
 import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 
 interface UseGameCommandOptions {
