@@ -207,10 +207,10 @@ export class UserScriptRuntime {
         caseInsensitive: trig.caseInsensitive ?? false,
       });
     }
-    console.log("Invoking setOmitRules from rebuildOmitRules", {
+    console.log('Invoking setOmitRules from rebuildOmitRules', {
       rules,
-      activeConnectionId: this.activeConnectionId
-    })
+      activeConnectionId: this.activeConnectionId,
+    });
     setOmitRules(rules, this.activeConnectionId);
   }
 
@@ -621,7 +621,8 @@ export class UserScriptRuntime {
       error: (...args: unknown[]) => console.error(`[Script:${script.name}]`, ...args),
 
       getGlobalVar: (key: string) => getGlobalVarStore(this.activeConnectionId, String(key ?? '')),
-      setGlobalVar: (key: string, value: unknown) => setGlobalVarStore(this.activeConnectionId, String(key ?? ''), value),
+      setGlobalVar: (key: string, value: unknown) =>
+        setGlobalVarStore(this.activeConnectionId, String(key ?? ''), value),
       deleteGlobalVar: (key: string) => deleteGlobalVarStore(this.activeConnectionId, String(key ?? '')),
 
       // Lets scripts access alias vars via getNamedVar(...) (Lua/Python rely on this)

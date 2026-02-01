@@ -1,6 +1,6 @@
-import { Registry } from "../../types/event-emitter-types/event-registry";
-import { REGISTRY_KEY } from "../../types/event-emitter-types/event-registry-key";
-import { ListenerEntry } from "../../types/event-emitter-types/listener-entry";
+import { Registry } from '../../types/event-emitter-types/event-registry';
+import { REGISTRY_KEY } from '../../types/event-emitter-types/event-registry-key';
+import { ListenerEntry } from '../../types/event-emitter-types/listener-entry';
 
 /**
  * ------------------------------------------------------------

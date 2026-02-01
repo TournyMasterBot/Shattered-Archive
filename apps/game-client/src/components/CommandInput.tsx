@@ -144,8 +144,8 @@ export const CommandInput: React.FC<CommandInputProps> = ({
         }
         disabled={!isConnected}
       />
-      
-{/*
+
+      {/*
       <button
         type="button"
         className={`${styles.autoLevelButton} ${!autoDisabled && !isIdle ? styles.autoLevelButtonActive : ''}`}

@@ -193,16 +193,20 @@ export function getGlobalVarsSnapshot(connectionId?: string | null): Record<stri
   }
 
   // Otherwise parse fresh (or default).
-  const parsed = coerceVars(raw ? (() => {
-    try {
-      console.log("Preparing to return getGlobalVarsSnapshot", {
-        raw
-      });
-      return JSON.parse(raw);
-    } catch {
-      return null;
-    }
-  })() : null);
+  const parsed = coerceVars(
+    raw
+      ? (() => {
+          try {
+            console.log('Preparing to return getGlobalVarsSnapshot', {
+              raw,
+            });
+            return JSON.parse(raw);
+          } catch {
+            return null;
+          }
+        })()
+      : null,
+  );
 
   varsCache.set(key, parsed);
   varsRawCache.set(key, raw);

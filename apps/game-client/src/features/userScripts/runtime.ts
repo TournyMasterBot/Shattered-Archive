@@ -35,9 +35,7 @@ function buildAliasVarsPrelude(api: ScriptSandboxApi): string {
   const lines: string[] = [];
 
   // Access vars safely at runtime (values are not string-injected into code)
-  lines.push(
-    `const __vars = (event && event.payload && event.payload.vars) ? event.payload.vars : {};`,
-  );
+  lines.push(`const __vars = (event && event.payload && event.payload.vars) ? event.payload.vars : {};`);
 
   for (const k of keys) {
     const key = String(k ?? '').trim();

@@ -130,7 +130,7 @@ export function usePlugins(connectionId?: string | null) {
           enabled: false,
           installedAt: Date.now(),
           userConfig: {},
-          kind: "unknown-plugin-kind"
+          kind: 'unknown-plugin-kind',
         };
 
         return [...prev, rec];

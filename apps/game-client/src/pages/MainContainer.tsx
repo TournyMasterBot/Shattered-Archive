@@ -167,7 +167,11 @@ export const MainContainer: React.FC = () => {
         connectionId={connectionId}
       />
 
-      <PluginsModal isOpen={isPluginsModalOpen} onClose={() => setIsPluginsModalOpen(false)} connectionId={connectionId} />
+      <PluginsModal
+        isOpen={isPluginsModalOpen}
+        onClose={() => setIsPluginsModalOpen(false)}
+        connectionId={connectionId}
+      />
 
       <ConnectModal
         isOpen={main.isConnectModalOpen}
@@ -181,7 +185,11 @@ export const MainContainer: React.FC = () => {
 
       <LibraryModal isOpen={main.isLibraryModalOpen} onClose={main.closeLibraryModal} connectionId={connectionId} />
 
-      <EquipmentModal isOpen={main.isEquipmentModalOpen} onClose={main.closeEquipmentModal} connectionId={connectionId} />
+      <EquipmentModal
+        isOpen={main.isEquipmentModalOpen}
+        onClose={main.closeEquipmentModal}
+        connectionId={connectionId}
+      />
 
       <AutoLevelingModal
         isOpen={isAutoLevelingModalOpen}

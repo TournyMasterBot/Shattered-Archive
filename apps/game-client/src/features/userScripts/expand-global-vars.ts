@@ -1,4 +1,4 @@
-import { safeTrim } from "./safeTrim";
+import { safeTrim } from './safeTrim';
 
 export function expandMatchTextWithGlobals(matchText: string, getVar: (key: string) => unknown): string | null {
   const raw = safeTrim(matchText);

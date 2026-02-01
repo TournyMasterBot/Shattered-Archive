@@ -1,5 +1,5 @@
 // apps\game-client\src\types\chat-types\command-input-props.ts
-import { AutoLevelRunState } from "../../features/autoleveling/autoleveling-types";
+import { AutoLevelRunState } from '../../features/autoleveling/autoleveling-types';
 
 export interface CommandInputProps {
   sendRaw: (data: string) => void;

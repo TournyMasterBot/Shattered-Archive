@@ -74,12 +74,10 @@ jest.mock('./userScriptRuntime', () => {
 // event dispatcher mock
 jest.mock('../event-emitter/event-dispatcher', () => {
   return {
-    ListenRedispatchMap: jest.fn(
-      (sourceEvent: string, destEvent: string, mapper: any, options?: { key?: string }) => {
-        redispatchCalls.push({ sourceEvent, destEvent, mapper, options });
-        return () => {};
-      },
-    ),
+    ListenRedispatchMap: jest.fn((sourceEvent: string, destEvent: string, mapper: any, options?: { key?: string }) => {
+      redispatchCalls.push({ sourceEvent, destEvent, mapper, options });
+      return () => {};
+    }),
 
     ListenEvent: jest.fn((name: string, handler: (payload: any) => void, options?: { key?: string }) => {
       listenEventCalls.push({ name, handler, options });
@@ -306,10 +304,7 @@ describe('RuntimeSingleton', () => {
     const { RuntimeSingleton } = importSingleton();
     void RuntimeSingleton.Instance;
 
-    const keys = [
-      ...listenEventCalls.map((c) => c.options?.key),
-      ...listenDomEventCalls.map((c) => c.options?.key),
-    ];
+    const keys = [...listenEventCalls.map((c) => c.options?.key), ...listenDomEventCalls.map((c) => c.options?.key)];
 
     expect(keys).toContain('runtimeSingleton::window::connection-changed');
     expect(keys).toContain('runtimeSingleton::window::userScripts-updated');

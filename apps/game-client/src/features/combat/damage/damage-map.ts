@@ -279,14 +279,14 @@ export const DamageAnsiTokenToKey: Record<string, keyof IDamageMap> = Object.fro
   Array.from(damageMapKeys).map((key) => {
     const prefix = (DamageMapAnsi as Record<keyof IDamageMap, string>)[key];
     return [`${prefix}${key}${ANSI_COLOR_SUFFIX}`, key];
-  })
+  }),
 ) as Record<string, keyof IDamageMap>;
 
 export const DamageKeyToAnsiToken: Record<keyof IDamageMap, string> = Object.fromEntries(
   Array.from(damageMapKeys).map((key) => {
     const prefix = (DamageMapAnsi as Record<keyof IDamageMap, string>)[key];
     return [key, `${prefix}${key}${ANSI_COLOR_SUFFIX}`];
-  })
+  }),
 ) as Record<keyof IDamageMap, string>;
 
 const DAMAGE_ANSI_WORD_RE = /\u001b\[(?:0;32|1;33|1;31|1;37)m([A-Za-z]+)\u001b\[0m/g;
@@ -404,14 +404,17 @@ export function parseDamageLine(line: string): ParsedDamageLine | null {
 export function tryParseTarget(line: string): string | null {
   const idx = line.lastIndexOf(' a ');
   if (idx === -1) return null;
-  return line.slice(idx + 3).replace(/[!\r\n]+$/, '').trim();
+  return line
+    .slice(idx + 3)
+    .replace(/[!\r\n]+$/, '')
+    .trim();
 }
 
 function cleanSourcePrefix(s: string): string {
   // remove common decorations / trailing separators
   return s
     .replace(/[*>=<\-\s]+$/g, '') // trailing " *** " / " >>> " / etc
-    .replace(/[,:;.\s]+$/g, '')   // trailing punctuation
+    .replace(/[,:;.\s]+$/g, '') // trailing punctuation
     .trim();
 }
 

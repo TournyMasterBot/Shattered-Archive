@@ -158,9 +158,9 @@ export function useGameConnection(): UseGameConnectionResult {
     const unbind = ListenEvent<{ cmd: string }>('shatteredarchive:send-command', (payload) => {
       const cmd = payload?.cmd ?? '';
       const ansi = dslToAnsi(`{D> ${cmd}{x\n\n`);
-      DispatchEvent("shatteredarchive:write-terminal", {
-        rawText: ansi
-      })
+      DispatchEvent('shatteredarchive:write-terminal', {
+        rawText: ansi,
+      });
       sendTelnetData(cmd);
     });
 

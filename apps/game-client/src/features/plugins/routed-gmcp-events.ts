@@ -19,5 +19,5 @@ export const ROUTED_WINDOW_EVENTS: string[] = [
   'event:flee',
   'event:damage',
   'event:creature-death',
-  'event:level-up'
+  'event:level-up',
 ];

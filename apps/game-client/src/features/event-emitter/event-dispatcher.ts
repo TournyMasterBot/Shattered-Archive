@@ -1,9 +1,9 @@
 // apps/game-client/src/features/event-emitter/event-dispatcher.ts
 
-import { ListenOptions } from "../../types/event-emitter-types/event-listen-options";
-import { getRegistry } from "./event-get-registry";
-import { getStackTrace } from "./event-get-stack-trace";
-import { shouldTraceDispatch } from "./event-should-trace-dispatch";
+import { ListenOptions } from '../../types/event-emitter-types/event-listen-options';
+import { getRegistry } from './event-get-registry';
+import { getStackTrace } from './event-get-stack-trace';
+import { shouldTraceDispatch } from './event-should-trace-dispatch';
 
 /**
  * Default keys so callers don't have to invent them.

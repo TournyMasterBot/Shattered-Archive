@@ -1,4 +1,4 @@
-import { getGlobalVarsSnapshot } from "./globalScriptsStore";
+import { getGlobalVarsSnapshot } from './globalScriptsStore';
 
 export function getGlobalVar(connectionId: string | null | undefined, keyName: string): unknown {
   const vars = getGlobalVarsSnapshot(connectionId);
