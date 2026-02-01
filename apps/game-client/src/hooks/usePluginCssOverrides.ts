@@ -25,7 +25,7 @@ export function applyPluginUserCss(connectionId: string, pluginId: string, css: 
     document.head.appendChild(styleEl);
   }
 
-  styleEl.innerHTML = css || '';
+  styleEl.textContent = css || '';
 }
 
 export function removePluginUserCss(connectionId: string, pluginId: string) {
