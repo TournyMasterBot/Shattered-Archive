@@ -143,9 +143,9 @@ export class RuntimeSingleton {
     const scripts = this.userScriptRuntime.loadScriptsFromStorage(id);
     this.userScriptRuntime.replaceAllScripts(scripts);
 
-    (this.userScriptRuntime as any).rebuildTriggerListeners?.();
-    (this.userScriptRuntime as any).rebuildAliasIndex?.();
-    (this.userScriptRuntime as any).rebuildTimers?.();
+    this.userScriptRuntime.rebuildTriggerListeners();
+    //this.userScriptRuntime.rebuildAliasIndex();
+    this.userScriptRuntime.rebuildTimers();
   }
 
   private attachWindowEvents(): void {
@@ -209,8 +209,7 @@ export class RuntimeSingleton {
       ListenEvent<{ connectionId?: string }>(
         'shatteredarchive:connection-changed',
         (payload) => {
-          const nextId = payload?.connectionId ?? 'default';
-          this.hydrateRuntime(nextId);
+          this.hydrateRuntime(safeConnId(payload?.connectionId));
         },
         { key: 'runtimeSingleton::window::connection-changed' },
       ),
@@ -221,8 +220,7 @@ export class RuntimeSingleton {
       ListenEvent<{ connectionId?: string }>(
         'shatteredarchive:userScripts-updated',
         (payload) => {
-          const connectionId = payload?.connectionId ?? 'default';
-          this.hydrateRuntime(connectionId);
+          this.hydrateRuntime(safeConnId(payload?.connectionId));
         },
         { key: 'runtimeSingleton::window::userScripts-updated' },
       ),
@@ -323,6 +321,19 @@ export class RuntimeSingleton {
         { key: 'runtimeSingleton::named-vars::clear' },
       ),
     );
+
+    // Timers should run even when the user script editor/modal isn't mounted.
+    // Use a single global tick (HMR-safe) to drive UserScriptRuntime.tickTimers().
+    const w = window as any;
+    if (!w.__SA_USERSCRIPTS_TIMER_TICK__) {
+      w.__SA_USERSCRIPTS_TIMER_TICK__ = window.setInterval(() => {
+        try {
+          this.userScriptRuntime.tickTimers();
+        } catch (err) {
+          console.error('[RuntimeSingleton] tickTimers failed', err);
+        }
+      }, 250);
+    }
 
     window.__SA_RUNTIME__ = {
       runtime: this.userScriptRuntime,

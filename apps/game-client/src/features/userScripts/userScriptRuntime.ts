@@ -1,7 +1,7 @@
 // apps/game-client/src/features/userScripts/userScriptRuntime.ts
 
 import { AnyUserScript, ScriptSandboxApi, TriggerContextEvent } from './types';
-import { runUserScript } from './runtime';
+import { runTimerScript, runUserScript } from './runtime';
 import { DispatchEvent, ListenEvent, ListenRedispatch } from '../event-emitter/event-dispatcher';
 import { SendCommandFn } from '../../types/userscript-types/send-command-function';
 import { ScriptErrorInfo } from '../../types/userscript-types/script-error-info';
@@ -113,6 +113,7 @@ export class UserScriptRuntime {
   private readonly onScriptError?: (err: ScriptErrorInfo) => void;
 
   private aliasSplitChar: string;
+  private timerElapsedById: Map<string, number> = new Map();
   private lastTick: number;
 
   private triggerUnsubs: Map<string, () => void> = new Map();
@@ -122,6 +123,8 @@ export class UserScriptRuntime {
 
   // active connection for global vars / global runtime
   private activeConnectionId: string = 'default';
+  private timerNextFireAt: Map<string, number> = new Map();
+  private timerIntervalById: Map<string, number> = new Map();
 
   constructor(options: UserScriptRuntimeOptions = {}) {
     this.sendCommand =
@@ -217,6 +220,10 @@ export class UserScriptRuntime {
   public replaceAllScripts(scripts: AnyUserScript[]): void {
     this.scripts.clear();
     this.aliasTemplateCache.clear();
+
+    this.timerElapsedById.clear();
+    this.lastTick = Date.now();
+
     for (const s of scripts ?? []) this.scripts.set(s.id, s);
     this.rebuildTriggerListeners();
     this.rebuildOmitRules();
@@ -226,12 +233,26 @@ export class UserScriptRuntime {
     const loaded = this.loadScriptsFromStorage(connectionId);
     this.scripts.clear();
     this.aliasTemplateCache.clear();
+
+    this.timerElapsedById.clear();
+    this.lastTick = Date.now();
+
     for (const s of loaded) this.scripts.set(s.id, s);
     this.rebuildTriggerListeners();
     this.rebuildOmitRules();
   }
 
-  private rebuildTriggerListeners(): void {
+  /**
+   * Reset timer scheduling after loading/replacing scripts.
+   * Call this after replaceAllScripts(), or after any bulk update.
+   */
+  public rebuildTimers(): void {
+    this.timerNextFireAt.clear();
+    this.timerIntervalById.clear();
+    this.lastTick = Date.now();
+  }
+
+  public rebuildTriggerListeners(): void {
     // dispose old listeners
     for (const off of this.triggerUnsubs.values()) {
       try {
@@ -587,14 +608,49 @@ export class UserScriptRuntime {
 
   /* -------------------------------- timers -------------------------------- */
 
-  tickTimers(): void {
+  public tickTimers(): void {
     const now = Date.now();
-    const delta = now - this.lastTick;
     this.lastTick = now;
+
+    // Track active timer ids so we can garbage-collect removed/disabled timers.
+    const active = new Set<string>();
 
     for (const script of this.scripts.values()) {
       if (script.kind !== 'timer' || !script.enabled) continue;
-      if (script.intervalMs <= delta) this.executeScript(script);
+
+      const interval = Number((script as any).intervalMs ?? 0);
+      if (!Number.isFinite(interval) || interval <= 0) continue;
+
+      active.add(script.id);
+
+      // If interval changed since last tick, reschedule (wait full interval).
+      const prevInterval = this.timerIntervalById.get(script.id);
+      if (prevInterval !== interval) {
+        this.timerIntervalById.set(script.id, interval);
+        this.timerNextFireAt.set(script.id, now + interval);
+        continue;
+      }
+
+      const nextAt = this.timerNextFireAt.get(script.id) ?? now + interval;
+
+      if (now >= nextAt) {
+        // Schedule next fire first (prevents reentrancy issues if script errors)
+        this.timerNextFireAt.set(script.id, now + interval);
+
+        // Run the timer
+        this.executeScript(script);
+      } else {
+        // Ensure it’s stored
+        this.timerNextFireAt.set(script.id, nextAt);
+      }
+    }
+
+    // Cleanup timers that no longer exist / disabled
+    for (const id of Array.from(this.timerNextFireAt.keys())) {
+      if (!active.has(id)) {
+        this.timerNextFireAt.delete(id);
+        this.timerIntervalById.delete(id);
+      }
     }
   }
 

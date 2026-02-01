@@ -6,6 +6,11 @@ import { FitAddon } from '@xterm/addon-fit';
 import { ShatteredArchiveTerminal } from '../features/terminal/shatteredArchiveTerminal';
 import { registerListener, unregisterListener } from '../features/event-emitter/event-dispatcher';
 
+type ScrollTarget = {
+  el: HTMLDivElement;
+  kind: 'viewport' | 'scrollable';
+};
+
 export function useTerminal() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const termRef = useRef<XTerm | null>(null);
@@ -48,11 +53,6 @@ export function useTerminal() {
     // ============================================================
     // ✅ ALLOW SELECTION, BUT PREVENT MOBILE KEYBOARD
     // ============================================================
-
-    // IMPORTANT:
-    // - DO NOT preventDefault pointerdown/touchstart on container
-    // - DO NOT blur focus inside terminal (breaks selection)
-    // - Instead: neuter the helper textarea inputmode
     const applyNoKeyboardToXtermTextarea = () => {
       const helper = container.querySelector('.xterm-helper-textarea') as HTMLTextAreaElement | null;
       if (!helper) return;
@@ -69,14 +69,11 @@ export function useTerminal() {
     };
 
     applyNoKeyboardToXtermTextarea();
-    const helperTick = window.setTimeout(() => {
-      applyNoKeyboardToXtermTextarea();
-    }, 0);
+    const helperTick = window.setTimeout(() => applyNoKeyboardToXtermTextarea(), 0);
 
     // ============================================================
-    // Layout / scrolling / data handling
+    // Layout / attach terminal singleton
     // ============================================================
-
     requestAnimationFrame(() => {
       try {
         fitAddon.fit();
@@ -86,19 +83,25 @@ export function useTerminal() {
       }
     });
 
-    const viewport = container.querySelector('.xterm-viewport') as HTMLDivElement | null;
+    // Attach terminal runtime singleton (handles write events + autoscroll)
+    ShatteredArchiveTerminal.Instance.attach(term, fitAddon);
 
-    const handleScroll = () => {
-      if (!viewport) return;
+    // ============================================================
+    // Scroll tracking (Jump-to-live)
+    //
+    // The key fix: resolve scroll element asynchronously and retry
+    // until xterm has created it, then attach listener.
+    // ============================================================
+    let attachedScroll: ScrollTarget | null = null;
 
+    const computeAndApplyScrollState = (el: HTMLDivElement) => {
       const threshold = 10;
-      const distance = viewport.scrollHeight - (viewport.scrollTop + viewport.clientHeight);
+      const distance = el.scrollHeight - (el.scrollTop + el.clientHeight);
       const atBottom = distance <= threshold;
 
       if (atBottom) {
         autoScrollRef.current = true;
         setShowJump(false);
-
         try {
           ShatteredArchiveTerminal.Instance.setAutoScroll(true);
         } catch {
@@ -107,7 +110,6 @@ export function useTerminal() {
       } else {
         autoScrollRef.current = false;
         setShowJump(true);
-
         try {
           ShatteredArchiveTerminal.Instance.setAutoScroll(false);
         } catch {
@@ -116,17 +118,56 @@ export function useTerminal() {
       }
     };
 
-    if (viewport) {
-      registerListener('useTerminal::viewport::scroll', viewport, 'scroll', handleScroll as any);
-    }
+    const handleScroll = () => {
+      if (!attachedScroll?.el) return;
+      computeAndApplyScrollState(attachedScroll.el);
+    };
 
-    // Attach terminal runtime singleton
-    ShatteredArchiveTerminal.Instance.attach(term, fitAddon);
+    const findScrollTarget = (): ScrollTarget | null => {
+      // Primary: xterm viewport (most common)
+      const viewport = container.querySelector('.xterm-viewport') as HTMLDivElement | null;
+      if (viewport) return { el: viewport, kind: 'viewport' };
+
+      // Fallback: sometimes the scrollable element is the one emitting scroll
+      const scrollable = container.querySelector('.xterm-scrollable-element') as HTMLDivElement | null;
+      if (scrollable) return { el: scrollable, kind: 'scrollable' };
+
+      return null;
+    };
+
+    let findAttempts = 0;
+    const maxAttempts = 10;
+
+    const attachScrollListener = () => {
+      const target = findScrollTarget();
+      if (!target) {
+        findAttempts++;
+        if (findAttempts <= maxAttempts) {
+          // retry next frame; xterm can create these elements async
+          requestAnimationFrame(attachScrollListener);
+        }
+        return;
+      }
+
+      attachedScroll = target;
+
+      registerListener(
+        'useTerminal::scroll',
+        attachedScroll.el,
+        'scroll',
+        handleScroll as any,
+      );
+
+      // Initialize state once we’ve attached
+      handleScroll();
+    };
+
+    // Kick off async attachment
+    requestAnimationFrame(attachScrollListener);
 
     // ============================================================
     // Resize -> fit terminal
     // ============================================================
-
     const handleResize = () => {
       requestAnimationFrame(() => {
         try {
@@ -142,10 +183,9 @@ export function useTerminal() {
     // ============================================================
     // Cleanup
     // ============================================================
-
     return () => {
-      if (viewport) {
-        unregisterListener('useTerminal::viewport::scroll', viewport, 'scroll', handleScroll as any);
+      if (attachedScroll?.el) {
+        unregisterListener('useTerminal::scroll', attachedScroll.el, 'scroll', handleScroll as any);
       }
 
       unregisterListener('useTerminal::window::resize', window, 'resize', handleResize as any);

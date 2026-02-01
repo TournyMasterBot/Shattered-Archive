@@ -377,6 +377,13 @@ export function useUserScriptSandbox(connectionId?: string | null) {
     }
   }, [scripts, connectionId]);
 
+  // Timers are driven globally by RuntimeSingleton/UserScriptRuntime.
+  // The sandbox should not schedule its own intervals (avoids double-fires).
+  useEffect(() => {
+    clearAllTimers();
+    return () => clearAllTimers();
+  }, [clearAllTimers]);
+  /*
   // Manage timers whenever scripts, socket state, or connection change
   useEffect(() => {
     if (!scripts || !socketReady) {
@@ -412,6 +419,7 @@ export function useUserScriptSandbox(connectionId?: string | null) {
       clearAllTimers();
     };
   }, [scripts, socketReady, pushError, connectionId, clearAllTimers]);
+  */
 
   const createTrigger = useCallback((partial: Omit<TriggerScript, 'id' | 'kind'>): TriggerScript => {
     const script: TriggerScript = {
