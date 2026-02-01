@@ -142,4 +142,6 @@ export interface ScriptSandboxApi {
    * Named variables used for trigger/alias template expansion: "{NAME}"
    */
   getNamedVar?: (name: string) => string | undefined;
+  setNamedVar?: (name: string, value: string) => void;
+  deleteNamedVar?: (name: string) => void;
 }

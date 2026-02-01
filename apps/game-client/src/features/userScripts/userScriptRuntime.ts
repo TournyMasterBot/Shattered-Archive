@@ -8,12 +8,27 @@ import { ScriptErrorInfo } from '../../types/userscript-types/script-error-info'
 import { UserScriptRuntimeOptions } from '../../types/userscript-types/user-script-runtime-options';
 import { ProbeOpponentConditionLine } from '../combat/probe-opponent-condition';
 import { probeChatRange } from '../chat/chat-probe';
-import { normalizeForMatch, stripAnsi } from '../autoleveling/autoleveling-text';
+import { stripAnsi } from '../autoleveling/autoleveling-text';
 import { dslToAnsi } from '../chat/dsl-to-ansi';
 import { DamageEventPayload, parseDamageLine, parseDamageSource, tryParseTarget } from '../combat/damage/damage-map';
 import { ProbeLevelUpLine } from '../level/probe-level-up';
 
+// Global vars + global runtime
+import {
+  getGlobalVar as getGlobalVarStore,
+  setGlobalVar as setGlobalVarStore,
+  deleteGlobalVar as deleteGlobalVarStore,
+  getGlobalVarsStorageKey,
+  getGlobalVarsSnapshot,
+} from './globalScriptsStore';
+import { invokeGlobalById } from './globalRuntime';
+import { OmitRule, setOmitRules, shouldOmitLine } from './triggerOmitStore';
+import { safeTrim } from './safeTrim';
+import { expandMatchTextWithGlobals } from './expand-global-vars';
+
 export const STORAGE_KEY_PREFIX_USERSCRIPTS = 'shatteredArchive.userScripts.';
+
+const RAW_EVENT_NAME = 'shatteredarchive:raw-data';
 
 const tickPhrase = 'tick ';
 const charDataPhrase = 'char_data ';
@@ -23,29 +38,74 @@ const addAffectPhrase = 'add_affect ';
 const affectDataPhrase = 'affect_data ';
 const loginDataPhrase = 'login_data ';
 
+/* ------------------------------- helpers ------------------------------- */
+
 function normalizeSplitChar(v: string | undefined): string {
   const s = (v ?? ';').trim();
-  if (!s) {
-    return ';';
-  }
+  if (!s) return ';';
   return s.slice(0, 1);
-}
-
-function safeTrim(v: unknown): string {
-  return String(v ?? '').trim();
 }
 
 function pickMatchTextFromPayload(payload: any): string {
   if (payload == null) return '';
-
   if (typeof payload === 'string') return payload;
-
-  // common shapes in this codebase
   if (typeof payload?.text === 'string') return payload.text;
   if (typeof payload?.rawText === 'string') return payload.rawText;
   if (typeof payload?.line === 'string') return payload.line;
   return '';
 }
+
+function escapeRegexLiteral(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Compile an alias template like:
+ *   "target {TARGET}"
+ * into a regex and list of variable names.
+ *
+ * Captures are token-based (\S+) to keep this simple and predictable.
+ */
+function compileAliasTemplate(template: string): { re: RegExp; vars: string[] } | null {
+  const raw = safeTrim(template);
+  if (!raw) return null;
+
+  const varNames: string[] = [];
+  const parts: string[] = [];
+
+  const tokenRe = /\{([a-zA-Z0-9_]+)\}/g;
+  let lastIndex = 0;
+  let m: RegExpExecArray | null;
+
+  while ((m = tokenRe.exec(raw)) !== null) {
+    const lit = raw.slice(lastIndex, m.index);
+    if (lit) parts.push(escapeRegexLiteral(lit).replace(/\s+/g, '\\s+'));
+
+    const name = safeTrim(m[1]);
+    if (name) {
+      varNames.push(name);
+      parts.push('(\\S+)');
+    } else {
+      parts.push(escapeRegexLiteral(m[0]));
+    }
+
+    lastIndex = m.index + m[0].length;
+  }
+
+  const tail = raw.slice(lastIndex);
+  if (tail) parts.push(escapeRegexLiteral(tail).replace(/\s+/g, '\\s+'));
+
+  if (varNames.length === 0) return null;
+
+  const pattern = `^\\s*${parts.join('')}\\s*$`;
+  return { re: new RegExp(pattern, 'i'), vars: varNames };
+}
+
+function safeConnectionId(connectionId?: string | null) {
+  return connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
+}
+
+/* -------------------------------- runtime ------------------------------ */
 
 export class UserScriptRuntime {
   private scripts: Map<string, AnyUserScript> = new Map();
@@ -55,8 +115,13 @@ export class UserScriptRuntime {
   private aliasSplitChar: string;
   private lastTick: number;
 
-  // per-trigger event listeners
   private triggerUnsubs: Map<string, () => void> = new Map();
+
+  // cache compiled templates by script id
+  private aliasTemplateCache: Map<string, { re: RegExp; vars: string[] } | null> = new Map();
+
+  // active connection for global vars / global runtime
+  private activeConnectionId: string = 'default';
 
   constructor(options: UserScriptRuntimeOptions = {}) {
     this.sendCommand =
@@ -75,7 +140,7 @@ export class UserScriptRuntime {
   private attachWindowEvents() {
     console.log('Attaching user script runtime events');
 
-    // Raw text lines from the server
+    // Raw text lines from the server (mapped by runtimeSingleton)
     ListenEvent<any>('shatteredarchive:raw-data', (payload) => {
       void this.processRawEvent(payload);
     });
@@ -95,21 +160,75 @@ export class UserScriptRuntime {
       const connectionId = payload?.connectionId;
       this.reloadFromStorage(connectionId);
     });
+
+    ListenEvent<{ key?: string }>('shatteredarchive:globalVars-updated', (payload) => {
+      const key = String(payload?.key ?? '');
+      if (!key) return;
+
+      const expected = getGlobalVarsStorageKey(this.activeConnectionId);
+      if (key !== expected) return;
+
+      this.rebuildOmitRules();
+    });
+  }
+
+  public setActiveConnectionId(connectionId: string | null | undefined): void {
+    const next = safeConnectionId(connectionId);
+    this.activeConnectionId = next;
+
+    // ensure globals are warmed for this connection
+    getGlobalVarsSnapshot(next);
+
+    this.rebuildOmitRules();
+  }
+
+  private rebuildOmitRules(): void {
+    // IMPORTANT:
+    // Omit rules must be compiled using the *resolved* globals (e.g. "{target}" -> "weed").
+    // Otherwise, after refresh you'll have "{target}" in the omit engine and nothing matches.
+    const rules: OmitRule[] = [];
+
+    for (const s of this.scripts.values()) {
+      if (s.kind !== 'trigger' || !s.enabled) continue;
+
+      const trig: any = s;
+      if (trig.omitFromOutput !== true) continue;
+
+      const template = String(trig.matchText ?? '').trim();
+      if (!template) continue;
+
+      const expanded = expandMatchTextWithGlobals(template, (key) => getGlobalVarStore(this.activeConnectionId, key));
+      if (!expanded) continue;
+
+      rules.push({
+        id: s.id,
+        eventName: String(trig.eventName ?? ''),
+        matchText: expanded,
+        caseInsensitive: trig.caseInsensitive ?? false,
+      });
+    }
+    console.log("Invoking setOmitRules from rebuildOmitRules", {
+      rules,
+      activeConnectionId: this.activeConnectionId
+    })
+    setOmitRules(rules, this.activeConnectionId);
   }
 
   public replaceAllScripts(scripts: AnyUserScript[]): void {
     this.scripts.clear();
-    for (const s of scripts ?? []) {
-      this.scripts.set(s.id, s);
-    }
+    this.aliasTemplateCache.clear();
+    for (const s of scripts ?? []) this.scripts.set(s.id, s);
     this.rebuildTriggerListeners();
+    this.rebuildOmitRules();
   }
 
   private reloadFromStorage(connectionId?: string | null) {
     const loaded = this.loadScriptsFromStorage(connectionId);
     this.scripts.clear();
+    this.aliasTemplateCache.clear();
     for (const s of loaded) this.scripts.set(s.id, s);
     this.rebuildTriggerListeners();
+    this.rebuildOmitRules();
   }
 
   private rebuildTriggerListeners(): void {
@@ -141,10 +260,6 @@ export class UserScriptRuntime {
       const list = byEvent.get(eventName) ?? [];
       list.push(script);
       byEvent.set(eventName, list);
-      console.log('Listening for triggers', {
-        eventName,
-        list
-      });
     }
 
     // Attach 1 listener per eventName
@@ -154,7 +269,6 @@ export class UserScriptRuntime {
       const off = ListenEvent<any>(
         eventName,
         (payload) => {
-          console.log("Preparing to scrub scripts");
           for (const s of scripts) {
             // Re-check current state (scripts might have changed since this rebuild)
             const current = this.scripts.get(s.id);
@@ -174,81 +288,48 @@ export class UserScriptRuntime {
       // store unsub by eventName (since it's one per event)
       this.triggerUnsubs.set(eventName, off);
     }
+
+    this.rebuildOmitRules();
   }
+
   private triggerPassesMatch(trig: any, payload: any): boolean {
     const dontRequireMatchText = trig.dontRequireMatchText === true;
-    if(dontRequireMatchText) {
-      return true;
-    }
-    const matchText = safeTrim(trig.matchText);
-    if (!matchText) {
-      return dontRequireMatchText;
-    }
+    if (dontRequireMatchText) return true;
+
+    const matchTextRaw = expandMatchTextWithGlobals(safeTrim(trig.matchText), (key) =>
+      getGlobalVarStore(this.activeConnectionId, key),
+    );
+    if (!matchTextRaw) return false;
+
+    const expanded = expandMatchTextWithGlobals(matchTextRaw, (key) => getGlobalVarStore(this.activeConnectionId, key));
+    if (!expanded) return false;
 
     const text = pickMatchTextFromPayload(payload);
     if (!text) return false;
 
-    const hay = text;
-    const needle = matchText;
-    console.log("Comparing needle haystack", {
-      hay,
-      needle
-    });
-
-    return hay.indexOf(needle) > -1;
-  }
-
-  private shouldOmitFromOutput(rawText: string): boolean {
-    const text = stripAnsi(rawText ?? '');
-
-    for (const s of this.scripts.values()) {
-      if (s.kind !== 'trigger' || !s.enabled) continue;
-
-      const trig: any = s;
-      if (trig.omitFromOutput !== true) continue;
-
-      const ev = safeTrim(trig.eventName);
-
-      // Only omit for raw line triggers (new + legacy)
-      if (ev !== 'shatteredarchive:raw-data') continue;
-
-      const matchText = safeTrim(trig.matchText);
-
-      // SAFETY: never omit with empty matchText (would gag everything)
-      if (!matchText) continue;
-
-      if (text.toLowerCase().includes(matchText.toLowerCase())) {
-        return true;
-      }
-    }
-
-    return false;
+    // DO NOT lowercase / strip ANSI here. This is a raw substring match.
+    return text.indexOf(expanded) > -1;
   }
 
   getStorageKey(connectionId?: string | null) {
-    const safe = connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
+    const safe = safeConnectionId(connectionId);
     return `${STORAGE_KEY_PREFIX_USERSCRIPTS}${safe}`;
   }
 
   loadScriptsFromStorage(connectionId?: string | null): AnyUserScript[] {
     try {
+      // keep active connection in sync with hydration
+      this.activeConnectionId = safeConnectionId(connectionId);
+
+      // warm globals for this connection
+      getGlobalVarsSnapshot(this.activeConnectionId);
+
       const raw = window.localStorage.getItem(this.getStorageKey(connectionId));
-      if (!raw) {
-        console.log('User scripts not found. Returning default', {
-          connectionId,
-        });
-        return [];
-      }
+      if (!raw) return [];
+
       const parsed = JSON.parse(raw);
-      console.log('Successfully loaded user scripts', {
-        connectionId,
-      });
       return Array.isArray(parsed) ? (parsed as AnyUserScript[]) : [];
-    } catch (err) {
-      console.error('Failed to load user scripts. Returning default', {
-        connectionId,
-        err,
-      });
+    } catch {
       return [];
     }
   }
@@ -263,11 +344,13 @@ export class UserScriptRuntime {
 
   clear(): void {
     this.scripts.clear();
+    this.aliasTemplateCache.clear();
     this.rebuildTriggerListeners();
   }
 
   upsertScript(script: AnyUserScript): void {
     this.scripts.set(script.id, script);
+    this.aliasTemplateCache.delete(script.id);
     this.rebuildTriggerListeners();
   }
 
@@ -278,6 +361,7 @@ export class UserScriptRuntime {
 
   removeScript(id: string): void {
     this.scripts.delete(id);
+    this.aliasTemplateCache.delete(id);
     this.rebuildTriggerListeners();
   }
 
@@ -290,24 +374,25 @@ export class UserScriptRuntime {
     return Array.from(this.scripts.values());
   }
 
+  /* ------------------------------ raw stream ------------------------------ */
+
   async processRawEvent(payload: any): Promise<void> {
     const rawText = String(payload?.rawText ?? '');
-    console.log('Processing raw text', {
-      rawText,
-    });
+
     // Derived/special events (damage, death, etc.)
     await this.processForSpecialLines(rawText);
 
+    // Apply omit rules to *server-originated* raw lines
+    const omit = shouldOmitLine(rawText);
+
     // forward to chat probe + terminal
     let end = rawText.length;
-
     if (end > 0 && rawText.charCodeAt(end - 1) === 10 /* \n */) end--;
     if (end > 0 && rawText.charCodeAt(end - 1) === 13 /* \r */) end--;
 
     const match = probeChatRange(rawText, 0, end);
 
-    if (match.isChat && !this.shouldOmitFromOutput(rawText)) {
-      // If any enabled omit trigger matches, do not forward to the terminal
+    if (!omit && match.isChat) {
       DispatchEvent('shatteredarchive:chat-line', {
         rawText,
         receivedTimestamp: payload?.receivedTimestamp,
@@ -315,7 +400,10 @@ export class UserScriptRuntime {
       });
     }
 
-    DispatchEvent('shatteredarchive:write-terminal', payload);
+    // IMPORTANT: if omitted, do not forward original line to terminal
+    if (!omit) {
+      DispatchEvent('shatteredarchive:write-terminal', payload);
+    }
   }
 
   async processForSpecialLines(line: string): Promise<string | undefined> {
@@ -380,6 +468,8 @@ export class UserScriptRuntime {
     };
   }
 
+  /* -------------------------------- gmcp -------------------------------- */
+
   processGmcpEvent(payload: any): void {
     const rawText = String(payload?.rawText ?? '');
 
@@ -406,10 +496,6 @@ export class UserScriptRuntime {
       } else if (rawText.startsWith(loginDataPhrase)) {
         this.dispatchGmcpEvent('game:character-login', loginDataPhrase.length, rawText);
         return;
-      } else {
-        console.warn('Unknown GMCP event', {
-          rawText,
-        });
       }
     } catch (err) {
       console.warn('[GMCP] Failed to parse payload', { rawText, err });
@@ -424,10 +510,20 @@ export class UserScriptRuntime {
     DispatchEvent(eventName, data);
   }
 
+  /* -------------------------------- aliases ------------------------------- */
+
+  private getCompiledAliasTemplate(scriptId: string, alias: string): { re: RegExp; vars: string[] } | null {
+    if (this.aliasTemplateCache.has(scriptId)) {
+      return this.aliasTemplateCache.get(scriptId) ?? null;
+    }
+    const compiled = compileAliasTemplate(alias);
+    this.aliasTemplateCache.set(scriptId, compiled);
+    return compiled;
+  }
+
   executeAlias(input: string): boolean {
     const line = input ?? '';
     const splitChar = this.aliasSplitChar;
-
     const parts = splitChar ? line.split(splitChar) : [line];
 
     let anyAliasMatched = false;
@@ -438,22 +534,49 @@ export class UserScriptRuntime {
         continue;
       }
 
-      const normalized = rawPart.trim().toLowerCase();
+      const normalizedInput = rawPart.trim().toLowerCase();
       let matched = false;
 
       for (const script of this.scripts.values()) {
         if (script.kind !== 'alias' || !script.enabled) continue;
 
-        const aliasKey = (script.alias ?? '').trim().toLowerCase();
-        if (!aliasKey) continue;
+        const aliasRaw = String((script as any).alias ?? '');
+        const aliasTrim = aliasRaw.trim();
+        if (!aliasTrim) continue;
 
-        if (aliasKey === normalized) {
+        // 1) exact match (original behavior)
+        if (aliasTrim.toLowerCase() === normalizedInput) {
           matched = true;
           anyAliasMatched = true;
-          this.executeScript(script);
+
+          this.executeScript(script, {
+            event: { name: 'shatteredarchive:alias-fired', payload: { input: rawPart, vars: {} } },
+          });
+          break;
         }
+
+        // 2) template match: "target {TARGET}"
+        const compiled = this.getCompiledAliasTemplate(script.id, aliasRaw);
+        if (!compiled) continue;
+
+        const m = compiled.re.exec(rawPart);
+        if (!m) continue;
+
+        const vars: Record<string, string> = {};
+        for (let i = 0; i < compiled.vars.length; i++) {
+          vars[compiled.vars[i]] = String(m[i + 1] ?? '');
+        }
+
+        matched = true;
+        anyAliasMatched = true;
+
+        this.executeScript(script, {
+          event: { name: 'shatteredarchive:alias-fired', payload: { input: rawPart, alias: aliasRaw, vars } },
+        });
+        break;
       }
 
+      // If no match, send as normal to server
       if (!matched) {
         this.sendCommand(rawPart);
       }
@@ -461,6 +584,8 @@ export class UserScriptRuntime {
 
     return anyAliasMatched;
   }
+
+  /* -------------------------------- timers -------------------------------- */
 
   tickTimers(): void {
     const now = Date.now();
@@ -473,22 +598,48 @@ export class UserScriptRuntime {
     }
   }
 
+  /* ------------------------------- execution ------------------------------ */
+
   private executeScript(script: AnyUserScript, extraContext?: { event?: TriggerContextEvent }): void {
     if (!script.enabled) return;
 
-    const api: ScriptSandboxApi = {
+    // Pull template vars from alias-fired payload (if present)
+    const payloadVars =
+      extraContext?.event && typeof (extraContext.event as any)?.payload === 'object'
+        ? ((extraContext.event as any).payload?.vars as Record<string, string> | undefined)
+        : undefined;
+
+    const vars = payloadVars && typeof payloadVars === 'object' ? payloadVars : {};
+
+    // Build api with globals + runGlobal wired to your existing implementations
+    const apiRef = {} as ScriptSandboxApi;
+
+    Object.assign(apiRef, {
       sendCommand: this.sendCommand,
       event: extraContext?.event,
       log: (...args: unknown[]) => console.log(`[Script:${script.name}]`, ...args),
       error: (...args: unknown[]) => console.error(`[Script:${script.name}]`, ...args),
+
+      getGlobalVar: (key: string) => getGlobalVarStore(this.activeConnectionId, String(key ?? '')),
+      setGlobalVar: (key: string, value: unknown) => setGlobalVarStore(this.activeConnectionId, String(key ?? ''), value),
+      deleteGlobalVar: (key: string) => deleteGlobalVarStore(this.activeConnectionId, String(key ?? '')),
+
+      // Lets scripts access alias vars via getNamedVar(...) (Lua/Python rely on this)
+      getNamedVar: (name: string) => {
+        const k = String(name ?? '');
+        const v = (vars as any)[k];
+        return v == null ? undefined : String(v);
+      },
+
+      runGlobal: async (globalId: string, args?: unknown) => {
+        return invokeGlobalById(this.activeConnectionId, globalId, apiRef, args);
+      },
+
       writeTerminal: (dsl: string) => {
-        if (!dsl) {
-          return;
-        }
+        if (!dsl) return;
 
         try {
           const ansi = dslToAnsi(dsl);
-
           DispatchEvent('shatteredarchive:write-terminal', {
             rawText: ansi,
             fromUserScript: true,
@@ -497,9 +648,9 @@ export class UserScriptRuntime {
           console.error('[Script:writeTerminal] failed', err);
         }
       },
-    };
+    } satisfies ScriptSandboxApi);
 
-    void runUserScript(script, api).catch((err) => {
+    void runUserScript(script, apiRef).catch((err) => {
       const message = err instanceof Error ? err.message : String(err ?? 'Unknown error');
       const stack = err instanceof Error && err.stack ? err.stack.toString() : undefined;
 
@@ -519,6 +670,8 @@ export class UserScriptRuntime {
       }
     });
   }
+
+  /* -------------------------------- storage ------------------------------- */
 
   private saveScriptsToStorage(connectionId?: string | null): void {
     try {

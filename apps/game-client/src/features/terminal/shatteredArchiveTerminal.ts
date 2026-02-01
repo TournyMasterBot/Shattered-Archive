@@ -69,11 +69,11 @@ export class ShatteredArchiveTerminal {
       /*DEBUG
       console.log("Preparing to check terminal output", {
         payload,
-        shouldOmit: shouldOmitLine('shatteredarchive:write-terminal', payload.rawText)
+        shouldOmit: shouldOmitLine(payload.rawText)
       });
       */
 
-      if (!payload.fromUserScript && shouldOmitLine('shatteredarchive:write-terminal', payload.rawText)) {
+      if (!payload.fromUserScript && shouldOmitLine(payload.rawText)) {
         return;
       }
 

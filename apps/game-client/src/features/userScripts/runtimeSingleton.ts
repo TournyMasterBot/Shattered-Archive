@@ -13,6 +13,7 @@ import { ShatteredArchiveRawData } from '../../types/event-types/shattered-archi
 import { ShatteredArchiveGmcpData } from '../../types/event-types/shattered-archive-gmcp-data';
 import { ShatteredArchiveServerError } from '../../types/event-types/shattered-archive-server-error';
 import { ShatteredArchiveServerClosed } from '../../types/event-types/shattered-archive-server-closed';
+import { getGlobalVarsSnapshot } from './globalScriptsStore';
 
 declare global {
   interface Window {
@@ -25,8 +26,29 @@ declare global {
       reload: (connectionId?: string) => void;
       rebuildTriggers: () => void;
       dump: () => void;
+
+      // ✅ named var helpers (debug / dev convenience)
+      getNamedVars: () => Record<string, string>;
+      setNamedVar: (name: string, value: string) => void;
+      deleteNamedVar: (name: string) => void;
+      clearNamedVars: () => void;
     };
   }
+}
+
+type NamedVarSetEvent = { name: string; value: string; connectionId?: string };
+type NamedVarDeleteEvent = { name: string; connectionId?: string };
+type NamedVarClearEvent = { connectionId?: string };
+
+function safeConnId(v: unknown): string {
+  const s = String(v ?? '').trim();
+  return s.length > 0 ? s : 'default';
+}
+
+function normalizeVarName(name: unknown): string {
+  return String(name ?? '')
+    .trim()
+    .toUpperCase();
 }
 
 export class RuntimeSingleton {
@@ -47,9 +69,20 @@ export class RuntimeSingleton {
   private settings: AccessibilitySettings = getAccessibilitySettings();
   private disposers: Array<() => void> = [];
 
+  // ✅ track current connection for the named var store
+  private currentConnectionId: string = 'default';
+
+  // ✅ per-connection named variable store
+  private namedVarsByConn: Map<string, Map<string, string>> = new Map();
+
   private constructor() {
     this.userScriptRuntime = new UserScriptRuntime({
       aliasSplitChar: this.settings.commandSplitChar,
+
+      // ✅ allow runtime to expand "{NAME}" live
+      getNamedVar: (name: string) => this.getNamedVar(name),
+      setNamedVar: (name: string, value: string) => this.setNamedVar(name, value),
+      deleteNamedVar: (name: string) => this.deleteNamedVar(name),
     });
 
     this.hydrateRuntime('default');
@@ -60,19 +93,59 @@ export class RuntimeSingleton {
     return this.userScriptRuntime;
   }
 
+  private getNamedVarMap(connectionId?: string): Map<string, string> {
+    const id = safeConnId(connectionId ?? this.currentConnectionId);
+    let m = this.namedVarsByConn.get(id);
+    if (!m) {
+      m = new Map<string, string>();
+      this.namedVarsByConn.set(id, m);
+    }
+    return m;
+  }
+
+  private getNamedVar(name: string): string | undefined {
+    const key = normalizeVarName(name);
+    if (!key) return undefined;
+    return this.getNamedVarMap().get(key);
+  }
+
+  private setNamedVar(name: string, value: string): void {
+    const key = normalizeVarName(name);
+    if (!key) return;
+    this.getNamedVarMap().set(key, String(value ?? ''));
+  }
+
+  private deleteNamedVar(name: string): void {
+    const key = normalizeVarName(name);
+    if (!key) return;
+    this.getNamedVarMap().delete(key);
+  }
+
+  private clearNamedVars(connectionId?: string): void {
+    this.getNamedVarMap(connectionId).clear();
+  }
+
   private hydrateRuntime(connectionId?: string | null) {
-    const key = this.userScriptRuntime.getStorageKey(connectionId);
+    const id = safeConnId(connectionId);
+    this.userScriptRuntime.setActiveConnectionId(id);
+    this.currentConnectionId = id;
+
+    const key = this.userScriptRuntime.getStorageKey(id);
     const raw = window.localStorage.getItem(key) ?? '';
 
-    if (this.lastHydrateKey === key && this.lastHydrateJson === raw) {
-      return;
-    }
+    if (this.lastHydrateKey === key && this.lastHydrateJson === raw) return;
 
     this.lastHydrateKey = key;
     this.lastHydrateJson = raw;
 
-    const scripts = this.userScriptRuntime.loadScriptsFromStorage(connectionId);
+    getGlobalVarsSnapshot(id);
+
+    const scripts = this.userScriptRuntime.loadScriptsFromStorage(id);
     this.userScriptRuntime.replaceAllScripts(scripts);
+
+    (this.userScriptRuntime as any).rebuildTriggerListeners?.();
+    (this.userScriptRuntime as any).rebuildAliasIndex?.();
+    (this.userScriptRuntime as any).rebuildTimers?.();
   }
 
   private attachWindowEvents(): void {
@@ -131,7 +204,7 @@ export class RuntimeSingleton {
       ),
     );
 
-    // Connection changed -> hydrate scripts
+    // Connection changed -> hydrate scripts (and switch named var scope)
     this.disposers.push(
       ListenEvent<{ connectionId?: string }>(
         'shatteredarchive:connection-changed',
@@ -209,6 +282,48 @@ export class RuntimeSingleton {
       ),
     );
 
+    // ✅ Live named-var updates (optional; useful if UI wants to push changes)
+    this.disposers.push(
+      ListenEvent<NamedVarSetEvent>(
+        'shatteredarchive:named-var:set',
+        (payload) => {
+          const id = safeConnId(payload?.connectionId ?? this.currentConnectionId);
+          const key = normalizeVarName(payload?.name);
+          if (!key) return;
+
+          const m = this.getNamedVarMap(id);
+          m.set(key, String(payload?.value ?? ''));
+        },
+        { key: 'runtimeSingleton::named-vars::set' },
+      ),
+    );
+
+    this.disposers.push(
+      ListenEvent<NamedVarDeleteEvent>(
+        'shatteredarchive:named-var:delete',
+        (payload) => {
+          const id = safeConnId(payload?.connectionId ?? this.currentConnectionId);
+          const key = normalizeVarName(payload?.name);
+          if (!key) return;
+
+          const m = this.getNamedVarMap(id);
+          m.delete(key);
+        },
+        { key: 'runtimeSingleton::named-vars::delete' },
+      ),
+    );
+
+    this.disposers.push(
+      ListenEvent<NamedVarClearEvent>(
+        'shatteredarchive:named-var:clear',
+        (payload) => {
+          const id = safeConnId(payload?.connectionId ?? this.currentConnectionId);
+          this.clearNamedVars(id);
+        },
+        { key: 'runtimeSingleton::named-vars::clear' },
+      ),
+    );
+
     window.__SA_RUNTIME__ = {
       runtime: this.userScriptRuntime,
       getScripts: () => this.userScriptRuntime.getAllScripts(),
@@ -223,8 +338,6 @@ export class RuntimeSingleton {
       },
 
       rebuildTriggers: () => {
-        // rebuildTriggerListeners is private, but you can expose a public wrapper if you want.
-        // Easiest: add a public method on UserScriptRuntime: `debugRebuildTriggers()`.
         (this.userScriptRuntime as any).rebuildTriggerListeners?.();
         console.log('[__SA_RUNTIME__] rebuildTriggers called');
       },
@@ -253,6 +366,12 @@ export class RuntimeSingleton {
         );
         console.groupEnd();
       },
+
+      // ✅ named var debug helpers
+      getNamedVars: () => Object.fromEntries(Array.from(this.getNamedVarMap().entries())),
+      setNamedVar: (name: string, value: string) => this.setNamedVar(name, value),
+      deleteNamedVar: (name: string) => this.deleteNamedVar(name),
+      clearNamedVars: () => this.clearNamedVars(),
     };
   }
 }

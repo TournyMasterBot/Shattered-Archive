@@ -16,6 +16,7 @@ export type InstalledPluginRecord = {
   enabled: boolean;
   installedAt: number;
   userConfig: Record<string, unknown>;
+  kind: string;
 };
 
 /* -------------------------------------------
@@ -129,6 +130,7 @@ export function usePlugins(connectionId?: string | null) {
           enabled: false,
           installedAt: Date.now(),
           userConfig: {},
+          kind: "unknown-plugin-kind"
         };
 
         return [...prev, rec];

@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "pnpm -r run build",
+    "typecheck": "tsc -p apps/game-client/tsconfig.json --noEmit",
     "lint": "eslint . --max-warnings=300",
     "lint:strict": "eslint .",
     "lint:fix": "eslint . --fix",

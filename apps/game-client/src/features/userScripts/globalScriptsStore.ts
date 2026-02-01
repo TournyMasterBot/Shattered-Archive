@@ -30,9 +30,10 @@ export function getGlobalVarsStorageKey(connectionId?: string | null) {
 }
 
 const scriptCache = new Map<string, GlobalScriptsPayloadV1>();
-const varsCache = new Map<string, GlobalVarsPayloadV1>();
 
-const pendingVarsSave = new Map<string, number>();
+// Vars cache + last-seen raw json string (from *actual* localStorage)
+const varsCache = new Map<string, GlobalVarsPayloadV1>();
+const varsRawCache = new Map<string, string>();
 
 function defaultScriptsPayload(): GlobalScriptsPayloadV1 {
   return {
@@ -53,11 +54,24 @@ function defaultVarsPayload(): GlobalVarsPayloadV1 {
   };
 }
 
-function readJson(key: string): unknown | null {
-  if (typeof window === 'undefined') return null;
+function readRaw(key: string): string {
+  if (typeof window === 'undefined') return '';
   try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return null;
+    return window.localStorage.getItem(key) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function writeRaw(key: string, raw: string) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(key, raw);
+}
+
+function readJson(key: string): unknown | null {
+  const raw = readRaw(key);
+  if (!raw) return null;
+  try {
     return JSON.parse(raw);
   } catch {
     return null;
@@ -65,8 +79,7 @@ function readJson(key: string): unknown | null {
 }
 
 function writeJson(key: string, value: unknown) {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem(key, JSON.stringify(value));
+  writeRaw(key, JSON.stringify(value));
 }
 
 function isObject(v: unknown): v is Record<string, unknown> {
@@ -108,8 +121,11 @@ function coerceVars(v: unknown): GlobalVarsPayloadV1 {
   };
 }
 
+/* ------------------------------ scripts ------------------------------ */
+
 export function getGlobalScriptsSnapshot(connectionId?: string | null): Record<GlobalScriptLanguage, string> {
   const key = getGlobalScriptsStorageKey(connectionId);
+
   const cached = scriptCache.get(key);
   if (cached) return cached.sources;
 
@@ -124,6 +140,7 @@ export function setGlobalScriptSource(
   source: string,
 ) {
   const key = getGlobalScriptsStorageKey(connectionId);
+
   const payload: GlobalScriptsPayloadV1 = {
     schema: 'shatteredArchive.globalScripts.v1',
     sources: {
@@ -154,39 +171,43 @@ export function getGlobalScriptSource(connectionId: string | null | undefined, l
   return snap?.[language] ?? '';
 }
 
+/* ------------------------------ vars ------------------------------ */
+
+/**
+ * Returns vars for a connection.
+ *
+ * Important behavior:
+ * - If localStorage changed (including after a refresh), we re-parse.
+ * - If we call set/delete, we also write localStorage immediately so refresh picks it up.
+ */
 export function getGlobalVarsSnapshot(connectionId?: string | null): Record<string, unknown> {
   const key = getGlobalVarsStorageKey(connectionId);
+
+  const raw = readRaw(key);
+  const lastRaw = varsRawCache.get(key);
   const cached = varsCache.get(key);
-  if (cached) return cached.vars;
 
-  const parsed = coerceVars(readJson(key));
-  varsCache.set(key, parsed);
-  return parsed.vars;
-}
+  // If cache exists and localStorage raw hasn't changed, return cached.
+  if (cached && lastRaw === raw) {
+    return cached.vars;
+  }
 
-function scheduleVarsSave(key: string) {
-  if (typeof window === 'undefined') return;
-
-  const existing = pendingVarsSave.get(key);
-  if (existing) window.clearTimeout(existing);
-
-  // Debounce a bit to reduce thrash when scripts set vars frequently
-  const id = window.setTimeout(() => {
-    pendingVarsSave.delete(key);
-    const payload = varsCache.get(key);
-    if (!payload) return;
-
+  // Otherwise parse fresh (or default).
+  const parsed = coerceVars(raw ? (() => {
     try {
-      writeJson(key, payload);
-      DispatchEvent('shatteredarchive:globalVars-updated', {
-        key,
+      console.log("Preparing to return getGlobalVarsSnapshot", {
+        raw
       });
+      return JSON.parse(raw);
     } catch {
-      // ignore
+      return null;
     }
-  }, 200);
+  })() : null);
 
-  pendingVarsSave.set(key, id);
+  varsCache.set(key, parsed);
+  varsRawCache.set(key, raw);
+
+  return parsed.vars;
 }
 
 export function getGlobalVar(connectionId: string | null | undefined, keyName: string): unknown {
@@ -194,24 +215,63 @@ export function getGlobalVar(connectionId: string | null | undefined, keyName: s
   return vars[keyName];
 }
 
+/**
+ * Immediate persistence:
+ * - Updates in-memory varsCache
+ * - Writes localStorage synchronously (no debounce)
+ * - Updates varsRawCache to match what is actually stored
+ *
+ * This guarantees that after typing "target weed" (and your script calls setGlobalVar),
+ * a page refresh will still have the value.
+ */
 export function setGlobalVar(connectionId: string | null | undefined, keyName: string, value: unknown) {
   const key = getGlobalVarsStorageKey(connectionId);
-  const current = varsCache.get(key) ?? coerceVars(readJson(key));
 
-  current.vars = { ...(current.vars ?? {}), [keyName]: value };
-  varsCache.set(key, current);
+  const currentPayload: GlobalVarsPayloadV1 = {
+    schema: 'shatteredArchive.globalVars.v1',
+    vars: { ...(getGlobalVarsSnapshot(connectionId) ?? {}) },
+  };
 
-  scheduleVarsSave(key);
+  currentPayload.vars = { ...(currentPayload.vars ?? {}), [keyName]: value };
+
+  // update caches first
+  varsCache.set(key, currentPayload);
+
+  // write through immediately
+  try {
+    const raw = JSON.stringify(currentPayload);
+    writeRaw(key, raw);
+    varsRawCache.set(key, raw);
+
+    DispatchEvent('shatteredarchive:globalVars-updated', { key });
+  } catch {
+    // ignore
+  }
 }
 
 export function deleteGlobalVar(connectionId: string | null | undefined, keyName: string) {
   const key = getGlobalVarsStorageKey(connectionId);
-  const current = varsCache.get(key) ?? coerceVars(readJson(key));
 
-  const next = { ...(current.vars ?? {}) };
+  const currentPayload: GlobalVarsPayloadV1 = {
+    schema: 'shatteredArchive.globalVars.v1',
+    vars: { ...(getGlobalVarsSnapshot(connectionId) ?? {}) },
+  };
+
+  const next = { ...(currentPayload.vars ?? {}) };
   delete next[keyName];
-  current.vars = next;
+  currentPayload.vars = next;
 
-  varsCache.set(key, current);
-  scheduleVarsSave(key);
+  // update caches first
+  varsCache.set(key, currentPayload);
+
+  // write through immediately
+  try {
+    const raw = JSON.stringify(currentPayload);
+    writeRaw(key, raw);
+    varsRawCache.set(key, raw);
+
+    DispatchEvent('shatteredarchive:globalVars-updated', { key });
+  } catch {
+    // ignore
+  }
 }

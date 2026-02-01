@@ -8,7 +8,6 @@ import {
   ScriptSandboxApi,
 } from '../features/userScripts/types';
 import { runUserScript, runTimerScript } from '../features/userScripts/runtime';
-import { setOmitRules } from '../features/userScripts/triggerOmitStore';
 import { invokeGlobalById } from '../features/userScripts/globalRuntime';
 import { getGlobalVar, setGlobalVar, deleteGlobalVar } from '../features/userScripts/globalScriptsStore';
 import { getUserVariablesSnapshot } from '../features/userScripts/userVariablesStore';
@@ -377,28 +376,6 @@ export function useUserScriptSandbox(connectionId?: string | null) {
       console.error('[UserScriptSandbox] Failed to save scripts:', err);
     }
   }, [scripts, connectionId]);
-
-  // TMB TODO : REVIEW THIS OMISSION LOGIC AFTER FLOW CHANGES
-  useEffect(() => {
-    if (!scripts) {
-      setOmitRules([]);
-      return;
-    }
-
-    const omitRules = scripts
-      .filter((s) => s.kind === 'trigger' && s.enabled)
-      .filter((s: any) => !!s.omitFromOutput)
-      .flatMap((s: any) => {
-        const matchText = String(s.matchText ?? '').trim();
-
-        // SAFETY: never allow blank matchText omit rules (would gag everything)
-        if (!matchText) return [];
-
-        return [{ id: `${s.id}:line`, eventName: 'shatteredarchive:raw-data', matchText, caseInsensitive: true }];
-      });
-
-    setOmitRules(omitRules);
-  }, [scripts]);
 
   // Manage timers whenever scripts, socket state, or connection change
   useEffect(() => {
