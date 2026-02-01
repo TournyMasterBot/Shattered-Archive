@@ -12,6 +12,6 @@
   },
   "dependencies": {
     "@shatteredarchive/types-server": "workspace:*",
-    "cors": "^2.8.5"
+    "cors": "^2.8.6"
   }
 }
