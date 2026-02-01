@@ -35,9 +35,6 @@ module.exports = {
       },
 
       testPathIgnorePatterns: ['/node_modules/', '/dist/', '/coverage/'],
-
-      // ✅ added
-      passWithNoTests: true,
       coverageDirectory: '<rootDir>/coverage/server',
       coverageReporters: ['json-summary'],
     },
@@ -80,7 +77,6 @@ module.exports = {
       },
 
       testPathIgnorePatterns: ['/node_modules/', '/dist/', '/coverage/'],
-      passWithNoTests: true,
       coverageDirectory: '<rootDir>/coverage/client',
       coverageReporters: ['json-summary'],
     },

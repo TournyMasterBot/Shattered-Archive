@@ -41,25 +41,31 @@ jest.mock('../chat/chat-store', () => ({
   appendChatRaw: jest.fn(),
 }));
 
-// UserScriptRuntime mock
+// UserScriptRuntime mock fns
 const clearMock = jest.fn();
 const loadScriptsFromStorageMock = jest.fn();
 const upsertScriptMock = jest.fn();
 const getStorageKeyMock = jest.fn();
 const setAliasSplitCharMock = jest.fn();
+const setActiveConnectionIdMock = jest.fn();
+const replaceAllScriptsMock = jest.fn();
 
 jest.mock('./userScriptRuntime', () => {
   return {
-    // runtimeSingleton.ts imports this
     STORAGE_KEY_PREFIX_USERSCRIPTS: 'userscripts:',
-
     UserScriptRuntime: jest.fn().mockImplementation(() => {
       return {
         clear: clearMock,
         loadScriptsFromStorage: loadScriptsFromStorageMock,
+        replaceAllScripts: replaceAllScriptsMock,
         upsertScript: upsertScriptMock,
         getStorageKey: getStorageKeyMock,
         setAliasSplitChar: setAliasSplitCharMock,
+        setActiveConnectionId: setActiveConnectionIdMock,
+
+        // optional methods runtimeSingleton tries to call (optional chaining in prod code)
+        rebuildTriggerListeners: jest.fn(),
+        rebuildAliasIndex: jest.fn(),
       };
     }),
   };
@@ -68,10 +74,12 @@ jest.mock('./userScriptRuntime', () => {
 // event dispatcher mock
 jest.mock('../event-emitter/event-dispatcher', () => {
   return {
-    ListenRedispatchMap: jest.fn((sourceEvent: string, destEvent: string, mapper: any, options?: { key?: string }) => {
-      redispatchCalls.push({ sourceEvent, destEvent, mapper, options });
-      return () => {};
-    }),
+    ListenRedispatchMap: jest.fn(
+      (sourceEvent: string, destEvent: string, mapper: any, options?: { key?: string }) => {
+        redispatchCalls.push({ sourceEvent, destEvent, mapper, options });
+        return () => {};
+      },
+    ),
 
     ListenEvent: jest.fn((name: string, handler: (payload: any) => void, options?: { key?: string }) => {
       listenEventCalls.push({ name, handler, options });
@@ -82,6 +90,9 @@ jest.mock('../event-emitter/event-dispatcher', () => {
       listenDomEventCalls.push({ name, handler, options });
       return () => {};
     }),
+
+    // in case runtimeSingleton imports these too
+    ListenRedispatch: jest.fn(() => () => {}),
   };
 });
 
@@ -103,7 +114,7 @@ describe('RuntimeSingleton', () => {
     // hydrateRuntime() calls getStorageKey(connectionId) + localStorage.getItem(key)
     getStorageKeyMock.mockImplementation((connectionId?: string | null) => `userscripts:${connectionId ?? 'default'}`);
 
-    // deterministic localStorage behavior for the hydration short-circuit logic
+    // deterministic localStorage behavior for hydration short-circuit logic
     jest.spyOn(window.localStorage.__proto__, 'getItem').mockImplementation(() => '');
 
     // silence noisy logs during tests
@@ -120,11 +131,13 @@ describe('RuntimeSingleton', () => {
     return require('./runtimeSingleton') as typeof import('./runtimeSingleton');
   }
 
-  function emitListenEvent(name: string, payload: any) {
+  function emitWindowEvent(name: string, payload: any) {
+    // Some code paths wire these via ListenEvent, others via ListenDomEvent.
     for (const call of listenEventCalls) {
-      if (call.name === name) {
-        call.handler(payload);
-      }
+      if (call.name === name) call.handler(payload);
+    }
+    for (const call of listenDomEventCalls) {
+      if (call.name === name) call.handler({ detail: payload });
     }
   }
 
@@ -146,27 +159,25 @@ describe('RuntimeSingleton', () => {
     expect(r1).toBe(r2);
   });
 
-  test('constructor hydrates runtime with "default" and upserts loaded scripts', () => {
+  test('constructor hydrates runtime with "default" and replaces loaded scripts', () => {
     const { RuntimeSingleton } = importSingleton();
 
     // trigger construction
     void RuntimeSingleton.Instance;
 
-    // hydrateRuntime('default'):
     expect(getStorageKeyMock).toHaveBeenCalledWith('default');
-    expect(clearMock).toHaveBeenCalledTimes(1);
     expect(loadScriptsFromStorageMock).toHaveBeenCalledTimes(1);
     expect(loadScriptsFromStorageMock).toHaveBeenCalledWith('default');
 
-    // upsert both scripts that loadScriptsFromStorage returned
-    expect(upsertScriptMock).toHaveBeenCalledTimes(2);
-    expect(upsertScriptMock).toHaveBeenNthCalledWith(1, expect.objectContaining({ id: 's1' }));
-    expect(upsertScriptMock).toHaveBeenNthCalledWith(2, expect.objectContaining({ id: 's2' }));
+    expect(replaceAllScriptsMock).toHaveBeenCalledTimes(1);
+    expect(replaceAllScriptsMock).toHaveBeenCalledWith([
+      { id: 's1', name: 'script1', code: 'echo 1' },
+      { id: 's2', name: 'script2', code: 'echo 2' },
+    ]);
   });
 
   test('attaches redispatch mappings for RAW/GMCP/ERROR/CLOSE events with correct names', () => {
     const { RuntimeSingleton } = importSingleton();
-
     void RuntimeSingleton.Instance;
 
     expect(redispatchCalls).toHaveLength(4);
@@ -193,7 +204,6 @@ describe('RuntimeSingleton', () => {
       payload: 'hello',
     });
 
-    // runtimeSingleton.ts maps `text` (not `userText`)
     expect(mapped).toEqual({
       rawText: 'hello',
       text: 'hello',
@@ -258,47 +268,52 @@ describe('RuntimeSingleton', () => {
     const { RuntimeSingleton } = importSingleton();
     void RuntimeSingleton.Instance;
 
-    // initial hydrate happened once already
+    // initial hydrate
     expect(loadScriptsFromStorageMock).toHaveBeenCalledTimes(1);
+    expect(replaceAllScriptsMock).toHaveBeenCalledTimes(1);
 
-    emitListenEvent('shatteredarchive:connection-changed', { connectionId: 'abc123' });
+    emitWindowEvent('shatteredarchive:connection-changed', { connectionId: 'abc123' });
 
     // hydrate again
-    expect(clearMock).toHaveBeenCalledTimes(2);
     expect(loadScriptsFromStorageMock).toHaveBeenCalledTimes(2);
     expect(loadScriptsFromStorageMock).toHaveBeenLastCalledWith('abc123');
-    expect(upsertScriptMock).toHaveBeenCalledTimes(4); // 2 more scripts upserted
+
+    expect(replaceAllScriptsMock).toHaveBeenCalledTimes(2);
+    expect(setActiveConnectionIdMock).toHaveBeenLastCalledWith('abc123');
   });
 
   test('connection-changed defaults connectionId to "default" if missing', () => {
     const { RuntimeSingleton } = importSingleton();
     void RuntimeSingleton.Instance;
 
-    emitListenEvent('shatteredarchive:connection-changed', {});
+    emitWindowEvent('shatteredarchive:connection-changed', {});
 
     expect(loadScriptsFromStorageMock).toHaveBeenLastCalledWith('default');
+    expect(setActiveConnectionIdMock).toHaveBeenLastCalledWith('default');
   });
 
   test('userScripts-updated rehydrates scripts for connectionId', () => {
     const { RuntimeSingleton } = importSingleton();
     void RuntimeSingleton.Instance;
 
-    emitListenEvent('shatteredarchive:userScripts-updated', { connectionId: 'conn-9' });
+    emitWindowEvent('shatteredarchive:userScripts-updated', { connectionId: 'conn-9' });
 
     expect(loadScriptsFromStorageMock).toHaveBeenLastCalledWith('conn-9');
+    expect(replaceAllScriptsMock).toHaveBeenCalledTimes(2);
   });
 
   test('registers ListenEvent subscriptions using stable dedupe keys (HMR safe)', () => {
     const { RuntimeSingleton } = importSingleton();
     void RuntimeSingleton.Instance;
 
-    // these include *all* ListenEvent calls from runtimeSingleton.ts (not just 2 anymore)
-    const keys = listenEventCalls.map((c) => c.options?.key);
+    const keys = [
+      ...listenEventCalls.map((c) => c.options?.key),
+      ...listenDomEventCalls.map((c) => c.options?.key),
+    ];
 
     expect(keys).toContain('runtimeSingleton::window::connection-changed');
     expect(keys).toContain('runtimeSingleton::window::userScripts-updated');
 
-    // also present in runtimeSingleton.ts now
     expect(keys).toContain('runtimeSingleton::window::accessibility-updated');
     expect(keys).toContain('runtimeSingleton::chat::shatteredarchive:chat-line');
   });
