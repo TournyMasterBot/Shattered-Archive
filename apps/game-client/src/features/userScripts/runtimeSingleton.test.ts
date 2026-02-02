@@ -50,6 +50,11 @@ const setAliasSplitCharMock = jest.fn();
 const setActiveConnectionIdMock = jest.fn();
 const replaceAllScriptsMock = jest.fn();
 
+const rebuildTriggerListenersMock = jest.fn();
+const rebuildAliasIndexMock = jest.fn();
+const rebuildTimersMock = jest.fn();
+const tickTimersMock = jest.fn();
+
 jest.mock('./userScriptRuntime', () => {
   return {
     STORAGE_KEY_PREFIX_USERSCRIPTS: 'userscripts:',
@@ -63,13 +68,18 @@ jest.mock('./userScriptRuntime', () => {
         setAliasSplitChar: setAliasSplitCharMock,
         setActiveConnectionId: setActiveConnectionIdMock,
 
-        // optional methods runtimeSingleton tries to call (optional chaining in prod code)
-        rebuildTriggerListeners: jest.fn(),
-        rebuildAliasIndex: jest.fn(),
+        rebuildTriggerListeners: rebuildTriggerListenersMock,
+        rebuildAliasIndex: rebuildAliasIndexMock,
+        rebuildTimers: rebuildTimersMock,
+        tickTimers: tickTimersMock,
       };
     }),
   };
 });
+
+jest.mock('./globalScriptsStore', () => ({
+  getGlobalVarsSnapshot: jest.fn(),
+}));
 
 // event dispatcher mock
 jest.mock('../event-emitter/event-dispatcher', () => {
@@ -99,23 +109,25 @@ describe('RuntimeSingleton', () => {
     jest.resetModules();
     jest.clearAllMocks();
 
+    // reset window globals that survive resetModules()
+    delete (window as any).__SA_USERSCRIPTS_TIMER_TICK__;
+    delete (window as any).__SA_RUNTIME__;
+
+    // don't create real timers during unit tests
+    jest.spyOn(window, 'setInterval').mockReturnValue(1 as any);
+
     redispatchCalls.length = 0;
     listenEventCalls.length = 0;
     listenDomEventCalls.length = 0;
 
-    // default scripts for hydration
     loadScriptsFromStorageMock.mockReturnValue([
       { id: 's1', name: 'script1', code: 'echo 1' },
       { id: 's2', name: 'script2', code: 'echo 2' },
     ]);
 
-    // hydrateRuntime() calls getStorageKey(connectionId) + localStorage.getItem(key)
     getStorageKeyMock.mockImplementation((connectionId?: string | null) => `userscripts:${connectionId ?? 'default'}`);
 
-    // deterministic localStorage behavior for hydration short-circuit logic
     jest.spyOn(window.localStorage.__proto__, 'getItem').mockImplementation(() => '');
-
-    // silence noisy logs during tests
     jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
