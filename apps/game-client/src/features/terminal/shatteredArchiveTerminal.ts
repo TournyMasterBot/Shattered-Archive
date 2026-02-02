@@ -77,6 +77,17 @@ export class ShatteredArchiveTerminal {
         return;
       }
 
+      // Save scroll position if autoScroll is false
+      let prevScrollTop: number | null = null;
+      let scrollable: HTMLDivElement | null = null;
+      if (!this.autoScroll && t.element) {
+        scrollable = t.element.querySelector('.xterm-scrollable-element') as HTMLDivElement | null;
+        if (scrollable) {
+          prevScrollTop = scrollable.scrollTop;
+          // DEBUG console.log('[shatteredArchiveTerminal] save scrollTop', prevScrollTop);
+        }
+      }
+
       t.write(raw);
 
       if (this.autoScroll) {
@@ -85,6 +96,10 @@ export class ShatteredArchiveTerminal {
         } catch {
           // ignore
         }
+      } else if (scrollable && prevScrollTop !== null) {
+        // Restore previous scroll position
+        scrollable.scrollTop = prevScrollTop;
+        //DEBUG : console.log('[shatteredArchiveTerminal] restore scrollTop', prevScrollTop);
       }
     });
 

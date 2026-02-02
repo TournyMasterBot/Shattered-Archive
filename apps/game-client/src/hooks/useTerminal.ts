@@ -87,21 +87,26 @@ export function useTerminal() {
     ShatteredArchiveTerminal.Instance.attach(term, fitAddon);
 
     // ============================================================
-    // Scroll tracking (Jump-to-live)
-    //
-    // The key fix: resolve scroll element asynchronously and retry
-    // until xterm has created it, then attach listener.
+    // Scroll tracking (Jump-to-live) using xterm.js API
     // ============================================================
-    let attachedScroll: ScrollTarget | null = null;
-
-    const computeAndApplyScrollState = (el: HTMLDivElement) => {
-      const threshold = 10;
-      const distance = el.scrollHeight - (el.scrollTop + el.clientHeight);
-      const atBottom = distance <= threshold;
-
+    const updateScrollState = () => {
+      const t = termRef.current;
+      if (!t) return;
+      // xterm.js: buffer.active.viewportY is the top line in the viewport
+      // buffer.active.baseY is the bottom-most line in the buffer
+      // buffer.active.length is total lines in buffer
+      // t.rows is number of visible rows
+      const buffer = t.buffer.active;
+      const viewportY = buffer.viewportY;
+      const baseY = buffer.baseY;
+      const rows = t.rows;
+      // If the bottom of the viewport is at the baseY, we're at the bottom
+      const atBottom = viewportY + rows >= baseY + rows;
+      // DEBUG console.log('[useTerminal] updateScrollState', { viewportY, baseY, rows, atBottom });
       if (atBottom) {
         autoScrollRef.current = true;
         setShowJump(false);
+        // DEBUG console.log('[useTerminal] at bottom, autoScroll true, showJump false');
         try {
           ShatteredArchiveTerminal.Instance.setAutoScroll(true);
         } catch {
@@ -110,6 +115,7 @@ export function useTerminal() {
       } else {
         autoScrollRef.current = false;
         setShowJump(true);
+        // DEBUG console.log('[useTerminal] not at bottom, autoScroll false, showJump true');
         try {
           ShatteredArchiveTerminal.Instance.setAutoScroll(false);
         } catch {
@@ -118,52 +124,13 @@ export function useTerminal() {
       }
     };
 
-    const handleScroll = () => {
-      if (!attachedScroll?.el) return;
-      computeAndApplyScrollState(attachedScroll.el);
-    };
+    // Use xterm.js API to listen for scroll events
+    term.onScroll(() => {
+      updateScrollState();
+    });
 
-    const findScrollTarget = (): ScrollTarget | null => {
-      // Primary: xterm viewport (most common)
-      const viewport = container.querySelector('.xterm-viewport') as HTMLDivElement | null;
-      if (viewport) return { el: viewport, kind: 'viewport' };
-
-      // Fallback: sometimes the scrollable element is the one emitting scroll
-      const scrollable = container.querySelector('.xterm-scrollable-element') as HTMLDivElement | null;
-      if (scrollable) return { el: scrollable, kind: 'scrollable' };
-
-      return null;
-    };
-
-    let findAttempts = 0;
-    const maxAttempts = 10;
-
-    const attachScrollListener = () => {
-      const target = findScrollTarget();
-      if (!target) {
-        findAttempts++;
-        if (findAttempts <= maxAttempts) {
-          // retry next frame; xterm can create these elements async
-          requestAnimationFrame(attachScrollListener);
-        }
-        return;
-      }
-
-      attachedScroll = target;
-
-      registerListener(
-        'useTerminal::scroll',
-        attachedScroll.el,
-        'scroll',
-        handleScroll as any,
-      );
-
-      // Initialize state once we’ve attached
-      handleScroll();
-    };
-
-    // Kick off async attachment
-    requestAnimationFrame(attachScrollListener);
+    // Initialize scroll state
+    updateScrollState();
 
     // ============================================================
     // Resize -> fit terminal
@@ -184,10 +151,6 @@ export function useTerminal() {
     // Cleanup
     // ============================================================
     return () => {
-      if (attachedScroll?.el) {
-        unregisterListener('useTerminal::scroll', attachedScroll.el, 'scroll', handleScroll as any);
-      }
-
       unregisterListener('useTerminal::window::resize', window, 'resize', handleResize as any);
 
       window.clearTimeout(helperTick);
