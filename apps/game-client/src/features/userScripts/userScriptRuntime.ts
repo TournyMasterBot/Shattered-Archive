@@ -59,55 +59,250 @@ function escapeRegexLiteral(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function safeConnectionId(connectionId?: string | null) {
+  return connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
+}
+
+function stripOuterQuotes(s: string): string {
+  const v = s ?? '';
+  if (v.length >= 2) {
+    const a = v[0];
+    const b = v[v.length - 1];
+    if ((a === "'" && b === "'") || (a === '"' && b === '"')) {
+      return v.slice(1, -1);
+    }
+  }
+  return v;
+}
+
+/**
+ * If a captured value is in one of these forms:
+ *  - "{potion:health}"
+ *  - "{ brewCommand: 2xherb stir 'red mushroom' }"
+ *  - "{health}" (allowed; no key)
+ * returns the inside.
+ *
+ * If a key is present and doesn't match expectedName, we still return the raw inner
+ * (so users can do "{something:...}" without breaking everything), but prefer matching keys.
+ */
+function unwrapBraceValue(expectedName: string, raw: string): { value: string; key?: string } | null {
+  const s = (raw ?? '').trim();
+  if (s.length < 2) return null;
+  if (s[0] !== '{' || s[s.length - 1] !== '}') return null;
+
+  const inner = s.slice(1, -1).trim();
+  if (!inner) return { value: '' };
+
+  const colonIdx = inner.indexOf(':');
+  if (colonIdx === -1) {
+    return { value: stripOuterQuotes(inner).trim() };
+  }
+
+  const k = inner.slice(0, colonIdx).trim();
+  const v = inner.slice(colonIdx + 1).trim();
+
+  const key = k.replace(/^["']|["']$/g, '').trim();
+  const value = stripOuterQuotes(v).trim();
+
+  if (key && expectedName && key.toLowerCase() === expectedName.toLowerCase()) {
+    return { value, key };
+  }
+
+  return { value, key: key || undefined };
+}
+
+function normalizeCapturedVar(expectedName: string, raw: string): string {
+  const t = (raw ?? '').trim();
+  if (!t) return '';
+
+  // brace form
+  const unwrapped = unwrapBraceValue(expectedName, t);
+  if (unwrapped) return (unwrapped.value ?? '').trim();
+
+  // quoted token
+  const q = stripOuterQuotes(t).trim();
+  return q;
+}
+
+/**
+ * Parse an input like:
+ *   setbrew { potion: "health", brewCommand: "2xherb stir 'red mushroom'" }
+ *
+ * into:
+ *   { command: "setbrew", vars: { potion: "health", brewCommand: "2xherb stir 'red mushroom'" } }
+ */
+function parseInlineObjectVars(
+  input: string,
+): { command: string; vars: Record<string, string> } | null {
+  const raw = (input ?? '').trim();
+  if (!raw) return null;
+
+  // command is first token
+  const m = /^(\S+)\s*(.*)$/.exec(raw);
+  if (!m) return null;
+
+  const command = m[1];
+  let rest = (m[2] ?? '').trim();
+  if (!rest) return null;
+
+  if (rest[0] !== '{' || rest[rest.length - 1] !== '}') return null;
+
+  const inner = rest.slice(1, -1);
+  const vars: Record<string, string> = {};
+
+  // simple scanner for: key : value (, key : value)*
+  // value can be:
+  // - "..."
+  // - '...'
+  // - unquoted token(s) until comma/end (trimmed)
+  let i = 0;
+
+  const skipWs = () => {
+    while (i < inner.length && /\s/.test(inner[i])) i++;
+  };
+
+  const readIdent = (): string => {
+    skipWs();
+    const start = i;
+    while (i < inner.length && /[A-Za-z0-9_]/.test(inner[i])) i++;
+    return inner.slice(start, i);
+  };
+
+  const readQuoted = (quote: "'" | '"'): string => {
+    // assumes inner[i] === quote
+    i++; // skip open quote
+    const start = i;
+    while (i < inner.length) {
+      if (inner[i] === quote) {
+        const out = inner.slice(start, i);
+        i++; // consume close
+        return out;
+      }
+      i++;
+    }
+    // no close quote -> take rest
+    return inner.slice(start);
+  };
+
+  const readValue = (): string => {
+    skipWs();
+    if (i >= inner.length) return '';
+
+    const ch = inner[i];
+    if (ch === "'" || ch === '"') {
+      return readQuoted(ch);
+    }
+
+    // unquoted: read until comma or end
+    const start = i;
+    while (i < inner.length && inner[i] !== ',') i++;
+    return inner.slice(start, i).trim();
+  };
+
+  while (i < inner.length) {
+    skipWs();
+    if (i >= inner.length) break;
+
+    // allow trailing commas/whitespace
+    if (inner[i] === ',') {
+      i++;
+      continue;
+    }
+
+    const key = readIdent();
+    if (!key) {
+      // skip unknown junk to next comma
+      while (i < inner.length && inner[i] !== ',') i++;
+      continue;
+    }
+
+    skipWs();
+    if (inner[i] !== ':') {
+      // not a kv pair -> skip
+      while (i < inner.length && inner[i] !== ',') i++;
+      continue;
+    }
+
+    i++; // skip ':'
+    const value = readValue();
+
+    vars[key] = value;
+
+    skipWs();
+    if (inner[i] === ',') i++;
+  }
+
+  if (!command || Object.keys(vars).length === 0) return null;
+  return { command, vars };
+}
+
 /**
  * Compile an alias template like:
  *   "target {TARGET}"
  * into a regex and list of variable names.
  *
- * Captures are token-based (\S+) to keep this simple and predictable.
+ * Enhancements:
+ * - Non-last vars still behave token-ish, but allow:
+ *   - "{var:value}" / "{value}" (captured as one token, later normalized)
+ *   - quoted tokens: "foo bar" or 'foo bar'
+ * - The LAST {VAR} in the template captures the rest of the line (multi-word),
+ *   preserving the original simple behavior for non-last vars.
  */
-function compileAliasTemplate(template: string): { re: RegExp; vars: string[] } | null {
+function compileAliasTemplate(template: string): { re: RegExp; vars: string[]; command?: string } | null {
   const raw = safeTrim(template);
   if (!raw) return null;
 
   const varNames: string[] = [];
   const parts: string[] = [];
 
-  const tokenRe = /\{([a-zA-Z0-9_]+)\}/g;
-  let lastIndex = 0;
-  let m: RegExpExecArray | null;
+  // best-effort: command = first token before whitespace or "{"
+  const commandMatch = /^\s*([^\s{]+)/.exec(raw);
+  const command = commandMatch?.[1];
 
-  while ((m = tokenRe.exec(raw)) !== null) {
-    const lit = raw.slice(lastIndex, m.index);
+  const tokenRe = /\{([a-zA-Z0-9_]+)\}/g;
+  const tokens: Array<{ name: string; index: number; len: number }> = [];
+
+  {
+    let m: RegExpExecArray | null;
+    while ((m = tokenRe.exec(raw)) !== null) {
+      const name = safeTrim(m[1]);
+      if (!name) continue;
+      tokens.push({ name, index: m.index, len: m[0].length });
+    }
+  }
+
+  if (tokens.length === 0) return null;
+
+  let lastIndex = 0;
+
+  for (let t = 0; t < tokens.length; t++) {
+    const tok = tokens[t];
+    const lit = raw.slice(lastIndex, tok.index);
     if (lit) parts.push(escapeRegexLiteral(lit).replace(/\s+/g, '\\s+'));
 
-    const name = safeTrim(m[1]);
-    const isLastToken = tokenRe.lastIndex >= raw.length || raw.slice(tokenRe.lastIndex).trim().length === 0;
+    const isLast = t === tokens.length - 1;
 
-    if (name) {
-      varNames.push(name);
+    varNames.push(tok.name);
 
-      // - non-last vars are token captures
-      // - last var captures the rest of the input (including spaces)
-      parts.push(isLastToken ? '(.+)' : '(\\S+)');
+    if (isLast) {
+      // capture the rest of the line (can include spaces, quotes, braces)
+      parts.push('(.+)');
     } else {
-      parts.push(escapeRegexLiteral(m[0]));
+      // capture a "token", but allow quotes/braces as a single unit
+      // - { ... } (no nested braces)
+      // - " ... " or ' ... ' (no escaped quotes)
+      // - otherwise \S+
+      parts.push('(\\{[^}]+\\}|"[^"]*"|\'[^\']*\'|\\S+)');
     }
 
-    lastIndex = m.index + m[0].length;
+    lastIndex = tok.index + tok.len;
   }
 
   const tail = raw.slice(lastIndex);
   if (tail) parts.push(escapeRegexLiteral(tail).replace(/\s+/g, '\\s+'));
 
-  if (varNames.length === 0) return null;
-
   const pattern = `^\\s*${parts.join('')}\\s*$`;
-  return { re: new RegExp(pattern, 'i'), vars: varNames };
-}
-
-function safeConnectionId(connectionId?: string | null) {
-  return connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
+  return { re: new RegExp(pattern, 'i'), vars: varNames, command };
 }
 
 /* -------------------------------- runtime ------------------------------ */
@@ -124,7 +319,7 @@ export class UserScriptRuntime {
   private triggerUnsubs: Map<string, () => void> = new Map();
 
   // cache compiled templates by script id
-  private aliasTemplateCache: Map<string, { re: RegExp; vars: string[] } | null> = new Map();
+  private aliasTemplateCache: Map<string, { re: RegExp; vars: string[]; command?: string } | null> = new Map();
 
   // active connection for global vars / global runtime
   private activeConnectionId: string = 'default';
@@ -538,7 +733,10 @@ export class UserScriptRuntime {
 
   /* -------------------------------- aliases ------------------------------- */
 
-  private getCompiledAliasTemplate(scriptId: string, alias: string): { re: RegExp; vars: string[] } | null {
+  private getCompiledAliasTemplate(
+    scriptId: string,
+    alias: string,
+  ): { re: RegExp; vars: string[]; command?: string } | null {
     if (this.aliasTemplateCache.has(scriptId)) {
       return this.aliasTemplateCache.get(scriptId) ?? null;
     }
@@ -560,7 +758,14 @@ export class UserScriptRuntime {
         continue;
       }
 
-      const normalizedInput = rawPart.trim().toLowerCase();
+      const trimmedPart = rawPart.trim();
+      const normalizedInput = trimmedPart.toLowerCase();
+
+      // If the user typed: "cmd { key: value, key2: value2 }"
+      const objectVarsParsed = parseInlineObjectVars(trimmedPart);
+      const objectCommandLower = objectVarsParsed?.command?.toLowerCase();
+      const objectVars = objectVarsParsed?.vars;
+
       let matched = false;
 
       for (const script of this.scripts.values()) {
@@ -581,16 +786,68 @@ export class UserScriptRuntime {
           break;
         }
 
-        // 2) template match: "target {TARGET}"
+        // 1b) object form: "aliasCmd { potion: ..., brewCommand: ... }"
+        // If alias itself is just the command (exact), allow object payload to drive vars.
+        if (objectVarsParsed && aliasTrim.toLowerCase() === objectCommandLower) {
+          matched = true;
+          anyAliasMatched = true;
+
+          const varsOut: Record<string, string> = {};
+          for (const [k, v] of Object.entries(objectVars ?? {})) {
+            varsOut[k] = String(v ?? '');
+          }
+
+          this.executeScript(script, {
+            event: { name: 'shatteredarchive:alias-fired', payload: { input: rawPart, alias: aliasRaw, vars: varsOut } },
+          });
+          break;
+        }
+
+        // 2) template match: "setbrew {potion} {brewCommand}"
         const compiled = this.getCompiledAliasTemplate(script.id, aliasRaw);
         if (!compiled) continue;
 
-        const m = compiled.re.exec(rawPart);
+        // 2b) template + object form:
+        // If they typed "setbrew { potion:..., brewCommand:... }" and the template's command matches,
+        // map vars by name.
+        if (objectVarsParsed && compiled.command && compiled.command.toLowerCase() === objectCommandLower) {
+          const varsOut: Record<string, string> = {};
+          let ok = true;
+
+          for (const vName of compiled.vars) {
+            const rawVal = (objectVars ?? {})[vName];
+            if (rawVal == null) {
+              ok = false;
+              break;
+            }
+            varsOut[vName] = normalizeCapturedVar(vName, String(rawVal));
+          }
+
+          if (!ok) continue;
+
+          matched = true;
+          anyAliasMatched = true;
+
+          this.executeScript(script, {
+            event: { name: 'shatteredarchive:alias-fired', payload: { input: rawPart, alias: aliasRaw, vars: varsOut } },
+          });
+          break;
+        }
+
+        // 2c) regular template regex (positional), with enhanced token/last-var capture
+        const m = compiled.re.exec(trimmedPart);
         if (!m) continue;
 
         const vars: Record<string, string> = {};
         for (let i = 0; i < compiled.vars.length; i++) {
-          vars[compiled.vars[i]] = String(m[i + 1] ?? '');
+          const varName = compiled.vars[i];
+          const rawVal = String(m[i + 1] ?? '');
+
+          // normalize:
+          // - allow {var:value} or {value}
+          // - allow "..." or '...'
+          // - last var may include spaces
+          vars[varName] = normalizeCapturedVar(varName, rawVal);
         }
 
         matched = true;
