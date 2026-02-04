@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styles from '../styles/ChatPane.module.scss';
 import { useChatPane } from '../hooks/useChatPane';
+import { useChatLog } from '../hooks/useChatLog';
 import {
   KNOWN_CHAT_SUBTYPES,
   type ChatSettings,
@@ -47,21 +48,49 @@ export const ChatPane: React.FC = () => {
   const [settings, setSettings] = useState<ChatSettings>(getChatSettings());
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Used to anchor the menu position
+  // used to anchor the menu position
   const gearButtonRef = useRef<HTMLButtonElement | null>(null);
 
-  // Menu positioning in viewport coords (fixed)
-  const [menuPos, setMenuPos] = useState<{ top: number; right: number; maxHeight: number } | null>(
-    null,
-  );
+  // menu positioning in viewport coords (fixed)
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number; maxHeight: number } | null>(null);
 
   const [activePane, setActivePane] = useState<PaneId>('all');
 
+  // For "only show pills if values exist"
+  const { messages: allMessages } = useChatLog();
+
   useEffect(() => subscribeChatSettings(setSettings), []);
+
+  const countsBySubtype = useMemo(() => {
+    const counts: Record<string, number> = Object.create(null);
+
+    for (const m of allMessages) {
+      const st = (m as any).subtype as ChatSubtype | undefined;
+      if (!st) continue;
+      counts[st] = (counts[st] ?? 0) + 1;
+    }
+
+    return counts as Record<ChatSubtype, number>;
+  }, [allMessages]);
 
   const enabledSubtypeList = useMemo(() => {
     return KNOWN_CHAT_SUBTYPES.filter((s) => settings.enabledPanes[s]);
   }, [settings.enabledPanes]);
+
+  // Order is persisted. Visibility depends on showHiddenChatPanes.
+  const orderedVisibleSubtypes = useMemo(() => {
+    const order = settings.paneOrder?.length ? settings.paneOrder : [...KNOWN_CHAT_SUBTYPES];
+
+    if (settings.showHiddenChatPanes) {
+      // Show all enabled subtypes, even if no messages exist yet
+      const enabledSet = new Set(enabledSubtypeList);
+      return order.filter((s) => enabledSet.has(s));
+    }
+
+    // Default behavior: only show enabled subtypes that currently have messages
+    const visibleSet = new Set(enabledSubtypeList.filter((s) => (countsBySubtype[s] ?? 0) > 0));
+    return order.filter((s) => visibleSet.has(s));
+  }, [settings.paneOrder, settings.showHiddenChatPanes, enabledSubtypeList, countsBySubtype]);
 
   const panes: { id: PaneId; title: string }[] = useMemo(() => {
     // Always mount "all" pane. Pills are only shown when enableChatPanes is true.
@@ -69,9 +98,9 @@ export const ChatPane: React.FC = () => {
 
     return [
       { id: 'all', title: 'All' },
-      ...enabledSubtypeList.map((s) => ({ id: s as PaneId, title: s.toUpperCase() })),
+      ...orderedVisibleSubtypes.map((s) => ({ id: s as PaneId, title: s.toUpperCase() })),
     ];
-  }, [settings.enableChatPanes, enabledSubtypeList]);
+  }, [settings.enableChatPanes, orderedVisibleSubtypes]);
 
   // If panes are disabled or active pane disappears, fall back to all
   useEffect(() => {
@@ -81,17 +110,68 @@ export const ChatPane: React.FC = () => {
     }
 
     if (activePane === 'all') return;
-    if (!enabledSubtypeList.includes(activePane as ChatSubtype)) setActivePane('all');
-  }, [settings.enableChatPanes, enabledSubtypeList, activePane]);
+
+    const st = activePane as ChatSubtype;
+    if (!orderedVisibleSubtypes.includes(st)) setActivePane('all');
+  }, [settings.enableChatPanes, orderedVisibleSubtypes, activePane]);
 
   const toggleStrict = () => updateChatSettings({ strictChatFormat: !settings.strictChatFormat });
   const togglePanes = () => updateChatSettings({ enableChatPanes: !settings.enableChatPanes });
+  const toggleShowHidden = () =>
+    updateChatSettings({ showHiddenChatPanes: !settings.showHiddenChatPanes });
 
   const toggleSubtype = (subtype: ChatSubtype) => {
     updateChatSettings({
       enabledPanes: { [subtype]: !settings.enabledPanes[subtype] } as any,
     });
   };
+
+  // ---- Drag reorder (subtype pills only) --------------------------------
+
+  const dragSrcRef = useRef<ChatSubtype | null>(null);
+
+  const persistReorder = (src: ChatSubtype, dst: ChatSubtype) => {
+    const order = settings.paneOrder?.length ? [...settings.paneOrder] : [...KNOWN_CHAT_SUBTYPES];
+
+    const from = order.indexOf(src);
+    const to = order.indexOf(dst);
+    if (from < 0 || to < 0 || from === to) return;
+
+    order.splice(from, 1);
+    order.splice(to, 0, src);
+
+    updateChatSettings({ paneOrder: order });
+  };
+
+  const onDragStartSubtype = (s: ChatSubtype) => (e: React.DragEvent) => {
+    dragSrcRef.current = s;
+    try {
+      e.dataTransfer.setData('text/plain', s);
+    } catch {
+      // ignore
+    }
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const onDragOverSubtype = (_s: ChatSubtype) => (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const onDropSubtype = (dst: ChatSubtype) => (e: React.DragEvent) => {
+    e.preventDefault();
+    const src = dragSrcRef.current;
+    dragSrcRef.current = null;
+    if (!src) return;
+    if (src === dst) return;
+    persistReorder(src, dst);
+  };
+
+  const onDragEnd = () => {
+    dragSrcRef.current = null;
+  };
+
+  // ---- Gear menu positioning (flip + maxHeight) -------------------------
 
   const computeMenuPos = () => {
     const btn = gearButtonRef.current;
@@ -138,7 +218,6 @@ export const ChatPane: React.FC = () => {
 
   const closeMenu = () => setMenuOpen(false);
 
-  // Keep menu position correct on resize/scroll while open
   useEffect(() => {
     if (!menuOpen) return;
 
@@ -163,16 +242,34 @@ export const ChatPane: React.FC = () => {
       <div className={styles.chatTopBar}>
         {settings.enableChatPanes && (
           <div className={styles.chatPills} role="tablist" aria-label="Chat panes">
-            {panes.map((p) => (
+            {/* All is always present */}
+            <button
+              key="all"
+              type="button"
+              role="tab"
+              aria-selected={activePane === 'all'}
+              className={`${styles.chatPill} ${activePane === 'all' ? styles.chatPillActive : ''}`}
+              onClick={() => setActivePane('all')}
+            >
+              All
+            </button>
+
+            {orderedVisibleSubtypes.map((s) => (
               <button
-                key={p.id}
+                key={s}
                 type="button"
                 role="tab"
-                aria-selected={activePane === p.id}
-                className={`${styles.chatPill} ${activePane === p.id ? styles.chatPillActive : ''}`}
-                onClick={() => setActivePane(p.id)}
+                aria-selected={activePane === s}
+                className={`${styles.chatPill} ${activePane === s ? styles.chatPillActive : ''}`}
+                onClick={() => setActivePane(s)}
+                draggable
+                onDragStart={onDragStartSubtype(s)}
+                onDragOver={onDragOverSubtype(s)}
+                onDrop={onDropSubtype(s)}
+                onDragEnd={onDragEnd}
+                title="Drag to reorder"
               >
-                {p.title}
+                {s.toUpperCase()}
               </button>
             ))}
           </div>
@@ -216,9 +313,7 @@ export const ChatPane: React.FC = () => {
                   } as React.CSSProperties)
                 : undefined
             }
-            onMouseDown={(e) => {
-              e.stopPropagation();
-            }}
+            onMouseDown={(e) => e.stopPropagation()}
           >
             <label className={styles.chatMenuRow}>
               <input type="checkbox" checked={settings.strictChatFormat} onChange={toggleStrict} />
@@ -228,6 +323,16 @@ export const ChatPane: React.FC = () => {
             <label className={styles.chatMenuRow}>
               <input type="checkbox" checked={settings.enableChatPanes} onChange={togglePanes} />
               <span>Enable Chat Panes</span>
+            </label>
+
+            <label className={styles.chatMenuRow}>
+              <input
+                type="checkbox"
+                checked={settings.showHiddenChatPanes}
+                onChange={toggleShowHidden}
+                disabled={!settings.enableChatPanes}
+              />
+              <span>Show Hidden Chat Panes</span>
             </label>
 
             <div className={styles.chatMenuDivider} />
