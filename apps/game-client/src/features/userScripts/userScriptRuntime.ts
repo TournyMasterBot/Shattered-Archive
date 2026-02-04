@@ -131,9 +131,7 @@ function normalizeCapturedVar(expectedName: string, raw: string): string {
  * into:
  *   { command: "setbrew", vars: { potion: "health", brewCommand: "2xherb stir 'red mushroom'" } }
  */
-function parseInlineObjectVars(
-  input: string,
-): { command: string; vars: Record<string, string> } | null {
+function parseInlineObjectVars(input: string): { command: string; vars: Record<string, string> } | null {
   const raw = (input ?? '').trim();
   if (!raw) return null;
 
@@ -798,7 +796,10 @@ export class UserScriptRuntime {
           }
 
           this.executeScript(script, {
-            event: { name: 'shatteredarchive:alias-fired', payload: { input: rawPart, alias: aliasRaw, vars: varsOut } },
+            event: {
+              name: 'shatteredarchive:alias-fired',
+              payload: { input: rawPart, alias: aliasRaw, vars: varsOut },
+            },
           });
           break;
         }
@@ -829,7 +830,10 @@ export class UserScriptRuntime {
           anyAliasMatched = true;
 
           this.executeScript(script, {
-            event: { name: 'shatteredarchive:alias-fired', payload: { input: rawPart, alias: aliasRaw, vars: varsOut } },
+            event: {
+              name: 'shatteredarchive:alias-fired',
+              payload: { input: rawPart, alias: aliasRaw, vars: varsOut },
+            },
           });
           break;
         }

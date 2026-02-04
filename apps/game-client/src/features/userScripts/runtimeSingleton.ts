@@ -4,7 +4,7 @@ import { AccessibilitySettings, getAccessibilitySettings } from '../accessibilit
 import { STORAGE_KEY_PREFIX_USERSCRIPTS, UserScriptRuntime } from './userScriptRuntime';
 import { ListenDomEvent, ListenEvent, ListenRedispatchMap } from '../event-emitter/event-dispatcher';
 import { ShatteredArchiveChatLine } from '../../types/chat-types/chat-line';
-import { appendChatRaw } from '../chat/chat-store';
+import { appendChatLine, appendChatRaw } from '../chat/chat-store';
 import { GameRemoteServerRaw } from '../../types/event-types/game-remote-server-raw';
 import { GameRemoteServerGmcp } from '../../types/event-types/game-remote-server-gmcp';
 import { GameRemoteServerError } from '../../types/event-types/game-remote-server-error';
@@ -14,6 +14,8 @@ import { ShatteredArchiveGmcpData } from '../../types/event-types/shattered-arch
 import { ShatteredArchiveServerError } from '../../types/event-types/shattered-archive-server-error';
 import { ShatteredArchiveServerClosed } from '../../types/event-types/shattered-archive-server-closed';
 import { getGlobalVarsSnapshot } from './globalScriptsStore';
+import { getChatSettings } from '../chat/chat-settings-store';
+import { classifyStrictChatSubtype } from '../chat/strict-chat-classifier';
 
 declare global {
   interface Window {
@@ -244,9 +246,7 @@ export class RuntimeSingleton {
         (payload) => {
           console.log('Raw chat event', payload);
           const rawText = String(payload?.rawText ?? payload?.text ?? '');
-          if (!rawText) {
-            return;
-          }
+          if (!rawText) return;
 
           const ts =
             typeof payload?.ts === 'number'
@@ -255,7 +255,17 @@ export class RuntimeSingleton {
                 ? Date.parse(payload.receivedTimestamp)
                 : Date.now();
 
-          appendChatRaw(rawText, Number.isFinite(ts) ? ts : Date.now());
+          const t = Number.isFinite(ts) ? ts : Date.now();
+
+          const settings = getChatSettings();
+          const subtype = settings.strictChatFormat ? classifyStrictChatSubtype(rawText) : undefined;
+
+          // STRICT: only capture if it matched a strict rule
+          if (settings.strictChatFormat && !subtype) {
+            return;
+          }
+
+          appendChatLine(rawText, t, subtype);
         },
         { key: 'runtimeSingleton::chat::shatteredarchive:chat-line' },
       ),
