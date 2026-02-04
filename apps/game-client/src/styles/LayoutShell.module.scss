@@ -359,12 +359,22 @@
     height: 120px !important;
     min-height: 80px;
     max-height: 160px;
+    height: var(--bottom-pane-height);
+    min-height: 150px;
+    max-height: 70%;
     overflow: hidden;
   }
-
+  
   .horizontalResizer {
     height: 2px;
     cursor: default;
+    height: 4px;
+    cursor: row-resize;
+  }
+
+  .horizontalResizerHit {
+    top: -10px;
+    bottom: -10px;
   }
 }
 
