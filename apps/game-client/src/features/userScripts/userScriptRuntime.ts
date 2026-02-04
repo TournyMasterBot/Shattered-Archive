@@ -82,9 +82,14 @@ function compileAliasTemplate(template: string): { re: RegExp; vars: string[] } 
     if (lit) parts.push(escapeRegexLiteral(lit).replace(/\s+/g, '\\s+'));
 
     const name = safeTrim(m[1]);
+    const isLastToken = tokenRe.lastIndex >= raw.length || raw.slice(tokenRe.lastIndex).trim().length === 0;
+
     if (name) {
       varNames.push(name);
-      parts.push('(\\S+)');
+
+      // - non-last vars are token captures
+      // - last var captures the rest of the input (including spaces)
+      parts.push(isLastToken ? '(.+)' : '(\\S+)');
     } else {
       parts.push(escapeRegexLiteral(m[0]));
     }
