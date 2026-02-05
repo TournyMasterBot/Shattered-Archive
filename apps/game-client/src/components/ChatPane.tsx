@@ -52,14 +52,22 @@ export const ChatPane: React.FC = () => {
   const gearButtonRef = useRef<HTMLButtonElement | null>(null);
 
   // menu positioning in viewport coords (fixed)
-  const [menuPos, setMenuPos] = useState<{ top: number; right: number; maxHeight: number } | null>(null);
+  const [menuPos, setMenuPos] = useState<{
+    top: number;
+    maxHeight: number;
+    // one of these is set
+    left?: number;
+    right?: number;
+  } | null>(null);
 
   const [activePane, setActivePane] = useState<PaneId>('all');
 
   // For "only show pills if values exist"
   const { messages: allMessages } = useChatLog();
 
-  useEffect(() => subscribeChatSettings(setSettings), []);
+  useEffect(() => {
+    return subscribeChatSettings(setSettings);
+  }, []);
 
   const countsBySubtype = useMemo(() => {
     const counts: Record<string, number> = Object.create(null);
@@ -93,7 +101,8 @@ export const ChatPane: React.FC = () => {
   }, [settings.paneOrder, settings.showHiddenChatPanes, enabledSubtypeList, countsBySubtype]);
 
   const panes: { id: PaneId; title: string }[] = useMemo(() => {
-    // Always mount "all" pane. Pills are only shown when enableChatPanes is true.
+    // Always mount "all" pane.
+    // Subtype panes only mount when enableChatPanes is true.
     if (!settings.enableChatPanes) return [{ id: 'all', title: 'All' }];
 
     return [
@@ -117,8 +126,7 @@ export const ChatPane: React.FC = () => {
 
   const toggleStrict = () => updateChatSettings({ strictChatFormat: !settings.strictChatFormat });
   const togglePanes = () => updateChatSettings({ enableChatPanes: !settings.enableChatPanes });
-  const toggleShowHidden = () =>
-    updateChatSettings({ showHiddenChatPanes: !settings.showHiddenChatPanes });
+  const toggleShowHidden = () => updateChatSettings({ showHiddenChatPanes: !settings.showHiddenChatPanes });
 
   const toggleSubtype = (subtype: ChatSubtype) => {
     updateChatSettings({
@@ -206,9 +214,19 @@ export const ChatPane: React.FC = () => {
       top = Math.round(r.top - gap - maxHeight);
     }
 
-    const right = Math.max(margin, Math.round(viewportW - r.right));
+    // Horizontal flip:
+    // - If gear is on right half of the viewport, anchor menu using `right`
+    // - Else anchor using `left`
+    const mid = viewportW / 2;
+    const anchorRight = r.left >= mid;
 
-    setMenuPos({ top, right, maxHeight });
+    if (anchorRight) {
+      const right = Math.max(margin, Math.round(viewportW - r.right));
+      setMenuPos({ top, maxHeight, right });
+    } else {
+      const left = Math.max(margin, Math.round(r.left));
+      setMenuPos({ top, maxHeight, left });
+    }
   };
 
   const openMenu = () => {
@@ -240,21 +258,21 @@ export const ChatPane: React.FC = () => {
     <div className={styles.chatRoot}>
       {/* Top strip: pills + gear */}
       <div className={styles.chatTopBar}>
-        {settings.enableChatPanes && (
-          <div className={styles.chatPills} role="tablist" aria-label="Chat panes">
-            {/* All is always present */}
-            <button
-              key="all"
-              type="button"
-              role="tab"
-              aria-selected={activePane === 'all'}
-              className={`${styles.chatPill} ${activePane === 'all' ? styles.chatPillActive : ''}`}
-              onClick={() => setActivePane('all')}
-            >
-              All
-            </button>
+        {/* Pills are ALWAYS present so "All" never disappears. */}
+        <div className={styles.chatPills} role="tablist" aria-label="Chat panes">
+          <button
+            key="all"
+            type="button"
+            role="tab"
+            aria-selected={activePane === 'all'}
+            className={`${styles.chatPill} ${activePane === 'all' ? styles.chatPillActive : ''}`}
+            onClick={() => setActivePane('all')}
+          >
+            All
+          </button>
 
-            {orderedVisibleSubtypes.map((s) => (
+          {settings.enableChatPanes &&
+            orderedVisibleSubtypes.map((s) => (
               <button
                 key={s}
                 type="button"
@@ -272,8 +290,7 @@ export const ChatPane: React.FC = () => {
                 {s.toUpperCase()}
               </button>
             ))}
-          </div>
-        )}
+        </div>
 
         <button
           ref={gearButtonRef}
@@ -308,8 +325,9 @@ export const ChatPane: React.FC = () => {
               menuPos
                 ? ({
                     top: `${menuPos.top}px`,
-                    right: `${menuPos.right}px`,
                     maxHeight: `${menuPos.maxHeight}px`,
+                    left: typeof menuPos.left === 'number' ? `${menuPos.left}px` : undefined,
+                    right: typeof menuPos.right === 'number' ? `${menuPos.right}px` : undefined,
                   } as React.CSSProperties)
                 : undefined
             }
@@ -338,17 +356,20 @@ export const ChatPane: React.FC = () => {
             <div className={styles.chatMenuDivider} />
 
             <div className={styles.chatMenuSectionTitle}>Panes</div>
-            {KNOWN_CHAT_SUBTYPES.map((s) => (
-              <label key={s} className={styles.chatMenuRow}>
-                <input
-                  type="checkbox"
-                  checked={settings.enabledPanes[s]}
-                  onChange={() => toggleSubtype(s)}
-                  disabled={!settings.enableChatPanes}
-                />
-                <span>Enable {s}</span>
-              </label>
-            ))}
+
+            <div className={styles.chatMenuScroll}>
+              {KNOWN_CHAT_SUBTYPES.map((s) => (
+                <label key={s} className={styles.chatMenuRow}>
+                  <input
+                    type="checkbox"
+                    checked={settings.enabledPanes[s]}
+                    onChange={() => toggleSubtype(s)}
+                    disabled={!settings.enableChatPanes}
+                  />
+                  <span>Enable {s}</span>
+                </label>
+              ))}
+            </div>
           </div>
         </div>
       )}

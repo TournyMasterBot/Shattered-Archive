@@ -8,7 +8,7 @@ const ansiRe = /\u001b\[[0-9;]*[A-Za-z]/g;
 function normalizeLine(rawLine: string): string {
   return rawLine
     .replace(/\x07/g, '') // bell
-    .replace(ansiRe, '')  // ANSI
+    .replace(ansiRe, '') // ANSI
     .replace(/\r?\n/g, '') // newline(s)
     .trimEnd();
 }
