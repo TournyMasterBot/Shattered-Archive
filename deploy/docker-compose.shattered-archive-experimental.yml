@@ -58,8 +58,6 @@ services:
           - web-server.shatteredarchive.dev
 
     healthcheck:
-      # If wget is not available in your nginx image, replace with:
-      # test: ["CMD-SHELL", "curl -fsS http://localhost/ >/dev/null || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 10
