@@ -1,5 +1,6 @@
 // apps\game-client\src\features\plugins\routed-gmcp-events.ts
 export const ROUTED_WINDOW_EVENTS: string[] = [
+  // Main game received data (non-gmcp)
   'shatteredarchive:raw-data',
   // Raw GMCP events emitted from the game
   'game:tick',

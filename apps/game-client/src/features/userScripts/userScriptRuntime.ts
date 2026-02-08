@@ -384,9 +384,6 @@ export class UserScriptRuntime {
   }
 
   private rebuildOmitRules(): void {
-    // IMPORTANT:
-    // Omit rules must be compiled using the *resolved* globals (e.g. "{target}" -> "weed").
-    // Otherwise, after refresh you'll have "{target}" in the omit engine and nothing matches.
     const rules: OmitRule[] = [];
 
     for (const s of this.scripts.values()) {
@@ -395,7 +392,24 @@ export class UserScriptRuntime {
       const trig: any = s;
       if (trig.omitFromOutput !== true) continue;
 
-      const template = String(trig.matchText ?? '').trim();
+      const eventName = safeTrim(String(trig.eventName ?? ''));
+      if (!eventName) continue;
+
+      const dontRequireMatchText = trig.dontRequireMatchText === true;
+      const template = safeTrim(String(trig.matchText ?? ''));
+
+      // If they opted out of matchText, this is an "omit everything for this event" rule
+      if (dontRequireMatchText) {
+        rules.push({
+          id: s.id,
+          eventName,
+          omitAll: true,
+          caseInsensitive: trig.caseInsensitive ?? false,
+        });
+        continue;
+      }
+
+      // otherwise, require a real matchText
       if (!template) continue;
 
       const expanded = expandMatchTextWithGlobals(template, (key) => getGlobalVarStore(this.activeConnectionId, key));
@@ -403,15 +417,17 @@ export class UserScriptRuntime {
 
       rules.push({
         id: s.id,
-        eventName: String(trig.eventName ?? ''),
+        eventName,
         matchText: expanded,
         caseInsensitive: trig.caseInsensitive ?? false,
       });
     }
+
     console.log('Invoking setOmitRules from rebuildOmitRules', {
       rules,
       activeConnectionId: this.activeConnectionId,
     });
+
     setOmitRules(rules, this.activeConnectionId);
   }
 
@@ -599,10 +615,18 @@ export class UserScriptRuntime {
     const rawText = String(payload?.rawText ?? '');
 
     // Derived/special events (damage, death, etc.)
-    await this.processForSpecialLines(rawText);
+    const specialEventType = await this.processForSpecialLines(rawText);
 
-    // Apply omit rules to *server-originated* raw lines
-    const omit = shouldOmitLine(rawText);
+    // IMPORTANT: match omit on a *plain* version, otherwise ANSI breaks matching
+    const plain = stripAnsi(rawText);
+
+    // 1) Always apply raw-data omit rules
+    const omitRaw = shouldOmitLine('shatteredarchive:raw-data', plain);
+
+    // 2) Optionally also apply event-specific omit rules (event:damage, etc.)
+    const omitSpecial = specialEventType ? shouldOmitLine(specialEventType, plain) : false;
+
+    const omit = omitRaw || omitSpecial;
 
     // forward to chat probe + terminal
     let end = rawText.length;
@@ -619,7 +643,6 @@ export class UserScriptRuntime {
       });
     }
 
-    // IMPORTANT: if omitted, do not forward original line to terminal
     if (!omit) {
       DispatchEvent('shatteredarchive:write-terminal', payload);
     }
@@ -652,6 +675,7 @@ export class UserScriptRuntime {
     if (damage) {
       eventName = 'event:damage';
       DispatchEvent(eventName, {
+        rawText: line,
         ...damage,
       });
       return eventName;

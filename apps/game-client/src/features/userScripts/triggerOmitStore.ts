@@ -6,15 +6,17 @@ import { safeTrim } from './safeTrim';
 export type OmitRule = {
   id: string;
   eventName: string;
-  matchText: string;
+  matchText?: string; // optional now
   caseInsensitive?: boolean;
+  omitAll?: boolean;
 };
 
 type Compiled = {
   id: string;
   eventName: string;
-  needle: string;
+  needle: string; // may be ''
   caseInsensitive: boolean;
+  omitAll: boolean;
 };
 
 let compiled: Compiled[] = [];
@@ -23,36 +25,57 @@ export function setOmitRules(rules: OmitRule[], connectionId: string) {
   const next: Compiled[] = [];
 
   for (const r of rules) {
-    const raw = safeTrim(r.matchText);
+    const eventName = safeTrim(r.eventName);
+    if (!eventName) continue;
+
+    const omitAll = r.omitAll === true;
+
+    // If omitAll, we keep the rule even with no needle.
+    if (omitAll) {
+      next.push({
+        id: r.id,
+        eventName,
+        needle: '',
+        caseInsensitive: r.caseInsensitive === true,
+        omitAll: true,
+      });
+      continue;
+    }
+
+    const raw = safeTrim(r.matchText ?? '');
     if (!raw) continue;
 
-    // Expand globals. If expansion yields empty, SKIP the rule.
     const expanded = expandMatchTextWithGlobals(raw, (key) => getGlobalVar(connectionId, key)) ?? '';
-
     const needle = safeTrim(expanded);
-    if (!needle) continue; // <- critical fix (prevents includes('') => true)
+    if (!needle) continue; // critical: prevents includes('') => true
 
     next.push({
       id: r.id,
-      eventName: safeTrim(r.eventName),
+      eventName,
       needle,
       caseInsensitive: r.caseInsensitive === true,
+      omitAll: false,
     });
   }
 
   compiled = next;
 }
 
-export function shouldOmitLine(line: string): boolean {
+export function shouldOmitLine(eventName: string, line: string): boolean {
   if (compiled.length === 0) return false;
+
+  const ev = safeTrim(eventName);
+  if (!ev) return false;
 
   let lower: string | null = null;
 
   for (const r of compiled) {
-    // Also guard here, in case something slips through.
+    if (r.eventName !== ev) continue;
+
+    if (r.omitAll) return true;
+
     if (!r.needle) continue;
 
-    // You currently ignore caseInsensitive; leaving behavior as-is per your request.
     if (r.caseInsensitive) {
       if (lower === null) lower = line.toLowerCase();
       if (lower.includes(r.needle.toLowerCase())) return true;

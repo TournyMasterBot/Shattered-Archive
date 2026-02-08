@@ -73,7 +73,7 @@ export class ShatteredArchiveTerminal {
       });
       */
 
-      if (!payload.fromUserScript && shouldOmitLine(payload.rawText)) {
+      if (!payload.fromUserScript && shouldOmitLine('shatteredarchive:raw-data', payload.rawText)) {
         return;
       }
 
