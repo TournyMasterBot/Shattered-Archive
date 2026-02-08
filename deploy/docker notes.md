@@ -7,3 +7,7 @@ docker compose -f deploy/docker-compose.yml -p shatteredarchive-prod logs -f --t
 # Manual kick
 docker compose -f deploy/docker-compose.yml -p shatteredarchive-prod up -d --build --remove-orphans
 
+# Nginx being a butt
+docker rm -f shatteredarchive-nginx
+cd ~/src/shatteredarchive/deploy
+docker compose up -d --no-deps nginx
