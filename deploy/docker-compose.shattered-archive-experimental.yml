@@ -60,7 +60,6 @@ services:
     healthcheck:
       # If wget is not available in your nginx image, replace with:
       # test: ["CMD-SHELL", "curl -fsS http://localhost/ >/dev/null || exit 1"]
-      test: ["CMD-SHELL", "wget -q --spider --max-redirect=0 http://127.0.0.1/ || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 10
