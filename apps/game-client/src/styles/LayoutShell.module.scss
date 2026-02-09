@@ -97,7 +97,7 @@
    BOTTOM PANE
 -------------------------------------------------- */
 .bottomPane {
-  height: var(--bottom-pane-height);
+  height: 160px !important;
   min-height: 120px;
   max-height: 60%;
 
@@ -165,9 +165,6 @@
   flex-shrink: 0;
 
   position: relative;
-
-  /* allow touch / pointer dragging without scrolling */
-  touch-action: none;
 }
 
 .horizontalResizer:hover {
@@ -438,7 +435,7 @@
   /* Let JS/CSS var drive this so it can be taller */
   .bottomPane {
     height: var(--bottom-pane-height);
-    min-height: 140px;
+    min-height: 120px;
     max-height: 70%;
     overflow: hidden;
   }
@@ -446,8 +443,8 @@
 
 @media (max-width: 600px) {
   .bottomPane {
-    min-height: 160px;
-    max-height: 75%;
+    min-height: 120px;
+    max-height: 70%;
   }
 }
 

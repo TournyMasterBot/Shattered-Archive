@@ -42,6 +42,9 @@
   position: relative;
   overflow: hidden;
   display: flex;
+
+  /* We implement touch drag-scroll ourselves; prevent page panning */
+  touch-action: none;
 }
 
 /* Apply font stack + desired size on the container */
