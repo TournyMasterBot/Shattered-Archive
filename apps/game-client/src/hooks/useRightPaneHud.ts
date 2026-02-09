@@ -1,5 +1,5 @@
 // apps/game-client/src/hooks/useRightPaneHud.ts
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ListenEvent } from '../features/event-emitter/event-dispatcher';
 
 /** Re-export so existing imports keep working */
@@ -41,21 +41,15 @@ function isRecord(v: unknown): v is AnyRecord {
   return typeof v === 'object' && v !== null;
 }
 
-function getDetail(ev: Event): unknown {
-  // We accept any CustomEvent payloads, but we don't assume the shape.
-  const ce = ev as CustomEvent<unknown>;
-  return ce.detail;
-}
-
 function toNum(x: unknown): number | undefined {
   const n = Number(x);
   return Number.isFinite(n) ? n : undefined;
 }
 
 function applyVitalsPatch(prev: VitalsState, detail: unknown): VitalsState {
-  // Supports BOTH shapes:
-  // - legacy custom event: { hp, hpMax, mp, mpMax, stamina, staminaMax } (+ mv/mvMax)
-  // - GMCP char_data payload: { hp, max_hp, mana, max_mana, move, max_move }
+  // Supports:
+  // - legacy: { hp, hpMax, mp, mpMax, stamina, staminaMax }
+  // - GMCP char_data: { hp, max_hp, mana, max_mana, move, max_move }
   const d = isRecord(detail) ? detail : {};
 
   const hp = toNum(d.hp);
@@ -77,12 +71,20 @@ function applyVitalsPatch(prev: VitalsState, detail: unknown): VitalsState {
   };
 }
 
+function makeInstanceKey(prefix: string): string {
+  // stable-enough randomness for per-mount uniqueness
+  return `${prefix}::${Math.random().toString(16).slice(2)}`;
+}
+
 /**
  * Player vitals from GMCP.
  *
- * Supports:
- *  - "game:char-data" (from useGameConnection's GMCP char_data)
- *  - "game:gmcp-vitals" (legacy/custom bridge, kept for compatibility)
+ * Source of truth:
+ *  - "game:char-data"
+ *
+ * IMPORTANT:
+ * Multiple components can mount this hook (RightSidebar + FocusBar).
+ * Listener keys MUST be unique per instance, otherwise one will clobber the other.
  */
 export function useVitalsState(): VitalsState {
   const [vitals, setVitals] = useState<VitalsState>({
@@ -94,29 +96,18 @@ export function useVitalsState(): VitalsState {
     staminaMax: 0,
   });
 
-  useEffect(() => {
-    const disposeVitals = ListenEvent<any>(
-      'game:gmcp-vitals',
-      (payload) => {
-        setVitals((prev) => applyVitalsPatch(prev, payload));
-      },
-      { key: 'useVitalsState::game:gmcp-vitals' },
-    );
+  const keyRef = useRef<string>(makeInstanceKey('useVitalsState::game:char-data'));
 
+  useEffect(() => {
     const disposeChar = ListenEvent<any>(
       'game:char-data',
       (payload) => {
         setVitals((prev) => applyVitalsPatch(prev, payload));
       },
-      { key: 'useVitalsState::game:char-data' },
+      { key: keyRef.current },
     );
 
     return () => {
-      try {
-        disposeVitals?.();
-      } catch {
-        // ignore
-      }
       try {
         disposeChar?.();
       } catch {
@@ -139,13 +130,14 @@ export function useEnemyHudState(): EnemyHudState {
     statusText: '',
   });
 
+  const keyRef = useRef<string>(makeInstanceKey('useEnemyHudState::event:enemy-hp'));
+
   // TMB TODO : This is probably the wrong event to listen to now,
   // review for correct event
   useEffect(() => {
     const dispose = ListenEvent<any>(
       'event:enemy-hp',
       (payload) => {
-        // payload is CustomEvent.detail
         const d = isRecord(payload) ? payload : {};
 
         const visible = typeof d.visible === 'boolean' ? d.visible : undefined;
@@ -163,7 +155,7 @@ export function useEnemyHudState(): EnemyHudState {
           statusText: statusText ?? prev.statusText,
         }));
       },
-      { key: 'useEnemyHpState::dsl:enemy-hp' },
+      { key: keyRef.current },
     );
 
     return () => {
@@ -182,18 +174,21 @@ export function useEnemyHudState(): EnemyHudState {
  * Affects state.
  *
  * Supported events:
- *   dsl:affects-sync   – full replace: { affects: AffectEntry[] }
- *   dsl:affects-add    – add/update:   { affect: AffectEntry }
- *   dsl:affects-remove – remove by id: { id: string }
+ *   game:affects-sync   – full replace: { affects: AffectEntry[] }
+ *   game:affects-add    – add/update:   { affect: AffectEntry }
+ *   game:affects-remove – remove by id: { id: string }
  */
 export function useAffectsState(): AffectEntry[] {
   const [affects, setAffects] = useState<AffectEntry[]>([]);
+
+  const syncKeyRef = useRef<string>(makeInstanceKey('useAffectsState::game:affects-sync'));
+  const addKeyRef = useRef<string>(makeInstanceKey('useAffectsState::game:affects-add'));
+  const remKeyRef = useRef<string>(makeInstanceKey('useAffectsState::game:affects-remove'));
 
   useEffect(() => {
     const disposeSync = ListenEvent<any>(
       'game:affects-sync',
       (payload) => {
-        // payload is CustomEvent.detail
         const d = isRecord(payload) ? payload : {};
         const raw = (d as any).affects;
 
@@ -210,7 +205,7 @@ export function useAffectsState(): AffectEntry[] {
 
         setAffects(list);
       },
-      { key: 'useAffectsState::dsl:affects-sync' },
+      { key: syncKeyRef.current },
     );
 
     const disposeAdd = ListenEvent<any>(
@@ -237,7 +232,7 @@ export function useAffectsState(): AffectEntry[] {
           return next;
         });
       },
-      { key: 'useAffectsState::dsl:affects-add' },
+      { key: addKeyRef.current },
     );
 
     const disposeRemove = ListenEvent<any>(
@@ -249,25 +244,19 @@ export function useAffectsState(): AffectEntry[] {
 
         setAffects((prev) => prev.filter((a) => a.id !== id));
       },
-      { key: 'useAffectsState::dsl:affects-remove' },
+      { key: remKeyRef.current },
     );
 
     return () => {
       try {
         disposeSync?.();
-      } catch {
-        // ignore
-      }
+      } catch {}
       try {
         disposeAdd?.();
-      } catch {
-        // ignore
-      }
+      } catch {}
       try {
         disposeRemove?.();
-      } catch {
-        // ignore
-      }
+      } catch {}
     };
   }, []);
 
@@ -278,18 +267,17 @@ export function useAffectsState(): AffectEntry[] {
  * Compass exits.
  *
  * Expect:
- *   DispatchEvent('dsl:room-exits', {
- *    { exits: ["N","E","S","D"] }
- *   }));
+ *   DispatchEvent('dsl:room-exits', { exits: ["N","E","S","D"] }));
  */
 export function useCompassState(): CompassState {
   const [exits, setExits] = useState<Set<CompassDirection>>(new Set());
+
+  const keyRef = useRef<string>(makeInstanceKey('useCompassState::dsl:room-exits'));
 
   useEffect(() => {
     const dispose = ListenEvent<any>(
       'dsl:room-exits',
       (payload) => {
-        // payload is CustomEvent.detail
         const d = isRecord(payload) ? payload : {};
         const raw = (d as any).exits;
 
@@ -319,7 +307,7 @@ export function useCompassState(): CompassState {
 
         setExits(next);
       },
-      { key: 'useCompassState::dsl:room-exits' },
+      { key: keyRef.current },
     );
 
     return () => {

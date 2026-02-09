@@ -1,4 +1,4 @@
-// apps\game-client\src\components\AffectsBlock.tsx
+// apps/game-client/src/components/AffectsBlock.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import styles from '../styles/LayoutShell.module.scss';
 import { useAffectsBlock } from '../hooks/useAffectsBlock';
@@ -34,6 +34,12 @@ function saveSettings(s: AffectsUiSettings) {
   }
 }
 
+function getDurationClass(d: number): string {
+  if (d <= 0) return styles.affectDurationRed;
+  if (d === 1) return styles.affectDurationYellow;
+  return '';
+}
+
 export const AffectsBlock: React.FC = () => {
   const { affects, timeOfDay } = useAffectsBlock();
 
@@ -44,7 +50,6 @@ export const AffectsBlock: React.FC = () => {
     saveSettings(ui);
   }, [ui]);
 
-  // Group by location only; sum modifiers; do NOT sum durations.
   const aggregates = useMemo(() => {
     const map = new Map<string, { lc: string; sumM: number; count: number }>();
 
@@ -59,7 +64,6 @@ export const AffectsBlock: React.FC = () => {
       }
     }
 
-    // Sort: largest absolute modifier first, then location name
     return Array.from(map.values()).sort((x, y) => {
       const ax = Math.abs(x.sumM);
       const ay = Math.abs(y.sumM);
@@ -75,7 +79,6 @@ export const AffectsBlock: React.FC = () => {
   return (
     <div className={styles.affectsBlock}>
       <div className={styles.affectsHeader}>
-        {/* Left: gear + menu */}
         <div className={styles.affectsMenuWrap}>
           <button
             type="button"
@@ -122,15 +125,11 @@ export const AffectsBlock: React.FC = () => {
           )}
         </div>
 
-        {/* Middle: title */}
         <div className={styles.affectsTitle}>Affects Summary</div>
-
-        {/* Right: time (optional) */}
         <div className={styles.affectsTime}>{ui.showTime ? timeOfDay : ''}</div>
       </div>
 
       <div className={styles.affectsScroll}>
-        {/* Aggregates at top */}
         {ui.showAggregates && aggregates.length > 0 && (
           <div className={styles.affectsAggregatesSection}>
             {aggregates.map((g) => (
@@ -145,29 +144,37 @@ export const AffectsBlock: React.FC = () => {
           </div>
         )}
 
-        {/* Affects list */}
         {ui.showAffects && (
           <>
             {affects.length === 0 && <div className={styles.affectEmpty}>No active affects.</div>}
 
-            {affects.map((a) => (
-              <div key={`${a.n}|${a.lc}|${a.m}|${a.t}|${a.d}`} className={styles.affectItem}>
-                <div className={styles.affectName}>
-                  {a.n} <span style={{ opacity: 0.7 }}>({a.d})</span>
-                </div>
+            {affects.map((a) => {
+              const durationClass = getDurationClass(a.d);
 
-                {(a.lc && a.lc !== 'none') || a.m !== 0 ? (
-                  <div className={styles.affectDetails}>
-                    {a.lc && a.lc !== 'none' ? `${a.lc}: ` : ''}
-                    {a.m}
+              return (
+                <div key={`${a.n}|${a.lc}|${a.m}|${a.t}|${a.d}`} className={styles.affectItem}>
+                  <div className={styles.affectName}>
+                    {a.n}{' '}
+                    <span
+                      className={durationClass}
+                      data-duration-class={durationClass || 'none'}
+                      style={{ opacity: 0.7 }}
+                    >
+                      ({a.d})
+                    </span>
                   </div>
-                ) : null}
-              </div>
-            ))}
+
+                  {(a.lc && a.lc !== 'none') || a.m !== 0 ? (
+                    <div className={styles.affectDetails}>
+                      {a.lc && a.lc !== 'none' ? `${a.lc}: ` : ''}
+                      {a.m}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
           </>
         )}
-
-        {/* If both are hidden, just keep the scroll area empty (space reserved). */}
       </div>
     </div>
   );

@@ -32,7 +32,27 @@ export const Terminal: React.FC = () => {
       });
     };
 
-    scheduleFit();
+    const fitAfterFonts = async () => {
+      // On hard refresh, fonts may not be ready when xterm measures,
+      // so the canvas can render at a smaller “fallback” metric.
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fonts: any = (document as any).fonts;
+        if (fonts?.ready) {
+          await fonts.ready;
+        }
+      } catch {
+        // ignore
+      }
+
+      scheduleFit();
+
+      // One extra delayed fit helps with late font swaps / layout settle.
+      window.setTimeout(() => scheduleFit(), 50);
+      window.setTimeout(() => scheduleFit(), 250);
+    };
+
+    fitAfterFonts();
 
     const ro = new ResizeObserver(() => scheduleFit());
     ro.observe(el);

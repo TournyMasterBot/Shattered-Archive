@@ -2,6 +2,7 @@
 import React from 'react';
 import styles from '../styles/FocusBar.module.scss';
 import { useTickTimer, useVitalsState } from '../hooks/useRightPaneHud';
+import { useSanctuaryActive } from '../hooks/useSanctuaryActive';
 
 interface FocusBarProps {
   label?: string;
@@ -10,6 +11,7 @@ interface FocusBarProps {
 export const FocusBar: React.FC<FocusBarProps> = ({ label = 'Vitals' }) => {
   const { remaining } = useTickTimer(41);
   const vitals = useVitalsState();
+  const { hasSanctuary } = useSanctuaryActive();
 
   const pct = (value: number, max: number) => (max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0);
 
@@ -25,7 +27,7 @@ export const FocusBar: React.FC<FocusBarProps> = ({ label = 'Vitals' }) => {
         </span>
 
         <div className={styles.focusBarVitalsGroup}>
-          <div className={styles.focusBarVitalRow}>
+          <div className={`${styles.focusBarVitalRow} ${hasSanctuary ? styles.hpSanctuary : ''}`}>
             <span className={styles.focusBarVitalName}>HP</span>
             <div className={styles.focusBarVitalTrack}>
               <div className={styles.focusBarVitalFillHp} style={{ width: `${hpPct}%` }} />

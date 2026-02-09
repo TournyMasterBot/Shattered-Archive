@@ -12,7 +12,6 @@ import { useLayoutSizing, useUserCssOverrides, useMainContainer } from '../hooks
 import { usePlugins } from '../hooks/usePlugins';
 
 import { MainMenuBar } from '../components/MainMenuBar';
-import { FocusBar } from '../components/FocusBar';
 import { LayoutShell } from '../components/LayoutShell';
 import { useGameConnection } from '../hooks/useGameConnection';
 
@@ -32,6 +31,8 @@ import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
 import { useTerminal } from '../hooks/useTerminal';
 import { ShatteredArchiveTerminal } from '../features/terminal/shatteredArchiveTerminal';
 import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
+import FocusBarVitals from '../components/FocusBarVitals';
+import FocusBar from '../components/FocusBar';
 
 export const MainContainer: React.FC = () => {
   useVisualViewportHeight();
@@ -128,7 +129,7 @@ export const MainContainer: React.FC = () => {
         onOpenAutoLeveling={handleOpenAutoLeveling}
       />
 
-      <FocusBar />
+      <FocusBarVitals />
 
       <LayoutShell
         layoutVars={layoutVars}

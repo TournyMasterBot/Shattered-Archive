@@ -33,7 +33,40 @@ export class ShatteredArchiveTerminal {
   public attach(term: XTerm, fitAddon: FitAddon): void {
     this.term = term;
     this.fit = fitAddon;
+
+    // Source-of-truth font settings for xterm (canvas glyphs).
+    // CSS alone does not reliably affect rendered glyph size.
+    try {
+      // Prefer setOption when available, otherwise fall back to options assignment.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const anyTerm = term as any;
+
+      const fontFamily =
+        `"Cascadia Mono","Cascadia Code","JetBrains Mono",` +
+        `ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,` +
+        `"Liberation Mono","DejaVu Sans Mono",monospace`;
+
+      if (typeof anyTerm.setOption === 'function') {
+        anyTerm.setOption('fontSize', 16);
+        anyTerm.setOption('lineHeight', 1.2);
+        anyTerm.setOption('fontFamily', fontFamily);
+        // Helps when high DPI looks “fuzzy” after refresh in some setups
+        anyTerm.setOption('letterSpacing', 0);
+      } else if (anyTerm.options) {
+        anyTerm.options.fontSize = 16;
+        anyTerm.options.lineHeight = 1.2;
+        anyTerm.options.fontFamily = fontFamily;
+        anyTerm.options.letterSpacing = 0;
+      }
+    } catch {
+      // ignore
+    }
+
+    // Fit immediately, then re-fit once fonts are ready.
     this.Fit();
+    this.refreshAll();
+
+    this.fitAfterFontsReady();
   }
 
   public detach(): void {
@@ -57,6 +90,53 @@ export class ShatteredArchiveTerminal {
     }
   }
 
+  private refreshAll(): void {
+    const t = this.term;
+    if (!t) return;
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const anyTerm = t as any;
+      if (typeof anyTerm.refresh === 'function' && Number.isFinite(anyTerm.rows) && anyTerm.rows > 0) {
+        anyTerm.refresh(0, Math.max(0, anyTerm.rows - 1));
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  private fitAfterFontsReady(): void {
+    // On hard refresh, xterm may measure before preferred fonts load.
+    // Waiting for document.fonts.ready, then fit+refresh, fixes “HMR ok / refresh bad”.
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fonts = (document as any).fonts;
+      if (!fonts?.ready) return;
+
+      void fonts.ready
+        .then(() => {
+          this.Fit();
+          this.refreshAll();
+
+          // One extra delayed fit helps with late font swaps/layout settle.
+          window.setTimeout(() => {
+            this.Fit();
+            this.refreshAll();
+          }, 50);
+
+          window.setTimeout(() => {
+            this.Fit();
+            this.refreshAll();
+          }, 250);
+        })
+        .catch(() => {
+          // ignore
+        });
+    } catch {
+      // ignore
+    }
+  }
+
   private attachWindowEvents(): void {
     if (ShatteredArchiveTerminal._windowEventsRegistered) return;
 
@@ -66,12 +146,6 @@ export class ShatteredArchiveTerminal {
 
       const raw = payload.rawText;
       if (!raw) return;
-      /*DEBUG
-      console.log("Preparing to check terminal output", {
-        payload,
-        shouldOmit: shouldOmitLine(payload.rawText)
-      });
-      */
 
       if (!payload.fromUserScript && shouldOmitLine('shatteredarchive:raw-data', payload.rawText)) {
         return;
@@ -84,7 +158,6 @@ export class ShatteredArchiveTerminal {
         scrollable = t.element.querySelector('.xterm-scrollable-element') as HTMLDivElement | null;
         if (scrollable) {
           prevScrollTop = scrollable.scrollTop;
-          // DEBUG console.log('[shatteredArchiveTerminal] save scrollTop', prevScrollTop);
         }
       }
 
@@ -97,9 +170,7 @@ export class ShatteredArchiveTerminal {
           // ignore
         }
       } else if (scrollable && prevScrollTop !== null) {
-        // Restore previous scroll position
         scrollable.scrollTop = prevScrollTop;
-        //DEBUG : console.log('[shatteredArchiveTerminal] restore scrollTop', prevScrollTop);
       }
     });
 

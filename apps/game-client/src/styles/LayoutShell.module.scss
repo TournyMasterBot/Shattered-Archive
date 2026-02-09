@@ -63,6 +63,36 @@
   padding-left: 5px;
 }
 
+.terminalRoot {
+  /* crisp, modern monospace stack */
+  font-family:
+    'Bitstream Vera Sans Mono', ui-monospace, 'Cascadia Mono', 'Cascadia Code', 'JetBrains Mono', 'SFMono-Regular',
+    Menlo, Monaco, Consolas, 'Liberation Mono', 'DejaVu Sans Mono', monospace;
+
+  font-size: 16px !important;
+  line-height: 1.2 !important;
+
+  /* small readability tweaks */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+}
+
+/* xterm inherits font-family/font-size from its container in most cases */
+:global(.xterm) {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.affectDurationYellow {
+  color: #f5d000; /* yellow */
+}
+
+.affectDurationRed {
+  color: #ff4d4d; /* red */
+}
+
 /* -------------------------------------------------
    BOTTOM PANE
 -------------------------------------------------- */
@@ -128,7 +158,8 @@
 }
 
 .horizontalResizer {
-  height: 4px; /* visual line */
+  height: 4px;
+  /* visual line */
   cursor: row-resize;
   background: #252525;
   flex-shrink: 0;
@@ -149,7 +180,8 @@
   left: 0;
   right: 0;
   top: -10px;
-  bottom: -10px; /* total hit target ~24px tall */
+  bottom: -10px;
+  /* total hit target ~24px tall */
 }
 
 .horizontalResizer:focus-visible,
@@ -257,6 +289,18 @@
   min-width: 4.6rem;
   text-align: right;
   font-family: monospace;
+}
+
+.hpSanctuary {
+  .barTrack {
+    box-shadow:
+      0 0 0 2px rgba(255, 255, 255, 0.98),
+      0 0 0 4px rgba(255, 255, 255, 0.22);
+  }
+
+  .barFill {
+    filter: brightness(1.05);
+  }
 }
 
 /* Variants */
@@ -470,23 +514,28 @@
 
 /* Bucket colors */
 .enemyGreen .barFill {
-  background: #5cb85c; /* green */
+  background: #5cb85c;
+  /* green */
 }
 
 .enemyYellow .barFill {
-  background: #f0ad4e; /* yellow */
+  background: #f0ad4e;
+  /* yellow */
 }
 
 .enemyRedOrange .barFill {
-  background: #ff6f3c; /* red-orange */
+  background: #ff6f3c;
+  /* red-orange */
 }
 
 .enemyBurnishedRed .barFill {
-  background: #b22222; /* burnished red */
+  background: #b22222;
+  /* burnished red */
 }
 
 .enemyBrightRed .barFill {
-  background: #ff3b30; /* bright red */
+  background: #ff3b30;
+  /* bright red */
 }
 
 /* Enemy track overlay support */
@@ -511,10 +560,12 @@
     opacity: 0.05;
     filter: brightness(1);
   }
+
   45% {
     opacity: 0.75;
     filter: brightness(1.25);
   }
+
   100% {
     opacity: 0.05;
     filter: brightness(1);
@@ -562,7 +613,8 @@
 .hudConfigPanel {
   position: absolute;
   top: 22px;
-  left: 0; /* anchor under the gear */
+  left: 0;
+  /* anchor under the gear */
   z-index: 20;
 
   background: #101010;
@@ -645,10 +697,13 @@
   position: absolute;
   top: 22px;
 
-  left: 0; /* open to the right */
-  right: auto; /* IMPORTANT: ensure right anchoring is off */
+  left: 0;
+  /* open to the right */
+  right: auto;
+  /* IMPORTANT: ensure right anchoring is off */
 
-  max-width: calc(100% - 4px); /* prevents overflow on narrow panes */
+  max-width: calc(100% - 4px);
+  /* prevents overflow on narrow panes */
   z-index: 50;
 
   background: #141414;
@@ -742,7 +797,8 @@
 }
 
 .affectsAggregateText {
-  color: #a7d7a7; /* pale green */
+  color: #a7d7a7;
+  /* pale green */
 }
 
 .chatRoot {
@@ -790,9 +846,11 @@
 .chatPills::-webkit-scrollbar {
   height: 8px;
 }
+
 .chatPills::-webkit-scrollbar-track {
   background: #141414;
 }
+
 .chatPills::-webkit-scrollbar-thumb {
   background: #444;
   border-radius: 4px;
@@ -1034,9 +1092,11 @@
 .chatMenuScroll::-webkit-scrollbar {
   width: 8px;
 }
+
 .chatMenuScroll::-webkit-scrollbar-track {
   background: #101010;
 }
+
 .chatMenuScroll::-webkit-scrollbar-thumb {
   background: #444;
   border-radius: 4px;

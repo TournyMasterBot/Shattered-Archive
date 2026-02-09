@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styles from '../styles/LayoutShell.module.scss';
 import { useStatusBlockViewModel } from '../hooks/useLayoutShell';
+import { useSanctuaryActive } from '../hooks/useSanctuaryActive';
 import AffectsBlock from './AffectsBlock';
 import CompassBlock from './CompassBlock';
 import RoomHeader from './RoomHeader';
@@ -47,6 +48,7 @@ const HUD_STORAGE_KEY = 'shatteredarchive:hud:statusBlock';
 
 const StatusBlock: React.FC = () => {
   const { remaining, vitals, hpPct, mpPct, staPct, ancillary } = useStatusBlockViewModel();
+  const { hasSanctuary } = useSanctuaryActive();
 
   // HUD toggle state (persisted)
   const [hud, setHud] = useState<HudToggles>(
@@ -296,7 +298,7 @@ const StatusBlock: React.FC = () => {
       {/* Vitals + enemy bars */}
       <div className={styles.barGroup}>
         {hud.hp && (
-          <div className={`${styles.barRow} ${styles.barHp}`}>
+          <div className={`${styles.barRow} ${styles.barHp} ${hasSanctuary ? styles.hpSanctuary : ''}`}>
             <span className={styles.barLabel}>HP</span>
             <div className={styles.barTrack}>
               <div className={styles.barFill} style={{ width: `${hpPct}%` }} />

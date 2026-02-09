@@ -1,5 +1,38 @@
 /* apps/game-client/src/styles/Terminal.module.scss */
 
+/* Register VeraMono from /public/fonts */
+@font-face {
+  font-family: 'VeraMono';
+  src: url('/fonts/VeraMono.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'VeraMono';
+  src: url('/fonts/VeraMono-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'VeraMono';
+  src: url('/fonts/VeraMono-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'VeraMono';
+  src: url('/fonts/VeraMono-Bold-Italic.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
 /* Terminal container inside play area */
 .playAreaTerminalWrapper {
   width: 100%;
@@ -11,11 +44,33 @@
   display: flex;
 }
 
+/* Apply font stack + desired size on the container */
 .playAreaTerminal {
   flex: 1;
   min-height: 0;
   min-width: 0;
   overflow: hidden;
+
+  /* VeraMono first, then fallbacks */
+  font-family:
+    'Bitstream Vera Sans Mono', 'VeraMono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'DejaVu Sans Mono', monospace;
+
+  /* Slightly smaller than 16 to reduce “bold” look */
+  font-size: 13px;
+
+  /* Don’t force text-rendering; it can make things look heavier/fuzzier */
+  font-weight: 400;
+}
+
+/* Helps xterm DOM bits inherit the same font */
+.playAreaTerminal :global(.xterm),
+.playAreaTerminal :global(.xterm-rows),
+.playAreaTerminal :global(.xterm-screen) {
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  font-weight: inherit !important;
 }
 
 /* Jump-to-live button */
