@@ -33,7 +33,6 @@ import { useTerminal } from '../hooks/useTerminal';
 import { ShatteredArchiveTerminal } from '../features/terminal/shatteredArchiveTerminal';
 import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 import FocusBarVitals from '../components/FocusBarVitals';
-import FocusBar from '../components/FocusBar';
 
 export const MainContainer: React.FC = () => {
   useVisualViewportHeight();
