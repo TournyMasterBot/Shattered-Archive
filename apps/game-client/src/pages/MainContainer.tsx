@@ -1,3 +1,4 @@
+// apps\game-client\src\pages\MainContainer.tsx
 import React from 'react';
 import styles from '../styles/MainContainer.module.scss';
 import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight';

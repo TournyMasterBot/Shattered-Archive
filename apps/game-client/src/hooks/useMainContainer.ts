@@ -17,6 +17,9 @@ const MIN_BOTTOM_HEIGHT = 120;
 /** Max height of BottomPane.tsx */
 const MAX_BOTTOM_HEIGHT = 480;
 
+const LS_RIGHT_WIDTH = 'shatteredArchive.layout.rightPaneWidth';
+const LS_BOTTOM_HEIGHT = 'shatteredArchive.layout.bottomPaneHeight';
+
 /* -------------------------------------------
    User CSS constants / helpers
 -------------------------------------------- */
@@ -233,8 +236,42 @@ ${accessibilityCss ?? ''}
    Layout sizing
 -------------------------------------------- */
 export function useLayoutSizing() {
-  const [rightWidth, setRightWidth] = useState(320);
-  const [bottomHeight, setBottomHeight] = useState(220);
+  const [rightWidth, setRightWidth] = useState(() => {
+    try {
+      const raw = window.localStorage.getItem(LS_RIGHT_WIDTH);
+      const n = raw ? Number(raw) : NaN;
+      return Number.isFinite(n) ? clamp(n, MIN_RIGHT_WIDTH, MAX_RIGHT_WIDTH) : 320;
+    } catch {
+      return 320;
+    }
+  });
+
+  const [bottomHeight, setBottomHeight] = useState(() => {
+    try {
+      const raw = window.localStorage.getItem(LS_BOTTOM_HEIGHT);
+      const n = raw ? Number(raw) : NaN;
+      return Number.isFinite(n) ? clamp(n, MIN_BOTTOM_HEIGHT, MAX_BOTTOM_HEIGHT) : 220;
+    } catch {
+      return 220;
+    }
+  });
+
+  // Persist on change
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(LS_RIGHT_WIDTH, String(rightWidth));
+    } catch {
+      // ignore
+    }
+  }, [rightWidth]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(LS_BOTTOM_HEIGHT, String(bottomHeight));
+    } catch {
+      // ignore
+    }
+  }, [bottomHeight]);
 
   const layoutVars: CSSProperties = {
     '--right-pane-width': `${rightWidth}px`,
@@ -248,25 +285,19 @@ export function useLayoutSizing() {
       const startX = e.clientX;
       const startWidth = rightWidth;
 
-      let isActive = true;
-
       const onMouseMove = (ev: MouseEvent) => {
-        if (!isActive) return;
-
         const delta = startX - ev.clientX;
-        let nextWidth = startWidth + delta;
-        nextWidth = Math.min(MAX_RIGHT_WIDTH, Math.max(MIN_RIGHT_WIDTH, nextWidth));
+        const nextWidth = clamp(startWidth + delta, MIN_RIGHT_WIDTH, MAX_RIGHT_WIDTH);
         setRightWidth(nextWidth);
       };
 
       const onMouseUp = () => {
-        if (!isActive) return;
-        isActive = false;
-
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('mouseup', onMouseUp);
+        document.body.style.userSelect = '';
       };
 
+      document.body.style.userSelect = 'none';
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseup', onMouseUp);
     },
@@ -276,21 +307,23 @@ export function useLayoutSizing() {
   const handleHorizontalResizeMouseDown = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       e.preventDefault();
+
       const startY = e.clientY;
       const startHeight = bottomHeight;
 
       const onMouseMove = (ev: MouseEvent) => {
-        const delta = startY - ev.clientY;
-        let nextHeight = startHeight + delta;
-        nextHeight = Math.min(MAX_BOTTOM_HEIGHT, Math.max(MIN_BOTTOM_HEIGHT, nextHeight));
+        const delta = startY - ev.clientY; // move up => positive => grow
+        const nextHeight = clamp(startHeight + delta, MIN_BOTTOM_HEIGHT, MAX_BOTTOM_HEIGHT);
         setBottomHeight(nextHeight);
       };
 
       const onMouseUp = () => {
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('mouseup', onMouseUp);
+        document.body.style.userSelect = '';
       };
 
+      document.body.style.userSelect = 'none';
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseup', onMouseUp);
     },

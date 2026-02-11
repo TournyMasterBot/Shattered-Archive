@@ -1,0 +1,61 @@
+import { useEffect, useRef, useState } from 'react';
+
+type DamageChunk = {
+  /** where the chunk begins (the new value) */
+  leftPct: number;
+  /** how wide the lost portion is (prev - next) */
+  widthPct: number;
+  /** change this to restart CSS animation reliably */
+  pulseKey: number;
+};
+
+const CLEAR_MS = 2800; // 1.4s * 2 iterations
+
+function clampPct(n: number) {
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(100, n));
+}
+
+/**
+ * Tracks decreases in pct and returns an overlay segment
+ * representing the lost portion. Auto-clears after animation.
+ */
+export function useVitalsDamageChunk(pct: number): DamageChunk | null {
+  const prevRef = useRef<number>(clampPct(pct));
+  const timerRef = useRef<number | null>(null);
+
+  const [chunk, setChunk] = useState<DamageChunk | null>(null);
+
+  useEffect(() => {
+    const next = clampPct(pct);
+    const prev = prevRef.current;
+
+    // only animate on loss
+    if (next < prev) {
+      const lost = prev - next;
+
+      setChunk((c) => ({
+        leftPct: next,
+        widthPct: lost,
+        pulseKey: (c?.pulseKey ?? 0) + 1,
+      }));
+
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+      timerRef.current = window.setTimeout(() => {
+        setChunk(null);
+        timerRef.current = null;
+      }, CLEAR_MS);
+    }
+
+    prevRef.current = next;
+
+    return () => {
+      if (timerRef.current) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [pct]);
+
+  return chunk;
+}

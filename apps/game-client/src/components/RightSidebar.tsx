@@ -103,6 +103,12 @@ const StatusBlock: React.FC = () => {
   const [damageChunk, setDamageChunk] = useState<DamageChunk | null>(null);
   const chunkTimerRef = useRef<number | null>(null);
 
+  // HP movement overlay (restore)
+  type HpDeltaChunk = { leftPct: number; widthPct: number; key: number; opacity: number };
+  const [hpDeltaChunk, setHpDeltaChunk] = useState<HpDeltaChunk | null>(null);
+  const hpChunkTimerRef = useRef<number | null>(null);
+  const lastHpPctRef = useRef<number | null>(null);
+
   // "Now" ticker so staleness can flip without new events
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -152,6 +158,43 @@ const StatusBlock: React.FC = () => {
         // ignore
       }
       if (chunkTimerRef.current) window.clearTimeout(chunkTimerRef.current);
+    };
+  }, []);
+
+  // Restore HP movement overlay:
+  // - Detect HP percent decreases
+  // - Render a pulsing overlay over the lost segment
+  // - Intensity scales with remaining life (lower hp => stronger)
+  useEffect(() => {
+    const prev = lastHpPctRef.current;
+
+    if (prev == null) {
+      lastHpPctRef.current = hpPct;
+      return;
+    }
+
+    if (hpPct < prev) {
+      const left = Math.max(0, Math.min(100, hpPct));
+      const width = Math.max(0, Math.min(100 - left, prev - hpPct));
+
+      if (width > 0.05) {
+        const life01 = Math.max(0, Math.min(100, hpPct)) / 100; // 0..1
+        const opacity = 0.12 + (1 - life01) * 0.60; // ~0.12..0.72
+
+        setHpDeltaChunk({ leftPct: left, widthPct: width, key: Date.now(), opacity });
+
+        if (hpChunkTimerRef.current) window.clearTimeout(hpChunkTimerRef.current);
+        hpChunkTimerRef.current = window.setTimeout(() => setHpDeltaChunk(null), 2200);
+      }
+    }
+
+    lastHpPctRef.current = hpPct;
+  }, [hpPct]);
+
+  // cleanup HP chunk timer
+  useEffect(() => {
+    return () => {
+      if (hpChunkTimerRef.current) window.clearTimeout(hpChunkTimerRef.current);
     };
   }, []);
 
@@ -300,9 +343,23 @@ const StatusBlock: React.FC = () => {
         {hud.hp && (
           <div className={`${styles.barRow} ${styles.barHp} ${hasSanctuary ? styles.hpSanctuary : ''}`}>
             <span className={styles.barLabel}>HP</span>
-            <div className={styles.barTrack}>
+
+            <div className={`${styles.barTrack} ${styles.hpTrack}`}>
               <div className={styles.barFill} style={{ width: `${hpPct}%` }} />
+
+              {hpDeltaChunk && hpDeltaChunk.widthPct > 0.05 && (
+                <div
+                  key={hpDeltaChunk.key}
+                  className={styles.hpDamageChunk}
+                  style={{
+                    left: `${hpDeltaChunk.leftPct}%`,
+                    width: `${hpDeltaChunk.widthPct}%`,
+                    opacity: hpDeltaChunk.opacity,
+                  }}
+                />
+              )}
             </div>
+
             <span className={styles.barValue}>
               {vitals.hp} / {vitals.hpMax}
             </span>

@@ -97,7 +97,7 @@
    BOTTOM PANE
 -------------------------------------------------- */
 .bottomPane {
-  height: 160px !important;
+  height: var(--bottom-pane-height);
   min-height: 120px;
   max-height: 60%;
 
@@ -327,6 +327,68 @@
   white-space: normal;
   line-height: 1.1;
   font-size: 0.7rem;
+}
+
+/* -------------------------------------------------
+   HP movement overlay (restored)
+-------------------------------------------------- */
+.hpTrack {
+  position: relative;
+}
+
+.hpDamageChunk {
+  @extend .vitalsDamageChunk;
+}
+
+/* use on any track that needs overlays */
+.vitalsTrack {
+  position: relative;
+}
+
+/* Shared damage overlay chunk (default = white pulse) */
+.vitalsDamageChunk {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 999px;
+  pointer-events: none;
+
+  background: rgba(255, 255, 255, 0.55);
+  animation: vitalsDamagePulse 1.4s ease-in-out 2 forwards;
+}
+
+@keyframes vitalsDamagePulse {
+  0% {
+    opacity: 0.05;
+    filter: brightness(1);
+  }
+
+  50% {
+    opacity: 1;
+    filter: brightness(1.5);
+  }
+
+  100% {
+    opacity: 0.05;
+    filter: brightness(1);
+  }
+}
+
+@keyframes hpDamagePulse {
+  0% {
+    opacity: 0.05;
+    filter: brightness(1);
+  }
+
+  50% {
+    opacity: 1;
+    filter: brightness(1.5);
+  }
+
+  100% {
+    opacity: 0.05;
+    filter: brightness(1);
+  }
 }
 
 /* -------------------------------------------------
@@ -664,7 +726,181 @@
   border-color: #4a4a4a;
 }
 
-/* Affects header gear + menu */
+/* HUD menu (positioned relative to the gear button now) */
+.hudConfigWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.hudConfigButton {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid #2d2d2d;
+  background: #121212;
+  color: #9a9a9a;
+  font-size: 12px;
+  line-height: 16px;
+  padding: 0;
+  cursor: pointer;
+
+  &:hover {
+    color: #e6e6e6;
+    border-color: #3a3a3a;
+    background: #161616;
+  }
+
+  &:active {
+    transform: translateY(0.5px);
+  }
+}
+
+.hudConfigPanel {
+  position: absolute;
+  top: 22px;
+  left: 0;
+  z-index: 20;
+
+  background: #101010;
+  border: 1px solid #2e2e2e;
+  border-radius: 10px;
+  padding: 6px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.hudToggleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background: #161616;
+  }
+}
+
+.hudToggleLabel {
+  font-size: 0.7rem;
+  color: #e0e0e0;
+  min-width: 44px;
+}
+
+.hudDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid #5a5a5a;
+  display: inline-block;
+}
+
+.hudDotOn {
+  background: #5cb85c;
+  border-color: #5cb85c;
+}
+
+.hudDotOff {
+  background: transparent;
+  border-color: #4a4a4a;
+}
+
+/* HUD menu (positioned relative to the gear button now) */
+.hudConfigWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.hudConfigButton {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid #2d2d2d;
+  background: #121212;
+  color: #9a9a9a;
+  font-size: 12px;
+  line-height: 16px;
+  padding: 0;
+  cursor: pointer;
+
+  &:hover {
+    color: #e6e6e6;
+    border-color: #3a3a3a;
+    background: #161616;
+  }
+
+  &:active {
+    transform: translateY(0.5px);
+  }
+}
+
+.hudConfigPanel {
+  position: absolute;
+  top: 22px;
+  left: 0;
+  z-index: 20;
+
+  background: #101010;
+  border: 1px solid #2e2e2e;
+  border-radius: 10px;
+  padding: 6px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.hudToggleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background: #161616;
+  }
+}
+
+.hudToggleLabel {
+  font-size: 0.7rem;
+  color: #e0e0e0;
+  min-width: 44px;
+}
+
+.hudDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid #5a5a5a;
+  display: inline-block;
+}
+
+.hudDotOn {
+  background: #5cb85c;
+  border-color: #5cb85c;
+}
+
+.hudDotOff {
+  background: transparent;
+  border-color: #4a4a4a;
+}
+
+/* -------------------------------------------------
+   Affects header gear + menu
+-------------------------------------------------- */
 .affectsMenuWrap {
   position: relative;
   display: inline-flex;
