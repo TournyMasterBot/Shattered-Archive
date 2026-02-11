@@ -66,7 +66,7 @@ export const Terminal: React.FC = () => {
     };
   }, [containerRef]);
 
-    // ✅ Touch drag-scroll + inertia: xterm doesn’t use native scrollTop; use terminal.scrollLines(...)
+  // ✅ Touch drag-scroll + inertia: xterm doesn’t use native scrollTop; use terminal.scrollLines(...)
   React.useEffect(() => {
     const host = containerRef.current;
     if (!host) return;
@@ -124,7 +124,7 @@ export const Terminal: React.FC = () => {
     // inertia state
     let inertiaRaf = 0;
     let velocityPxPerMs = 0; // positive = finger moving down
-    const carry = { v: 0 };  // carryPx remainder
+    const carry = { v: 0 }; // carryPx remainder
     let rowH = 18;
 
     const stopInertia = () => {
@@ -247,7 +247,6 @@ export const Terminal: React.FC = () => {
       scrollable.removeEventListener('pointercancel', onPointerUpOrCancel as any);
     };
   }, [containerRef]);
-
 
   const focusCommandInput = () => {
     const input = document.getElementById('game-command-input') as HTMLInputElement | null;

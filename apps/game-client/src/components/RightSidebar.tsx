@@ -188,7 +188,7 @@ const StatusBlock: React.FC = () => {
 
       if (width > 0.05) {
         const life01 = Math.max(0, Math.min(100, hpPct)) / 100; // 0..1
-        const opacity = 0.12 + (1 - life01) * 0.60; // ~0.12..0.72
+        const opacity = 0.12 + (1 - life01) * 0.6; // ~0.12..0.72
 
         setHpDeltaChunk({ leftPct: left, widthPct: width, key: Date.now(), opacity });
 
@@ -215,7 +215,7 @@ const StatusBlock: React.FC = () => {
 
       if (width > 0.05) {
         const life01 = Math.max(0, Math.min(100, mpPct)) / 100; // 0..1
-        const opacity = 0.12 + (1 - life01) * 0.60; // ~0.12..0.72
+        const opacity = 0.12 + (1 - life01) * 0.6; // ~0.12..0.72
 
         setMpDeltaChunk({ leftPct: left, widthPct: width, key: Date.now(), opacity });
 
@@ -242,7 +242,7 @@ const StatusBlock: React.FC = () => {
 
       if (width > 0.05) {
         const life01 = Math.max(0, Math.min(100, staPct)) / 100; // 0..1
-        const opacity = 0.12 + (1 - life01) * 0.60; // ~0.12..0.72
+        const opacity = 0.12 + (1 - life01) * 0.6; // ~0.12..0.72
 
         setStaDeltaChunk({ leftPct: left, widthPct: width, key: Date.now(), opacity });
 
