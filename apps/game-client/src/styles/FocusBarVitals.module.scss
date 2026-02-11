@@ -104,3 +104,49 @@
 .focusBarVitalFillSta {
   background: #ffdf7a;
 }
+
+/* -------------------------------------------------
+   Vitals movement overlay (HP/MP/STA)
+-------------------------------------------------- */
+
+.focusBarVitalTrack {
+  position: relative;
+}
+
+.vitalsDamageChunk {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 999px;
+  pointer-events: none;
+
+  background: rgba(255, 255, 255, 0.55);
+  animation: vitalsDamagePulse 1.4s ease-in-out 2 forwards;
+
+  z-index: 2;
+}
+
+/* keep the fill below the overlay */
+.focusBarVitalFillHp,
+.focusBarVitalFillMp,
+.focusBarVitalFillSta {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes vitalsDamagePulse {
+  0% {
+    opacity: 0.05;
+    filter: brightness(1);
+  }
+
+  50% {
+    opacity: 1;
+    filter: brightness(1.5);
+  }
+
+  100% {
+    opacity: 0.05;
+    filter: brightness(1);
+  }
+}

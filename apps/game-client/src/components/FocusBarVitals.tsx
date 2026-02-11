@@ -13,11 +13,6 @@ export const FocusBarVitals: React.FC = () => {
   const mpChunk = useVitalsDamageChunk(mpPct);
   const staChunk = useVitalsDamageChunk(staPct);
 
-  React.useEffect(() => {
-  // remove after verifying
-  console.log('[focus vitals pct]', { hpPct, mpPct, staPct });
-}, [hpPct, mpPct, staPct]);
-
   return (
     <div className={styles.focusBar}>
       <div className={styles.focusBarContent}>
