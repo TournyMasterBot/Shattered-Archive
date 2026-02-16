@@ -1,3 +1,4 @@
+// apps\game-client\src\hooks\useMainContainer.ts
 import { useState, useEffect, useCallback, CSSProperties, useRef } from 'react';
 import type React from 'react';
 import { initBrowserLuaRunner } from '../features/userScripts/luaRuntime';

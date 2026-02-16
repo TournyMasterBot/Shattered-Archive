@@ -750,20 +750,26 @@ export class UserScriptRuntime {
   }
 
   dispatchGmcpEvent<T extends object>(eventName: string, length: number, rawText: string): void {
-    const jsonPart = rawText.slice(length).trim();
-    const data = JSON.parse(jsonPart) as T;
-
-    // Snapshot the latest payload so late subscribers (e.g. FocusBar on mobile)
-    // can initialize even if they missed the first dispatch after refresh.
     try {
+      console.log("Dispatching event", {
+        eventName,
+        rawText
+      });
+      const jsonPart = rawText.slice(length).trim();
+      const data = JSON.parse(jsonPart) as T; 
       const w = window as any;
+      // Snapshot the latest payload so late subscribers (e.g. FocusBar on mobile)
+      // can initialize even if they missed the first dispatch after refresh.
       w.__SA_EVENT_SNAPSHOTS__ = w.__SA_EVENT_SNAPSHOTS__ || {};
       w.__SA_EVENT_SNAPSHOTS__[eventName] = data;
-    } catch {
-      // ignore
+      DispatchEvent(eventName, data);
+    } catch(err) {
+      console.log("Failed to dispatch GMCP event", {
+        eventName,
+        length,
+        rawText
+      });
     }
-
-    DispatchEvent(eventName, data);
   }
 
   /* -------------------------------- aliases ------------------------------- */
