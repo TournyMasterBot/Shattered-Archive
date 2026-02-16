@@ -10,6 +10,7 @@ import {
 } from '../features/equipment/equipment-store';
 import type { EqSlot } from '../features/equipment/equipment-types';
 import { stripItemStatusPrefixes } from '../features/equipment/equipment-text';
+import { DispatchEvent, ListenEvent } from '../features/event-emitter/event-dispatcher';
 
 function splitToLines(text: string): string[] {
   return String(text ?? '')
@@ -65,7 +66,6 @@ function bestSnapshotSlotMatch(connectionId: string, removedItem: string): EqSlo
     const candidate = normalizeForCompare(rawLine);
     if (!candidate) continue;
 
-    // simple scoring: exact normalized match wins; otherwise substring match
     let score = 0;
     if (candidate === target) score = 100;
     else if (candidate.includes(target) || target.includes(candidate)) score = 50;
@@ -80,16 +80,14 @@ function bestSnapshotSlotMatch(connectionId: string, removedItem: string): EqSlo
     }
   }
 
-  // conservative: only return if unique best
   if (!best || tie) return null;
   return best.slot;
 }
 
 export function useEquipmentDeltas(connectionId: string) {
   useEffect(() => {
-    const onTerminal = (ev: Event) => {
-      const detail = (ev as CustomEvent<unknown>).detail;
-      const chunk = extractTerminalText(detail);
+    const onTerminal = (payload: any) => {
+      const chunk = extractTerminalText(payload);
       if (!chunk) return;
 
       const lines = splitToLines(chunk);
@@ -108,13 +106,14 @@ export function useEquipmentDeltas(connectionId: string) {
 
         if (evt.kind === 'disarm') {
           try {
-            window.dispatchEvent(new CustomEvent('event:disarm', { detail: wielded }));
+            DispatchEvent('event:disarm', {
+              wielded,
+            });
           } catch {
             // ignore
           }
-          // hotbar
+
           void setEquipmentFromDelta(connectionId, { wielded: '(nothing)', secondary: '(nothing)' });
-          // snapshot (delete so we don't show stale)
           void patchEqSnapshot(connectionId, { wielded: null, secondary_weapon: null });
           continue;
         }
@@ -122,18 +121,24 @@ export function useEquipmentDeltas(connectionId: string) {
         if (evt.kind === 'wield') {
           if (evt.isSecondary) {
             try {
-              window.dispatchEvent(new CustomEvent('event:wield:secondary', { detail: evt.item }));
+              DispatchEvent('event:wield:secondary', {
+                secondary: evt.item,
+              });
             } catch {
               // ignore
             }
+
             void setEquipmentFromDelta(connectionId, { secondary: evt.item });
             void patchEqSnapshot(connectionId, { secondary_weapon: evt.item });
           } else {
             try {
-              window.dispatchEvent(new CustomEvent('event:wield:primary', { detail: evt.item }));
+              DispatchEvent('event:wield:primary', {
+                primary: evt.item,
+              });
             } catch {
               // ignore
             }
+
             void setEquipmentFromDelta(connectionId, { wielded: evt.item });
             void patchEqSnapshot(connectionId, { wielded: evt.item });
           }
@@ -142,19 +147,19 @@ export function useEquipmentDeltas(connectionId: string) {
 
         if (evt.kind === 'wear') {
           try {
-            console.log('Emitting event', {
-              eventName: 'event:gear:wear',
-              detail: evt.item,
+            DispatchEvent('event:gear:wear', {
+              slot: evt.slot,
+              item: evt.item,
             });
-            window.dispatchEvent(new CustomEvent(`event:gear:wear`, { detail: evt.item }));
-            window.dispatchEvent(new CustomEvent(`event:gear:wear:${evt.slot}`, { detail: evt.item }));
+            DispatchEvent(`event:gear:wear:${evt.slot}`, {
+              item: evt.item,
+            });
           } catch {
             // ignore
           }
-          // snapshot always gets the slot (this is what fixes your modal issue)
+
           void patchEqSnapshot(connectionId, { [evt.slot]: evt.item } as Partial<Record<EqSlot, string | null>>);
 
-          // hotbar only mirrors a subset
           if (evt.slot === 'worn_as_shield') {
             void setEquipmentFromDelta(connectionId, { shield: evt.item });
           }
@@ -184,15 +189,7 @@ export function useEquipmentDeltas(connectionId: string) {
           const matchesShield = removed && shNorm && removed === shNorm;
           const matchesSheathed = removed && sheNorm && removed === sheNorm;
 
-          try {
-            window.dispatchEvent(new CustomEvent(`event:gear:remove`, { detail: evt.item }));
-          } catch {
-            // ignore
-          }
-
-          // Hotbar rules first
           if (matchesWielded) {
-            // Dual-wield removal rule: removing primary clears both
             if (secondary && secondary !== '(nothing)') {
               void setEquipmentFromDelta(connectionId, { wielded: '(nothing)', secondary: '(nothing)' });
               void patchEqSnapshot(connectionId, { wielded: null, secondary_weapon: null });
@@ -221,14 +218,20 @@ export function useEquipmentDeltas(connectionId: string) {
             continue;
           }
 
-          // Snapshot-only removal: try to find the correct slot (conservative)
           const slot = bestSnapshotSlotMatch(connectionId, removedRaw);
           if (slot) {
             try {
-              window.dispatchEvent(new CustomEvent(`event:gear:remove:${slot}`, { detail: evt.item }));
+              DispatchEvent('event:gear:remove', {
+                slot: slot,
+                item: evt.item,
+              });
+              DispatchEvent(`event:gear:remove:${slot}`, {
+                item: evt.item,
+              });
             } catch {
               // ignore
             }
+
             void patchEqSnapshot(connectionId, { [slot]: null } as Partial<Record<EqSlot, string | null>>);
           }
 
@@ -237,10 +240,21 @@ export function useEquipmentDeltas(connectionId: string) {
       }
     };
 
-    window.addEventListener('game:terminal-data', onTerminal as EventListener);
+    // HMR-safe attach (and auto-cleanup)
+    const dispose = ListenEvent<any>(
+      'shatteredarchive:raw-data',
+      (payload) => {
+        onTerminal(payload);
+      },
+      { key: `useEquipmentDeltas::terminal::${connectionId}` },
+    );
+
     return () => {
-      console.debug('[eq-delta] hook unmounted', { connectionId });
-      window.removeEventListener('game:terminal-data', onTerminal as EventListener);
+      try {
+        dispose?.();
+      } catch {
+        // ignore
+      }
     };
   }, [connectionId]);
 }

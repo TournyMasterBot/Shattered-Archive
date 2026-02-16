@@ -1,3 +1,4 @@
+// apps\game-client\src\features\connection\connectionSingleton.ts
 export type ConnectionSingleton = {
   ws: WebSocket | null;
   connectionId: string;

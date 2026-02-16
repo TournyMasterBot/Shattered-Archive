@@ -1,4 +1,6 @@
+// apps\game-client\src\hooks\useRoomHeader.ts
 import { useEffect, useMemo, useState } from 'react';
+import { ListenEvent } from '../features/event-emitter/event-dispatcher';
 
 type RoomDataPayload = {
   room?: string;
@@ -11,17 +13,25 @@ export function useRoomHeader() {
   const [sector, setSector] = useState('');
 
   useEffect(() => {
-    const onRoomData = (ev: Event) => {
-      const ce = ev as CustomEvent<RoomDataPayload>;
-      const nextRoom = String(ce.detail?.room ?? '');
-      const nextSector = String(ce.detail?.sector ?? '');
+    const dispose = ListenEvent<RoomDataPayload>(
+      'game:room-data',
+      (payload) => {
+        const nextRoom = String(payload?.room ?? '');
+        const nextSector = String(payload?.sector ?? '');
 
-      setRoomName(nextRoom);
-      setSector(nextSector);
+        setRoomName(nextRoom);
+        setSector(nextSector);
+      },
+      { key: 'useRoomHeader::game:room-data' },
+    );
+
+    return () => {
+      try {
+        dispose?.();
+      } catch {
+        // ignore
+      }
     };
-
-    window.addEventListener('game:room-data', onRoomData as EventListener);
-    return () => window.removeEventListener('game:room-data', onRoomData as EventListener);
   }, []);
 
   const roomFlags = useMemo(() => {

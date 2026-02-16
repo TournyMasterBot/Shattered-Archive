@@ -1,3 +1,4 @@
+// apps\game-client\src\features\equipment\equipment-text.ts
 function stripAnsi(input: string): string {
   return String(input ?? '').replace(/\u001b\[[0-9;]*m/g, '');
 }

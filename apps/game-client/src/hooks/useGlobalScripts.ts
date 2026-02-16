@@ -9,6 +9,7 @@ import {
   deleteGlobalVar,
 } from '../features/userScripts/globalScriptsStore';
 import { invalidateGlobalRuntime } from '../features/userScripts/globalRuntime';
+import { ListenEvent } from '../features/event-emitter/event-dispatcher';
 
 export function useGlobalScripts(connectionId?: string | null) {
   const [sources, setSources] = useState(() => getGlobalScriptsSnapshot(connectionId));
@@ -20,20 +21,32 @@ export function useGlobalScripts(connectionId?: string | null) {
   }, [connectionId]);
 
   useEffect(() => {
-    const onScripts = () => setSources(getGlobalScriptsSnapshot(connectionId));
-    const onVars = () => setVars(getGlobalVarsSnapshot(connectionId));
+    const safeId = connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
 
-    try {
-      window.addEventListener('game:globalScripts-updated', onScripts as EventListener);
-      window.addEventListener('game:globalVars-updated', onVars as EventListener);
-    } catch {
-      // ignore
-    }
+    const disposeScripts = ListenEvent<any>(
+      'shatteredarchive:globalScripts-updated',
+      () => {
+        setSources(getGlobalScriptsSnapshot(connectionId));
+      },
+      { key: `useGlobalScripts::globalScripts-updated::${safeId}` },
+    );
+
+    const disposeVars = ListenEvent<any>(
+      'shatteredarchive:globalVars-updated',
+      () => {
+        setVars(getGlobalVarsSnapshot(connectionId));
+      },
+      { key: `useGlobalScripts::globalVars-updated::${safeId}` },
+    );
 
     return () => {
       try {
-        window.removeEventListener('game:globalScripts-updated', onScripts as EventListener);
-        window.removeEventListener('game:globalVars-updated', onVars as EventListener);
+        disposeScripts?.();
+      } catch {
+        // ignore
+      }
+      try {
+        disposeVars?.();
       } catch {
         // ignore
       }

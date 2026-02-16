@@ -80,6 +80,7 @@ function keywordsFromFirstKeyword(firstKeyword: string | undefined | null): stri
 
 function isAutoLevelingDebugEnabled(): boolean {
   try {
+    return false;
     if (typeof window !== 'undefined' && (window as any).__AUTOLEVELING_DEBUG__ === true) return true;
 
     const v = typeof localStorage !== 'undefined' ? localStorage.getItem('autoleveling.debug') : null;
@@ -834,7 +835,7 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
                 >
                   Start
                 </button>
-
+                {/*
                 {showStop ? (
                   <button
                     type="button"
@@ -847,7 +848,7 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
                     Stop
                   </button>
                 ) : null}
-
+                  */}
                 {config.enabled ? (
                   <>
                     <button

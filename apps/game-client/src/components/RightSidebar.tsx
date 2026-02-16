@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styles from '../styles/LayoutShell.module.scss';
 import { useStatusBlockViewModel } from '../hooks/useLayoutShell';
+import { useSanctuaryActive } from '../hooks/useSanctuaryActive';
 import AffectsBlock from './AffectsBlock';
 import CompassBlock from './CompassBlock';
 import RoomHeader from './RoomHeader';
@@ -11,6 +12,7 @@ import {
   type EnemyUiState,
   type OpponentStatusDetail,
 } from '../features/combat/opponent-types';
+import { ListenDomEvent, ListenEvent } from '../features/event-emitter/event-dispatcher';
 
 /* ---------------- Status block (tick + vitals + enemy + ancillary) ---------------- */
 
@@ -42,10 +44,11 @@ function safeParseHud(json: string | null): HudToggles | null {
   }
 }
 
-const HUD_STORAGE_KEY = 'sa:hud:statusBlock';
+const HUD_STORAGE_KEY = 'shatteredarchive:hud:statusBlock';
 
 const StatusBlock: React.FC = () => {
   const { remaining, vitals, hpPct, mpPct, staPct, ancillary } = useStatusBlockViewModel();
+  const { hasSanctuary } = useSanctuaryActive();
 
   // HUD toggle state (persisted)
   const [hud, setHud] = useState<HudToggles>(
@@ -68,15 +71,24 @@ const StatusBlock: React.FC = () => {
   useEffect(() => {
     if (!hudMenuOpen) return;
 
-    const onDown = (e: MouseEvent) => {
-      const wrap = hudMenuWrapRef.current;
-      if (!wrap) return;
-      if (wrap.contains(e.target as Node)) return;
-      setHudMenuOpen(false);
-    };
+    const dispose = ListenDomEvent<MouseEvent>(
+      'mousedown',
+      (e) => {
+        const wrap = hudMenuWrapRef.current;
+        if (!wrap) return;
+        if (wrap.contains(e.target as Node)) return;
+        setHudMenuOpen(false);
+      },
+      { key: 'RightSidebar::StatusBlock::hudMenu::mousedown' },
+    );
 
-    window.addEventListener('mousedown', onDown);
-    return () => window.removeEventListener('mousedown', onDown);
+    return () => {
+      try {
+        dispose?.();
+      } catch {
+        // ignore
+      }
+    };
   }, [hudMenuOpen]);
 
   // Enemy UI state (last known)
@@ -91,6 +103,21 @@ const StatusBlock: React.FC = () => {
   const [damageChunk, setDamageChunk] = useState<DamageChunk | null>(null);
   const chunkTimerRef = useRef<number | null>(null);
 
+  // HP movement overlay (restore)
+  type HpDeltaChunk = { leftPct: number; widthPct: number; key: number; opacity: number };
+  const [hpDeltaChunk, setHpDeltaChunk] = useState<HpDeltaChunk | null>(null);
+  const hpChunkTimerRef = useRef<number | null>(null);
+  const lastHpPctRef = useRef<number | null>(null);
+
+  // MP + Stamina movement overlays (match HP behavior)
+  type VitalDeltaChunk = { leftPct: number; widthPct: number; key: number; opacity: number };
+  const [mpDeltaChunk, setMpDeltaChunk] = useState<VitalDeltaChunk | null>(null);
+  const [staDeltaChunk, setStaDeltaChunk] = useState<VitalDeltaChunk | null>(null);
+  const mpChunkTimerRef = useRef<number | null>(null);
+  const staChunkTimerRef = useRef<number | null>(null);
+  const lastMpPctRef = useRef<number | null>(null);
+  const lastStaPctRef = useRef<number | null>(null);
+
   // "Now" ticker so staleness can flip without new events
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -99,42 +126,140 @@ const StatusBlock: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const handler = (ev: Event) => {
-      const ce = ev as CustomEvent<OpponentStatusDetail>;
-      const d = ce.detail;
-      if (!d || !Number.isFinite(d.pct)) return;
+    const dispose = ListenEvent<OpponentStatusDetail>(
+      'event:fighting:opponent',
+      (d) => {
+        if (!d || !Number.isFinite(d.pct)) return;
 
-      setEnemyUi((prev) => {
-        const prevSeen = prev.lastSeenTs > 0;
-        const prevPct = prevSeen ? prev.pct : d.pct;
-        const nextPct = d.pct;
+        setEnemyUi((prev) => {
+          const prevSeen = prev.lastSeenTs > 0;
+          const prevPct = prevSeen ? prev.pct : d.pct;
+          const nextPct = d.pct;
 
-        // If enemy pct decreased, show pulsing "damage chunk" over the lost segment.
-        if (nextPct < prevPct) {
-          const left = Math.max(0, Math.min(100, nextPct));
-          const width = Math.max(0, Math.min(100 - left, prevPct - nextPct));
+          // If enemy pct decreased, show pulsing "damage chunk" over the lost segment.
+          if (nextPct < prevPct) {
+            const left = Math.max(0, Math.min(100, nextPct));
+            const width = Math.max(0, Math.min(100 - left, prevPct - nextPct));
 
-          if (width > 0.05) {
-            setDamageChunk({ leftPct: left, widthPct: width, key: d.ts || Date.now() });
+            if (width > 0.05) {
+              setDamageChunk({ leftPct: left, widthPct: width, key: d.ts || Date.now() });
 
-            if (chunkTimerRef.current) window.clearTimeout(chunkTimerRef.current);
-            chunkTimerRef.current = window.setTimeout(() => setDamageChunk(null), 4500);
+              if (chunkTimerRef.current) window.clearTimeout(chunkTimerRef.current);
+              chunkTimerRef.current = window.setTimeout(() => setDamageChunk(null), 4500);
+            }
           }
-        }
 
-        return {
-          lastSeenTs: d.ts || Date.now(),
-          label: d.label?.trim() || prev.label || 'Enemy',
-          pct: nextPct,
-          statusText: formatOpponentStatusText(d.pct, d.minPct, d.maxPct),
-        };
-      });
-    };
+          return {
+            lastSeenTs: d.ts || Date.now(),
+            label: d.label?.trim() || prev.label || 'Enemy',
+            pct: nextPct,
+            statusText: formatOpponentStatusText(d.pct, d.minPct, d.maxPct),
+          };
+        });
+      },
+      { key: 'RightSidebar::StatusBlock::opponent' },
+    );
 
-    window.addEventListener('event:fighting:opponent', handler as EventListener);
     return () => {
-      window.removeEventListener('event:fighting:opponent', handler as EventListener);
+      try {
+        dispose?.();
+      } catch {
+        // ignore
+      }
       if (chunkTimerRef.current) window.clearTimeout(chunkTimerRef.current);
+    };
+  }, []);
+
+  // Restore HP movement overlay:
+  // - Detect HP percent decreases
+  // - Render a pulsing overlay over the lost segment
+  // - Intensity scales with remaining life (lower hp => stronger)
+  useEffect(() => {
+    const prev = lastHpPctRef.current;
+
+    if (prev == null) {
+      lastHpPctRef.current = hpPct;
+      return;
+    }
+
+    if (hpPct < prev) {
+      const left = Math.max(0, Math.min(100, hpPct));
+      const width = Math.max(0, Math.min(100 - left, prev - hpPct));
+
+      if (width > 0.05) {
+        const life01 = Math.max(0, Math.min(100, hpPct)) / 100; // 0..1
+        const opacity = 0.12 + (1 - life01) * 0.6; // ~0.12..0.72
+
+        setHpDeltaChunk({ leftPct: left, widthPct: width, key: Date.now(), opacity });
+
+        if (hpChunkTimerRef.current) window.clearTimeout(hpChunkTimerRef.current);
+        hpChunkTimerRef.current = window.setTimeout(() => setHpDeltaChunk(null), 2200);
+      }
+    }
+
+    lastHpPctRef.current = hpPct;
+  }, [hpPct]);
+
+  // Restore MP movement overlay (match HP behavior)
+  useEffect(() => {
+    const prev = lastMpPctRef.current;
+
+    if (prev == null) {
+      lastMpPctRef.current = mpPct;
+      return;
+    }
+
+    if (mpPct < prev) {
+      const left = Math.max(0, Math.min(100, mpPct));
+      const width = Math.max(0, Math.min(100 - left, prev - mpPct));
+
+      if (width > 0.05) {
+        const life01 = Math.max(0, Math.min(100, mpPct)) / 100; // 0..1
+        const opacity = 0.12 + (1 - life01) * 0.6; // ~0.12..0.72
+
+        setMpDeltaChunk({ leftPct: left, widthPct: width, key: Date.now(), opacity });
+
+        if (mpChunkTimerRef.current) window.clearTimeout(mpChunkTimerRef.current);
+        mpChunkTimerRef.current = window.setTimeout(() => setMpDeltaChunk(null), 2200);
+      }
+    }
+
+    lastMpPctRef.current = mpPct;
+  }, [mpPct]);
+
+  // Restore stamina movement overlay (match HP behavior)
+  useEffect(() => {
+    const prev = lastStaPctRef.current;
+
+    if (prev == null) {
+      lastStaPctRef.current = staPct;
+      return;
+    }
+
+    if (staPct < prev) {
+      const left = Math.max(0, Math.min(100, staPct));
+      const width = Math.max(0, Math.min(100 - left, prev - staPct));
+
+      if (width > 0.05) {
+        const life01 = Math.max(0, Math.min(100, staPct)) / 100; // 0..1
+        const opacity = 0.12 + (1 - life01) * 0.6; // ~0.12..0.72
+
+        setStaDeltaChunk({ leftPct: left, widthPct: width, key: Date.now(), opacity });
+
+        if (staChunkTimerRef.current) window.clearTimeout(staChunkTimerRef.current);
+        staChunkTimerRef.current = window.setTimeout(() => setStaDeltaChunk(null), 2200);
+      }
+    }
+
+    lastStaPctRef.current = staPct;
+  }, [staPct]);
+
+  // cleanup chunk timers
+  useEffect(() => {
+    return () => {
+      if (hpChunkTimerRef.current) window.clearTimeout(hpChunkTimerRef.current);
+      if (mpChunkTimerRef.current) window.clearTimeout(mpChunkTimerRef.current);
+      if (staChunkTimerRef.current) window.clearTimeout(staChunkTimerRef.current);
     };
   }, []);
 
@@ -281,11 +406,25 @@ const StatusBlock: React.FC = () => {
       {/* Vitals + enemy bars */}
       <div className={styles.barGroup}>
         {hud.hp && (
-          <div className={`${styles.barRow} ${styles.barHp}`}>
+          <div className={`${styles.barRow} ${styles.barHp} ${hasSanctuary ? styles.hpSanctuary : ''}`}>
             <span className={styles.barLabel}>HP</span>
-            <div className={styles.barTrack}>
+
+            <div className={`${styles.barTrack} ${styles.hpTrack}`}>
               <div className={styles.barFill} style={{ width: `${hpPct}%` }} />
+
+              {hpDeltaChunk && hpDeltaChunk.widthPct > 0.05 && (
+                <div
+                  key={hpDeltaChunk.key}
+                  className={styles.hpDamageChunk}
+                  style={{
+                    left: `${hpDeltaChunk.leftPct}%`,
+                    width: `${hpDeltaChunk.widthPct}%`,
+                    opacity: hpDeltaChunk.opacity,
+                  }}
+                />
+              )}
             </div>
+
             <span className={styles.barValue}>
               {vitals.hp} / {vitals.hpMax}
             </span>
@@ -295,9 +434,23 @@ const StatusBlock: React.FC = () => {
         {hud.mp && (
           <div className={`${styles.barRow} ${styles.barMp}`}>
             <span className={styles.barLabel}>MP</span>
-            <div className={styles.barTrack}>
+
+            <div className={`${styles.barTrack} ${styles.vitalsTrack}`}>
               <div className={styles.barFill} style={{ width: `${mpPct}%` }} />
+
+              {mpDeltaChunk && mpDeltaChunk.widthPct > 0.05 && (
+                <div
+                  key={mpDeltaChunk.key}
+                  className={styles.vitalsDamageChunk}
+                  style={{
+                    left: `${mpDeltaChunk.leftPct}%`,
+                    width: `${mpDeltaChunk.widthPct}%`,
+                    opacity: mpDeltaChunk.opacity,
+                  }}
+                />
+              )}
             </div>
+
             <span className={styles.barValue}>
               {vitals.mp} / {vitals.mpMax}
             </span>
@@ -307,9 +460,23 @@ const StatusBlock: React.FC = () => {
         {hud.stam && (
           <div className={`${styles.barRow} ${styles.barSta}`}>
             <span className={styles.barLabel}>Stam</span>
-            <div className={styles.barTrack}>
+
+            <div className={`${styles.barTrack} ${styles.vitalsTrack}`}>
               <div className={styles.barFill} style={{ width: `${staPct}%` }} />
+
+              {staDeltaChunk && staDeltaChunk.widthPct > 0.05 && (
+                <div
+                  key={staDeltaChunk.key}
+                  className={styles.vitalsDamageChunk}
+                  style={{
+                    left: `${staDeltaChunk.leftPct}%`,
+                    width: `${staDeltaChunk.widthPct}%`,
+                    opacity: staDeltaChunk.opacity,
+                  }}
+                />
+              )}
             </div>
+
             <span className={styles.barValue}>
               {vitals.stamina} / {vitals.staminaMax}
             </span>

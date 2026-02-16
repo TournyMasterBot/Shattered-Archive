@@ -1,4 +1,4 @@
-// apps\game-client\src\styles\LayoutShell.module.scss
+/* apps/game-client/src/styles/LayoutShell.module.scss */
 /* -------------------------------------------------
    SHARED LAYOUT TOKENS
    (Global CSS variables used by layout shell)
@@ -63,6 +63,36 @@
   padding-left: 5px;
 }
 
+.terminalRoot {
+  /* crisp, modern monospace stack */
+  font-family:
+    'Bitstream Vera Sans Mono', ui-monospace, 'Cascadia Mono', 'Cascadia Code', 'JetBrains Mono', 'SFMono-Regular',
+    Menlo, Monaco, Consolas, 'Liberation Mono', 'DejaVu Sans Mono', monospace;
+
+  font-size: 16px !important;
+  line-height: 1.2 !important;
+
+  /* small readability tweaks */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+}
+
+/* xterm inherits font-family/font-size from its container in most cases */
+:global(.xterm) {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.affectDurationYellow {
+  color: #f5d000; /* yellow */
+}
+
+.affectDurationRed {
+  color: #ff4d4d; /* red */
+}
+
 /* -------------------------------------------------
    BOTTOM PANE
 -------------------------------------------------- */
@@ -113,13 +143,48 @@
   cursor: col-resize;
   background: #252525;
   flex-shrink: 0;
+
+  /* larger hit area without changing visuals */
+  position: relative;
+}
+
+.verticalResizer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -6px;
+  right: -6px;
 }
 
 .horizontalResizer {
   height: 4px;
+  /* visual line */
   cursor: row-resize;
   background: #252525;
   flex-shrink: 0;
+
+  position: relative;
+}
+
+.horizontalResizer:hover {
+  background: #2f2f2f;
+}
+
+/* invisible hit zone to make it easier to grab */
+.horizontalResizerHit {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -10px;
+  bottom: -10px;
+  /* total hit target ~24px tall */
+}
+
+.horizontalResizer:focus-visible,
+.verticalResizer:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px #3a6cff;
 }
 
 /* -------------------------------------------------
@@ -223,6 +288,18 @@
   font-family: monospace;
 }
 
+.hpSanctuary {
+  .barTrack {
+    box-shadow:
+      0 0 0 2px rgba(255, 255, 255, 0.98),
+      0 0 0 4px rgba(255, 255, 255, 0.22);
+  }
+
+  .barFill {
+    filter: brightness(1.05);
+  }
+}
+
 /* Variants */
 .barHp .barFill {
   background: #a94442;
@@ -250,6 +327,68 @@
   white-space: normal;
   line-height: 1.1;
   font-size: 0.7rem;
+}
+
+/* -------------------------------------------------
+   HP movement overlay (restored)
+-------------------------------------------------- */
+.hpTrack {
+  position: relative;
+}
+
+.hpDamageChunk {
+  @extend .vitalsDamageChunk;
+}
+
+/* use on any track that needs overlays */
+.vitalsTrack {
+  position: relative;
+}
+
+/* Shared damage overlay chunk (default = white pulse) */
+.vitalsDamageChunk {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 999px;
+  pointer-events: none;
+
+  background: rgba(255, 255, 255, 0.55);
+  animation: vitalsDamagePulse 1.4s ease-in-out 2 forwards;
+}
+
+@keyframes vitalsDamagePulse {
+  0% {
+    opacity: 0.05;
+    filter: brightness(1);
+  }
+
+  50% {
+    opacity: 1;
+    filter: brightness(1.5);
+  }
+
+  100% {
+    opacity: 0.05;
+    filter: brightness(1);
+  }
+}
+
+@keyframes hpDamagePulse {
+  0% {
+    opacity: 0.05;
+    filter: brightness(1);
+  }
+
+  50% {
+    opacity: 1;
+    filter: brightness(1.5);
+  }
+
+  100% {
+    opacity: 0.05;
+    filter: brightness(1);
+  }
 }
 
 /* -------------------------------------------------
@@ -355,22 +494,19 @@
     display: none;
   }
 
+  /* Let JS/CSS var drive this so it can be taller */
   .bottomPane {
-    height: 120px !important;
-    min-height: 80px;
-    max-height: 160px;
+    height: var(--bottom-pane-height);
+    min-height: 120px;
+    max-height: 70%;
     overflow: hidden;
-  }
-
-  .horizontalResizer {
-    height: 2px;
-    cursor: default;
   }
 }
 
 @media (max-width: 600px) {
   .bottomPane {
-    height: 100px !important;
+    min-height: 120px;
+    max-height: 70%;
   }
 }
 
@@ -437,23 +573,28 @@
 
 /* Bucket colors */
 .enemyGreen .barFill {
-  background: #5cb85c; /* green */
+  background: #5cb85c;
+  /* green */
 }
 
 .enemyYellow .barFill {
-  background: #f0ad4e; /* yellow */
+  background: #f0ad4e;
+  /* yellow */
 }
 
 .enemyRedOrange .barFill {
-  background: #ff6f3c; /* red-orange */
+  background: #ff6f3c;
+  /* red-orange */
 }
 
 .enemyBurnishedRed .barFill {
-  background: #b22222; /* burnished red */
+  background: #b22222;
+  /* burnished red */
 }
 
 .enemyBrightRed .barFill {
-  background: #ff3b30; /* bright red */
+  background: #ff3b30;
+  /* bright red */
 }
 
 /* Enemy track overlay support */
@@ -478,10 +619,12 @@
     opacity: 0.05;
     filter: brightness(1);
   }
+
   45% {
     opacity: 0.75;
     filter: brightness(1.25);
   }
+
   100% {
     opacity: 0.05;
     filter: brightness(1);
@@ -529,7 +672,8 @@
 .hudConfigPanel {
   position: absolute;
   top: 22px;
-  left: 0; /* anchor under the gear */
+  left: 0;
+  /* anchor under the gear */
   z-index: 20;
 
   background: #101010;
@@ -582,7 +726,181 @@
   border-color: #4a4a4a;
 }
 
-/* Affects header gear + menu */
+/* HUD menu (positioned relative to the gear button now) */
+.hudConfigWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.hudConfigButton {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid #2d2d2d;
+  background: #121212;
+  color: #9a9a9a;
+  font-size: 12px;
+  line-height: 16px;
+  padding: 0;
+  cursor: pointer;
+
+  &:hover {
+    color: #e6e6e6;
+    border-color: #3a3a3a;
+    background: #161616;
+  }
+
+  &:active {
+    transform: translateY(0.5px);
+  }
+}
+
+.hudConfigPanel {
+  position: absolute;
+  top: 22px;
+  left: 0;
+  z-index: 20;
+
+  background: #101010;
+  border: 1px solid #2e2e2e;
+  border-radius: 10px;
+  padding: 6px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.hudToggleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background: #161616;
+  }
+}
+
+.hudToggleLabel {
+  font-size: 0.7rem;
+  color: #e0e0e0;
+  min-width: 44px;
+}
+
+.hudDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid #5a5a5a;
+  display: inline-block;
+}
+
+.hudDotOn {
+  background: #5cb85c;
+  border-color: #5cb85c;
+}
+
+.hudDotOff {
+  background: transparent;
+  border-color: #4a4a4a;
+}
+
+/* HUD menu (positioned relative to the gear button now) */
+.hudConfigWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.hudConfigButton {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid #2d2d2d;
+  background: #121212;
+  color: #9a9a9a;
+  font-size: 12px;
+  line-height: 16px;
+  padding: 0;
+  cursor: pointer;
+
+  &:hover {
+    color: #e6e6e6;
+    border-color: #3a3a3a;
+    background: #161616;
+  }
+
+  &:active {
+    transform: translateY(0.5px);
+  }
+}
+
+.hudConfigPanel {
+  position: absolute;
+  top: 22px;
+  left: 0;
+  z-index: 20;
+
+  background: #101010;
+  border: 1px solid #2e2e2e;
+  border-radius: 10px;
+  padding: 6px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.hudToggleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background: #161616;
+  }
+}
+
+.hudToggleLabel {
+  font-size: 0.7rem;
+  color: #e0e0e0;
+  min-width: 44px;
+}
+
+.hudDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid #5a5a5a;
+  display: inline-block;
+}
+
+.hudDotOn {
+  background: #5cb85c;
+  border-color: #5cb85c;
+}
+
+.hudDotOff {
+  background: transparent;
+  border-color: #4a4a4a;
+}
+
+/* -------------------------------------------------
+   Affects header gear + menu
+-------------------------------------------------- */
 .affectsMenuWrap {
   position: relative;
   display: inline-flex;
@@ -612,10 +930,13 @@
   position: absolute;
   top: 22px;
 
-  left: 0; /* open to the right */
-  right: auto; /* IMPORTANT: ensure right anchoring is off */
+  left: 0;
+  /* open to the right */
+  right: auto;
+  /* IMPORTANT: ensure right anchoring is off */
 
-  max-width: calc(100% - 4px); /* prevents overflow on narrow panes */
+  max-width: calc(100% - 4px);
+  /* prevents overflow on narrow panes */
   z-index: 50;
 
   background: #141414;
@@ -709,5 +1030,307 @@
 }
 
 .affectsAggregateText {
-  color: #a7d7a7; /* pale green */
+  color: #a7d7a7;
+  /* pale green */
+}
+
+.chatRoot {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* ----------------------------------------------
+   Top bar: pills + gear
+---------------------------------------------- */
+.chatTopBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 4px 6px;
+  box-sizing: border-box;
+
+  border-bottom: 1px solid #232323;
+  background: #141414;
+}
+
+/* Pills strip */
+.chatPills {
+  flex: 1;
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+
+  scrollbar-width: thin;
+  scrollbar-color: #444 #141414;
+}
+
+.chatPills::-webkit-scrollbar {
+  height: 8px;
+}
+
+.chatPills::-webkit-scrollbar-track {
+  background: #141414;
+}
+
+.chatPills::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+
+/* Individual pill */
+.chatPill {
+  appearance: none;
+  -webkit-appearance: none;
+
+  border: 1px solid #2a2a2a;
+  background: #101010;
+  color: #d0d0d0;
+
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.chatPill:hover {
+  background: #171717;
+  color: #ffffff;
+  border-color: #3a3a3a;
+}
+
+.chatPillActive {
+  background: #1b1b1b;
+  color: #ffffff;
+  border-color: #4a4a4a;
+}
+
+/* Gear button */
+.chatGearButton {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+
+  border: 1px solid #2d2d2d;
+  background: #121212;
+  color: #cfcfcf;
+
+  font-size: 12px;
+  line-height: 20px;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover {
+    background: #1a1a1a;
+    border-color: #3a3a3a;
+    color: #ffffff;
+  }
+}
+
+/* ----------------------------------------------
+   Body: panes
+---------------------------------------------- */
+.chatBody {
+  flex: 1;
+  min-height: 0;
+
+  position: relative;
+}
+
+/* Each pane is mounted; only one visible */
+.chatPaneShell {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.chatPaneHidden {
+  display: none;
+}
+
+.chatPaneVisible {
+  display: flex;
+}
+
+/* Scroll area */
+.chatScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px;
+  box-sizing: border-box;
+
+  scrollbar-width: thin;
+  scrollbar-color: #444 #181818;
+}
+
+.chatScroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chatScroll::-webkit-scrollbar-track {
+  background: #181818;
+}
+
+.chatScroll::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+
+.chatRow {
+  padding: 2px 0;
+}
+
+.chatBubble {
+  background: #2a2a2a;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  color: #e0e0e0;
+  white-space: pre-wrap;
+}
+
+.chatEmpty {
+  font-size: 0.75rem;
+  color: #777;
+  padding: 4px 6px;
+}
+
+/* Jump to live overlay */
+.chatJumpToLive {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid #444;
+
+  background: #202020;
+  color: #f0f0f0;
+  font-size: 0.75rem;
+  cursor: pointer;
+
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  opacity: 0.95;
+
+  transition:
+    background 0.12s ease,
+    transform 0.08s ease;
+}
+
+.chatJumpToLive:hover {
+  background: #2b2b2b;
+  transform: translateY(-1px);
+}
+
+/* ----------------------------------------------
+   Gear menu overlay + menu (fixed)
+---------------------------------------------- */
+.chatMenuOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+}
+
+/* fixed-position menu, positioned by inline style */
+.chatMenu {
+  position: fixed;
+  z-index: 210;
+
+  background: #101010;
+  border: 1px solid #2e2e2e;
+  border-radius: 10px;
+  padding: 8px;
+
+  /* critical: keep within viewport width so it never goes off-screen */
+  width: 240px;
+  max-width: calc(100vw - 16px);
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chatMenuRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  font-size: 0.65rem;
+  color: #e6e6e6;
+
+  padding: 4px 4px;
+  border-radius: 8px;
+  user-select: none;
+
+  &:hover {
+    background: #161616;
+  }
+
+  input {
+    margin: 0;
+  }
+}
+
+.chatMenuDivider {
+  height: 1px;
+  background: #232323;
+  margin: 6px 0;
+}
+
+.chatMenuSectionTitle {
+  font-size: 0.72rem;
+  color: #bdbdbd;
+  padding: 2px 4px 6px 4px;
+}
+
+/* internal scroll for long pane lists */
+.chatMenuScroll {
+  overflow-y: auto;
+  min-height: 0;
+
+  /* when ChatPane.tsx sets maxHeight on the menu container,
+     the scroll area takes the remaining space */
+  flex: 1;
+
+  scrollbar-width: thin;
+  scrollbar-color: #444 #101010;
+}
+
+.chatMenuScroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chatMenuScroll::-webkit-scrollbar-track {
+  background: #101010;
+}
+
+.chatMenuScroll::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
 }

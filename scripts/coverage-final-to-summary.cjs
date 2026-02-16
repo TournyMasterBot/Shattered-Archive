@@ -1,0 +1,65 @@
+/* eslint-disable no-console */
+const fs = require('fs');
+const path = require('path');
+
+const finalPath = path.join(process.cwd(), 'coverage', 'coverage-final.json');
+if (!fs.existsSync(finalPath)) {
+  console.error(`Missing ${finalPath}`);
+  process.exit(1);
+}
+
+const cov = JSON.parse(fs.readFileSync(finalPath, 'utf8'));
+
+function pct(covered, total) {
+  return total ? Number(((covered / total) * 100).toFixed(2)) : 0;
+}
+
+let linesTotal = 0, linesCovered = 0;
+let statementsTotal = 0, statementsCovered = 0;
+let functionsTotal = 0, functionsCovered = 0;
+let branchesTotal = 0, branchesCovered = 0;
+
+for (const file of Object.values(cov)) {
+  // lines: prefer "l" map (line -> hits)
+  const l = file.l || {};
+  for (const hits of Object.values(l)) {
+    linesTotal++;
+    if (hits > 0) linesCovered++;
+  }
+
+  // statements: "s" map (statementId -> hits)
+  const s = file.s || {};
+  for (const hits of Object.values(s)) {
+    statementsTotal++;
+    if (hits > 0) statementsCovered++;
+  }
+
+  // functions: "f" map (fnId -> hits)
+  const f = file.f || {};
+  for (const hits of Object.values(f)) {
+    functionsTotal++;
+    if (hits > 0) functionsCovered++;
+  }
+
+  // branches: "b" map (branchId -> [hits...])
+  const b = file.b || {};
+  for (const arr of Object.values(b)) {
+    for (const hits of arr) {
+      branchesTotal++;
+      if (hits > 0) branchesCovered++;
+    }
+  }
+}
+
+const out = {
+  total: {
+    lines: { total: linesTotal, covered: linesCovered, skipped: 0, pct: pct(linesCovered, linesTotal) },
+    statements: { total: statementsTotal, covered: statementsCovered, skipped: 0, pct: pct(statementsCovered, statementsTotal) },
+    functions: { total: functionsTotal, covered: functionsCovered, skipped: 0, pct: pct(functionsCovered, functionsTotal) },
+    branches: { total: branchesTotal, covered: branchesCovered, skipped: 0, pct: pct(branchesCovered, branchesTotal) },
+  },
+};
+
+const outPath = path.join(process.cwd(), 'coverage', 'coverage-summary.json');
+fs.writeFileSync(outPath, JSON.stringify(out, null, 2), 'utf8');
+console.log(`Wrote ${outPath} from coverage-final.json`);

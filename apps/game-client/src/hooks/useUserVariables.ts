@@ -5,6 +5,7 @@ import {
   setNamedVariable,
   deleteNamedVariable,
 } from '../features/userScripts/userVariablesStore';
+import { ListenEvent } from '../features/event-emitter/event-dispatcher';
 
 export function useUserVariables(connectionId?: string | null) {
   const [vars, setVars] = useState(() => getUserVariablesSnapshot(connectionId));
@@ -14,17 +15,21 @@ export function useUserVariables(connectionId?: string | null) {
   }, [connectionId]);
 
   useEffect(() => {
-    const onUpdate = () => setVars(getUserVariablesSnapshot(connectionId));
+    const dispose = ListenEvent<{ connectionId?: string }>(
+      'shatteredarchive:userVariables-updated',
+      (payload) => {
+        const evConn = payload?.connectionId ?? 'default';
+        const curConn = connectionId ?? 'default';
+        if (evConn !== curConn) return;
 
-    try {
-      window.addEventListener('game:userVariables-updated', onUpdate as EventListener);
-    } catch {
-      // ignore
-    }
+        setVars(getUserVariablesSnapshot(connectionId));
+      },
+      { key: 'useUserVariables::window::userVariables-updated' },
+    );
 
     return () => {
       try {
-        window.removeEventListener('game:userVariables-updated', onUpdate as EventListener);
+        dispose?.();
       } catch {
         // ignore
       }

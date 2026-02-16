@@ -1,3 +1,4 @@
+// apps\game-client\src\features\accessibility\accessibility-command.ts
 import { getAccessibilitySettings } from './accessibility-settings-store';
 
 function startsWithPrefix(s: string, prefix: string) {

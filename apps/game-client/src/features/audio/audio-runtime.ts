@@ -1,29 +1,49 @@
+// apps\game-client\src\features\audio\audio-runtime.ts
 import { getAudioSettings, subscribeAudioSettings } from './audio-settings-store';
 import { tryBeepForLine } from './audio-beep';
+import { ListenEvent } from '../event-emitter/event-dispatcher';
 
-let attached = false;
+const RUNTIME_KEY = '__shatteredarchive_audio_runtime__';
+
+type AudioRuntimeState = {
+  attached: boolean;
+  offTelnet?: () => void;
+  offSettings?: () => void;
+};
+
+function getRuntimeState(): AudioRuntimeState {
+  const g = globalThis as any;
+  if (!g[RUNTIME_KEY]) {
+    g[RUNTIME_KEY] = { attached: false } as AudioRuntimeState;
+  }
+  return g[RUNTIME_KEY] as AudioRuntimeState;
+}
+
 let settingsCache = getAudioSettings();
 
 export function ensureAudioRuntimeAttached() {
-  if (attached) return;
   if (typeof window === 'undefined') return;
 
+  const rt = getRuntimeState();
+  if (rt.attached) return;
+
   // live settings cache so we don’t read storage each line
-  subscribeAudioSettings((s) => {
+  const offSettings = subscribeAudioSettings((s) => {
     settingsCache = s;
   });
 
-  const handler = (ev: Event) => {
-    const ce = ev as CustomEvent<any>;
-    const text: string = ce.detail?.text ?? '';
+  const offTelnet = ListenEvent<any>(
+    'shatteredarchive:raw-data',
+    (payload) => {
+      const text: string = payload?.text ?? '';
+      void tryBeepForLine(text, settingsCache);
+    },
+    {
+      key: 'audio-runtime:game:telnet-raw-line',
+    },
+  );
 
-    // Hot path: only do the minimum work
-    // - no regex
-    // - no splitting
-    // - relies on substring checks
-    void tryBeepForLine(text, settingsCache);
-  };
-
-  window.addEventListener('game:telnet-raw-line', handler as EventListener);
-  attached = true;
+  rt.attached = true;
+  rt.offSettings = typeof offSettings === 'function' ? offSettings : undefined;
+  rt.offTelnet = offTelnet;
 }

@@ -1,3 +1,4 @@
+// apps\game-client\src\pages\MainContainer.tsx
 import React from 'react';
 import styles from '../styles/MainContainer.module.scss';
 import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight';
@@ -12,7 +13,6 @@ import { useLayoutSizing, useUserCssOverrides, useMainContainer } from '../hooks
 import { usePlugins } from '../hooks/usePlugins';
 
 import { MainMenuBar } from '../components/MainMenuBar';
-import { FocusBar } from '../components/FocusBar';
 import { LayoutShell } from '../components/LayoutShell';
 import { useGameConnection } from '../hooks/useGameConnection';
 
@@ -28,12 +28,23 @@ import { useEquipmentDeltas } from '../hooks/useEquipmentDeltas';
 
 import AutoLevelingModal from '../components/AutoLevelingModal';
 import { useAutoLeveling } from '../hooks/useAutoLeveling';
+import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
+import { useTerminal } from '../hooks/useTerminal';
+import { ShatteredArchiveTerminal } from '../features/terminal/shatteredArchiveTerminal';
+import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
+import FocusBarVitals from '../components/FocusBarVitals';
 
 export const MainContainer: React.FC = () => {
   useVisualViewportHeight();
   const main = useMainContainer();
   const gameConn = useGameConnection();
-  applyCssToDom(getAppliedCss());
+
+  const userScriptRuntime = RuntimeSingleton.Instance.GetUserScriptRuntime;
+  const terminal = ShatteredArchiveTerminal.Instance;
+
+  React.useEffect(() => {
+    applyCssToDom(getAppliedCss());
+  }, []);
 
   const { layoutVars, handleVerticalResizeMouseDown, handleHorizontalResizeMouseDown } = useLayoutSizing();
 
@@ -68,6 +79,17 @@ export const MainContainer: React.FC = () => {
     if (host.includes('dsl-mud')) return 'dsl-mud';
     return `${host}:${port}`;
   }, [gameConn.currentHost, gameConn.currentPort]);
+
+  React.useEffect(() => {
+    if (!connectionId) {
+      return;
+    }
+    DispatchEvent('shatteredarchive:connection-changed', {
+      connectionId,
+      host: gameConn.currentHost,
+      port: gameConn.currentPort,
+    });
+  }, [connectionId, gameConn.currentHost, gameConn.currentPort]);
 
   const plugins = usePlugins(connectionId);
   useEquipmentCapture(connectionId);
@@ -107,7 +129,7 @@ export const MainContainer: React.FC = () => {
         onOpenAutoLeveling={handleOpenAutoLeveling}
       />
 
-      <FocusBar />
+      <FocusBarVitals />
 
       <LayoutShell
         layoutVars={layoutVars}
@@ -125,12 +147,12 @@ export const MainContainer: React.FC = () => {
         appliedCss={userCssApplied}
         draftCss={userCssDraft}
         onChangeDraft={setUserCssDraft}
-        onPreview={() => {
-          saveUserCss();
+        onPreview={(css) => {
+          saveUserCss(css);
           closeStyleModal();
         }}
-        onSave={() => {
-          saveUserCss();
+        onSave={(css) => {
+          saveUserCss(css);
           closeStyleModal();
         }}
         onDiscardDraft={() => {

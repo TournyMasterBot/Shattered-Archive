@@ -25,7 +25,7 @@ export function applyPluginUserCss(connectionId: string, pluginId: string, css: 
     document.head.appendChild(styleEl);
   }
 
-  styleEl.innerHTML = css || '';
+  styleEl.textContent = css || '';
 }
 
 export function removePluginUserCss(connectionId: string, pluginId: string) {
@@ -55,9 +55,11 @@ export function usePluginCssOverrides(connectionId: string, pluginId: string) {
   const open = () => setIsOpen(true);
   const close = () => setIsOpen(false);
 
-  const save = () => {
-    const css = draftCss;
+  const save = (cssArg?: string) => {
+    const css = cssArg ?? draftCss;
+
     setAppliedCss(css);
+    setDraftCss(css);
     applyPluginUserCss(connectionId, pluginId, css);
 
     try {

@@ -1,4 +1,3 @@
-// apps\game-client\src\components\PluginsModal.tsx
 import React from 'react';
 import styles from '../styles/PluginsModal.module.scss';
 
@@ -42,9 +41,8 @@ export const PluginsModal: React.FC<PluginsModalProps> = ({ isOpen, onClose, con
     cssState.open();
   };
 
-  const closeCss = () => {
-    // If user previewed changes, revert back to applied CSS on close
-    cssState.discardDraft();
+  const closeCss = (revert: boolean) => {
+    if (revert) cssState.discardDraft();
     cssState.close();
     setActiveCssPluginId(null);
   };
@@ -63,7 +61,6 @@ export const PluginsModal: React.FC<PluginsModalProps> = ({ isOpen, onClose, con
     const rec = getInstallRecord(pluginId);
     const userConfig = rec?.userConfig ?? {};
 
-    // Keep runtime pluginHost in sync
     if (enabled) {
       pluginHost.enable(pluginId, userConfig);
     } else {
@@ -155,19 +152,19 @@ export const PluginsModal: React.FC<PluginsModalProps> = ({ isOpen, onClose, con
           appliedCss={cssState.appliedCss}
           draftCss={cssState.draftCss}
           onChangeDraft={cssState.setDraftCss}
-          onPreview={() => {
-            cssState.save();
-            closeCss();
+          onPreview={(css) => {
+            cssState.save(css);
+            closeCss(false);
           }}
-          onSave={() => {
-            cssState.save();
-            closeCss();
+          onSave={(css) => {
+            cssState.save(css);
+            closeCss(false);
           }}
           onDiscardDraft={() => {
             cssState.discardDraft();
-            closeCss();
+            closeCss(false);
           }}
-          onClose={closeCss}
+          onClose={() => closeCss(true)}
         />
       )}
 

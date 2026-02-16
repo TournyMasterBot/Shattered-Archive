@@ -1,3 +1,4 @@
+// apps\game-client\src\hooks\useLibrary.ts
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LibraryBook, LibraryBookPage, LibraryNote, UserNote, NoteSpool } from '../features/library/library-types';
 import {
@@ -10,7 +11,7 @@ import {
   upsertBook,
   upsertNote,
 
-  // ✅ Notes (new store)
+  // Notes
   listUserNotes,
   createUserNote,
   upsertUserNote,
@@ -18,7 +19,7 @@ import {
 } from '../features/library/library-store';
 
 function normalizeBookPages(pages: LibraryBookPage[] | undefined): LibraryBookPage[] {
-  // ✅ IMPORTANT: allow empty pages to represent "all pages missing"
+  // IMPORTANT: allow empty pages to represent "all pages missing"
   return (
     (pages ?? [])
       .filter((x) => x && Number.isFinite(x.page))
@@ -46,7 +47,6 @@ export function useLibrary(connectionId: string) {
     const [n, b, un] = await Promise.all([listNotes(cid), listBooks(cid), listUserNotes(cid)]);
 
     setNotes(n);
-    // ✅ no longer force a synthetic page 1 here
     setBooks(b.map((x) => ({ ...x, pages: normalizeBookPages(x.pages) })));
     setUserNotes(un);
   }, []);
@@ -89,7 +89,7 @@ export function useLibrary(connectionId: string) {
 
   const saveBook = useCallback(
     async (book: LibraryBook) => {
-      // ✅ allow empty pages
+      // allow empty pages
       await upsertBook({ ...book, pages: normalizeBookPages(book.pages) });
       await refresh();
     },
@@ -143,7 +143,7 @@ export function useLibrary(connectionId: string) {
       const pages = normalizeBookPages(book.pages);
       const nextPages = pages.filter((p) => p.page !== page);
 
-      // ✅ IMPORTANT: do NOT force page 1 back in.
+      // IMPORTANT: do NOT force page 1 back in.
       // Empty pages array means "everything is missing".
       await saveBook({
         ...book,

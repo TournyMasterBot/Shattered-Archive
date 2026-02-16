@@ -1,130 +1,398 @@
-// apps\game-client\src\features\userScripts\runtimeSingleton.ts
-import { getAccessibilitySettings } from '../accessibility/accessibility-settings-store';
-import { UserScriptRuntime } from './userScriptRuntime';
-import type { AnyUserScript } from './types';
-import { ROUTED_WINDOW_EVENTS } from '../plugins/routed-gmcp-events';
+// apps/game-client/src/features/userScripts/runtimeSingleton.ts
 
-const settings = getAccessibilitySettings();
+import { AccessibilitySettings, getAccessibilitySettings } from '../accessibility/accessibility-settings-store';
+import { STORAGE_KEY_PREFIX_USERSCRIPTS, UserScriptRuntime } from './userScriptRuntime';
+import { ListenDomEvent, ListenEvent, ListenRedispatchMap } from '../event-emitter/event-dispatcher';
+import { ShatteredArchiveChatLine } from '../../types/chat-types/chat-line';
+import { appendChatLine, appendChatRaw } from '../chat/chat-store';
+import { GameRemoteServerRaw } from '../../types/event-types/game-remote-server-raw';
+import { GameRemoteServerGmcp } from '../../types/event-types/game-remote-server-gmcp';
+import { GameRemoteServerError } from '../../types/event-types/game-remote-server-error';
+import { GameRemoteServerClose } from '../../types/event-types/game-remote-server-close';
+import { ShatteredArchiveRawData } from '../../types/event-types/shattered-archive-raw-data';
+import { ShatteredArchiveGmcpData } from '../../types/event-types/shattered-archive-gmcp-data';
+import { ShatteredArchiveServerError } from '../../types/event-types/shattered-archive-server-error';
+import { ShatteredArchiveServerClosed } from '../../types/event-types/shattered-archive-server-closed';
+import { getGlobalVarsSnapshot } from './globalScriptsStore';
+import { getChatSettings } from '../chat/chat-settings-store';
+import { classifyStrictChatSubtype } from '../chat/strict-chat-classifier';
 
-export const userScriptRuntime = new UserScriptRuntime({
-  aliasSplitChar: settings.commandSplitChar,
-});
+declare global {
+  interface Window {
+    __SA_RUNTIME__?: {
+      runtime: UserScriptRuntime;
+      getScripts: () => any[];
+      getTriggers: () => any[];
+      getAliases: () => any[];
+      getTimers: () => any[];
+      reload: (connectionId?: string) => void;
+      rebuildTriggers: () => void;
+      dump: () => void;
 
-window.addEventListener('sa:accessibility-updated', (e: any) => {
-  const next = e?.detail;
-  userScriptRuntime.setAliasSplitChar(next?.commandSplitChar);
-});
-
-const STORAGE_KEY_PREFIX = 'shatteredArchive.userScripts.';
-
-function getStorageKey(connectionId?: string | null) {
-  const safe = connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
-  return `${STORAGE_KEY_PREFIX}${safe}`;
-}
-
-function loadScriptsFromStorage(connectionId?: string | null): AnyUserScript[] {
-  try {
-    const raw = window.localStorage.getItem(getStorageKey(connectionId));
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as AnyUserScript[]) : [];
-  } catch {
-    return [];
+      // ✅ named var helpers (debug / dev convenience)
+      getNamedVars: () => Record<string, string>;
+      setNamedVar: (name: string, value: string) => void;
+      deleteNamedVar: (name: string) => void;
+      clearNamedVars: () => void;
+    };
   }
 }
 
-function hydrateRuntime(connectionId?: string | null) {
-  // Replace runtime scripts with what’s in storage for this connection
-  userScriptRuntime.clear();
+type NamedVarSetEvent = { name: string; value: string; connectionId?: string };
+type NamedVarDeleteEvent = { name: string; connectionId?: string };
+type NamedVarClearEvent = { connectionId?: string };
 
-  const scripts = loadScriptsFromStorage(connectionId);
-  for (const s of scripts) {
-    userScriptRuntime.upsertScript(s);
-  }
+function safeConnId(v: unknown): string {
+  const s = String(v ?? '').trim();
+  return s.length > 0 ? s : 'default';
 }
 
-/**
- * Keep runtime synced with:
- * - initial page load
- * - connection changes
- * - sandbox saves (localStorage writes)
- */
-(function initUserScriptRuntimeHydration() {
-  // initial hydrate (default connection)
-  hydrateRuntime('default');
+function normalizeVarName(name: unknown): string {
+  return String(name ?? '')
+    .trim()
+    .toUpperCase();
+}
 
-  window.addEventListener('game:connection-changed', (e: any) => {
-    const nextId = e?.detail?.connectionId ?? 'default';
-    hydrateRuntime(nextId);
-  });
+export class RuntimeSingleton {
+  private static _instance: RuntimeSingleton | null = null;
+  private lastHydrateKey: string | null = null;
+  private lastHydrateJson: string | null = null;
 
-  // Listen to any localStorage update (including other tabs and same tab via manual dispatch)
-  window.addEventListener('storage', (e: StorageEvent) => {
-    if (!e.key) return;
-    if (!e.key.startsWith(STORAGE_KEY_PREFIX)) return;
-
-    // key format: shatteredArchive.userScripts.{connectionId}
-    const connectionId = e.key.slice(STORAGE_KEY_PREFIX.length) || 'default';
-    hydrateRuntime(connectionId);
-  });
-
-  // Same-tab writes do not trigger `storage`, so we also provide a manual event hook.
-  // We’ll fire this from useUserScriptSandbox when it saves.
-  window.addEventListener('game:userScripts-updated', (e: any) => {
-    const connectionId = e?.detail?.connectionId ?? 'default';
-    hydrateRuntime(connectionId);
-  });
-
-  function splitIntoLines(chunk: string): string[] {
-    // normalize to \n, then split; keep it simple and stable
-    const text = (chunk ?? '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    const lines = text.split('\n');
-
-    // drop final empty line caused by trailing newline
-    if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
-
-    return lines;
+  public static get Instance(): RuntimeSingleton {
+    if (!RuntimeSingleton._instance) RuntimeSingleton._instance = new RuntimeSingleton();
+    return RuntimeSingleton._instance;
   }
 
-  // Bridge terminal output into user-script triggers
-  window.addEventListener('game:terminal-data', (ev: any) => {
-    const detail = ev?.detail;
+  public static get Runtime(): UserScriptRuntime {
+    return RuntimeSingleton.Instance.GetUserScriptRuntime;
+  }
 
-    // Avoid triggers firing from plugin logs (optional but recommended)
-    if (detail?.__fromPlugin) return;
+  private userScriptRuntime: UserScriptRuntime;
+  private settings: AccessibilitySettings = getAccessibilitySettings();
+  private disposers: Array<() => void> = [];
 
-    const text = String(detail?.text ?? '');
-    if (!text) return;
-    const lines = splitIntoLines(text);
-    for (const line of lines) {
-      userScriptRuntime.dispatchEvent({ name: 'text:line', payload: { text: line } });
-      if (line === 'You flee from combat!') {
-        try {
-          userScriptRuntime.dispatchEvent({ name: 'event:flee', payload: { text: line } });
-          window.dispatchEvent(new CustomEvent('game:flee', { detail: line }));
-        } catch {
-          // ignore
-        }
-      } else if (line.includes('is DEAD!!')) {
-        try {
-          userScriptRuntime.dispatchEvent({ name: 'event:creature-death', payload: { text: line } });
-          window.dispatchEvent(new CustomEvent('game:creature-death', { detail: line }));
-        } catch {
-          // ignore
-        }
-      }
-    }
-  });
+  // ✅ track current connection for the named var store
+  private currentConnectionId: string = 'default';
 
-  // Bridge other routed window events into user-script triggers
-  for (const name of ROUTED_WINDOW_EVENTS) {
-    window.addEventListener(name, (ev: any) => {
-      const payload = ev?.detail;
+  // ✅ per-connection named variable store
+  private namedVarsByConn: Map<string, Map<string, string>> = new Map();
 
-      userScriptRuntime.dispatchEvent({
-        name,
-        payload,
-      });
+  private constructor() {
+    this.userScriptRuntime = new UserScriptRuntime({
+      aliasSplitChar: this.settings.commandSplitChar,
+
+      // ✅ allow runtime to expand "{NAME}" live
+      getNamedVar: (name: string) => this.getNamedVar(name),
+      setNamedVar: (name: string, value: string) => this.setNamedVar(name, value),
+      deleteNamedVar: (name: string) => this.deleteNamedVar(name),
     });
+
+    this.hydrateRuntime('default');
+    this.attachWindowEvents();
   }
-})();
+
+  public get GetUserScriptRuntime(): UserScriptRuntime {
+    return this.userScriptRuntime;
+  }
+
+  private getNamedVarMap(connectionId?: string): Map<string, string> {
+    const id = safeConnId(connectionId ?? this.currentConnectionId);
+    let m = this.namedVarsByConn.get(id);
+    if (!m) {
+      m = new Map<string, string>();
+      this.namedVarsByConn.set(id, m);
+    }
+    return m;
+  }
+
+  private getNamedVar(name: string): string | undefined {
+    const key = normalizeVarName(name);
+    if (!key) return undefined;
+    return this.getNamedVarMap().get(key);
+  }
+
+  private setNamedVar(name: string, value: string): void {
+    const key = normalizeVarName(name);
+    if (!key) return;
+    this.getNamedVarMap().set(key, String(value ?? ''));
+  }
+
+  private deleteNamedVar(name: string): void {
+    const key = normalizeVarName(name);
+    if (!key) return;
+    this.getNamedVarMap().delete(key);
+  }
+
+  private clearNamedVars(connectionId?: string): void {
+    this.getNamedVarMap(connectionId).clear();
+  }
+
+  private hydrateRuntime(connectionId?: string | null) {
+    const id = safeConnId(connectionId);
+    this.userScriptRuntime.setActiveConnectionId(id);
+    this.currentConnectionId = id;
+
+    const key = this.userScriptRuntime.getStorageKey(id);
+    const raw = window.localStorage.getItem(key) ?? '';
+
+    if (this.lastHydrateKey === key && this.lastHydrateJson === raw) return;
+
+    this.lastHydrateKey = key;
+    this.lastHydrateJson = raw;
+
+    getGlobalVarsSnapshot(id);
+
+    const scripts = this.userScriptRuntime.loadScriptsFromStorage(id);
+    this.userScriptRuntime.replaceAllScripts(scripts);
+
+    this.userScriptRuntime.rebuildTriggerListeners();
+    //this.userScriptRuntime.rebuildAliasIndex();
+    this.userScriptRuntime.rebuildTimers();
+  }
+
+  private attachWindowEvents(): void {
+    console.log('Attaching runtime singleton window events');
+
+    // RAW -> shatteredarchive:raw-data (mapped)
+    this.disposers.push(
+      ListenRedispatchMap<GameRemoteServerRaw, ShatteredArchiveRawData>(
+        'game:remote-server:raw',
+        'shatteredarchive:raw-data',
+        (detail) => ({
+          rawText: detail.payload,
+          // TODO : Consider cleaning this text output -- but don't remove it
+          // as would be a breaking change.
+          text: detail.payload,
+          fromUserScript: false,
+        }),
+        { key: 'runtimeSingleton::redispatch::raw' },
+      ),
+    );
+
+    // GMCP -> shatteredarchive:gmcp-data (mapped)
+    this.disposers.push(
+      ListenRedispatchMap<GameRemoteServerGmcp, ShatteredArchiveGmcpData>(
+        'game:remote-server:gmcp',
+        'shatteredarchive:gmcp-data',
+        (detail) => ({
+          rawText: detail.payload,
+          fromUserScript: false,
+        }),
+        { key: 'runtimeSingleton::redispatch::gmcp' },
+      ),
+    );
+
+    // ERROR -> shatteredarchive:server-error
+    this.disposers.push(
+      ListenRedispatchMap<GameRemoteServerError, ShatteredArchiveServerError>(
+        'game:remote-server:error',
+        'shatteredarchive:server-error',
+        (detail) => ({
+          message: detail.payload?.message ?? 'Unknown server error',
+        }),
+        { key: 'runtimeSingleton::redispatch::error' },
+      ),
+    );
+
+    // CLOSE -> shatteredarchive:server-closed
+    this.disposers.push(
+      ListenRedispatchMap<GameRemoteServerClose, ShatteredArchiveServerClosed>(
+        'game:remote-server:close',
+        'shatteredarchive:server-closed',
+        (detail) => ({
+          reason: detail.payload?.reason,
+        }),
+        { key: 'runtimeSingleton::redispatch::close' },
+      ),
+    );
+
+    // Connection changed -> hydrate scripts (and switch named var scope)
+    this.disposers.push(
+      ListenEvent<{ connectionId?: string }>(
+        'shatteredarchive:connection-changed',
+        (payload) => {
+          this.hydrateRuntime(safeConnId(payload?.connectionId));
+        },
+        { key: 'runtimeSingleton::window::connection-changed' },
+      ),
+    );
+
+    // UserScripts updated -> hydrate scripts
+    this.disposers.push(
+      ListenEvent<{ connectionId?: string }>(
+        'shatteredarchive:userScripts-updated',
+        (payload) => {
+          this.hydrateRuntime(safeConnId(payload?.connectionId));
+        },
+        { key: 'runtimeSingleton::window::userScripts-updated' },
+      ),
+    );
+
+    this.disposers.push(
+      ListenEvent<{ commandSplitChar?: string }>(
+        'shatteredarchive:accessibility-updated',
+        (payload) => {
+          const nextSplit = payload?.commandSplitChar ?? this.settings.commandSplitChar;
+          this.userScriptRuntime.setAliasSplitChar(nextSplit);
+        },
+        { key: 'runtimeSingleton::window::accessibility-updated' },
+      ),
+    );
+
+    // Chat lines -> chat store (global, always-on)
+    this.disposers.push(
+      ListenEvent<ShatteredArchiveChatLine>(
+        'shatteredarchive:chat-line',
+        (payload) => {
+          console.log('Raw chat event', payload);
+          const rawText = String(payload?.rawText ?? payload?.text ?? '');
+          if (!rawText) return;
+
+          const ts =
+            typeof payload?.ts === 'number'
+              ? payload.ts
+              : payload?.receivedTimestamp
+                ? Date.parse(payload.receivedTimestamp)
+                : Date.now();
+
+          const t = Number.isFinite(ts) ? ts : Date.now();
+
+          const settings = getChatSettings();
+          const subtype = settings.strictChatFormat ? classifyStrictChatSubtype(rawText) : undefined;
+
+          // STRICT: only capture if it matched a strict rule
+          if (settings.strictChatFormat && !subtype) {
+            return;
+          }
+
+          appendChatLine(rawText, t, subtype);
+        },
+        { key: 'runtimeSingleton::chat::shatteredarchive:chat-line' },
+      ),
+    );
+
+    // Storage updated -> hydrate scripts (cross-tab safe)
+    this.disposers.push(
+      ListenDomEvent<StorageEvent>(
+        'storage',
+        (e) => {
+          if (!e.key) {
+            return;
+          }
+          if (!e.key.startsWith(STORAGE_KEY_PREFIX_USERSCRIPTS)) {
+            return;
+          }
+
+          const connectionId = e.key.slice(STORAGE_KEY_PREFIX_USERSCRIPTS.length) || 'default';
+          this.hydrateRuntime(connectionId);
+        },
+        { key: 'runtimeSingleton::window::storage' },
+      ),
+    );
+
+    // ✅ Live named-var updates (optional; useful if UI wants to push changes)
+    this.disposers.push(
+      ListenEvent<NamedVarSetEvent>(
+        'shatteredarchive:named-var:set',
+        (payload) => {
+          const id = safeConnId(payload?.connectionId ?? this.currentConnectionId);
+          const key = normalizeVarName(payload?.name);
+          if (!key) return;
+
+          const m = this.getNamedVarMap(id);
+          m.set(key, String(payload?.value ?? ''));
+        },
+        { key: 'runtimeSingleton::named-vars::set' },
+      ),
+    );
+
+    this.disposers.push(
+      ListenEvent<NamedVarDeleteEvent>(
+        'shatteredarchive:named-var:delete',
+        (payload) => {
+          const id = safeConnId(payload?.connectionId ?? this.currentConnectionId);
+          const key = normalizeVarName(payload?.name);
+          if (!key) return;
+
+          const m = this.getNamedVarMap(id);
+          m.delete(key);
+        },
+        { key: 'runtimeSingleton::named-vars::delete' },
+      ),
+    );
+
+    this.disposers.push(
+      ListenEvent<NamedVarClearEvent>(
+        'shatteredarchive:named-var:clear',
+        (payload) => {
+          const id = safeConnId(payload?.connectionId ?? this.currentConnectionId);
+          this.clearNamedVars(id);
+        },
+        { key: 'runtimeSingleton::named-vars::clear' },
+      ),
+    );
+
+    // Timers should run even when the user script editor/modal isn't mounted.
+    // Use a single global tick (HMR-safe) to drive UserScriptRuntime.tickTimers().
+    const w = window as any;
+    if (!w.__SA_USERSCRIPTS_TIMER_TICK__) {
+      w.__SA_USERSCRIPTS_TIMER_TICK__ = window.setInterval(() => {
+        try {
+          this.userScriptRuntime.tickTimers();
+        } catch (err) {
+          console.error('[RuntimeSingleton] tickTimers failed', err);
+        }
+      }, 250);
+    }
+
+    window.__SA_RUNTIME__ = {
+      runtime: this.userScriptRuntime,
+      getScripts: () => this.userScriptRuntime.getAllScripts(),
+      getTriggers: () => this.userScriptRuntime.getAllScripts().filter((s: any) => s.kind === 'trigger'),
+      getAliases: () => this.userScriptRuntime.getAllScripts().filter((s: any) => s.kind === 'alias'),
+      getTimers: () => this.userScriptRuntime.getAllScripts().filter((s: any) => s.kind === 'timer'),
+
+      reload: (connectionId?: string) => {
+        const id = connectionId ?? 'default';
+        this.hydrateRuntime(id);
+        console.log('[__SA_RUNTIME__] reloaded', { connectionId: id });
+      },
+
+      rebuildTriggers: () => {
+        (this.userScriptRuntime as any).rebuildTriggerListeners?.();
+        console.log('[__SA_RUNTIME__] rebuildTriggers called');
+      },
+
+      dump: () => {
+        const all = this.userScriptRuntime.getAllScripts();
+        const byKind = all.reduce((acc: any, s: any) => {
+          acc[s.kind] = acc[s.kind] ?? [];
+          acc[s.kind].push(s);
+          return acc;
+        }, {});
+
+        console.group('[__SA_RUNTIME__] scripts');
+        console.log('count:', all.length);
+        console.log('byKind:', Object.fromEntries(Object.entries(byKind).map(([k, v]: any) => [k, v.length])));
+        console.table(
+          all.map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            kind: s.kind,
+            enabled: s.enabled,
+            eventName: s.kind === 'trigger' ? s.eventName : '',
+            matchText: s.kind === 'trigger' ? s.matchText : '',
+            omitFromOutput: s.kind === 'trigger' ? s.omitFromOutput : '',
+          })),
+        );
+        console.groupEnd();
+      },
+
+      // ✅ named var debug helpers
+      getNamedVars: () => Object.fromEntries(Array.from(this.getNamedVarMap().entries())),
+      setNamedVar: (name: string, value: string) => this.setNamedVar(name, value),
+      deleteNamedVar: (name: string) => this.deleteNamedVar(name),
+      clearNamedVars: () => this.clearNamedVars(),
+    };
+  }
+}

@@ -16,6 +16,7 @@ export type InstalledPluginRecord = {
   enabled: boolean;
   installedAt: number;
   userConfig: Record<string, unknown>;
+  kind: string;
 };
 
 /* -------------------------------------------
@@ -69,7 +70,7 @@ export function usePlugins(connectionId?: string | null) {
     setPlugins(loadFromStorage(connectionId));
   }, [connectionId]);
 
-  // ✅ Persist immediately with the computed "next" value (no effect-race)
+  // Persist immediately with the computed "next" value (no effect-race)
   const setPluginsPersist = useCallback((updater: (prev: InstalledPluginRecord[]) => InstalledPluginRecord[]) => {
     setPlugins((prev) => {
       const next = updater(prev);
@@ -129,6 +130,7 @@ export function usePlugins(connectionId?: string | null) {
           enabled: false,
           installedAt: Date.now(),
           userConfig: {},
+          kind: 'unknown-plugin-kind',
         };
 
         return [...prev, rec];

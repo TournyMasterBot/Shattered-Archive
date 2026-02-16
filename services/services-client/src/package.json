@@ -9,5 +9,29 @@
     "build": "tsc -p tsconfig.json",
     "test": "jest --config ../../jest.config.cjs --runInBand --rootDir .",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\""
+  },
+  "dependencies": {
+    "@testing-library/react": "^16.3.1",
+    "@types/react-dom": "^19.2.3",
+    "@types/ws": "^8.18.1",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-search": "^0.16.0",
+    "@xterm/xterm": "^5.5.0",
+    "ansi-to-html": "^0.7.2",
+    "compression": "^1.8.1",
+    "concurrently": "^9.2.1",
+    "dotenv": "^17.2.3",
+    "events": "^3.3.0",
+    "express": "^5.2.1",
+    "fengari-web": "^0.1.4",
+    "helmet": "^8.1.0",
+    "react": "^19.2.3",
+    "react-dom": "19.2.3",
+    "scss": "^0.2.4",
+    "skulpt": "^1.2.0",
+    "uuid": "^13.0.0",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "ws": "^8.18.3"
   }
 }

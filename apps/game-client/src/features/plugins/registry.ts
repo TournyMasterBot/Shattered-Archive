@@ -1,3 +1,4 @@
+// apps\game-client\src\features\plugins\registry.ts
 import type { IPluginModule, PluginId, PluginManifest } from '@shatteredarchive/types-client';
 import { createRollerPlugin } from './core-plugins/roller.plugin';
 

@@ -1,7 +1,7 @@
 // apps/game-client/src/features/userStyles/userStyleOverrideStore.ts
 
-const KEY_APPLIED = 'sa.userStyleOverrides.appliedCss.v1';
-const STYLE_TAG_ID = 'sa-user-style-overrides';
+const KEY_APPLIED = 'shatteredarchive.userStyleOverrides.appliedCss.v1';
+const STYLE_TAG_ID = 'shatteredarchive-user-style-overrides';
 
 export function getAppliedCss(): string {
   try {
@@ -21,17 +21,29 @@ export function setAppliedCss(css: string): void {
 }
 
 export function applyCssToDom(css: string): void {
-  try {
-    let tag = document.getElementById(STYLE_TAG_ID) as HTMLStyleElement | null;
-    if (!tag) {
-      tag = document.createElement('style');
-      tag.id = STYLE_TAG_ID;
-      document.head.appendChild(tag);
-    }
-    tag.textContent = css ?? '';
-  } catch {
-    // ignore
+  const safeCss = css ?? '';
+
+  // If this can ever run before <head> exists, you can optionally queue it.
+  const head = document.head || document.getElementsByTagName('head')[0];
+  if (!head) return;
+
+  let el = document.getElementById(STYLE_TAG_ID);
+
+  // If something else stole the id, remove it and recreate properly.
+  if (el && el.tagName.toLowerCase() !== 'style') {
+    el.parentElement?.removeChild(el);
+    el = null;
   }
+
+  const styleEl = (el as HTMLStyleElement) ?? document.createElement('style');
+  styleEl.id = STYLE_TAG_ID;
+
+  // Set CSS first
+  styleEl.textContent = safeCss;
+
+  // Then ensure it's LAST in <head> so it wins the cascade.
+  // appendChild() will move it if it already exists.
+  head.appendChild(styleEl);
 }
 
 // ------------------------------------------------------------

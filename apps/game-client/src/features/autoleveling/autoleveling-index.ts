@@ -1,6 +1,6 @@
 // apps/game-client/src/features/autoleveling/autoleveling-index.ts
 
-export { AUTOLEVELING_CONFIG_VERSION, createDefaultAutoLevelConfig } from './autoleveling-defaults';
+export { createDefaultAutoLevelConfig } from './autoleveling-defaults';
 
 // Storage exports (real names)
 export { loadAutoLevelConfig, saveAutoLevelConfig } from './autoleveling-storage';

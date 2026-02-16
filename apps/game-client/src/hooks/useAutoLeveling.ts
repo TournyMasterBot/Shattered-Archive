@@ -25,6 +25,7 @@ import {
   saveAutoLevelConfig,
 } from '../features/autoleveling/autoleveling-storage';
 import { AutoLevelingEngine } from '../features/autoleveling/autoleveling-engine';
+import { ListenEvent } from '../features/event-emitter/event-dispatcher';
 
 /* ----------------------------- debug helpers ------------------------------ */
 
@@ -50,12 +51,14 @@ function isAutoLevelingDebugEnabled(): boolean {
 }
 
 function hdbg(...args: any[]) {
+  return;
   if (!isAutoLevelingDebugEnabled()) return;
   // eslint-disable-next-line no-console
   console.debug(HOOK_LOG_PREFIX, ...args);
 }
 
 function hwarn(...args: any[]) {
+  return;
   if (!isAutoLevelingDebugEnabled()) return;
   // eslint-disable-next-line no-console
   console.warn(HOOK_LOG_PREFIX, ...args);
@@ -93,26 +96,42 @@ export function useAutoLeveling(connectionId: string) {
   // socket readiness remains a UI safety gate
   const [socketReady, setSocketReady] = useState(false);
   useEffect(() => {
-    const onOpen = () => {
-      hdbg('socket open -> socketReady=true');
-      setSocketReady(true);
-    };
-    const onClose = () => {
-      hdbg('socket closed -> socketReady=false');
-      setSocketReady(false);
-    };
-    window.addEventListener('game:socket-open', onOpen as EventListener);
-    window.addEventListener('game:socket-closed', onClose as EventListener);
+    const disposeOpen = ListenEvent<unknown>(
+      'game:remote-server:open',
+      () => {
+        hdbg('socket open -> socketReady=true');
+        setSocketReady(true);
+      },
+      { key: 'useUserScriptSandbox::socket::open' },
+    );
+
+    const disposeClose = ListenEvent<unknown>(
+      'game:remote-server:close',
+      () => {
+        hdbg('socket closed -> socketReady=false');
+        setSocketReady(false);
+      },
+      { key: 'useUserScriptSandbox::socket::close' },
+    );
+
     return () => {
-      window.removeEventListener('game:socket-open', onOpen as EventListener);
-      window.removeEventListener('game:socket-closed', onClose as EventListener);
+      try {
+        disposeOpen?.();
+      } catch {
+        // ignore
+      }
+      try {
+        disposeClose?.();
+      } catch {
+        // ignore
+      }
     };
   }, []);
 
   const [runState, setRunState] = useState<AutoLevelRunState>({ status: 'idle' });
-  useEffect(() => {
+  /*useEffect(() => {
     hdbg('runState updated', runState);
-  }, [runState]);
+  }, [runState]);*/
 
   const engineRef = useRef<AutoLevelingEngine | null>(null);
 
@@ -239,33 +258,51 @@ export function useAutoLeveling(connectionId: string) {
 
   // Event-bus controls (crossed swords etc)
   useEffect(() => {
-    const onStart = () => {
-      hdbg('event: game:autoleveling-start');
-      start();
-    };
-    const onPause = () => {
-      hdbg('event: game:autoleveling-pause');
-      pause();
-    };
-    const onResume = () => {
-      hdbg('event: game:autoleveling-resume');
-      resume();
-    };
-    const onStop = () => {
-      hdbg('event: game:autoleveling-stop');
-      stop();
-    };
+    const disposeStart = ListenEvent(
+      'shatteredarchive:autoleveling-start',
+      () => {
+        hdbg('event: game:autoleveling-start');
+        start();
+      },
+      { key: 'useAutoLeveling::window::autoleveling-start' },
+    );
 
-    window.addEventListener('game:autoleveling-start', onStart as EventListener);
-    window.addEventListener('game:autoleveling-pause', onPause as EventListener);
-    window.addEventListener('game:autoleveling-resume', onResume as EventListener);
-    window.addEventListener('game:autoleveling-stop', onStop as EventListener);
+    const disposePause = ListenEvent(
+      'shatteredarchive:autoleveling-pause',
+      () => {
+        hdbg('event: game:autoleveling-pause');
+        pause();
+      },
+      { key: 'useAutoLeveling::window::autoleveling-pause' },
+    );
+
+    const disposeResume = ListenEvent(
+      'shatteredarchive:autoleveling-resume',
+      () => {
+        hdbg('event: game:autoleveling-resume');
+        resume();
+      },
+      { key: 'useAutoLeveling::window::autoleveling-resume' },
+    );
+
+    const disposeStop = ListenEvent(
+      'shatteredarchive:autoleveling-stop',
+      () => {
+        hdbg('event: game:autoleveling-stop');
+        stop();
+      },
+      { key: 'useAutoLeveling::window::autoleveling-stop' },
+    );
 
     return () => {
-      window.removeEventListener('game:autoleveling-start', onStart as EventListener);
-      window.removeEventListener('game:autoleveling-pause', onPause as EventListener);
-      window.removeEventListener('game:autoleveling-resume', onResume as EventListener);
-      window.removeEventListener('game:autoleveling-stop', onStop as EventListener);
+      try {
+        disposeStart?.();
+        disposePause?.();
+        disposeResume?.();
+        disposeStop?.();
+      } catch {
+        // ignore
+      }
     };
   }, [pause, resume, start, stop]);
 

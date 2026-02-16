@@ -36,6 +36,7 @@ function isAutoLevelingDebugEnabled(): boolean {
 }
 
 function sdbg(...args: any[]) {
+  return;
   if (!isAutoLevelingDebugEnabled()) return;
   // eslint-disable-next-line no-console
   console.debug(STORAGE_LOG_PREFIX, ...args);

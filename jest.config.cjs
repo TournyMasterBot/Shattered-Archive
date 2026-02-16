@@ -1,30 +1,84 @@
 /** @type {import('jest').Config} */
 module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
+  projects: [
+    // -------------------------
+    // SERVER TESTS (Node)
+    // -------------------------
+    {
+      displayName: 'server',
+      preset: 'ts-jest/presets/default-esm',
+      testEnvironment: 'node',
 
-  roots: ['<rootDir>/src'],
+      testMatch: [
+        '<rootDir>/**/**-server/**/*.test.ts',
+        '<rootDir>/**/**-server/**/*.spec.ts',
+        '<rootDir>/**/**-server/**/__tests__/**/*.test.ts',
+        '<rootDir>/**/**-server/**/__tests__/**/*.spec.ts',
+      ],
 
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  moduleNameMapper: {
-    "^(\\.{1,2}/.*)\\.js$": "$1",
-  },
+      extensionsToTreatAsEsm: ['.ts'],
 
-  testMatch: [
-    '**/__tests__/**/*.(test|spec).[tj]s?(x)',
-    '**/?(*.)+(test|spec).[tj]s?(x)',
-  ],
+      transform: {
+        '^.+\\.ts$': [
+          'ts-jest',
+          {
+            useESM: true,
+            tsconfig: '<rootDir>/tsconfig.jest.server.json',
+          },
+        ],
+      },
 
-  transform: {
-    '^.+\\.(t|j)sx?$': 'ts-jest',
-  },
+      moduleFileExtensions: ['ts', 'js', 'json', 'node'],
 
-  collectCoverage: true,
-  coverageDirectory: 'coverage',
-  coverageReporters: [
-    'json-summary',
-    'json',
-    'lcov',
-    'text',
+      moduleNameMapper: {
+        '^(\\.{1,2}/.*)\\.js$': '$1',
+      },
+
+      testPathIgnorePatterns: ['/node_modules/', '/dist/', '/coverage/'],
+      coverageDirectory: '<rootDir>/coverage/server',
+      coverageReporters: ['json-summary'],
+    },
+
+    // -------------------------
+    // CLIENT TESTS (jsdom)
+    // -------------------------
+    {
+      displayName: 'client',
+      preset: 'ts-jest/presets/default-esm',
+      testEnvironment: 'jsdom',
+
+      testMatch: [
+        '<rootDir>/**/**-client/**/*.test.ts',
+        '<rootDir>/**/**-client/**/*.test.tsx',
+        '<rootDir>/**/**-client/**/*.spec.ts',
+        '<rootDir>/**/**-client/**/*.spec.tsx',
+        '<rootDir>/**/**-client/**/__tests__/**/*.test.ts',
+        '<rootDir>/**/**-client/**/__tests__/**/*.test.tsx',
+        '<rootDir>/**/**-client/**/__tests__/**/*.spec.ts',
+        '<rootDir>/**/**-client/**/__tests__/**/*.spec.tsx',
+      ],
+
+      extensionsToTreatAsEsm: ['.ts', '.tsx'],
+
+      transform: {
+        '^.+\\.(ts|tsx)$': [
+          'ts-jest',
+          {
+            useESM: true,
+            tsconfig: '<rootDir>/tsconfig.jest.client.json',
+          },
+        ],
+      },
+
+      moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+
+      moduleNameMapper: {
+        '^(\\.{1,2}/.*)\\.js$': '$1',
+      },
+
+      testPathIgnorePatterns: ['/node_modules/', '/dist/', '/coverage/'],
+      coverageDirectory: '<rootDir>/coverage/client',
+      coverageReporters: ['json-summary'],
+    },
   ],
 };

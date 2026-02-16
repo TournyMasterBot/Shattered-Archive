@@ -25,7 +25,7 @@ function toNumberOrUndefined(raw: string): number | undefined {
 export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({ isOpen, onClose, connectionId, pluginId }) => {
   const { getInstallRecord, updatePluginConfig, installCorePlugin } = usePlugins(connectionId);
 
-  // ✅ hooks must be unconditional / always in the same order
+  // hooks must be unconditional / always in the same order
   const firstInputRef = React.useRef<HTMLInputElement | null>(null);
   const shouldCloseRef = React.useRef(false);
 
@@ -49,7 +49,7 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({ isOpen, on
 
   const defaults = schema?.defaults ?? {};
 
-  // ✅ include defaults in deps (it changes when schema changes)
+  // include defaults in deps (it changes when schema changes)
   const initialCfg = React.useMemo(() => ({ ...defaults, ...(record?.userConfig ?? {}) }), [defaults, record]);
 
   const [draft, setDraft] = React.useState<Record<string, unknown>>(() => initialCfg);
@@ -99,8 +99,10 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({ isOpen, on
     if (e.key === 'Escape') onClose();
   };
 
-  // ✅ return after all hooks are declared
-  if (!isOpen) return null;
+  // return after all hooks are declared
+  if (!isOpen) {
+    return null;
+  }
 
   const modal = (
     <div

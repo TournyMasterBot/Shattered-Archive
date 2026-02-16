@@ -17,7 +17,7 @@ export function applyPluginBaseCss(connectionId: string, pluginId: string, css: 
     document.head.appendChild(styleEl);
   }
 
-  styleEl.innerHTML = css || '';
+  styleEl.textContent = css || '';
 }
 
 export function removePluginBaseCss(connectionId: string, pluginId: string) {

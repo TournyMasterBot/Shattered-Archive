@@ -18,9 +18,9 @@
  *   A) start.pre -> start.exec -> start.post
  *   B) For each trainingPath segment (config.init.trainingPath split by ';', empty segments preserved):
  *       1) move.pre -> move.exec
- *       2) send segment (dispatches game:send-command, plus game:movement-attempt for directionals)
+ *       2) send segment (dispatches shatteredarchive:send-command, plus shatteredarchive:movement-attempt for directionals)
  *       3) if segment is movement:
- *            waitForMovement(...) using game:movement-succeeded/failed
+ *            waitForMovement(...) using shatteredarchive:movement-succeeded/failed
  *            move.post
  *            identify.pre -> identify.exec -> identify.post
  *          else:
@@ -38,6 +38,7 @@
  *    - if engage fails, unlock and continue
  */
 
+import { DispatchEvent, ListenEvent } from '../event-emitter/event-dispatcher';
 import type { AutoLevelAction, AutoLevelConfig, AutoLevelRunState, AutoLevelTarget } from './autoleveling-types';
 
 type EngineDeps = {
@@ -83,6 +84,7 @@ function isAutoLevelingDebugEnabled(): boolean {
 }
 
 function dbg(...args: any[]) {
+  return;
   if (!isAutoLevelingDebugEnabled()) return;
   // eslint-disable-next-line no-console
   console.debug(ENG_LOG_PREFIX, ...args);
@@ -118,15 +120,6 @@ function normLine(input: string): string {
 
 function now() {
   return Date.now();
-}
-
-function dispatchSafe(name: string, detail?: any) {
-  try {
-    dbg('dispatch', { name, detail });
-    window.dispatchEvent(new CustomEvent(name, { detail }));
-  } catch (e) {
-    warn('dispatch failed (ignored)', { name, e });
-  }
 }
 
 const MOVE_DIRS = new Set(['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw', 'u', 'd', 'up', 'down']);
@@ -202,6 +195,9 @@ function extractEventMoveKey(detail: any): { cmd?: string; dir?: string; ts?: nu
 
 export class AutoLevelingEngine {
   private deps: EngineDeps;
+
+  private isBound = false;
+  private offListeners: Array<() => void> = [];
 
   private trainingPathSteps: string[] = [];
 
@@ -384,8 +380,17 @@ export class AutoLevelingEngine {
     if (this.stopping || this.paused) return;
 
     const ce = ev as CustomEvent<any>;
-    dbg('game:flee observed -> pausing engine', { detail: ce?.detail });
+    dbg('event:flee observed -> pausing engine', { detail: ce?.detail });
     this.pause();
+  };
+
+  private boundOnCreatureDeath = (ev: Event) => {
+    if (this.stopping || this.paused) return;
+
+    const ce = ev as CustomEvent<any>;
+    console.log('autoleveling-engine observed a creature death', {
+      ce,
+    });
   };
 
   private boundOnCharDataFighting = (ev: Event) => {
@@ -418,35 +423,108 @@ export class AutoLevelingEngine {
   }
 
   bind() {
-    try {
-      dbg('bind()');
-      // Global terminal data
-      window.addEventListener('game:terminal-data', this.boundOnTerminalData as EventListener);
-      // GMCP-derived combat state (authoritative)
-      window.addEventListener('game:char-data', this.boundOnCharDataFighting as EventListener);
-      window.addEventListener('game:gmcp-char-data', this.boundOnCharDataFighting as EventListener);
-      window.addEventListener('gmcp:char_data', this.boundOnCharDataFighting as EventListener);
+    if (this.isBound) {
+      return;
+    }
 
-      // Custom events to help power the engine
-      window.addEventListener('game:movement-succeeded', this.boundOnMovementSucceeded as EventListener);
-      window.addEventListener('game:movement-failed', this.boundOnMovementFailed as EventListener);
-      window.addEventListener('game:flee', this.boundOnFlee as EventListener);
+    try {
+      dbg('autoleveling-engine bind()');
+
+      this.offListeners = [
+        // Global terminal data
+        ListenEvent<any>(
+          'shatteredarchive:terminal-data',
+          (payload) => {
+            this.boundOnTerminalData({ detail: payload } as any);
+          },
+          { key: 'AutoLevelingEngine:terminal-data' },
+        ),
+
+        // GMCP-derived combat state (authoritative)
+        ListenEvent<any>(
+          'shatteredarchive:char-data',
+          (payload) => {
+            this.boundOnCharDataFighting({ detail: payload, type: 'shatteredarchive:char-data' } as any);
+          },
+          { key: 'AutoLevelingEngine:char-data' },
+        ),
+
+        ListenEvent<any>(
+          'shatteredarchive:gmcp-char-data',
+          (payload) => {
+            this.boundOnCharDataFighting({ detail: payload, type: 'shatteredarchive:gmcp-char-data' } as any);
+          },
+          { key: 'AutoLevelingEngine:gmcp-char-data' },
+        ),
+
+        ListenEvent<any>(
+          'gmcp:char_data',
+          (payload) => {
+            this.boundOnCharDataFighting({ detail: payload, type: 'gmcp:char_data' } as any);
+          },
+          { key: 'AutoLevelingEngine:gmcp:char_data' },
+        ),
+
+        // Handle movement succeeded
+        ListenEvent<any>(
+          'shatteredarchive:movement-succeeded',
+          (payload) => {
+            this.boundOnMovementSucceeded({ detail: payload } as any);
+          },
+          { key: 'AutoLevelingEngine:movement-succeeded' },
+        ),
+
+        // Handle movement failed
+        ListenEvent<any>(
+          'shatteredarchive:movement-failed',
+          (payload) => {
+            this.boundOnMovementFailed({ detail: payload } as any);
+          },
+          { key: 'AutoLevelingEngine:movement-failed' },
+        ),
+
+        // Handle creature deaths
+        ListenEvent<any>(
+          'event:creature-death',
+          (payload) => {
+            this.boundOnCreatureDeath({ detail: payload } as any);
+          },
+          { key: 'AutoLevelingEngine:event:creature-death' },
+        ),
+
+        // Pause on flee
+        ListenEvent<any>(
+          'event:flee',
+          (payload) => {
+            this.boundOnFlee({ detail: payload } as any);
+          },
+          { key: 'AutoLevelingEngine:event:flee' },
+        ),
+      ];
+
+      this.isBound = true;
     } catch (e) {
       warn('bind failed (ignored)', e);
     }
   }
 
   unbind() {
+    return; // TMB TODO : Review
+    if (!this.isBound) return;
+
     try {
       dbg('unbind()');
 
-      window.removeEventListener('game:terminal-data', this.boundOnTerminalData as EventListener);
-      window.removeEventListener('game:char-data', this.boundOnCharDataFighting as EventListener);
-      window.removeEventListener('game:gmcp-char-data', this.boundOnCharDataFighting as EventListener);
-      window.removeEventListener('gmcp:char_data', this.boundOnCharDataFighting as EventListener);
-      window.removeEventListener('game:movement-succeeded', this.boundOnMovementSucceeded as EventListener);
-      window.removeEventListener('game:movement-failed', this.boundOnMovementFailed as EventListener);
-      window.removeEventListener('game:flee', this.boundOnFlee as EventListener);
+      for (const off of this.offListeners) {
+        try {
+          off();
+        } catch {
+          // ignore
+        }
+      }
+
+      this.offListeners = [];
+      this.isBound = false;
     } catch (e) {
       warn('unbind failed (ignored)', e);
     }
@@ -480,7 +558,7 @@ export class AutoLevelingEngine {
   }
 
   async start(): Promise<void> {
-    // ✅ single consistent cfg
+    // single consistent cfg
     const cfg = this.deps.getConfig();
 
     dbg('start() called', {
@@ -502,7 +580,7 @@ export class AutoLevelingEngine {
       return;
     }
 
-    // ✅ restored original queue init (filtering empties)
+    // restored original queue init (filtering empties)
     this.trainingPathSteps = cfg.init.trainingPath.split(';').filter((x) => x?.trim()?.length > 0);
     if (this.trainingPathSteps.length === 0) {
       this.deps.setRunState({ status: 'error', message: 'Training path step length is 0' });
@@ -539,7 +617,6 @@ export class AutoLevelingEngine {
           roundDelay: cfg.roundLoopTimeMs,
         });
 
-        // ✅ restored original queue loop
         while (this.trainingPathSteps.length > 0) {
           const step = this.trainingPathSteps.shift()!;
 
@@ -582,7 +659,6 @@ export class AutoLevelingEngine {
 
         await this.delayMs(cfg.roundLoopTimeMs);
 
-        // ✅ restored original repopulate
         this.trainingPathSteps = cfg.init.trainingPath.split(';').filter((x) => x?.trim()?.length > 0);
         round += 1;
         this.deps.setRunState({ status: 'running', round, step: 'start', actionIndex: 0 });
@@ -680,10 +756,9 @@ export class AutoLevelingEngine {
 
     const mv = isMovementCommand(cmd);
     if (mv.isMove) {
-      dispatchSafe('game:movement-attempt', { cmd, dir: mv.dir });
+      DispatchEvent('shatteredarchive:movement-attempt', { cmd, dir: mv.dir });
     }
-
-    dispatchSafe('game:send-command', { cmd });
+    DispatchEvent('shatteredarchive:send-command', { cmd });
   }
 
   private delayMs(ms: number): Promise<void> {

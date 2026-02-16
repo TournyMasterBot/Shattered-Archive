@@ -1,22 +1,14 @@
 // apps/game-client/src/features/userScripts/terminalBridge.ts
+import { DispatchEvent } from '../event-emitter/event-dispatcher';
 import { renderDslToAnsi } from './dslToAnsi';
 
-/**
- * Emit raw ANSI text directly to the xterm terminal bypass path.
- *
- * This writes to the same xterm instance used by useTerminal,
- * but via the `game:terminal-data-script` event that does NOT go
- * through omit/line filtering.
- */
 export function emitScriptTerminal(text: string): void {
   if (!text) return;
 
   try {
-    window.dispatchEvent(
-      new CustomEvent('game:terminal-data-script', {
-        detail: { text },
-      }),
-    );
+    DispatchEvent('shatteredarchive:write-terminal', {
+      rawText: text,
+    });
   } catch {
     // Ignore in non-browser / test environments
   }

@@ -1,3 +1,4 @@
+// apps\game-client\src\features\plugins\core-plugins\roller.plugin.ts
 import type { IPluginModule, PluginExportInfo, PluginRuntimeApi } from '@shatteredarchive/types-client';
 
 type ParsedRoll = {
@@ -201,7 +202,9 @@ export function createRollerPlugin(): IPluginModule {
     },
 
     onEvent: (api: PluginRuntimeApi, evt) => {
-      if (!evt || evt.name !== 'game:terminal-data') return;
+      if (!evt || evt.name !== 'shatteredarchive:raw-data') {
+        return;
+      }
 
       const cfg = getConfigFromApi(api);
       const debug = readBool(cfg, 'debug', false);

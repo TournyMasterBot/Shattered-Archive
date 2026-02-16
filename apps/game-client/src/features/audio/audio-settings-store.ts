@@ -1,3 +1,4 @@
+// apps\game-client\src\features\audio\audio-settings-store.ts
 export type BeepSound =
   | {
       kind: 'osc';
@@ -42,7 +43,7 @@ export type AudioSettings = {
   defaultBeep: BeepSound;
 };
 
-const STORAGE_KEY = 'sa.audio.settings.v2';
+const STORAGE_KEY = 'shatteredarchive.audio.settings.v2';
 
 const DEFAULT_SETTINGS: AudioSettings = {
   beepsEnabled: true,

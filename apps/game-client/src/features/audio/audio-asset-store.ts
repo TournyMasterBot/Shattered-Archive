@@ -1,3 +1,4 @@
+// apps\game-client\src\features\audio\audio-asset-store.ts
 const DB_NAME = 'sa_audio_assets_v1';
 const STORE = 'assets';
 const DB_VERSION = 1;

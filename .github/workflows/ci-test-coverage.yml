@@ -24,7 +24,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Use Corepack + packageManager from package.json as the single source of truth.
       - name: Enable Corepack
         run: corepack enable
 
@@ -45,24 +44,100 @@ jobs:
       - name: Build
         run: pnpm -r run build
 
-      - name: Run Jest tests with coverage
-        run: pnpm test -- --coverage
+      - name: Typecheck
+        run: pnpm typecheck
 
-      - name: Merge workspace coverage summaries
+      - name: Run Jest (root) with coverage
+        env:
+          CI: "true"
+        run: pnpm exec jest --config ./jest.config.cjs --runInBand --coverage --coverageReporters=json --coverageReporters=json-summary
+
+      - name: Split coverage-final.json into per-workspace summaries
         if: always()
-        run: node scripts/merge-coverage-summary.cjs
+        run: node scripts/split-coverage-final.cjs
 
-      - name: Add coverage summary to run
+      - name: Add per-project coverage table to run
         if: always()
         shell: bash
         run: |
-          echo "### Test & Coverage" >> "$GITHUB_STEP_SUMMARY"
-          if [ -f coverage/coverage-summary.json ]; then
-            node -e "const fs=require('fs'); const p='coverage/coverage-summary.json'; const s=JSON.parse(fs.readFileSync(p,'utf8')).total; const fmt=v=>\`\${((v.pct??0)).toFixed(2)}%\`; const lines=['','| Metric | % | Covered / Total |','|---|---:|---:|',\`| Lines | \${fmt(s.lines)} | \${s.lines.covered}/\${s.lines.total} |\`,\`| Statements | \${fmt(s.statements)} | \${s.statements.covered}/\${s.statements.total} |\`,\`| Functions | \${fmt(s.functions)} | \${s.functions.covered}/\${s.functions.total} |\`,\`| Branches | \${fmt(s.branches)} | \${s.branches.covered}/\${s.branches.total} |\`]; fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n')+'\n');"
-          else
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "No coverage/coverage-summary.json found. Check Jest coverageDirectory/output paths." >> "$GITHUB_STEP_SUMMARY"
+          if [ ! -f coverage/workspaces/index.json ]; then
+            echo "No per-project index found." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
           fi
+
+          node <<'NODE'
+          const fs = require('fs');
+
+          const idx = JSON.parse(fs.readFileSync('coverage/workspaces/index.json','utf8'));
+
+          const fmtPct = (v) => `${Number(v?.pct ?? 0).toFixed(2)}%`;
+          const fmtRatio = (v) => `${v?.covered ?? 0}/${v?.total ?? 0}`;
+
+          let out = [];
+          out.push('\n### Test & Coverage (Per Project Bucket)');
+          out.push('\n| Bucket | Lines | Statements | Functions | Branches |');
+          out.push('|---|---:|---:|---:|---:|');
+
+          for (const e of idx) {
+            const s = JSON.parse(fs.readFileSync(e.path, 'utf8')).total;
+
+            const cell = (m) => `${fmtPct(m)} (${fmtRatio(m)})`;
+
+            out.push(`| ${e.bucket} | ${cell(s.lines)} | ${cell(s.statements)} | ${cell(s.functions)} | ${cell(s.branches)} |`);
+          }
+
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, out.join('\n') + '\n');
+          NODE
+
+      - name: Build multiple-files list for PR comment
+        if: always()
+        id: covlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          list="$(node scripts/list-coverage-summaries.cjs 2>/dev/null || true)"
+
+          # Encode newlines for GITHUB_OUTPUT
+          esc="${list//'%'/'%25'}"
+          esc="${esc//$'\n'/'%0A'}"
+          esc="${esc//$'\r'/'%0D'}"
+
+          echo "multiple_files=$esc" >> "$GITHUB_OUTPUT"
+          echo "has_multiple=$([ -n "$list" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Add overall coverage summary to run
+        if: always()
+        shell: bash
+        run: |
+          echo "### Test & Coverage (Overall)" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ ! -f coverage/coverage-summary.json ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "No coverage/coverage-summary.json found. Check split-coverage-final step." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          node <<'NODE'
+          const fs = require('fs');
+
+          const p = 'coverage/coverage-summary.json';
+          const s = JSON.parse(fs.readFileSync(p, 'utf8')).total;
+
+          const fmtPct = (v) => `${Number(v?.pct ?? 0).toFixed(2)}%`;
+          const fmtRatio = (v) => `${v?.covered ?? 0}/${v?.total ?? 0}`;
+
+          const lines = [
+            '',
+            '| Metric | % | Covered / Total |',
+            '|---|---:|---:|',
+            `| Lines | ${fmtPct(s.lines)} | ${fmtRatio(s.lines)} |`,
+            `| Statements | ${fmtPct(s.statements)} | ${fmtRatio(s.statements)} |`,
+            `| Functions | ${fmtPct(s.functions)} | ${fmtRatio(s.functions)} |`,
+            `| Branches | ${fmtPct(s.branches)} | ${fmtRatio(s.branches)} |`,
+          ];
+
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
+          NODE
 
       - name: Upload coverage artifact
         if: always()
@@ -73,12 +148,13 @@ jobs:
             coverage/
             **/coverage/
 
-      - name: Comment coverage on PR
+      - name: Comment coverage on PR (overall + per project)
         if: github.event_name == 'pull_request'
         uses: MishaKav/jest-coverage-comment@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          coverage-summary-path: coverage/coverage-summary.json
           unique-id-for-comment: ci-test-coverage
           create-new-comment: false
           hide-comment: false
+          coverage-summary-path: coverage/coverage-summary.json
+          multiple-files: ${{ steps.covlist.outputs.has_multiple == 'true' && steps.covlist.outputs.multiple_files || '' }}

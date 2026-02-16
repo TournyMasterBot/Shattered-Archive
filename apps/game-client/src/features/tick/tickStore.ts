@@ -1,4 +1,6 @@
+// apps\game-client\src\features\tick\tickStore.ts
 import { useSyncExternalStore } from 'react';
+import { ListenEvent } from '../event-emitter/event-dispatcher';
 
 const DEFAULT_TICK_DURATION = 41;
 
@@ -70,40 +72,43 @@ function createStore(): TickStore {
       store.state.timeOfDay = nextTime;
       store.state.remaining = nextRemaining;
 
-      // ✅ new object ONLY when values changed
       store.snapshot = { timeOfDay: nextTime, remaining: nextRemaining };
-
       store.listeners.forEach((fn) => fn());
     },
 
     start() {
+      // attach ONE HMR-safe tick listener
       if (!store.tickListenerAttached) {
-        const onTick = (ev: Event) => {
-          const ce = ev as CustomEvent<any>;
-          const data = ce.detail ?? {};
+        const disposeTick = ListenEvent<any>(
+          'game:tick',
+          (payload) => {
+            const data = payload ?? {};
 
-          const raw = typeof data.time === 'string' ? data.time.trim() : '';
-          const nextTime = raw || store.state.timeOfDay;
+            const raw = typeof data.time === 'string' ? data.time.trim() : '';
+            const nextTime = raw || store.state.timeOfDay;
 
-          store.state.lastTickAt = Date.now();
+            store.state.lastTickAt = Date.now();
 
-          // reset countdown
-          const nextRemaining = store.state.durationSec;
+            // reset countdown
+            const nextRemaining = store.state.durationSec;
 
-          console.log('[tickStore] game:tick → reset countdown', {
-            raw,
-            lastTickAt: store.state.lastTickAt,
-            durationSec: store.state.durationSec,
-          });
+            console.log('[tickStore] game:tick → reset countdown', {
+              raw,
+              lastTickAt: store.state.lastTickAt,
+              durationSec: store.state.durationSec,
+            });
 
-          store.publishIfChanged(nextTime, nextRemaining);
-        };
+            store.publishIfChanged(nextTime, nextRemaining);
+          },
+          { key: 'tickStore::event::game:tick' },
+        );
 
-        window.addEventListener('game:tick', onTick as EventListener);
-        (store as any)._onTick = onTick;
+        // store disposer on the singleton store instance
+        (store as any)._disposeTick = disposeTick;
         store.tickListenerAttached = true;
       }
 
+      // countdown interval
       if (store.intervalId == null) {
         store.intervalId = window.setInterval(() => {
           if (store.state.lastTickAt == null) return;
@@ -125,12 +130,18 @@ function createStore(): TickStore {
         store.intervalId = null;
       }
 
+      // cleanly dispose the HMR-safe listener
       if (store.tickListenerAttached) {
-        const onTick = (store as any)._onTick as ((ev: Event) => void) | undefined;
-        if (onTick) {
-          window.removeEventListener('game:tick', onTick as EventListener);
-          (store as any)._onTick = undefined;
+        const disposeTick = (store as any)._disposeTick as undefined | (() => void);
+        if (disposeTick) {
+          try {
+            disposeTick();
+          } catch {
+            // ignore
+          }
         }
+
+        (store as any)._disposeTick = undefined;
         store.tickListenerAttached = false;
       }
     },
@@ -142,15 +153,11 @@ function createStore(): TickStore {
 
       store.state.durationSec = n;
 
-      // clamp current remaining into new duration
       const nextRemaining = clampInt(store.state.remaining, 0, n);
-
-      // publish if remaining changed due to clamp (time unchanged)
       store.publishIfChanged(store.state.timeOfDay, nextRemaining);
     },
 
     getSnapshot() {
-      // ✅ stable reference unless changed via publishIfChanged
       return store.snapshot;
     },
 
@@ -159,7 +166,6 @@ function createStore(): TickStore {
       store.listeners.add(fn);
       return () => {
         store.listeners.delete(fn);
-        // keep running; no auto-stop
       };
     },
   };

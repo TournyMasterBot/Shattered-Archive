@@ -1,5 +1,4 @@
-// apps/game-client/src/hooks/useMainContainer.ts
-import { useState, useEffect, useCallback, CSSProperties } from 'react';
+import { useState, useEffect, useCallback, CSSProperties, useRef } from 'react';
 import type React from 'react';
 import { initBrowserLuaRunner } from '../features/userScripts/luaRuntime';
 import { ensureAudioRuntimeAttached } from '../features/audio/audio-runtime';
@@ -17,6 +16,9 @@ const MAX_RIGHT_WIDTH = 640;
 const MIN_BOTTOM_HEIGHT = 120;
 /** Max height of BottomPane.tsx */
 const MAX_BOTTOM_HEIGHT = 480;
+
+const LS_RIGHT_WIDTH = 'shatteredArchive.layout.rightPaneWidth';
+const LS_BOTTOM_HEIGHT = 'shatteredArchive.layout.bottomPaneHeight';
 
 /* -------------------------------------------
    User CSS constants / helpers
@@ -179,22 +181,37 @@ html { font-size: calc(16px * var(--sa-font-scale)); }
 `.trim()
     : '';
 
-  // (Reduce motion can be added here later, same pattern.)
   return [fontCss, highContrastCss].filter(Boolean).join('\n\n');
 }
 
-function applyUserCss(css: string) {
-  if (typeof document === 'undefined') return;
+function ensureStyleTag(id: string): HTMLStyleElement | null {
+  if (typeof document === 'undefined') return null;
 
-  let styleEl = document.getElementById(USER_CSS_STYLE_ID) as HTMLStyleElement | null;
+  const head = document.head || document.getElementsByTagName('head')[0];
+  if (!head) return null;
 
-  if (!styleEl) {
-    styleEl = document.createElement('style');
-    styleEl.id = USER_CSS_STYLE_ID;
-    document.head.appendChild(styleEl);
+  let el = document.getElementById(id);
+
+  // If something else stole the id, delete it.
+  if (el && el.tagName.toLowerCase() !== 'style') {
+    el.parentElement?.removeChild(el);
+    el = null;
   }
 
-  styleEl.innerHTML = css || '';
+  const styleEl = (el as HTMLStyleElement) ?? document.createElement('style');
+  styleEl.id = id;
+
+  // Always move to end of <head> so it wins the cascade.
+  head.appendChild(styleEl);
+
+  return styleEl;
+}
+
+function applyUserCss(css: string) {
+  const styleEl = ensureStyleTag(USER_CSS_STYLE_ID);
+  if (!styleEl) return;
+
+  styleEl.textContent = css || '';
 }
 
 function applyCombinedCss(userCss: string) {
@@ -219,8 +236,42 @@ ${accessibilityCss ?? ''}
    Layout sizing
 -------------------------------------------- */
 export function useLayoutSizing() {
-  const [rightWidth, setRightWidth] = useState(320);
-  const [bottomHeight, setBottomHeight] = useState(220);
+  const [rightWidth, setRightWidth] = useState(() => {
+    try {
+      const raw = window.localStorage.getItem(LS_RIGHT_WIDTH);
+      const n = raw ? Number(raw) : NaN;
+      return Number.isFinite(n) ? clamp(n, MIN_RIGHT_WIDTH, MAX_RIGHT_WIDTH) : 320;
+    } catch {
+      return 320;
+    }
+  });
+
+  const [bottomHeight, setBottomHeight] = useState(() => {
+    try {
+      const raw = window.localStorage.getItem(LS_BOTTOM_HEIGHT);
+      const n = raw ? Number(raw) : NaN;
+      return Number.isFinite(n) ? clamp(n, MIN_BOTTOM_HEIGHT, MAX_BOTTOM_HEIGHT) : 220;
+    } catch {
+      return 220;
+    }
+  });
+
+  // Persist on change
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(LS_RIGHT_WIDTH, String(rightWidth));
+    } catch {
+      // ignore
+    }
+  }, [rightWidth]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(LS_BOTTOM_HEIGHT, String(bottomHeight));
+    } catch {
+      // ignore
+    }
+  }, [bottomHeight]);
 
   const layoutVars: CSSProperties = {
     '--right-pane-width': `${rightWidth}px`,
@@ -230,21 +281,23 @@ export function useLayoutSizing() {
   const handleVerticalResizeMouseDown = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       e.preventDefault();
+
       const startX = e.clientX;
       const startWidth = rightWidth;
 
       const onMouseMove = (ev: MouseEvent) => {
         const delta = startX - ev.clientX;
-        let nextWidth = startWidth + delta;
-        nextWidth = Math.min(MAX_RIGHT_WIDTH, Math.max(MIN_RIGHT_WIDTH, nextWidth));
+        const nextWidth = clamp(startWidth + delta, MIN_RIGHT_WIDTH, MAX_RIGHT_WIDTH);
         setRightWidth(nextWidth);
       };
 
       const onMouseUp = () => {
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('mouseup', onMouseUp);
+        document.body.style.userSelect = '';
       };
 
+      document.body.style.userSelect = 'none';
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseup', onMouseUp);
     },
@@ -254,21 +307,23 @@ export function useLayoutSizing() {
   const handleHorizontalResizeMouseDown = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       e.preventDefault();
+
       const startY = e.clientY;
       const startHeight = bottomHeight;
 
       const onMouseMove = (ev: MouseEvent) => {
-        const delta = startY - ev.clientY;
-        let nextHeight = startHeight + delta;
-        nextHeight = Math.min(MAX_BOTTOM_HEIGHT, Math.max(MIN_BOTTOM_HEIGHT, nextHeight));
+        const delta = startY - ev.clientY; // move up => positive => grow
+        const nextHeight = clamp(startHeight + delta, MIN_BOTTOM_HEIGHT, MAX_BOTTOM_HEIGHT);
         setBottomHeight(nextHeight);
       };
 
       const onMouseUp = () => {
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('mouseup', onMouseUp);
+        document.body.style.userSelect = '';
       };
 
+      document.body.style.userSelect = 'none';
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseup', onMouseUp);
     },
@@ -331,45 +386,66 @@ export function useMenuState() {
 -------------------------------------------- */
 export function useUserCssOverrides() {
   const [userCssApplied, setUserCssApplied] = useState<string>('');
-  const [userCssDraft, setUserCssDraft] = useState<string>('');
+  const [userCssDraft, _setUserCssDraft] = useState<string>('');
   const [isStyleModalOpen, setIsStyleModalOpen] = useState(false);
+
+  // Holds the latest draft synchronously (avoids “click Save before last onChange commits”)
+  const draftRef = useRef<string>('');
+  const appliedRef = useRef<string>('');
+
+  const setUserCssDraft = (css: string) => {
+    draftRef.current = css ?? '';
+    _setUserCssDraft(css ?? '');
+  };
 
   useEffect(() => {
     try {
       const stored = window.localStorage.getItem(USER_CSS_KEY) || '';
       setUserCssApplied(stored);
+      appliedRef.current = stored;
+
       setUserCssDraft(stored);
 
-      // Apply combined CSS at startup
       applyCombinedCss(stored);
     } catch {
       // ignore localStorage errors
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // keep refs in sync with state
+  useEffect(() => {
+    appliedRef.current = userCssApplied;
+  }, [userCssApplied]);
 
   // When accessibility settings change, re-apply combined CSS (using current applied user css)
   useEffect(() => {
     const onUpdated = () => {
-      applyCombinedCss(userCssApplied);
+      applyCombinedCss(appliedRef.current);
     };
 
-    window.addEventListener('sa:accessibility-updated', onUpdated);
-    return () => window.removeEventListener('sa:accessibility-updated', onUpdated);
-  }, [userCssApplied]);
+    window.addEventListener('shatteredarchive:accessibility-updated', onUpdated);
+    return () => window.removeEventListener('shatteredarchive:accessibility-updated', onUpdated);
+  }, []);
 
   const openStyleModal = () => setIsStyleModalOpen(true);
 
   const closeStyleModal = () => {
-    // If user was previewing draft, revert to applied on close
-    applyCombinedCss(userCssApplied);
+    // revert any preview to applied on close
+    applyCombinedCss(appliedRef.current);
     setIsStyleModalOpen(false);
   };
 
-  const saveUserCss = () => {
-    const css = userCssDraft;
-    setUserCssApplied(css);
+  // Accept explicit cssArg (best), otherwise fall back to ref (safe), then state.
+  const saveUserCss = (cssArg?: string) => {
+    const css = (cssArg ?? draftRef.current ?? userCssDraft) || '';
 
-    // Apply combined and persist only the user portion
+    setUserCssApplied(css);
+    appliedRef.current = css;
+
+    // Keep draft in sync after save (so modal reads correctly if reopened immediately)
+    setUserCssDraft(css);
+
     applyCombinedCss(css);
 
     try {
@@ -383,16 +459,15 @@ export function useUserCssOverrides() {
     }
   };
 
-  const previewDraft = () => {
-    // Apply combined but do NOT persist
-    applyCombinedCss(userCssDraft);
+  // Apply combined but do NOT persist
+  const previewDraft = (cssArg?: string) => {
+    const css = (cssArg ?? draftRef.current ?? userCssDraft) || '';
+    applyCombinedCss(css);
   };
 
   const discardDraft = () => {
-    setUserCssDraft(userCssApplied);
-
-    // Revert preview immediately if they discard
-    applyCombinedCss(userCssApplied);
+    setUserCssDraft(appliedRef.current);
+    applyCombinedCss(appliedRef.current);
   };
 
   return {
@@ -412,12 +487,10 @@ export function useUserCssOverrides() {
    Hook: main initialization + connect modal + library modal
 -------------------------------------------- */
 export function useMainContainer() {
-  // Initialize Lua runtime once
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
         initBrowserLuaRunner();
-        console.log('[Lua] Browser Lua runtime initialized');
       } catch (err) {
         console.error('[Lua] Failed to initialize Lua runtime:', err);
       }
@@ -428,12 +501,10 @@ export function useMainContainer() {
     ensureAudioRuntimeAttached();
   }, []);
 
-  // Only connect modal open/close lives here now
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const openConnectModal = () => setIsConnectModalOpen(true);
   const closeConnectModal = () => setIsConnectModalOpen(false);
 
-  // Library modal open/close (Notes & Books)
   const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
   const openLibraryModal = () => setIsLibraryModalOpen(true);
   const closeLibraryModal = () => setIsLibraryModalOpen(false);

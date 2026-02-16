@@ -1,3 +1,4 @@
+// apps\game-client\src\features\accessibility\accessibility-settings-store.ts
 export type AccessibilitySettings = {
   fontScale: number; // 0.8..1.6
   preferHighContrast: boolean;
@@ -17,7 +18,7 @@ export type AccessibilitySettings = {
   repeatLastPrefix: string; // default "&"
 };
 
-const KEY = 'sa.accessibility.settings.v1';
+const KEY = 'shatteredarchive.accessibility.settings.v1';
 
 const DEFAULTS: AccessibilitySettings = {
   fontScale: 1.0,

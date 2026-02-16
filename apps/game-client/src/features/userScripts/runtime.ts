@@ -1,29 +1,10 @@
-// apps/game-client/src/features/userScripts/runtime.ts
 import ts from 'typescript';
-import {
-  AnyUserScript,
-  AliasScript,
-  TimerScript,
-  TriggerScript,
-  ScriptSandboxApi,
-  ScriptErrorInfo,
-  UserScriptLanguage,
-} from './types';
+import { AnyUserScript, AliasScript, TimerScript, TriggerScript, ScriptSandboxApi, UserScriptLanguage } from './types';
 import { runLuaSourceInBrowser } from './luaRuntime';
 import { runPythonSourceInBrowser } from './pythonRuntime';
+import { ScriptErrorInfo } from '../../types/userscript-types/script-error-info';
 
 function isGlobalIdentifierLine(line: string): boolean {
-  // For plain-text scripts, allow a line that is exactly a global identifier
-  // to invoke the global runtime instead of sending it to the game.
-  //
-  // Examples:
-  //   global.javascript.foo
-  //   global.lua.bar
-  //   global.python.baz
-  //   global.typescript.qux
-  //
-  // NOTE: we do NOT trim/normalize the line; we only match if the trimmed line
-  // is identical (meaning no leading/trailing whitespace).
   const trimmed = line.trim();
   if (trimmed !== line) return false;
 
@@ -36,14 +17,45 @@ function isGlobalIdentifierLine(line: string): boolean {
   return lang === 'javascript' || lang === 'lua' || lang === 'python' || lang === 'typescript';
 }
 
+function isValidJsIdentifier(name: string): boolean {
+  return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name);
+}
+
+/**
+ * If api.event.payload.vars exists (e.g. { TARGET: "weed" }),
+ * inject JS locals so user code can reference TARGET directly.
+ */
+function buildAliasVarsPrelude(api: ScriptSandboxApi): string {
+  const vars = (api as any)?.event?.payload?.vars;
+  if (!vars || typeof vars !== 'object') return '';
+
+  const keys = Object.keys(vars);
+  if (keys.length === 0) return '';
+
+  const lines: string[] = [];
+
+  // Access vars safely at runtime (values are not string-injected into code)
+  lines.push(`const __vars = (event && event.payload && event.payload.vars) ? event.payload.vars : {};`);
+
+  for (const k of keys) {
+    const key = String(k ?? '').trim();
+    if (!key) continue;
+    if (!isValidJsIdentifier(key)) continue;
+
+    // Example: const TARGET = __vars["TARGET"];
+    lines.push(`const ${key} = __vars[${JSON.stringify(key)}];`);
+  }
+
+  return lines.join('\n') + '\n';
+}
+
 /**
  * Core JS sandbox runner.
- *
- * For now we use a simple `new Function` with an `api` parameter.
- * All user-facing capabilities are provided via that `api`.
  */
 async function runJavascript(source: string, api: ScriptSandboxApi): Promise<void> {
   try {
+    const varPrelude = buildAliasVarsPrelude(api);
+
     const fn = new Function(
       'api',
       `"use strict";
@@ -58,9 +70,11 @@ const {
   getGlobalVar,
   setGlobalVar,
   deleteGlobalVar,
-  getNamedVar
+  getNamedVar,
+  setGlobalVar: setGlobalVar2, // (harmless if duplicated by bundler transforms)
 } = api;
 try {
+${varPrelude}
 ${source}
 } catch (err) {
   error(
@@ -78,7 +92,6 @@ ${source}
 
 /**
  * TypeScript runner: transpile TS -> JS, then reuse runJavascript.
- * No type-checking, just strip types / TS syntax.
  */
 async function runTypescript(source: string, api: ScriptSandboxApi): Promise<void> {
   try {
@@ -103,15 +116,10 @@ async function runTypescript(source: string, api: ScriptSandboxApi): Promise<voi
  * - NO trimming, NO normalization
  */
 async function runPlainText(source: string, api: ScriptSandboxApi): Promise<void> {
-  // Intentionally allow empty string and whitespace-only scripts:
-  // user may be deliberately sending blank lines.
   const text = source ?? '';
-
-  // Normalize to LF split, but preserve blank lines.
   const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
 
   for (const line of lines) {
-    // NEW: allow a plain-text line to call a global script by identifier.
     if (api.runGlobal && isGlobalIdentifierLine(line)) {
       try {
         await api.runGlobal(line);
@@ -131,11 +139,10 @@ async function runPlainText(source: string, api: ScriptSandboxApi): Promise<void
 export async function runUserScript(script: AnyUserScript, api: ScriptSandboxApi): Promise<void> {
   const lang: UserScriptLanguage = script.language;
 
-  // Disabled scripts do nothing
-  if (!script.enabled) return;
+  if (!script.enabled) {
+    return;
+  }
 
-  // For plain text scripts, we intentionally allow empty/whitespace-only source
-  // because blank lines are meaningful (they should be sent as-is).
   if (lang !== 'text') {
     if (!script.source || !script.source.trim()) {
       return;
@@ -191,7 +198,6 @@ export async function runTriggerScript(
 ): Promise<void> {
   if (!script.enabled) return;
 
-  // If the trigger is bound to a specific event, enforce it.
   if (script.eventName && script.eventName !== eventName) {
     return;
   }
@@ -227,7 +233,7 @@ export async function runTimerScript(script: TimerScript, baseApi: ScriptSandbox
   const api: ScriptSandboxApi = {
     ...baseApi,
     event: {
-      name: 'timer:tick',
+      name: 'game:tick',
       payload: { intervalMs: script.intervalMs },
     },
   };

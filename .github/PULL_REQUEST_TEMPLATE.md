@@ -47,6 +47,7 @@ Please confirm the following before requesting review:
 - [ ] I ran `pnpm lint`
 - [ ] I ran `pnpm test` (including coverage)
 - [ ] I ran `pnpm build`
+- [ ] I ran `pnpm typecheck`
 - [ ] I have added or updated tests where appropriate
 - [ ] I have updated documentation where necessary
 - [ ] This change targets `release/dev` (unless otherwise discussed)

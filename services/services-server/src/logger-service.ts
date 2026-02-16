@@ -2,7 +2,7 @@
 import path from 'path';
 import fs from 'fs';
 import winston from 'winston';
-import DailyRotateFile from 'winston-daily-rotate-file'; // ✅ typed import
+import DailyRotateFile from 'winston-daily-rotate-file';
 
 import { ILogger, LoggerProps, LogLevel } from '@shatteredarchive/types-server';
 
@@ -142,7 +142,7 @@ export function createSohGateFormat(args: {
     sohToggleEventTypes,
     containsSohFn = containsSoh,
     getEventType = (info) => String(info.message ?? ''),
-    getPayload = (info) => getInfoPayload(info), // ✅ no any
+    getPayload = (info) => getInfoPayload(info),
   } = args;
 
   const sohTypes = sohToggleEventTypes?.length ? new Set(sohToggleEventTypes) : undefined;

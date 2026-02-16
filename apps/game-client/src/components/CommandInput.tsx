@@ -3,36 +3,7 @@ import React, { useCallback, useRef } from 'react';
 import styles from '../styles/CommandInput.module.scss';
 import { useGameCommand } from '../hooks/useGameCommand';
 import { useVoiceDictation } from '../hooks/useVoiceDictation';
-
-import type { AutoLevelRunState } from '../features/autoleveling/autoleveling-types';
-
-interface CommandInputProps {
-  sendRaw: (data: string) => void;
-  isConnected: boolean;
-
-  /** Opens the configuration modal (optional) */
-  onOpenAutoLeveling?: () => void;
-
-  /** Whether autoleveling feature is enabled/configured */
-  autoLevelingActive?: boolean;
-
-  /** Current run state (for Start/Pause/Resume labeling) */
-  autoLevelRunState?: AutoLevelRunState;
-
-  /** Optional direct callbacks; if omitted we dispatch events. */
-  onAutoLevelStart?: () => void;
-  onAutoLevelPause?: () => void;
-  onAutoLevelResume?: () => void;
-  onAutoLevelStop?: () => void;
-}
-
-function dispatchSafe(name: string, detail?: any) {
-  try {
-    window.dispatchEvent(new CustomEvent(name, { detail }));
-  } catch {
-    // ignore
-  }
-}
+import { CommandInputProps } from '../types/chat-types/command-input-props';
 
 export const CommandInput: React.FC<CommandInputProps> = ({
   sendRaw,
@@ -99,14 +70,14 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 
   const autoDisabled = !isConnected || !autoLevelingActive;
 
-  const fireStart = () => (onAutoLevelStart ? onAutoLevelStart() : dispatchSafe('game:autoleveling-start'));
-  const firePause = () => (onAutoLevelPause ? onAutoLevelPause() : dispatchSafe('game:autoleveling-pause'));
-  const fireResume = () => (onAutoLevelResume ? onAutoLevelResume() : dispatchSafe('game:autoleveling-resume'));
-  const fireStop = () => (onAutoLevelStop ? onAutoLevelStop() : dispatchSafe('game:autoleveling-stop'));
+  //const fireStart = () => (onAutoLevelStart ? onAutoLevelStart() : DispatchEvent('shatteredarchive:autoleveling-start', {}));
+  //const firePause = () => (onAutoLevelPause ? onAutoLevelPause() : DispatchEvent('shatteredarchive:autoleveling-pause', {}));
+  //const fireResume = () => (onAutoLevelResume ? onAutoLevelResume() : DispatchEvent('shatteredarchive:autoleveling-resume', {}));
+  //const fireStop = () => (onAutoLevelStop ? onAutoLevelStop() : DispatchEvent('shatteredarchive:autoleveling-stop', {}));
 
   const onAutoClick = () => {
     if (autoDisabled) return;
-
+    /*
     if (isIdle) {
       const ok = window.confirm('Begin auto leveling now?');
       if (!ok) return;
@@ -127,7 +98,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
     // error/stopping fallback
     const ok = window.confirm('Auto leveling is not idle. Start again?');
     if (!ok) return;
-    fireStart();
+    fireStart(); */
   };
 
   const onStopClick = () => {
@@ -137,7 +108,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
     const ok = window.confirm('Stop auto leveling? This ends the current run.');
     if (!ok) return;
 
-    fireStop();
+    //fireStop();
   };
 
   const autoLabel = isIdle
@@ -174,6 +145,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
         disabled={!isConnected}
       />
 
+      {/*
       <button
         type="button"
         className={`${styles.autoLevelButton} ${!autoDisabled && !isIdle ? styles.autoLevelButtonActive : ''}`}
@@ -192,6 +164,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
         ⚔️
       </button>
 
+        
       {!isIdle ? (
         <button
           type="button"
@@ -204,6 +177,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
           ⏹
         </button>
       ) : null}
+       */}
 
       {onOpenAutoLeveling ? (
         <button

@@ -1,5 +1,6 @@
 // apps/game-client/src/hooks/useCharData.ts
 import { useEffect, useState } from 'react';
+import { ListenEvent } from '../features/event-emitter/event-dispatcher';
 
 export interface CharDataVitals {
   hp: number;
@@ -46,52 +47,60 @@ export function useCharData() {
   const [ancillary, setAncillary] = useState<CharDataAncillary>(defaultAncillary);
 
   useEffect(() => {
-    const handler = (ev: Event) => {
-      const custom = ev as CustomEvent<any>;
-      const data = custom.detail || {};
+    const dispose = ListenEvent<any>(
+      'game:char-data',
+      (data) => {
+        const d = data ?? {};
 
-      const hp = Number(data.hp ?? 0);
-      const maxHp = Number(data.max_hp ?? 0);
-      const mana = Number(data.mana ?? 0);
-      const maxMana = Number(data.max_mana ?? 0);
-      const move = Number(data.move ?? 0);
-      const maxMove = Number(data.max_move ?? 0);
+        const hp = Number(d.hp ?? 0);
+        const maxHp = Number(d.max_hp ?? 0);
+        const mana = Number(d.mana ?? 0);
+        const maxMana = Number(d.max_mana ?? 0);
+        const move = Number(d.move ?? 0);
+        const maxMove = Number(d.max_move ?? 0);
 
-      const carryWeightRaw = Number(data.carry_weight ?? NaN);
-      const canCarryWeightRaw = Number(data.can_carry_weight ?? NaN);
+        const carryWeightRaw = Number(d.carry_weight ?? NaN);
+        const canCarryWeightRaw = Number(d.can_carry_weight ?? NaN);
 
-      const hasCarry = Number.isFinite(carryWeightRaw);
-      const hasCarryMax = Number.isFinite(canCarryWeightRaw) && canCarryWeightRaw > 0;
+        const hasCarry = Number.isFinite(carryWeightRaw);
+        const hasCarryMax = Number.isFinite(canCarryWeightRaw) && canCarryWeightRaw > 0;
 
-      const carryWeight = hasCarry ? carryWeightRaw : null;
-      const carryWeightMax = hasCarryMax ? canCarryWeightRaw : null;
+        const carryWeight = hasCarry ? carryWeightRaw : null;
+        const carryWeightMax = hasCarryMax ? canCarryWeightRaw : null;
 
-      const carryWeightPct =
-        hasCarry && hasCarryMax ? Math.max(0, Math.min(100, (carryWeightRaw / canCarryWeightRaw) * 100)) : null;
+        const carryWeightPct =
+          hasCarry && hasCarryMax ? Math.max(0, Math.min(100, (carryWeightRaw / canCarryWeightRaw) * 100)) : null;
 
-      setVitals({
-        hp,
-        hpMax: maxHp,
-        mp: mana,
-        mpMax: maxMana,
-        stamina: move,
-        staminaMax: maxMove,
-      });
+        setVitals({
+          hp,
+          hpMax: maxHp,
+          mp: mana,
+          mpMax: maxMana,
+          stamina: move,
+          staminaMax: maxMove,
+        });
 
-      setAncillary({
-        carryWeight,
-        carryWeightMax,
-        carryWeightPct,
-        isQuiet: !!data.is_quiet,
-        isFlying: !!data.is_flying,
-        isRiding: !!data.is_riding,
-        isFighting: !!data.is_fighting,
-        language: typeof data.language === 'string' ? data.language : null,
-      });
+        setAncillary({
+          carryWeight,
+          carryWeightMax,
+          carryWeightPct,
+          isQuiet: !!d.is_quiet,
+          isFlying: !!d.is_flying,
+          isRiding: !!d.is_riding,
+          isFighting: !!d.is_fighting,
+          language: typeof d.language === 'string' ? d.language : null,
+        });
+      },
+      { key: 'vitalsAncillary::game:char-data' },
+    );
+
+    return () => {
+      try {
+        dispose?.();
+      } catch {
+        // ignore
+      }
     };
-
-    window.addEventListener('game:char-data', handler as EventListener);
-    return () => window.removeEventListener('game:char-data', handler as EventListener);
   }, []);
 
   return { vitals, ancillary };
