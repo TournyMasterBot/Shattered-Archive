@@ -7,32 +7,45 @@ type RawDataPayload = {
   rawText?: string;
   text?: string;
   fromUserScript?: boolean;
+  receivedTimestamp?: number;
+};
+
+type IdentitySnapshot = {
+  characterName?: string;
+  updatedAt?: number;
 };
 
 export interface ContributeIdentifyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  connectionId: string; // ✅ NEW (for parity + later use)
+  connectionId: string;
 }
 
-export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = ({
-  isOpen,
-  onClose,
-  connectionId,
-}) => {
+function getIdentitySnapshot(): IdentitySnapshot {
+  const w = window as any;
+  return (w.__SA_IDENTITY__ ?? {}) as IdentitySnapshot;
+}
+
+export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = ({ isOpen, onClose, connectionId }) => {
   const [shortText, setShortText] = React.useState('');
   const [longText, setLongText] = React.useState('');
 
   const [lines, setLines] = React.useState<string[]>([]);
   const [isCapturing, setIsCapturing] = React.useState(false);
 
+  const [identity, setIdentity] = React.useState<IdentitySnapshot>({});
+
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [submitOk, setSubmitOk] = React.useState(false);
+
   const unbindRef = React.useRef<null | (() => void)>(null);
-  const timerRef = React.useRef<number | null>(null);
+  const captureTimerRef = React.useRef<number | null>(null);
 
   const stopCapture = React.useCallback(() => {
-    if (timerRef.current) {
-      window.clearTimeout(timerRef.current);
-      timerRef.current = null;
+    if (captureTimerRef.current != null) {
+      window.clearTimeout(captureTimerRef.current);
+      captureTimerRef.current = null;
     }
 
     try {
@@ -41,44 +54,78 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
       // ignore
     }
     unbindRef.current = null;
-
     setIsCapturing(false);
   }, []);
 
-  const beginCaptureForMs = React.useCallback(
-    (ms: number) => {
+  const startIdentifyCapture = React.useCallback(() => {
+    setSubmitError(null);
+    setSubmitOk(false);
+
+    stopCapture();
+    setLines([]);
+
+    setIsCapturing(true);
+
+    unbindRef.current = ListenEvent<RawDataPayload>(
+      'shatteredarchive:raw-data',
+      (payload) => {
+        const raw = String(payload?.rawText ?? payload?.text ?? '');
+        if (!raw) return;
+
+        setLines((prev) => {
+          const next = [...prev, raw];
+
+          // If the *second-to-last* item is blank, drop the last two lines.
+          // (i.e., next[next.length - 2] is blank)
+          if (next.length >= 2 && next[next.length - 2].trim() === '') {
+            next.splice(-2, 2);
+          }
+
+          return next;
+        });
+      },
+      { key: 'ContributeIdentifyModal::raw-data-capture' },
+    );
+
+    // capture for 1 second then stop
+    captureTimerRef.current = window.setTimeout(() => {
       stopCapture();
+    }, 1000);
 
-      setLines([]);
-      setIsCapturing(true);
-
-      // Unique key so we don't collide with other listeners
-      const key = `ContributeIdentifyModal::raw-data::${Date.now()}`;
-
-      unbindRef.current = ListenEvent<RawDataPayload>(
-        'shatteredarchive:raw-data',
-        (payload) => {
-          const raw = String(payload?.rawText ?? payload?.text ?? '');
-          if (!raw) return;
-          setLines((prev) => [...prev, raw]);
-        },
-        { key },
-      );
-
-      timerRef.current = window.setTimeout(() => {
-        stopCapture();
-      }, ms);
-    },
-    [stopCapture],
-  );
+    // send the game command immediately
+    const short = (shortText ?? '').trim();
+    if (short.length > 0) {
+      DispatchEvent('shatteredarchive:send-command', { cmd: `c id ${short}`, connectionId });
+    }
+  }, [shortText, connectionId, stopCapture]);
 
   React.useEffect(() => {
     if (!isOpen) {
       stopCapture();
+      setSubmitError(null);
+      setSubmitOk(false);
       return;
     }
 
+    // prime from latest snapshot
+    setIdentity(getIdentitySnapshot());
+
+    // subscribe to GMCP-derived identity updates
+    const off = ListenEvent<IdentitySnapshot>(
+      'shatteredarchive:identity-updated',
+      (snap) => {
+        setIdentity({
+          characterName: snap?.characterName,
+          updatedAt: snap?.updatedAt,
+        });
+      },
+      { key: 'ContributeIdentifyModal::identity-updated' },
+    );
+
     return () => {
+      try {
+        off?.();
+      } catch {}
       stopCapture();
     };
   }, [isOpen, stopCapture]);
@@ -89,24 +136,81 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
     setLines((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const onIdentify = () => {
-    const s = shortText.trim();
-    if (!s) return;
+  const onSubmit = async () => {
+    setSubmitError(null);
+    setSubmitOk(false);
 
-    // 1) Start capture immediately for 3 seconds
-    beginCaptureForMs(3000);
+    const characterName = String(identity?.characterName ?? '').trim();
 
-    // 2) Dispatch game command immediately: c id {short}
-    DispatchEvent('shatteredarchive:send-command', { cmd: `c id ${s}` });
+    const short = String(shortText ?? '').trim();
+    const long = String(longText ?? '').trim();
+
+    // description = remaining lines after deletion
+    const description = lines.join('\n').trim();
+
+    if (!short) {
+      setSubmitError('Short is required.');
+      return;
+    }
+    if (!connectionId || !String(connectionId).trim()) {
+      setSubmitError('Missing connectionId.');
+      return;
+    }
+    if (!characterName) {
+      setSubmitError('Missing identity: character name not captured yet (GMCP login_data).');
+      return;
+    }
+    if (!description) {
+      setSubmitError('Nothing to submit (no captured lines remaining).');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const payload = {
+        connectionId,
+        characterName,
+        timestamp: new Date().toISOString(),
+        short,
+        long,
+        description,
+      };
+
+      const res = await fetch('http://localhost:5000/contribute/identify', {
+      //const res = await fetch('https://shatteredarchive.com/contribute/identify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`POST failed (${res.status})${text ? `: ${text}` : ''}`);
+      }
+
+      setSubmitOk(true);
+      stopCapture();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err ?? 'Unknown error');
+      setSubmitError(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const onSubmit = () => {
-    // Placeholder — you said submit becomes POST later.
-    // For now, stop capture to prevent continued accumulation.
-    stopCapture();
-    // eslint-disable-next-line no-alert
-    window.alert('Submit is not wired yet (placeholder).');
-  };
+  const identityStatus = (() => {
+    const char = String(identity?.characterName ?? '').trim();
+    if (char) return char;
+    return '(character unknown)';
+  })();
+
+  const canSubmit =
+    !isSubmitting &&
+    String(shortText ?? '').trim().length > 0 &&
+    String(connectionId ?? '').trim().length > 0 &&
+    String(identity?.characterName ?? '').trim().length > 0 &&
+    lines.length > 0;
 
   return (
     <div className={styles.backdrop} role="dialog" aria-modal="true" onMouseDown={onClose}>
@@ -119,7 +223,6 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
         </div>
 
         <div className={styles.body}>
-          {/* Top section */}
           <div className={styles.topSection}>
             <div className={styles.formRow}>
               <label className={styles.label} htmlFor="contrib-identify-short">
@@ -151,29 +254,44 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
               <button
                 className={styles.primaryBtn}
                 type="button"
-                onClick={onIdentify}
-                disabled={!shortText.trim() || isCapturing}
-                title={isCapturing ? 'Capturing raw output…' : 'Send c id {short} and capture raw for 3s'}
+                onClick={startIdentifyCapture}
+                disabled={isCapturing || isSubmitting || String(shortText ?? '').trim().length === 0}
+                title={String(shortText ?? '').trim().length === 0 ? 'Enter a Short value first.' : undefined}
               >
-                {isCapturing ? 'Capturing…' : 'Identify'}
+                Identify
               </button>
 
               <div className={styles.hint}>
-                {isCapturing ? (
-                  <span>
-                    Capturing <span className={styles.mono}>shatteredarchive:raw-data</span> for 3 seconds…
-                  </span>
-                ) : (
-                  <span>Click Identify to send the command and capture raw output for 3 seconds.</span>
-                )}
+                <div>
+                  Connection: <span className={styles.mono}>{connectionId}</span>
+                </div>
+                <div>
+                  Identity: <span className={styles.mono}>{identityStatus}</span>
+                </div>
+                <div>
+                  {isCapturing ? (
+                    <span>
+                      Capturing <span className={styles.mono}>shatteredarchive:raw-data</span> for 1 second…
+                    </span>
+                  ) : (
+                    <span>Click Identify to capture 1 second of raw output and send the id command.</span>
+                  )}
+                </div>
               </div>
+
+              {isCapturing ? (
+                <button className={styles.secondaryBtn} type="button" onClick={stopCapture} disabled={isSubmitting}>
+                  Stop
+                </button>
+              ) : null}
             </div>
+
+            {submitError ? <div className={styles.errorBox}>{submitError}</div> : null}
+            {submitOk ? <div className={styles.okBox}>Submitted.</div> : null}
           </div>
 
-          {/* Splitter */}
           <div className={styles.splitter} />
 
-          {/* Detail section */}
           <div className={styles.detailSection}>
             {lines.length === 0 ? (
               <div className={styles.empty}>No captured lines yet.</div>
@@ -186,11 +304,10 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
                       type="button"
                       onClick={() => deleteLine(idx)}
                       aria-label="Delete line"
+                      disabled={isSubmitting}
                     >
                       ✕
                     </button>
-
-                    {/* Placeholder: later we’ll render ANSI->HTML here */}
                     <pre className={styles.lineText}>{line}</pre>
                   </div>
                 ))}
@@ -198,15 +315,11 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
             )}
           </div>
 
-          {/* Bottom actions */}
           <div className={styles.footer}>
-            <button className={styles.submitBtn} type="button" onClick={onSubmit} disabled={lines.length === 0}>
-              Submit
+            <button className={styles.submitBtn} type="button" onClick={onSubmit} disabled={!canSubmit}>
+              {isSubmitting ? 'Submitting…' : 'Submit'}
             </button>
           </div>
-
-          {/* (Optional) keep connectionId visible during dev */}
-          {/* <div style={{ opacity: 0.5, fontSize: 12, marginTop: 8 }}>connectionId: {connectionId}</div> */}
         </div>
       </div>
     </div>

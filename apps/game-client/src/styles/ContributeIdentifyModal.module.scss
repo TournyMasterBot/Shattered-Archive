@@ -11,8 +11,8 @@
 }
 
 .modal {
-  width: min(860px, 94vw);
-  max-height: min(86vh, 960px);
+  width: min(760px, 92vw);
+  max-height: min(86vh, 900px);
   background: #111;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
@@ -52,38 +52,33 @@
 /* ---------- Scrollbar theming (local to this modal) ---------- */
 /* Firefox */
 .body,
-.detailSection,
-.lineList {
+.detailSection {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.22) rgba(0, 0, 0, 0.35);
 }
 
 /* Chromium/WebKit */
 .body::-webkit-scrollbar,
-.detailSection::-webkit-scrollbar,
-.lineList::-webkit-scrollbar {
+.detailSection::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
 .body::-webkit-scrollbar-track,
-.detailSection::-webkit-scrollbar-track,
-.lineList::-webkit-scrollbar-track {
+.detailSection::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.35);
   border-radius: 999px;
 }
 
 .body::-webkit-scrollbar-thumb,
-.detailSection::-webkit-scrollbar-thumb,
-.lineList::-webkit-scrollbar-thumb {
+.detailSection::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.22);
   border-radius: 999px;
   border: 2px solid rgba(0, 0, 0, 0.35);
 }
 
 .body::-webkit-scrollbar-thumb:hover,
-.detailSection::-webkit-scrollbar-thumb:hover,
-.lineList::-webkit-scrollbar-thumb:hover {
+.detailSection::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 /* ------------------------------------------------------------ */
@@ -96,6 +91,7 @@
   gap: 12px;
 }
 
+/* Top form area */
 .topSection {
   display: flex;
   flex-direction: column;
@@ -104,27 +100,53 @@
 
 .formRow {
   display: grid;
-  grid-template-columns: 90px 1fr;
+  grid-template-columns: 70px 1fr;
   gap: 10px;
-  align-items: center;
+  align-items: start;
 }
 
 .label {
   font-size: 13px;
-  opacity: 0.8;
+  opacity: 0.85;
+  padding-top: 6px;
 }
 
 .input {
-  background: #0e1016;
-  color: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 10px;
+  width: 100%;
   padding: 8px 10px;
-  font-size: 13px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.9);
+  outline: none;
 
   &:focus {
-    outline: none;
     border-color: rgba(120, 200, 255, 0.55);
+    box-shadow: 0 0 0 2px rgba(120, 200, 255, 0.18);
+  }
+}
+
+.textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.9);
+  outline: none;
+  resize: vertical;
+  min-height: 120px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.35;
+
+  &:focus {
+    border-color: rgba(120, 200, 255, 0.55);
+    box-shadow: 0 0 0 2px rgba(120, 200, 255, 0.18);
+  }
+
+  &:disabled {
+    opacity: 0.7;
   }
 }
 
@@ -132,7 +154,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 4px;
+  flex-wrap: wrap;
 }
 
 .primaryBtn,
@@ -157,23 +179,45 @@
 }
 
 .primaryBtn {
-  border-color: rgba(120, 200, 255, 0.55);
-  background: rgba(120, 200, 255, 0.18);
-}
+  border-color: rgba(120, 200, 255, 0.45);
+  background: rgba(120, 200, 255, 0.16);
 
-.secondaryBtn {
-  background: rgba(255, 255, 255, 0.04);
+  &:hover {
+    background: rgba(120, 200, 255, 0.22);
+  }
 }
 
 .hint {
   font-size: 12px;
-  opacity: 0.7;
-  flex: 1;
-  min-width: 0;
+  opacity: 0.75;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 260px;
 }
 
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 12px;
+  opacity: 0.95;
+}
+
+.errorBox {
+  border: 1px solid rgba(255, 120, 120, 0.35);
+  background: rgba(255, 120, 120, 0.12);
+  color: rgba(255, 220, 220, 0.92);
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.okBox {
+  border: 1px solid rgba(120, 255, 170, 0.28);
+  background: rgba(120, 255, 170, 0.1);
+  color: rgba(220, 255, 235, 0.92);
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
 }
 
 .splitter {
@@ -182,67 +226,65 @@
 }
 
 .detailSection {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-height: 220px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  overflow: auto;
+  max-height: 320px;
 }
 
 .empty {
   font-size: 13px;
-  opacity: 0.75;
-  padding: 8px 0;
+  opacity: 0.65;
+  padding: 6px 2px;
 }
 
 .lineList {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  overflow: auto;
-  max-height: 360px;
-  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .lineRow {
   display: grid;
-  grid-template-columns: 28px 1fr;
+  grid-template-columns: 24px 1fr;
   gap: 8px;
   align-items: start;
 }
 
 .deleteBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.8);
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.78);
   cursor: pointer;
 
   &:hover {
     background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.92);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 }
 
 .lineText {
   margin: 0;
-  padding: 6px 8px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-
+  white-space: pre-wrap;
+  word-break: break-word;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   font-size: 12px;
   line-height: 1.35;
-  white-space: pre-wrap;
-  word-break: break-word;
 }
 
 .footer {
   display: flex;
   justify-content: flex-end;
-  padding-top: 2px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
