@@ -1,5 +1,3 @@
-/* apps/game-client/src/styles/ContributeLoreModal.module.scss */
-
 .backdrop {
   position: fixed;
   inset: 0;
@@ -20,6 +18,9 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+
+  /* Helps native form controls + dropdown popups follow dark theme where supported */
+  color-scheme: dark;
 }
 
 .header {
@@ -52,33 +53,38 @@
 /* ---------- Scrollbar theming (local to this modal) ---------- */
 /* Firefox */
 .body,
-.detailSection {
+.detailSection,
+.panelBody {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.22) rgba(0, 0, 0, 0.35);
 }
 
 /* Chromium/WebKit */
 .body::-webkit-scrollbar,
-.detailSection::-webkit-scrollbar {
+.detailSection::-webkit-scrollbar,
+.panelBody::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
 .body::-webkit-scrollbar-track,
-.detailSection::-webkit-scrollbar-track {
+.detailSection::-webkit-scrollbar-track,
+.panelBody::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.35);
   border-radius: 999px;
 }
 
 .body::-webkit-scrollbar-thumb,
-.detailSection::-webkit-scrollbar-thumb {
+.detailSection::-webkit-scrollbar-thumb,
+.panelBody::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.22);
   border-radius: 999px;
   border: 2px solid rgba(0, 0, 0, 0.35);
 }
 
 .body::-webkit-scrollbar-thumb:hover,
-.detailSection::-webkit-scrollbar-thumb:hover {
+.detailSection::-webkit-scrollbar-thumb:hover,
+.panelBody::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 /* ------------------------------------------------------------ */
@@ -105,6 +111,13 @@
   align-items: center;
 }
 
+/* full-width row for the 2 selects */
+.formRowFull {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .label {
   font-size: 13px;
   opacity: 0.85;
@@ -123,8 +136,64 @@
     border-color: rgba(120, 200, 255, 0.55);
     box-shadow: 0 0 0 2px rgba(120, 200, 255, 0.18);
   }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
 }
 
+/* --- Select row layout (side-by-side) --- */
+.selectRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+}
+
+.selectField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.selectLabel {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+/* Select styling */
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  padding-right: 36px; /* room for arrow */
+  cursor: pointer;
+
+  /* SVG chevron arrow (reduces aliasing vs gradients) */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.25 4.5 L6 8.0 L9.75 4.5' fill='none' stroke='rgba(255,255,255,0.85)' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px 12px;
+
+  /* Helps native dropdown follow dark theme in Chromium */
+  color-scheme: dark;
+}
+
+/* placeholder look when value="" (your <option value="" disabled> is the placeholder) */
+.select[value=''] {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* dropdown option background (best-effort; OS may still control popup UI) */
+.select option {
+  background: #111;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* Buttons / actions */
 .actionsRow {
   display: flex;
   align-items: center;
@@ -178,19 +247,105 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
+/* Feedback boxes */
+.errorBox {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 80, 80, 0.12);
+  border: 1px solid rgba(255, 80, 80, 0.28);
+  color: rgba(255, 210, 210, 0.95);
+  font-size: 12px;
+}
+
+.okBox {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(120, 200, 255, 0.12);
+  border: 1px solid rgba(120, 200, 255, 0.28);
+  color: rgba(220, 245, 255, 0.95);
+  font-size: 12px;
+}
+
+/* Detail area (now holds 2 panels) */
 .detailSection {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  padding: 8px;
+  padding: 10px;
   background: rgba(255, 255, 255, 0.03);
   overflow: auto;
-  max-height: 320px;
+  max-height: 360px;
 }
 
+/* Two-column grid for lore/look; collapses on small screens */
+.detailGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Panel card */
+.detailPanel {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Panel header */
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.panelTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.panelMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.countPill {
+  min-width: 26px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Panel body scroll (so each side can scroll independently) */
+.panelBody {
+  padding: 10px;
+  overflow: auto;
+  max-height: 280px;
+}
+
+/* Empty / list */
 .empty {
   font-size: 13px;
   opacity: 0.65;
-  padding: 6px 2px;
+  padding: 2px 2px;
 }
 
 .lineList {
@@ -219,6 +374,11 @@
     background: rgba(255, 255, 255, 0.08);
     color: rgba(255, 255, 255, 0.92);
   }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
 }
 
 .lineText {
@@ -235,4 +395,15 @@
   justify-content: flex-end;
   padding-top: 4px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Responsive: stack panels on narrow widths */
+@media (max-width: 720px) {
+  .detailGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .selectRow {
+    grid-template-columns: 1fr;
+  }
 }

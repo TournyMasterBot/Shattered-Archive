@@ -35,6 +35,7 @@ import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 import FocusBarVitals from '../components/FocusBarVitals';
 import ContributeIdentifyModal from '../components/ContributeIdentifyModal';
 import ContributeLoreModal from '../components/ContributeLoreModal';
+import ContributeCreatureLoreModal from '../components/ContributeCreatureLoreModal';
 
 export const MainContainer: React.FC = () => {
   useVisualViewportHeight();
@@ -215,7 +216,7 @@ export const MainContainer: React.FC = () => {
         onClose={() => setIsIdentifyModalOpen(false)}
         connectionId={connectionId}
       />
-      <ContributeLoreModal
+      <ContributeCreatureLoreModal
         isOpen={isLoreModalOpen}
         onClose={() => setIsLoreModalOpen(false)}
         connectionId={connectionId}
