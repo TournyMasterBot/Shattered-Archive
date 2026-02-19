@@ -335,9 +335,11 @@ export class UserScriptRuntime {
       void this.processGmcpEvent(payload);
     });
 
+    /* DEBUG
     ListenRedispatch('shatteredarchive:gmcp-data', 'shatteredarchive:write-console', {
       fromUserScript: false,
     });
+    */
 
     ListenEvent<any>('shatteredarchive:userScripts-updated', (payload) => {
       const connectionId = payload?.connectionId;
