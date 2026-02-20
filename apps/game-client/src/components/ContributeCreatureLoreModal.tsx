@@ -41,7 +41,7 @@ function applyBlankLineTailTrim(lines: string[]) {
 type ContinentNamesResponse = { continentNames?: string[] };
 type AreaNamesResponse = { areaNames?: string[] };
 
-const MAPS_BASE = 'https://web-server.shatteredarchive.com';
+const MAPS_BASE = 'https://web-server.shatteredarchive.dev';
 
 export const ContributeCreatureLoreModal: React.FC<ContributeCreatureLoreModalProps> = ({
   isOpen,
