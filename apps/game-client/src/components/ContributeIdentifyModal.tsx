@@ -178,7 +178,7 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
       };
 
       const res = await fetch('http://localhost:5000/contribute/identify', {
-      //const res = await fetch('https://shatteredarchive.com/contribute/identify', {
+        //const res = await fetch('https://shatteredarchive.com/contribute/identify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

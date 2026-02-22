@@ -163,10 +163,7 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
         </div>
 
         {/* ✅ NEW: Contribute */}
-        <div
-          className={`${styles.menuItem} ${styles.menuItemHasSubmenu}`}
-          onClick={() => toggleRootMenu('Contribute')}
-        >
+        <div className={`${styles.menuItem} ${styles.menuItemHasSubmenu}`} onClick={() => toggleRootMenu('Contribute')}>
           Contribute
           <div className={`${styles.subMenu} ${openRootMenu === 'Contribute' ? styles.subMenuOpen : ''}`}>
             <div

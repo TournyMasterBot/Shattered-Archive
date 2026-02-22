@@ -384,7 +384,7 @@ export const ContributeCreatureLoreModal: React.FC<ContributeCreatureLoreModalPr
 
   const shortOk = String(shortText ?? '').trim().length > 0;
 
-  const areasForSelected = continent ? areasByContinent[continent] ?? [] : [];
+  const areasForSelected = continent ? (areasByContinent[continent] ?? []) : [];
   const areaLoadFailedForSelected = continent ? areaFetchErrors[continent] : undefined;
 
   const canSubmit =

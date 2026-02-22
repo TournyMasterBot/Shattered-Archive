@@ -991,7 +991,8 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
     [scripts, moveNonTriggerToGroup, moveScriptInArray],
   );
 
-  const activeDndKind = activeTab === 'triggers' ? 'trigger' : activeTab === 'aliases' ? 'alias' : activeTab === 'timers' ? 'timer' : null;
+  const activeDndKind =
+    activeTab === 'triggers' ? 'trigger' : activeTab === 'aliases' ? 'alias' : activeTab === 'timers' ? 'timer' : null;
 
   const sortTreeNodesAlpha = useCallback((nodes: TriggerTreeNode[]): TriggerTreeNode[] => {
     return [...nodes].sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
@@ -1510,7 +1511,8 @@ look`,
   const showScriptTabs = activeTab === 'triggers' || activeTab === 'aliases' || activeTab === 'timers';
 
   const renderScriptListButton = (script: AnyUserScript, indentPx = 0) => {
-    const dndKindForThisScript = script.kind === 'trigger' || script.kind === 'alias' || script.kind === 'timer' ? script.kind : null;
+    const dndKindForThisScript =
+      script.kind === 'trigger' || script.kind === 'alias' || script.kind === 'timer' ? script.kind : null;
     const isDraggable = dndKindForThisScript !== null && activeDndKind === dndKindForThisScript;
     const isDragOverScript = dragOverScriptId === script.id && draggingScriptId && draggingScriptId !== script.id;
 

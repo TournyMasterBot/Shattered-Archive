@@ -4,11 +4,15 @@ FROM nginx:alpine
 RUN apk add --no-cache openssl logrotate tzdata
 
 # Ensure snippet dirs exist (some base images don't ship it).
-RUN mkdir -p /etc/nginx/snippets /etc/nginx/certs /var/lib/logrotate /var/log/nginx
+RUN mkdir -p /etc/nginx/snippets /etc/nginx/includes /etc/nginx/certs /var/lib/logrotate /var/log/nginx
 
 # Nginx config + ssl snippet
 COPY deploy/nginx/edge.conf /etc/nginx/conf.d/default.conf
 COPY deploy/nginx/ssl-params.conf /etc/nginx/snippets/ssl-params.conf
+
+# NEW: conditional include files used by edge-subdomains.conf template
+COPY deploy/nginx/includes/tls-dev.conf /etc/nginx/includes/tls-dev.conf
+COPY deploy/nginx/includes/tls-off.conf /etc/nginx/includes/tls-off.conf
 
 # Logrotate config
 COPY deploy/nginx/logrotate-nginx.conf /etc/logrotate.d/nginx

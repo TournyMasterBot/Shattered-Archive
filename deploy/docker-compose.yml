@@ -28,6 +28,9 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    
+    environment:
+      NGINX_TLS_INCLUDE_FILE: "tls-off.conf"
 
     volumes:
       - ./nginx/edge-subdomains.conf:/etc/nginx/conf.d/default.conf:ro
