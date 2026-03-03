@@ -360,8 +360,9 @@ export const ContributeCreatureLoreModal: React.FC<ContributeCreatureLoreModalPr
         creatureLore,
         creatureLook,
       };
-
-      const res = await fetch('http://localhost:5000/contribute/creaturelore', {
+      
+      const res = await fetch('https://web-server.shatteredarchive.dev/contribute/creaturelore', {
+      //const res = await fetch('https://localhost:5000/contribute/creaturelore', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
