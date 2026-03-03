@@ -14,8 +14,8 @@
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
     "fengari-web": "^0.1.4",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "skulpt": "^1.2.0"
   },
   "devDependencies": {
@@ -23,9 +23,9 @@
     "@shatteredarchive/types-global": "workspace:*",
     "@shatteredarchive/utils-client": "workspace:*",
     "@shatteredarchive/utils-global": "workspace:*",
-    "@testing-library/react": "^16.3.1",
+    "@testing-library/react": "^16.3.2",
     "@types/testing-library__react": "10.2.0",
-    "@vitejs/plugin-react-swc": "^4.2.2",
-    "vite": "^7.3.0"
+    "@vitejs/plugin-react-swc": "^4.2.3",
+    "vite": "^7.3.1"
   }
 }
