@@ -610,13 +610,12 @@ export class UserScriptRuntime {
       eventName = 'event:creature-death';
       DispatchEvent(eventName, { text: line });
       return eventName;
-    } else if (
-      line.indexOf('You flee from combat!') > -1) {
+    } else if (line.indexOf('You flee from combat!') > -1) {
       eventName = 'event:flee:success';
       DispatchEvent(eventName, { text: line });
       return eventName;
     } else if (
-      line.indexOf('PANIC! You couldn\'t escape!') > -1 ||
+      line.indexOf("PANIC! You couldn't escape!") > -1 ||
       line.indexOf('You cannot escape from combat!!!') > -1
     ) {
       eventName = 'event:flee:failed';

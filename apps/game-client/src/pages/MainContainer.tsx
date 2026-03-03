@@ -34,7 +34,6 @@ import { ShatteredArchiveTerminal } from '../features/terminal/shatteredArchiveT
 import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 import FocusBarVitals from '../components/FocusBarVitals';
 import ContributeIdentifyModal from '../components/ContributeIdentifyModal';
-import ContributeLoreModal from '../components/ContributeLoreModal';
 import ContributeCreatureLoreModal from '../components/ContributeCreatureLoreModal';
 
 export const MainContainer: React.FC = () => {
