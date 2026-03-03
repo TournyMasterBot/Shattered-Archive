@@ -36,6 +36,10 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    
+    environment:
+      NGINX_TLS_INCLUDE_FILE: "tls-dev.conf"
+
     volumes:
       # keep your template-based config flow
       - ./nginx/edge-subdomains.conf:/etc/nginx/templates/default.conf.template:ro

@@ -494,11 +494,19 @@ export class AutoLevelingEngine {
 
         // Pause on flee
         ListenEvent<any>(
-          'event:flee',
+          'event:flee:success',
           (payload) => {
             this.boundOnFlee({ detail: payload } as any);
           },
-          { key: 'AutoLevelingEngine:event:flee' },
+          { key: 'AutoLevelingEngine:event:flee:success' },
+        ),
+        // Be aware of a failed flee
+        ListenEvent<any>(
+          'event:flee:failed',
+          (payload) => {
+            this.boundOnFlee({ detail: payload } as any);
+          },
+          { key: 'AutoLevelingEngine:event:flee:failed' },
         ),
       ];
 

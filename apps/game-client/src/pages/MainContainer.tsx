@@ -33,6 +33,8 @@ import { useTerminal } from '../hooks/useTerminal';
 import { ShatteredArchiveTerminal } from '../features/terminal/shatteredArchiveTerminal';
 import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 import FocusBarVitals from '../components/FocusBarVitals';
+import ContributeIdentifyModal from '../components/ContributeIdentifyModal';
+import ContributeCreatureLoreModal from '../components/ContributeCreatureLoreModal';
 
 export const MainContainer: React.FC = () => {
   useVisualViewportHeight();
@@ -63,6 +65,10 @@ export const MainContainer: React.FC = () => {
   const [isPluginsModalOpen, setIsPluginsModalOpen] = React.useState(false);
   const [isAutoLevelingModalOpen, setIsAutoLevelingModalOpen] = React.useState(false);
 
+  // Contribute modals
+  const [isIdentifyModalOpen, setIsIdentifyModalOpen] = React.useState(false);
+  const [isLoreModalOpen, setIsLoreModalOpen] = React.useState(false);
+
   const handleOpenCustomStyles = () => openStyleModal();
   const handleOpenScriptSandbox = () => setIsScriptModalOpen(true);
   const handleOpenConnect = () => main.openConnectModal();
@@ -70,6 +76,8 @@ export const MainContainer: React.FC = () => {
   const handleOpenLibrary = () => main.openLibraryModal();
   const handleOpenEquipment = () => main.openEquipmentModal();
   const handleOpenAutoLeveling = () => setIsAutoLevelingModalOpen(true);
+  const handleOpenIdentifyObject = () => setIsIdentifyModalOpen(true);
+  const handleOpenCreatureLore = () => setIsLoreModalOpen(true);
 
   const connectionId = React.useMemo(() => {
     const host = gameConn.currentHost;
@@ -127,6 +135,8 @@ export const MainContainer: React.FC = () => {
         onOpenLibrary={handleOpenLibrary}
         onOpenEquipment={handleOpenEquipment}
         onOpenAutoLeveling={handleOpenAutoLeveling}
+        onOpenIdentifyObject={handleOpenIdentifyObject}
+        onOpenCreatureLore={handleOpenCreatureLore}
       />
 
       <FocusBarVitals />
@@ -197,6 +207,18 @@ export const MainContainer: React.FC = () => {
         onClose={() => setIsAutoLevelingModalOpen(false)}
         connectionId={connectionId}
         isConnected={gameConn.isConnected}
+      />
+
+      {/* ✅ CHANGED: pass connectionId to both contribute modals */}
+      <ContributeIdentifyModal
+        isOpen={isIdentifyModalOpen}
+        onClose={() => setIsIdentifyModalOpen(false)}
+        connectionId={connectionId}
+      />
+      <ContributeCreatureLoreModal
+        isOpen={isLoreModalOpen}
+        onClose={() => setIsLoreModalOpen(false)}
+        connectionId={connectionId}
       />
     </div>
   );

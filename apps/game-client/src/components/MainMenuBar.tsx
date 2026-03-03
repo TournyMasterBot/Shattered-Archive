@@ -14,6 +14,8 @@ interface MainMenuBarProps {
   onOpenLibrary: () => void;
   onOpenEquipment: () => void;
   onOpenAutoLeveling: () => void;
+  onOpenIdentifyObject: () => void;
+  onOpenCreatureLore: () => void;
 }
 
 export const MainMenuBar: React.FC<MainMenuBarProps> = ({
@@ -24,6 +26,8 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
   onOpenLibrary,
   onOpenEquipment,
   onOpenAutoLeveling,
+  onOpenIdentifyObject,
+  onOpenCreatureLore,
 }) => {
   const {
     openRootMenu,
@@ -79,18 +83,6 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
           </div>
         </div>
 
-        {/* Profiles */}
-        {/* Hide for now
-        <div className={`${styles.menuItem} ${styles.menuItemHasSubmenu}`} onClick={() => toggleRootMenu('Profiles')}>
-          Profiles
-          <div className={`${styles.subMenu} ${openRootMenu === 'Profiles' ? styles.subMenuOpen : ''}`}>
-            <div className={styles.subMenuItem}>Load Profile</div>
-            <div className={styles.subMenuItem}>Save Profile</div>
-            <div className={styles.subMenuItem}>Manage Profiles</div>
-          </div>
-        </div>
-        */}
-
         {/* Game */}
         <div className={`${styles.menuItem} ${styles.menuItemHasSubmenu}`} onClick={() => toggleRootMenu('Game')}>
           Game
@@ -98,12 +90,6 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
             <div className={`${styles.subMenuItem} ${styles.subMenuItemHasSubmenu}`} onClick={toggleGameSettings}>
               Settings
               <div className={`${styles.subMenuLevel2} ${isGameSettingsOpen ? styles.subMenuOpen : ''}`}>
-                {/* Graphics is now an action that opens a modal */}
-                {/* Hide for now, until more graphics options are available
-                <div className={styles.subMenuItem} onClick={openGraphicsModal}>
-                  Graphics…
-                </div>
-                */}
                 <div className={styles.subMenuItem} onClick={openAudioModal}>
                   Audio…
                 </div>
@@ -156,19 +142,6 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
             >
               Equipment…
             </div>
-
-            {/*Work in progress
-            <div
-              className={styles.subMenuItem}
-              onClick={(e) => {
-                e.stopPropagation();
-                closeAllMenus();
-                onOpenAutoLeveling();
-              }}
-            >
-              Auto Leveling…
-            </div>
-            */}
           </div>
         </div>
 
@@ -189,6 +162,34 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
           </div>
         </div>
 
+        {/* ✅ NEW: Contribute */}
+        <div className={`${styles.menuItem} ${styles.menuItemHasSubmenu}`} onClick={() => toggleRootMenu('Contribute')}>
+          Contribute
+          <div className={`${styles.subMenu} ${openRootMenu === 'Contribute' ? styles.subMenuOpen : ''}`}>
+            <div
+              className={styles.subMenuItem}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeAllMenus();
+                onOpenIdentifyObject();
+              }}
+            >
+              Identify Object…
+            </div>
+
+            <div
+              className={styles.subMenuItem}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeAllMenus();
+                onOpenCreatureLore();
+              }}
+            >
+              Creature Lore…
+            </div>
+          </div>
+        </div>
+
         {/* External */}
         <div className={`${styles.menuItem} ${styles.menuItemHasSubmenu}`} onClick={() => toggleRootMenu('External')}>
           External
@@ -202,10 +203,6 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
             >
               Open Shattered Archive
             </a>
-            {/* Hide for now
-            <div className={styles.subMenuItem}>Sync Data (TODO)</div>
-            <div className={styles.subMenuItem}>Load Data (TODO)</div>
-            */}
             <a
               className={`${styles.subMenuItem} ${styles.subMenuLink}`}
               href="https://github.com/TournyMasterBot/Shattered-Archive"
@@ -222,9 +219,6 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
         <div className={`${styles.menuItem} ${styles.menuItemHasSubmenu}`} onClick={() => toggleRootMenu('Help')}>
           Help
           <div className={`${styles.subMenu} ${openRootMenu === 'Help' ? styles.subMenuOpen : ''}`}>
-            {/* Hide for now
-            <div className={styles.subMenuItem}>About</div>
-            */}
             <a
               className={`${styles.subMenuItem} ${styles.subMenuLink}`}
               href="https://github.com/sponsors/TournyMasterBot"

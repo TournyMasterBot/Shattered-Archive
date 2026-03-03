@@ -38,6 +38,45 @@ const addAffectPhrase = 'add_affect ';
 const affectDataPhrase = 'affect_data ';
 const loginDataPhrase = 'login_data ';
 
+// ---- Identity snapshot (GMCP-only) --------------------------------------
+
+type IdentitySnapshot = {
+  characterName?: string;
+  updatedAt?: number;
+};
+
+function getIdentitySnapshot(): IdentitySnapshot {
+  const w = window as any;
+  w.__SA_IDENTITY__ = w.__SA_IDENTITY__ || {};
+  return w.__SA_IDENTITY__ as IdentitySnapshot;
+}
+
+function setIdentitySnapshot(patch: Partial<IdentitySnapshot>) {
+  const w = window as any;
+  const cur = getIdentitySnapshot();
+  const next: IdentitySnapshot = { ...cur, ...patch, updatedAt: Date.now() };
+  w.__SA_IDENTITY__ = next;
+  DispatchEvent('shatteredarchive:identity-updated', next);
+}
+
+function toCleanString(v: unknown): string {
+  return v == null ? '' : String(v).trim();
+}
+
+function extractCharacterFromLoginData(data: any): { characterName?: string } {
+  const characterName =
+    toCleanString(data?.name) ||
+    toCleanString(data?.characterName) ||
+    toCleanString(data?.character_name) ||
+    toCleanString(data?.charName) ||
+    toCleanString(data?.char_name) ||
+    toCleanString(data?.character) ||
+    toCleanString(data?.char) ||
+    toCleanString(data?.player);
+
+  return { characterName: characterName || undefined };
+}
+
 /* ------------------------------- helpers ------------------------------- */
 
 function normalizeSplitChar(v: string | undefined): string {
@@ -75,16 +114,6 @@ function stripOuterQuotes(s: string): string {
   return v;
 }
 
-/**
- * If a captured value is in one of these forms:
- *  - "{potion:health}"
- *  - "{ brewCommand: 2xherb stir 'red mushroom' }"
- *  - "{health}" (allowed; no key)
- * returns the inside.
- *
- * If a key is present and doesn't match expectedName, we still return the raw inner
- * (so users can do "{something:...}" without breaking everything), but prefer matching keys.
- */
 function unwrapBraceValue(expectedName: string, raw: string): { value: string; key?: string } | null {
   const s = (raw ?? '').trim();
   if (s.length < 2) return null;
@@ -115,27 +144,17 @@ function normalizeCapturedVar(expectedName: string, raw: string): string {
   const t = (raw ?? '').trim();
   if (!t) return '';
 
-  // brace form
   const unwrapped = unwrapBraceValue(expectedName, t);
   if (unwrapped) return (unwrapped.value ?? '').trim();
 
-  // quoted token
   const q = stripOuterQuotes(t).trim();
   return q;
 }
 
-/**
- * Parse an input like:
- *   setbrew { potion: "health", brewCommand: "2xherb stir 'red mushroom'" }
- *
- * into:
- *   { command: "setbrew", vars: { potion: "health", brewCommand: "2xherb stir 'red mushroom'" } }
- */
 function parseInlineObjectVars(input: string): { command: string; vars: Record<string, string> } | null {
   const raw = (input ?? '').trim();
   if (!raw) return null;
 
-  // command is first token
   const m = /^(\S+)\s*(.*)$/.exec(raw);
   if (!m) return null;
 
@@ -147,12 +166,6 @@ function parseInlineObjectVars(input: string): { command: string; vars: Record<s
 
   const inner = rest.slice(1, -1);
   const vars: Record<string, string> = {};
-
-  // simple scanner for: key : value (, key : value)*
-  // value can be:
-  // - "..."
-  // - '...'
-  // - unquoted token(s) until comma/end (trimmed)
   let i = 0;
 
   const skipWs = () => {
@@ -167,18 +180,16 @@ function parseInlineObjectVars(input: string): { command: string; vars: Record<s
   };
 
   const readQuoted = (quote: "'" | '"'): string => {
-    // assumes inner[i] === quote
-    i++; // skip open quote
+    i++;
     const start = i;
     while (i < inner.length) {
       if (inner[i] === quote) {
         const out = inner.slice(start, i);
-        i++; // consume close
+        i++;
         return out;
       }
       i++;
     }
-    // no close quote -> take rest
     return inner.slice(start);
   };
 
@@ -191,7 +202,6 @@ function parseInlineObjectVars(input: string): { command: string; vars: Record<s
       return readQuoted(ch);
     }
 
-    // unquoted: read until comma or end
     const start = i;
     while (i < inner.length && inner[i] !== ',') i++;
     return inner.slice(start, i).trim();
@@ -201,7 +211,6 @@ function parseInlineObjectVars(input: string): { command: string; vars: Record<s
     skipWs();
     if (i >= inner.length) break;
 
-    // allow trailing commas/whitespace
     if (inner[i] === ',') {
       i++;
       continue;
@@ -209,21 +218,18 @@ function parseInlineObjectVars(input: string): { command: string; vars: Record<s
 
     const key = readIdent();
     if (!key) {
-      // skip unknown junk to next comma
       while (i < inner.length && inner[i] !== ',') i++;
       continue;
     }
 
     skipWs();
     if (inner[i] !== ':') {
-      // not a kv pair -> skip
       while (i < inner.length && inner[i] !== ',') i++;
       continue;
     }
 
-    i++; // skip ':'
+    i++;
     const value = readValue();
-
     vars[key] = value;
 
     skipWs();
@@ -234,18 +240,6 @@ function parseInlineObjectVars(input: string): { command: string; vars: Record<s
   return { command, vars };
 }
 
-/**
- * Compile an alias template like:
- *   "target {TARGET}"
- * into a regex and list of variable names.
- *
- * Enhancements:
- * - Non-last vars still behave token-ish, but allow:
- *   - "{var:value}" / "{value}" (captured as one token, later normalized)
- *   - quoted tokens: "foo bar" or 'foo bar'
- * - The LAST {VAR} in the template captures the rest of the line (multi-word),
- *   preserving the original simple behavior for non-last vars.
- */
 function compileAliasTemplate(template: string): { re: RegExp; vars: string[]; command?: string } | null {
   const raw = safeTrim(template);
   if (!raw) return null;
@@ -253,7 +247,6 @@ function compileAliasTemplate(template: string): { re: RegExp; vars: string[]; c
   const varNames: string[] = [];
   const parts: string[] = [];
 
-  // best-effort: command = first token before whitespace or "{"
   const commandMatch = /^\s*([^\s{]+)/.exec(raw);
   const command = commandMatch?.[1];
 
@@ -283,13 +276,8 @@ function compileAliasTemplate(template: string): { re: RegExp; vars: string[]; c
     varNames.push(tok.name);
 
     if (isLast) {
-      // capture the rest of the line (can include spaces, quotes, braces)
       parts.push('(.+)');
     } else {
-      // capture a "token", but allow quotes/braces as a single unit
-      // - { ... } (no nested braces)
-      // - " ... " or ' ... ' (no escaped quotes)
-      // - otherwise \S+
       parts.push('(\\{[^}]+\\}|"[^"]*"|\'[^\']*\'|\\S+)');
     }
 
@@ -316,10 +304,8 @@ export class UserScriptRuntime {
 
   private triggerUnsubs: Map<string, () => void> = new Map();
 
-  // cache compiled templates by script id
   private aliasTemplateCache: Map<string, { re: RegExp; vars: string[]; command?: string } | null> = new Map();
 
-  // active connection for global vars / global runtime
   private activeConnectionId: string = 'default';
   private timerNextFireAt: Map<string, number> = new Map();
   private timerIntervalById: Map<string, number> = new Map();
@@ -341,22 +327,20 @@ export class UserScriptRuntime {
   private attachWindowEvents() {
     console.log('Attaching user script runtime events');
 
-    // Raw text lines from the server (mapped by runtimeSingleton)
     ListenEvent<any>('shatteredarchive:raw-data', (payload) => {
       void this.processRawEvent(payload);
     });
 
-    // GMCP -> parse + emit real events
     ListenEvent<any>('shatteredarchive:gmcp-data', (payload) => {
       void this.processGmcpEvent(payload);
     });
 
-    // gmcp console logger
+    /* DEBUG
     ListenRedispatch('shatteredarchive:gmcp-data', 'shatteredarchive:write-console', {
       fromUserScript: false,
     });
+    */
 
-    // When the sandbox UI (or runtime itself) saves scripts, reload + rebuild listeners.
     ListenEvent<any>('shatteredarchive:userScripts-updated', (payload) => {
       const connectionId = payload?.connectionId;
       this.reloadFromStorage(connectionId);
@@ -377,9 +361,7 @@ export class UserScriptRuntime {
     const next = safeConnectionId(connectionId);
     this.activeConnectionId = next;
 
-    // ensure globals are warmed for this connection
     getGlobalVarsSnapshot(next);
-
     this.rebuildOmitRules();
   }
 
@@ -398,7 +380,6 @@ export class UserScriptRuntime {
       const dontRequireMatchText = trig.dontRequireMatchText === true;
       const template = safeTrim(String(trig.matchText ?? ''));
 
-      // If they opted out of matchText, this is an "omit everything for this event" rule
       if (dontRequireMatchText) {
         rules.push({
           id: s.id,
@@ -409,7 +390,6 @@ export class UserScriptRuntime {
         continue;
       }
 
-      // otherwise, require a real matchText
       if (!template) continue;
 
       const expanded = expandMatchTextWithGlobals(template, (key) => getGlobalVarStore(this.activeConnectionId, key));
@@ -422,13 +402,6 @@ export class UserScriptRuntime {
         caseInsensitive: trig.caseInsensitive ?? false,
       });
     }
-
-    /* DEBUG
-    console.log('Invoking setOmitRules from rebuildOmitRules', {
-      rules,
-      activeConnectionId: this.activeConnectionId,
-    });
-    */
 
     setOmitRules(rules, this.activeConnectionId);
   }
@@ -458,10 +431,6 @@ export class UserScriptRuntime {
     this.rebuildOmitRules();
   }
 
-  /**
-   * Reset timer scheduling after loading/replacing scripts.
-   * Call this after replaceAllScripts(), or after any bulk update.
-   */
   public rebuildTimers(): void {
     this.timerNextFireAt.clear();
     this.timerIntervalById.clear();
@@ -469,7 +438,6 @@ export class UserScriptRuntime {
   }
 
   public rebuildTriggerListeners(): void {
-    // dispose old listeners
     for (const off of this.triggerUnsubs.values()) {
       try {
         off();
@@ -477,7 +445,6 @@ export class UserScriptRuntime {
     }
     this.triggerUnsubs.clear();
 
-    // Group enabled triggers by eventName
     const byEvent = new Map<string, AnyUserScript[]>();
 
     for (const script of this.scripts.values()) {
@@ -491,7 +458,6 @@ export class UserScriptRuntime {
       const dontRequireMatchText = trig.dontRequireMatchText === true;
       const matchText = safeTrim(trig.matchText);
 
-      // If they didn't opt out, require matchText
       if (!dontRequireMatchText && !matchText) continue;
 
       const list = byEvent.get(eventName) ?? [];
@@ -499,7 +465,6 @@ export class UserScriptRuntime {
       byEvent.set(eventName, list);
     }
 
-    // Attach 1 listener per eventName
     for (const [eventName, scripts] of byEvent.entries()) {
       const key = `UserScriptRuntime::triggers::${eventName}`;
 
@@ -507,7 +472,6 @@ export class UserScriptRuntime {
         eventName,
         (payload) => {
           for (const s of scripts) {
-            // Re-check current state (scripts might have changed since this rebuild)
             const current = this.scripts.get(s.id);
             if (!current || current.kind !== 'trigger' || !current.enabled) continue;
 
@@ -522,7 +486,6 @@ export class UserScriptRuntime {
         { key, captureStack: false },
       );
 
-      // store unsub by eventName (since it's one per event)
       this.triggerUnsubs.set(eventName, off);
     }
 
@@ -544,7 +507,6 @@ export class UserScriptRuntime {
     const text = pickMatchTextFromPayload(payload);
     if (!text) return false;
 
-    // DO NOT lowercase / strip ANSI here. This is a raw substring match.
     return text.indexOf(expanded) > -1;
   }
 
@@ -555,10 +517,7 @@ export class UserScriptRuntime {
 
   loadScriptsFromStorage(connectionId?: string | null): AnyUserScript[] {
     try {
-      // keep active connection in sync with hydration
       this.activeConnectionId = safeConnectionId(connectionId);
-
-      // warm globals for this connection
       getGlobalVarsSnapshot(this.activeConnectionId);
 
       const raw = window.localStorage.getItem(this.getStorageKey(connectionId));
@@ -616,21 +575,15 @@ export class UserScriptRuntime {
   async processRawEvent(payload: any): Promise<void> {
     const rawText = String(payload?.rawText ?? '');
 
-    // Derived/special events (damage, death, etc.)
     const specialEventType = await this.processForSpecialLines(rawText);
 
-    // IMPORTANT: match omit on a *plain* version, otherwise ANSI breaks matching
     const plain = stripAnsi(rawText);
 
-    // 1) Always apply raw-data omit rules
     const omitRaw = shouldOmitLine('shatteredarchive:raw-data', plain);
-
-    // 2) Optionally also apply event-specific omit rules (event:damage, etc.)
     const omitSpecial = specialEventType ? shouldOmitLine(specialEventType, plain) : false;
 
     const omit = omitRaw || omitSpecial;
 
-    // forward to chat probe + terminal
     let end = rawText.length;
     if (end > 0 && rawText.charCodeAt(end - 1) === 10 /* \n */) end--;
     if (end > 0 && rawText.charCodeAt(end - 1) === 13 /* \r */) end--;
@@ -653,13 +606,19 @@ export class UserScriptRuntime {
   async processForSpecialLines(line: string): Promise<string | undefined> {
     let eventName: string | undefined = undefined;
 
-    // Creature death
     if (line.indexOf('is DEAD!!') > -1) {
       eventName = 'event:creature-death';
       DispatchEvent(eventName, { text: line });
       return eventName;
     } else if (line.indexOf('You flee from combat!') > -1) {
-      eventName = 'event:flee';
+      eventName = 'event:flee:success';
+      DispatchEvent(eventName, { text: line });
+      return eventName;
+    } else if (
+      line.indexOf("PANIC! You couldn't escape!") > -1 ||
+      line.indexOf('You cannot escape from combat!!!') > -1
+    ) {
+      eventName = 'event:flee:failed';
       DispatchEvent(eventName, { text: line });
       return eventName;
     }
@@ -729,7 +688,6 @@ export class UserScriptRuntime {
         this.dispatchGmcpEvent('game:room-data', roomDataPhrase.length, rawText);
         return;
       } else if (rawText.startsWith(affectDataPhrase)) {
-        // NOTE: keep this string consistent with ROUTED_WINDOW_EVENTS
         this.dispatchGmcpEvent('game:affects-trueup', affectDataPhrase.length, rawText);
         return;
       } else if (rawText.startsWith(addAffectPhrase)) {
@@ -739,8 +697,29 @@ export class UserScriptRuntime {
         this.dispatchGmcpEvent('game:affect-removed', removeAffectPhrase.length, rawText);
         return;
       } else if (rawText.startsWith(loginDataPhrase)) {
-        this.dispatchGmcpEvent('game:character-login', loginDataPhrase.length, rawText);
-        return;
+        try {
+          const jsonPart = rawText.slice(loginDataPhrase.length).trim();
+          const data = JSON.parse(jsonPart);
+
+          // Snapshot for late subscribers
+          const w = window as any;
+          w.__SA_EVENT_SNAPSHOTS__ = w.__SA_EVENT_SNAPSHOTS__ || {};
+          w.__SA_EVENT_SNAPSHOTS__['game:character-login'] = data;
+
+          // Dispatch the standard event
+          DispatchEvent('game:character-login', data);
+
+          // Store GMCP-only identity for UI consumers
+          const { characterName } = extractCharacterFromLoginData(data);
+          if (characterName) {
+            setIdentitySnapshot({ characterName });
+          }
+
+          return;
+        } catch (err) {
+          console.warn('[GMCP] Failed to parse login_data payload', { rawText, err });
+          return;
+        }
       }
     } catch (err) {
       console.warn('[GMCP] Failed to parse payload', { rawText, err });
@@ -750,20 +729,26 @@ export class UserScriptRuntime {
   }
 
   dispatchGmcpEvent<T extends object>(eventName: string, length: number, rawText: string): void {
-    const jsonPart = rawText.slice(length).trim();
-    const data = JSON.parse(jsonPart) as T;
-
-    // Snapshot the latest payload so late subscribers (e.g. FocusBar on mobile)
-    // can initialize even if they missed the first dispatch after refresh.
     try {
+      console.log('Dispatching event', {
+        eventName,
+        rawText,
+      });
+      const jsonPart = rawText.slice(length).trim();
+      const data = JSON.parse(jsonPart) as T;
       const w = window as any;
+
       w.__SA_EVENT_SNAPSHOTS__ = w.__SA_EVENT_SNAPSHOTS__ || {};
       w.__SA_EVENT_SNAPSHOTS__[eventName] = data;
-    } catch {
-      // ignore
-    }
 
-    DispatchEvent(eventName, data);
+      DispatchEvent(eventName, data);
+    } catch (err) {
+      console.log('Failed to dispatch GMCP event', {
+        eventName,
+        length,
+        rawText,
+      });
+    }
   }
 
   /* -------------------------------- aliases ------------------------------- */
@@ -796,7 +781,6 @@ export class UserScriptRuntime {
       const trimmedPart = rawPart.trim();
       const normalizedInput = trimmedPart.toLowerCase();
 
-      // If the user typed: "cmd { key: value, key2: value2 }"
       const objectVarsParsed = parseInlineObjectVars(trimmedPart);
       const objectCommandLower = objectVarsParsed?.command?.toLowerCase();
       const objectVars = objectVarsParsed?.vars;
@@ -810,7 +794,6 @@ export class UserScriptRuntime {
         const aliasTrim = aliasRaw.trim();
         if (!aliasTrim) continue;
 
-        // 1) exact match (original behavior)
         if (aliasTrim.toLowerCase() === normalizedInput) {
           matched = true;
           anyAliasMatched = true;
@@ -821,8 +804,6 @@ export class UserScriptRuntime {
           break;
         }
 
-        // 1b) object form: "aliasCmd { potion: ..., brewCommand: ... }"
-        // If alias itself is just the command (exact), allow object payload to drive vars.
         if (objectVarsParsed && aliasTrim.toLowerCase() === objectCommandLower) {
           matched = true;
           anyAliasMatched = true;
@@ -841,13 +822,9 @@ export class UserScriptRuntime {
           break;
         }
 
-        // 2) template match: "setbrew {potion} {brewCommand}"
         const compiled = this.getCompiledAliasTemplate(script.id, aliasRaw);
         if (!compiled) continue;
 
-        // 2b) template + object form:
-        // If they typed "setbrew { potion:..., brewCommand:... }" and the template's command matches,
-        // map vars by name.
         if (objectVarsParsed && compiled.command && compiled.command.toLowerCase() === objectCommandLower) {
           const varsOut: Record<string, string> = {};
           let ok = true;
@@ -875,7 +852,6 @@ export class UserScriptRuntime {
           break;
         }
 
-        // 2c) regular template regex (positional), with enhanced token/last-var capture
         const m = compiled.re.exec(trimmedPart);
         if (!m) continue;
 
@@ -883,11 +859,6 @@ export class UserScriptRuntime {
         for (let i = 0; i < compiled.vars.length; i++) {
           const varName = compiled.vars[i];
           const rawVal = String(m[i + 1] ?? '');
-
-          // normalize:
-          // - allow {var:value} or {value}
-          // - allow "..." or '...'
-          // - last var may include spaces
           vars[varName] = normalizeCapturedVar(varName, rawVal);
         }
 
@@ -900,7 +871,6 @@ export class UserScriptRuntime {
         break;
       }
 
-      // If no match, send as normal to server
       if (!matched) {
         this.sendCommand(rawPart);
       }
@@ -915,7 +885,6 @@ export class UserScriptRuntime {
     const now = Date.now();
     this.lastTick = now;
 
-    // Track active timer ids so we can garbage-collect removed/disabled timers.
     const active = new Set<string>();
 
     for (const script of this.scripts.values()) {
@@ -926,7 +895,6 @@ export class UserScriptRuntime {
 
       active.add(script.id);
 
-      // If interval changed since last tick, reschedule (wait full interval).
       const prevInterval = this.timerIntervalById.get(script.id);
       if (prevInterval !== interval) {
         this.timerIntervalById.set(script.id, interval);
@@ -937,18 +905,13 @@ export class UserScriptRuntime {
       const nextAt = this.timerNextFireAt.get(script.id) ?? now + interval;
 
       if (now >= nextAt) {
-        // Schedule next fire first (prevents reentrancy issues if script errors)
         this.timerNextFireAt.set(script.id, now + interval);
-
-        // Run the timer
         this.executeScript(script);
       } else {
-        // Ensure it’s stored
         this.timerNextFireAt.set(script.id, nextAt);
       }
     }
 
-    // Cleanup timers that no longer exist / disabled
     for (const id of Array.from(this.timerNextFireAt.keys())) {
       if (!active.has(id)) {
         this.timerNextFireAt.delete(id);
@@ -962,7 +925,6 @@ export class UserScriptRuntime {
   private executeScript(script: AnyUserScript, extraContext?: { event?: TriggerContextEvent }): void {
     if (!script.enabled) return;
 
-    // Pull template vars from alias-fired payload (if present)
     const payloadVars =
       extraContext?.event && typeof (extraContext.event as any)?.payload === 'object'
         ? ((extraContext.event as any).payload?.vars as Record<string, string> | undefined)
@@ -970,7 +932,6 @@ export class UserScriptRuntime {
 
     const vars = payloadVars && typeof payloadVars === 'object' ? payloadVars : {};
 
-    // Build api with globals + runGlobal wired to your existing implementations
     const apiRef = {} as ScriptSandboxApi;
 
     Object.assign(apiRef, {
@@ -984,7 +945,6 @@ export class UserScriptRuntime {
         setGlobalVarStore(this.activeConnectionId, String(key ?? ''), value),
       deleteGlobalVar: (key: string) => deleteGlobalVarStore(this.activeConnectionId, String(key ?? '')),
 
-      // Lets scripts access alias vars via getNamedVar(...) (Lua/Python rely on this)
       getNamedVar: (name: string) => {
         const k = String(name ?? '');
         const v = (vars as any)[k];
@@ -1048,3 +1008,5 @@ export class UserScriptRuntime {
     }
   }
 }
+
+export default UserScriptRuntime;

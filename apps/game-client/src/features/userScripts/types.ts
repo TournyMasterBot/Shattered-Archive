@@ -1,5 +1,3 @@
-// apps/game-client/src/features/userScripts/types.ts
-
 export type UserScriptLanguage = 'javascript' | 'lua' | 'python' | 'typescript' | 'text';
 
 export interface BaseUserScript {
@@ -8,6 +6,16 @@ export interface BaseUserScript {
   enabled: boolean;
   language: UserScriptLanguage;
   source: string;
+
+  /**
+   * Cosmetic grouping path for the editor list UI only.
+   * Supports nested grouping via delimiters interpreted by the list tree builder.
+   * Examples:
+   * - "combat"
+   * - "combat/defense"
+   * - "utility::travel"
+   */
+  group?: string;
 }
 
 /**

@@ -1,0 +1,16 @@
+# docker exec -it comfyui sh -lc "ls -1 /comfyui/models/checkpoints | head -10"
+name: Shattered Archive MCP
+version: 0.0.1
+schema: v1
+mcpServers:
+  - name: Shattered Archive Tools
+    type: stdio
+    command: docker
+    args:
+      - exec
+      - -i
+      - -w
+      - /app
+      - shattered_archive_mcp
+      - node
+      - build/index.js

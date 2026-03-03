@@ -1,21 +1,20 @@
 # Prod Command (use the deploy script)
 # sudo /usr/local/bin/shatteredarchive-nightly-deploy.sh
 
-name: shatteredarchive
+name: shatteredarchive-prod
 
 networks:
-  shatteredarchive:
+  shatteredarchive-prod:
     driver: bridge
 
 services:
   ############################################################
-  # EDGE NGINX (TLS TERMINATION)
+  # EDGE NGINX (HTTP/HTTPS termination)
   ############################################################
   nginx:
     image: nginx:alpine
-    container_name: shatteredarchive-nginx
+    container_name: shatteredarchive-prod-nginx
 
-    # OPTIONAL (recommended): wait for servers to be healthy
     depends_on:
       game-client:
         condition: service_started
@@ -29,11 +28,16 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    
+    environment:
+      NGINX_TLS_INCLUDE_FILE: "tls-off.conf"
+
     volumes:
       - ./nginx/edge-subdomains.conf:/etc/nginx/conf.d/default.conf:ro
       - ./nginx/certs:/etc/nginx/certs:ro
+
     networks:
-      shatteredarchive:
+      shatteredarchive-prod:
         aliases:
           - shatteredarchive.dev
           - game-client.shatteredarchive.dev
@@ -62,9 +66,10 @@ services:
         VITE_WEB_WS: "wss://web-server.shatteredarchive.dev"
         VITE_WEB_SECURE: "true"
         VITE_ENV: "development"
-    image: shatteredarchive-game-client
+    image: shatteredarchive-prod-game-client
+    container_name: shatteredarchive-prod-game-client
     networks:
-      shatteredarchive:
+      shatteredarchive-prod:
         aliases:
           - game-client.shatteredarchive.dev
 
@@ -77,9 +82,10 @@ services:
         VITE_WEB_WS: "wss://web-server.shatteredarchive.dev"
         VITE_WEB_SECURE: "true"
         VITE_ENV: "docker"
-    image: shatteredarchive-web-client
+    image: shatteredarchive-prod-web-client
+    container_name: shatteredarchive-prod-web-client
     networks:
-      shatteredarchive:
+      shatteredarchive-prod:
         aliases:
           - web-client.shatteredarchive.dev
 
@@ -90,7 +96,8 @@ services:
     build:
       context: ..
       dockerfile: deploy/game-server.Dockerfile
-    image: shatteredarchive-game-server
+    image: shatteredarchive-prod-game-server
+    container_name: shatteredarchive-prod-game-server
     env_file:
       - ../apps/game-server/.env
     environment:
@@ -105,12 +112,11 @@ services:
     expose:
       - "31000"
     networks:
-      shatteredarchive:
+      shatteredarchive-prod:
         aliases:
           - game-server.shatteredarchive.dev
 
     healthcheck:
-      # TCP port open check using node (assumes node exists in the container)
       test:
         [
           "CMD-SHELL",
@@ -125,7 +131,8 @@ services:
     build:
       context: ..
       dockerfile: deploy/web-server.Dockerfile
-    image: shatteredarchive-web-server
+    image: shatteredarchive-prod-web-server
+    container_name: shatteredarchive-prod-web-server
     env_file:
       - ../apps/web-server/.env
     environment:
@@ -135,7 +142,7 @@ services:
     expose:
       - "41000"
     networks:
-      shatteredarchive:
+      shatteredarchive-prod:
         aliases:
           - web-server.shatteredarchive.dev
 

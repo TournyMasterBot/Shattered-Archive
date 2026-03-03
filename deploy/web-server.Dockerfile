@@ -43,5 +43,9 @@ COPY --from=build /repo/sdks ./sdks
 
 RUN pnpm install --frozen-lockfile --prod --filter @shatteredarchive/web-server...
 
+# Ensure offline fallback is discoverable at /repo/src/offline (a checked candidate path)
+RUN mkdir -p /repo/src \
+ && ln -sf /repo/apps/web-server/src/offline /repo/src/offline
+
 EXPOSE 41000
 CMD ["node", "apps/web-server/dist/index.js"]

@@ -11,8 +11,9 @@ export function useMainMenuBar() {
 
   const [isGraphicsModalOpen, setIsGraphicsModalOpen] = useState(false);
   const [isAudioModalOpen, setIsAudioModalOpen] = useState(false);
-
   const [isAccessibilityModalOpen, setIsAccessibilityModalOpen] = useState(false);
+
+  const [isCreatureLoreModalOpen, setIsCreatureLoreModalOpen] = useState(false);
 
   const toggleRootMenu = (id: string) => {
     setOpenRootMenu((prev) => (prev === id ? null : id));
@@ -61,6 +62,14 @@ export function useMainMenuBar() {
 
   const closeAccessibilityModal = () => setIsAccessibilityModalOpen(false);
 
+  const openCreatureLoreModal = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    closeAllMenus();
+    setIsCreatureLoreModalOpen(true);
+  };
+
+  const closeCreatureLoreModal = () => setIsCreatureLoreModalOpen(false);
+
   return {
     openRootMenu,
     isGameSettingsOpen,
@@ -77,6 +86,10 @@ export function useMainMenuBar() {
     isAccessibilityModalOpen,
     openAccessibilityModal,
     closeAccessibilityModal,
+
+    isCreatureLoreModalOpen,
+    openCreatureLoreModal,
+    closeCreatureLoreModal,
 
     toggleRootMenu,
     toggleGameSettings,

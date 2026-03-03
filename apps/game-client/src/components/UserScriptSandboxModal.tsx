@@ -1,5 +1,4 @@
-// apps\game-client\src\components\UserScriptSandboxModal.tsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useUserScriptSandbox, getUserScriptStorageKey } from '../hooks/useUserScriptSandbox';
 import {
   AnyUserScript,
@@ -13,6 +12,7 @@ import { ROUTED_WINDOW_EVENTS } from '../features/plugins/routed-gmcp-events';
 import { useGlobalScripts } from '../hooks/useGlobalScripts';
 import { useUserVariables } from '../hooks/useUserVariables';
 import { ListenDomEvent } from '../features/event-emitter/event-dispatcher';
+import { buildTriggerTree, filterScriptsByTagQuery, TriggerTreeNode } from '../features/userScripts/scriptListSearch';
 
 interface UserScriptSandboxModalProps {
   isOpen: boolean;
@@ -90,6 +90,7 @@ function isValidUserScript(v: unknown): v is AnyUserScript {
   const language = v.language;
   const source = v.source;
   const kind = v.kind;
+  const group = (v as any).group;
 
   if (typeof id !== 'string' || id.trim().length === 0) return false;
   if (typeof name !== 'string') return false;
@@ -97,6 +98,7 @@ function isValidUserScript(v: unknown): v is AnyUserScript {
   if (!isUserScriptLanguage(language)) return false;
   if (typeof source !== 'string') return false;
   if (!isUserScriptKind(kind)) return false;
+  if (group !== undefined && typeof group !== 'string') return false;
 
   if (kind === 'trigger') {
     const eventName = (v as any).eventName;
@@ -215,7 +217,8 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
       .filter((s) => exportKindFilter[s.kind])
       .filter((s) => {
         if (!q) return true;
-        const hay = `${s.name} ${s.kind} ${s.id} ${s.kind === 'alias' ? (s as AliasScript).alias : ''}`.toLowerCase();
+        const hay =
+          `${s.name} ${s.kind} ${s.id} ${(s as any).group ?? ''} ${s.kind === 'alias' ? (s as AliasScript).alias : ''}`.toLowerCase();
         return hay.includes(q);
       })
       .slice()
@@ -358,7 +361,7 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
                 className={styles.ieSearch}
                 value={exportFilter}
                 onChange={(e) => setExportFilter(e.target.value)}
-                placeholder="Search name / kind / alias / id"
+                placeholder="Search name / kind / alias / id / group"
               />
 
               <label className={styles.ieKindToggle}>
@@ -410,6 +413,12 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
                       <span className={styles.ieRowKind}>{s.kind}</span>
                       {!s.enabled && <span className={styles.ieRowDisabled}>disabled</span>}
                     </div>
+
+                    {(s as any).group && (
+                      <div className={styles.ieRowSub}>
+                        group: <span className={styles.ieMono}>{String((s as any).group)}</span>
+                      </div>
+                    )}
 
                     {s.kind === 'alias' && (
                       <div className={styles.ieRowSub}>
@@ -599,6 +608,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
   // Trigger-specific state
   const [triggerEventName, setTriggerEventName] = useState<string>('shatteredarchive:raw-data');
   const [triggerMatchText, setTriggerMatchText] = useState<string>('');
+  const [triggerGroup, setTriggerGroup] = useState<string>('');
   const [triggerTestInput, setTriggerTestInput] = useState<string>('');
   const [triggerOmitFromOutput, setTriggerOmitFromOutput] = useState<boolean>(false);
 
@@ -607,13 +617,24 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
 
   // Alias-specific state
   const [aliasKey, setAliasKey] = useState<string>('');
+  const [aliasGroup, setAliasGroup] = useState<string>('');
 
   // Timer-specific state
   const [timerIntervalSeconds, setTimerIntervalSeconds] = useState<string>('');
+  const [timerGroup, setTimerGroup] = useState<string>('');
 
   // Import/Export modal state
   const [ieOpen, setIeOpen] = useState(false);
   const [ieMode, setIeMode] = useState<'export' | 'import'>('export');
+
+  // Cosmetic list search + trigger tree UI state (no submit, no behavior changes)
+  const [scriptSearchQuery, setScriptSearchQuery] = useState<string>('');
+  const [expandedTriggerGroups, setExpandedTriggerGroups] = useState<Record<string, boolean>>({});
+
+  // Drag/drop state for trigger tree organization
+  const [draggingScriptId, setDraggingScriptId] = useState<string | null>(null);
+  const [dragOverGroupPath, setDragOverGroupPath] = useState<string | null>(null);
+  const [dragOverScriptId, setDragOverScriptId] = useState<string | null>(null);
 
   // Modal sizing
   const [isSmallScreen, setIsSmallScreen] = useState<boolean>(() => {
@@ -663,12 +684,15 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
 
       setTriggerEventName('shatteredarchive:raw-data');
       setTriggerMatchText('');
+      setTriggerGroup('');
       setTriggerTestInput('');
       setTriggerOmitFromOutput(false);
       setTriggerDontRequireMatchText(false);
 
       setAliasKey('');
+      setAliasGroup('');
       setTimerIntervalSeconds('');
+      setTimerGroup('');
       setIeOpen(false);
       setIeMode('export');
 
@@ -678,6 +702,13 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       setGlobalVarValue('');
       setNamedVarKey('');
       setNamedVarValue('');
+
+      setScriptSearchQuery('');
+      setExpandedTriggerGroups({});
+
+      setDraggingScriptId(null);
+      setDragOverGroupPath(null);
+      setDragOverScriptId(null);
     }
   }, [isOpen]);
 
@@ -690,12 +721,19 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
 
     setTriggerEventName('shatteredarchive:raw-data');
     setTriggerMatchText('');
+    setTriggerGroup('');
     setTriggerTestInput('');
     setTriggerOmitFromOutput(false);
     setTriggerDontRequireMatchText(false);
 
     setAliasKey('');
+    setAliasGroup('');
     setTimerIntervalSeconds('');
+    setTimerGroup('');
+
+    setDragOverGroupPath(null);
+    setDragOverScriptId(null);
+    setDraggingScriptId(null);
   }, [activeTab]);
 
   // Keep global draft synced to chosen language (only when switching language)
@@ -720,6 +758,9 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
   const baseTriggerMatchText =
     selectedScript && selectedScript.kind === 'trigger' ? ((selectedScript as TriggerScript).matchText ?? '') : '';
 
+  const baseTriggerGroup =
+    selectedScript && selectedScript.kind === 'trigger' ? ((selectedScript as TriggerScript).group ?? '') : '';
+
   const baseTriggerOmitFromOutput =
     selectedScript && selectedScript.kind === 'trigger' ? !!(selectedScript as TriggerScript).omitFromOutput : false;
 
@@ -737,8 +778,14 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
         )
       : '';
 
+  const baseTimerGroup =
+    selectedScript && selectedScript.kind === 'timer' ? ((selectedScript as TimerScript).group ?? '') : '';
+
   const baseAliasKey =
     selectedScript && selectedScript.kind === 'alias' ? ((selectedScript as AliasScript).alias ?? '') : '';
+
+  const baseAliasGroup =
+    selectedScript && selectedScript.kind === 'alias' ? ((selectedScript as AliasScript).group ?? '') : '';
 
   const hasDraftChanges =
     !!selectedScript &&
@@ -748,12 +795,208 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       (selectedScript.kind === 'trigger' &&
         (triggerEventName !== baseTriggerEventName ||
           triggerMatchText !== baseTriggerMatchText ||
+          triggerGroup !== baseTriggerGroup ||
           triggerOmitFromOutput !== baseTriggerOmitFromOutput ||
           triggerDontRequireMatchText !== baseTriggerDontRequireMatchText)) ||
-      (selectedScript.kind === 'timer' && timerIntervalSeconds !== baseTimerIntervalSeconds) ||
-      (selectedScript.kind === 'alias' && aliasKey !== baseAliasKey));
+      (selectedScript.kind === 'timer' &&
+        (timerIntervalSeconds !== baseTimerIntervalSeconds || timerGroup !== baseTimerGroup)) ||
+      (selectedScript.kind === 'alias' && (aliasKey !== baseAliasKey || aliasGroup !== baseAliasGroup)));
 
   const hasGlobalDraftChanges = (globalMgr.sources?.[globalLanguage] ?? '') !== (globalDraft ?? '');
+
+  // Search/filter (cosmetic only) for script list panes
+  const activeScriptKind: 'trigger' | 'alias' | 'timer' | null =
+    activeTab === 'triggers' ? 'trigger' : activeTab === 'aliases' ? 'alias' : activeTab === 'timers' ? 'timer' : null;
+
+  const filteredActiveScripts = useMemo(() => {
+    if (!activeScriptKind) return [];
+    const base = scriptsOfKind(activeScriptKind);
+    return filterScriptsByTagQuery(base, scriptSearchQuery);
+  }, [activeScriptKind, scripts, scriptSearchQuery]);
+
+  const filteredTriggers = useMemo(
+    () => filteredActiveScripts.filter((s): s is TriggerScript => s.kind === 'trigger'),
+    [filteredActiveScripts],
+  );
+
+  const triggerTree = useMemo(() => buildTriggerTree(filteredTriggers), [filteredTriggers]);
+
+  // Project aliases/timers into trigger-like structures for grouped display only (cosmetic)
+  const groupedNonTriggerTree = useMemo(() => {
+    if (activeTab !== 'aliases' && activeTab !== 'timers') return [];
+
+    const projected = filteredActiveScripts.map((s) => {
+      const asTriggerLike: TriggerScript = {
+        id: s.id,
+        kind: 'trigger',
+        name: s.name,
+        enabled: s.enabled,
+        language: s.language,
+        source: s.source,
+        eventName: 'grouping-only',
+        matchText: '',
+        group: (s as any).group ?? '',
+      };
+      return asTriggerLike;
+    });
+
+    return buildTriggerTree(projected);
+  }, [activeTab, filteredActiveScripts]);
+
+  useEffect(() => {
+    if (activeTab !== 'triggers' && activeTab !== 'aliases' && activeTab !== 'timers') return;
+
+    const treeToUse = activeTab === 'triggers' ? triggerTree : groupedNonTriggerTree;
+
+    setExpandedTriggerGroups((prev) => {
+      const next: Record<string, boolean> = { ...prev };
+
+      const visit = (nodes: TriggerTreeNode[]) => {
+        for (const n of nodes) {
+          if (next[n.path] === undefined) next[n.path] = true;
+          if (n.children.length) visit(n.children);
+        }
+      };
+
+      visit(treeToUse);
+      return next;
+    });
+  }, [triggerTree, groupedNonTriggerTree, activeTab]);
+
+  const toggleTriggerGroup = useCallback((path: string) => {
+    setExpandedTriggerGroups((prev) => ({ ...prev, [path]: !prev[path] }));
+  }, []);
+
+  const expandCollapseAllTriggerGroups = useCallback(
+    (expanded: boolean) => {
+      const treeToUse = activeTab === 'triggers' ? triggerTree : groupedNonTriggerTree;
+
+      setExpandedTriggerGroups((prev) => {
+        const next: Record<string, boolean> = { ...prev };
+        const visit = (nodes: TriggerTreeNode[]) => {
+          for (const n of nodes) {
+            next[n.path] = expanded;
+            if (n.children.length) visit(n.children);
+          }
+        };
+        visit(treeToUse);
+        return next;
+      });
+    },
+    [activeTab, triggerTree, groupedNonTriggerTree],
+  );
+
+  const clearDragUi = useCallback(() => {
+    setDraggingScriptId(null);
+    setDragOverGroupPath(null);
+    setDragOverScriptId(null);
+  }, []);
+
+  const moveScriptInArray = useCallback(
+    (scriptId: string, targetScriptId: string) => {
+      if (scriptId === targetScriptId) return;
+
+      const current = [...scripts];
+      const fromIndex = current.findIndex((s) => s.id === scriptId);
+      const toIndex = current.findIndex((s) => s.id === targetScriptId);
+
+      if (fromIndex < 0 || toIndex < 0) return;
+
+      const [moved] = current.splice(fromIndex, 1);
+      current.splice(toIndex, 0, moved);
+
+      replaceAllScripts(current);
+    },
+    [scripts, replaceAllScripts],
+  );
+
+  const moveTriggerToGroup = useCallback(
+    (scriptId: string, targetGroupPath: string) => {
+      const current = [...scripts];
+      const idx = current.findIndex((s) => s.id === scriptId);
+      if (idx < 0) return;
+
+      const script = current[idx];
+      if (!script || script.kind !== 'trigger') return;
+
+      const updated: TriggerScript = {
+        ...(script as TriggerScript),
+        group: targetGroupPath === 'Ungrouped' ? '' : targetGroupPath,
+      };
+
+      current[idx] = updated;
+      replaceAllScripts(current);
+
+      // keep editor in sync if current trigger is selected
+      if (selectedScriptId === scriptId) {
+        setTriggerGroup(updated.group ?? '');
+      }
+    },
+    [scripts, replaceAllScripts, selectedScriptId],
+  );
+
+  const reorderTriggerWithinGroupNearTarget = useCallback(
+    (draggedId: string, targetId: string) => {
+      const dragged = scripts.find((s) => s.id === draggedId);
+      const target = scripts.find((s) => s.id === targetId);
+
+      if (!dragged || !target) return;
+      if (dragged.kind !== 'trigger' || target.kind !== 'trigger') return;
+
+      // First align group to target's group, then reorder array
+      const targetGroup = (target as TriggerScript).group ?? '';
+      moveTriggerToGroup(draggedId, targetGroup || 'Ungrouped');
+      moveScriptInArray(draggedId, targetId);
+    },
+    [scripts, moveTriggerToGroup, moveScriptInArray],
+  );
+
+  // Generic drag/drop helpers for alias + timer (group-aware + reorder)
+  const moveNonTriggerToGroup = useCallback(
+    (scriptId: string, kind: 'alias' | 'timer', targetGroupPath: string) => {
+      const current = [...scripts];
+      const idx = current.findIndex((s) => s.id === scriptId);
+      if (idx < 0) return;
+
+      const script = current[idx];
+      if (!script || script.kind !== kind) return;
+
+      const normalizedGroup = targetGroupPath === 'Ungrouped' ? '' : targetGroupPath;
+      const updated = { ...(script as any), group: normalizedGroup } as AnyUserScript;
+
+      current[idx] = updated;
+      replaceAllScripts(current);
+
+      // Keep active editor field in sync
+      if (selectedScriptId === scriptId) {
+        if (kind === 'alias') setAliasGroup(normalizedGroup);
+        if (kind === 'timer') setTimerGroup(normalizedGroup);
+      }
+    },
+    [scripts, replaceAllScripts, selectedScriptId],
+  );
+
+  const reorderNonTriggerWithinGroupNearTarget = useCallback(
+    (draggedId: string, targetId: string, kind: 'alias' | 'timer') => {
+      const dragged = scripts.find((s) => s.id === draggedId);
+      const target = scripts.find((s) => s.id === targetId);
+
+      if (!dragged || !target) return;
+      if (dragged.kind !== kind || target.kind !== kind) return;
+
+      const targetGroup = ((target as any).group ?? '') as string;
+      moveNonTriggerToGroup(draggedId, kind, targetGroup || 'Ungrouped');
+      moveScriptInArray(draggedId, targetId);
+    },
+    [scripts, moveNonTriggerToGroup, moveScriptInArray],
+  );
+
+  const activeDndKind =
+    activeTab === 'triggers' ? 'trigger' : activeTab === 'aliases' ? 'alias' : activeTab === 'timers' ? 'timer' : null;
+
+  const sortTreeNodesAlpha = useCallback((nodes: TriggerTreeNode[]): TriggerTreeNode[] => {
+    return [...nodes].sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
+  }, []);
 
   if (!isOpen) {
     return null;
@@ -771,41 +1014,53 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       const trig = script as TriggerScript;
       setTriggerEventName(trig.eventName ?? 'shatteredarchive:raw-data');
       setTriggerMatchText(trig.matchText ?? '');
+      setTriggerGroup(trig.group ?? '');
       setTriggerOmitFromOutput(!!trig.omitFromOutput);
       setTriggerDontRequireMatchText(!!trig.dontRequireMatchText);
 
       setAliasKey('');
+      setAliasGroup('');
       setTimerIntervalSeconds('');
+      setTimerGroup('');
     } else if (script.kind === 'timer') {
       const t = script as TimerScript;
       const secs = t.intervalMs ? Math.round(t.intervalMs / 1000) : 5;
 
       setTimerIntervalSeconds(String(secs));
+      setTimerGroup(t.group ?? '');
 
       setTriggerEventName('shatteredarchive:raw-data');
       setTriggerMatchText('');
+      setTriggerGroup('');
       setTriggerOmitFromOutput(false);
       setTriggerDontRequireMatchText(false);
 
       setAliasKey('');
+      setAliasGroup('');
     } else if (script.kind === 'alias') {
       const a = script as AliasScript;
       setAliasKey(a.alias ?? '');
+      setAliasGroup(a.group ?? '');
 
       setTriggerEventName('shatteredarchive:raw-data');
       setTriggerMatchText('');
+      setTriggerGroup('');
       setTriggerOmitFromOutput(false);
       setTriggerDontRequireMatchText(false);
 
       setTimerIntervalSeconds('');
+      setTimerGroup('');
     } else {
       setTriggerEventName('shatteredarchive:raw-data');
       setTriggerMatchText('');
+      setTriggerGroup('');
       setTriggerOmitFromOutput(false);
       setTriggerDontRequireMatchText(false);
 
       setAliasKey('');
+      setAliasGroup('');
       setTimerIntervalSeconds('');
+      setTimerGroup('');
     }
 
     setTriggerTestInput('');
@@ -821,6 +1076,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
 look`,
         eventName: 'shatteredarchive:raw-data',
         matchText: '',
+        group: '',
         omitFromOutput: false,
         dontRequireMatchText: false,
       });
@@ -831,6 +1087,7 @@ look`,
       const s = createAlias({
         name: 'New Alias',
         alias: 'l',
+        group: '',
         enabled: false,
         language: 'text',
         source: `look`,
@@ -840,6 +1097,7 @@ look`,
     } else if (activeTab === 'timers') {
       const s = createTimer({
         name: 'New Timer',
+        group: '',
         enabled: false,
         language: 'text',
         source: `score`,
@@ -864,15 +1122,19 @@ look`,
       const trig = updated as TriggerScript;
       trig.eventName = triggerEventName || 'shatteredarchive:raw-data';
       trig.matchText = triggerMatchText || '';
+      trig.group = triggerGroup.trim();
       trig.omitFromOutput = !!triggerOmitFromOutput;
       trig.dontRequireMatchText = !!triggerDontRequireMatchText;
     } else if (updated.kind === 'timer') {
       const secs = Number(timerIntervalSeconds);
       const clampedSecs = Number.isFinite(secs) && secs > 0 ? secs : 5;
-      (updated as TimerScript).intervalMs = clampedSecs * 1000;
+      const t = updated as TimerScript;
+      t.intervalMs = clampedSecs * 1000;
+      t.group = timerGroup.trim();
     } else if (updated.kind === 'alias') {
       const a = updated as AliasScript;
       a.alias = aliasKey || '';
+      a.group = aliasGroup.trim();
     }
 
     upsertScript(updated);
@@ -888,12 +1150,15 @@ look`,
     if (selectedScript.kind === 'trigger') {
       setTriggerEventName(baseTriggerEventName);
       setTriggerMatchText(baseTriggerMatchText);
+      setTriggerGroup(baseTriggerGroup);
       setTriggerOmitFromOutput(baseTriggerOmitFromOutput);
       setTriggerDontRequireMatchText(baseTriggerDontRequireMatchText);
     } else if (selectedScript.kind === 'timer') {
       setTimerIntervalSeconds(baseTimerIntervalSeconds);
+      setTimerGroup(baseTimerGroup);
     } else if (selectedScript.kind === 'alias') {
       setAliasKey(baseAliasKey);
+      setAliasGroup(baseAliasGroup);
     }
 
     setTriggerTestInput('');
@@ -910,12 +1175,15 @@ look`,
 
     setTriggerEventName('shatteredarchive:raw-data');
     setTriggerMatchText('');
+    setTriggerGroup('');
     setTriggerTestInput('');
     setTriggerOmitFromOutput(false);
     setTriggerDontRequireMatchText(false);
 
     setAliasKey('');
+    setAliasGroup('');
     setTimerIntervalSeconds('');
+    setTimerGroup('');
   };
 
   const handleToggleEnabled = (script: AnyUserScript) => {
@@ -952,15 +1220,19 @@ look`,
       const trig = draft as TriggerScript;
       trig.eventName = triggerEventName || 'shatteredarchive:raw-data';
       trig.matchText = triggerMatchText || '';
+      trig.group = triggerGroup.trim();
       trig.omitFromOutput = !!triggerOmitFromOutput;
       trig.dontRequireMatchText = !!triggerDontRequireMatchText;
     } else if (draft.kind === 'timer') {
       const secs = Number(timerIntervalSeconds);
       const clampedSecs = Number.isFinite(secs) && secs > 0 ? secs : 5;
-      (draft as TimerScript).intervalMs = clampedSecs * 1000;
+      const t = draft as TimerScript;
+      t.intervalMs = clampedSecs * 1000;
+      t.group = timerGroup.trim();
     } else if (draft.kind === 'alias') {
       const a = draft as AliasScript;
       a.alias = aliasKey || '';
+      a.group = aliasGroup.trim();
     }
 
     const apiExtras =
@@ -1238,6 +1510,198 @@ look`,
 
   const showScriptTabs = activeTab === 'triggers' || activeTab === 'aliases' || activeTab === 'timers';
 
+  const renderScriptListButton = (script: AnyUserScript, indentPx = 0) => {
+    const dndKindForThisScript =
+      script.kind === 'trigger' || script.kind === 'alias' || script.kind === 'timer' ? script.kind : null;
+    const isDraggable = dndKindForThisScript !== null && activeDndKind === dndKindForThisScript;
+    const isDragOverScript = dragOverScriptId === script.id && draggingScriptId && draggingScriptId !== script.id;
+
+    return (
+      <button
+        key={script.id}
+        type="button"
+        className={`${styles.scriptItem} ${selectedScriptId === script.id ? styles.scriptItemActive : ''}`}
+        onClick={() => handleSelectScript(script)}
+        style={
+          {
+            ...(indentPx ? { paddingLeft: `${indentPx}px` } : {}),
+            ...(isDragOverScript
+              ? {
+                  outline: '1px dashed rgba(255,255,255,0.35)',
+                  outlineOffset: '-2px',
+                }
+              : {}),
+            ...(draggingScriptId === script.id
+              ? {
+                  opacity: 0.6,
+                }
+              : {}),
+          } as React.CSSProperties
+        }
+        title={script.id}
+        draggable={isDraggable}
+        onDragStart={(e) => {
+          if (!isDraggable) return;
+          setDraggingScriptId(script.id);
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', script.id);
+        }}
+        onDragEnd={() => {
+          clearDragUi();
+        }}
+        onDragOver={(e) => {
+          if (!isDraggable) return;
+          if (!draggingScriptId || draggingScriptId === script.id) return;
+
+          const dragged = scripts.find((s) => s.id === draggingScriptId);
+          if (!dragged || dragged.kind !== script.kind) return;
+
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          setDragOverScriptId(script.id);
+          setDragOverGroupPath(null);
+        }}
+        onDragLeave={() => {
+          if (dragOverScriptId === script.id) setDragOverScriptId(null);
+        }}
+        onDrop={(e) => {
+          if (!isDraggable) return;
+          e.preventDefault();
+          e.stopPropagation();
+
+          const draggedId = draggingScriptId || e.dataTransfer.getData('text/plain');
+          if (!draggedId || draggedId === script.id) {
+            clearDragUi();
+            return;
+          }
+
+          if (script.kind === 'trigger') {
+            reorderTriggerWithinGroupNearTarget(draggedId, script.id);
+          } else if (script.kind === 'alias') {
+            reorderNonTriggerWithinGroupNearTarget(draggedId, script.id, 'alias');
+          } else if (script.kind === 'timer') {
+            reorderNonTriggerWithinGroupNearTarget(draggedId, script.id, 'timer');
+          }
+
+          clearDragUi();
+        }}
+      >
+        <span className={styles.scriptName}>{script.name}</span>
+        {!script.enabled && <span className={styles.scriptDisabled}>· disabled</span>}
+        <input
+          type="checkbox"
+          className={styles.enabledCheckbox}
+          checked={script.enabled}
+          onChange={(e) => {
+            e.stopPropagation();
+            handleToggleEnabled(script);
+          }}
+          title={script.enabled ? 'Click to disable' : 'Click to enable'}
+        />
+      </button>
+    );
+  };
+
+  function countTreeNodeScripts(node: TriggerTreeNode): number {
+    return node.scripts.length + node.children.reduce((acc, child) => acc + countTreeNodeScripts(child), 0);
+  }
+
+  const renderGenericGroupTreeNodes = (
+    nodes: TriggerTreeNode[],
+    kind: 'triggers' | 'aliases' | 'timers',
+    depth = 0,
+  ): React.ReactNode[] => {
+    const out: React.ReactNode[] = [];
+
+    for (const node of sortTreeNodesAlpha(nodes)) {
+      const isExpanded = expandedTriggerGroups[node.path] !== false;
+      const totalCount = countTreeNodeScripts(node);
+      const expectedScriptKind = kind === 'triggers' ? 'trigger' : kind === 'aliases' ? 'alias' : 'timer';
+      const isDragOverGroup = dragOverGroupPath === node.path && !!draggingScriptId;
+
+      out.push(
+        <button
+          key={`${kind}:group:${node.path}`}
+          type="button"
+          className={styles.scriptItem}
+          onClick={() => toggleTriggerGroup(node.path)}
+          style={{
+            paddingLeft: `${10 + depth * 14}px`,
+            fontWeight: 600,
+            opacity: 0.95,
+            ...(isDragOverGroup
+              ? {
+                  outline: '1px dashed rgba(255,255,255,0.35)',
+                  outlineOffset: '-2px',
+                  background: 'rgba(255,255,255,0.05)',
+                }
+              : {}),
+          }}
+          title={`${node.path} (drop ${expectedScriptKind} here to move group)`}
+          onDragOver={(e) => {
+            if (!draggingScriptId) return;
+            const dragged = scripts.find((s) => s.id === draggingScriptId);
+            if (!dragged || dragged.kind !== expectedScriptKind) return;
+
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            setDragOverGroupPath(node.path);
+            setDragOverScriptId(null);
+          }}
+          onDragLeave={() => {
+            if (dragOverGroupPath === node.path) setDragOverGroupPath(null);
+          }}
+          onDrop={(e) => {
+            if (!draggingScriptId) return;
+            e.preventDefault();
+            e.stopPropagation();
+
+            const dragged = scripts.find((s) => s.id === draggingScriptId);
+            if (!dragged || dragged.kind !== expectedScriptKind) {
+              clearDragUi();
+              return;
+            }
+
+            if (expectedScriptKind === 'trigger') {
+              moveTriggerToGroup(draggingScriptId, node.path);
+            } else if (expectedScriptKind === 'alias') {
+              moveNonTriggerToGroup(draggingScriptId, 'alias', node.path);
+            } else if (expectedScriptKind === 'timer') {
+              moveNonTriggerToGroup(draggingScriptId, 'timer', node.path);
+            }
+
+            clearDragUi();
+          }}
+        >
+          <span className={styles.scriptName}>
+            {isExpanded ? '▾' : '▸'} {node.label}
+          </span>
+          <span className={styles.scriptDisabled}>· {totalCount}</span>
+        </button>,
+      );
+
+      if (!isExpanded) continue;
+
+      if (node.children.length) {
+        out.push(...renderGenericGroupTreeNodes(sortTreeNodesAlpha(node.children), kind, depth + 1));
+      }
+
+      if (node.scripts.length) {
+        for (const pseudo of node.scripts) {
+          const actual = scripts.find((s) => s.id === pseudo.id);
+          if (!actual) continue;
+          out.push(renderScriptListButton(actual, 20 + (depth + 1) * 14));
+        }
+      }
+    }
+
+    return out;
+  };
+
+  const renderTriggerTreeNodes = (nodes: TriggerTreeNode[], depth = 0): React.ReactNode[] => {
+    return renderGenericGroupTreeNodes(sortTreeNodesAlpha(nodes), 'triggers', depth);
+  };
+
   return (
     <div className={styles.backdrop}>
       <div className={styles.modal} style={modalStyle}>
@@ -1327,28 +1791,66 @@ look`,
         ) : (
           <div className={styles.body}>
             <div className={styles.listPane}>
-              {scriptsOfKind(activeTab === 'triggers' ? 'trigger' : activeTab === 'aliases' ? 'alias' : 'timer').map(
-                (script) => (
-                  <button
-                    key={script.id}
-                    type="button"
-                    className={`${styles.scriptItem} ${selectedScriptId === script.id ? styles.scriptItemActive : ''}`}
-                    onClick={() => handleSelectScript(script)}
-                  >
-                    <span className={styles.scriptName}>{script.name}</span>
-                    {!script.enabled && <span className={styles.scriptDisabled}>· disabled</span>}
-                    <input
-                      type="checkbox"
-                      className={styles.enabledCheckbox}
-                      checked={script.enabled}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        handleToggleEnabled(script);
-                      }}
-                      title={script.enabled ? 'Click to disable' : 'Click to enable'}
-                    />
-                  </button>
-                ),
+              <div style={{ padding: 8, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                <input
+                  type="text"
+                  value={scriptSearchQuery}
+                  onChange={(e) => setScriptSearchQuery(e.target.value)}
+                  placeholder="Filter (live). Tags: kind:, name:, event:, match:, group:, alias:, language:, enabled:, disabled:"
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '6px 8px',
+                    borderRadius: 4,
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    background: 'rgba(0,0,0,0.2)',
+                    color: 'inherit',
+                  }}
+                />
+
+                {((activeTab === 'triggers' && triggerTree.length > 0) ||
+                  ((activeTab === 'aliases' || activeTab === 'timers') && groupedNonTriggerTree.length > 0)) && (
+                  <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className={styles.ieSmallButton}
+                      onClick={() => expandCollapseAllTriggerGroups(true)}
+                    >
+                      Expand all
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.ieSmallButton}
+                      onClick={() => expandCollapseAllTriggerGroups(false)}
+                    >
+                      Collapse all
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {activeTab === 'triggers' ? (
+                triggerTree.length > 0 ? (
+                  renderTriggerTreeNodes(sortTreeNodesAlpha(triggerTree))
+                ) : (
+                  <div className={styles.emptyEditor} style={{ padding: 10 }}>
+                    No triggers match the current filter.
+                  </div>
+                )
+              ) : activeTab === 'aliases' || activeTab === 'timers' ? (
+                groupedNonTriggerTree.length > 0 ? (
+                  renderGenericGroupTreeNodes(sortTreeNodesAlpha(groupedNonTriggerTree), activeTab)
+                ) : (
+                  <div className={styles.emptyEditor} style={{ padding: 10 }}>
+                    No scripts match the current filter.
+                  </div>
+                )
+              ) : filteredActiveScripts.length > 0 ? (
+                filteredActiveScripts.map((script) => renderScriptListButton(script))
+              ) : (
+                <div className={styles.emptyEditor} style={{ padding: 10 }}>
+                  No scripts match the current filter.
+                </div>
               )}
             </div>
 
@@ -1453,6 +1955,17 @@ look`,
 
                       {/* toggle group is anchored to the right */}
                       <div className={styles.triggerToggleGroup}>
+                        <label className={styles.configLabel} style={{ minWidth: 220 }}>
+                          <input
+                            type="text"
+                            className={styles.configInput}
+                            value={triggerGroup}
+                            onChange={(e) => setTriggerGroup(e.target.value)}
+                            placeholder="group"
+                            title='Cosmetic tree grouping. Supports "/", "\\", ">", "::"'
+                          />
+                        </label>
+
                         <label className={`${styles.enabledToggle} ${styles.omitToggle}`}>
                           <input
                             type="checkbox"
@@ -1486,6 +1999,18 @@ look`,
                           placeholder="command to type"
                         />
                       </label>
+
+                      <label className={styles.configLabel} style={{ minWidth: 220 }}>
+                        Group
+                        <input
+                          type="text"
+                          className={styles.configInput}
+                          value={aliasGroup}
+                          onChange={(e) => setAliasGroup(e.target.value)}
+                          placeholder="group"
+                          title='Cosmetic tree grouping. Supports "/", "\\", ">", "::"'
+                        />
+                      </label>
                     </div>
                   )}
 
@@ -1499,6 +2024,18 @@ look`,
                           className={styles.configInput}
                           value={timerIntervalSeconds}
                           onChange={(e) => setTimerIntervalSeconds(e.target.value)}
+                        />
+                      </label>
+
+                      <label className={styles.configLabel} style={{ minWidth: 220 }}>
+                        Group
+                        <input
+                          type="text"
+                          className={styles.configInput}
+                          value={timerGroup}
+                          onChange={(e) => setTimerGroup(e.target.value)}
+                          placeholder="group"
+                          title='Cosmetic tree grouping. Supports "/", "\\", ">", "::"'
                         />
                       </label>
                     </div>

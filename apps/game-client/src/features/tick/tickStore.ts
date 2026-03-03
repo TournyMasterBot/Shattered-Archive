@@ -92,11 +92,13 @@ function createStore(): TickStore {
             // reset countdown
             const nextRemaining = store.state.durationSec;
 
+            /* DEBUG
             console.log('[tickStore] game:tick → reset countdown', {
               raw,
               lastTickAt: store.state.lastTickAt,
               durationSec: store.state.durationSec,
             });
+            */
 
             store.publishIfChanged(nextTime, nextRemaining);
           },
