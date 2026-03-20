@@ -84,7 +84,7 @@ export const Terminal: React.FC = () => {
       const rows = host.querySelector('.xterm-rows') as HTMLElement | null;
       if (rows) {
         const cs = window.getComputedStyle(rows);
-        const fs = parseFloat(cs.fontSize || '16');
+        const fs = parseFloat(cs.fontSize || '13');
         const lh = cs.lineHeight === 'normal' ? fs * 1.2 : parseFloat(cs.lineHeight || `${fs * 1.2}`);
         if (Number.isFinite(lh) && lh > 4) return lh;
       }

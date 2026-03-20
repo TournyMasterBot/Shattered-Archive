@@ -41,6 +41,7 @@
 /* PRIMARY PLAY AREA */
 .playArea {
   flex: 1;
+  min-width: 0; /* allow shrinking when right pane expands */
   min-height: 0;
 
   background: #000;
@@ -58,6 +59,7 @@
 /* Terminal flex wrapper */
 .playAreaTerminalShell {
   flex: 1;
+  min-width: 0; /* allow shrinking when right pane expands */
   min-height: 0;
   display: flex;
   padding-left: 5px;

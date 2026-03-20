@@ -34,38 +34,9 @@ export class ShatteredArchiveTerminal {
     this.term = term;
     this.fit = fitAddon;
 
-    // Source-of-truth font settings for xterm (canvas glyphs).
-    // CSS alone does not reliably affect rendered glyph size.
-    try {
-      // Prefer setOption when available, otherwise fall back to options assignment.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const anyTerm = term as any;
-
-      const fontFamily =
-        `"Cascadia Mono","Cascadia Code","JetBrains Mono",` +
-        `ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,` +
-        `"Liberation Mono","DejaVu Sans Mono",monospace`;
-
-      if (typeof anyTerm.setOption === 'function') {
-        anyTerm.setOption('fontSize', 16);
-        anyTerm.setOption('lineHeight', 1.2);
-        anyTerm.setOption('fontFamily', fontFamily);
-        // Helps when high DPI looks “fuzzy” after refresh in some setups
-        anyTerm.setOption('letterSpacing', 0);
-      } else if (anyTerm.options) {
-        anyTerm.options.fontSize = 16;
-        anyTerm.options.lineHeight = 1.2;
-        anyTerm.options.fontFamily = fontFamily;
-        anyTerm.options.letterSpacing = 0;
-      }
-    } catch {
-      // ignore
-    }
-
     // Fit immediately, then re-fit once fonts are ready.
     this.Fit();
     this.refreshAll();
-
     this.fitAfterFontsReady();
   }
 
@@ -81,10 +52,37 @@ export class ShatteredArchiveTerminal {
 
   public Fit(): void {
     const f = this.fit;
-    if (!f) return;
+    const t = this.term;
+    if (!f || !t) return;
 
     try {
       f.fit();
+
+      // xterm renders its own overlay scrollbar widget (.scrollbar.vertical) inside
+      // .xterm-scrollable-element. FitAddon measures the full clientWidth of that element,
+      // which includes the area the scrollbar covers — so the rightmost columns end up
+      // hidden behind it. We correct by shrinking cols by the scrollbar's column width.
+      const core = (t as any)._core;
+      const el = t.element;
+      const scrollbarEl: HTMLElement | null = el
+        ? (el.querySelector('.xterm-scrollable-element > .scrollbar.vertical') ??
+           el.querySelector('.scrollbar.vertical'))
+        : null;
+      const scrollbarW = scrollbarEl ? (scrollbarEl.offsetWidth || 0) : 0;
+
+      if (scrollbarW > 0 && core) {
+        const cellW: number =
+          core._renderService?.dimensions?.css?.cell?.width ??
+          core._renderService?.dimensions?.actualCellWidth ??
+          0;
+        if (cellW > 0) {
+          const colsToRemove = Math.ceil(scrollbarW / cellW);
+          const correctedCols = Math.max(2, t.cols - colsToRemove);
+          if (correctedCols !== t.cols) {
+            t.resize(correctedCols, t.rows);
+          }
+        }
+      }
     } catch {
       // ignore
     }
