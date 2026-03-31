@@ -66,15 +66,13 @@ export class ShatteredArchiveTerminal {
       const el = t.element;
       const scrollbarEl: HTMLElement | null = el
         ? (el.querySelector('.xterm-scrollable-element > .scrollbar.vertical') ??
-           el.querySelector('.scrollbar.vertical'))
+          el.querySelector('.scrollbar.vertical'))
         : null;
-      const scrollbarW = scrollbarEl ? (scrollbarEl.offsetWidth || 0) : 0;
+      const scrollbarW = scrollbarEl ? scrollbarEl.offsetWidth || 0 : 0;
 
       if (scrollbarW > 0 && core) {
         const cellW: number =
-          core._renderService?.dimensions?.css?.cell?.width ??
-          core._renderService?.dimensions?.actualCellWidth ??
-          0;
+          core._renderService?.dimensions?.css?.cell?.width ?? core._renderService?.dimensions?.actualCellWidth ?? 0;
         if (cellW > 0) {
           const colsToRemove = Math.ceil(scrollbarW / cellW);
           const correctedCols = Math.max(2, t.cols - colsToRemove);
