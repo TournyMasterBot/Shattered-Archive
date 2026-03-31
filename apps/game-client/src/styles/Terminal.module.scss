@@ -1,6 +1,67 @@
-/* apps/game-client/src/styles/Terminal.module.scss */
+.playAreaTerminalWrapper {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+  display: flex;
 
-/* Register VeraMono from /public/fonts */
+  touch-action: none;
+}
+
+.playAreaTerminal {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+
+  //font-family:
+  // 'Bitstream Vera Sans Mono', 'VeraMono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+  //'DejaVu Sans Mono', monospace;
+
+  //font-size: 13px;
+
+  //font-weight: 400;
+}
+
+.playAreaTerminalJump {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  z-index: 10;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  background: rgba(10, 10, 10, 0.85);
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #eee;
+  cursor: pointer;
+}
+
+.playAreaTerminal :global(.xterm-viewport) {
+  scrollbar-width: thin;
+  scrollbar-color: #555 #111;
+}
+
+.playAreaTerminal :global(.xterm-viewport::-webkit-scrollbar) {
+  width: 8px;
+}
+
+.playAreaTerminal :global(.xterm-viewport::-webkit-scrollbar-track) {
+  background: #111;
+}
+
+.playAreaTerminal :global(.xterm-viewport::-webkit-scrollbar-thumb) {
+  background: #555;
+  border-radius: 4px;
+}
+
+.playAreaTerminal :global(.xterm-viewport::-webkit-scrollbar-thumb:hover) {
+  background: #777;
+}
+
+/*
 @font-face {
   font-family: 'VeraMono';
   src: url('/fonts/VeraMono.ttf') format('truetype');
@@ -33,40 +94,10 @@
   font-display: swap;
 }
 
-/* Terminal container inside play area */
-.playAreaTerminalWrapper {
-  width: 100%;
-  flex: 1;
-  min-height: 0;
-  min-width: 0;
-  position: relative;
-  overflow: hidden;
-  display: flex;
 
-  /* We implement touch drag-scroll ourselves; prevent page panning */
-  touch-action: none;
-}
 
-/* Apply font stack + desired size on the container */
-.playAreaTerminal {
-  flex: 1;
-  min-height: 0;
-  min-width: 0;
-  overflow: hidden;
 
-  /* VeraMono first, then fallbacks */
-  font-family:
-    'Bitstream Vera Sans Mono', 'VeraMono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
-    'DejaVu Sans Mono', monospace;
 
-  /* Slightly smaller than 16 to reduce “bold” look */
-  font-size: 13px;
-
-  /* Don’t force text-rendering; it can make things look heavier/fuzzier */
-  font-weight: 400;
-}
-
-/* Helps xterm DOM bits inherit the same font */
 .playAreaTerminal :global(.xterm),
 .playAreaTerminal :global(.xterm-rows),
 .playAreaTerminal :global(.xterm-screen) {
@@ -76,41 +107,7 @@
   font-weight: inherit !important;
 }
 
-/* Jump-to-live button */
-.playAreaTerminalJump {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  z-index: 10;
-  padding: 4px 10px;
-  font-size: 0.75rem;
-  background: rgba(10, 10, 10, 0.85);
-  border: 1px solid #555;
-  border-radius: 4px;
-  color: #eee;
-  cursor: pointer;
-}
 
-/* XTerm scrollbar styling */
-.playAreaTerminal :global(.xterm-viewport) {
-  scrollbar-width: thin;
-  scrollbar-color: #555 #111;
-}
 
-/* Chrome / Edge */
-.playAreaTerminal :global(.xterm-viewport::-webkit-scrollbar) {
-  width: 8px;
-}
 
-.playAreaTerminal :global(.xterm-viewport::-webkit-scrollbar-track) {
-  background: #111;
-}
-
-.playAreaTerminal :global(.xterm-viewport::-webkit-scrollbar-thumb) {
-  background: #555;
-  border-radius: 4px;
-}
-
-.playAreaTerminal :global(.xterm-viewport::-webkit-scrollbar-thumb:hover) {
-  background: #777;
-}
+*/
