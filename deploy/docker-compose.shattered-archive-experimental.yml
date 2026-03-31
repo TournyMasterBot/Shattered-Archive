@@ -43,7 +43,7 @@ services:
     volumes:
       # keep your template-based config flow
       - ./nginx/edge-subdomains.conf:/etc/nginx/templates/default.conf.template:ro
-
+      - ./nginx/includes:/etc/nginx/includes:ro
       # DO NOT CHANGE CERTS (as requested)
       - ./nginx/certs:/etc/nginx/certs:ro
 

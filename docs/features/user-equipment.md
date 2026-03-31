@@ -215,11 +215,11 @@ This is intentionally a heuristic (not a perfect parser), but it matches the gam
 
 ### Hooks
 - `apps/game-client/src/hooks/useEquipmentCapture.ts`
-  - Listens to `game:terminal-data`
+  - Should listen to `shatteredarchive:raw-data` (**TODO:** currently has commented-out listener — see note below)
   - Detects `eq` output blocks and produces full snapshots
 
 - `apps/game-client/src/hooks/useEquipmentDeltas.ts`
-  - Listens to `game:terminal-data`
+  - Listens to `shatteredarchive:raw-data`
   - Parses and applies delta events
   - Responsible for hotbar updates **and** snapshot patching (best-effort)
 
@@ -274,7 +274,8 @@ This section is written for an AI assistant helping maintain the system.
 
 ## Non-negotiable constraints
 - Do **not** guess missing file contents. Ask for the file or sample logs first.
-- `game:terminal-data` is the correct browser event name for terminal output.
+- `shatteredarchive:raw-data` is the correct browser event name for raw terminal output. The old name `game:terminal-data` is **no longer used**.
+- `useEquipmentCapture` currently has its event listener commented out (marked `TMB TODO`). Until that is wired, full `eq` capture is non-functional. `useEquipmentDeltas` does listen to `shatteredarchive:raw-data` correctly.
 - Deltas may patch snapshot, but must remain conservative and slot-specific.
 - Parenthesized status tags like `(Glowing)` / `(Invis)` are **formatting noise** and must be stripped before comparisons.
 
