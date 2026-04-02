@@ -52,12 +52,27 @@ export type PluginConfigField =
   | PluginConfigFieldBoolean
   | PluginConfigFieldSelect;
 
+export interface PluginConfigAction {
+  /** Stable identifier used to invoke the action. */
+  key: string;
+  /** Button label shown in the configure modal. */
+  label: string;
+  /** Optional tooltip / hint text rendered below the button. */
+  description?: string;
+}
+
 export interface PluginConfigSchema {
   /** Default values merged into userConfig when missing. */
   defaults?: Record<string, unknown>;
 
   /** Fields used by the base UI to render a config editor. */
   fields: PluginConfigField[];
+
+  /**
+   * Optional action buttons rendered in the configure modal.
+   * The plugin registers handlers via api.registerAction() in onEnable.
+   */
+  actions?: PluginConfigAction[];
 }
 
 export interface PluginManifest {
@@ -137,6 +152,30 @@ export interface PluginRuntimeApi {
   getConfig: () => Record<string, unknown>;
   setConfig: (next: Record<string, unknown>) => void;
   updateConfig: (patch: Record<string, unknown>) => void;
+
+  /**
+   * Write DSL-colored text directly to the terminal.
+   * DSL color codes (e.g. {r, {B, {x) are converted to ANSI before rendering.
+   * The output bypasses the omit-line suppression check.
+   */
+  writeTerminal: (dslText: string) => void;
+
+  /**
+   * Register a named action handler callable from the configure modal.
+   * Call this inside onEnable. The handler receives the plugin's current
+   * runtime config at the time of invocation.
+   */
+  registerAction: (key: string, handler: () => void) => void;
+
+  /**
+   * Register line-suppression rules for this plugin.
+   * When a matching line arrives on the given event (default: shatteredarchive:raw-data),
+   * its default terminal output is suppressed so the plugin can write a colored replacement.
+   * Call with an empty array to clear all rules for this plugin.
+   */
+  registerOmitRules: (
+    rules: Array<{ matchText: string; eventName?: string; caseInsensitive?: boolean }>,
+  ) => void;
 }
 
 /**
@@ -159,6 +198,13 @@ export interface IPluginModule {
 
   /** Called for each routed event (optional “bus” pattern) */
   onEvent?: (api: PluginRuntimeApi, evt: PluginEvent) => void;
+
+  /**
+   * Called when the user submits a command that no user-script alias matched.
+   * Return true to consume the command (prevents it from being sent to the game).
+   * Return false/undefined to pass through.
+   */
+  onAlias?: (api: PluginRuntimeApi, input: string) => boolean | undefined;
 
   /** Optional export */
   exportPlugin?: () => PluginExportInfo;

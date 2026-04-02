@@ -85,3 +85,4 @@ desktop.ini
 .nyc_output/
 .jest/
 .claude/settings.local.json
+.claude/settings.json

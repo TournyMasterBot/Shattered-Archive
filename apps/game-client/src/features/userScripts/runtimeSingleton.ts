@@ -2,6 +2,7 @@
 
 import { AccessibilitySettings, getAccessibilitySettings } from '../accessibility/accessibility-settings-store';
 import { STORAGE_KEY_PREFIX_USERSCRIPTS, UserScriptRuntime } from './userScriptRuntime';
+import { pluginHost } from '../plugins/pluginHost';
 import { ListenDomEvent, ListenEvent, ListenRedispatchMap } from '../event-emitter/event-dispatcher';
 import { ShatteredArchiveChatLine } from '../../types/chat-types/chat-line';
 import { appendChatLine, appendChatRaw } from '../chat/chat-store';
@@ -85,6 +86,9 @@ export class RuntimeSingleton {
       getNamedVar: (name: string) => this.getNamedVar(name),
       setNamedVar: (name: string, value: string) => this.setNamedVar(name, value),
       deleteNamedVar: (name: string) => this.deleteNamedVar(name),
+
+      // give enabled plugins a chance to intercept unmatched commands
+      aliasFallback: (input: string) => pluginHost.tryExecuteAlias(input),
     });
 
     this.hydrateRuntime('default');

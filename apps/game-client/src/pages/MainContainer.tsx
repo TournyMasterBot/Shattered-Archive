@@ -35,6 +35,7 @@ import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 import FocusBarVitals from '../components/FocusBarVitals';
 import ContributeIdentifyModal from '../components/ContributeIdentifyModal';
 import ContributeCreatureLoreModal from '../components/ContributeCreatureLoreModal';
+import ScriptingHelpModal from '../components/ScriptingHelpModal';
 
 export const MainContainer: React.FC = () => {
   useVisualViewportHeight();
@@ -78,6 +79,9 @@ export const MainContainer: React.FC = () => {
   const handleOpenAutoLeveling = () => setIsAutoLevelingModalOpen(true);
   const handleOpenIdentifyObject = () => setIsIdentifyModalOpen(true);
   const handleOpenCreatureLore = () => setIsLoreModalOpen(true);
+
+  const [isScriptingHelpOpen, setIsScriptingHelpOpen] = React.useState(false);
+  const handleOpenScriptingHelp = () => setIsScriptingHelpOpen(true);
 
   const connectionId = React.useMemo(() => {
     const host = gameConn.currentHost;
@@ -137,6 +141,7 @@ export const MainContainer: React.FC = () => {
         onOpenAutoLeveling={handleOpenAutoLeveling}
         onOpenIdentifyObject={handleOpenIdentifyObject}
         onOpenCreatureLore={handleOpenCreatureLore}
+        onOpenScriptingHelp={handleOpenScriptingHelp}
       />
 
       <FocusBarVitals />
@@ -219,6 +224,11 @@ export const MainContainer: React.FC = () => {
         isOpen={isLoreModalOpen}
         onClose={() => setIsLoreModalOpen(false)}
         connectionId={connectionId}
+      />
+
+      <ScriptingHelpModal
+        isOpen={isScriptingHelpOpen}
+        onClose={() => setIsScriptingHelpOpen(false)}
       />
     </div>
   );

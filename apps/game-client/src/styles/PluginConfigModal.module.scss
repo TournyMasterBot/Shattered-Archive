@@ -13,7 +13,7 @@
 }
 
 .modal {
-  width: 520px;
+  width: 560px;
   max-width: 92vw;
   max-height: 86vh;
 
@@ -157,6 +157,39 @@
   color: #888;
 }
 
+.notEnabledBanner {
+  padding: 8px 12px;
+  background: #1e1600;
+  border-top: 1px solid #4a3800;
+  color: #c8a040;
+  font-size: 0.76rem;
+  line-height: 1.4;
+
+  strong {
+    color: #e8b840;
+  }
+}
+
+.actionsBar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-top: 1px solid #2a2a2a;
+  background: #0d0d0d;
+}
+
+.actionItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.actionDesc {
+  font-size: 0.72rem;
+  color: #888;
+}
+
 .footer {
   display: flex;
   align-items: center;
@@ -197,6 +230,18 @@
   &:hover {
     background: #2c2c2c;
   }
+}
+
+.actionButtonDone {
+  background: #1a2e1a;
+  color: #7dc47d;
+  border-color: #3a6e3a;
+  border-radius: 3px;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  cursor: default;
+  border: 1px solid;
+  transition: background 0.15s, color 0.15s;
 }
 
 @media (max-width: 640px) {

@@ -25,8 +25,7 @@ export function appendChatLine(rawText: string, ts?: number, subtype?: ChatSubty
     subtype,
   };
 
-  // keep bounded
-  globalMessages = [...globalMessages, msg].slice(-500);
+  globalMessages = [...globalMessages, msg];
   subscribers.forEach((notify) => notify(globalMessages));
 }
 

@@ -21,4 +21,10 @@ export interface UserScriptRuntimeOptions {
   getNamedVar?: (name: string) => string | undefined;
   setNamedVar?: (name: string, value: string) => void;
   deleteNamedVar?: (name: string) => void;
+
+  /**
+   * Called when a command doesn't match any user-script alias.
+   * Return true to consume the command (prevents it reaching the game).
+   */
+  aliasFallback?: (input: string) => boolean;
 }

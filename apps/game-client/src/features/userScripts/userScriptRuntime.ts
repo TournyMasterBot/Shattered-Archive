@@ -309,6 +309,7 @@ export class UserScriptRuntime {
   private activeConnectionId: string = 'default';
   private timerNextFireAt: Map<string, number> = new Map();
   private timerIntervalById: Map<string, number> = new Map();
+  private aliasFallback?: (input: string) => boolean;
 
   constructor(options: UserScriptRuntimeOptions = {}) {
     this.sendCommand =
@@ -320,6 +321,7 @@ export class UserScriptRuntime {
     this.onScriptError = options.onScriptError;
     this.lastTick = Date.now();
     this.aliasSplitChar = normalizeSplitChar(options.aliasSplitChar);
+    this.aliasFallback = options.aliasFallback;
 
     this.attachWindowEvents();
   }
@@ -872,7 +874,8 @@ export class UserScriptRuntime {
       }
 
       if (!matched) {
-        this.sendCommand(rawPart);
+        const consumed = this.aliasFallback?.(rawPart) ?? false;
+        if (!consumed) this.sendCommand(rawPart);
       }
     }
 

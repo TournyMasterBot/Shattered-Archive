@@ -4,7 +4,6 @@ import { createPortal } from 'react-dom';
 import styles from '../styles/PluginConfigModal.module.scss';
 
 import type { PluginId } from '@shatteredarchive/types-client';
-import usePlugins from '../hooks/usePlugins';
 import { findCorePlugin } from '../features/plugins/registry';
 import { pluginHost } from '../features/plugins/pluginHost';
 
@@ -13,6 +12,12 @@ interface PluginConfigModalProps {
   onClose: () => void;
   connectionId: string;
   pluginId: PluginId;
+  /** Saved userConfig from the parent's install record — single source of truth. */
+  initialUserConfig: Record<string, unknown>;
+  /** Called when the user clicks Save; parent is responsible for persisting. */
+  onSave: (pluginId: PluginId, config: Record<string, unknown>) => void;
+  /** Whether the plugin is currently enabled — used to show an enable reminder. */
+  isEnabled?: boolean;
 }
 
 function toNumberOrUndefined(raw: string): number | undefined {
@@ -22,14 +27,20 @@ function toNumberOrUndefined(raw: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({ isOpen, onClose, connectionId, pluginId }) => {
-  const { getInstallRecord, updatePluginConfig, installCorePlugin } = usePlugins(connectionId);
-
+export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
+  isOpen,
+  onClose,
+  connectionId: _connectionId,
+  pluginId,
+  initialUserConfig,
+  onSave,
+  isEnabled,
+}) => {
   // hooks must be unconditional / always in the same order
   const firstInputRef = React.useRef<HTMLInputElement | null>(null);
   const shouldCloseRef = React.useRef(false);
-
-  const record = getInstallRecord(pluginId);
+  const [actionFeedback, setActionFeedback] = React.useState<Record<string, 'idle' | 'done'>>({});
+  const actionTimers = React.useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   // Only build plugin + schema when open (avoids unnecessary create() calls)
   const { mod, schema } = React.useMemo(() => {
@@ -39,24 +50,19 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({ isOpen, on
     return { mod: created, schema: created?.configSchema };
   }, [isOpen, pluginId]);
 
-  // Ensure install record exists so config persists
-  React.useEffect(() => {
-    if (!isOpen) return;
-    if (record) return;
-    installCorePlugin(pluginId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, pluginId]);
-
   const defaults = schema?.defaults ?? {};
 
-  // include defaults in deps (it changes when schema changes)
-  const initialCfg = React.useMemo(() => ({ ...defaults, ...(record?.userConfig ?? {}) }), [defaults, record]);
+  // Merge defaults with the parent-supplied saved config — parent is source of truth
+  const initialCfg = React.useMemo(
+    () => ({ ...defaults, ...initialUserConfig }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isOpen, pluginId],
+  );
 
   const [draft, setDraft] = React.useState<Record<string, unknown>>(() => initialCfg);
 
   React.useEffect(() => {
     if (!isOpen) return;
-
     setDraft(initialCfg);
     const t = window.setTimeout(() => firstInputRef.current?.focus(), 0);
     return () => window.clearTimeout(t);
@@ -67,14 +73,11 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({ isOpen, on
   };
 
   const save = () => {
-    const cleaned = Object.fromEntries(Object.entries(draft).filter(([, v]) => v !== undefined)) as Record<
-      string,
-      unknown
-    >;
+    const cleaned = Object.fromEntries(
+      Object.entries(draft).filter(([, v]) => v !== undefined),
+    ) as Record<string, unknown>;
 
-    console.debug('[PluginConfigModal] Saving userConfig for', pluginId, cleaned);
-    updatePluginConfig(pluginId, cleaned);
-    pluginHost.updateEnabledPluginConfig(pluginId, cleaned);
+    onSave(pluginId, cleaned);
     onClose();
   };
 
@@ -176,10 +179,94 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({ isOpen, on
                 );
               }
 
+              if (f.type === 'string') {
+                return (
+                  <div key={f.key} className={styles.field}>
+                    <div className={styles.labelRow}>
+                      <div className={styles.label}>{f.label}</div>
+                      {f.optional ? <div className={styles.optional}>optional</div> : null}
+                    </div>
+                    {f.description ? <div className={styles.desc}>{f.description}</div> : null}
+                    <input
+                      ref={idx === 0 ? firstInputRef : undefined}
+                      className={styles.input}
+                      type="text"
+                      value={value === undefined || value === null ? '' : String(value)}
+                      placeholder={f.placeholder}
+                      onChange={(e) => updateDraft(f.key, e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      onKeyUp={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                );
+              }
+
+              if (f.type === 'textarea') {
+                return (
+                  <div key={f.key} className={styles.field}>
+                    <div className={styles.labelRow}>
+                      <div className={styles.label}>{f.label}</div>
+                      {f.optional ? <div className={styles.optional}>optional</div> : null}
+                    </div>
+                    {f.description ? <div className={styles.desc}>{f.description}</div> : null}
+                    <textarea
+                      className={styles.input}
+                      value={value === undefined || value === null ? '' : String(value)}
+                      placeholder={f.placeholder}
+                      rows={7}
+                      style={{ resize: 'vertical', minHeight: 100 }}
+                      onChange={(e) => updateDraft(f.key, e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      onKeyUp={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                );
+              }
+
               return null;
             })
           )}
         </div>
+
+        {schema?.actions && schema.actions.length > 0 && (
+          <div className={styles.actionsBar}>
+            {schema.actions.map((action: any) => {
+              const state = actionFeedback[action.key] ?? 'idle';
+              return (
+                <div key={action.key} className={styles.actionItem}>
+                  <button
+                    className={state === 'done' ? styles.actionButtonDone : styles.secondaryButton}
+                    type="button"
+                    onClick={() => {
+                      const cleaned = Object.fromEntries(
+                        Object.entries(draft).filter(([, v]) => v !== undefined),
+                      ) as Record<string, unknown>;
+                      pluginHost.updateEnabledPluginConfig(pluginId, cleaned);
+                      pluginHost.invokePluginAction(pluginId, action.key);
+
+                      setActionFeedback((prev) => ({ ...prev, [action.key]: 'done' }));
+                      clearTimeout(actionTimers.current[action.key]);
+                      actionTimers.current[action.key] = setTimeout(() => {
+                        setActionFeedback((prev) => ({ ...prev, [action.key]: 'idle' }));
+                      }, 1500);
+                    }}
+                  >
+                    {state === 'done' ? '✓ Synced' : action.label}
+                  </button>
+                  {action.description && (
+                    <span className={styles.actionDesc}>{action.description}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {isEnabled === false && (
+          <div className={styles.notEnabledBanner}>
+            ⚠ This plugin is currently <strong>disabled</strong>. Enable it from the Plugins list for changes to take effect.
+          </div>
+        )}
 
         <div className={styles.footer}>
           <div className={styles.footerSpacer} />

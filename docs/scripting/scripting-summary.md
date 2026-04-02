@@ -190,6 +190,7 @@ Example:
 ---
 
 ## See also
+- `plugins.md` — built-in plugins (Roller, Auto Standup, Auto Respell, Brew Helper)
 - `javascript.md`
 - `typescript.md`
 - `lua.md`

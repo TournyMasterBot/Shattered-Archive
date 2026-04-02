@@ -34,8 +34,8 @@ function isAffectData(x: any): x is AffectData {
 function normalizeAffects(list: unknown): AffectData[] {
   const arr: any[] = Array.isArray(list) ? list : [];
 
-  // Remove any with d <= -1, validate shape
-  const filtered = arr.filter((x) => isAffectData(x) && x.d > -1) as AffectData[];
+  // Remove any with d <= 0, validate shape
+  const filtered = arr.filter((x) => isAffectData(x) && x.d > 0) as AffectData[];
 
   return [...filtered].sort(sortByDurationThenName);
 }
