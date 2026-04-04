@@ -1,5 +1,5 @@
 // apps\game-client\src\hooks\usePlugins.ts
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { PluginId } from '@shatteredarchive/types-client';
 import { findCorePlugin } from '../features/plugins/registry';
 
@@ -23,18 +23,59 @@ export type InstalledPluginRecord = {
    Storage
 -------------------------------------------- */
 
-const STORAGE_KEY_PREFIX = 'shatteredArchive.plugins.installed.';
+const STORAGE_KEY = 'shatteredArchive.plugins.installed';
+const LEGACY_KEY_PREFIX = 'shatteredArchive.plugins.installed.';
 
-function getStorageKey(connectionId?: string | null) {
-  const safe = connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
-  return `${STORAGE_KEY_PREFIX}${safe}`;
+/**
+ * One-time migration: if the new global key is empty but the old per-connection
+ * key has data, merge it forward and clean up the legacy keys.
+ */
+function migrateLegacyStorage(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    // Only migrate if the new key doesn't exist yet
+    if (window.localStorage.getItem(STORAGE_KEY) !== null) return;
+
+    const seen = new Map<string, InstalledPluginRecord>();
+    const keysToRemove: string[] = [];
+
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (!key?.startsWith(LEGACY_KEY_PREFIX)) continue;
+
+      keysToRemove.push(key);
+      try {
+        const raw = window.localStorage.getItem(key);
+        if (!raw) continue;
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) continue;
+        for (const rec of arr as InstalledPluginRecord[]) {
+          if (rec?.id && !seen.has(rec.id)) seen.set(rec.id, rec);
+        }
+      } catch {
+        // ignore malformed entry
+      }
+    }
+
+    if (seen.size > 0) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...seen.values()]));
+    }
+
+    for (const key of keysToRemove) {
+      window.localStorage.removeItem(key);
+    }
+  } catch {
+    // ignore storage errors
+  }
 }
 
-function loadFromStorage(connectionId?: string | null): InstalledPluginRecord[] {
+migrateLegacyStorage();
+
+function loadFromStorage(): InstalledPluginRecord[] {
   if (typeof window === 'undefined') return [];
 
   try {
-    const raw = window.localStorage.getItem(getStorageKey(connectionId));
+    const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? (parsed as InstalledPluginRecord[]) : [];
@@ -43,10 +84,10 @@ function loadFromStorage(connectionId?: string | null): InstalledPluginRecord[] 
   }
 }
 
-function saveToStorage(connectionId: string | null | undefined, items: InstalledPluginRecord[]) {
+function saveToStorage(items: InstalledPluginRecord[]) {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(getStorageKey(connectionId), JSON.stringify(items));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   } catch {
     // ignore
   }
@@ -56,25 +97,16 @@ function saveToStorage(connectionId: string | null | undefined, items: Installed
    Hook
 -------------------------------------------- */
 
-export function usePlugins(connectionId?: string | null) {
-  const [plugins, setPlugins] = useState<InstalledPluginRecord[]>([]);
-
-  // keep latest connectionId inside state closures
-  const connectionRef = useRef<string | null | undefined>(connectionId);
-  useEffect(() => {
-    connectionRef.current = connectionId;
-  }, [connectionId]);
-
-  // Load whenever connection changes
-  useEffect(() => {
-    setPlugins(loadFromStorage(connectionId));
-  }, [connectionId]);
+export function usePlugins(_connectionId?: string | null) {
+  // Plugins are global (not per-connection) so they persist correctly across restarts.
+  // _connectionId is kept in the signature for call-site compatibility but not used for storage.
+  const [plugins, setPlugins] = useState<InstalledPluginRecord[]>(() => loadFromStorage());
 
   // Persist immediately with the computed "next" value (no effect-race)
   const setPluginsPersist = useCallback((updater: (prev: InstalledPluginRecord[]) => InstalledPluginRecord[]) => {
     setPlugins((prev) => {
       const next = updater(prev);
-      saveToStorage(connectionRef.current, next);
+      saveToStorage(next);
       return next;
     });
   }, []);

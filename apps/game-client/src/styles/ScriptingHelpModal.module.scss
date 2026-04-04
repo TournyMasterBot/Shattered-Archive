@@ -176,6 +176,51 @@
   color: #c8c8c8;
 }
 
+/* ── Plugin anchor headings ──────────────────────────────── */
+
+.pluginHeading {
+  margin: 24px 0 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #d8d8d8;
+  padding-left: 8px;
+  border-left: 3px solid #4a8fd4;
+
+  &:first-of-type {
+    margin-top: 8px;
+  }
+}
+
+/* ── Plugin quick-jump index ─────────────────────────────── */
+
+.pluginIndex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 20px;
+  padding: 10px 12px;
+  background: #0e1a2a;
+  border: 1px solid #1e3050;
+  border-radius: 4px;
+}
+
+.pluginIndexLink {
+  background: #142035;
+  border: 1px solid #2a4a70;
+  border-radius: 12px;
+  color: #7ab8f5;
+  font-size: 0.74rem;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+
+  &:hover {
+    background: #1e3555;
+    color: #a8d4ff;
+    border-color: #4a8fd4;
+  }
+}
+
 /* ── Callout box ─────────────────────────────────────────── */
 
 .callout {

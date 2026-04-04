@@ -6,6 +6,8 @@ import { createRespellPlugin } from './core-plugins/respell.plugin';
 import { createBrewPlugin } from './core-plugins/brew.plugin';
 import { createDisarmPlugin } from './core-plugins/disarm.plugin';
 import { createColorKitPlugin } from './core-plugins/colorkit.plugin';
+import { createEnchantPlugin } from './core-plugins/enchant.plugin';
+import { createGourdPlugin } from './core-plugins/gourd.plugin';
 
 export interface CorePluginDefinition {
   id: PluginId;
@@ -43,6 +45,16 @@ export const CORE_PLUGINS: CorePluginDefinition[] = [
     id: 'colorkit',
     manifest: createColorKitPlugin().manifest,
     create: createColorKitPlugin,
+  },
+  {
+    id: 'enchant',
+    manifest: createEnchantPlugin().manifest,
+    create: createEnchantPlugin,
+  },
+  {
+    id: 'gourd',
+    manifest: createGourdPlugin().manifest,
+    create: createGourdPlugin,
   },
 ];
 

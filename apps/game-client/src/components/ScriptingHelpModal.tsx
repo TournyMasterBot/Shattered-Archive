@@ -45,6 +45,12 @@ const ScriptingHelpModal: React.FC<ScriptingHelpModalProps> = ({ isOpen, onClose
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  const scrollToAnchor = (anchorId: string) => {
+    setActiveSection('plugins');
+    const el = contentRef.current?.querySelector(`#${anchorId}`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   React.useEffect(() => {
     if (!isOpen) return;
     const content = contentRef.current;
@@ -627,14 +633,38 @@ if (cmd) {
               <h4 className={styles.subHeading}>Managing plugins</h4>
               <p>
                 Go to <strong>Plugins → Manage Plugins…</strong> in the menu bar. You'll see a list
-                of installed plugins with a toggle to enable or disable each one.
+                of available plugins. Click <strong>Install</strong> to add one, then toggle it on.
+                Installed plugins that are toggled off appear dimmed — they won't run until enabled.
               </p>
 
-              <h4 className={styles.subHeading}>Roller (built-in)</h4>
+              {/* ── Plugin index ── */}
+              <div className={styles.pluginIndex}>
+                {[
+                  { id: 'plugin-roller',     label: 'Roller' },
+                  { id: 'plugin-standup',    label: 'Auto Standup' },
+                  { id: 'plugin-respell',    label: 'Auto Respell' },
+                  { id: 'plugin-rewield',    label: 'Auto Re-wield' },
+                  { id: 'plugin-brew',       label: 'Brew Helper' },
+                  { id: 'plugin-colorkit',   label: 'Color Kit' },
+                  { id: 'plugin-enchant',    label: 'Enchant Helper' },
+                  { id: 'plugin-gourd',      label: 'Gourd Helper' },
+                ].map(({ id, label }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={styles.pluginIndexLink}
+                    onClick={() => scrollToAnchor(id)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* ── Roller ── */}
+              <h4 id="plugin-roller" className={styles.pluginHeading}>Roller</h4>
               <p>
-                The <strong>Roller</strong> plugin automates character stat rolling at creation.
-                Set minimum thresholds for each stat and the plugin will keep rejecting rolls until
-                all your targets are met.
+                Automates character stat rolling at creation. Set minimum thresholds for each stat
+                and the plugin will keep rejecting rolls until all your targets are met.
               </p>
               <ul className={styles.list}>
                 <li>Enable from <strong>Plugins → Manage Plugins</strong></li>
@@ -642,18 +672,17 @@ if (cmd) {
                 <li>Start rolling in-game — the plugin handles the rest</li>
               </ul>
 
-              <h4 className={styles.subHeading}>Auto Standup (built-in)</h4>
+              {/* ── Auto Standup ── */}
+              <h4 id="plugin-standup" className={styles.pluginHeading}>Auto Standup</h4>
               <p>
-                The <strong>Auto Standup</strong> plugin automatically issues a stand command
-                whenever the server sends text matching one of your configured knockdown phrases.
-                No scripting required — just add any phrases that appear when your character is
-                knocked down.
+                Automatically issues a stand command whenever the server sends text matching one of
+                your configured knockdown phrases. Replaces manual trigger scripts.
               </p>
               <ul className={styles.list}>
                 <li>Enable from <strong>Plugins → Manage Plugins</strong></li>
                 <li>
-                  Click <strong>Configure</strong> — add one knockdown phrase per line in the{' '}
-                  <em>Trigger phrases</em> box (lines starting with <code>#</code> are comments)
+                  Click <strong>Configure</strong> — add one knockdown phrase per line (lines
+                  starting with <code>#</code> are comments)
                 </li>
                 <li>
                   Set <em>Stand command</em> to whatever command stands your character up (default:{' '}
@@ -661,91 +690,289 @@ if (cmd) {
                 </li>
                 <li>Matching is case-insensitive</li>
               </ul>
-              <pre className={styles.code}>{`# Example trigger phrases (one per line):
+              <pre className={styles.code}>{`# Trigger phrases — one per line:
 knocking you senseless
 You fall to the ground
 You are stunned
-You are knocked down`}</pre>
+You are knocked down
+You lose your balance and fall
+You slip and fall`}</pre>
 
-              <h4 className={styles.subHeading}>Auto Respell (built-in)</h4>
+              {/* ── Auto Respell ── */}
+              <h4 id="plugin-respell" className={styles.pluginHeading}>Auto Respell</h4>
               <p>
-                The <strong>Auto Respell</strong> plugin watches for affect-removed events and
-                automatically re-casts any spell you have listed. This replaces the manual trigger
-                approach used by DSL_PNP_Affects.
+                Watches for affects dropping (via GMCP <code>game:affect-removed</code> and periodic
+                full-list refreshes) and automatically re-casts any spell or skill you have listed.
+                Replaces DSL_PNP_Affects.
               </p>
               <ul className={styles.list}>
                 <li>Enable from <strong>Plugins → Manage Plugins</strong></li>
                 <li>
-                  Click <strong>Configure</strong> — add one spell per line in the format{' '}
-                  <code>affect name | cast command</code>
+                  Add one spell per line: <code>affect name | cast command</code>
                 </li>
                 <li>
-                  If you omit the <code>| cast command</code> part, the plugin defaults to{' '}
-                  <code>cast '&lt;affect name&gt;'</code>
+                  Omit <code>| cast command</code> to default to <code>cast '&lt;affect name&gt;'</code>
                 </li>
                 <li>
-                  <em>Cooldown (ms)</em> adds a short delay before recasting to avoid spam (default
-                  500 ms)
+                  <em>Recast delay (ms)</em> — pause before recasting to avoid flooding (default 500 ms)
                 </li>
-                <li>Lines starting with <code>#</code> are comments</li>
+                <li>A shared cooldown prevents double-casting when multiple sources detect the same drop</li>
               </ul>
-              <pre className={styles.code}>{`# Format:  affect name | cast command
-# If cast command is omitted, defaults to: cast '<affect name>'
+              <pre className={styles.code}>{`# affect name | cast command
+# Omit command to default to: cast '<affect name>'
 sanctuary
 bless | cast 'bless' self
 armor | cast 'armor' self
 haste | cast 'haste'`}</pre>
 
-              <h4 className={styles.subHeading}>Brew Helper (built-in)</h4>
+              {/* ── Auto Re-wield ── */}
+              <h4 id="plugin-rewield" className={styles.pluginHeading}>Auto Re-wield</h4>
               <p>
-                The <strong>Brew Helper</strong> plugin automates potion brewing. You define a
-                letter map and recipe list, then type <code>brew &lt;name&gt;</code> in the command
-                bar to execute a recipe — no scripting needed.
+                When the server fires a <code>event:disarm</code> event, automatically retrieves
+                and re-wields your weapon using your configured alias. Supports a{' '}
+                <em>nodrop</em> flag for weapons that don't hit the floor.
               </p>
               <ul className={styles.list}>
                 <li>Enable from <strong>Plugins → Manage Plugins</strong></li>
                 <li>
-                  Configure a <em>Letter map</em>: one mapping per line in the form{' '}
-                  <code>LETTER = item name</code>
+                  Add one weapon per line: <code>full item name | alias</code> or{' '}
+                  <code>full item name | alias | nodrop</code>
                 </li>
                 <li>
-                  Configure <em>Recipes</em>: one recipe per line as{' '}
-                  <code>name = token token …</code>. Tokens can be a single letter (resolved via
-                  the letter map), a quoted item name, or a quantity prefix like <code>2xS</code>{' '}
-                  or <code>3x'ill shard'</code>
+                  Without <code>nodrop</code>: sends <code>~get alias</code> then{' '}
+                  <code>wield alias</code>
                 </li>
                 <li>
-                  Set <em>Storage container</em> to wherever your ingredients are stored (default:{' '}
+                  With <code>nodrop</code>: sends <code>~wield alias</code> only (item stayed on you)
+                </li>
+              </ul>
+              <pre className={styles.code}>{`# full item name | alias | nodrop (nodrop optional)
+the Magius Staff | magius
+the Darkstaff | darkstaff
+the icy staff of the Seven Seas | sea
+a scorched staff covered in charred runes | hoopak | nodrop
+a grand arcanium glaive | glaive`}</pre>
+
+              {/* ── Brew Helper ── */}
+              <h4 id="plugin-brew" className={styles.pluginHeading}>Brew Helper</h4>
+              <p>
+                Automates potion brewing with a letter-map shorthand and named recipes. Type{' '}
+                <code>brew &lt;name&gt;</code> to execute a recipe — the plugin fetches each
+                ingredient from your storage container and puts it in the cauldron.
+              </p>
+              <ul className={styles.list}>
+                <li>Enable from <strong>Plugins → Manage Plugins</strong></li>
+                <li>
+                  <em>Letter map</em>: one mapping per line — <code>LETTER = item name</code>
+                </li>
+                <li>
+                  <em>Recipes</em>: one recipe per line — <code>name = token token …</code>.
+                  Tokens: single letter, <code>'quoted item'</code>, or quantity prefix like{' '}
+                  <code>2xS</code> / <code>3x'ill shard'</code>
+                </li>
+                <li>
+                  <em>Storage container</em>: where ingredients are fetched from (default:{' '}
                   <code>shelf</code>)
                 </li>
               </ul>
-              <pre className={styles.code}>{`# Letter map example:
+              <pre className={styles.code}>{`# Letter map
 C = cologne
 S = ill shard
 K = continual light
 
-# Recipe example:
+# Recipes
 health = 2xS C P V
 light  = 2x'ill shard' K`}</pre>
-              <p>
-                Once configured, these commands are available in the command bar:
-              </p>
               <div className={styles.table}>
                 <div className={styles.tableRow}>
-                  <span className={styles.tableKey}><code>brew health</code></span>
-                  <span>Execute the "health" recipe — fetches all ingredients and puts them in the cauldron</span>
+                  <span className={styles.tableKey}><code>brew &lt;name&gt;</code></span>
+                  <span>Execute a recipe — fetches all ingredients and puts them in the cauldron</span>
                 </div>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}><code>showbrews</code></span>
-                  <span>List all your saved recipes</span>
+                  <span>List all saved recipes</span>
                 </div>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}><code>showletters</code></span>
-                  <span>List your letter-to-item mappings</span>
+                  <span>List all letter-to-item mappings</span>
                 </div>
               </div>
 
-              <h4 className={styles.subHeading}>How plugins differ from scripts</h4>
+              {/* ── Color Kit ── */}
+              <h4 id="plugin-colorkit" className={styles.pluginHeading}>Color Kit</h4>
+              <p>
+                Colorizes matched lines in the terminal without requiring any trigger scripts. Each
+                rule suppresses the original line and re-prints it in your chosen color.
+              </p>
+              <ul className={styles.list}>
+                <li>Enable from <strong>Plugins → Manage Plugins</strong></li>
+                <li>
+                  Add one rule per line: <code>match text | color [| event]</code>
+                </li>
+                <li>
+                  <em>color</em> is a single DSL code letter — <code>r</code> dark red,{' '}
+                  <code>R</code> bright red, <code>y</code> yellow, <code>g</code> green,{' '}
+                  <code>B</code> bright blue, <code>p</code> pink, <code>o</code> orange, etc.
+                </li>
+                <li>
+                  <em>event</em> is optional — defaults to <code>shatteredarchive:raw-data</code>.
+                  Use <code>event:line</code> if needed.
+                </li>
+                <li>
+                  After changing rules, click <strong>Sync colors</strong> in the Configure panel
+                  to apply the new suppression list without toggling the plugin
+                </li>
+                <li>First matching rule wins — rules are checked top to bottom</li>
+              </ul>
+              <pre className={styles.code}>{`# match text | color | event (event optional)
+DISARMS you and sends your weapon flying! | r
+The white aura around your body fades | r
+You feel yourself slowing down. | y
+looks very ill. | B
+is surrounded by a pink outline. | B
+muscles stop responding | p`}</pre>
+
+              {/* ── Enchant Helper ── */}
+              <h4 id="plugin-enchant" className={styles.pluginHeading}>Enchant Helper</h4>
+              <p>
+                Automates the enchanting loop. Tracks the current enchant level of your active item,
+                watches for server responses, and can automatically continue casting until a target
+                level is reached. Handles fades (resets level) and explosions (marks item destroyed).
+                Replaces DSL_PNP_Enchant.
+              </p>
+              <ul className={styles.list}>
+                <li>Enable from <strong>Plugins → Manage Plugins</strong></li>
+                <li>
+                  <em>Items to enchant</em>: one item per line — <code>item name | weapon or armor</code>
+                </li>
+                <li>
+                  <em>Container</em>: bag or container to get items from (e.g. <code>bag</code>)
+                </li>
+                <li>
+                  <em>Storage</em>: where to put finished items before fetching the next (optional)
+                </li>
+                <li>
+                  <em>Auto-enchant target level</em>: keep casting until this level (0–3). Set to{' '}
+                  <code>0</code> to cast once per command
+                </li>
+              </ul>
+              <pre className={styles.code}>{`# Items to enchant — item name | weapon or armor
+fancy sword | weapon
+dragon helm | armor`}</pre>
+              <p>Commands available in the command bar once the plugin is enabled:</p>
+              <div className={styles.table}>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>enchant start [name]</code></span>
+                  <span>Set active item and begin enchanting. Name optional if only one item is configured.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>enchant stop</code></span>
+                  <span>Halt the auto-enchant loop.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>enchant get [name]</code></span>
+                  <span>Put current item in storage, fetch the named (or active) item from container.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>enchant restore</code></span>
+                  <span>Cast restore on the active item.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>enchant disenchant</code></span>
+                  <span>Cast disenchant on the active item.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>enchant identify</code></span>
+                  <span>Cast identify on the active item.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>enchant reset</code></span>
+                  <span>Reset the tracked enchant level to 0.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>enchant set &lt;n&gt;</code></span>
+                  <span>Manually override the tracked level (useful after an identify).</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>enchant show</code></span>
+                  <span>Print current item, level, and auto-enchant status to the terminal.</span>
+                </div>
+              </div>
+              <div className={styles.callout}>
+                <strong>Level tracking:</strong> Weapon levels display as{' '}
+                <code>+1/+1</code>, <code>+2/+2</code>, <code>+3/+3</code>. Armor levels display
+                as <code>-1</code>, <code>-2</code>, <code>-3</code>. Max useful level is 3 for
+                both types. If the item explodes, it is marked <strong>DESTROYED</strong> and
+                auto-enchanting halts.
+              </div>
+
+              {/* ── Gourd Helper ── */}
+              <h4 id="plugin-gourd" className={styles.pluginHeading}>Gourd Helper</h4>
+              <p>
+                Tracks your potion gourd inventory. Automatically learns gourds from{' '}
+                <code>lore</code> output, removes them when they evaporate or are used, and lets
+                you quaff, apply, toss, or drop them by spell name or list number. When enabled,
+                a <strong>Gourds</strong> tab appears next to the Affects Summary in the right
+                panel. Replaces DSL_PNP_Gourd.
+              </p>
+              <ul className={styles.list}>
+                <li>Enable from <strong>Plugins → Manage Plugins</strong></li>
+                <li>
+                  The <strong>Gourds</strong> tab in the right sidebar shows your full list with
+                  numbers and spell contents
+                </li>
+                <li>
+                  Type <code>scan gourds</code> after logging in to lore all gourds in your
+                  inventory and build the list from scratch
+                </li>
+                <li>
+                  Gourds are removed automatically when they evaporate or you quaff/apply/toss/drop
+                  them through the plugin aliases
+                </li>
+              </ul>
+              <p>Commands available in the command bar once the plugin is enabled:</p>
+              <div className={styles.table}>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>scan gourds</code></span>
+                  <span>Clears the list and lores every gourd in your inventory to rebuild it.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>remove gourd &lt;n&gt;</code></span>
+                  <span>Manually remove gourd number <em>n</em> from the list.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>gq &lt;spell or #&gt;</code></span>
+                  <span>Quaff a gourd by spell name or list number. Removes it from the list.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>gd &lt;spell or #&gt;</code></span>
+                  <span>Drop a gourd by spell name or list number. Removes it from the list.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>toss &lt;spell or #&gt;</code></span>
+                  <span>Toss a gourd. Resolves to the indexed item name. Falls through if not a tracked gourd.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>apply &lt;spell or #&gt; [target]</code></span>
+                  <span>Apply a gourd. Resolves to the indexed item name. Falls through if not a tracked gourd.</span>
+                </div>
+              </div>
+              <div className={styles.callout}>
+                <strong>How references work:</strong> You can refer to gourds by spell name (e.g.{' '}
+                <code>gq sanctuary</code>) or by their list number (e.g. <code>gq 3</code>). When
+                you have multiple gourds of the same type, each gets a unique index prefix —{' '}
+                <code>1.healing</code>, <code>2.healing</code>, etc. — so the mud knows exactly
+                which one to use.
+              </div>
+              <pre className={styles.code}>{`scan gourds          — lore all gourds, build list
+gq sanctuary         — quaff the gourd containing sanctuary
+gq 2                 — quaff gourd #2 from the list
+apply 'fire shield'  — apply a gourd with fire shield
+toss cone            — toss a gourd containing cone of cold
+remove gourd 4       — remove entry 4 manually`}</pre>
+
+              {/* ── Scripts vs Plugins ── */}
+              <h4 className={styles.subHeading}>Scripts vs plugins</h4>
               <div className={styles.table}>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}>Scripts</span>
@@ -753,19 +980,9 @@ light  = 2x'ill shard' K`}</pre>
                 </div>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}>Plugins</span>
-                  <span>
-                    Pre-packaged tools. You just configure them. Found in Plugins → Manage Plugins.
-                  </span>
+                  <span>Pre-packaged tools. Configure and enable. Found in Plugins → Manage Plugins.</span>
                 </div>
               </div>
-
-              <h4 className={styles.subHeading}>What makes a plugin</h4>
-              <p>
-                For those curious: a plugin is a self-contained JavaScript module with a name,
-                version, optional settings, and event listeners. Everything it needs — code, styles,
-                sub-scripts — is bundled into a single file. Plugins are more structured than
-                scripts, making them easier to share with others.
-              </p>
             </section>
 
             {/* ── DSL PNP REFERENCE ───────────────────────────── */}
@@ -784,8 +1001,9 @@ light  = 2x'ill shard' K`}</pre>
 
               <div className={styles.callout}>
                 <strong>Good news:</strong> Many of the most popular PNP features are already
-                available here as built-in plugins — Roller, Auto Standup, Auto Respell, and Brew
-                Helper. Others are easy to re-create as scripts in a few lines of code.
+                available here as built-in plugins — Roller, Auto Standup, Auto Respell, Auto
+                Re-wield, Brew Helper, Color Kit, Enchant Helper, and Gourd Helper. Others are
+                easy to re-create as scripts in a few lines of code.
               </div>
 
               <h4 className={styles.subHeading}>PNP Module Overview</h4>
@@ -819,7 +1037,7 @@ light  = 2x'ill shard' K`}</pre>
                 <div className={styles.pnpRow}>
                   <span className={styles.pnpName}>DSL_PNP_Character.disarm</span>
                   <span>When your weapon is disarmed, automatically retrieves and re-wields it</span>
-                  <span>Trigger on <code>event:disarm</code> (see Practical Examples)</span>
+                  <span className={styles.pnpBuiltin}>Built-in Auto Re-wield Plugin (Plugins → Manage)</span>
                 </div>
 
                 <div className={styles.pnpRow}>
@@ -851,8 +1069,8 @@ light  = 2x'ill shard' K`}</pre>
 
                 <div className={styles.pnpRow}>
                   <span className={styles.pnpName}>DSL_PNP_Gourd</span>
-                  <span>Automatically drinks from a water container when thirsty</span>
-                  <span>Trigger on <code>You are thirsty</code> → <code>sendCommand("drink gourd")</code> (see Triggers section)</span>
+                  <span>Tracks potion gourd inventory; quaff/apply/toss by spell name or number</span>
+                  <span className={styles.pnpBuiltin}>Built-in Gourd Helper Plugin (Plugins → Manage)</span>
                 </div>
 
                 <div className={styles.pnpRow}>
@@ -879,7 +1097,7 @@ light  = 2x'ill shard' K`}</pre>
                 <div className={styles.pnpRow}>
                   <span className={styles.pnpName}>DSL_PNP_Enchant</span>
                   <span>Automates the enchanting process on equipment</span>
-                  <span>Scripting TODO — plugin conversion planned</span>
+                  <span className={styles.pnpBuiltin}>Built-in Enchant Helper Plugin (Plugins → Manage)</span>
                 </div>
 
                 <div className={styles.pnpRow}>
