@@ -9,13 +9,11 @@
 //
 // Defaults correspond to DSL_PNP_Highlighter.custom.lua trigger patterns.
 //
-// Aliases:
-//   set status <name> [enemy|neutral|ally]  — tag a player for annotation
-//   set team <name> <tag>                   — assign a team label (use 'none' to clear)
+// Status and team management is handled by the People plugin.
 
 import type { IPluginModule, PluginRuntimeApi } from '@shatteredarchive/types-client';
 import { stripAnsi } from '../../autoleveling/autoleveling-text';
-import { getPerson, setPerson } from './peopleDb';
+import { getPerson } from './peopleDb';
 
 // ── Organization → DSL color mapping ──────────────────────────────────
 
@@ -238,50 +236,6 @@ export function createHighlighterPlugin(): IPluginModule {
     };
   }
 
-  function onAlias(api: PluginRuntimeApi, input: string): boolean | undefined {
-    const t = input.trim();
-
-    // set status <name> [enemy|neutral|ally]
-    const statusMatch = t.match(
-      /^set\s+status\s+(['"]?)([^'"]+)\1(?:\s+(enemy|neutral|ally))?\s*$/i,
-    );
-    if (statusMatch) {
-      const name = statusMatch[2].trim();
-      const requested = statusMatch[3]?.toLowerCase() as 'enemy' | 'neutral' | 'ally' | undefined;
-      const person = getPerson(name);
-      if (!person) {
-        api.writeTerminal(`{R"${name}" not found in People database.{x\n`);
-      } else {
-        const newStatus =
-          requested ?? (person.status === 'enemy' ? 'neutral' : 'enemy');
-        setPerson(person.name, { status: newStatus });
-        api.writeTerminal(`Status of {W${person.name}{x set to ${newStatus}.\n`);
-      }
-      return true;
-    }
-
-    // set team <name> <tag>  (use 'none' to clear)
-    const teamMatch = t.match(/^set\s+team\s+([\w']+)\s+(.+)$/i);
-    if (teamMatch) {
-      const name = teamMatch[1].trim();
-      const tag = teamMatch[2].trim().toLowerCase() === 'none' ? undefined : teamMatch[2].trim();
-      const person = getPerson(name);
-      if (!person) {
-        api.writeTerminal(`{R"${name}" not found in People database.{x\n`);
-      } else {
-        setPerson(person.name, { team: tag });
-        api.writeTerminal(
-          tag
-            ? `{W${person.name}{x assigned to team ${tag}.\n`
-            : `Team for {W${person.name}{x cleared.\n`,
-        );
-      }
-      return true;
-    }
-
-    return false;
-  }
-
   return {
     manifest: {
       id: 'highlighter',
@@ -321,6 +275,5 @@ export function createHighlighterPlugin(): IPluginModule {
     },
 
     onEnable,
-    onAlias,
   };
 }

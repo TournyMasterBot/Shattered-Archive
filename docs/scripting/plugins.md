@@ -293,10 +293,14 @@ dragon helm | armor
 | `show kinfo <kingdom>` | List all known players in a kingdom (e.g. `NT`) |
 | `show cinfo <clan>` | List all known players in a clan. Use `conclave` for all Robe clans. |
 | `show craft <craft>` | List known crafters sorted by rank |
+| `set status <name>` | Toggle a player between enemy (`*` suffix) and neutral |
+| `set status <name> enemy\|neutral\|ally` | Set status explicitly. Allies show a `+` suffix. |
+| `set team <name> <tag>` | Assign a team label shown before the name by the Highlighter. Use `none` to clear. |
 
 **Notes:**
 - Detects both standard who-list format (`[25 H-Elf Mage] (NT) Name`) and who craft output.
 - Player data persists in `localStorage` indefinitely — the database grows over time.
+- Names with apostrophes (e.g. `Z'szytheis`) are supported directly — no quoting needed.
 
 ---
 
@@ -325,14 +329,6 @@ dragon helm | armor
 ```
 
 Use **Sync Rules** in the config panel to apply edits without restarting the plugin.
-
-**Status and team aliases:**
-
-| Command | Description |
-|---|---|
-| `set status <name>` | Toggle a player between enemy (`*` suffix) and neutral |
-| `set status <name> enemy\|neutral\|ally` | Set status explicitly. Allies show a `+` suffix. |
-| `set team <name> <tag>` | Assign a team label shown before the name. Use `none` to clear. |
 
 **Clan color reference:**
 

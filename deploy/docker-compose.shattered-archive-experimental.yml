@@ -1,3 +1,6 @@
+# Force cache bypass
+# docker-compose -f deploy/docker-compose.shattered-archive-experimental.yml build --no-cache game-client
+
 # docker ps --format "table {{.Names}}\t{{.Status}}"
 # docker exec -it shatteredarchive-nginx sh -lc 'command -v wget || command -v curl || echo "no wget/curl"'
 

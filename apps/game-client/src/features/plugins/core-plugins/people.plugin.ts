@@ -4,10 +4,12 @@
 // The database is shared with the Highlighter plugin via peopleDb.ts.
 //
 // Aliases:
-//   show info  <name>   — look up by name prefix
-//   show kinfo <name>   — filter by kingdom
-//   show cinfo <name>   — filter by clan
-//   show craft <name>   — filter by craft
+//   show info  <name>                      — look up by name prefix
+//   show kinfo <name>                      — filter by kingdom
+//   show cinfo <name>                      — filter by clan
+//   show craft <name>                      — filter by craft
+//   set status <name> [enemy|neutral|ally] — tag a player for annotation
+//   set team <name> <tag>                  — assign a team label (use 'none' to clear)
 
 import type { IPluginModule, PluginRuntimeApi } from '@shatteredarchive/types-client';
 import { stripAnsi } from '../../autoleveling/autoleveling-text';
@@ -200,7 +202,47 @@ export function createPeoplePlugin(): IPluginModule {
   }
 
   function onAlias(api: PluginRuntimeApi, input: string): boolean | undefined {
-    const m = input.trim().match(/^show\s+(info|kinfo|cinfo|craft)\s+([\w'\s]+)$/i);
+    const t = input.trim();
+
+    // set status <name> [enemy|neutral|ally]
+    const statusMatch = t.match(
+      /^set\s+status\s+(\S+)(?:\s+(enemy|neutral|ally))?\s*$/i,
+    );
+    if (statusMatch) {
+      const name = statusMatch[1].trim();
+      const requested = statusMatch[2]?.toLowerCase() as 'enemy' | 'neutral' | 'ally' | undefined;
+      const person = getPerson(name);
+      if (!person) {
+        api.writeTerminal(`{R"${name}" not found in People database.{x\n`);
+      } else {
+        const newStatus =
+          requested ?? (person.status === 'enemy' ? 'neutral' : 'enemy');
+        setPerson(person.name, { status: newStatus });
+        api.writeTerminal(`Status of {W${person.name}{x set to ${newStatus}.\n`);
+      }
+      return true;
+    }
+
+    // set team <name> <tag>  (use 'none' to clear)
+    const teamMatch = t.match(/^set\s+team\s+([\w']+)\s+(.+)$/i);
+    if (teamMatch) {
+      const name = teamMatch[1].trim();
+      const tag = teamMatch[2].trim().toLowerCase() === 'none' ? undefined : teamMatch[2].trim();
+      const person = getPerson(name);
+      if (!person) {
+        api.writeTerminal(`{R"${name}" not found in People database.{x\n`);
+      } else {
+        setPerson(person.name, { team: tag });
+        api.writeTerminal(
+          tag
+            ? `{W${person.name}{x assigned to team ${tag}.\n`
+            : `Team for {W${person.name}{x cleared.\n`,
+        );
+      }
+      return true;
+    }
+
+    const m = t.match(/^show\s+(info|kinfo|cinfo|craft)\s+([\w'\s]+)$/i);
     if (!m) return false;
 
     const show = m[1].toLowerCase();
