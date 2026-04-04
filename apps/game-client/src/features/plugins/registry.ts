@@ -8,6 +8,8 @@ import { createDisarmPlugin } from './core-plugins/disarm.plugin';
 import { createColorKitPlugin } from './core-plugins/colorkit.plugin';
 import { createEnchantPlugin } from './core-plugins/enchant.plugin';
 import { createGourdPlugin } from './core-plugins/gourd.plugin';
+import { createPeoplePlugin } from './core-plugins/people.plugin';
+import { createHighlighterPlugin } from './core-plugins/highlighter.plugin';
 
 export interface CorePluginDefinition {
   id: PluginId;
@@ -55,6 +57,16 @@ export const CORE_PLUGINS: CorePluginDefinition[] = [
     id: 'gourd',
     manifest: createGourdPlugin().manifest,
     create: createGourdPlugin,
+  },
+  {
+    id: 'people',
+    manifest: createPeoplePlugin().manifest,
+    create: createPeoplePlugin,
+  },
+  {
+    id: 'highlighter',
+    manifest: createHighlighterPlugin().manifest,
+    create: createHighlighterPlugin,
   },
 ];
 

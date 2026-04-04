@@ -648,6 +648,8 @@ if (cmd) {
                   { id: 'plugin-colorkit',   label: 'Color Kit' },
                   { id: 'plugin-enchant',    label: 'Enchant Helper' },
                   { id: 'plugin-gourd',      label: 'Gourd Helper' },
+                  { id: 'plugin-people',     label: 'People' },
+                  { id: 'plugin-highlighter', label: 'Highlighter' },
                 ].map(({ id, label }) => (
                   <button
                     key={id}
@@ -971,6 +973,93 @@ apply 'fire shield'  — apply a gourd with fire shield
 toss cone            — toss a gourd containing cone of cold
 remove gourd 4       — remove entry 4 manually`}</pre>
 
+              {/* ── People ── */}
+              <h4 id="plugin-people" className={styles.pluginHeading}>People</h4>
+              <p>
+                Passively tracks player information from any who-list output — level, race, class,
+                and organization. The data is stored locally and powers the Highlighter plugin.
+                Nothing needs to be configured; simply enable it and the database builds itself
+                as you browse who lists in-game. Replaces DSL_PNP_People.
+              </p>
+              <ul className={styles.list}>
+                <li>Enable from <strong>Plugins → Manage Plugins</strong></li>
+                <li>
+                  Detects kingdom players <code>[25 H-Elf Mage] (NT) Name</code> and clan players{' '}
+                  <code>[25 H-Elf Mage] [Wargar] Name</code> automatically
+                </li>
+                <li>Also parses <code>who craft</code> output to track crafters</li>
+              </ul>
+              <p>Commands available once the plugin is enabled:</p>
+              <div className={styles.table}>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>show info &lt;name&gt;</code></span>
+                  <span>Look up a player by name prefix. Shows level, org, and when last seen.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>show kinfo &lt;kingdom&gt;</code></span>
+                  <span>List all known players in a kingdom (e.g. <code>show kinfo NT</code>).</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>show cinfo &lt;clan&gt;</code></span>
+                  <span>List all known players in a clan (e.g. <code>show cinfo Wargar</code>). Use <code>conclave</code> for all Robe clans.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>show craft &lt;craft&gt;</code></span>
+                  <span>List known crafters sorted by rank (e.g. <code>show craft Spellcrafter</code>).</span>
+                </div>
+              </div>
+
+              {/* ── Highlighter ── */}
+              <h4 id="plugin-highlighter" className={styles.pluginHeading}>Highlighter</h4>
+              <p>
+                Colors player names by organization as they appear in who lists, farsight output,
+                scan results, and gossip lines. Clan members are colored by their clan's color
+                (e.g. Wargar → cyan, Slayers → yellow). Kingdom members are shown with a cyan
+                org prefix. Requires the <strong>People</strong> plugin to be enabled.
+                Replaces DSL_PNP_Highlighter and DSL_PNP_Highlighter.custom.
+              </p>
+              <ul className={styles.list}>
+                <li>Enable <strong>People</strong> first, then enable <strong>Highlighter</strong></li>
+                <li>
+                  The config textarea contains the trigger rules — these are the contents of{' '}
+                  <code>DSL_PNP_Highlighter.custom.lua</code> translated to the plugin format
+                </li>
+                <li>
+                  Use the <strong>Sync Rules</strong> button in the config modal to apply rule
+                  edits without restarting the plugin
+                </li>
+              </ul>
+              <p>Config rule format (one per line):</p>
+              <pre className={styles.code}>{`# pattern | next   — color all following who-list lines until blank/prompt
+# pattern | line   — color names only on this specific matched line
+
+^Players near you:$ | next
+^You quest out with your magic in search of others\\.$ | next
+^Looking around you see:$ | next
+^[\\w']+ clan gossips '.*'$ | line`}</pre>
+              <p>Status and team aliases (available once the plugin is enabled):</p>
+              <div className={styles.table}>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>set status &lt;name&gt;</code></span>
+                  <span>Toggle a player between enemy (<code>*</code> suffix) and neutral.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>set status &lt;name&gt; enemy|neutral|ally</code></span>
+                  <span>Explicitly set a player's status. Allies show a <code>+</code> suffix.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>set team &lt;name&gt; &lt;tag&gt;</code></span>
+                  <span>Assign a team label shown before the name. Use <code>none</code> to clear.</span>
+                </div>
+              </div>
+              <div className={styles.callout}>
+                <strong>Clan colors:</strong> Wargar <code>{'{C'}cyan{'{x'}</code> · Slayers{' '}
+                <code>{'{Y'}yellow{'{x'}</code> · Knighthood <code>{'{B'}bright blue{'{x'}</code> ·
+                Shalonesti <code>{'{G'}green{'{x'}</code> · Justice <code>{'{b'}dark blue{'{x'}</code> ·
+                Red Robes <code>{'{R'}bright red{'{x'}</code> · White Robes <code>{'{W'}white{'{x'}</code> ·
+                Black/Shadow/Chaos/Demon <code>{'{D'}dark{'{x'}</code>
+              </div>
+
               {/* ── Scripts vs Plugins ── */}
               <h4 className={styles.subHeading}>Scripts vs plugins</h4>
               <div className={styles.table}>
@@ -1002,8 +1091,8 @@ remove gourd 4       — remove entry 4 manually`}</pre>
               <div className={styles.callout}>
                 <strong>Good news:</strong> Many of the most popular PNP features are already
                 available here as built-in plugins — Roller, Auto Standup, Auto Respell, Auto
-                Re-wield, Brew Helper, Color Kit, Enchant Helper, and Gourd Helper. Others are
-                easy to re-create as scripts in a few lines of code.
+                Re-wield, Brew Helper, Color Kit, Enchant Helper, Gourd Helper, People, and
+                Highlighter. Others are easy to re-create as scripts in a few lines of code.
               </div>
 
               <h4 className={styles.subHeading}>PNP Module Overview</h4>
@@ -1087,11 +1176,8 @@ remove gourd 4       — remove entry 4 manually`}</pre>
 
                 <div className={styles.pnpRow}>
                   <span className={styles.pnpName}>DSL_PNP_Highlighter</span>
-                  <span>Highlights keywords in different colors (mob names, tells, etc.)</span>
-                  <span>
-                    Trigger with <strong>Omit from output</strong> + custom{' '}
-                    <code>writeTerminal()</code> with DSL color codes
-                  </span>
+                  <span>Colors player names by organization on who lists, farsight, and gossip</span>
+                  <span className={styles.pnpBuiltin}>Built-in Highlighter Plugin (Plugins → Manage)</span>
                 </div>
 
                 <div className={styles.pnpRow}>
@@ -1108,8 +1194,8 @@ remove gourd 4       — remove entry 4 manually`}</pre>
 
                 <div className={styles.pnpRow}>
                   <span className={styles.pnpName}>DSL_PNP_People</span>
-                  <span>Tracks who is online and in your area</span>
-                  <span>Trigger on <code>shatteredarchive:raw-data</code> matching "who" output</span>
+                  <span>Tracks player info (level, race, class, org) from who-list output</span>
+                  <span className={styles.pnpBuiltin}>Built-in People Plugin (Plugins → Manage)</span>
                 </div>
               </div>
 
