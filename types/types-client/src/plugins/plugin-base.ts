@@ -172,9 +172,16 @@ export interface PluginRuntimeApi {
    * When a matching line arrives on the given event (default: shatteredarchive:raw-data),
    * its default terminal output is suppressed so the plugin can write a colored replacement.
    * Call with an empty array to clear all rules for this plugin.
+   *
+   * Each rule is either a substring match or a regex match:
+   *   { matchText: string }  — case-insensitive substring match (default)
+   *   { pattern: string }    — regex match (flags default to 'i')
    */
   registerOmitRules: (
-    rules: Array<{ matchText: string; eventName?: string; caseInsensitive?: boolean }>,
+    rules: Array<
+      | { matchText: string; eventName?: string; caseInsensitive?: boolean }
+      | { pattern: string; flags?: string; eventName?: string }
+    >,
   ) => void;
 }
 

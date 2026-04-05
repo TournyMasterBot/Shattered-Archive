@@ -264,6 +264,9 @@ export class AutoLevelingEngine {
     lookNameNorm: string; // normalized with normMatch(...)
   }> = [];
 
+  // GMCP vitals — updated by game:char-data events
+  private charVitals = { hp: 0, hpMax: 0, mp: 0, mpMax: 0, mv: 0, mvMax: 0 };
+
   private boundOnTerminalData = (ev: Event) => {
     if (this.stopping || this.paused) {
       return;
@@ -332,50 +335,6 @@ export class AutoLevelingEngine {
     });
   };
 
-  private boundOnMovementFailed = (ev: Event) => {
-    if (!this.moveWait) return;
-
-    const ce = ev as CustomEvent<any>;
-    const { cmd, dir, ts, reasonLine } = extractEventMoveKey(ce?.detail);
-
-    if (typeof ts === 'number' && ts < this.moveWait.startedAt - 50) {
-      dbg('movement-failed ignored (stale ts)', {
-        ts,
-        startedAt: this.moveWait.startedAt,
-        expected: { cmd: this.moveWait.cmd, dir: this.moveWait.dir },
-        got: { cmd, dir },
-        detail: ce?.detail,
-      });
-      return;
-    }
-
-    const expectedCmd = this.moveWait.cmd;
-    const expectedDir = this.moveWait.dir;
-
-    const cmdMatch = !!cmd && cmd === expectedCmd;
-    const dirMatch = !cmd && !!dir && !!expectedDir && dir === expectedDir;
-
-    if (!cmdMatch && !dirMatch) {
-      dbg('movement-failed ignored (no match)', {
-        expected: { cmd: expectedCmd, dir: expectedDir },
-        got: { cmd, dir, ts },
-        detail: ce?.detail,
-      });
-      return;
-    }
-
-    const resolve = this.moveWait.resolve;
-
-    this.clearMoveWaitTimer();
-    this.moveWait = null;
-
-    resolve({
-      result: 'failed',
-      cmd: cmd ?? expectedCmd,
-      reasonLine: String(reasonLine ?? ''),
-    });
-  };
-
   private boundOnFlee = (ev: Event) => {
     if (this.stopping || this.paused) return;
 
@@ -388,9 +347,7 @@ export class AutoLevelingEngine {
     if (this.stopping || this.paused) return;
 
     const ce = ev as CustomEvent<any>;
-    console.log('autoleveling-engine observed a creature death', {
-      ce,
-    });
+    dbg('creature death observed', { detail: ce?.detail });
   };
 
   private boundOnCharDataFighting = (ev: Event) => {
@@ -418,6 +375,18 @@ export class AutoLevelingEngine {
     this.setIsFighting(v, `event:${(ev as any).type}`);
   };
 
+  private onCharDataVitals(d: any) {
+    if (!d) return;
+    const hp = Number(d.hp ?? 0);
+    const hpMax = Number(d.max_hp ?? 0);
+    const mp = Number(d.mana ?? 0);
+    const mpMax = Number(d.max_mana ?? 0);
+    const mv = Number(d.move ?? 0);
+    const mvMax = Number(d.max_move ?? 0);
+    this.charVitals = { hp, hpMax, mp, mpMax, mv, mvMax };
+    dbg('charVitals updated', this.charVitals);
+  }
+
   constructor(deps: EngineDeps) {
     this.deps = deps;
   }
@@ -431,56 +400,34 @@ export class AutoLevelingEngine {
       dbg('autoleveling-engine bind()');
 
       this.offListeners = [
-        // Global terminal data
+        // Incoming terminal text — shatteredarchive:raw-data is the authoritative event
+        // Payload shape: { text: string, rawText: string, fromUserScript: boolean }
         ListenEvent<any>(
-          'shatteredarchive:terminal-data',
+          'shatteredarchive:raw-data',
           (payload) => {
             this.boundOnTerminalData({ detail: payload } as any);
           },
-          { key: 'AutoLevelingEngine:terminal-data' },
+          { key: 'AutoLevelingEngine:raw-data' },
         ),
 
-        // GMCP-derived combat state (authoritative)
+        // GMCP char-data — authoritative source for isFighting and vitals
+        // Payload shape: { hp, max_hp, mana, max_mana, move, max_move, is_fighting, ... }
         ListenEvent<any>(
-          'shatteredarchive:char-data',
+          'game:char-data',
           (payload) => {
-            this.boundOnCharDataFighting({ detail: payload, type: 'shatteredarchive:char-data' } as any);
+            this.onCharDataVitals(payload);
+            this.boundOnCharDataFighting({ detail: payload, type: 'game:char-data' } as any);
           },
-          { key: 'AutoLevelingEngine:char-data' },
+          { key: 'AutoLevelingEngine:game:char-data' },
         ),
 
+        // Movement success — fires from game:room-data (new room arrived after a move)
         ListenEvent<any>(
-          'shatteredarchive:gmcp-char-data',
+          'game:room-data',
           (payload) => {
-            this.boundOnCharDataFighting({ detail: payload, type: 'shatteredarchive:gmcp-char-data' } as any);
+            this.boundOnMovementSucceeded({ detail: { cmd: this.moveWait?.cmd, dir: this.moveWait?.dir, ts: now() + 100, room: payload } } as any);
           },
-          { key: 'AutoLevelingEngine:gmcp-char-data' },
-        ),
-
-        ListenEvent<any>(
-          'gmcp:char_data',
-          (payload) => {
-            this.boundOnCharDataFighting({ detail: payload, type: 'gmcp:char_data' } as any);
-          },
-          { key: 'AutoLevelingEngine:gmcp:char_data' },
-        ),
-
-        // Handle movement succeeded
-        ListenEvent<any>(
-          'shatteredarchive:movement-succeeded',
-          (payload) => {
-            this.boundOnMovementSucceeded({ detail: payload } as any);
-          },
-          { key: 'AutoLevelingEngine:movement-succeeded' },
-        ),
-
-        // Handle movement failed
-        ListenEvent<any>(
-          'shatteredarchive:movement-failed',
-          (payload) => {
-            this.boundOnMovementFailed({ detail: payload } as any);
-          },
-          { key: 'AutoLevelingEngine:movement-failed' },
+          { key: 'AutoLevelingEngine:room-data' },
         ),
 
         // Handle creature deaths
@@ -620,11 +567,6 @@ export class AutoLevelingEngine {
 
     while (!this.stopping) {
       try {
-        this.deps.setRunState({ status: 'waiting' });
-        dbg('engine waiting for next round', {
-          roundDelay: cfg.roundLoopTimeMs,
-        });
-
         while (this.trainingPathSteps.length > 0) {
           const step = this.trainingPathSteps.shift()!;
 
@@ -637,6 +579,11 @@ export class AutoLevelingEngine {
           }
 
           const mv = isMovementCommand(step);
+
+          if (mv.isMove) {
+            this.deps.setRunState({ status: 'running', round, step: 'move', actionIndex: 0 });
+          }
+
           const gate = mv.isMove ? this.waitForMovement(step, cfg.idleTimeoutMs) : null;
 
           await this.sendCommand(step);
@@ -655,9 +602,20 @@ export class AutoLevelingEngine {
             } else {
               dbg('movement succeeded', { cmd: res.cmd, room: res.room });
             }
+          } else {
+            // Non-movement command (e.g. look) — wait for the server's response text to
+            // arrive before checking for encounter detections.
+            const settleMs = cfg.lookSettleMs ?? 500;
+            if (settleMs > 0) await this.delayMs(settleMs);
           }
 
           await this.flushInjected(round);
+
+          // After a successful movement, pause briefly before the next step.
+          if (mv.isMove && !this.stopping) {
+            const moveSettle = cfg.moveSettleMs ?? 600;
+            if (moveSettle > 0) await this.delayMs(moveSettle);
+          }
         }
 
         if (!cfg.loopRounds) {
@@ -665,6 +623,9 @@ export class AutoLevelingEngine {
           break;
         }
 
+        // Round complete — signal we are waiting before the next one starts.
+        this.deps.setRunState({ status: 'waiting' });
+        dbg('engine waiting for next round', { roundDelay: cfg.roundLoopTimeMs });
         await this.delayMs(cfg.roundLoopTimeMs);
 
         this.trainingPathSteps = cfg.init.trainingPath.split(';').filter((x) => x?.trim()?.length > 0);
@@ -752,6 +713,27 @@ export class AutoLevelingEngine {
         dbg('wait_fighting', { value: a.value, timeoutMs: a.timeoutMs, round, current: this.isFighting });
         await this.waitForFighting(a.value, a.timeoutMs);
         return;
+
+      case 'if_hp_pct_below': {
+        const pct = this.charVitals.hpMax > 0 ? (this.charVitals.hp / this.charVitals.hpMax) * 100 : 100;
+        dbg('if_hp_pct_below', { threshold: a.pct, current: pct });
+        if (pct < a.pct) await this.sendCommand(a.cmd);
+        return;
+      }
+
+      case 'if_mp_pct_below': {
+        const pct = this.charVitals.mpMax > 0 ? (this.charVitals.mp / this.charVitals.mpMax) * 100 : 100;
+        dbg('if_mp_pct_below', { threshold: a.pct, current: pct });
+        if (pct < a.pct) await this.sendCommand(a.cmd);
+        return;
+      }
+
+      case 'if_mv_pct_below': {
+        const pct = this.charVitals.mvMax > 0 ? (this.charVitals.mv / this.charVitals.mvMax) * 100 : 100;
+        dbg('if_mv_pct_below', { threshold: a.pct, current: pct });
+        if (pct < a.pct) await this.sendCommand(a.cmd);
+        return;
+      }
 
       default:
         dbg('unknown action kind (ignored)', a);
@@ -1206,23 +1188,83 @@ export class AutoLevelingEngine {
         }
 
         const cfg = this.deps.getConfig();
-        await this.runTriplet(cfg.steps.fight, 'fight', round);
+        const loopIntervalMs = Math.max(2000, cfg.fightLoopIntervalMs ?? 2500);
 
-        // Ensure combat has ended before releasing lock
-        if (this.isFighting) {
-          const gateTimeout = Math.max(1000, cfg.idleTimeoutMs || 30000);
-          dbg('waiting for fighting=false to release encounter lock', { timeoutMs: gateTimeout });
-          try {
-            await this.waitForFighting(false, gateTimeout);
-          } catch {
-            this.deps.setRunState({ status: 'error', message: 'Timed out waiting for fight to end' });
-            this.stopping = true;
-            return;
+        // fight.pre — runs once on engage success
+        this.deps.setRunState({ status: 'running', round, step: 'fight.pre', actionIndex: 0 });
+        await this.runActions(cfg.steps.fight.pre, 'fight.pre', round);
+
+        // fight.exec — only loop if there are actions to run.
+        // If fight.exec is empty, just wait for the fight to end naturally.
+        // A step is "present" only if it contains at least one action that isn't a blank send.
+        // This prevents a textarea that was left empty (parser produces [] or [{kind:'send',cmd:''}])
+        // from being treated as having actions and triggering a send loop.
+        const hasFightExec = (cfg.steps.fight.exec ?? []).some(
+          (a) => a.kind !== 'send' || String(a.cmd ?? '').trim().length > 0,
+        );
+        if (hasFightExec) {
+          dbg('fight loop start', { target: eng.target.cleanName, loopIntervalMs });
+          while (!this.stopping && this.isFighting) {
+            await this.waitWhilePausedOrStopped().catch(() => null);
+            if (this.stopping) break;
+
+            this.deps.setRunState({ status: 'running', round, step: 'fight.exec', actionIndex: 0 });
+            await this.runActions(cfg.steps.fight.exec, 'fight.exec', round);
+
+            if (!this.isFighting) break;
+
+            // Wait the loop interval, polling every 200 ms so we exit promptly
+            // when fighting ends without touching the shared waitFighting slot.
+            let waited = 0;
+            const POLL_MS = 200;
+            while (waited < loopIntervalMs && this.isFighting && !this.stopping) {
+              await this.delayMs(POLL_MS);
+              waited += POLL_MS;
+            }
           }
+          dbg('fight loop end', { target: eng.target.cleanName, isFighting: this.isFighting });
+        } else {
+          // No fight actions — wait for combat to end without sending anything.
+          dbg('fight loop skip (no exec actions), waiting for fight end', { target: eng.target.cleanName });
+          if (this.isFighting) {
+            try {
+              await this.waitForFighting(false, Math.max(30_000, cfg.idleTimeoutMs || 30_000));
+            } catch {
+              this.deps.setRunState({ status: 'error', message: 'Timed out waiting for fight to end' });
+              this.stopping = true;
+            }
+          }
+        }
+
+        // fight.post — runs once when fight loop exits
+        this.deps.setRunState({ status: 'running', round, step: 'fight.post', actionIndex: 0 });
+        await this.runActions(cfg.steps.fight.post, 'fight.post', round);
+
+        // postFight triplet — loot, rest, health check
+        this.deps.setRunState({ status: 'running', round, step: 'postFight', actionIndex: 0 });
+        await this.runTriplet(cfg.steps.postFight, 'postFight', round);
+
+        // Brief pause after the fight before re-scanning or moving on.
+        if (!this.stopping) {
+          const postFightSettle = cfg.postFightSettleMs ?? 2_000;
+          if (postFightSettle > 0) await this.delayMs(postFightSettle);
         }
 
         dbg('encounter complete; releasing lock', { target: eng.target.cleanName });
         this.encounterLocked = false;
+
+        // Re-scan the room — there may be more mobs here before we move on.
+        if (!this.stopping) {
+          const cfgRecheck = this.deps.getConfig();
+          this.deps.setRunState({ status: 'running', round, step: 'identify', actionIndex: 0 });
+          await this.runTriplet(cfgRecheck.steps.identify, 'identify', round);
+          // Wait for the server to send back the room description before we check
+          // whether another mob was detected (i.e. injected into the queue).
+          const settleMs = cfgRecheck.lookSettleMs ?? 500;
+          if (settleMs > 0 && !this.stopping) await this.delayMs(settleMs);
+          // If another mob was detected during the re-scan, it will have been injected into
+          // the queue. The while-loop above will pick it up on the next iteration.
+        }
         continue;
       }
 

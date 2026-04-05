@@ -144,6 +144,17 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
             >
               Equipment…
             </div>
+
+            <div
+              className={styles.subMenuItem}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeAllMenus();
+                onOpenAutoLeveling();
+              }}
+            >
+              Auto Leveling…
+            </div>
           </div>
         </div>
 

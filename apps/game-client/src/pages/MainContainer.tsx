@@ -107,7 +107,7 @@ export const MainContainer: React.FC = () => {
   useEquipmentCapture(connectionId);
   useEquipmentDeltas(connectionId);
 
-  const auto = useAutoLeveling(connectionId);
+  const auto = useAutoLeveling(connectionId, gameConn.isConnected);
 
   React.useEffect(() => {
     pluginHost.setConnection(connectionId);
@@ -212,6 +212,15 @@ export const MainContainer: React.FC = () => {
         onClose={() => setIsAutoLevelingModalOpen(false)}
         connectionId={connectionId}
         isConnected={gameConn.isConnected}
+        config={auto.config}
+        setConfig={auto.setConfig}
+        runState={auto.runState}
+        socketReady={auto.socketReady}
+        start={auto.start}
+        stop={auto.stop}
+        pause={auto.pause}
+        resume={auto.resume}
+        resetToDefaults={auto.resetToDefaults}
       />
 
       {/* ✅ CHANGED: pass connectionId to both contribute modals */}

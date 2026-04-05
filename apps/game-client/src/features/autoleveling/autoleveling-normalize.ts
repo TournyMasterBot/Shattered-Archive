@@ -61,11 +61,13 @@ function normalizeSteps(x: unknown, fallback: AutoLevelStepConfig): AutoLevelSte
     ? { pre: normalizeActions(x.fight.pre), exec: normalizeActions(x.fight.exec), post: normalizeActions(x.fight.post) }
     : fallback.fight;
 
+  const postFight = normalizeTriplet(x.postFight, fallback.postFight);
+
   const reset = isObj(x.reset)
     ? { endRound: normalizeActions(x.reset.endRound), wait: normalizeActions(x.reset.wait) }
     : fallback.reset;
 
-  return { start, move, identify, fight, reset };
+  return { start, move, identify, fight, postFight, reset };
 }
 
 function normalizeEscapeCommands(x: unknown): string[] {
@@ -97,6 +99,7 @@ function normalizeAutoLevelConfig(raw: AutoLevelConfig): AutoLevelConfig {
       move: { ...def.steps.move, ...(raw as any).steps?.move },
       identify: { ...def.steps.identify, ...(raw as any).steps?.identify },
       fight: { ...def.steps.fight, ...(raw as any).steps?.fight },
+      postFight: { ...def.steps.postFight, ...(raw as any).steps?.postFight },
       reset: { ...def.steps.reset, ...(raw as any).steps?.reset },
     },
   };

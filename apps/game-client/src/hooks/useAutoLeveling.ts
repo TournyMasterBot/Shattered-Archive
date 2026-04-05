@@ -58,15 +58,13 @@ function hdbg(...args: any[]) {
 }
 
 function hwarn(...args: any[]) {
-  return;
-  if (!isAutoLevelingDebugEnabled()) return;
   // eslint-disable-next-line no-console
   console.warn(HOOK_LOG_PREFIX, ...args);
 }
 
 /* ------------------------------------------------------------------------- */
 
-export function useAutoLeveling(connectionId: string) {
+export function useAutoLeveling(connectionId: string, isConnectedInitial = false) {
   const [config, _setConfig] = useState<AutoLevelConfig>(() => {
     const initial = loadAutoLevelConfig(connectionId, createDefaultAutoLevelConfig());
     hdbg('init config loaded', { connectionId, enabled: initial.enabled, version: initial.version });
@@ -93,8 +91,14 @@ export function useAutoLeveling(connectionId: string) {
     [connectionId],
   );
 
-  // socket readiness remains a UI safety gate
-  const [socketReady, setSocketReady] = useState(false);
+  // socket readiness — initialise from current connection state so we don't
+  // miss the open event that already fired before this hook mounted.
+  const [socketReady, setSocketReady] = useState(isConnectedInitial);
+  useEffect(() => {
+    // Sync whenever the parent passes a new isConnected value (e.g. reconnect)
+    setSocketReady(isConnectedInitial);
+  }, [isConnectedInitial]);
+
   useEffect(() => {
     const disposeOpen = ListenEvent<unknown>(
       'game:remote-server:open',

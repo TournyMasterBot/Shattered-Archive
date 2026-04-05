@@ -141,14 +141,20 @@ export function createHighlighterPlugin(): IPluginModule {
   let rules: HighlightRule[] = [];
   let nextMode = false;
 
-  // Lines matching `^\[\s*\d+` are who-list entries — suppressed during next-mode
-  const WHO_LINE_OMIT = { pattern: '^\\[\\s*\\d+' };
+  // Who-list entries start with [ followed by optional spaces and a digit.
+  const WHO_LINE_OMIT = { pattern: '^\\[\\s*\\d' };
+  // Scan entries end with a location phrase.
+  const SCAN_OMIT_RULES = [
+    { matchText: ', right here.' },
+    { matchText: ', nearby to the ' },
+  ];
 
-  function buildOmitRules(currentRules: HighlightRule[], includeWhoLine: boolean) {
+  function buildOmitRules(currentRules: HighlightRule[], nextModeActive: boolean) {
     const lineOmits = currentRules
       .filter((r) => r.kind === 'line')
       .map((r) => ({ pattern: r.source }));
-    return includeWhoLine ? [...lineOmits, WHO_LINE_OMIT] : lineOmits;
+    if (!nextModeActive) return lineOmits;
+    return [...lineOmits, WHO_LINE_OMIT, ...SCAN_OMIT_RULES];
   }
 
   function applyRules(api: PluginRuntimeApi, newRules: HighlightRule[]) {
@@ -203,14 +209,13 @@ export function createHighlighterPlugin(): IPluginModule {
         const lineRule = rules.find((r) => r.kind === 'line' && r.pattern.test(t));
         if (lineRule) {
           const { result, changed } = colorizeText(t);
-          if (changed) {
-            if (debug) api.log(`line rule matched: "${t}"`);
-            api.writeTerminal(result + '{x\n');
-          }
+          if (debug) api.log(`line rule matched: "${t}"`);
+          // Always write — original is suppressed by the omit rule
+          api.writeTerminal((changed ? result + '{x' : t) + '\n');
           continue;
         }
 
-        // 'next' rule — enter next-mode; show the trigger line itself unmodified
+        // 'next' rule — enter next-mode; the trigger line itself is not suppressed
         const nextRule = rules.find((r) => r.kind === 'next' && r.pattern.test(t));
         if (nextRule) {
           if (debug) api.log(`next-mode triggered: "${t}"`);
@@ -219,11 +224,17 @@ export function createHighlighterPlugin(): IPluginModule {
           continue;
         }
 
-        // In next-mode — suppress who-list entry and write coloured version
-        if (nextMode && /^\[\s*\d+/.test(t)) {
-          const { result, changed } = colorizeText(t);
-          // Always write something (original is suppressed by omit rule)
-          api.writeTerminal((changed ? result + '{x' : t) + '\n');
+        // In next-mode — colorize who-list entries and scan entries.
+        // Both formats are suppressed by their respective omit rules so we must
+        // always write something back (colorized or original).
+        if (nextMode) {
+          const isWhoLine = /^\[\s*\d/.test(t);
+          const isScanLine = t.includes(', right here.') || t.includes(', nearby to the ');
+          if (isWhoLine || isScanLine) {
+            const { result, changed } = colorizeText(t);
+            if (debug && changed) api.log(`next-mode colorized: "${t}"`);
+            api.writeTerminal((changed ? result + '{x' : t) + '\n');
+          }
         }
       }
     });

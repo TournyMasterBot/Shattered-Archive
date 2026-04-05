@@ -105,6 +105,33 @@ export function parseActionsFromEditor(text: string): AutoLevelAction[] {
       continue;
     }
 
+    if (trimmed.toLowerCase().startsWith('if_hp_below ')) {
+      const rest = trimmed.slice('if_hp_below '.length).trim();
+      const sp = rest.indexOf(' ');
+      const pct = sp >= 0 ? Number(rest.slice(0, sp)) : NaN;
+      const cmd = sp >= 0 ? rest.slice(sp + 1) : rest;
+      out.push({ kind: 'if_hp_pct_below', pct: Number.isFinite(pct) ? Math.max(0, Math.min(100, pct)) : 50, cmd });
+      continue;
+    }
+
+    if (trimmed.toLowerCase().startsWith('if_mp_below ')) {
+      const rest = trimmed.slice('if_mp_below '.length).trim();
+      const sp = rest.indexOf(' ');
+      const pct = sp >= 0 ? Number(rest.slice(0, sp)) : NaN;
+      const cmd = sp >= 0 ? rest.slice(sp + 1) : rest;
+      out.push({ kind: 'if_mp_pct_below', pct: Number.isFinite(pct) ? Math.max(0, Math.min(100, pct)) : 50, cmd });
+      continue;
+    }
+
+    if (trimmed.toLowerCase().startsWith('if_mv_below ')) {
+      const rest = trimmed.slice('if_mv_below '.length).trim();
+      const sp = rest.indexOf(' ');
+      const pct = sp >= 0 ? Number(rest.slice(0, sp)) : NaN;
+      const cmd = sp >= 0 ? rest.slice(sp + 1) : rest;
+      out.push({ kind: 'if_mv_pct_below', pct: Number.isFinite(pct) ? Math.max(0, Math.min(100, pct)) : 50, cmd });
+      continue;
+    }
+
     // Preserve blank lines as blank sends
     out.push({ kind: 'send', cmd: line });
   }
@@ -124,6 +151,9 @@ export function serializeActionsToEditor(actions: AutoLevelAction[]): string {
     } else if (a.kind === 'wait_ms') lines.push(`wait_ms ${a.ms}`);
     else if (a.kind === 'wait_text') lines.push(`wait_text ${a.text ?? ''}`);
     else if (a.kind === 'wait_regex') lines.push(`wait_regex /${a.pattern ?? ''}/${a.flags ?? 'i'}`);
+    else if (a.kind === 'if_hp_pct_below') lines.push(`if_hp_below ${a.pct} ${a.cmd}`);
+    else if (a.kind === 'if_mp_pct_below') lines.push(`if_mp_below ${a.pct} ${a.cmd}`);
+    else if (a.kind === 'if_mv_pct_below') lines.push(`if_mv_below ${a.pct} ${a.cmd}`);
   }
 
   const out = lines.join('\n');

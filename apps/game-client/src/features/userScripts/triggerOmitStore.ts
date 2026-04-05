@@ -15,6 +15,7 @@ type Compiled = {
   id: string;
   eventName: string;
   needle: string; // may be ''
+  regex?: RegExp;
   caseInsensitive: boolean;
   omitAll: boolean;
 };
@@ -25,9 +26,13 @@ let compiled: Compiled[] = [];
 
 const pluginCompiled: Map<string, Compiled[]> = new Map();
 
+type PluginOmitRuleInput =
+  | { matchText: string; eventName?: string; caseInsensitive?: boolean }
+  | { pattern: string; flags?: string; eventName?: string };
+
 export function setPluginOmitRules(
   pluginId: string,
-  rules: Array<{ matchText: string; eventName?: string; caseInsensitive?: boolean }>,
+  rules: PluginOmitRuleInput[],
 ): void {
   if (rules.length === 0) {
     pluginCompiled.delete(pluginId);
@@ -39,14 +44,31 @@ export function setPluginOmitRules(
     const eventName = safeTrim(r.eventName ?? 'shatteredarchive:raw-data');
     if (!eventName) continue;
 
-    const needle = safeTrim(r.matchText ?? '');
+    if ('pattern' in r && r.pattern) {
+      try {
+        const regex = new RegExp(r.pattern, r.flags ?? 'i');
+        next.push({
+          id: `plugin::${pluginId}::regex::${r.pattern}`,
+          eventName,
+          needle: '',
+          regex,
+          caseInsensitive: false,
+          omitAll: false,
+        });
+      } catch {
+        // skip invalid regex
+      }
+      continue;
+    }
+
+    const needle = safeTrim((r as { matchText: string }).matchText ?? '');
     if (!needle) continue;
 
     next.push({
       id: `plugin::${pluginId}::${needle}`,
       eventName,
       needle,
-      caseInsensitive: r.caseInsensitive !== false, // default true
+      caseInsensitive: (r as { caseInsensitive?: boolean }).caseInsensitive !== false,
       omitAll: false,
     });
   }
@@ -102,6 +124,11 @@ function checkRules(rules: Compiled[], ev: string, line: string, lower: () => st
   for (const r of rules) {
     if (r.eventName !== ev) continue;
     if (r.omitAll) return true;
+    if (r.regex) {
+      r.regex.lastIndex = 0;
+      if (r.regex.test(line)) return true;
+      continue;
+    }
     if (!r.needle) continue;
     if (r.caseInsensitive) {
       if (lower().includes(r.needle.toLowerCase())) return true;

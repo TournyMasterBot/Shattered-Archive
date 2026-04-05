@@ -39,7 +39,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from '../styles/AutoLevelingModal.module.scss';
 
 import type { AutoLevelConfig, AutoLevelRunState, AutoLevelTarget } from '../features/autoleveling/autoleveling-types';
-import { useAutoLeveling } from '../hooks/useAutoLeveling';
 
 import { parseActionsFromEditor, serializeActionsToEditor } from '../features/autoleveling/autoleveling-actions';
 
@@ -127,6 +126,9 @@ type StepKey =
   | 'fight.pre'
   | 'fight.exec'
   | 'fight.post'
+  | 'postFight.pre'
+  | 'postFight.exec'
+  | 'postFight.post'
   | 'reset.endRound'
   | 'reset.wait';
 
@@ -135,25 +137,50 @@ interface AutoLevelingModalProps {
   onClose: () => void;
   connectionId: string;
   isConnected: boolean;
+  // Engine state & controls — provided by the single useAutoLeveling instance in MainContainer.
+  config: AutoLevelConfig;
+  setConfig: (next: AutoLevelConfig) => void;
+  runState: AutoLevelRunState;
+  socketReady: boolean;
+  start: () => void;
+  stop: () => void;
+  pause: () => void;
+  resume: () => void;
+  resetToDefaults: () => void;
 }
 
 function toRunStateText(runState: AutoLevelRunState): string {
-  // Intent:
-  // - Human-readable status string shown in modal header.
-  // - Mirrors engine runState updates.
   switch (runState.status) {
     case 'idle':
-      return 'Idle';
-    case 'running':
-      return `Running: round ${runState.round} • ${runState.step} • #${runState.actionIndex + 1}`;
-    case 'paused':
-      return `Paused: round ${runState.round} • ${runState.step} • #${runState.actionIndex + 1}`;
     case 'stopping':
-      return 'Stopping…';
+      return 'Not Running';
+
+    case 'waiting':
+      return 'Waiting';
+
+    case 'resting':
+      return 'Idle';
+
+    case 'running': {
+      const step = runState.step ?? '';
+      if (step.includes('fight')) return `Fighting (round ${runState.round})`;
+      if (step.includes('move')) return `Moving (round ${runState.round})`;
+      // start.*, identify.*, reset.*, postFight.* — engine is active but between fight/move
+      return `Idle (round ${runState.round})`;
+    }
+
+    case 'paused': {
+      const step = runState.step ?? '';
+      if (step.includes('fight')) return `Paused — Fighting (round ${runState.round})`;
+      if (step.includes('move')) return `Paused — Moving (round ${runState.round})`;
+      return `Paused (round ${runState.round})`;
+    }
+
     case 'error':
       return `Error: ${runState.message}`;
+
     default:
-      return 'Idle';
+      return 'Not Running';
   }
 }
 
@@ -179,6 +206,10 @@ function buildStepEditors(config: AutoLevelConfig): Record<StepKey, string> {
     'fight.exec': serializeActionsToEditor(s.fight.exec),
     'fight.post': serializeActionsToEditor(s.fight.post),
 
+    'postFight.pre': serializeActionsToEditor(s.postFight?.pre ?? []),
+    'postFight.exec': serializeActionsToEditor(s.postFight?.exec ?? []),
+    'postFight.post': serializeActionsToEditor(s.postFight?.post ?? []),
+
     'reset.endRound': serializeActionsToEditor(s.reset.endRound),
     'reset.wait': serializeActionsToEditor(s.reset.wait),
   };
@@ -197,6 +228,7 @@ function applyEditors(base: AutoLevelConfig, stepEditors: Record<StepKey, string
       move: { pre: get('move.pre'), exec: get('move.exec'), post: get('move.post') },
       identify: { pre: get('identify.pre'), exec: get('identify.exec'), post: get('identify.post') },
       fight: { pre: get('fight.pre'), exec: get('fight.exec'), post: get('fight.post') },
+      postFight: { pre: get('postFight.pre'), exec: get('postFight.exec'), post: get('postFight.post') },
       reset: { endRound: get('reset.endRound'), wait: get('reset.wait') },
     },
   };
@@ -267,9 +299,21 @@ function beastToTarget(b: Beast): AutoLevelTarget {
   };
 }
 
-export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, onClose, connectionId, isConnected }) => {
-  const { config, setConfig, runState, socketReady, start, stop, pause, resume, resetToDefaults } =
-    useAutoLeveling(connectionId);
+export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
+  isOpen,
+  onClose,
+  connectionId,
+  isConnected,
+  config,
+  setConfig,
+  runState,
+  socketReady,
+  start,
+  stop,
+  pause,
+  resume,
+  resetToDefaults,
+}) => {
 
   const [tab, setTab] = useState<TabKey>('setup');
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -808,6 +852,94 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
                 </label>
               </div>
 
+              <div className={styles.row}>
+                <label className={styles.label}>
+                  Round wait (min)
+                  <input
+                    className={styles.input}
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={Math.round((draft.roundLoopTimeMs ?? 300_000) / 60_000)}
+                    onChange={(e) => {
+                      const mins = Math.max(0, Number(e.target.value) || 0);
+                      setDraft((p) => ({ ...p, roundLoopTimeMs: mins * 60_000 }));
+                    }}
+                    disabled={!draft.loopRounds}
+                    style={{ width: 70 }}
+                  />
+                  <div className={styles.help}>Minutes to wait between rounds when Loop rounds is on.</div>
+                </label>
+
+                <label className={styles.label}>
+                  Fight loop (sec)
+                  <input
+                    className={styles.input}
+                    type="number"
+                    min={2}
+                    step={0.5}
+                    value={((draft.fightLoopIntervalMs ?? 2_500) / 1000).toFixed(1)}
+                    onChange={(e) => {
+                      const secs = Math.max(2, Number(e.target.value) || 2.5);
+                      setDraft((p) => ({ ...p, fightLoopIntervalMs: Math.round(secs * 1000) }));
+                    }}
+                    style={{ width: 70 }}
+                  />
+                  <div className={styles.help}>Seconds between each pass of the fight.exec loop.</div>
+                </label>
+
+                <label className={styles.label}>
+                  Move settle (ms)
+                  <input
+                    className={styles.input}
+                    type="number"
+                    min={0}
+                    step={50}
+                    value={draft.moveSettleMs ?? 600}
+                    onChange={(e) => {
+                      const ms = Math.max(0, Number(e.target.value) || 600);
+                      setDraft((p) => ({ ...p, moveSettleMs: ms }));
+                    }}
+                    style={{ width: 70 }}
+                  />
+                  <div className={styles.help}>Pause after each movement before the next step.</div>
+                </label>
+
+                <label className={styles.label}>
+                  Look settle (ms)
+                  <input
+                    className={styles.input}
+                    type="number"
+                    min={0}
+                    step={100}
+                    value={draft.lookSettleMs ?? 500}
+                    onChange={(e) => {
+                      const ms = Math.max(0, Number(e.target.value) || 500);
+                      setDraft((p) => ({ ...p, lookSettleMs: ms }));
+                    }}
+                    style={{ width: 70 }}
+                  />
+                  <div className={styles.help}>Pause after look/scan commands to let server response arrive before detecting mobs.</div>
+                </label>
+
+                <label className={styles.label}>
+                  Post-fight settle (ms)
+                  <input
+                    className={styles.input}
+                    type="number"
+                    min={0}
+                    step={500}
+                    value={draft.postFightSettleMs ?? 2_000}
+                    onChange={(e) => {
+                      const ms = Math.max(0, Number(e.target.value) || 2000);
+                      setDraft((p) => ({ ...p, postFightSettleMs: ms }));
+                    }}
+                    style={{ width: 70 }}
+                  />
+                  <div className={styles.help}>Pause after a fight ends before re-scanning the room or moving on.</div>
+                </label>
+              </div>
+
               <div className={styles.sectionHeader}>
                 <div className={styles.sectionHeaderTitle}>Controls</div>
                 <div className={styles.sectionHeaderSub}>Start uses saved config</div>
@@ -1165,9 +1297,9 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
                       </div>
                     </div>
                     <div className={styles.blockBody}>
-                      {editor('fight.pre', '4a. Pre-fight')}
-                      {editor('fight.exec', '4b. Fight (after engage)')}
-                      {editor('fight.post', '4c. Post-fight')}
+                      {editor('fight.pre', '4a. Pre-fight (runs once on engage)')}
+                      {editor('fight.exec', '4b. Fight loop (repeats every fight loop interval)')}
+                      {editor('fight.post', '4c. Post-fight (runs once when fighting ends)')}
                     </div>
                   </div>
 
@@ -1175,12 +1307,26 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
                     <div className={styles.blockHeader}>
                       <div className={styles.blockHeaderLeft}>
                         <div className={styles.blockNumber}>5</div>
+                        <div className={styles.blockTitle}>Post-fight</div>
+                      </div>
+                    </div>
+                    <div className={styles.blockBody}>
+                      {editor('postFight.pre', '5a. Pre post-fight')}
+                      {editor('postFight.exec', '5b. Post-fight (loot, rest, check health)')}
+                      {editor('postFight.post', '5c. Post post-fight')}
+                    </div>
+                  </div>
+
+                  <div className={styles.blockCard}>
+                    <div className={styles.blockHeader}>
+                      <div className={styles.blockHeaderLeft}>
+                        <div className={styles.blockNumber}>6</div>
                         <div className={styles.blockTitle}>Reset</div>
                       </div>
                     </div>
                     <div className={styles.blockBody}>
-                      {editor('reset.endRound', '5a. End round')}
-                      {editor('reset.wait', '5b. Wait')}
+                      {editor('reset.endRound', '6a. End round')}
+                      {editor('reset.wait', '6b. Wait')}
                     </div>
                   </div>
                 </>

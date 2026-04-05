@@ -16,6 +16,7 @@ type SectionId =
   | 'variables'
   | 'examples'
   | 'plugins'
+  | 'autoleveling'
   | 'pnp';
 
 interface NavSection {
@@ -32,6 +33,7 @@ const NAV_SECTIONS: NavSection[] = [
   { id: 'variables', label: 'Variables' },
   { id: 'examples', label: 'Practical Examples' },
   { id: 'plugins', label: 'Plugins' },
+  { id: 'autoleveling', label: 'Auto Leveling' },
   { id: 'pnp', label: 'DSL PNP Reference' },
 ];
 
@@ -1072,6 +1074,297 @@ remove gourd 4       — remove entry 4 manually`}</pre>
                   <span>Pre-packaged tools. Configure and enable. Found in Plugins → Manage Plugins.</span>
                 </div>
               </div>
+            </section>
+
+            {/* ── AUTO LEVELING ───────────────────────────────── */}
+            <section data-section="autoleveling" className={styles.section}>
+              <h3 className={styles.sectionHeading}>Auto Leveling</h3>
+
+              <p className={styles.intro}>
+                Auto Leveling is a built-in engine that automates a full leveling loop — moving
+                through rooms, scanning for targets, engaging combat, looting, resting, and
+                repeating — without any scripting knowledge required.
+              </p>
+
+              <div className={styles.callout}>
+                <strong>Open it:</strong> <strong>Game → Auto Leveling…</strong> in the menu bar.
+              </div>
+
+              {/* ── Overview ── */}
+              <h4 className={styles.subHeading}>What it does</h4>
+              <p>
+                You configure a route (a <em>training path</em>), pick which monsters you want
+                to fight, and click <strong>Start</strong>. The engine then loops through these
+                steps automatically:
+              </p>
+              <ol className={styles.list}>
+                <li><strong>Pre-round actions</strong> — optional buff/setup commands run once at round start.</li>
+                <li>
+                  <strong>Move</strong> — sends the next movement command and waits for the server
+                  to confirm the move succeeded.
+                </li>
+                <li>
+                  <strong>Room scan</strong> — runs your identify actions (typically a{' '}
+                  <code>look</code> command). The engine watches the terminal output for any of
+                  your selected target names.
+                </li>
+                <li>
+                  <strong>Fight</strong> — if a target is spotted, the engine engages it (using
+                  your configured initiation command), then loops your fight actions on a timer
+                  until combat ends. Conditional actions (<code>if_hp_below</code> etc.) let you
+                  heal or use skills only when needed.
+                </li>
+                <li>
+                  <strong>Post-fight</strong> — once the fight ends, runs post-fight actions:
+                  loot the corpse, check health, rest if needed.
+                </li>
+                <li>
+                  <strong>Repeat</strong> — advances to the next room and repeats from step 2.
+                  When the full path is complete, optionally waits a set time then starts again.
+                </li>
+              </ol>
+
+              {/* ── Setup tab ── */}
+              <h4 className={styles.subHeading}>Setup tab</h4>
+              <p>The <strong>Setup</strong> tab has the on/off controls.</p>
+              <div className={styles.table}>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Enabled</span>
+                  <span>Master switch. The engine won't start unless this is checked.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Loop rounds</span>
+                  <span>
+                    When checked, the engine automatically starts the next round after the
+                    configured wait time. When unchecked, it stops after one pass.
+                  </span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Round wait (min)</span>
+                  <span>
+                    How long to wait between rounds when Loop rounds is on. Default: 5 minutes.
+                    Set lower for quick re-runs or higher if you need time to regenerate mana.
+                  </span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Start / Pause / Resume</span>
+                  <span>
+                    <strong>Start</strong> uses the <em>saved</em> config (not any unsaved draft).
+                    Save first, then start. Pause suspends execution mid-step; Resume continues
+                    from where it stopped.
+                  </span>
+                </div>
+              </div>
+
+              <div className={styles.callout}>
+                <strong>Status indicators</strong> — shown in the modal header while running:
+                <div className={styles.table} style={{ marginTop: 8 }}>
+                  <div className={styles.tableRow}><span className={styles.tableKey}>Not Running</span><span>Engine is stopped.</span></div>
+                  <div className={styles.tableRow}><span className={styles.tableKey}>Idle (round N)</span><span>Engine is active but between fight/move steps.</span></div>
+                  <div className={styles.tableRow}><span className={styles.tableKey}>Moving (round N)</span><span>Sending a movement command and waiting for confirmation.</span></div>
+                  <div className={styles.tableRow}><span className={styles.tableKey}>Fighting (round N)</span><span>In the fight loop — engaging or looping fight actions.</span></div>
+                  <div className={styles.tableRow}><span className={styles.tableKey}>Waiting</span><span>Round complete — waiting for the next round timer to expire.</span></div>
+                </div>
+              </div>
+
+              {/* ── Configure tab ── */}
+              <h4 className={styles.subHeading}>Configure tab — Location</h4>
+              <p>
+                Select a <strong>Continent</strong> then an <strong>Area</strong>. This loads the
+                list of available monsters and saved training paths for that area from the server.
+              </p>
+              <div className={styles.table}>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Training path</span>
+                  <span>
+                    The route the engine walks — semicolon-separated commands. Movement directions
+                    (n, s, e, w, ne, nw, se, sw, u, d) are gated: the engine waits for a
+                    movement-succeeded event before continuing. Non-direction commands are sent and
+                    execution continues immediately.
+                    Example: <code>n;n;e;open door;e;s</code>
+                  </span>
+                </div>
+              </div>
+              <p>
+                If the server has saved training paths for the selected area, they will appear as
+                suggestions in the training path input. Click one to use it, or type your own.
+              </p>
+
+              <h4 className={styles.subHeading}>Configure tab — Combat</h4>
+              <div className={styles.table}>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Initiation command</span>
+                  <span>
+                    The command used to start combat. Use <code>{'{name}'}</code> as a placeholder
+                    for the target keyword. Default: <code>kill {'{name}'}</code>. Example:{' '}
+                    <code>backstab {'{name}'}</code>
+                  </span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Fight loop interval</span>
+                  <span>
+                    How long (seconds) to wait between each pass through your fight actions.
+                    Default: 2.5 s. Lower values send commands more frequently; raise it if you
+                    want slower, less aggressive automation.
+                  </span>
+                </div>
+              </div>
+
+              <h4 className={styles.subHeading}>Configure tab — Targets</h4>
+              <p>
+                The target list shows all monsters the server knows about for the selected area.
+                Check the ones you want to fight. For each checked target the engine will watch
+                the terminal for the monster's <em>look description</em> — when it appears, combat
+                is triggered automatically.
+              </p>
+              <p>
+                Use <strong>Select all</strong> to check every valid target, or <strong>Clear</strong>{' '}
+                to deselect all. Expand the <strong>Details</strong> dropdown on any monster to
+                see its level, damage, keywords, immunities, and vulnerabilities.
+              </p>
+
+              {/* ── Advanced steps ── */}
+              <h4 className={styles.subHeading}>Configure tab — Advanced steps</h4>
+              <p>
+                Click <strong>Show advanced</strong> to reveal the step editors. Each step is a
+                text area where you type <strong>one action per line</strong>. These let you inject
+                custom commands at specific points in the round loop.
+              </p>
+
+              <div className={styles.table}>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>1. Start (pre/exec/post)</span>
+                  <span>Runs once at the beginning of every round. Use it for buffs, consumables, or sanity checks before the route begins.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>2. Move (pre/exec/post)</span>
+                  <span>Runs around each movement command in the training path. <em>pre</em> fires before the command is sent; <em>post</em> fires after the move is confirmed.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>3. Room Scan (pre/exec/post)</span>
+                  <span>Runs after a successful movement. Typically put <code>look</code> in <em>exec</em> and a <code>wait_text</code> in <em>post</em> to pause until the room description arrives before scanning for targets.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>4. Fight — pre</span>
+                  <span>Runs once when a target is engaged. Use for opening abilities or applying buffs before the fight loop starts.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>4. Fight — exec (looped)</span>
+                  <span>Loops every <em>fight loop interval</em> while you are fighting. Put your combat commands here — skills, spells, conditional heals. Supports <code>if_hp_below</code>, <code>if_mp_below</code>, <code>if_mv_below</code>.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>4. Fight — post</span>
+                  <span>Runs once when the fight loop exits (you are no longer fighting). Use for cleanup actions right after combat.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>5. Post-fight (pre/exec/post)</span>
+                  <span>Runs after fight post, before moving to the next room. Intended for looting, health checks, and resting.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>6. Reset — End round / Wait</span>
+                  <span><em>End round</em> runs after the full path is walked. <em>Wait</em> runs during the between-round pause (if looping).</span>
+                </div>
+              </div>
+
+              {/* ── Action syntax ── */}
+              <h4 className={styles.subHeading}>Action syntax</h4>
+              <p>
+                Each line in a step editor is either a command to send or a special <em>wait</em>{' '}
+                or <em>conditional</em> directive. Any line that doesn't match a directive is sent
+                to the game as a command.
+              </p>
+
+              <pre className={styles.code}>{`# ── Waits ──────────────────────────────────────────────
+wait_ms 500              # pause for 500 milliseconds
+wait_text You feel rested   # wait until this text appears in the terminal
+wait_text You slay          # (case-insensitive by default)
+wait_regex /^You slay/i     # wait for a regex match
+wait_fighting true          # wait until you ARE fighting
+wait_fighting false         # wait until you are NOT fighting
+wait_fighting false 10000   # …with a 10-second timeout
+
+# ── Conditional sends (checked against live GMCP vitals) ──
+if_hp_below 50 eat bread    # send "eat bread" only if HP% < 50
+if_mp_below 30 quaff mana   # send "quaff mana" only if MP% < 30
+if_mv_below 20 rest         # send "rest" only if movement% < 20
+
+# ── Regular commands ─────────────────────────────────────
+look                        # sent as-is
+get all corpse
+cast 'cure light' self`}</pre>
+
+              <div className={styles.callout}>
+                <strong>Blank lines</strong> in a step editor are sent as empty commands (hitting
+                enter with nothing typed). You can use this to confirm prompts, but be careful —
+                each blank line is a separate action.
+              </div>
+
+              {/* ── Example config ── */}
+              <h4 className={styles.subHeading}>Example: basic fighter setup</h4>
+              <p>
+                A simple configuration for a fighter clearing a linear dungeon area:
+              </p>
+              <pre className={styles.code}>{`Training path:   n;n;e;e;s;s;w;w
+Init command:    kill {name}
+Fight interval:  2.5 s
+Targets:         ✓ kobold warrior  ✓ kobold shaman
+
+── Start.exec ──────────────────────────────────────────
+# Buff up before the round begins
+cast 'bless' self
+wait_text You feel blessed
+cast 'armor' self
+wait_text You feel protected
+
+── Room Scan.exec ──────────────────────────────────────
+look
+
+── Room Scan.post ──────────────────────────────────────
+# Wait for the room description before scanning
+wait_ms 300
+
+── Fight.exec (looped every 2.5 s) ────────────────────
+# Heal if low on HP
+if_hp_below 40 quaff healing
+# Use bash skill every loop
+bash
+
+── Post-fight.exec ─────────────────────────────────────
+get all corpse
+# Rest until fully healed if below 70% HP
+if_hp_below 70 rest
+if_hp_below 70 wait_text You wake from your slumber`}</pre>
+
+              <h4 className={styles.subHeading}>Tips</h4>
+              <ul className={styles.list}>
+                <li>
+                  <strong>Save before starting.</strong> The Start button uses the saved config.
+                  If you have unsaved changes the button title will say so.
+                </li>
+                <li>
+                  <strong>Test your training path first</strong> by walking it manually once to
+                  confirm directions and door commands before setting up the engine.
+                </li>
+                <li>
+                  <strong>Empty targets = sightseeing.</strong> If no targets are selected the
+                  engine will walk the path without fighting anything — useful for navigation
+                  testing.
+                </li>
+                <li>
+                  <strong>Keyword order matters.</strong> The engine tries engagement keywords
+                  in order from the target's keyword list. If the first keyword fails ("They
+                  aren't here"), it tries the next one automatically.
+                </li>
+                <li>
+                  <strong>Flee PK</strong> (Setup tab) — when enabled the engine pauses if you
+                  flee from combat, so you can take over manually.
+                </li>
+                <li>
+                  <strong>Pause is non-destructive.</strong> Pausing mid-step resumes exactly
+                  where it left off — useful if you need to manually interact while the
+                  script is running.
+                </li>
+              </ul>
             </section>
 
             {/* ── DSL PNP REFERENCE ───────────────────────────── */}
