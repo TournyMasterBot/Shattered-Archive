@@ -56,6 +56,12 @@ type InjectedEngineAction =
   | {
       kind: '__engage_target';
       target: AutoLevelTarget;
+    }
+  | {
+      kind: '__dry_run_notify';
+      target: AutoLevelTarget;
+      /** The command that would have been sent in auto_level mode. */
+      wouldSend: string;
     };
 
 const ANSI_CSI_RE = /\u001b\[[0-9;]*m/g;
@@ -130,6 +136,18 @@ function isMovementCommand(cmd: string): { isMove: boolean; dir?: string } {
   const first = trimmed.split(/\s+/)[0]?.toLowerCase() ?? '';
   if (MOVE_DIRS.has(first)) return { isMove: true, dir: first };
   return { isMove: false };
+}
+
+const REVERSE_DIR: Record<string, string> = {
+  n: 's', s: 'n', e: 'w', w: 'e',
+  ne: 'sw', sw: 'ne', nw: 'se', se: 'nw',
+  u: 'd', d: 'u', up: 'down', down: 'up',
+  north: 'south', south: 'north', east: 'west', west: 'east',
+};
+
+function reverseMovementCommand(cmd: string): string | null {
+  const c = String(cmd ?? '').trim().toLowerCase();
+  return REVERSE_DIR[c] ?? null;
 }
 
 function applyInitiationTemplate(template: string, keyword: string): string {
@@ -211,6 +229,16 @@ export class AutoLevelingEngine {
   // encounter gating
   private encounterLocked = false;
   private lastEncounterMatch: { targetCleanName: string; lookName: string; at: number } | null = null;
+  // dry_run: track mobs already announced this room so we only fire once per mob per room
+  private dryRunAnnouncedThisRoom = new Set<string>();
+
+  // sightsee mode — per-step gate
+  private sightseeWait: null | {
+    promise: Promise<'next' | 'prev'>;
+    resolve: (d: 'next' | 'prev') => void;
+    reject: (e: any) => void;
+  } = null;
+  private lastMovementCmd: string | null = null;
 
   // movement gating
   private moveWait: null | {
@@ -512,12 +540,56 @@ export class AutoLevelingEngine {
     this.paused = false;
   }
 
+  /**
+   * Sightsee mode: fire the identify exec commands without advancing the path.
+   * Lets the user re-scan the current room without triggering a fight.
+   */
+  rescanRoom() {
+    if (this.stopping) return;
+    const cfg = this.deps.getConfig();
+    const sendActions = [
+      ...(cfg.steps.identify.pre ?? []),
+      ...(cfg.steps.identify.exec ?? []),
+      ...(cfg.steps.identify.post ?? []),
+    ].filter((a): a is Extract<typeof a, { kind: 'send' }> =>
+      a.kind === 'send' && String((a as any).cmd ?? '').trim().length > 0,
+    );
+
+    if (sendActions.length > 0) {
+      for (const a of sendActions) {
+        DispatchEvent('shatteredarchive:send-command', { cmd: a.cmd });
+      }
+    } else {
+      // No identify actions configured — send look directly.
+      DispatchEvent('shatteredarchive:send-command', { cmd: 'look' });
+    }
+  }
+
+  /** Sightsee mode: unblock the current waiting step. */
+  advanceSightsee(direction: 'next' | 'prev' = 'next') {
+    if (!this.sightseeWait) {
+      dbg('advanceSightsee: no pending wait');
+      return;
+    }
+    if (direction === 'prev' && !this.lastMovementCmd) {
+      // Nothing to reverse — leave the wait active and tell the user.
+      dbg('advanceSightsee: prev blocked — no prior movement');
+      DispatchEvent('shatteredarchive:write-terminal' as any, {
+        rawText: '\r\n[SIGHTSEE] Nothing to go back to — press Next to advance.\r\n',
+      });
+      return;
+    }
+    const w = this.sightseeWait;
+    this.sightseeWait = null;
+    w.resolve(direction);
+  }
+
   async start(): Promise<void> {
     // single consistent cfg
     const cfg = this.deps.getConfig();
 
     dbg('start() called', {
-      enabled: cfg.enabled,
+      mode: cfg.mode,
       loopRounds: cfg.loopRounds,
       idleTimeoutMs: cfg.idleTimeoutMs,
       trainingPath: cfg.init.trainingPath,
@@ -525,7 +597,7 @@ export class AutoLevelingEngine {
       targetsCount: (cfg.init.targets ?? []).length,
     });
 
-    if (!cfg.enabled) {
+    if (cfg.mode === 'disabled') {
       this.deps.setRunState({ status: 'error', message: 'Auto leveling is disabled' });
       return;
     }
@@ -548,6 +620,9 @@ export class AutoLevelingEngine {
     this.injectedQueue = [];
     this.encounterLocked = false;
     this.lastEncounterMatch = null;
+    this.dryRunAnnouncedThisRoom.clear();
+    this.sightseeWait = null;
+    this.lastMovementCmd = null;
 
     // normalize targets for detection
     this.targets = (cfg.init.targets ?? [])
@@ -580,6 +655,37 @@ export class AutoLevelingEngine {
 
           const mv = isMovementCommand(step);
 
+          // Sightsee: pause before each movement and wait for manual advance.
+          if (mv.isMove && cfg.mode === 'sightsee') {
+            // Encode prev-availability in the step name so the UI can disable the button.
+            const sightseeStep = this.lastMovementCmd ? 'sightsee:waiting' : 'sightsee:waiting:noprev';
+            this.deps.setRunState({ status: 'running', round, step: sightseeStep, actionIndex: 0 });
+            let advance: 'next' | 'prev';
+            try {
+              advance = await new Promise<'next' | 'prev'>((resolve, reject) => {
+                this.sightseeWait = { promise: Promise.resolve('next'), resolve, reject };
+              });
+            } catch {
+              break; // stopped while waiting
+            }
+            if (advance === 'prev') {
+              // Re-insert both the current waiting step AND the last completed step so
+              // the path is fully restored to the state before that last movement.
+              // e.g. forward(n) → waiting(e) → prev  ⟹  path becomes ['n','e',...]
+              // so the next forward re-does 'n' (step 1) rather than jumping to 'e' (step 2).
+              const last = this.lastMovementCmd;
+              this.trainingPathSteps.unshift(step); // put current step back first
+              if (last) this.trainingPathSteps.unshift(last); // then put the completed step before it
+              const rev = reverseMovementCommand(last ?? '');
+              this.lastMovementCmd = null; // consumed — must go forward before prev works again
+              if (rev) {
+                dbg('sightsee prev', { reverse: rev });
+                await this.sendCommand(rev);
+              }
+              continue;
+            }
+          }
+
           if (mv.isMove) {
             this.deps.setRunState({ status: 'running', round, step: 'move', actionIndex: 0 });
           }
@@ -587,6 +693,7 @@ export class AutoLevelingEngine {
           const gate = mv.isMove ? this.waitForMovement(step, cfg.idleTimeoutMs) : null;
 
           await this.sendCommand(step);
+          if (mv.isMove) this.lastMovementCmd = step;
 
           if (gate) {
             const res = await gate;
@@ -601,6 +708,8 @@ export class AutoLevelingEngine {
               warn('movement failed (non-fatal)', { cmd: res.cmd, reasonLine: res.reasonLine });
             } else {
               dbg('movement succeeded', { cmd: res.cmd, room: res.room });
+              // New room — reset dry_run announced set so mobs here get announced fresh.
+              this.dryRunAnnouncedThisRoom.clear();
             }
           } else {
             // Non-movement command (e.g. look) — wait for the server's response text to
@@ -743,6 +852,7 @@ export class AutoLevelingEngine {
 
   private async sendCommand(cmd: string): Promise<void> {
     if (this.stopping) return;
+    if (!String(cmd ?? '').trim()) return; // never dispatch empty commands
 
     const mv = isMovementCommand(cmd);
     if (mv.isMove) {
@@ -1088,8 +1198,8 @@ export class AutoLevelingEngine {
       initiation,
     });
 
-    const attemptTimeout = Math.min(Math.max(1500, cfg.idleTimeoutMs || 30000), 8000);
-    const gmcpGraceMs = 500;
+    const attemptTimeout = Math.min(Math.max(3000, cfg.idleTimeoutMs || 30000), 10000);
+    const gmcpGraceMs = 800;
 
     for (let i = 0; i < uniqueKeywords.length; i++) {
       if (this.stopping) return false;
@@ -1117,6 +1227,8 @@ export class AutoLevelingEngine {
 
       if (r.reason === 'not_here') {
         dbg('engage not_here -> trying next keyword', { keyword });
+        // Brief pause so we don't burst-fire keyword attempts back-to-back.
+        await this.delayMs(600);
         continue;
       }
 
@@ -1131,7 +1243,7 @@ export class AutoLevelingEngine {
 
   private tryDetectEncounter(textRaw: string) {
     const cfg = this.deps.getConfig();
-    if (!cfg.enabled) return;
+    if (cfg.mode === 'disabled') return;
 
     if (!this.targets || this.targets.length === 0) return;
 
@@ -1142,13 +1254,40 @@ export class AutoLevelingEngine {
       const t = this.targets[i];
       if (!t.lookNameNorm) continue;
 
-      if (clean.includes(t.lookNameNorm)) {
-        this.lastEncounterMatch = { targetCleanName: t.target.cleanName, lookName: t.target.lookName, at: now() };
-        dbg('encounter detected (lookName match)', this.lastEncounterMatch);
+      if (!clean.includes(t.lookNameNorm)) continue;
 
-        this.injectEncounter(t.target);
+      this.lastEncounterMatch = { targetCleanName: t.target.cleanName, lookName: t.target.lookName, at: now() };
+
+      if (cfg.mode === 'sightsee') {
+        dbg('sightsee: encounter injection skipped', { target: t.target.cleanName });
         return;
       }
+
+      if (cfg.mode === 'dry_run') {
+        // Only announce each mob once per room visit.
+        if (this.dryRunAnnouncedThisRoom.has(t.target.cleanName)) {
+          dbg('dry_run: already announced this room, skipping', { target: t.target.cleanName });
+          return;
+        }
+        this.dryRunAnnouncedThisRoom.add(t.target.cleanName);
+
+        // Build the command that would have been sent.
+        const initiation = (cfg.init.initiationCommand ?? '').length
+          ? String(cfg.init.initiationCommand)
+          : 'kill {name}';
+        const firstKeyword = (Array.isArray(t.target.keywords) ? t.target.keywords : [])
+          .map((k) => String(k ?? '').trim())
+          .find((k) => k.length > 0) ?? t.target.cleanName;
+        const wouldSend = applyInitiationTemplate(initiation, firstKeyword);
+
+        dbg('dry_run: injecting notify', { target: t.target.cleanName, wouldSend });
+        this.injectedQueue.unshift({ kind: '__dry_run_notify', target: t.target, wouldSend });
+        return;
+      }
+
+      dbg('encounter detected (lookName match)', this.lastEncounterMatch);
+      this.injectEncounter(t.target);
+      return;
     }
   }
 
@@ -1174,6 +1313,16 @@ export class AutoLevelingEngine {
       await this.waitWhilePausedOrStopped();
 
       const a = this.injectedQueue.shift()!;
+
+      if ((a as any).kind === '__dry_run_notify') {
+        const n = a as Extract<InjectedEngineAction, { kind: '__dry_run_notify' }>;
+        const msg = `\r\n[DRY RUN] Would engage: ${n.target.cleanName} — skipping: ${n.wouldSend}\r\n`;
+        DispatchEvent('shatteredarchive:write-terminal' as any, { rawText: msg });
+        dbg('dry_run notify written', { target: n.target.cleanName, wouldSend: n.wouldSend });
+        // Brief pause so the user can read the message before the engine moves on.
+        if (!this.stopping) await this.delayMs(1200);
+        continue;
+      }
 
       if ((a as any).kind === '__engage_target') {
         const eng = a as Extract<InjectedEngineAction, { kind: '__engage_target' }>;
@@ -1290,6 +1439,12 @@ export class AutoLevelingEngine {
 
   private rejectAllWaits(err: any) {
     dbg('rejectAllWaits', { err: String(err?.message ?? err ?? err) });
+
+    if (this.sightseeWait) {
+      const rej = this.sightseeWait.reject;
+      this.sightseeWait = null;
+      try { rej(err); } catch { /* ignore */ }
+    }
 
     if (this.moveWait) {
       this.clearMoveWaitTimer();

@@ -2,11 +2,14 @@
 import type {
   AutoLevelAction,
   AutoLevelConfig,
+  AutoLevelMode,
   AutoLevelPhaseTriplet,
   AutoLevelRunState,
   AutoLevelStepConfig,
 } from './autoleveling-types';
 import { createDefaultAutoLevelConfig } from './autoleveling-defaults';
+
+const VALID_MODES: AutoLevelMode[] = ['disabled', 'dry_run', 'auto_level', 'sightsee'];
 
 function isObj(x: unknown): x is Record<string, any> {
   return !!x && typeof x === 'object';
@@ -78,13 +81,26 @@ function normalizeEscapeCommands(x: unknown): string[] {
 /**
  * Repairs unknown/old/broken shapes into a fully-formed AutoLevelConfig.
  * - Also supports older configs that accidentally placed fleePk/escapeCommands inside init.
+ * - Migrates old `enabled: boolean` to the new `mode: AutoLevelMode` field.
  */
 function normalizeAutoLevelConfig(raw: AutoLevelConfig): AutoLevelConfig {
   const def = createDefaultAutoLevelConfig();
 
+  // Migrate: configs prior to mode used enabled:boolean — map to equivalent mode.
+  const rawMode = (raw as any).mode;
+  const rawEnabled = (raw as any).enabled;
+  const mode: AutoLevelMode = VALID_MODES.includes(rawMode)
+    ? (rawMode as AutoLevelMode)
+    : typeof rawEnabled === 'boolean'
+      ? rawEnabled
+        ? 'auto_level'
+        : 'disabled'
+      : def.mode;
+
   return {
     ...def,
     ...raw,
+    mode,
     init: {
       ...def.init,
       ...(raw as any).init,

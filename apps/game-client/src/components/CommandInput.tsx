@@ -1,9 +1,10 @@
 // apps/game-client/src/components/CommandInput.tsx
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styles from '../styles/CommandInput.module.scss';
 import { useGameCommand } from '../hooks/useGameCommand';
 import { useVoiceDictation } from '../hooks/useVoiceDictation';
 import { CommandInputProps } from '../types/chat-types/command-input-props';
+import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 
 export const CommandInput: React.FC<CommandInputProps> = ({
   sendRaw,
@@ -11,15 +12,12 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 
   onOpenAutoLeveling,
 
-  autoLevelingActive = false,
+  autoLevelMode,
   autoLevelRunState,
-
-  onAutoLevelStart,
-  onAutoLevelPause,
-  onAutoLevelResume,
-  onAutoLevelStop,
+  onSightseeRescan,
 }) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
 
   const { inputValue, setInputValue, handleKeyDown } = useGameCommand({
     sendRaw,
@@ -63,61 +61,56 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 
   const micDisabled = !isConnected || !isSupported;
 
-  const state = autoLevelRunState?.status ?? 'idle';
-  const isRunning = state === 'running';
-  const isPaused = state === 'paused';
-  const isIdle = state === 'idle';
+  const status = autoLevelRunState?.status ?? 'idle';
+  const isRunning = status === 'running';
+  const isPaused = status === 'paused';
+  const isIdle = status === 'idle' || status === 'stopping';
+  const sightseeStep = (autoLevelRunState as any)?.step ?? '';
+  const isSightseeWaiting = isRunning && sightseeStep.startsWith('sightsee:waiting');
+  const isSightseePrevAvailable = isRunning && sightseeStep === 'sightsee:waiting';
 
-  const autoDisabled = !isConnected || !autoLevelingActive;
+  const modeActive = !!autoLevelMode && autoLevelMode !== 'disabled';
 
-  //const fireStart = () => (onAutoLevelStart ? onAutoLevelStart() : DispatchEvent('shatteredarchive:autoleveling-start', {}));
-  //const firePause = () => (onAutoLevelPause ? onAutoLevelPause() : DispatchEvent('shatteredarchive:autoleveling-pause', {}));
-  //const fireResume = () => (onAutoLevelResume ? onAutoLevelResume() : DispatchEvent('shatteredarchive:autoleveling-resume', {}));
-  //const fireStop = () => (onAutoLevelStop ? onAutoLevelStop() : DispatchEvent('shatteredarchive:autoleveling-stop', {}));
+  const [panelOpen, setPanelOpen] = useState(false);
 
-  const onAutoClick = () => {
-    if (autoDisabled) return;
-    /*
-    if (isIdle) {
-      const ok = window.confirm('Begin auto leveling now?');
-      if (!ok) return;
-      fireStart();
-      return;
+  // Close panel on outside click
+  useEffect(() => {
+    if (!panelOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        setPanelOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [panelOpen]);
+
+  // Close panel when engine goes idle (run finished)
+  useEffect(() => {
+    if (isIdle) setPanelOpen(false);
+  }, [isIdle]);
+
+  const statusText = () => {
+    const s = autoLevelRunState?.status ?? 'idle';
+    const round = (autoLevelRunState as any)?.round;
+    const step = (autoLevelRunState as any)?.step ?? '';
+    if (s === 'idle' || s === 'stopping') return 'Not running';
+    if (s === 'waiting') return 'Waiting for next round';
+    if (s === 'paused') return `Paused${round ? ` (round ${round})` : ''}`;
+    if (s === 'error') return `Error: ${(autoLevelRunState as any).message}`;
+    if (s === 'running') {
+      if (step === 'sightsee:waiting') return `Ready — waiting for next step${round ? ` (round ${round})` : ''}`;
+      if (step.includes('fight')) return `Fighting${round ? ` (round ${round})` : ''}`;
+      if (step.includes('move')) return `Moving${round ? ` (round ${round})` : ''}`;
+      return `Running${round ? ` (round ${round})` : ''}`;
     }
-
-    if (isRunning) {
-      firePause();
-      return;
-    }
-
-    if (isPaused) {
-      fireResume();
-      return;
-    }
-
-    // error/stopping fallback
-    const ok = window.confirm('Auto leveling is not idle. Start again?');
-    if (!ok) return;
-    fireStart(); */
+    return s;
   };
 
-  const onStopClick = () => {
-    if (!isConnected) return;
-    if (isIdle) return;
-
-    const ok = window.confirm('Stop auto leveling? This ends the current run.');
-    if (!ok) return;
-
-    //fireStop();
+  const dispatch = (event: string) => {
+    DispatchEvent(event as any, {});
+    setPanelOpen(false);
   };
-
-  const autoLabel = isIdle
-    ? 'Start auto level'
-    : isRunning
-      ? 'Pause auto level'
-      : isPaused
-        ? 'Resume auto level'
-        : 'Auto level';
 
   return (
     <div className={styles.commandInputBar}>
@@ -145,58 +138,127 @@ export const CommandInput: React.FC<CommandInputProps> = ({
         disabled={!isConnected}
       />
 
-      {/*
-      <button
-        type="button"
-        className={`${styles.autoLevelButton} ${!autoDisabled && !isIdle ? styles.autoLevelButtonActive : ''}`}
-        onMouseDown={(e) => e.preventDefault()} // keep focus in input
-        onClick={onAutoClick}
-        disabled={autoDisabled}
-        aria-label={autoDisabled ? 'Auto leveling unavailable' : autoLabel}
-        title={
-          !isConnected
-            ? 'Connect to a server to use auto leveling'
-            : !autoLevelingActive
-              ? 'Enable auto leveling first'
-              : autoLabel
-        }
-      >
-        ⚔️
-      </button>
+      {modeActive ? (
+        <div ref={panelRef} className={styles.autoLevelWrap}>
+          <button
+            type="button"
+            className={`${styles.autoLevelButton} ${isRunning ? styles.autoLevelButtonActive : isPaused ? styles.autoLevelButtonPaused : ''}`}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setPanelOpen((o) => !o)}
+            disabled={!isConnected}
+            aria-label="Auto leveling controls"
+            title="Auto leveling controls"
+          >
+            ⚔️
+          </button>
 
-        
-      {!isIdle ? (
-        <button
-          type="button"
-          className={styles.autoStopButton}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={onStopClick}
-          aria-label="Stop auto leveling"
-          title="Stop auto leveling"
-        >
-          ⏹
-        </button>
-      ) : null}
-       */}
+          {panelOpen ? (
+            <div className={styles.autoLevelPanel}>
+              <div className={styles.autoLevelPanelStatus}>{statusText()}</div>
 
-      {onOpenAutoLeveling ? (
-        <button
-          type="button"
-          className={styles.autoConfigButton}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => onOpenAutoLeveling?.()}
-          disabled={!isConnected}
-          aria-label="Configure auto leveling"
-          title="Configure auto leveling"
-        >
-          ⚙️
-        </button>
-      ) : null}
+              <div className={styles.autoLevelPanelRow}>
+                {isIdle ? (
+                  <button
+                    className={styles.autoLevelPanelBtn}
+                    onClick={() => dispatch('shatteredarchive:autoleveling-start')}
+                    disabled={!isConnected}
+                  >
+                    ▶ Start
+                  </button>
+                ) : null}
+
+                {isRunning ? (
+                  <button
+                    className={styles.autoLevelPanelBtn}
+                    onClick={() => dispatch('shatteredarchive:autoleveling-pause')}
+                  >
+                    ⏸ Pause
+                  </button>
+                ) : null}
+
+                {isPaused ? (
+                  <button
+                    className={styles.autoLevelPanelBtn}
+                    onClick={() => dispatch('shatteredarchive:autoleveling-resume')}
+                  >
+                    ▶ Resume
+                  </button>
+                ) : null}
+
+                {!isIdle ? (
+                  <button
+                    className={`${styles.autoLevelPanelBtn} ${styles.autoLevelPanelBtnStop}`}
+                    onClick={() => dispatch('shatteredarchive:autoleveling-stop')}
+                  >
+                    ⏹ Stop
+                  </button>
+                ) : null}
+              </div>
+
+              {autoLevelMode === 'sightsee' && isRunning ? (
+                <div className={styles.autoLevelPanelRow}>
+                  <button
+                    className={styles.autoLevelPanelBtn}
+                    onClick={() => { DispatchEvent('shatteredarchive:autoleveling-move-prev' as any, {}); }}
+                    disabled={!isSightseePrevAvailable}
+                    title={isSightseePrevAvailable ? 'Go back one room' : 'Nothing to go back to'}
+                  >
+                    ← Prev
+                  </button>
+                  <button
+                    className={styles.autoLevelPanelBtn}
+                    onClick={() => { DispatchEvent('shatteredarchive:autoleveling-move-next' as any, {}); }}
+                    disabled={!isSightseeWaiting}
+                    title="Advance to next room"
+                  >
+                    Next →
+                  </button>
+                  <button
+                    className={styles.autoLevelPanelBtn}
+                    onClick={() => onSightseeRescan?.()}
+                    disabled={!isSightseeWaiting}
+                    title="Re-fire look/scan commands to refresh the room description"
+                  >
+                    🔍 Look
+                  </button>
+                </div>
+              ) : null}
+
+              {onOpenAutoLeveling ? (
+                <div className={styles.autoLevelPanelRow}>
+                  <button
+                    className={styles.autoLevelPanelBtn}
+                    onClick={() => { setPanelOpen(false); onOpenAutoLeveling(); }}
+                  >
+                    ⚙ Settings
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        onOpenAutoLeveling ? (
+          <button
+            type="button"
+            className={styles.autoConfigButton}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => onOpenAutoLeveling?.()}
+            disabled={!isConnected}
+            aria-label="Configure auto leveling"
+            title="Configure auto leveling"
+          >
+            ⚙️
+          </button>
+        ) : null
+      )}
+
+      {/* Show gear separately when mode active (it's inside the panel already) */}
 
       <button
         type="button"
         className={`${styles.micButton} ${isRecording ? styles.micButtonRecording : ''}`}
-        onMouseDown={(e) => e.preventDefault()} // keep input focus
+        onMouseDown={(e) => e.preventDefault()}
         onClick={toggle}
         disabled={micDisabled}
         aria-label={micDisabled ? 'Voice dictation unavailable' : isRecording ? 'Stop recording' : 'Start dictation'}

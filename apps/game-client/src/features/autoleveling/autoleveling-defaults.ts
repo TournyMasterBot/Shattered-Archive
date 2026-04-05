@@ -21,7 +21,7 @@ export function createDefaultAutoLevelConfig(): AutoLevelConfig {
   return {
     version: AUTOLEVELING_CONFIG_VERSION,
 
-    enabled: false,
+    mode: 'disabled',
     loopRounds: true,
     idleTimeoutMs: 1000,
     roundLoopTimeMs: 300_000,

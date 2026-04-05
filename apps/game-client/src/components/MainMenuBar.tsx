@@ -153,7 +153,7 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
                 onOpenAutoLeveling();
               }}
             >
-              Auto Leveling…
+              Autopilot…
             </div>
           </div>
         </div>

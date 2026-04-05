@@ -153,8 +153,9 @@ export const MainContainer: React.FC = () => {
         BottomPaneComponent={BottomPane}
         isConnected={gameConn.isConnected}
         sendRaw={gameConn.sendRaw}
-        autoLevelingActive={auto.config.enabled}
+        autoLevelMode={auto.config.mode}
         autoLevelRunState={auto.runState}
+        onSightseeRescan={auto.rescanRoom}
       />
 
       <UserStyleOverrideModal
@@ -221,6 +222,9 @@ export const MainContainer: React.FC = () => {
         pause={auto.pause}
         resume={auto.resume}
         resetToDefaults={auto.resetToDefaults}
+        moveNext={auto.moveNext}
+        movePrev={auto.movePrev}
+        rescanRoom={auto.rescanRoom}
       />
 
       {/* ✅ CHANGED: pass connectionId to both contribute modals */}

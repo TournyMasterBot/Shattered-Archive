@@ -131,9 +131,11 @@ export type AutoLevelInitConfigV2 = {
   targets: AutoLevelTarget[];
 };
 
+export type AutoLevelMode = 'disabled' | 'dry_run' | 'auto_level' | 'sightsee';
+
 export type AutoLevelConfig = {
   version: 2;
-  enabled: boolean;
+  mode: AutoLevelMode;
 
   init: AutoLevelInitConfigV2;
   steps: AutoLevelStepConfig;

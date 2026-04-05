@@ -38,7 +38,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from '../styles/AutoLevelingModal.module.scss';
 
-import type { AutoLevelConfig, AutoLevelRunState, AutoLevelTarget } from '../features/autoleveling/autoleveling-types';
+import type { AutoLevelConfig, AutoLevelMode, AutoLevelRunState, AutoLevelTarget } from '../features/autoleveling/autoleveling-types';
 
 import { parseActionsFromEditor, serializeActionsToEditor } from '../features/autoleveling/autoleveling-actions';
 
@@ -147,6 +147,9 @@ interface AutoLevelingModalProps {
   pause: () => void;
   resume: () => void;
   resetToDefaults: () => void;
+  moveNext: () => void;
+  movePrev: () => void;
+  rescanRoom: () => void;
 }
 
 function toRunStateText(runState: AutoLevelRunState): string {
@@ -163,9 +166,9 @@ function toRunStateText(runState: AutoLevelRunState): string {
 
     case 'running': {
       const step = runState.step ?? '';
+      if (step.startsWith('sightsee:waiting')) return `Sightsee — Ready (round ${runState.round})`;
       if (step.includes('fight')) return `Fighting (round ${runState.round})`;
       if (step.includes('move')) return `Moving (round ${runState.round})`;
-      // start.*, identify.*, reset.*, postFight.* — engine is active but between fight/move
       return `Idle (round ${runState.round})`;
     }
 
@@ -313,6 +316,9 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
   pause,
   resume,
   resetToDefaults,
+  moveNext,
+  movePrev,
+  rescanRoom,
 }) => {
 
   const [tab, setTab] = useState<TabKey>('setup');
@@ -362,11 +368,11 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     uiDbg('config changed (saved)', {
-      enabled: config.enabled,
+      mode: config.mode,
       loopRounds: config.loopRounds,
       idleTimeoutMs: config.idleTimeoutMs,
     });
-  }, [isOpen, config.enabled, config.loopRounds, config.idleTimeoutMs]);
+  }, [isOpen, config.mode, config.loopRounds, config.idleTimeoutMs]);
 
   const save = useCallback(() => {
     const next = applyEditors(draft, stepEditors);
@@ -381,10 +387,10 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
   }, [config]);
 
   const showStop = useMemo(() => {
-    const v = config.enabled && runState.status === 'running';
-    uiDbg('showStop computed', { enabled: config.enabled, status: runState.status, showStop: v });
+    const v = config.mode !== 'disabled' && runState.status === 'running';
+    uiDbg('showStop computed', { mode: config.mode, status: runState.status, showStop: v });
     return v;
-  }, [config.enabled, runState.status]);
+  }, [config.mode, runState.status]);
 
   const selectedContinentName = draft.init.continentName ?? '';
   const selectedAreaName = draft.init.areaName ?? '';
@@ -748,7 +754,7 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
     <div className={styles.backdrop}>
       <div className={styles.modal}>
         <div className={styles.header}>
-          <div className={styles.title}>Auto Leveling</div>
+          <div className={styles.title}>Autopilot</div>
 
           <div className={styles.headerRight}>
             <span className={styles.runState}>{runStateText}</span>
@@ -812,18 +818,26 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
               </div>
 
               <div className={styles.row}>
-                <label className={styles.labelInline}>
-                  <input
-                    className={styles.checkbox}
-                    type="checkbox"
-                    checked={draft.enabled}
-                    onChange={(e) => {
-                      uiDbg('draft.enabled changed', { value: e.target.checked });
-                      setDraft((p) => ({ ...p, enabled: e.target.checked }));
-                    }}
-                  />
-                  Enabled
-                </label>
+                {(
+                  [
+                    { value: 'disabled',   label: 'Disabled',   title: 'Engine is off — no automation' },
+                    { value: 'dry_run',    label: 'Dry Run',    title: 'Walk through the area without engaging mobs — use this to verify routing and lookName matches' },
+                    { value: 'auto_level', label: 'Auto Level', title: 'Full automation: fights mobs and loops the training path' },
+                    { value: 'sightsee',   label: 'Sightsee',   title: 'Step room-by-room using Move Next / Move Prev — no auto-fighting' },
+                  ] as { value: AutoLevelMode; label: string; title: string }[]
+                ).map(({ value, label, title }) => (
+                  <label key={value} className={styles.labelInline} title={title}>
+                    <input
+                      className={styles.checkbox}
+                      type="radio"
+                      name="autoLevelMode"
+                      value={value}
+                      checked={draft.mode === value}
+                      onChange={() => setDraft((p) => ({ ...p, mode: value }))}
+                    />
+                    {label}
+                  </label>
+                ))}
 
                 <label className={styles.labelInline}>
                   <input
@@ -956,8 +970,8 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
                   title={
                     hasChanges
                       ? 'Save or Discard changes before starting'
-                      : !config.enabled
-                        ? 'Enable Auto Leveling'
+                      : config.mode === 'disabled'
+                        ? 'Select a mode before starting'
                         : !socketReady
                           ? 'Socket not ready'
                           : !isConnected
@@ -981,15 +995,12 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
                   </button>
                 ) : null}
                   */}
-                {config.enabled ? (
+                {config.mode !== 'disabled' ? (
                   <>
                     <button
                       type="button"
                       className={styles.inlineButton}
-                      onClick={() => {
-                        uiDbg('pause clicked');
-                        pause();
-                      }}
+                      onClick={() => { uiDbg('pause clicked'); pause(); }}
                       disabled={runState.status !== 'running'}
                     >
                       Pause
@@ -998,14 +1009,59 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
                     <button
                       type="button"
                       className={styles.inlineButton}
-                      onClick={() => {
-                        uiDbg('resume clicked');
-                        resume();
-                      }}
+                      onClick={() => { uiDbg('resume clicked'); resume(); }}
                       disabled={runState.status !== 'paused'}
                     >
                       Resume
                     </button>
+
+                    <button
+                      type="button"
+                      className={styles.inlineButton}
+                      onClick={() => { uiDbg('stop clicked'); stop(); }}
+                      disabled={runState.status === 'idle' || runState.status === 'stopping'}
+                    >
+                      Stop
+                    </button>
+
+                    {config.mode === 'sightsee' ? (
+                      <>
+                        <button
+                          type="button"
+                          className={styles.inlineButton}
+                          onClick={() => { uiDbg('move prev clicked'); movePrev(); }}
+                          disabled={
+                            runState.status !== 'running' ||
+                            (runState as any).step === 'sightsee:waiting:noprev'
+                          }
+                          title={
+                            (runState as any).step === 'sightsee:waiting:noprev'
+                              ? 'Nothing to go back to'
+                              : 'Send the reverse of the last movement (go back one room)'
+                          }
+                        >
+                          ← Prev
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.inlineButton}
+                          onClick={() => { uiDbg('move next clicked'); moveNext(); }}
+                          disabled={runState.status !== 'running'}
+                          title="Advance to the next step in the training path"
+                        >
+                          Next →
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.inlineButton}
+                          onClick={() => { uiDbg('rescan room clicked'); rescanRoom(); }}
+                          disabled={runState.status !== 'running'}
+                          title="Re-fire look/scan commands to refresh the room description"
+                        >
+                          🔍 Look
+                        </button>
+                      </>
+                    ) : null}
                   </>
                 ) : null}
 

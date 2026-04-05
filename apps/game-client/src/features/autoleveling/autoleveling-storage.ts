@@ -90,7 +90,7 @@ function coerceConfig(raw: unknown, fallback: AutoLevelConfig): AutoLevelConfig 
   };
 
   sdbg('coerceConfig: success', {
-    enabled: next.enabled,
+    mode: next.mode,
     targets: next.init.targets?.length ?? 0,
     trainingPath: next.init.trainingPath,
   });
@@ -123,7 +123,7 @@ export function saveAutoLevelConfig(connectionId: string, config: AutoLevelConfi
     const k = keyFor(connectionId);
     const json = JSON.stringify(config);
     localStorage.setItem(k, json);
-    sdbg('save: ok', { key: k, bytes: json.length, enabled: config.enabled });
+    sdbg('save: ok', { key: k, bytes: json.length, mode: config.mode });
   } catch (e) {
     swarn('save: error (ignored)', e);
   }
