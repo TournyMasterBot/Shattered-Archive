@@ -10,6 +10,7 @@ import { createEnchantPlugin } from './core-plugins/enchant.plugin';
 import { createGourdPlugin } from './core-plugins/gourd.plugin';
 import { createPeoplePlugin } from './core-plugins/people.plugin';
 import { createHighlighterPlugin } from './core-plugins/highlighter.plugin';
+import { createAffectEchoPlugin } from './core-plugins/affect-echo.plugin';
 
 export interface CorePluginDefinition {
   id: PluginId;
@@ -67,6 +68,11 @@ export const CORE_PLUGINS: CorePluginDefinition[] = [
     id: 'highlighter',
     manifest: createHighlighterPlugin().manifest,
     create: createHighlighterPlugin,
+  },
+  {
+    id: 'affect-echo',
+    manifest: createAffectEchoPlugin().manifest,
+    create: createAffectEchoPlugin,
   },
 ];
 
