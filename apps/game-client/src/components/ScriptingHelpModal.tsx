@@ -650,8 +650,9 @@ if (cmd) {
                   { id: 'plugin-colorkit',   label: 'Color Kit' },
                   { id: 'plugin-enchant',    label: 'Enchant Helper' },
                   { id: 'plugin-gourd',      label: 'Gourd Helper' },
-                  { id: 'plugin-people',     label: 'People' },
-                  { id: 'plugin-highlighter', label: 'Highlighter' },
+                  { id: 'plugin-people',       label: 'People' },
+                  { id: 'plugin-highlighter',  label: 'Highlighter' },
+                  { id: 'plugin-affect-echo',  label: 'Affect Echo' },
                 ].map(({ id, label }) => (
                   <button
                     key={id}
@@ -1060,6 +1061,39 @@ remove gourd 4       — remove entry 4 manually`}</pre>
                 Shalonesti <code>{'{G'}green{'{x'}</code> · Justice <code>{'{b'}dark blue{'{x'}</code> ·
                 Red Robes <code>{'{R'}bright red{'{x'}</code> · White Robes <code>{'{W'}white{'{x'}</code> ·
                 Black/Shadow/Chaos/Demon <code>{'{D'}dark{'{x'}</code>
+              </div>
+
+              {/* ── Affect Echo ── */}
+              <h4 id="plugin-affect-echo" className={styles.pluginHeading}>Affect Echo</h4>
+              <p>
+                Echoes affect gains and losses to the terminal window whenever{' '}
+                <code>game:affect-added</code> or <code>game:affect-removed</code> fires. Useful
+                for quickly seeing which buffs are coming and going without watching the affects
+                panel.
+              </p>
+              <ul className={styles.list}>
+                <li>Enable from <strong>Plugins → Manage Plugins</strong></li>
+                <li>
+                  <em>Up color</em>: DSL color code for gains (default <code>{'{C'}</code> cyan)
+                </li>
+                <li>
+                  <em>Down color</em>: DSL color code for losses (default <code>{'{Y'}</code> yellow)
+                </li>
+                <li>
+                  <em>Per-affect color overrides</em>: override the global colors for specific
+                  affects — one rule per line: <code>affect name | up color | down color</code>
+                </li>
+              </ul>
+              <pre className={styles.code}>{`# affect name | up color | down color
+sanctuary | {G | {R
+haste | {B | {Y
+berserk | {R | {D`}</pre>
+              <div className={styles.callout}>
+                Output format: <code>{'{color}'}affect name{'{x'} up</code> /{' '}
+                <code>{'{color}'}affect name{'{x'} down</code>. Colors use DSL codes:{' '}
+                <code>{'{C'}</code> cyan · <code>{'{Y'}</code> yellow · <code>{'{G'}</code> green ·{' '}
+                <code>{'{R'}</code> red · <code>{'{B'}</code> blue · <code>{'{W'}</code> white ·{' '}
+                <code>{'{D'}</code> dark.
               </div>
 
               {/* ── Scripts vs Plugins ── */}
