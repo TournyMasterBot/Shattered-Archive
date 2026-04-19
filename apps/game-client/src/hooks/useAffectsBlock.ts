@@ -37,7 +37,18 @@ function normalizeAffects(list: unknown): AffectData[] {
   // Remove any with d <= 0, validate shape
   const filtered = arr.filter((x) => isAffectData(x) && x.d > 0) as AffectData[];
 
-  return [...filtered].sort(sortByDurationThenName);
+  // Deduplicate by (n, lc, m) — some spells (e.g. ghost) send multiple identical
+  // modifier lines. Keep the entry with the highest remaining duration.
+  const seen = new Map<string, AffectData>();
+  for (const a of filtered) {
+    const key = `${a.n}|${a.lc ?? ''}|${a.m ?? 0}`;
+    const existing = seen.get(key);
+    if (!existing || a.d > existing.d) {
+      seen.set(key, a);
+    }
+  }
+
+  return [...seen.values()].sort(sortByDurationThenName);
 }
 
 export function useAffectsBlock() {
@@ -60,7 +71,21 @@ export function useAffectsBlock() {
         const added = payload?.affect ?? payload;
         if (!isAffectData(added)) return;
 
-        setAffects((prev) => normalizeAffects([...prev, added]));
+        setAffects((prev) => {
+          // Replace the first existing entry with matching (n, lc, m) so that
+          // re-applying an affect refreshes its duration rather than stacking.
+          // If no match found, append as a new entry.
+          let replaced = false;
+          const next = prev.map((a) => {
+            if (!replaced && a.n === added.n && a.lc === added.lc && a.m === added.m) {
+              replaced = true;
+              return added;
+            }
+            return a;
+          });
+          if (!replaced) next.push(added);
+          return normalizeAffects(next);
+        });
       },
       { key: 'useAffectsBlock:shatteredarchive:affect-added' },
     );

@@ -1,3 +1,19 @@
+# ── DslLogViewer ────────────────────────────────────────────
+# Run from C:\Projects\DslLogViewer (or wherever the files are copied on server)
+
+# Start (build image + run)
+docker compose -f docker-compose.yml up -d --build
+
+# Check logs
+docker logs -f --tail 200 dsl-log-viewer
+
+# Rebuild after changes
+docker compose -f docker-compose.yml up -d --build --force-recreate
+
+# Tear down
+docker compose -f docker-compose.yml down --remove-orphans
+
+# ── ShatteredArchive ─────────────────────────────────────────
 # Wait healthchecks
 docker compose -f deploy/docker-compose.yml -p shatteredarchive-prod up -d --build --pull always --remove-orphans --wait
 
