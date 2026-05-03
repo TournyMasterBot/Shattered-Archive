@@ -47,7 +47,12 @@ export const PluginsPage: React.FC<{ connectionId: string }> = ({ connectionId }
     return (
       <div key={record.pluginId} className={styles.row}>
         <div className={styles.rowMain}>
-          <div className={styles.name}>{mod?.manifest?.name ?? record.pluginId}</div>
+          <div className={styles.name}>
+            {mod?.manifest?.name ?? record.pluginId}
+            {mod?.manifest?.tags?.includes('wip') && (
+              <span className={styles.wipBadge}>⚙ WIP</span>
+            )}
+          </div>
           <div className={styles.desc}>{mod?.manifest?.description ?? ''}</div>
         </div>
 

@@ -28,6 +28,12 @@
   justify-content: space-between;
   padding: 12px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: grab;
+  user-select: none;
+
+  &:active {
+    cursor: grabbing;
+  }
 }
 
 .title {

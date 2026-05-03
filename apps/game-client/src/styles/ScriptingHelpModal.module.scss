@@ -25,19 +25,11 @@
   }
 }
 
-/* ── Backdrop & modal shell ─────────────────────────────── */
-
-.backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  z-index: 5000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* ── Floating modal shell ───────────────────────────────── */
 
 .modal {
+  position: fixed;
+  z-index: 5000;
   width: 900px;
   max-width: 96vw;
   height: 86vh;
@@ -62,6 +54,8 @@
   border-bottom: 1px solid #2e2e2e;
   background: #181818;
   flex-shrink: 0;
+  cursor: grab;
+  user-select: none;
 }
 
 .title {

@@ -40,6 +40,46 @@ const NAV_SECTIONS: NavSection[] = [
 const ScriptingHelpModal: React.FC<ScriptingHelpModalProps> = ({ isOpen, onClose }) => {
   const [activeSection, setActiveSection] = React.useState<SectionId>('welcome');
   const contentRef = React.useRef<HTMLDivElement>(null);
+  const modalRef = React.useRef<HTMLDivElement>(null);
+  const headerRef = React.useRef<HTMLDivElement>(null);
+  const draggingRef = React.useRef(false);
+  const dragOffsetRef = React.useRef({ x: 0, y: 0 });
+
+  // Center on first open; reset each time the modal is mounted
+  const [initialPos] = React.useState(() => ({
+    x: Math.max(20, Math.round((window.innerWidth - 900) / 2)),
+    y: Math.max(20, Math.round(window.innerHeight * 0.07)),
+  }));
+
+  const onHeaderMouseDown = React.useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+    draggingRef.current = true;
+    const rect = modalRef.current!.getBoundingClientRect();
+    dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    if (headerRef.current) headerRef.current.style.cursor = 'grabbing';
+    e.preventDefault();
+  }, []);
+
+  React.useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!draggingRef.current || !modalRef.current) return;
+      const x = Math.max(0, Math.min(window.innerWidth - 120, e.clientX - dragOffsetRef.current.x));
+      const y = Math.max(0, Math.min(window.innerHeight - 44, e.clientY - dragOffsetRef.current.y));
+      modalRef.current.style.left = `${x}px`;
+      modalRef.current.style.top = `${y}px`;
+    };
+    const onUp = () => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      if (headerRef.current) headerRef.current.style.cursor = '';
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+  }, []);
 
   const scrollToSection = (id: SectionId) => {
     setActiveSection(id);
@@ -77,18 +117,17 @@ const ScriptingHelpModal: React.FC<ScriptingHelpModalProps> = ({ isOpen, onClose
   if (!isOpen) return null;
 
   return (
-    <div className={styles.backdrop} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className={styles.header}>
-          <h2 className={styles.title}>Scripting Help</h2>
-          <button className={styles.closeButton} onClick={onClose} aria-label="Close">
-            ✕
-          </button>
-        </div>
+    <div ref={modalRef} className={styles.modal} style={{ left: initialPos.x, top: initialPos.y }}>
+      {/* Header */}
+      <div ref={headerRef} className={styles.header} onMouseDown={onHeaderMouseDown}>
+        <h2 className={styles.title}>Scripting Help</h2>
+        <button className={styles.closeButton} onClick={onClose} aria-label="Close">
+          ✕
+        </button>
+      </div>
 
-        {/* Body */}
-        <div className={styles.body}>
+      {/* Body */}
+      <div className={styles.body}>
           {/* Sidebar nav */}
           <nav className={styles.sidebar}>
             {NAV_SECTIONS.map((s) => (
@@ -653,6 +692,7 @@ if (cmd) {
                   { id: 'plugin-people',       label: 'People' },
                   { id: 'plugin-highlighter',  label: 'Highlighter' },
                   { id: 'plugin-affect-echo',  label: 'Affect Echo' },
+                  { id: 'plugin-warlock-alphabet', label: 'Warlock Alphabet' },
                 ].map(({ id, label }) => (
                   <button
                     key={id}
@@ -776,6 +816,13 @@ a grand arcanium glaive | glaive`}</pre>
                   <code>2xS</code> / <code>3x'ill shard'</code>
                 </li>
                 <li>
+                  Append <code>*</code> to any token to cast <code>continual light</code> on that
+                  item after getting it from storage but before putting it in the cauldron — used
+                  to differentiate duplicate items so the game can tell them apart. For example,{' '}
+                  <code>K K*</code> gets one copy of K, then gets another and casts continual
+                  light on it, then puts both in the cauldron.
+                </li>
+                <li>
                   <em>Storage container</em>: where ingredients are fetched from (default:{' '}
                   <code>shelf</code>)
                 </li>
@@ -783,11 +830,13 @@ a grand arcanium glaive | glaive`}</pre>
               <pre className={styles.code}>{`# Letter map
 C = cologne
 S = ill shard
-K = continual light
 
 # Recipes
 health = 2xS C P V
-light  = 2x'ill shard' K`}</pre>
+light  = 2x'ill shard'* K
+
+# K K* — two copies of K; the second one gets continual light cast on it
+example = K K*`}</pre>
               <div className={styles.table}>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}><code>brew &lt;name&gt;</code></span>
@@ -1094,6 +1143,153 @@ berserk | {R | {D`}</pre>
                 <code>{'{C'}</code> cyan · <code>{'{Y'}</code> yellow · <code>{'{G'}</code> green ·{' '}
                 <code>{'{R'}</code> red · <code>{'{B'}</code> blue · <code>{'{W'}</code> white ·{' '}
                 <code>{'{D'}</code> dark.
+              </div>
+
+              {/* ── Warlock Alphabet ── */}
+              <h4 id="plugin-warlock-alphabet" className={styles.pluginHeading}>Warlock Alphabet</h4>
+              <p>
+                Helps warlocks discover their personal brew alphabet — the mapping from each letter
+                (A–Z) to a specific in-game item. Warlocks brew spells by placing the correct items
+                into a cauldron. Each spell's recipe is a multiset of letters, and your alphabet
+                determines which item corresponds to each letter. This plugin guides you through
+                experiments to solve the full alphabet using as few brews as possible.
+              </p>
+
+              <h5 className={styles.subHeading}>How UIDs work</h5>
+              <p>
+                Each spell has a <strong>UniqueID (UID)</strong> — the minimum set of letters that
+                uniquely identifies it among all brewable spells. The UID is derived from the spell
+                name spelled backwards, with stop words removed, reduced to the smallest sub-multiset
+                of letters no other spell shares. For example, "Bark Skin" backwards is "nikSkraB",
+                which contains two K's — and no other spell's backward name contains two K's — so
+                its UID is <code>KK</code>.
+              </p>
+              <p>
+                To brew a spell, place exactly the items corresponding to the UID letters into the
+                cauldron. Your alphabet tells you which item to use for each letter.
+              </p>
+
+              <h5 className={styles.subHeading}>Setup</h5>
+              <ol className={styles.list}>
+                <li>Enable from <strong>Plugins → Manage Plugins</strong></li>
+                <li>
+                  In <em>Items</em>: add each item you want to test, one per line:{' '}
+                  <code>label = in-game item name</code>. The label is a short name you choose for
+                  logging (e.g. <code>apple = an apple</code>).
+                </li>
+                <li>
+                  In <em>Named alphabets</em>: list your alphabet names (one per line). Use{' '}
+                  <code>default</code> for a single shared alphabet, or multiple names if you track
+                  different item categories separately (e.g. <code>food</code> and <code>gems</code>).
+                </li>
+                <li>
+                  Set <em>Storage container</em> to wherever your items are stored (default:{' '}
+                  <code>shelf</code>).
+                </li>
+              </ol>
+              <pre className={styles.code}>{`# Items config example:
+apple   = an apple
+basil   = some basil
+carrot  = a bundle of carrots
+oregano = some oregano
+tomato  = a tomato
+orange  = an orange`}</pre>
+
+              <h5 className={styles.subHeading}>Discovery workflow</h5>
+              <ol className={styles.list}>
+                <li>
+                  Type <code>wa suggest</code> to get recommended experiments. Suggestions are ranked
+                  by how much they narrow down unknown letters. Single-letter brews (like putting
+                  2 of the same item in) are highest priority — they directly identify one letter.
+                </li>
+                <li>
+                  Perform the brew in-game (put the items in your cauldron and brew).
+                </li>
+                <li>
+                  Log the result: <code>wa log "Bark Skin" using apple apple</code>
+                </li>
+                <li>
+                  The plugin automatically deduces what it can. Use <code>wa solve</code> to review
+                  confirmed assignments and candidates.
+                </li>
+                <li>
+                  Repeat until all letters are identified. Override or correct assignments at any
+                  time with <code>wa set</code>.
+                </li>
+              </ol>
+
+              <div className={styles.table}>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>wa suggest [n]</code></span>
+                  <span>Show the top <em>n</em> recommended experiments (default 5)</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>wa log &lt;spell&gt; using &lt;items…&gt;</code></span>
+                  <span>Record a brew result. Spell and multi-word items can be quoted.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>wa solve</code></span>
+                  <span>Show all confirmed assignments and candidates for unknown letters</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>wa unknown</code></span>
+                  <span>List letters that haven't been assigned yet</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>wa lookup &lt;spell&gt;</code></span>
+                  <span>Show the recipe for a spell using your current alphabet items</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>wa brew &lt;spell&gt;</code></span>
+                  <span>Send the brew commands automatically (requires all letters to be resolved)</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>wa set &lt;letter&gt; &lt;label&gt;</code></span>
+                  <span>Manually assign a letter to an item (e.g. <code>wa set K apple</code>)</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>wa clear &lt;letter&gt;</code></span>
+                  <span>Remove an assignment so it can be re-determined</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>wa match &lt;letters&gt;</code></span>
+                  <span>Look up which spell has a given UID (e.g. <code>wa match KK</code>)</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>wa use &lt;alphabet&gt;</code></span>
+                  <span>Switch between named alphabets (e.g. gems vs food)</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>wa items</code></span>
+                  <span>List your configured items and their current letter assignments</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>wa spells [brewable]</code></span>
+                  <span>List all spells in the database with their UIDs</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>wa experiments</code></span>
+                  <span>List all recorded brew experiments</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>wa reset confirm</code></span>
+                  <span>Wipe all experiments and assignments for the active alphabet</span>
+                </div>
+              </div>
+
+              <div className={styles.callout}>
+                <strong>Multiple alphabets:</strong> If your brew items are split by category (e.g.
+                you use food items for some letters and gems for others), create separate named
+                alphabets in the config and switch between them with{' '}
+                <code>wa use gems</code> / <code>wa use food</code>. Each alphabet tracks its own
+                experiments, assignments, and items independently.
+              </div>
+              <div className={styles.callout}>
+                <strong>Item lookup:</strong> Browse all in-game items at{' '}
+                <a href="https://shatteredarchive.com/items/all-items" target="_blank" rel="noreferrer">
+                  shatteredarchive.com/items/all-items
+                </a>{' '}
+                to find items of the right type and level for your alphabet.
               </div>
 
               {/* ── Scripts vs Plugins ── */}
@@ -1595,7 +1791,6 @@ if (hp && maxHp && (hp / maxHp) < 0.20) {
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

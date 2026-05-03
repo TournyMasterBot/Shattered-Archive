@@ -11,6 +11,7 @@ import { createGourdPlugin } from './core-plugins/gourd.plugin';
 import { createPeoplePlugin } from './core-plugins/people.plugin';
 import { createHighlighterPlugin } from './core-plugins/highlighter.plugin';
 import { createAffectEchoPlugin } from './core-plugins/affect-echo.plugin';
+import { createWarlockAlphabetPlugin } from './core-plugins/warlock-alphabet.plugin';
 
 export interface CorePluginDefinition {
   id: PluginId;
@@ -73,6 +74,11 @@ export const CORE_PLUGINS: CorePluginDefinition[] = [
     id: 'affect-echo',
     manifest: createAffectEchoPlugin().manifest,
     create: createAffectEchoPlugin,
+  },
+  {
+    id: 'warlock-alphabet',
+    manifest: createWarlockAlphabetPlugin().manifest,
+    create: createWarlockAlphabetPlugin,
   },
 ];
 

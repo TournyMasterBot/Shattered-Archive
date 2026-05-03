@@ -1,4 +1,4 @@
-FROM node:20-alpine AS build
+FROM node:24.15.0-alpine3.23@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f AS build
 WORKDIR /repo
 RUN corepack enable
 
@@ -23,7 +23,8 @@ RUN pnpm --filter @shatteredarchive/sdks-server build
 
 RUN pnpm --filter @shatteredarchive/web-server... build
 
-FROM node:20-alpine AS runtime
+FROM node:24-alpine AS runtime
+RUN apk --no-cache upgrade
 WORKDIR /repo
 
 COPY deploy/.env /repo/.env

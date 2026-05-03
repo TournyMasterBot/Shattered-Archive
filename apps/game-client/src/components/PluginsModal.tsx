@@ -93,7 +93,12 @@ export const PluginsModal: React.FC<PluginsModalProps> = ({ isOpen, onClose, con
               return (
                 <div key={p.id} className={`${styles.row}${isOff ? ` ${styles.rowDisabled}` : ''}`}>
                   <div className={styles.left}>
-                    <div className={styles.name}>{p.manifest.name}</div>
+                    <div className={styles.name}>
+                      {p.manifest.name}
+                      {p.manifest.tags?.includes('wip') && (
+                        <span className={styles.wipBadge}>⚙ WIP</span>
+                      )}
+                    </div>
                     <div className={styles.meta}>
                       v{p.manifest.version}
                       {p.manifest.description ? ` • ${p.manifest.description}` : ''}

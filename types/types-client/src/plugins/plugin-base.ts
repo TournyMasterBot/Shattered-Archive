@@ -82,6 +82,8 @@ export interface PluginManifest {
   author?: string;
   description?: string;
   supportsExport?: boolean;
+  /** Freeform tags shown as badges in the plugin list. Supported: 'wip' */
+  tags?: string[];
 }
 
 export interface PluginBundledScript {

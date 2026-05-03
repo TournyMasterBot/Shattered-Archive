@@ -42,6 +42,29 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
   const unbindRef = React.useRef<null | (() => void)>(null);
   const captureTimerRef = React.useRef<number | null>(null);
 
+  const [pos, setPos] = React.useState({ x: 0, y: 0 });
+  const modalRef = React.useRef<HTMLDivElement>(null);
+  const dragOffsetRef = React.useRef<{ x: number; y: number } | null>(null);
+
+  const onHeaderMouseDown = React.useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+    const rect = modalRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    e.preventDefault();
+    const onMove = (ev: MouseEvent) => {
+      if (!dragOffsetRef.current) return;
+      setPos({ x: ev.clientX - dragOffsetRef.current.x, y: ev.clientY - dragOffsetRef.current.y });
+    };
+    const onUp = () => {
+      dragOffsetRef.current = null;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, []);
+
   const stopCapture = React.useCallback(() => {
     if (captureTimerRef.current != null) {
       window.clearTimeout(captureTimerRef.current);
@@ -106,6 +129,11 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
       setSubmitOk(false);
       return;
     }
+
+    setPos({
+      x: Math.max(0, (window.innerWidth - 760) / 2),
+      y: Math.max(0, (window.innerHeight - 600) / 2),
+    });
 
     // prime from latest snapshot
     setIdentity(getIdentitySnapshot());
@@ -177,8 +205,8 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
         description,
       };
 
-      //const res = await fetch('http://localhost:5000/contribute/identify', {
-      const res = await fetch('https://web-server.shatteredarchive.dev/contribute/identify', {
+      const res = await fetch('http://localhost:5000/contribute/identify', {
+        //const res = await fetch('https://web-server.shatteredarchive.dev/contribute/identify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -213,14 +241,19 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
     lines.length > 0;
 
   return (
-    <div className={styles.backdrop} role="dialog" aria-modal="true" onMouseDown={onClose}>
-      <div className={styles.modal} onMouseDown={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <div className={styles.title}>Contribute · Identify Object</div>
-          <button className={styles.closeBtn} onClick={onClose} type="button">
-            ✕
-          </button>
-        </div>
+    <div
+      ref={modalRef}
+      className={styles.modal}
+      role="dialog"
+      aria-modal="true"
+      style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: 9999 }}
+    >
+      <div className={styles.header} onMouseDown={onHeaderMouseDown}>
+        <div className={styles.title}>Contribute · Identify Object</div>
+        <button className={styles.closeBtn} onClick={onClose} type="button">
+          ✕
+        </button>
+      </div>
 
         <div className={styles.body}>
           <div className={styles.topSection}>
@@ -321,7 +354,6 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
             </button>
           </div>
         </div>
-      </div>
     </div>
   );
 };

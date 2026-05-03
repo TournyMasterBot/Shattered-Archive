@@ -78,6 +78,29 @@ export const ContributeCreatureLoreModal: React.FC<ContributeCreatureLoreModalPr
   const delayTimerRef = React.useRef<number | null>(null);
   const stageRef = React.useRef<CaptureStage>(null);
 
+  const [pos, setPos] = React.useState({ x: 0, y: 0 });
+  const modalRef = React.useRef<HTMLDivElement>(null);
+  const dragOffsetRef = React.useRef<{ x: number; y: number } | null>(null);
+
+  const onHeaderMouseDown = React.useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+    const rect = modalRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    e.preventDefault();
+    const onMove = (ev: MouseEvent) => {
+      if (!dragOffsetRef.current) return;
+      setPos({ x: ev.clientX - dragOffsetRef.current.x, y: ev.clientY - dragOffsetRef.current.y });
+    };
+    const onUp = () => {
+      dragOffsetRef.current = null;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, []);
+
   const clearTimers = React.useCallback(() => {
     if (stageTimerRef.current != null) {
       window.clearTimeout(stageTimerRef.current);
@@ -266,6 +289,11 @@ export const ContributeCreatureLoreModal: React.FC<ContributeCreatureLoreModalPr
       return;
     }
 
+    setPos({
+      x: Math.max(0, (window.innerWidth - 760) / 2),
+      y: Math.max(0, (window.innerHeight - 600) / 2),
+    });
+
     setIdentity(getIdentitySnapshot());
 
     const off = ListenEvent<IdentitySnapshot>(
@@ -360,9 +388,9 @@ export const ContributeCreatureLoreModal: React.FC<ContributeCreatureLoreModalPr
         creatureLore,
         creatureLook,
       };
-      
-      const res = await fetch('https://web-server.shatteredarchive.dev/contribute/creaturelore', {
-      //const res = await fetch('https://localhost:5000/contribute/creaturelore', {
+
+      //const res = await fetch('https://web-server.shatteredarchive.dev/contribute/creaturelore', {
+      const res = await fetch('http://localhost:5000/contribute/creaturelore', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -399,14 +427,19 @@ export const ContributeCreatureLoreModal: React.FC<ContributeCreatureLoreModalPr
     (loreLines.length > 0 || lookLines.length > 0);
 
   return (
-    <div className={styles.backdrop} role="dialog" aria-modal="true" onMouseDown={onClose}>
-      <div className={styles.modal} onMouseDown={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <div className={styles.title}>Contribute · Creature Lore</div>
-          <button className={styles.closeBtn} onClick={onClose} type="button">
-            ✕
-          </button>
-        </div>
+    <div
+      ref={modalRef}
+      className={styles.modal}
+      role="dialog"
+      aria-modal="true"
+      style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: 9999 }}
+    >
+      <div className={styles.header} onMouseDown={onHeaderMouseDown}>
+        <div className={styles.title}>Contribute · Creature Lore</div>
+        <button className={styles.closeBtn} onClick={onClose} type="button">
+          ✕
+        </button>
+      </div>
 
         <div className={styles.body}>
           <div className={styles.topSection}>
@@ -416,53 +449,72 @@ export const ContributeCreatureLoreModal: React.FC<ContributeCreatureLoreModalPr
                   <label className={styles.selectLabel} htmlFor="contrib-creaturelore-continent">
                     Continent
                   </label>
-                  <select
-                    id="contrib-creaturelore-continent"
-                    className={`${styles.input} ${styles.select}`}
-                    value={continent}
-                    onChange={(e) => setContinent(e.target.value)}
-                    disabled={isSubmitting}
-                    required
-                  >
-                    <option value="" disabled>
-                      {mapsLoading ? 'Loading continents…' : 'Select continent'}
-                    </option>
-                    {continentNames.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
+                  {continentError || continentNames.length === 0 && !mapsLoading ? (
+                    <input
+                      id="contrib-creaturelore-continent"
+                      className={styles.input}
+                      value={continent}
+                      onChange={(e) => setContinent(e.target.value)}
+                      placeholder="Type continent…"
+                      disabled={isSubmitting}
+                    />
+                  ) : (
+                    <select
+                      id="contrib-creaturelore-continent"
+                      className={`${styles.input} ${styles.select}`}
+                      value={continent}
+                      onChange={(e) => setContinent(e.target.value)}
+                      disabled={isSubmitting}
+                      required
+                    >
+                      <option value="" disabled>
+                        {mapsLoading ? 'Loading continents…' : 'Select continent'}
                       </option>
-                    ))}
-                  </select>
+                      {continentNames.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 <div className={styles.selectField}>
                   <label className={styles.selectLabel} htmlFor="contrib-creaturelore-area">
                     Area
                   </label>
-                  <select
-                    id="contrib-creaturelore-area"
-                    className={`${styles.input} ${styles.select}`}
-                    value={area}
-                    onChange={(e) => setArea(e.target.value)}
-                    disabled={isSubmitting || !continent}
-                    required
-                  >
-                    <option value="" disabled>
-                      {!continent
-                        ? 'Select area'
-                        : areaLoadFailedForSelected
-                          ? 'Areas failed to load'
+                  {continentError || areaLoadFailedForSelected ? (
+                    <input
+                      id="contrib-creaturelore-area"
+                      className={styles.input}
+                      value={area}
+                      onChange={(e) => setArea(e.target.value)}
+                      placeholder="Type area…"
+                      disabled={isSubmitting}
+                    />
+                  ) : (
+                    <select
+                      id="contrib-creaturelore-area"
+                      className={`${styles.input} ${styles.select}`}
+                      value={area}
+                      onChange={(e) => setArea(e.target.value)}
+                      disabled={isSubmitting || !continent}
+                      required
+                    >
+                      <option value="" disabled>
+                        {!continent
+                          ? 'Select area'
                           : areasForSelected.length === 0
                             ? 'Loading areas…'
                             : 'Select area'}
-                    </option>
-
-                    {areasForSelected.map((a) => (
-                      <option key={a} value={a}>
-                        {a}
                       </option>
-                    ))}
-                  </select>
+                      {areasForSelected.map((a, i) => (
+                        <option key={`${a}|${i}`} value={a}>
+                          {a}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
 
@@ -637,7 +689,6 @@ export const ContributeCreatureLoreModal: React.FC<ContributeCreatureLoreModalPr
             </button>
           </div>
         </div>
-      </div>
     </div>
   );
 };

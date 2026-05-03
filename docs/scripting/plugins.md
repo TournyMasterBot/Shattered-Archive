@@ -91,7 +91,7 @@ stone skin
 
 ## Brew Helper
 
-**Purpose:** Automates potion brewing with a letter-map shorthand and named recipes. Intercepts the `brew`, `showbrews`, and `showletters` commands in the command bar.
+**Purpose:** Automates potion brewing with a letter-map shorthand and named recipes. Intercepts the `brew`, `showbrews`, `showletters`, and `showsymbols` commands in the command bar.
 
 **Configuration:**
 
@@ -99,6 +99,7 @@ stone skin
 |---|---|---|
 | Letter map | Textarea | One mapping per line: `LETTER = item name`. Lines starting with `#` are comments. |
 | Recipes | Textarea | One recipe per line: `name = token token …`. Lines starting with `#` are comments. |
+| Symbol map | Textarea | One mapping per line: `symbol = spell name`. Supported symbols: `! @ $ % ^ & *`. Lines starting with `#` are comments. |
 | Storage container | String | Where items are fetched from (default: `shelf`) |
 | Debug logging | Boolean | Logs recipe execution to the script console |
 
@@ -107,7 +108,6 @@ stone skin
 # Map a single uppercase letter to an item name
 C = cologne
 S = ill shard
-K = continual light
 P = pinch of powder
 V = vial of water
 ```
@@ -119,12 +119,25 @@ Tokens can be:
 - A quoted item name (`'ill shard'`)
 - A quantity prefix + letter (`2xS`, `3xC`)
 - A quantity prefix + quoted name (`2x'ill shard'`)
+- Any token can have a **symbol suffix** (`K*`, `K%`, `K@`) — casts that symbol's mapped spell on the item between `get` and `put`
 
 ```
 # Recipes
-health = 2xS C P V
-light  = 2x'ill shard' K
-buff   = C S P
+health  = 2xS C P V
+light   = 2x'ill shard'* K     # cast * spell on each ill shard before putting in
+cloak   = K K* S               # cast * spell on the second K only
+special = K* K% S              # * spell on first K, % spell on second K
+```
+
+**Symbol map format:**
+
+Symbols define spells cast on items mid-recipe (between `get` and `put`). The `#` character is reserved as the comment marker and cannot be used as a symbol.
+
+```
+* = continual light
+! = invis
+@ = curse
+$ = bless
 ```
 
 **Command bar commands:**
@@ -134,15 +147,18 @@ buff   = C S P
 | `brew <name>` | Execute a saved recipe (fetches all ingredients to the cauldron) |
 | `showbrews` | List all saved recipes |
 | `showletters` | List all letter-to-item mappings |
+| `showsymbols` | List all symbol → spell mappings |
 
 **What the plugin does per ingredient:**
 1. `get '<item>' <storage>` — retrieves the item from your storage container
-2. `put '<item>' cauldron` — places it in the cauldron
+2. `cast '<spell>' '<item>'` — cast the token's symbol spell on the item *(only if a symbol suffix is present and mapped)*
+3. `put '<item>' cauldron` — places it in the cauldron
 
 The sequence repeats for each token in the recipe, respecting quantity prefixes.
 
 **Notes:**
 - If a letter in a recipe has no entry in the letter map, that token is skipped and a warning is logged.
+- If a symbol suffix is used but has no entry in the symbol map, a warning is logged and the cast step is skipped.
 - These commands are intercepted before they reach the game server — they never appear in the terminal.
 
 ---
@@ -345,6 +361,102 @@ Use **Sync Rules** in the config panel to apply edits without restarting the plu
 | Bloodlust | `{r` dark red |
 | Dragon | `{G` bright green |
 | Balanx | `{B` bright blue |
+
+---
+
+## Warlock Alphabet
+
+**Purpose:** Helps warlocks establish and use their brew alphabet. Tracks which item you use for each brew letter, looks up spell recipes by name, and sends the correct cauldron commands in the exact insertion order the game requires.
+
+**Configuration:**
+
+| Field | Type | Description |
+|---|---|---|
+| Items | Textarea | One item per line: `label = lore name`. Lines starting with `#` are comments. |
+| Brewer cipher | String | 26-character substitution string (position 1 = what A maps to, … position 26 = what Z maps to). Leave as `ABCDEFGHIJKLMNOPQRSTUVWXYZ` for no transformation. |
+| Storage container | String | Where items are fetched from (default: `shelf`). |
+
+**Item format:**
+
+```
+# label = lore keyword (used in: get 'lore name' shelf)
+apple        = apple
+kale         = kale chips
+avocado      = avocado toast
+```
+
+- `label` — short key used in `wa set`, `wa log`, etc.
+- `lore name` — the in-game keyword used in `get` commands
+- Brew letter is derived from the first letter of the lore name, run through the brewer cipher
+
+---
+
+**How the brewer's cipher works:**
+
+Each item's first letter passes through a 26-character substitution cipher to produce its brew letter. For example, with `A → K`, an apple (starts with A) contributes brew letter K. Configure the cipher string in settings, or discover it experimentally with `wa cipher` commands.
+
+**How UIDs work:**
+
+Each spell has a unique letter multiset (its UID). Items must be inserted into the cauldron in the exact order of the UID string — the cauldron reverses its display order, which reconstructs the spell name. For example, UID `SSELB` → insert S, S, E, L, B → cauldron displays B, L, E, S, S = BLESS.
+
+**Gourd spell effects:**
+
+- **Effect 1 (deterministic):** Fully controlled by the UID and insertion order — what `wa brew` automates.
+- **Effect 2 (rule-governed):** Rules not yet fully defined; do not rely on this being predictable.
+- **Effect 3 (always random):** Cannot be controlled regardless of ingredients.
+
+---
+
+**Command bar commands:**
+
+*Alphabet management:*
+
+| Command | Description |
+|---|---|
+| `wa solve` | Show assigned items per letter and gaps |
+| `wa missing` | Show letters with no item assigned |
+| `wa items` | List configured items and their brew letters |
+| `wa auto` | Auto-assign items to letters based on the cipher |
+| `wa set <letter> <label>` | Manually assign a letter to an item |
+| `wa clear <letter>` | Remove a letter assignment |
+
+*Spell lookup and brewing:*
+
+| Command | Description |
+|---|---|
+| `wa lookup <spell name>` | Show the recipe and required items for a spell |
+| `wa brew <spell name>` | Send brew commands in the correct cauldron order |
+| `wa suggest [n]` | List brewable spells and spells missing 1–2 letters |
+| `wa spells [brewable\|<letter>]` | List all spells in the database |
+| `wa match <letters>` | Find spells matching a set of brew letters (e.g. `wa match KK`) |
+| `wa spell-add <spell name> <UID>` | Add a spell not in the built-in database |
+| `wa log <spell> using <items…>` | Record a brew result for reference |
+| `wa experiments` | List recorded brew experiments |
+
+*Cipher discovery:*
+
+| Command | Description |
+|---|---|
+| `wa cipher` | Show all 26 letter mappings (`D`=confirmed, `C`=config, `~`=probable, `?`=unknown) |
+| `wa cipher set a=o` | Confirm that items starting with A contribute brew letter O |
+| `wa cipher maybe a=o,n` | Record that A is probably O or N (uncertain) |
+| `wa cipher clear a` | Remove confirmed and/or probable mapping for A |
+| `wa cipher export` | Get the full 26-char cipher string to paste into the config field |
+| `wa deduce <spell> using <items…>` | Deduce cipher mappings from a known brew result |
+
+*Named alphabets:*
+
+| Command | Description |
+|---|---|
+| `wa use <alphabet>` | Switch to a named alphabet (creates it if new) |
+| `wa reset confirm` | Wipe all assignments and experiments for the active alphabet |
+
+**Notes:**
+- Spell names and item labels with spaces can be quoted or unquoted: `wa lookup bark skin` or `wa lookup "Bark Skin"`.
+- `wa deduce` supports an inline UID for unknown spells: `wa deduce spook KOOP using apple apple` — this auto-registers the spell.
+- Item labels not found in the Items config are auto-created (lore = label) with a warning; add them to the config if the `get` keyword differs from the label.
+- `wa brew` sends the raw cauldron commands — start with a fresh cauldron before running it.
+- Browse brew-usable items at `https://shatteredarchive.com/items/all-items` or search by name, type, and level via `https://shatteredarchive.com/internal/brew-items?name=&type=&level=`.
 
 ---
 
