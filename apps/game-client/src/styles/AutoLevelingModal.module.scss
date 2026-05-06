@@ -1,19 +1,8 @@
 /* apps/game-client/src/styles/AutoLevelingModal.module.scss */
 
 /* -------------------------------------------------
-   BACKDROP + MODAL SHELL
+   MODAL SHELL
 -------------------------------------------------- */
-
-.backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.62);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 5000;
-  padding: 16px;
-}
 
 .modal {
   width: min(1200px, calc(100vw - 24px));
@@ -44,6 +33,12 @@
   padding: 10px 12px;
   background: #181818;
   border-bottom: 1px solid #2a2a2a;
+  cursor: grab;
+  user-select: none;
+
+  &:active {
+    cursor: grabbing;
+  }
 }
 
 .title {

@@ -295,6 +295,9 @@ export class AutoLevelingEngine {
   // GMCP vitals — updated by game:char-data events
   private charVitals = { hp: 0, hpMax: 0, mp: 0, mpMax: 0, mv: 0, mvMax: 0 };
 
+  // GMCP affects — normalized lowercase names of currently-active affects
+  private activeAffects = new Set<string>();
+
   private boundOnTerminalData = (ev: Event) => {
     if (this.stopping || this.paused) {
       return;
@@ -465,6 +468,42 @@ export class AutoLevelingEngine {
             this.boundOnCreatureDeath({ detail: payload } as any);
           },
           { key: 'AutoLevelingEngine:event:creature-death' },
+        ),
+
+        // GMCP affects — track active affect names for if_affect_missing
+        ListenEvent<any>(
+          'game:affects-trueup',
+          (payload) => {
+            this.activeAffects.clear();
+            const list: any[] = Array.isArray(payload) ? payload : (Array.isArray(payload?.affects) ? payload.affects : []);
+            for (const a of list) {
+              if (a?.n) this.activeAffects.add(String(a.n).trim().toLowerCase());
+            }
+            dbg('affects-trueup', { count: this.activeAffects.size });
+          },
+          { key: 'AutoLevelingEngine:game:affects-trueup' },
+        ),
+
+        ListenEvent<any>(
+          'game:affect-added',
+          (payload) => {
+            if (payload?.n) {
+              this.activeAffects.add(String(payload.n).trim().toLowerCase());
+              dbg('affect-added', { n: payload.n });
+            }
+          },
+          { key: 'AutoLevelingEngine:game:affect-added' },
+        ),
+
+        ListenEvent<any>(
+          'game:affect-removed',
+          (payload) => {
+            if (payload?.n) {
+              this.activeAffects.delete(String(payload.n).trim().toLowerCase());
+              dbg('affect-removed', { n: payload.n });
+            }
+          },
+          { key: 'AutoLevelingEngine:game:affect-removed' },
         ),
 
         // Pause on flee
@@ -841,6 +880,14 @@ export class AutoLevelingEngine {
         const pct = this.charVitals.mvMax > 0 ? (this.charVitals.mv / this.charVitals.mvMax) * 100 : 100;
         dbg('if_mv_pct_below', { threshold: a.pct, current: pct });
         if (pct < a.pct) await this.sendCommand(a.cmd);
+        return;
+      }
+
+      case 'if_affect_missing': {
+        const key = String(a.affectName ?? '').trim().toLowerCase();
+        const active = key ? this.activeAffects.has(key) : false;
+        dbg('if_affect_missing', { affectName: key, active });
+        if (!active) await this.sendCommand(a.cmd);
         return;
       }
 

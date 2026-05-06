@@ -6,7 +6,7 @@ import { startPluginBundledScripts } from './pluginScriptRunner';
 import { normalizePluginModule } from './normalizePluginModule';
 import { ROUTED_WINDOW_EVENTS } from './routed-gmcp-events';
 import { DispatchEvent, ListenEvent } from '../event-emitter/event-dispatcher';
-import { setPluginOmitRules } from '../userScripts/triggerOmitStore';
+import { setPluginOmitRules, type PluginOmitRuleInput } from '../userScripts/triggerOmitStore';
 import { renderDslToAnsi } from '../userScripts/dslToAnsi';
 
 type PluginCleanup = {
@@ -161,7 +161,7 @@ function makeDefaultApi(
       }
     },
 
-    registerOmitRules: (rules: Array<{ matchText: string; eventName?: string; caseInsensitive?: boolean }>) => {
+    registerOmitRules: (rules: PluginOmitRuleInput[]) => {
       setPluginOmitRules(pluginId, rules);
     },
 

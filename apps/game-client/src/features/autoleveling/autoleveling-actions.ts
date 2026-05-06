@@ -132,6 +132,26 @@ export function parseActionsFromEditor(text: string): AutoLevelAction[] {
       continue;
     }
 
+    if (trimmed.toLowerCase().startsWith('if_affect_missing ')) {
+      const rest = trimmed.slice('if_affect_missing '.length);
+      let affectName = '';
+      let cmd = '';
+      if (rest.trimStart().startsWith('"')) {
+        const s = rest.indexOf('"');
+        const e = rest.indexOf('"', s + 1);
+        if (e > s) {
+          affectName = rest.slice(s + 1, e);
+          cmd = rest.slice(e + 1).trim();
+        }
+      } else {
+        const sp = rest.indexOf(' ');
+        affectName = sp >= 0 ? rest.slice(0, sp).trim() : rest.trim();
+        cmd = sp >= 0 ? rest.slice(sp + 1).trim() : '';
+      }
+      out.push({ kind: 'if_affect_missing', affectName, cmd });
+      continue;
+    }
+
     // Preserve blank lines as blank sends
     out.push({ kind: 'send', cmd: line });
   }
@@ -154,6 +174,7 @@ export function serializeActionsToEditor(actions: AutoLevelAction[]): string {
     else if (a.kind === 'if_hp_pct_below') lines.push(`if_hp_below ${a.pct} ${a.cmd}`);
     else if (a.kind === 'if_mp_pct_below') lines.push(`if_mp_below ${a.pct} ${a.cmd}`);
     else if (a.kind === 'if_mv_pct_below') lines.push(`if_mv_below ${a.pct} ${a.cmd}`);
+    else if (a.kind === 'if_affect_missing') lines.push(`if_affect_missing "${a.affectName}" ${a.cmd}`);
   }
 
   const out = lines.join('\n');

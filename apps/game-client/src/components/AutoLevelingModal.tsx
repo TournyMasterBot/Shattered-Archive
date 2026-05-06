@@ -35,7 +35,7 @@
  *    - there are unsaved changes (draft != config)
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from '../styles/AutoLevelingModal.module.scss';
 
 import type { AutoLevelConfig, AutoLevelMode, AutoLevelRunState, AutoLevelTarget } from '../features/autoleveling/autoleveling-types';
@@ -55,6 +55,8 @@ import {
 } from '../features/autoleveling/autoleveling-maps-client';
 import type { BuildStep, UserBuiltPath } from '../features/autoleveling/autoleveling-user-paths';
 import type { ManualTarget } from '../features/autoleveling/autoleveling-saved-targets';
+import type { MudletArea, MudletBuff } from '../features/autoleveling/autoleveling-mudlet-import';
+import { parseMudletScript, mudletDirsToBuildSteps, parseMudletBuffs } from '../features/autoleveling/autoleveling-mudlet-import';
 import {
   loadSavedTargets,
   manualToAutoLevel,
@@ -372,6 +374,16 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [buildInteractive, setBuildInteractive] = useState(false);
 
+  // Mudlet import state
+  const [mudletImportOpen, setMudletImportOpen] = useState(false);
+  const [mudletScript, setMudletScript] = useState('');
+  const [mudletAreas, setMudletAreas] = useState<MudletArea[] | null>(null);
+  const [mudletSelectedName, setMudletSelectedName] = useState('');
+  const [mudletMessage, setMudletMessage] = useState<string | null>(null);
+  // Parsed buffs and user-editable affect names
+  const [mudletBuffs, setMudletBuffs] = useState<MudletBuff[] | null>(null);
+  const [mudletAffectNames, setMudletAffectNames] = useState<string[]>([]);
+
   // Persisted user-built paths
   const [userPaths, setUserPaths] = useState<UserBuiltPath[]>(() => loadUserPaths());
 
@@ -379,6 +391,29 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
   const [manualTargets, setManualTargets] = useState<ManualTarget[]>([]);
   const [manualLookInput, setManualLookInput] = useState('');
   const [manualEngageInput, setManualEngageInput] = useState('');
+
+  const modalRef = useRef<HTMLDivElement>(null);
+  const dragOffsetRef = useRef<{ x: number; y: number } | null>(null);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+
+  const onHeaderMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+    const rect = modalRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    e.preventDefault();
+    const onMove = (ev: MouseEvent) => {
+      if (!dragOffsetRef.current) return;
+      setPos({ x: ev.clientX - dragOffsetRef.current.x, y: ev.clientY - dragOffsetRef.current.y });
+    };
+    const onUp = () => {
+      dragOffsetRef.current = null;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, []);
 
   const runStateText = useMemo(() => toRunStateText(runState), [runState]);
 
@@ -389,6 +424,11 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
+
+    setPos({
+      x: Math.max(0, (window.innerWidth - 1200) / 2),
+      y: Math.max(0, (window.innerHeight - 860) / 2),
+    });
 
     setDraft(config);
     setStepEditors(buildStepEditors(config));
@@ -758,6 +798,72 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
     reader.readAsText(file);
   }, [userPaths]);
 
+  const onParseMudlet = useCallback(() => {
+    if (!mudletScript.trim()) { setMudletMessage('Paste a script first.'); return; }
+    const result = parseMudletScript(mudletScript);
+    setMudletAreas(result.areas);
+    setMudletSelectedName(result.areas[0]?.name ?? '');
+
+    const buffs = parseMudletBuffs(mudletScript);
+    setMudletBuffs(buffs);
+    setMudletAffectNames(buffs.map((b) => b.inferredAffect));
+
+    const areaPart = result.areas.length === 0
+      ? (result.errors[0] ?? 'No areas found.')
+      : `Found ${result.areas.length} area${result.areas.length !== 1 ? 's' : ''}`;
+    const buffPart = buffs.length > 0 ? `, ${buffs.length} buff command${buffs.length !== 1 ? 's' : ''}.` : '.';
+    setMudletMessage(areaPart + buffPart);
+  }, [mudletScript]);
+
+  const onImportMudletArea = useCallback(() => {
+    const area = mudletAreas?.find((a) => a.name === mudletSelectedName);
+    if (!area) return;
+
+    const steps = mudletDirsToBuildSteps(area.dirs);
+    setBuildSteps(steps);
+    setBuildPathName(area.name);
+
+    // Save mobs into the manual targets store so they appear as checkboxes
+    // in Configure when the user selects this area. Skip any already defined.
+    const continent = buildContinent || selectedContinentName;
+    const areaKey = buildArea || area.name;
+    const existing = loadSavedTargets(continent, areaKey);
+    const existingLooks = new Set(existing.map((t) => t.lookName.trim().toLowerCase()));
+
+    const toAdd = area.mobs
+      .filter((mob) => !existingLooks.has(mob.look.trim().toLowerCase()))
+      .map((mob) => ({ lookName: mob.look, engageName: mob.key }));
+
+    if (toAdd.length > 0) {
+      saveSavedTargets(continent, areaKey, [...existing, ...toAdd]);
+    }
+
+    const skipped = area.mobs.length - toAdd.length;
+    const mobMsg = toAdd.length > 0
+      ? `${toAdd.length} mob${toAdd.length !== 1 ? 's' : ''} saved${skipped > 0 ? `, ${skipped} already existed` : ''}`
+      : `all ${skipped} mob${skipped !== 1 ? 's' : ''} already defined`;
+
+    setMudletMessage(`Loaded ${steps.length} steps. ${mobMsg}. Select the area in Configure to choose targets.`);
+  }, [mudletAreas, mudletSelectedName, buildContinent, buildArea, selectedContinentName]);
+
+  const onAddMudletMobAsStep = useCallback((mob: MudletArea['mobs'][number]) => {
+    setBuildSteps((prev) => [...prev, { kind: 'mob', lookName: mob.look, engageName: mob.key }]);
+  }, []);
+
+  const onApplyBuffsToStart = useCallback(() => {
+    if (!mudletBuffs?.length) return;
+    const newLines = mudletBuffs.map((b, i) => {
+      const affect = mudletAffectNames[i]?.trim() ?? '';
+      return affect ? `if_affect_missing "${affect}" ${b.cmd}` : b.cmd;
+    });
+    setStepEditors((prev) => {
+      const existing = (prev['start.exec'] ?? '').trimEnd();
+      const combined = existing ? `${existing}\n${newLines.join('\n')}` : newLines.join('\n');
+      return { ...prev, 'start.exec': combined };
+    });
+    setMudletMessage(`Added ${newLines.length} buff action${newLines.length !== 1 ? 's' : ''} to Start step. Switch to Configure → Advanced → Start to review.`);
+  }, [mudletBuffs, mudletAffectNames]);
+
   const onBuildSelectContinent = useCallback((name: string) => {
     setBuildContinent(name);
     setBuildArea('');
@@ -958,9 +1064,14 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className={styles.backdrop}>
-      <div className={styles.modal}>
-        <div className={styles.header}>
+    <div
+      ref={modalRef}
+      className={styles.modal}
+      role="dialog"
+      aria-modal="true"
+      style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: 5000 }}
+    >
+        <div className={styles.header} onMouseDown={onHeaderMouseDown}>
           <div className={styles.title}>Autopilot</div>
 
           <div className={styles.headerRight}>
@@ -1030,6 +1141,170 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
         <div className={styles.body}>
           {tab === 'build' ? (
             <div className={styles.section}>
+              {/* ---- Mudlet Import ---- */}
+              <div className={styles.sectionHeader}>
+                <div className={styles.sectionHeaderTitle}>Import from Mudlet</div>
+                <div className={styles.sectionHeaderSub}>
+                  <button
+                    type="button"
+                    className={styles.inlineButton}
+                    onClick={() => setMudletImportOpen((p) => !p)}
+                  >
+                    {mudletImportOpen ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+              </div>
+
+              {mudletImportOpen && (
+                <>
+                  <div className={styles.row}>
+                    <label className={styles.label} style={{ flex: 1 }}>
+                      Paste Mudlet Leveling script
+                      <textarea
+                        className={styles.textarea}
+                        value={mudletScript}
+                        onChange={(e) => setMudletScript(e.target.value)}
+                        placeholder={'Paste a Leveling.areas = { ... } Lua script here'}
+                        style={{ minHeight: 120 }}
+                        spellCheck={false}
+                      />
+                    </label>
+                  </div>
+
+                  <div className={styles.row}>
+                    <button
+                      type="button"
+                      className={styles.inlineButton}
+                      onClick={onParseMudlet}
+                      disabled={!mudletScript.trim()}
+                    >
+                      Parse script
+                    </button>
+                    {mudletMessage && <span className={styles.buildImportMsg}>{mudletMessage}</span>}
+                  </div>
+
+                  {mudletAreas && mudletAreas.length > 0 && (() => {
+                    const area = mudletAreas.find((a) => a.name === mudletSelectedName);
+                    return (
+                      <>
+                        <div className={styles.row}>
+                          <label className={styles.label} style={{ flex: 1 }}>
+                            Select area
+                            <select
+                              className={styles.select}
+                              value={mudletSelectedName}
+                              onChange={(e) => setMudletSelectedName(e.target.value)}
+                            >
+                              {mudletAreas.map((a) => (
+                                <option key={a.name} value={a.name}>
+                                  {a.name} ({a.dirs.length} dirs, {a.mobs.length} mobs)
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+
+                        {area && (
+                          <>
+                            {(area.description || area.levels) && (
+                              <div className={styles.help} style={{ padding: '0 0 4px' }}>
+                                {area.description && <span><b>From:</b> {area.description}</span>}
+                                {area.levels && <span> · <b>Levels:</b> {area.levels}</span>}
+                              </div>
+                            )}
+
+                            <div className={styles.row}>
+                              <button
+                                type="button"
+                                className={styles.saveButton}
+                                onClick={onImportMudletArea}
+                              >
+                                Load {area.dirs.length} dirs into builder →
+                              </button>
+                            </div>
+
+                            {area.mobs.length > 0 && (
+                              <>
+                                <div className={styles.sectionHeader}>
+                                  <div className={styles.sectionHeaderTitle}>Mobs ({area.mobs.length})</div>
+                                  <div className={styles.sectionHeaderSub}>Add as encounter steps, or configure as targets in the Configure tab</div>
+                                </div>
+                                <div className={styles.buildStepList} style={{ maxHeight: 180 }}>
+                                  {area.mobs.map((mob) => (
+                                    <div key={mob.key} className={styles.buildStep}>
+                                      <span className={styles.buildStepBadgeMob}>mob</span>
+                                      <div className={styles.buildStepText} style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                        <span>{mob.look}</span>
+                                        <span style={{ opacity: 0.55, fontSize: '0.72rem' }}>keyword: {mob.key}</span>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        className={styles.buildStepBtn}
+                                        onClick={() => onAddMudletMobAsStep(mob)}
+                                        title="Append as mob encounter step"
+                                      >
+                                        + Add
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </>
+                            )}
+
+                            {mudletBuffs && mudletBuffs.length > 0 && (
+                              <>
+                                <div className={styles.sectionHeader}>
+                                  <div className={styles.sectionHeaderTitle}>Buff Commands ({mudletBuffs.length})</div>
+                                  <div className={styles.sectionHeaderSub}>Applied to Start step — skipped when affect is already active</div>
+                                </div>
+                                <div className={styles.buildStepList} style={{ maxHeight: 200 }}>
+                                  {mudletBuffs.map((b, i) => (
+                                    <div key={`${b.role}:${i}`} className={styles.buildStep}>
+                                      <span className={styles.buildStepBadgeMove} style={{ minWidth: 48, textAlign: 'center' }}>{b.role}</span>
+                                      <div className={styles.buildStepText} style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1, overflow: 'visible' }}>
+                                        <span style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{b.cmd}</span>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.74rem', color: '#aaa' }}>
+                                          Affect name:
+                                          <input
+                                            className={styles.input}
+                                            style={{ flex: 1, minWidth: 0, padding: '2px 6px', fontSize: '0.78rem' }}
+                                            value={mudletAffectNames[i] ?? ''}
+                                            onChange={(e) => setMudletAffectNames((prev) => {
+                                              const next = [...prev];
+                                              next[i] = e.target.value;
+                                              return next;
+                                            })}
+                                            placeholder="e.g. haste  (blank = always cast)"
+                                            spellCheck={false}
+                                          />
+                                        </label>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className={styles.row}>
+                                  <button
+                                    type="button"
+                                    className={styles.saveButton}
+                                    onClick={onApplyBuffsToStart}
+                                  >
+                                    Apply buffs to Start step →
+                                  </button>
+                                  <div className={styles.help} style={{ padding: 0, alignSelf: 'center' }}>
+                                    Opens Configure → Advanced → Start to review.
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </>
+                        )}
+                      </>
+                    );
+                  })()}
+                </>
+              )}
+
+              {/* ---- Path Builder ---- */}
               <div className={styles.sectionHeader}>
                 <div className={styles.sectionHeaderTitle}>Path Builder</div>
                 <div className={styles.sectionHeaderSub}>Build a training path, then Apply to Configure</div>
@@ -2045,7 +2320,6 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
           )}
         </div>
       </div>
-    </div>
   );
 };
 

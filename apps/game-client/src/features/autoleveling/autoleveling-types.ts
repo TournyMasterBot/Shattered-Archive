@@ -24,7 +24,13 @@ export type AutoLevelAction =
   /** Conditional sends — checked against live GMCP vitals at execution time. */
   | { kind: 'if_hp_pct_below'; pct: number; cmd: string }
   | { kind: 'if_mp_pct_below'; pct: number; cmd: string }
-  | { kind: 'if_mv_pct_below'; pct: number; cmd: string };
+  | { kind: 'if_mv_pct_below'; pct: number; cmd: string }
+  /**
+   * Send cmd only when the named affect is NOT currently active.
+   * affectName is matched case-insensitively against GMCP AffectData.n.
+   * Syntax in the step editor: if_affect_missing "affect name" command
+   */
+  | { kind: 'if_affect_missing'; affectName: string; cmd: string };
 
 export type AutoLevelPhaseTriplet = {
   /**

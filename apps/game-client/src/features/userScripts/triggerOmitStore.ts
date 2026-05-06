@@ -26,7 +26,7 @@ let compiled: Compiled[] = [];
 
 const pluginCompiled: Map<string, Compiled[]> = new Map();
 
-type PluginOmitRuleInput =
+export type PluginOmitRuleInput =
   | { matchText: string; eventName?: string; caseInsensitive?: boolean }
   | { pattern: string; flags?: string; eventName?: string };
 
