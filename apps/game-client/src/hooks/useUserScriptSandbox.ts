@@ -12,6 +12,7 @@ import { invokeGlobalById } from '../features/userScripts/globalRuntime';
 import { getGlobalVar, setGlobalVar, deleteGlobalVar } from '../features/userScripts/globalScriptsStore';
 import { getUserVariablesSnapshot } from '../features/userScripts/userVariablesStore';
 import { DispatchEvent, ListenEvent } from '../features/event-emitter/event-dispatcher';
+import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
 import { UserScriptKind } from '../types/userscript-types/user-script-kind';
 import { ScriptErrorInfo } from '../types/userscript-types/script-error-info';
 
@@ -196,6 +197,10 @@ function makeApiBase(
     getNamedVar: (name: string) => {
       const vars = getUserVariablesSnapshot(connectionId ?? 'default');
       return (vars as any)?.[name];
+    },
+
+    doAfter: (delayMs: number, type: 'world' | 'alias', command: string) => {
+      RuntimeSingleton.Runtime.scheduleDoAfter(delayMs, type, command);
     },
   };
 

@@ -1,5 +1,6 @@
-FROM node:24.15.0-alpine3.23@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f AS build
+FROM node:26.1.0-alpine3.23@sha256:e71ac5e964b9201072425d59d2e876359efa25dc96bb1768cb73295728d6e4ea AS build
 WORKDIR /repo
+ENV COREPACK_ENABLE_STRICT=1
 RUN corepack enable
 
 COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
@@ -24,11 +25,12 @@ RUN pnpm --filter @shatteredarchive/sdks-server build
 # Build the server itself (and any remaining deps)
 RUN pnpm --filter @shatteredarchive/game-server... build
 
-FROM node:24-alpine AS runtime
+FROM node:26.1.0-alpine3.23@sha256:e71ac5e964b9201072425d59d2e876359efa25dc96bb1768cb73295728d6e4ea AS runtime
 RUN apk --no-cache upgrade
 WORKDIR /repo
 
 COPY deploy/.env /repo/.env
+ENV COREPACK_ENABLE_STRICT=1
 RUN corepack enable
 
 ENV NODE_ENV=production

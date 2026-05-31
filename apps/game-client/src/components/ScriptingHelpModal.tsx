@@ -10,6 +10,7 @@ interface ScriptingHelpModalProps {
 type SectionId =
   | 'welcome'
   | 'getting-started'
+  | 'command-features'
   | 'triggers'
   | 'aliases'
   | 'timers'
@@ -27,6 +28,7 @@ interface NavSection {
 const NAV_SECTIONS: NavSection[] = [
   { id: 'welcome', label: 'Welcome' },
   { id: 'getting-started', label: 'Getting Started' },
+  { id: 'command-features', label: 'Command Features' },
   { id: 'triggers', label: 'Triggers' },
   { id: 'aliases', label: 'Aliases' },
   { id: 'timers', label: 'Timers' },
@@ -237,6 +239,173 @@ const ScriptingHelpModal: React.FC<ScriptingHelpModalProps> = ({ isOpen, onClose
                 <strong>Plain Text</strong> is the simplest option — just type one game command per
                 line. No code required! But it can't react to game events.
               </p>
+            </section>
+
+            {/* ── COMMAND FEATURES ────────────────────────────── */}
+            <section data-section="command-features" className={styles.section}>
+              <h3 className={styles.sectionHeading}>Command Features</h3>
+
+              <p>
+                Before a command reaches the game, the client processes it through a short pipeline
+                that supports chaining, delayed execution, and cancellation. None of these require
+                scripting knowledge — you just type them in the command bar.
+              </p>
+
+              {/* ── Chaining ── */}
+              <h4 className={styles.subHeading}>Command chaining with <code>;</code></h4>
+              <p>
+                Separate multiple commands with a semicolon <code>;</code> to send them one after
+                another in a single input:
+              </p>
+              <pre className={styles.code}>{`e;e;e;dig;e          — move east three times, dig, then move east again
+kill rat;get all corpse;stand
+cast 'armor' self;cast 'bless' self`}</pre>
+
+              <div className={styles.callout}>
+                <strong>Aliases work inside chains.</strong> Each segment is checked against your
+                alias list before being sent to the game, so you can mix aliases and raw commands
+                freely: <code>ks;n;n;ks</code>
+              </div>
+
+              {/* ── doAfter ── */}
+              <h4 className={styles.subHeading}>Delayed commands — <code>doAfter</code></h4>
+              <p>
+                <code>doAfter</code> schedules a command to run after a delay. Drop it anywhere in
+                a semicolon chain and the earlier commands send immediately while the delayed one
+                waits in the background.
+              </p>
+
+              <pre className={styles.code}>{`doAfter(delayMs, world|alias, "command")`}</pre>
+
+              <div className={styles.table}>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>delayMs</span>
+                  <span>How long to wait in milliseconds. <code>1000</code> = 1 second, <code>5000</code> = 5 seconds.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>world</span>
+                  <span>Send the command directly to the game server, bypassing alias processing.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>alias</span>
+                  <span>Run the command through your alias list first — use this if the command is an alias name.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>"command"</span>
+                  <span>The command to send. Quotes are optional for single words.</span>
+                </div>
+              </div>
+
+              <h4 className={styles.subHeading}>Command bar &amp; Plain Text scripts</h4>
+              <p>
+                Type <code>doAfter</code> directly in the command input, or put it on any line of
+                a Plain Text script:
+              </p>
+              <pre className={styles.code}>{`# In the command bar — mix with normal commands using ;
+e;e;e;e;e;dig;doAfter(5000, world, "jump")
+
+# Cast a spell, then re-cast it after 60 seconds
+cast 'haste';doAfter(60000, world, "cast 'haste'")
+
+# Execute an alias called "loot" after a short delay
+doAfter(2000, alias, loot)
+
+# Stack multiple delayed commands (each countdown is independent)
+cast 'sanctuary';doAfter(1000, world, look);doAfter(3000, alias, ks)`}</pre>
+
+              <h4 className={styles.subHeading}>JavaScript / TypeScript</h4>
+              <p>
+                <code>doAfter</code> is available as a function directly in the script scope,
+                alongside <code>sendCommand</code> and the other API functions:
+              </p>
+              <pre className={styles.code}>{`// Send a raw command to the world after 5 seconds
+doAfter(5000, 'world', 'jump');
+
+// Run an alias by name after 2 seconds
+doAfter(2000, 'alias', 'myheal');
+
+// Practical: open a door, wait, then move through
+sendCommand("open gate");
+doAfter(500, 'world', 'north');
+
+// Practical: cast haste, schedule a re-cast for 55 seconds later
+sendCommand("cast 'haste'");
+doAfter(55000, 'world', "cast 'haste'");`}</pre>
+              <div className={styles.callout}>
+                TypeScript works identically — the type signature is{' '}
+                <code>doAfter(delayMs: number, type: 'world' | 'alias', command: string): void</code>
+              </div>
+
+              <h4 className={styles.subHeading}>Lua</h4>
+              <pre className={styles.code}>{`-- Send a command to the world after 5 seconds
+doAfter(5000, "world", "jump")
+
+-- Run an alias after 2 seconds
+doAfter(2000, "alias", "myheal")
+
+-- Also available on the api table
+api.doAfter(3000, "world", "look")`}</pre>
+
+              <h4 className={styles.subHeading}>Python</h4>
+              <pre className={styles.code}>{`# Send a command to the world after 5 seconds
+doAfter(5000, "world", "jump")
+
+# Run an alias after 2 seconds
+doAfter(2000, "alias", "myheal")
+
+# Practical: flee, then wait before re-engaging
+sendCommand("flee")
+doAfter(10000, "alias", "ks")`}</pre>
+
+              <div className={styles.callout}>
+                <strong>Multiple doAfter timers stack independently.</strong> Each one runs its
+                own countdown in parallel — scheduling two <code>doAfter</code> calls doesn't
+                make them queue behind each other.
+              </div>
+
+              {/* ── Tilde / cancel ── */}
+              <h4 className={styles.subHeading}>Cancelling pending timers — <code>~</code></h4>
+              <p>
+                Typing <code>~</code> (tilde) on its own cancels <em>all</em> pending{' '}
+                <code>doAfter</code> timers and sends <code>~</code> to the game server.
+              </p>
+              <pre className={styles.code}>{`~             — cancel all doAfter timers + send ~ to game
+~look         — cancel all doAfter timers, then send "look" to game`}</pre>
+              <div className={styles.callout}>
+                <strong>The ~ still goes to the server.</strong> It isn't swallowed by the client.
+                If your MUD uses <code>~</code> for something (such as clearing its own queue),
+                that will still happen.
+              </div>
+
+              {/* ── Repeater prefixes ── */}
+              <h4 className={styles.subHeading}>Repeat prefixes</h4>
+              <p>
+                Two input prefixes let you repeat commands without typing them multiple times. These
+                work at the input level and do not interact with <code>doAfter</code>.
+              </p>
+
+              <div className={styles.table}>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>#5north;3east</code></span>
+                  <span>
+                    <strong>Per-segment repeater.</strong> Each segment is repeated independently.{' '}
+                    <code>#5north;3east</code> sends <code>north</code> five times then{' '}
+                    <code>east</code> three times.
+                  </span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>&amp;3kill rat;look</code></span>
+                  <span>
+                    <strong>Chain repeater.</strong> The whole chain is repeated N times.{' '}
+                    <code>&amp;3kill rat;look</code> sends <code>kill rat</code> then{' '}
+                    <code>look</code>, three times in a row.
+                  </span>
+                </div>
+              </div>
+
+              <pre className={styles.code}>{`#5e             — send "e" five times
+#5e;3n          — send "e" five times, then "n" three times
+&3 kill rat;l   — send "kill rat" then "l" three times total`}</pre>
             </section>
 
             {/* ── TRIGGERS ────────────────────────────────────── */}
