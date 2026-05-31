@@ -862,6 +862,7 @@ if (cmd) {
                   { id: 'plugin-highlighter',  label: 'Highlighter' },
                   { id: 'plugin-affect-echo',  label: 'Affect Echo' },
                   { id: 'plugin-warlock-alphabet', label: 'Warlock Alphabet' },
+                  { id: 'plugin-questbot',     label: 'Quest Bot' },
                 ].map(({ id, label }) => (
                   <button
                     key={id}
@@ -1459,6 +1460,141 @@ orange  = an orange`}</pre>
                   shatteredarchive.com/items/all-items
                 </a>{' '}
                 to find items of the right type and level for your alphabet.
+              </div>
+
+              {/* ── Quest Bot ── */}
+              <h4 id="plugin-questbot" className={styles.pluginHeading}>Quest Bot</h4>
+              <p>
+                Automates the full quest cycle from start to finish: walks to the quest master,
+                requests a quest, parses the assignment dialogue, navigates to the target area,
+                combs for the stolen item, and turns it in — then rests and repeats automatically
+                when the cooldown expires.
+              </p>
+              <ul className={styles.list}>
+                <li>Enable from <strong>Plugins → Manage Plugins</strong></li>
+                <li>
+                  Set <em>Home location</em> to your clan hall (Wargar, Thaxanos, Shadow,
+                  Darkonin, or Verminasia) — this determines the navigation paths
+                </li>
+                <li>
+                  Enable <em>Auto-restart</em> to automatically loop quests when{' '}
+                  <code>You can now quest again.</code> appears
+                </li>
+                <li>The bot stops immediately if a PK attack is detected</li>
+              </ul>
+              <p>Commands available in the command bar once the plugin is enabled:</p>
+              <div className={styles.table}>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>pq start</code></span>
+                  <span>Begin quest automation. Walks to the quest master and requests a quest.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>pq stop</code></span>
+                  <span>Stop the bot and reset all state. Navigation in progress is not cancelled — type <code>~</code> to clear the outbound queue first.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>pq status</code></span>
+                  <span>Print current bot state: running flag, state machine phase, captured item, area, and room.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>pq debug</code></span>
+                  <span>Toggle step-by-step debug output in the terminal.</span>
+                </div>
+              </div>
+
+              <h4 className={styles.subHeading}>How quest capture works</h4>
+              <p>
+                The bot listens for specific lines from the quest master NPC. Once{' '}
+                <code>pq start</code> is run, it walks to the quest master and sends{' '}
+                <code>pq request find</code>. It then watches for:
+              </p>
+              <div className={styles.table}>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Item line</span>
+                  <span><code>Vile thieves have stolen [item] from the royal treasury!</code> — captures the item name</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Location line</span>
+                  <span><code>Look in the general vicinity of [area] for [room]!</code> — captures area and room</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Go signal</span>
+                  <span><code>May the gods go with you!</code> — triggers navigation to the area</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Pickup</span>
+                  <span><code>You get [item].</code> — triggers the turn-in sequence</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Cooldown</span>
+                  <span><code>You can now quest again.</code> — triggers the next cycle (if Auto-restart is on)</span>
+                </div>
+              </div>
+
+              <h4 className={styles.subHeading}>Supported areas</h4>
+              <pre className={styles.code}>{`Gahboom Hill        — justice_bind start
+Elemental Planes    — succubus gate start
+Hell                — succubus gate start
+Silversand Garrison — alth_port start
+Ghost Lake          — alth_arena start
+A Lost Catacomb     — tropica_port start
+Forbidden Forest    — icewall_port start
+A Blazing Aurora    — justice_bind start
+Jovar               — icewall_port start`}</pre>
+              <div className={styles.callout}>
+                <strong>Area not listed?</strong> Add it in the <em>Custom Areas (JSON)</em>
+                field in the plugin's Configure panel — no plugin update required. Custom entries
+                are saved to localStorage and override any built-in area with the same name.
+              </div>
+
+              <h4 className={styles.subHeading}>Adding custom areas</h4>
+              <p>
+                Open <strong>Plugins → Quest Bot → Configure</strong> and paste a JSON array into
+                the <em>Custom Areas</em> field. Each object in the array defines one area:
+              </p>
+              <pre className={styles.code}>{`[
+  {
+    "name":        "my new area",          // must match what the quest master says
+    "startPoint":  "icewall_port",         // which home path gets you to the port/gate
+    "startToArea": ["n", "n", "e", "e"],  // commands from that port to the area entrance
+    "rooms": {
+      "a dark cave": ["w", "w", "s"],      // room name → walk path to search
+      "a dimly lit chamber": ["n", "n"]
+    }
+  }
+]`}</pre>
+              <p>
+                The <code>startPoint</code> must be one of the home path keys:
+              </p>
+              <div className={styles.table}>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>justice_bind</code></span>
+                  <span>Walk to Arkane justice bind point, then east to Arkane continent</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>icewall_port</code></span>
+                  <span>Walk to home portal and enter the Icewall ship</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>alth_port</code></span>
+                  <span>Walk to home portal and enter the Althainia ship</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>alth_arena</code></span>
+                  <span>Walk to Althainia via the gaming portal</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>tropica_port</code></span>
+                  <span>Walk to home portal and enter the Tropica ship</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>succubus</code></span>
+                  <span>Cast <code>c gate bloody nose</code> to reach the succubus gate area</span>
+                </div>
+              </div>
+              <div className={styles.callout}>
+                Type <code>pq areas</code> in the command bar to list every known area — both
+                built-in and custom — along with their start point and room names.
               </div>
 
               {/* ── Scripts vs Plugins ── */}

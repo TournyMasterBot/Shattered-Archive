@@ -1,7 +1,7 @@
 FROM node:26.1.0-alpine3.23@sha256:e71ac5e964b9201072425d59d2e876359efa25dc96bb1768cb73295728d6e4ea AS build
 WORKDIR /repo
 ENV COREPACK_ENABLE_STRICT=1
-RUN corepack enable
+RUN npm install -g corepack && corepack enable
 
 COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 COPY tsconfig*.json ./
@@ -31,7 +31,7 @@ WORKDIR /repo
 
 COPY deploy/.env /repo/.env
 ENV COREPACK_ENABLE_STRICT=1
-RUN corepack enable
+RUN npm install -g corepack && corepack enable
 
 ENV NODE_ENV=production
 ENV PORT=31000

@@ -12,6 +12,7 @@ import { createPeoplePlugin } from './core-plugins/people.plugin';
 import { createHighlighterPlugin } from './core-plugins/highlighter.plugin';
 import { createAffectEchoPlugin } from './core-plugins/affect-echo.plugin';
 import { createWarlockAlphabetPlugin } from './core-plugins/warlock-alphabet.plugin';
+import { createQuestBotPlugin } from './core-plugins/questbot.plugin';
 
 export interface CorePluginDefinition {
   id: PluginId;
@@ -79,6 +80,11 @@ export const CORE_PLUGINS: CorePluginDefinition[] = [
     id: 'warlock-alphabet',
     manifest: createWarlockAlphabetPlugin().manifest,
     create: createWarlockAlphabetPlugin,
+  },
+  {
+    id: 'questbot',
+    manifest: createQuestBotPlugin().manifest,
+    create: createQuestBotPlugin,
   },
 ];
 
