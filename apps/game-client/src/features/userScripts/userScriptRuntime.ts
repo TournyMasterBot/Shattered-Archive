@@ -325,6 +325,7 @@ export class UserScriptRuntime {
   private timerIntervalById: Map<string, number> = new Map();
   private aliasFallback?: (input: string) => boolean;
   private doAfterTimers: Set<ReturnType<typeof setTimeout>> = new Set();
+  private afkMode = false;
 
   constructor(options: UserScriptRuntimeOptions = {}) {
     this.sendCommand =
@@ -452,6 +453,14 @@ export class UserScriptRuntime {
     this.timerNextFireAt.clear();
     this.timerIntervalById.clear();
     this.lastTick = Date.now();
+  }
+
+  public setAfkMode(isAfk: boolean): void {
+    this.afkMode = isAfk;
+  }
+
+  public isAfkMode(): boolean {
+    return this.afkMode;
   }
 
   public cancelDoAfterTimers(): void {
@@ -928,6 +937,8 @@ export class UserScriptRuntime {
   public tickTimers(): void {
     const now = Date.now();
     this.lastTick = now;
+
+    if (this.afkMode) return;
 
     const active = new Set<string>();
 
