@@ -98,7 +98,7 @@ const HOME_PATHS: Record<HomeKey, CharacterPaths> = {
     rest_command: ['wear helm','land','rest blanket'],
     justice_bind: ['se','s','s','s','s','e','e','e','e','e','s','w','u','enter orb','s','d','enter ark','e','e','e','e','e'],
     icewall_port: ['se','s','s','s','s','e','e','e','e','e','s','w','u','enter orb','s','d','enter ice'],
-    alth_port: ['se','s','s','s','s','e','e','e','e','e','s','w','u','enter orb','s','d','enter alth'],
+    alth_port: ['se','s','s','s','s','e','e','e','e','e','s','w','u','enter orb','s','d','enter cove', 'se', 'ne', 'ne', 'n', 'n', 'e'],
     alth_arena: ['se','s','s','s','s','e','e','e','e','e','s','w','u','enter orb','s','d','enter gaming','enter portal'],
     tropica_port: ['se','s','s','s','s','e','e','e','e','e','s','w','u','enter orb','s','d','enter tropica'],
     succubus: ['c gate bloody nose'],
