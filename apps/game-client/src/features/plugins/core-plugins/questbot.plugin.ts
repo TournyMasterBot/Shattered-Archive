@@ -302,9 +302,41 @@ export function createQuestBotPlugin(): IPluginModule {
   let questArea: string | null = null;
   let questRoom: string | null = null;
   let questAttemptCount = 0;
+  // IDs of Knockdown-group triggers that were enabled when pq start ran (and thus disabled by us).
+  let disabledKnockdownIds: string[] = [];
 
   function walk(api: PluginRuntimeApi, cmds: string[]): void {
     for (const cmd of cmds) api.sendCommand(cmd);
+  }
+
+  function disableKnockdownTriggers(api: PluginRuntimeApi): void {
+    const rt = (window as any).__SA_RUNTIME__?.runtime;
+    if (!rt) return;
+    const scripts: any[] = rt.getAllScripts();
+    disabledKnockdownIds = [];
+    for (const script of scripts) {
+      if (script.group === 'Knockdown' && script.enabled) {
+        disabledKnockdownIds.push(script.id);
+        rt.upsertScript({ ...script, enabled: false });
+      }
+    }
+    if (disabledKnockdownIds.length > 0) {
+      debug(api, `Disabled ${disabledKnockdownIds.length} Knockdown trigger(s)`);
+    }
+  }
+
+  function restoreKnockdownTriggers(api: PluginRuntimeApi): void {
+    if (disabledKnockdownIds.length === 0) return;
+    const rt = (window as any).__SA_RUNTIME__?.runtime;
+    if (!rt) return;
+    const scripts: any[] = rt.getAllScripts();
+    for (const script of scripts) {
+      if (disabledKnockdownIds.includes(script.id)) {
+        rt.upsertScript({ ...script, enabled: true });
+      }
+    }
+    debug(api, `Re-enabled ${disabledKnockdownIds.length} Knockdown trigger(s)`);
+    disabledKnockdownIds = [];
   }
 
   // Execute a named alias through the full alias pipeline (same as typing it in the input bar).
@@ -377,7 +409,6 @@ export function createQuestBotPlugin(): IPluginModule {
 
     state = 'requesting';
     debug(api, 'Walking to quest master');
-    api.sendCommand('pq clear');
     walk(api, paths.to_quest_master);
     state = 'capturing';
   }
@@ -685,6 +716,7 @@ export function createQuestBotPlugin(): IPluginModule {
         }
         running = true;
         resetQuest();
+        disableKnockdownTriggers(api);
         api.writeTerminal?.(`{G[QuestBot] Starting quest automation...{x\n`);
         requestQuest(api);
         return true;
@@ -699,6 +731,7 @@ export function createQuestBotPlugin(): IPluginModule {
           combatResumeTimerId = null;
         }
         resetQuest();
+        restoreKnockdownTriggers(api);
         api.writeTerminal?.(`{Y[QuestBot] Stopped{x\n`);
         return true;
       }

@@ -6,7 +6,8 @@ Automates the full DSL quest cycle for characters based in Wargar, Thaxanos, Sha
 
 ```mermaid
 flowchart TD
-    START([pq start]) --> ATTEMPT{"Quest retries exhausted?<br/>(3 consecutive failures)"}
+    START([pq start]) --> KNOCKDOWN_OFF["Disable Knockdown triggers"]
+    KNOCKDOWN_OFF --> ATTEMPT{"Quest retries exhausted?<br/>(3 consecutive failures)"}
     ATTEMPT -- Yes --> GIVEUP["recall + to_resting_room<br/>stop — use pq start to retry"]
     ATTEMPT -- No --> ALIAS["Run startAlias (if set)"]
     ALIAS --> BEES_GET{"beeContainer set?"}
@@ -48,6 +49,9 @@ flowchart TD
     AUTO -- No --> IDLE([Idle])
     AUTO -- Yes --> COOLDOWN["You can now quest again."]
     COOLDOWN --> ATTEMPT
+
+    IDLE --> STOP(["pq stop"])
+    STOP --> KNOCKDOWN_ON["Re-enable Knockdown triggers"]
 ```
 
 ## Combat break and auto-resume
