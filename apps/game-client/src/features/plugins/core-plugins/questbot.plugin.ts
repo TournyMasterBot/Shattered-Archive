@@ -59,9 +59,6 @@ type CharacterPaths = {
   // Navigation from pq complete to gem merchant, including the buy command.
   // Leave empty to skip the gem step entirely.
   gem_merchant: string[];
-  // Navigation from the gem merchant back to the resting room.
-  // Used instead of to_resting_room when the gem step ran.
-  gem_merchant_return: string[];
 };
 
 const shadowHallFromRecall = ['e','e','e','s','s','s','s','s','s'];
@@ -80,7 +77,6 @@ const HOME_PATHS: Record<HomeKey, CharacterPaths> = {
     tropica_port: ['n','e','e','s','s','s','s','s','s','w','w','s','s','e','se','se','se','sw','s','d','n','u','w','stand','w','enter tropica'],
     succubus: ['c gate bloody nose'],
     gem_merchant: [],
-    gem_merchant_return: [],
   },
   thaxanos: {
     quest_master: ['n','n','n','n','e','s'],
@@ -94,7 +90,6 @@ const HOME_PATHS: Record<HomeKey, CharacterPaths> = {
     tropica_port: ['n','w','w','w','w','s','s','s','s','e','e','n','d','e','e','enter tropica'],
     succubus: ['c gate bloody nose'],
     gem_merchant: [],
-    gem_merchant_return: [],
   },
   shadow: {
     quest_master: ['open south', 's','s','w','w','w','s','s','s','s','s','s','e','e','e','s','s','w','s','e','e','n','n','n','w'],
@@ -108,7 +103,6 @@ const HOME_PATHS: Record<HomeKey, CharacterPaths> = {
     tropica_port: ['se','s','s','s','s','e','e','e','e','e','s','w','u','enter orb','s','d','enter tropica'],
     succubus: ['c gate bloody nose'],
     gem_merchant: [...gemMerchantFromVermTaskMaster,'buy blue'],
-    gem_merchant_return: ['s','e','s','s','s','s','s','s','s','s','e','n','n','n','open west','w','u','enter orb'],
   },
   darkonin: {
     quest_master: ['e','e'],
@@ -122,7 +116,6 @@ const HOME_PATHS: Record<HomeKey, CharacterPaths> = {
     tropica_port: ['w','s','s','s','w','n','n','w','n','enter tropica'],
     succubus: ['c gate bloody nose'],
     gem_merchant: [],
-    gem_merchant_return: [],
   },
   verm: {
     quest_master: ['n','nw'],
@@ -136,7 +129,6 @@ const HOME_PATHS: Record<HomeKey, CharacterPaths> = {
     tropica_port: ['se','s','s','w','w','n','e','n','n','w','w','w','n','n','n','n','n','w','w','w','d','enter tropica'],
     succubus: ['c gate bloody nose'],
     gem_merchant: [],
-    gem_merchant_return: [],
   },
 };
 
@@ -309,6 +301,7 @@ export function createQuestBotPlugin(): IPluginModule {
   let combatResumeTimerId: ReturnType<typeof setTimeout> | null = null;
   let questArea: string | null = null;
   let questRoom: string | null = null;
+  let questAttemptCount = 0;
 
   function walk(api: PluginRuntimeApi, cmds: string[]): void {
     for (const cmd of cmds) api.sendCommand(cmd);
@@ -357,6 +350,19 @@ export function createQuestBotPlugin(): IPluginModule {
       return;
     }
 
+    if (questAttemptCount >= 3) {
+      api.writeTerminal?.(`{R[QuestBot] 3 failed quest attempts — stopping. Type pq start to retry.{x\n`);
+      running = false;
+      questAttemptCount = 0;
+      api.sendCommand('recall');
+      walk(api, paths.to_resting_room);
+      walk(api, paths.rest_command);
+      return;
+    }
+
+    questAttemptCount++;
+    debug(api, `Quest attempt ${questAttemptCount} of 3`);
+
     const startAlias = String(api.getConfig().startAlias ?? '').trim();
     if (startAlias) {
       debug(api, `Running start alias: ${startAlias}`);
@@ -371,6 +377,7 @@ export function createQuestBotPlugin(): IPluginModule {
 
     state = 'requesting';
     debug(api, 'Walking to quest master');
+    api.sendCommand('pq clear');
     walk(api, paths.to_quest_master);
     state = 'capturing';
   }
@@ -423,7 +430,6 @@ export function createQuestBotPlugin(): IPluginModule {
     api.sendCommand('pq complete');
 
     const gemPath = paths.gem_merchant;
-    const gemReturn = paths.gem_merchant_return;
     const tookGemStep = gemPath.length > 0 && latestGold >= 600;
 
     if (tookGemStep) {
@@ -438,7 +444,8 @@ export function createQuestBotPlugin(): IPluginModule {
       debug(api, `Gold: ${latestGold} < 600 — skipping gem merchant`);
     }
 
-    walk(api, tookGemStep && gemReturn.length > 0 ? gemReturn : paths.to_resting_room);
+    api.sendCommand('recall');
+    walk(api, paths.to_resting_room);
     walk(api, paths.rest_command);
 
     const beeContainer = String(api.getConfig().beeContainer ?? '').trim();
@@ -522,6 +529,7 @@ export function createQuestBotPlugin(): IPluginModule {
     const rewardM = line.match(/granting you (\d+) quest points, and (\d+) gold/i);
     if (rewardM) {
       api.writeTerminal?.(`{G[QuestBot] Reward: {W${rewardM[1]}{G QP, {W${rewardM[2]}{G gold{x\n`);
+      questAttemptCount = 0;
       state = 'idle';
       resetQuest();
       return;

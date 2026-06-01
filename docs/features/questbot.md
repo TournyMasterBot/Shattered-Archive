@@ -6,11 +6,14 @@ Automates the full DSL quest cycle for characters based in Wargar, Thaxanos, Sha
 
 ```mermaid
 flowchart TD
-    START([pq start]) --> ALIAS["Run startAlias (if set)"]
+    START([pq start]) --> ATTEMPT{"Quest retries exhausted?<br/>(3 consecutive failures)"}
+    ATTEMPT -- Yes --> GIVEUP["recall + to_resting_room<br/>stop — use pq start to retry"]
+    ATTEMPT -- No --> ALIAS["Run startAlias (if set)"]
     ALIAS --> BEES_GET{"beeContainer set?"}
     BEES_GET -- Yes --> GET_BEES["get bees [container]"]
-    BEES_GET -- No --> WALK_QM
-    GET_BEES --> WALK_QM[Walk to_quest_master path]
+    BEES_GET -- No --> PQ_CLEAR
+    GET_BEES --> PQ_CLEAR[pq clear]
+    PQ_CLEAR --> WALK_QM[Walk to_quest_master path]
     WALK_QM --> PQ_REQ[pq request find]
     PQ_REQ --> ITEM["Capture: Vile thieves have stolen..."]
     ITEM --> AREA["Capture: Look in vicinity of area for room"]
@@ -29,12 +32,12 @@ flowchart TD
     GEM_CHECK -- Yes --> GEM_WALK[Walk gem_merchant path]
     GEM_WALK --> GEM_POUCH{"gemPouch set?"}
     GEM_POUCH -- Yes --> PUT_GEM["put blue 'gem pouch'"]
-    GEM_POUCH -- No --> GEM_RET
-    PUT_GEM --> GEM_RET[Walk gem_merchant_return]
-    GEM_CHECK -- No --> REST_WALK[Walk to_resting_room]
+    GEM_POUCH -- No --> RECALL2
+    PUT_GEM --> RECALL2[recall]
+    GEM_CHECK -- No --> RECALL2
 
-    GEM_RET --> REST_CMD[rest_command]
-    REST_WALK --> REST_CMD
+    RECALL2 --> REST_WALK[Walk to_resting_room]
+    REST_WALK --> REST_CMD[rest_command]
 
     REST_CMD --> BEES_PUT{"beeContainer set?"}
     BEES_PUT -- Yes --> PUT_BEES["put bees [container]"]
@@ -44,7 +47,7 @@ flowchart TD
     AUTO{Auto-restart?}
     AUTO -- No --> IDLE([Idle])
     AUTO -- Yes --> COOLDOWN["You can now quest again."]
-    COOLDOWN --> ALIAS
+    COOLDOWN --> ATTEMPT
 ```
 
 ## Combat break and auto-resume
@@ -100,7 +103,6 @@ flowchart TD
 | `to_resting_room` | Walk from recall point back to the resting room |
 | `rest_command` | Commands to enter rest state (e.g. `rest pew`) |
 | `gem_merchant` | Walk from quest master to gem merchant + buy command. Empty = skip step |
-| `gem_merchant_return` | Walk from gem merchant to resting room. Falls back to `to_resting_room` if empty |
 | `justice_bind` | Walk to Arkane justice bind point |
 | `icewall_port` | Walk to Icewall ship portal |
 | `alth_port` | Walk to Althainia ship portal |
