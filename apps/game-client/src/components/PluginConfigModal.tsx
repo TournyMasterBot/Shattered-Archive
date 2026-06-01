@@ -223,6 +223,28 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
                 );
               }
 
+              if (f.type === 'select') {
+                return (
+                  <div key={f.key} className={styles.field}>
+                    <div className={styles.labelRow}>
+                      <div className={styles.label}>{f.label}</div>
+                    </div>
+                    {f.description ? <div className={styles.desc}>{f.description}</div> : null}
+                    <select
+                      className={styles.input}
+                      value={value === undefined || value === null ? '' : String(value)}
+                      onChange={(e) => updateDraft(f.key, e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      onKeyUp={(e) => e.stopPropagation()}
+                    >
+                      {f.options.map((o: { value: string; label: string }) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              }
+
               return null;
             })
           )}

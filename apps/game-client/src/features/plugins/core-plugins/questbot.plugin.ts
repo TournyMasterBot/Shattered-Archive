@@ -56,24 +56,35 @@ type CharacterPaths = {
   alth_arena: string[];
   tropica_port: string[];
   succubus: string[];
+  // Navigation from pq complete to gem merchant, including the buy command.
+  // Leave empty to skip the gem step entirely.
+  gem_merchant: string[];
+  // Navigation from the gem merchant back to the resting room.
+  // Used instead of to_resting_room when the gem step ran.
+  gem_merchant_return: string[];
 };
 
+const shadowHallFromRecall = ['e','e','e','s','s','s','s','s','s'];
+const eclipseTowerEntranceToResting = ['open west','w','u','enter orb']
+const gemMerchantFromVermTaskMaster = ['e','s','s','s','s','s','w','n'];
 const HOME_PATHS: Record<HomeKey, CharacterPaths> = {
   wargar: {
     quest_master: ['d','n','ne','nw','nw','nw','w','n','n','e','e','n','n','n','n','n','n','w','w','s'],
-    to_quest_master: ['get bees pit','stand','c fly','c sanc','c pass','e','d','s','u','n','ne','nw','nw','nw','w','n','n','e','e','n','n','n','n','n','n','w','w','s','pq clear','pq request find'],
+    to_quest_master: ['stand','c fly','c sanc','c pass','e','d','s','u','n','ne','nw','nw','nw','w','n','n','e','e','n','n','n','n','n','n','w','w','s','pq request find'],
     to_resting_room: ['n','e','e','s','s','s','s','s','s','w','w','s','s','e','se','se','se','sw','s','d','n','u','w'],
-    rest_command: ['land','wear helm','rest pew','put bees pit'],
+    rest_command: ['land','wear helm','rest pew'],
     justice_bind: ['n','e','e','s','s','s','s','s','s','w','w','s','s','e','se','se','se','sw','s','d','n','u','w','stand','w','enter ark','e','e','e','e','e'],
     icewall_port: ['n','e','e','s','s','s','s','s','s','w','w','s','s','e','se','se','se','sw','s','d','n','u','w','stand','w','enter ice'],
     alth_port: ['n','e','e','s','s','s','s','s','s','w','w','s','s','e','se','se','se','sw','s','d','n','u','w','stand','w','enter new'],
     alth_arena: ['n','e','e','s','s','s','s','s','s','w','w','s','s','e','se','se','se','sw','s','d','n','u','w','stand','w','enter gaming','enter portal'],
     tropica_port: ['n','e','e','s','s','s','s','s','s','w','w','s','s','e','se','se','se','sw','s','d','n','u','w','stand','w','enter tropica'],
     succubus: ['c gate bloody nose'],
+    gem_merchant: [],
+    gem_merchant_return: [],
   },
   thaxanos: {
     quest_master: ['n','n','n','n','e','s'],
-    to_quest_master: ['stand','c fly','c sanc','c pass','s','s','pq clear','pq request find'],
+    to_quest_master: ['stand','c fly','c sanc','c pass','s','s', 'pq request find'],
     to_resting_room: ['n','n'],
     rest_command: ['wear helm','rest slab'],
     justice_bind: ['n','w','w','w','w','s','s','s','s','e','e','n','d','e','e','enter ark','e','e','e','e','e'],
@@ -82,11 +93,13 @@ const HOME_PATHS: Record<HomeKey, CharacterPaths> = {
     alth_arena: ['n','w','w','w','w','s','s','s','s','e','e','n','d','e','e','enter gaming','enter portal'],
     tropica_port: ['n','w','w','w','w','s','s','s','s','e','e','n','d','e','e','enter tropica'],
     succubus: ['c gate bloody nose'],
+    gem_merchant: [],
+    gem_merchant_return: [],
   },
   shadow: {
-    quest_master: ['se','e','s','s','s','s','s','s','s','w','sw','s','e','se','e','e','n','enter orb','d','e','n','w','w','w','w','w','n','n','n','n','nw'],
-    to_quest_master: ['get bees shelf','stand','c fly','c pass','c sanc','enter orb','d','e','n','w','w','w','w','w','n','n','n','n','nw','pq clear','pq request find'],
-    to_resting_room: ['se','s','s','s','s','e','e','e','e','e','s','w','u','enter orb'],
+    quest_master: ['open south', 's','s','w','w','w','s','s','s','s','s','s','e','e','e','s','s','w','s','e','e','n','n','n','w'],
+    to_quest_master: ['stand','c fly','c pass','enter orb','d','e','n','w','w','w','w','w','n','n','n','n','nw','pq request find'],
+    to_resting_room: [...shadowHallFromRecall, ...eclipseTowerEntranceToResting],
     rest_command: ['wear helm','land','rest blanket'],
     justice_bind: ['se','s','s','s','s','e','e','e','e','e','s','w','u','enter orb','s','d','enter ark','e','e','e','e','e'],
     icewall_port: ['se','s','s','s','s','e','e','e','e','e','s','w','u','enter orb','s','d','enter ice'],
@@ -94,10 +107,12 @@ const HOME_PATHS: Record<HomeKey, CharacterPaths> = {
     alth_arena: ['se','s','s','s','s','e','e','e','e','e','s','w','u','enter orb','s','d','enter gaming','enter portal'],
     tropica_port: ['se','s','s','s','s','e','e','e','e','e','s','w','u','enter orb','s','d','enter tropica'],
     succubus: ['c gate bloody nose'],
+    gem_merchant: [...gemMerchantFromVermTaskMaster,'buy blue'],
+    gem_merchant_return: ['s','e','s','s','s','s','s','s','s','s','e','n','n','n','open west','w','u','enter orb'],
   },
   darkonin: {
     quest_master: ['e','e'],
-    to_quest_master: ['stand','c fly','c pass','c sanc','s','e','pq clear','pq request find'],
+    to_quest_master: ['stand','c fly','c pass','c sanc','s','e','pq request find'],
     to_resting_room: ['w','n'],
     rest_command: ['stand'],
     justice_bind: ['w','s','s','s','w','n','n','w','n','enter ark','e','e','e','e','e'],
@@ -106,10 +121,12 @@ const HOME_PATHS: Record<HomeKey, CharacterPaths> = {
     alth_arena: ['w','s','s','s','w','n','n','w','n','enter gaming','enter portal'],
     tropica_port: ['w','s','s','s','w','n','n','w','n','enter tropica'],
     succubus: ['c gate bloody nose'],
+    gem_merchant: [],
+    gem_merchant_return: [],
   },
   verm: {
     quest_master: ['n','nw'],
-    to_quest_master: ['stand','c fly','c pass','c sanc','s','e','pq clear','pq request find'],
+    to_quest_master: ['stand','c fly','c pass','c sanc','s','e','pq request find'],
     to_resting_room: ['se','s','s','w','w','n','e','n','n','w','w','w','n','n','n','n','n','w','w'],
     rest_command: ['land','wear helm','rest cot'],
     justice_bind: ['se','s','s','w','w','n','e','n','n','w','w','w','n','n','n','n','n','w','w','w','d','enter ark','e','e','e','e','e'],
@@ -118,6 +135,8 @@ const HOME_PATHS: Record<HomeKey, CharacterPaths> = {
     alth_arena: ['se','s','s','w','w','n','e','n','n','w','w','w','n','n','n','n','n','w','w','w','d','enter gaming','enter portal'],
     tropica_port: ['se','s','s','w','w','n','e','n','n','w','w','w','n','n','n','n','n','w','w','w','d','enter tropica'],
     succubus: ['c gate bloody nose'],
+    gem_merchant: [],
+    gem_merchant_return: [],
   },
 };
 
@@ -283,6 +302,11 @@ export function createQuestBotPlugin(): IPluginModule {
   let state: BotState = 'idle';
   let item: string | null = null;
   let itemKeyword: string | null = null;
+  let latestGold = 0;
+  let lastIsFighting = false;
+  let combatBreakPending = false;
+  let fleedDuringCombat = false;
+  let combatResumeTimerId: ReturnType<typeof setTimeout> | null = null;
   let questArea: string | null = null;
   let questRoom: string | null = null;
 
@@ -339,6 +363,12 @@ export function createQuestBotPlugin(): IPluginModule {
       runAlias(api, startAlias);
     }
 
+    const beeContainer = String(api.getConfig().beeContainer ?? '').trim();
+    if (beeContainer) {
+      debug(api, `Getting bees from ${beeContainer}`);
+      api.sendCommand(`get bees ${beeContainer}`);
+    }
+
     state = 'requesting';
     debug(api, 'Walking to quest master');
     walk(api, paths.to_quest_master);
@@ -391,8 +421,31 @@ export function createQuestBotPlugin(): IPluginModule {
     api.sendCommand('recall');
     walk(api, paths.quest_master);
     api.sendCommand('pq complete');
-    walk(api, paths.to_resting_room);
+
+    const gemPath = paths.gem_merchant;
+    const gemReturn = paths.gem_merchant_return;
+    const tookGemStep = gemPath.length > 0 && latestGold >= 600;
+
+    if (tookGemStep) {
+      debug(api, `Gold: ${latestGold} ≥ 600 — walking to gem merchant`);
+      walk(api, gemPath);
+      const gemPouch = String(api.getConfig().gemPouch ?? '').trim();
+      if (gemPouch) {
+        const quotedPouch = gemPouch.includes(' ') ? `'${gemPouch}'` : gemPouch;
+        api.sendCommand(`put blue ${quotedPouch}`);
+      }
+    } else if (gemPath.length > 0) {
+      debug(api, `Gold: ${latestGold} < 600 — skipping gem merchant`);
+    }
+
+    walk(api, tookGemStep && gemReturn.length > 0 ? gemReturn : paths.to_resting_room);
     walk(api, paths.rest_command);
+
+    const beeContainer = String(api.getConfig().beeContainer ?? '').trim();
+    if (beeContainer) {
+      debug(api, `Returning bees to ${beeContainer}`);
+      api.sendCommand(`put bees ${beeContainer}`);
+    }
   }
 
   function handleLine(api: PluginRuntimeApi, raw: string): void {
@@ -489,6 +542,8 @@ export function createQuestBotPlugin(): IPluginModule {
       defaults: {
         homeLocation: 'wargar',
         startAlias: '',
+        beeContainer: '',
+        gemPouch: 'gem pouch',
         autoRestart: true,
         debug: false,
         customAreas: '[]',
@@ -506,6 +561,22 @@ export function createQuestBotPlugin(): IPluginModule {
             { value: 'darkonin', label: 'Darkonin' },
             { value: 'verm', label: 'Verminasia' },
           ],
+        },
+        {
+          key: 'beeContainer',
+          type: 'string',
+          label: 'Beeswax earplugs container',
+          description:
+            'Container name that holds your beeswax earplugs (e.g. "shelf" or "pit"). If set, the bot retrieves the earplugs before each quest cycle and returns them after resting.',
+          placeholder: 'shelf',
+        },
+        {
+          key: 'gemPouch',
+          type: 'string',
+          label: 'Gem pouch',
+          description:
+            'Name of the gem pouch to put blue gems into after buying (e.g. "gem pouch"). Leave blank to skip the put command.',
+          placeholder: 'gem pouch',
         },
         {
           key: 'startAlias',
@@ -552,6 +623,44 @@ export function createQuestBotPlugin(): IPluginModule {
     },
 
     onEvent: (api: PluginRuntimeApi, evt) => {
+      if (evt?.name === 'game:char-data') {
+        const p = evt.payload as any;
+        if (typeof p?.gold === 'number') latestGold = p.gold;
+
+        const isFighting = p?.is_fighting === true;
+
+        if (isFighting && !lastIsFighting && running) {
+          running = false;
+          state = 'idle';
+          resetQuest();
+          combatBreakPending = true;
+          fleedDuringCombat = false;
+          if (combatResumeTimerId !== null) {
+            clearTimeout(combatResumeTimerId);
+            combatResumeTimerId = null;
+          }
+          (window as any).__SA_RUNTIME__?.runtime?.cancelDoAfterTimers();
+          api.writeTerminal?.(`{R[QuestBot] Combat detected — stopped. Will resume in 30s if no flee.{x\n`);
+        }
+
+        if (!isFighting && lastIsFighting && combatBreakPending) {
+          combatResumeTimerId = setTimeout(() => {
+            combatResumeTimerId = null;
+            combatBreakPending = false;
+            if (fleedDuringCombat) {
+              api.writeTerminal?.(`{Y[QuestBot] Flee detected — not resuming{x\n`);
+              return;
+            }
+            api.writeTerminal?.(`{G[QuestBot] Combat over — resuming quest{x\n`);
+            running = true;
+            requestQuest(api);
+          }, 30_000);
+        }
+
+        lastIsFighting = isFighting;
+        return;
+      }
+
       if (evt?.name !== 'shatteredarchive:raw-data') return;
       const p = evt.payload as any;
       const raw = typeof p === 'string' ? p : String(p?.rawText ?? p?.text ?? '');
@@ -576,9 +685,25 @@ export function createQuestBotPlugin(): IPluginModule {
       if (cmd === 'pq stop') {
         running = false;
         state = 'idle';
+        combatBreakPending = false;
+        if (combatResumeTimerId !== null) {
+          clearTimeout(combatResumeTimerId);
+          combatResumeTimerId = null;
+        }
         resetQuest();
         api.writeTerminal?.(`{Y[QuestBot] Stopped{x\n`);
         return true;
+      }
+
+      if (cmd === 'flee' && combatBreakPending) {
+        fleedDuringCombat = true;
+        if (combatResumeTimerId !== null) {
+          clearTimeout(combatResumeTimerId);
+          combatResumeTimerId = null;
+        }
+        combatBreakPending = false;
+        api.writeTerminal?.(`{Y[QuestBot] Flee detected — auto-resume cancelled{x\n`);
+        return false; // pass 'flee' through to the game
       }
 
       if (cmd === 'pq status') {

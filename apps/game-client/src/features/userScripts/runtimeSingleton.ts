@@ -158,7 +158,7 @@ export class RuntimeSingleton {
   }
 
   private attachWindowEvents(): void {
-    console.log('Attaching runtime singleton window events');
+    // Debug: console.log('Attaching runtime singleton window events');
 
     // RAW -> shatteredarchive:raw-data (mapped)
     this.disposers.push(

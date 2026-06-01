@@ -343,7 +343,7 @@ export class UserScriptRuntime {
   }
 
   private attachWindowEvents() {
-    console.log('Attaching user script runtime events');
+    // Debug: console.log('Attaching user script runtime events');
 
     ListenEvent<any>('shatteredarchive:raw-data', (payload) => {
       void this.processRawEvent(payload);
@@ -775,10 +775,12 @@ export class UserScriptRuntime {
 
   dispatchGmcpEvent<T extends object>(eventName: string, length: number, rawText: string): void {
     try {
+      /* Debug
       console.log('Dispatching event', {
         eventName,
         rawText,
       });
+      */
       const jsonPart = rawText.slice(length).trim();
       const data = JSON.parse(jsonPart) as T;
       const w = window as any;

@@ -1465,61 +1465,76 @@ orange  = an orange`}</pre>
               {/* ── Quest Bot ── */}
               <h4 id="plugin-questbot" className={styles.pluginHeading}>Quest Bot</h4>
               <p>
-                Automates the full quest cycle from start to finish: walks to the quest master,
-                requests a quest, parses the assignment dialogue, navigates to the target area,
-                combs for the stolen item, and turns it in — then rests and repeats automatically
-                when the cooldown expires.
+                Automates the full quest cycle: runs a start alias, walks to the quest master,
+                requests a quest, parses the assignment, navigates to the area, collects the item,
+                turns it in, optionally buys a gem, rests, and repeats. Stops automatically on
+                combat or AFK, and can auto-resume after combat clears.
               </p>
               <ul className={styles.list}>
                 <li>Enable from <strong>Plugins → Manage Plugins</strong></li>
                 <li>
                   Set <em>Home location</em> to your clan hall (Wargar, Thaxanos, Shadow,
-                  Darkonin, or Verminasia) — this determines the navigation paths
+                  Darkonin, or Verminasia) — determines all navigation paths
                 </li>
                 <li>
-                  Enable <em>Auto-restart</em> to automatically loop quests when{' '}
+                  Set <em>Start alias</em> to an alias name (e.g. <code>buff</code>) to run
+                  before each quest cycle — useful for casting buffs before heading out
+                </li>
+                <li>
+                  Enable <em>Auto-restart</em> to loop automatically when{' '}
                   <code>You can now quest again.</code> appears
                 </li>
-                <li>The bot stops immediately if a PK attack is detected</li>
+                <li>
+                  Combat via GMCP <code>is_fighting</code> stops the bot and starts a 30-second
+                  resume timer — typing <code>flee</code> cancels the timer
+                </li>
+                <li>
+                  AFK mode via GMCP <code>is_afk</code> suspends all timers so the game can
+                  time you out naturally
+                </li>
               </ul>
-              <p>Commands available in the command bar once the plugin is enabled:</p>
+
+              <h4 className={styles.subHeading}>Commands</h4>
               <div className={styles.table}>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}><code>pq start</code></span>
-                  <span>Begin quest automation. Walks to the quest master and requests a quest.</span>
+                  <span>Enable the bot. Runs the start alias then walks to the quest master.</span>
                 </div>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}><code>pq stop</code></span>
-                  <span>Stop the bot and reset all state. Navigation in progress is not cancelled — type <code>~</code> to clear the outbound queue first.</span>
+                  <span>Stop the bot, reset all state, and cancel any pending combat-resume timer. Type <code>~</code> first to also flush queued movement commands.</span>
                 </div>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}><code>pq status</code></span>
-                  <span>Print current bot state: running flag, state machine phase, captured item, area, and room.</span>
+                  <span>Print current state: running flag, phase, captured item, area, and room.</span>
                 </div>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}><code>pq debug</code></span>
-                  <span>Toggle step-by-step debug output in the terminal.</span>
+                  <span>Toggle step-by-step navigation and state-change logging to the terminal.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>pq areas</code></span>
+                  <span>List all known areas (built-in and custom) with their start point and room names.</span>
                 </div>
               </div>
 
-              <h4 className={styles.subHeading}>How quest capture works</h4>
+              <h4 className={styles.subHeading}>Quest dialogue capture</h4>
               <p>
-                The bot listens for specific lines from the quest master NPC. Once{' '}
-                <code>pq start</code> is run, it walks to the quest master and sends{' '}
-                <code>pq request find</code>. It then watches for:
+                After <code>pq request find</code> is sent, the bot watches for these lines from
+                the quest master:
               </p>
               <div className={styles.table}>
                 <div className={styles.tableRow}>
-                  <span className={styles.tableKey}>Item line</span>
-                  <span><code>Vile thieves have stolen [item] from the royal treasury!</code> — captures the item name</span>
+                  <span className={styles.tableKey}>Item</span>
+                  <span><code>Vile thieves have stolen [item] from the royal treasury!</code> — captures item name</span>
                 </div>
                 <div className={styles.tableRow}>
-                  <span className={styles.tableKey}>Location line</span>
+                  <span className={styles.tableKey}>Location</span>
                   <span><code>Look in the general vicinity of [area] for [room]!</code> — captures area and room</span>
                 </div>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}>Go signal</span>
-                  <span><code>May the gods go with you!</code> — triggers navigation to the area</span>
+                  <span><code>May the gods go with you!</code> — triggers navigation</span>
                 </div>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}>Pickup</span>
@@ -1527,9 +1542,48 @@ orange  = an orange`}</pre>
                 </div>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}>Cooldown</span>
-                  <span><code>You can now quest again.</code> — triggers the next cycle (if Auto-restart is on)</span>
+                  <span><code>You can now quest again.</code> — triggers next cycle if Auto-restart is on</span>
                 </div>
               </div>
+
+              <h4 className={styles.subHeading}>Gem merchant step</h4>
+              <p>
+                After <code>pq complete</code>, if your gold is ≥ 600 <em>and</em> the{' '}
+                <code>gem_merchant</code> path for your home location is non-empty, the bot
+                walks to the gem merchant, buys a gem, then uses{' '}
+                <code>gem_merchant_return</code> to reach the resting room instead of the
+                normal <code>to_resting_room</code> path.
+              </p>
+
+              <h4 className={styles.subHeading}>Combat break and auto-resume</h4>
+              <p>
+                When GMCP reports <code>is_fighting: true</code> while the bot is running, it
+                stops immediately and starts a 30-second countdown. If the countdown completes
+                without you typing <code>flee</code>, the bot auto-resumes from the start
+                (runs the start alias, then walks to the quest master).
+              </p>
+              <div className={styles.table}>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Combat detected</span>
+                  <span>Bot stops. 30-second resume timer begins once <code>is_fighting</code> clears.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>flee</code> typed</span>
+                  <span>Resume timer is cancelled. Bot stays stopped — type <code>pq start</code> to restart manually.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Timer expires (no flee)</span>
+                  <span>Bot resumes automatically: runs start alias then walks to quest master.</span>
+                </div>
+              </div>
+
+              <h4 className={styles.subHeading}>AFK mode</h4>
+              <p>
+                When GMCP reports <code>is_afk: true</code>, all user script timers are
+                suspended so the game can idle-timeout your character naturally. Timers resume
+                when <code>is_afk</code> clears. A message is written to the terminal on each
+                transition.
+              </p>
 
               <h4 className={styles.subHeading}>Supported areas</h4>
               <pre className={styles.code}>{`Gahboom Hill        — justice_bind start
@@ -1542,20 +1596,20 @@ Forbidden Forest    — icewall_port start
 A Blazing Aurora    — justice_bind start
 Jovar               — icewall_port start`}</pre>
               <div className={styles.callout}>
-                <strong>Area not listed?</strong> Add it in the <em>Custom Areas (JSON)</em>
-                field in the plugin's Configure panel — no plugin update required. Custom entries
-                are saved to localStorage and override any built-in area with the same name.
+                <strong>Area not listed?</strong> Add it via the <em>Custom Areas (JSON)</em>
+                config field — no plugin update needed. Type <code>pq areas</code> to confirm
+                the new area was parsed correctly.
               </div>
 
               <h4 className={styles.subHeading}>Adding custom areas</h4>
               <p>
-                Open <strong>Plugins → Quest Bot → Configure</strong> and paste a JSON array into
-                the <em>Custom Areas</em> field. Each object in the array defines one area:
+                Open <strong>Plugins → Quest Bot → Configure</strong> and paste a JSON array
+                into the <em>Custom Areas</em> field:
               </p>
               <pre className={styles.code}>{`[
   {
     "name":        "my new area",          // must match what the quest master says
-    "startPoint":  "icewall_port",         // which home path gets you to the port/gate
+    "startPoint":  "icewall_port",         // home path key to reach the continent
     "startToArea": ["n", "n", "e", "e"],  // commands from that port to the area entrance
     "rooms": {
       "a dark cave": ["w", "w", "s"],      // room name → walk path to search
@@ -1563,38 +1617,32 @@ Jovar               — icewall_port start`}</pre>
     }
   }
 ]`}</pre>
-              <p>
-                The <code>startPoint</code> must be one of the home path keys:
-              </p>
+              <p>Valid <code>startPoint</code> values:</p>
               <div className={styles.table}>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}><code>justice_bind</code></span>
-                  <span>Walk to Arkane justice bind point, then east to Arkane continent</span>
+                  <span>Arkane justice bind point</span>
                 </div>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}><code>icewall_port</code></span>
-                  <span>Walk to home portal and enter the Icewall ship</span>
+                  <span>Icewall ship portal</span>
                 </div>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}><code>alth_port</code></span>
-                  <span>Walk to home portal and enter the Althainia ship</span>
+                  <span>Althainia ship portal</span>
                 </div>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}><code>alth_arena</code></span>
-                  <span>Walk to Althainia via the gaming portal</span>
+                  <span>Althainia via gaming portal</span>
                 </div>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}><code>tropica_port</code></span>
-                  <span>Walk to home portal and enter the Tropica ship</span>
+                  <span>Tropica ship portal</span>
                 </div>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}><code>succubus</code></span>
-                  <span>Cast <code>c gate bloody nose</code> to reach the succubus gate area</span>
+                  <span><code>c gate bloody nose</code> gate</span>
                 </div>
-              </div>
-              <div className={styles.callout}>
-                Type <code>pq areas</code> in the command bar to list every known area — both
-                built-in and custom — along with their start point and room names.
               </div>
 
               {/* ── Scripts vs Plugins ── */}
