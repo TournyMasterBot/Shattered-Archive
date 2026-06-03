@@ -1717,10 +1717,11 @@ export function createQuestBotPlugin(): IPluginModule {
             navRetryTimerId = null;
           }
           (window as any).__SA_RUNTIME__?.runtime?.cancelDoAfterTimers();
-          api.writeTerminal?.(`{R[QuestBot] Combat detected — stopped. Will resume in 30s if no flee.{x\n`);
+          api.writeTerminal?.(`{R[QuestBot] Combat detected — stopped.{x\n`);
         }
 
         if (!isFighting && lastIsFighting && combatBreakPending) {
+          api.writeTerminal?.(`{Y[QuestBot] Combat ended — resuming in 30s.{x\n`);
           combatResumeTimerId = setTimeout(() => {
             combatResumeTimerId = null;
             combatBreakPending = false;
