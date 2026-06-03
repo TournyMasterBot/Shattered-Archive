@@ -143,9 +143,26 @@ export async function recordQuestCompletion(opts: {
 }
 
 /**
- * Marks the session ended, increments the alltime session counter, and prunes
- * sessions older than MAX_SESSIONS. Only called when at least one quest was
- * completed in the session.
+ * Increments the alltime session counter. Called on pq start so disconnects
+ * are counted even when pq stop is never reached.
+ */
+export async function incrementSessionCount(): Promise<void> {
+  const db = await openDb();
+  const tx = db.transaction(STORE_ALLTIME, 'readwrite');
+  const store = tx.objectStore(STORE_ALLTIME);
+  const existing = await idbGet<AllTimeRecord>(store, ALLTIME_KEY);
+  const at: AllTimeRecord = existing ?? {
+    questCount: 0, totalQp: 0, totalGold: 0, totalQuestMs: 0,
+    sessionCount: 0, firstQuestAt: 0,
+  };
+  at.sessionCount += 1;
+  store.put(at, ALLTIME_KEY);
+  await txDone(tx);
+}
+
+/**
+ * Marks the session ended and prunes sessions older than MAX_SESSIONS.
+ * Only called when at least one quest was completed in the session.
  */
 export async function finalizeSession(session: SessionRecord): Promise<void> {
   const db = await openDb();
@@ -153,17 +170,6 @@ export async function finalizeSession(session: SessionRecord): Promise<void> {
   {
     const tx = db.transaction(STORE_SESSIONS, 'readwrite');
     tx.objectStore(STORE_SESSIONS).put(session);
-    await txDone(tx);
-  }
-
-  {
-    const tx = db.transaction(STORE_ALLTIME, 'readwrite');
-    const store = tx.objectStore(STORE_ALLTIME);
-    const existing = await idbGet<AllTimeRecord>(store, ALLTIME_KEY);
-    if (existing) {
-      existing.sessionCount += 1;
-      store.put(existing, ALLTIME_KEY);
-    }
     await txDone(tx);
   }
 
