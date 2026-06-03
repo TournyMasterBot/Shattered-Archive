@@ -279,7 +279,7 @@ export class RuntimeSingleton {
       ListenEvent<ShatteredArchiveChatLine>(
         'shatteredarchive:chat-line',
         (payload) => {
-          console.log('Raw chat event', payload);
+          // DEBUG: console.log('Raw chat event', payload);
           const rawText = String(payload?.rawText ?? payload?.text ?? '');
           if (!rawText) return;
 

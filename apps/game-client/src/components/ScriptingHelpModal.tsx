@@ -1468,7 +1468,8 @@ orange  = an orange`}</pre>
                 Automates the full quest cycle: runs a start alias, walks to the quest master,
                 requests a quest, parses the assignment, navigates to the area, collects the item,
                 turns it in, optionally buys a gem, rests, and repeats. Stops automatically on
-                combat or AFK, and can auto-resume after combat clears.
+                combat and can auto-resume after combat clears. Per-quest and per-area stats are
+                tracked in IndexedDB and viewable any time with <code>pq stats</code>.
               </p>
               <ul className={styles.list}>
                 <li>Enable from <strong>Plugins → Manage Plugins</strong></li>
@@ -1487,10 +1488,6 @@ orange  = an orange`}</pre>
                 <li>
                   Combat via GMCP <code>is_fighting</code> stops the bot and starts a 30-second
                   resume timer — typing <code>flee</code> cancels the timer
-                </li>
-                <li>
-                  AFK mode via GMCP <code>is_afk</code> suspends all timers so the game can
-                  time you out naturally
                 </li>
               </ul>
 
@@ -1515,6 +1512,14 @@ orange  = an orange`}</pre>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}><code>pq areas</code></span>
                   <span>List all known areas (built-in and custom) with their start point and room names.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>pq stats</code></span>
+                  <span>Print current session, all-time, and per-area stats (QP, gold, rates, averages). Data is persisted in IndexedDB across sessions.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}><code>pq stats reset</code></span>
+                  <span>Wipe all stored stats and start fresh.</span>
                 </div>
               </div>
 
@@ -1548,42 +1553,65 @@ orange  = an orange`}</pre>
 
               <h4 className={styles.subHeading}>Gem merchant step</h4>
               <p>
-                After <code>pq complete</code>, if your gold is ≥ 600 <em>and</em> the{' '}
+                After <code>pq complete</code>, if your gold meets the{' '}
+                <em>Gem buy gold threshold</em> (default 600) <em>and</em> the{' '}
                 <code>gem_merchant</code> path for your home location is non-empty, the bot
-                walks to the gem merchant, buys a gem, then uses{' '}
-                <code>gem_merchant_return</code> to reach the resting room instead of the
-                normal <code>to_resting_room</code> path.
+                walks to the gem merchant, buys a gem, optionally puts it in your gem pouch,
+                then recalls and walks the normal <code>to_resting_room</code> path home.
+                Set the threshold to <code>0</code> to always visit the gem merchant.
               </p>
 
               <h4 className={styles.subHeading}>Combat break and auto-resume</h4>
               <p>
                 When GMCP reports <code>is_fighting: true</code> while the bot is running, it
-                stops immediately and starts a 30-second countdown. If the countdown completes
-                without you typing <code>flee</code>, the bot auto-resumes from the start
-                (runs the start alias, then walks to the quest master).
+                stops immediately. Once fighting clears, a 30-second timer starts. If you type{' '}
+                <code>flee</code> during combat the timer is cancelled and the bot stays stopped.
+                Otherwise the bot resumes based on what it was doing when combat began:
               </p>
               <div className={styles.table}>
                 <div className={styles.tableRow}>
-                  <span className={styles.tableKey}>Combat detected</span>
-                  <span>Bot stops. 30-second resume timer begins once <code>is_fighting</code> clears.</span>
+                  <span className={styles.tableKey}>Was turning in</span>
+                  <span>Resumes the turn-in sequence.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Was combing</span>
+                  <span>Re-sends the remaining comb steps for the current room.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Was navigating</span>
+                  <span>Recalls and re-runs the full navigation to the quest area.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Any other state</span>
+                  <span>Recalls and requests a new quest from the quest master.</span>
                 </div>
                 <div className={styles.tableRow}>
                   <span className={styles.tableKey}><code>flee</code> typed</span>
                   <span>Resume timer is cancelled. Bot stays stopped — type <code>pq start</code> to restart manually.</span>
                 </div>
-                <div className={styles.tableRow}>
-                  <span className={styles.tableKey}>Timer expires (no flee)</span>
-                  <span>Bot resumes automatically: runs start alias then walks to quest master.</span>
-                </div>
               </div>
 
-              <h4 className={styles.subHeading}>AFK mode</h4>
+              <h4 className={styles.subHeading}>Quest stats</h4>
               <p>
-                When GMCP reports <code>is_afk: true</code>, all user script timers are
-                suspended so the game can idle-timeout your character naturally. Timers resume
-                when <code>is_afk</code> clears. A message is written to the terminal on each
-                transition.
+                The bot tracks QP, gold, and duration for every completed quest and persists
+                the data in IndexedDB. Aggregates are stored as running totals — no individual
+                records accumulate over time. Up to 20 completed sessions are kept; older ones
+                are pruned automatically.
               </p>
+              <div className={styles.table}>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Session</span>
+                  <span>Totals and averages for the current <code>pq start</code> run, including QP/hr rate over wall-clock time.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>All time</span>
+                  <span>Cumulative totals across all sessions: quest count, QP, gold, and per-quest averages.</span>
+                </div>
+                <div className={styles.tableRow}>
+                  <span className={styles.tableKey}>Areas</span>
+                  <span>Per-area totals sorted by quest count — shows which areas you've worked most and their average quest time.</span>
+                </div>
+              </div>
 
               <h4 className={styles.subHeading}>Supported areas</h4>
               <pre className={styles.code}>{`Gahboom Hill        — justice_bind start

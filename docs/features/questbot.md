@@ -37,7 +37,7 @@ flowchart TD
     TILDE --> WALK_QM2[Walk quest_master path]
     WALK_QM2 --> PQ_COMP[pq complete]
     PQ_COMP --> WORTH[worth]
-    WORTH --> GEM_CHECK{"gold ≥ 600 and<br/>gem_merchant set?"}
+    WORTH --> GEM_CHECK{"gold ≥ gemGoldThreshold<br/>and gem_merchant set?"}
 
     GEM_CHECK -- Yes --> GEM_WALK[Walk gem_merchant path]
     GEM_WALK --> GEM_POUCH{"gemPouch set?"}
@@ -115,6 +115,45 @@ flowchart TD
     RESUME_REQ --> RUNNING
 ```
 
+## Quest stats
+
+QP, gold, and duration are recorded for every completed quest and persisted in IndexedDB (`shatteredArchive.questbot`). Running aggregates (sums + counts) are stored rather than individual records, so the database stays bounded regardless of run time. Up to 20 completed sessions are retained; older sessions are pruned automatically.
+
+| Alias | Action |
+|-------|--------|
+| `pq stats` | Print current session, all-time, and per-area summary to the terminal |
+| `pq stats reset` | Wipe all stored stats and reset the current session |
+
+### What is tracked
+
+| Store | Key | Data |
+|-------|-----|------|
+| `sessions` | `startedAt` (timestamp) | Per-session: quest count, total QP, total gold, total quest duration (ms) |
+| `alltime` | `'stats'` | Cumulative: quest count, QP, gold, quest duration, session count, first quest timestamp |
+| `areas` | area name | Per-area: quest count, QP, gold, quest duration, last seen timestamp |
+
+### Stats output (`pq stats`)
+
+```
+[QuestBot] ── Session ───────────────────────────────────
+  Started 14:23   Duration 1h 42m   Quests 18
+  Earned  1,860 QP   12,600 gold
+  /quest  103 QP   700 gold   5m 40s avg
+  Rate    1,085 QP/hr
+
+[QuestBot] ── All Time ──────────────────────────────────
+  89 sessions   1,247 quests   since 2026-01-15
+  Earned  130,940 QP   875,000 gold
+  /quest  105 QP   701 gold   5m 22s avg
+
+[QuestBot] ── Areas (by quests) ───────────────────────
+  gahboom hill          234 q    24,570 QP   105/q   5m 10s avg
+  jovar                 187 q    19,635 QP   105/q   5m 58s avg
+  elemental planes       98 q    10,290 QP   105/q   6m 12s avg
+```
+
+> **Quest duration** is measured from "May the gods go with you!" to the reward line. Session wall-clock time (used for QP/hr rate) is measured from `pq start` to the current moment or `pq stop`.
+
 ## Configuration reference
 
 | Field | Default | Purpose |
@@ -123,6 +162,7 @@ flowchart TD
 | `startAlias` | _(empty)_ | Alias name executed before each quest cycle |
 | `beeContainer` | _(empty)_ | Container holding beeswax earplugs (e.g. `shelf`). Retrieved on auto-restart cycles only (`to_quest_master` path). Not retrieved on manual `pq start` or combat resume — use `startAlias` for those cases. Returned to container after resting |
 | `gemPouch` | `gem pouch` | Gem pouch to put blue gems into after buying. Leave blank to skip the put step |
+| `gemGoldThreshold` | `600` | Minimum gold required to trigger the gem merchant step. Set to `0` to always visit when the path is configured |
 | `autoRestart` | `true` | Auto-loop on `You can now quest again.` |
 | `debug` | `false` | Log each navigation step and state transition |
 | `refreshCommand` | `cast refresh` | Command sent twice after recalling when movement is at or below one third of maximum. Set to `quaff potion` or any alternative |

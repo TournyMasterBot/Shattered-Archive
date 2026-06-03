@@ -7,18 +7,117 @@
 // Adapted from QuestBot.lua (DSL community).
 //
 // Aliases:
-//   pq start   — enable and begin questing
-//   pq stop    — disable, reset state
-//   pq status  — print current state
-//   pq debug   — toggle debug logging
+//   pq start        — enable and begin questing
+//   pq stop         — disable, reset state
+//   pq status       — print current state
+//   pq debug        — toggle debug logging
+//   pq stats        — print session / all-time / per-area stats
+//   pq stats reset  — wipe all stored stats
 
 import type { IPluginModule, PluginRuntimeApi } from '@shatteredarchive/types-client';
+import {
+  type AreaRecord,
+  type AllTimeRecord,
+  type SessionRecord,
+  finalizeSession,
+  loadAllAreaStats,
+  loadAllTime,
+  recordQuestCompletion,
+  resetStats,
+} from './questbot-stats-idb';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function stripAnsi(s: string): string {
   if (!s || !s.includes('\x1b')) return s;
   return s.replace(/\[[0-9;]*m/g, '');
+}
+
+// ── Stats display helpers ─────────────────────────────────────────────────────
+
+function quoteArg(s: string): string {
+  return s.includes(' ') ? `'${s}'` : s;
+}
+
+function fmtN(n: number): string {
+  return Math.round(n)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function fmtMs(ms: number): string {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  const h = Math.floor(m / 60);
+  if (h > 0) return `${h}h ${m % 60}m`;
+  if (m > 0) return `${m}m ${s % 60}s`;
+  return `${s}s`;
+}
+
+function fmtTime(ts: number): string {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function fmtDate(ts: number): string {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleDateString('en-CA');
+}
+
+function qph(totalQp: number, totalMs: number): string {
+  if (totalMs < 1000) return '—';
+  return fmtN((totalQp / totalMs) * 3_600_000);
+}
+
+function buildStatsLines(session: SessionRecord | null, at: AllTimeRecord, areas: AreaRecord[]): string[] {
+  const lines: string[] = [];
+
+  if (session) {
+    const wallMs = (session.endedAt || Date.now()) - session.startedAt;
+    lines.push(`{C[QuestBot] ── Session ───────────────────────────────────{x`);
+    lines.push(
+      `  Started {D${fmtTime(session.startedAt)}{x   Duration {W${fmtMs(wallMs)}{x   Quests {W${fmtN(session.questCount)}{x`,
+    );
+    if (session.questCount > 0) {
+      const avgQp = Math.round(session.totalQp / session.questCount);
+      const avgGold = Math.round(session.totalGold / session.questCount);
+      const avgMs = Math.round(session.totalQuestMs / session.questCount);
+      lines.push(`  Earned  {W${fmtN(session.totalQp)}{x QP   {W${fmtN(session.totalGold)}{x gold`);
+      lines.push(`  /quest  {W${fmtN(avgQp)}{x QP   {W${fmtN(avgGold)}{x gold   {W${fmtMs(avgMs)}{x avg`);
+      lines.push(`  Rate    {W${qph(session.totalQp, wallMs)}{x QP/hr`);
+    } else {
+      lines.push(`  {D(no quests completed yet){x`);
+    }
+  } else {
+    lines.push(`{C[QuestBot] No active session{x`);
+  }
+
+  if (at.questCount > 0) {
+    const avgQp = Math.round(at.totalQp / at.questCount);
+    const avgGold = Math.round(at.totalGold / at.questCount);
+    const avgMs = Math.round(at.totalQuestMs / at.questCount);
+    lines.push(`{C[QuestBot] ── All Time ──────────────────────────────────{x`);
+    lines.push(
+      `  {W${fmtN(at.sessionCount)}{x sessions   {W${fmtN(at.questCount)}{x quests   since {D${fmtDate(at.firstQuestAt)}{x`,
+    );
+    lines.push(`  Earned  {W${fmtN(at.totalQp)}{x QP   {W${fmtN(at.totalGold)}{x gold`);
+    lines.push(`  /quest  {W${fmtN(avgQp)}{x QP   {W${fmtN(avgGold)}{x gold   {W${fmtMs(avgMs)}{x avg`);
+  }
+
+  if (areas.length > 0) {
+    lines.push(`{C[QuestBot] ── Areas (by quests) ───────────────────────{x`);
+    for (const a of areas.slice(0, 15)) {
+      const avgQp = a.questCount > 0 ? Math.round(a.totalQp / a.questCount) : 0;
+      const avgMs = a.questCount > 0 ? Math.round(a.totalQuestMs / a.questCount) : 0;
+      const name = a.name.length > 20 ? a.name.slice(0, 19) + '…' : a.name.padEnd(20);
+      lines.push(
+        `  {W${name}{x  ${String(a.questCount).padStart(4)} q   ${fmtN(a.totalQp).padStart(8)} QP   ${fmtN(avgQp).padStart(5)}/q   ${fmtMs(avgMs)} avg`,
+      );
+    }
+  }
+
+  return lines;
 }
 
 // ── Item map ──────────────────────────────────────────────────────────────────
@@ -61,72 +160,595 @@ type CharacterPaths = {
   gem_merchant: string[];
 };
 
-const shadowHallFromRecall = ['e','e','e','s','s','s','s','s','s'];
-const eclipseTowerEntranceToResting = ['open west','w','u','enter orb']
-const gemMerchantFromVermTaskMaster = ['e','s','s','s','s','s','w','n'];
+const shadowHallFromRecall = ['e', 'e', 'e', 's', 's', 's', 's', 's', 's'];
+const eclipseTowerEntranceToResting = ['open west', 'w', 'u', 'enter orb'];
+const gemMerchantFromVermTaskMaster = ['e', 's', 's', 's', 's', 's', 'w', 'n'];
 const HOME_PATHS: Record<HomeKey, CharacterPaths> = {
   wargar: {
-    quest_master: ['d','n','ne','nw','nw','nw','w','n','n','e','e','n','n','n','n','n','n','w','w','s'],
-    to_quest_master: ['stand','c fly','c sanc','c pass','e','d','s','u','n','ne','nw','nw','nw','w','n','n','e','e','n','n','n','n','n','n','w','w','s','pq request find'],
-    to_resting_room: ['n','e','e','s','s','s','s','s','s','w','w','s','s','e','se','se','se','sw','s','d','n','u','w'],
-    rest_command: ['land','wear helm','rest pew'],
-    justice_bind: ['n','e','e','s','s','s','s','s','s','w','w','s','s','e','se','se','se','sw','s','d','n','u','w','stand','w','enter ark','e','e','e','e','e'],
-    icewall_port: ['n','e','e','s','s','s','s','s','s','w','w','s','s','e','se','se','se','sw','s','d','n','u','w','stand','w','enter ice'],
-    alth_port: ['n','e','e','s','s','s','s','s','s','w','w','s','s','e','se','se','se','sw','s','d','n','u','w','stand','w','enter new'],
-    alth_arena: ['n','e','e','s','s','s','s','s','s','w','w','s','s','e','se','se','se','sw','s','d','n','u','w','stand','w','enter gaming','enter portal'],
-    tropica_port: ['n','e','e','s','s','s','s','s','s','w','w','s','s','e','se','se','se','sw','s','d','n','u','w','stand','w','enter tropica'],
+    quest_master: [
+      'd',
+      'n',
+      'ne',
+      'nw',
+      'nw',
+      'nw',
+      'w',
+      'n',
+      'n',
+      'e',
+      'e',
+      'n',
+      'n',
+      'n',
+      'n',
+      'n',
+      'n',
+      'w',
+      'w',
+      's',
+    ],
+    to_quest_master: [
+      'stand',
+      'c fly',
+      'c sanc',
+      'c pass',
+      'e',
+      'd',
+      's',
+      'u',
+      'n',
+      'ne',
+      'nw',
+      'nw',
+      'nw',
+      'w',
+      'n',
+      'n',
+      'e',
+      'e',
+      'n',
+      'n',
+      'n',
+      'n',
+      'n',
+      'n',
+      'w',
+      'w',
+      's',
+      'pq request find',
+    ],
+    to_resting_room: [
+      'n',
+      'e',
+      'e',
+      's',
+      's',
+      's',
+      's',
+      's',
+      's',
+      'w',
+      'w',
+      's',
+      's',
+      'e',
+      'se',
+      'se',
+      'se',
+      'sw',
+      's',
+      'd',
+      'n',
+      'u',
+      'w',
+    ],
+    rest_command: ['land', 'wear helm', 'rest pew'],
+    justice_bind: [
+      'n',
+      'e',
+      'e',
+      's',
+      's',
+      's',
+      's',
+      's',
+      's',
+      'w',
+      'w',
+      's',
+      's',
+      'e',
+      'se',
+      'se',
+      'se',
+      'sw',
+      's',
+      'd',
+      'n',
+      'u',
+      'w',
+      'stand',
+      'w',
+      'enter ark',
+      'e',
+      'e',
+      'e',
+      'e',
+      'e',
+    ],
+    icewall_port: [
+      'n',
+      'e',
+      'e',
+      's',
+      's',
+      's',
+      's',
+      's',
+      's',
+      'w',
+      'w',
+      's',
+      's',
+      'e',
+      'se',
+      'se',
+      'se',
+      'sw',
+      's',
+      'd',
+      'n',
+      'u',
+      'w',
+      'stand',
+      'w',
+      'enter ice',
+    ],
+    alth_port: [
+      'n',
+      'e',
+      'e',
+      's',
+      's',
+      's',
+      's',
+      's',
+      's',
+      'w',
+      'w',
+      's',
+      's',
+      'e',
+      'se',
+      'se',
+      'se',
+      'sw',
+      's',
+      'd',
+      'n',
+      'u',
+      'w',
+      'stand',
+      'w',
+      'enter new',
+    ],
+    alth_arena: [
+      'n',
+      'e',
+      'e',
+      's',
+      's',
+      's',
+      's',
+      's',
+      's',
+      'w',
+      'w',
+      's',
+      's',
+      'e',
+      'se',
+      'se',
+      'se',
+      'sw',
+      's',
+      'd',
+      'n',
+      'u',
+      'w',
+      'stand',
+      'w',
+      'enter gaming',
+      'enter portal',
+    ],
+    tropica_port: [
+      'n',
+      'e',
+      'e',
+      's',
+      's',
+      's',
+      's',
+      's',
+      's',
+      'w',
+      'w',
+      's',
+      's',
+      'e',
+      'se',
+      'se',
+      'se',
+      'sw',
+      's',
+      'd',
+      'n',
+      'u',
+      'w',
+      'stand',
+      'w',
+      'enter tropica',
+    ],
     succubus: ['c gate bloody nose'],
     gem_merchant: [],
   },
   thaxanos: {
-    quest_master: ['n','n','n','n','e','s'],
-    to_quest_master: ['stand','c fly','c sanc','c pass','s','s', 'pq request find'],
-    to_resting_room: ['n','n'],
-    rest_command: ['wear helm','rest slab'],
-    justice_bind: ['n','w','w','w','w','s','s','s','s','e','e','n','d','e','e','enter ark','e','e','e','e','e'],
-    icewall_port: ['n','w','w','w','w','s','s','s','s','e','e','n','d','e','e','enter ice'],
-    alth_port: ['n','w','w','w','w','s','s','s','s','e','e','n','d','e','e','enter new'],
-    alth_arena: ['n','w','w','w','w','s','s','s','s','e','e','n','d','e','e','enter gaming','enter portal'],
-    tropica_port: ['n','w','w','w','w','s','s','s','s','e','e','n','d','e','e','enter tropica'],
+    quest_master: ['n', 'n', 'n', 'n', 'e', 's'],
+    to_quest_master: ['stand', 'c fly', 'c sanc', 'c pass', 's', 's', 'pq request find'],
+    to_resting_room: ['n', 'n'],
+    rest_command: ['wear helm', 'rest slab'],
+    justice_bind: [
+      'n',
+      'w',
+      'w',
+      'w',
+      'w',
+      's',
+      's',
+      's',
+      's',
+      'e',
+      'e',
+      'n',
+      'd',
+      'e',
+      'e',
+      'enter ark',
+      'e',
+      'e',
+      'e',
+      'e',
+      'e',
+    ],
+    icewall_port: ['n', 'w', 'w', 'w', 'w', 's', 's', 's', 's', 'e', 'e', 'n', 'd', 'e', 'e', 'enter ice'],
+    alth_port: ['n', 'w', 'w', 'w', 'w', 's', 's', 's', 's', 'e', 'e', 'n', 'd', 'e', 'e', 'enter new'],
+    alth_arena: [
+      'n',
+      'w',
+      'w',
+      'w',
+      'w',
+      's',
+      's',
+      's',
+      's',
+      'e',
+      'e',
+      'n',
+      'd',
+      'e',
+      'e',
+      'enter gaming',
+      'enter portal',
+    ],
+    tropica_port: ['n', 'w', 'w', 'w', 'w', 's', 's', 's', 's', 'e', 'e', 'n', 'd', 'e', 'e', 'enter tropica'],
     succubus: ['c gate bloody nose'],
     gem_merchant: [],
   },
   shadow: {
-    quest_master: ['open south', 's','s','w','w','w','s','s','s','s','s','s','e','e','e','s','s','w','s','e','e','n','n','n','w'],
-    to_quest_master: ['stand','c fly','c pass','enter orb','d','e','n','w','w','w','w','w','n','n','n','n','nw','pq request find'],
+    quest_master: [
+      'open south',
+      's',
+      's',
+      'w',
+      'w',
+      'w',
+      's',
+      's',
+      's',
+      's',
+      's',
+      's',
+      'e',
+      'e',
+      'e',
+      's',
+      's',
+      'w',
+      's',
+      'e',
+      'e',
+      'n',
+      'n',
+      'n',
+      'w',
+    ],
+    to_quest_master: [
+      'stand',
+      'c fly',
+      'c pass',
+      'enter orb',
+      'd',
+      'e',
+      'n',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'n',
+      'n',
+      'n',
+      'n',
+      'nw',
+      'pq request find',
+    ],
     to_resting_room: [...shadowHallFromRecall, ...eclipseTowerEntranceToResting],
-    rest_command: ['wear helm','land','rest blanket'],
-    justice_bind: ['se','s','s','s','s','e','e','e','e','e','s','w','u','enter orb','s','d','enter ark','e','e','e','e','e'],
-    icewall_port: ['se','s','s','s','s','e','e','e','e','e','s','w','u','enter orb','s','d','enter ice'],
-    alth_port: ['se','s','s','s','s','e','e','e','e','e','s','w','u','enter orb','s','d','enter cove', 'se', 'ne', 'ne', 'n', 'n', 'e'],
-    alth_arena: ['se','s','s','s','s','e','e','e','e','e','s','w','u','enter orb','s','d','enter gaming','enter portal'],
-    tropica_port: ['se','s','s','s','s','e','e','e','e','e','s','w','u','enter orb','s','d','enter tropica'],
+    rest_command: ['wear helm', 'land', 'rest blanket'],
+    justice_bind: [
+      'se',
+      's',
+      's',
+      's',
+      's',
+      'e',
+      'e',
+      'e',
+      'e',
+      'e',
+      's',
+      'w',
+      'u',
+      'enter orb',
+      's',
+      'd',
+      'enter ark',
+      'e',
+      'e',
+      'e',
+      'e',
+      'e',
+    ],
+    icewall_port: [
+      'se',
+      's',
+      's',
+      's',
+      's',
+      'e',
+      'e',
+      'e',
+      'e',
+      'e',
+      's',
+      'w',
+      'u',
+      'enter orb',
+      's',
+      'd',
+      'enter ice',
+    ],
+    alth_port: [
+      'se',
+      's',
+      's',
+      's',
+      's',
+      'e',
+      'e',
+      'e',
+      'e',
+      'e',
+      's',
+      'w',
+      'u',
+      'enter orb',
+      's',
+      'd',
+      'enter cove',
+      'se',
+      'ne',
+      'ne',
+      'n',
+      'n',
+      'e',
+    ],
+    alth_arena: [
+      'se',
+      's',
+      's',
+      's',
+      's',
+      'e',
+      'e',
+      'e',
+      'e',
+      'e',
+      's',
+      'w',
+      'u',
+      'enter orb',
+      's',
+      'd',
+      'enter gaming',
+      'enter portal',
+    ],
+    tropica_port: [
+      'se',
+      's',
+      's',
+      's',
+      's',
+      'e',
+      'e',
+      'e',
+      'e',
+      'e',
+      's',
+      'w',
+      'u',
+      'enter orb',
+      's',
+      'd',
+      'enter tropica',
+    ],
     succubus: ['c gate bloody nose'],
-    gem_merchant: [...gemMerchantFromVermTaskMaster,'buy blue'],
+    gem_merchant: [...gemMerchantFromVermTaskMaster, 'buy blue'],
   },
   darkonin: {
-    quest_master: ['e','e'],
-    to_quest_master: ['stand','c fly','c pass','c sanc','s','e','pq request find'],
-    to_resting_room: ['w','n'],
+    quest_master: ['e', 'e'],
+    to_quest_master: ['stand', 'c fly', 'c pass', 'c sanc', 's', 'e', 'pq request find'],
+    to_resting_room: ['w', 'n'],
     rest_command: ['stand'],
-    justice_bind: ['w','s','s','s','w','n','n','w','n','enter ark','e','e','e','e','e'],
-    icewall_port: ['w','s','s','s','w','n','n','w','n','enter ice'],
-    alth_port: ['w','s','s','s','w','n','n','w','n','enter alth'],
-    alth_arena: ['w','s','s','s','w','n','n','w','n','enter gaming','enter portal'],
-    tropica_port: ['w','s','s','s','w','n','n','w','n','enter tropica'],
+    justice_bind: ['w', 's', 's', 's', 'w', 'n', 'n', 'w', 'n', 'enter ark', 'e', 'e', 'e', 'e', 'e'],
+    icewall_port: ['w', 's', 's', 's', 'w', 'n', 'n', 'w', 'n', 'enter ice'],
+    alth_port: ['w', 's', 's', 's', 'w', 'n', 'n', 'w', 'n', 'enter alth'],
+    alth_arena: ['w', 's', 's', 's', 'w', 'n', 'n', 'w', 'n', 'enter gaming', 'enter portal'],
+    tropica_port: ['w', 's', 's', 's', 'w', 'n', 'n', 'w', 'n', 'enter tropica'],
     succubus: ['c gate bloody nose'],
     gem_merchant: [],
   },
   verm: {
-    quest_master: ['n','nw'],
-    to_quest_master: ['stand','c fly','c pass','c sanc','s','e','pq request find'],
-    to_resting_room: ['se','s','s','w','w','n','e','n','n','w','w','w','n','n','n','n','n','w','w'],
-    rest_command: ['land','wear helm','rest cot'],
-    justice_bind: ['se','s','s','w','w','n','e','n','n','w','w','w','n','n','n','n','n','w','w','w','d','enter ark','e','e','e','e','e'],
-    icewall_port: ['se','s','s','w','w','n','e','n','n','w','w','w','n','n','n','n','n','w','w','w','d','enter ice'],
-    alth_port: ['se','s','s','w','w','n','e','n','n','w','w','w','n','n','n','n','n','w','w','w','d','enter alth'],
-    alth_arena: ['se','s','s','w','w','n','e','n','n','w','w','w','n','n','n','n','n','w','w','w','d','enter gaming','enter portal'],
-    tropica_port: ['se','s','s','w','w','n','e','n','n','w','w','w','n','n','n','n','n','w','w','w','d','enter tropica'],
+    quest_master: ['n', 'nw'],
+    to_quest_master: ['stand', 'c fly', 'c pass', 'c sanc', 's', 'e', 'pq request find'],
+    to_resting_room: ['se', 's', 's', 'w', 'w', 'n', 'e', 'n', 'n', 'w', 'w', 'w', 'n', 'n', 'n', 'n', 'n', 'w', 'w'],
+    rest_command: ['land', 'wear helm', 'rest cot'],
+    justice_bind: [
+      'se',
+      's',
+      's',
+      'w',
+      'w',
+      'n',
+      'e',
+      'n',
+      'n',
+      'w',
+      'w',
+      'w',
+      'n',
+      'n',
+      'n',
+      'n',
+      'n',
+      'w',
+      'w',
+      'w',
+      'd',
+      'enter ark',
+      'e',
+      'e',
+      'e',
+      'e',
+      'e',
+    ],
+    icewall_port: [
+      'se',
+      's',
+      's',
+      'w',
+      'w',
+      'n',
+      'e',
+      'n',
+      'n',
+      'w',
+      'w',
+      'w',
+      'n',
+      'n',
+      'n',
+      'n',
+      'n',
+      'w',
+      'w',
+      'w',
+      'd',
+      'enter ice',
+    ],
+    alth_port: [
+      'se',
+      's',
+      's',
+      'w',
+      'w',
+      'n',
+      'e',
+      'n',
+      'n',
+      'w',
+      'w',
+      'w',
+      'n',
+      'n',
+      'n',
+      'n',
+      'n',
+      'w',
+      'w',
+      'w',
+      'd',
+      'enter alth',
+    ],
+    alth_arena: [
+      'se',
+      's',
+      's',
+      'w',
+      'w',
+      'n',
+      'e',
+      'n',
+      'n',
+      'w',
+      'w',
+      'w',
+      'n',
+      'n',
+      'n',
+      'n',
+      'n',
+      'w',
+      'w',
+      'w',
+      'd',
+      'enter gaming',
+      'enter portal',
+    ],
+    tropica_port: [
+      'se',
+      's',
+      's',
+      'w',
+      'w',
+      'n',
+      'e',
+      'n',
+      'n',
+      'w',
+      'w',
+      'w',
+      'n',
+      'n',
+      'n',
+      'n',
+      'n',
+      'w',
+      'w',
+      'w',
+      'd',
+      'enter tropica',
+    ],
     succubus: ['c gate bloody nose'],
     gem_merchant: [],
   },
@@ -143,87 +765,304 @@ type QuestArea = {
 const QUEST_AREAS: Record<string, QuestArea> = {
   'gahboom hill': {
     start_point: 'justice_bind',
-    start_to_area: ['wear bees','s','s','s','e','s','s','w','w','s','s','s','s','e','s','e','n','n','n','n','w','w','w','s','se','e','se','se','n','ne','nw','sw','s','e','n','n','n','n','n','n','d'],
+    start_to_area: [
+      'wear bees',
+      's',
+      's',
+      's',
+      'e',
+      's',
+      's',
+      'w',
+      'w',
+      's',
+      's',
+      's',
+      's',
+      'e',
+      's',
+      'e',
+      'n',
+      'n',
+      'n',
+      'n',
+      'w',
+      'w',
+      'w',
+      's',
+      'se',
+      'e',
+      'se',
+      'se',
+      'n',
+      'ne',
+      'nw',
+      'sw',
+      's',
+      'e',
+      'n',
+      'n',
+      'n',
+      'n',
+      'n',
+      'n',
+      'd',
+    ],
     walk_paths: {
-      'philosophy guild': ['e','e','e','e','e','e','n','w','w','w','w','w','s'],
-      'an uneven, hot corridor': ['d','n','n','se','se','e','nw','nw','e','e','s','s','e'],
+      'philosophy guild': ['e', 'e', 'e', 'e', 'e', 'e', 'n', 'w', 'w', 'w', 'w', 'w', 's'],
+      'an uneven, hot corridor': ['d', 'n', 'n', 'se', 'se', 'e', 'nw', 'nw', 'e', 'e', 's', 's', 'e'],
       'a stone slab platform in fling-fall cavern': ['d'],
-      'a room of mirrors': ['w','w','w','nw','s','nw','e','sw','ne','n'],
-      'a long bare hallway': ['e','e','e','e','e'],
+      'a room of mirrors': ['w', 'w', 'w', 'nw', 's', 'nw', 'e', 'sw', 'ne', 'n'],
+      'a long bare hallway': ['e', 'e', 'e', 'e', 'e'],
     },
   },
   'elemental planes': {
     start_point: 'succubus',
-    start_to_area: ['d','d','w','w','w','w','d','d','d','d','d'],
+    start_to_area: ['d', 'd', 'w', 'w', 'w', 'w', 'd', 'd', 'd', 'd', 'd'],
     walk_paths: {
-      'on the elemental plane of fire': ['ne','ne','e','e','e','n','w','w','w','n','e','e','n','s','w','w','w'],
-      'on the elemental plane of air': ['nw','nw','w','w','w','n','e','e','e','n','w','w','w','n','e','e','e'],
-      'on the elemental plane of earth': ['se','se','e','e','e','s','w','w','w','s','e','e','e','s','w','w','w'],
-      'on the elemental plane of water': ['sw','sw','w','w','w','s','e','e','e','s','w','w','w','s','e','e','e'],
+      'on the elemental plane of fire': [
+        'ne',
+        'ne',
+        'e',
+        'e',
+        'e',
+        'n',
+        'w',
+        'w',
+        'w',
+        'n',
+        'e',
+        'e',
+        'n',
+        's',
+        'w',
+        'w',
+        'w',
+      ],
+      'on the elemental plane of air': [
+        'nw',
+        'nw',
+        'w',
+        'w',
+        'w',
+        'n',
+        'e',
+        'e',
+        'e',
+        'n',
+        'w',
+        'w',
+        'w',
+        'n',
+        'e',
+        'e',
+        'e',
+      ],
+      'on the elemental plane of earth': [
+        'se',
+        'se',
+        'e',
+        'e',
+        'e',
+        's',
+        'w',
+        'w',
+        'w',
+        's',
+        'e',
+        'e',
+        'e',
+        's',
+        'w',
+        'w',
+        'w',
+      ],
+      'on the elemental plane of water': [
+        'sw',
+        'sw',
+        'w',
+        'w',
+        'w',
+        's',
+        'e',
+        'e',
+        'e',
+        's',
+        'w',
+        'w',
+        'w',
+        's',
+        'e',
+        'e',
+        'e',
+      ],
     },
   },
   hell: {
     start_point: 'succubus',
     start_to_area: [],
     walk_paths: {
-      'the storage room': ['s','s','w','s','s'],
-      "lawyer's office": ['w','w','s','w','w','w','w','w','s','w'],
-      'office of the high priest': ['w','w','s','w','w','n','e'],
-      'near the hearth of hell': ['s','s','w','s','w'],
-      'a large hallway': ['s','s','w'],
-      'the end of a large hallway': ['s','s','w','s'],
+      'the storage room': ['s', 's', 'w', 's', 's'],
+      "lawyer's office": ['w', 'w', 's', 'w', 'w', 'w', 'w', 'w', 's', 'w'],
+      'office of the high priest': ['w', 'w', 's', 'w', 'w', 'n', 'e'],
+      'near the hearth of hell': ['s', 's', 'w', 's', 'w'],
+      'a large hallway': ['s', 's', 'w'],
+      'the end of a large hallway': ['s', 's', 'w', 's'],
     },
   },
   'silversand garrison': {
     start_point: 'alth_port',
-    start_to_area: ['w','s','s','w','w','w','w','sw','s','s','s','w','sw','s','s','s','w','s','sw'],
+    start_to_area: ['w', 's', 's', 'w', 'w', 'w', 'w', 'sw', 's', 's', 's', 'w', 'sw', 's', 's', 's', 'w', 's', 'sw'],
     walk_paths: {
       'silversand garrison': ['e'],
     },
   },
   'ghost lake': {
     start_point: 'alth_arena',
-    start_to_area: ['e','e','e','s','s','w','n','w','n','n','n','nw','w','w','w','w','w','w','w','w','s','s','sw','nw','d','n'],
+    start_to_area: [
+      'e',
+      'e',
+      'e',
+      's',
+      's',
+      'w',
+      'n',
+      'w',
+      'n',
+      'n',
+      'n',
+      'nw',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      's',
+      's',
+      'sw',
+      'nw',
+      'd',
+      'n',
+    ],
     walk_paths: {
-      'a deep crevice': ['d','n','n','n','n','d','d','se'],
-      'deep in a mist filled lake': ['n','n','n','n','d','n','n','w','e','n','e','n','s','s','w'],
+      'a deep crevice': ['d', 'n', 'n', 'n', 'n', 'd', 'd', 'se'],
+      'deep in a mist filled lake': ['n', 'n', 'n', 'n', 'd', 'n', 'n', 'w', 'e', 'n', 'e', 'n', 's', 's', 'w'],
     },
   },
   'a lost catacomb': {
     start_point: 'tropica_port',
-    start_to_area: ['sw','w','nw','w','nw','w','s','s','se','se','se','se','sw','se','se','se','w','nw','w','s','w','w','w','w','s','w','s','s','w'],
+    start_to_area: [
+      'sw',
+      'w',
+      'nw',
+      'w',
+      'nw',
+      'w',
+      's',
+      's',
+      'se',
+      'se',
+      'se',
+      'se',
+      'sw',
+      'se',
+      'se',
+      'se',
+      'w',
+      'nw',
+      'w',
+      's',
+      'w',
+      'w',
+      'w',
+      'w',
+      's',
+      'w',
+      's',
+      's',
+      'w',
+    ],
     walk_paths: {
-      'main bedroom': ['enter mau','e','e','e','e','s','s','s','s','d','e','e','s','s','w','w','n','d','s','s','s','s','e','e','e'],
+      'main bedroom': [
+        'enter mau',
+        'e',
+        'e',
+        'e',
+        'e',
+        's',
+        's',
+        's',
+        's',
+        'd',
+        'e',
+        'e',
+        's',
+        's',
+        'w',
+        'w',
+        'n',
+        'd',
+        's',
+        's',
+        's',
+        's',
+        'e',
+        'e',
+        'e',
+      ],
     },
   },
   'forbidden forest': {
     start_point: 'icewall_port',
-    start_to_area: ['ne','e','ne','n','n','ne','n','n','n','n','n'],
+    start_to_area: ['ne', 'e', 'ne', 'n', 'n', 'ne', 'n', 'n', 'n', 'n', 'n'],
     walk_paths: {
       'a snow covered field': ['w'],
     },
   },
   'a blazing aurora': {
     start_point: 'justice_bind',
-    start_to_area: ['e','ne','n','ne','e','e','ne','n','n','n','n','n','n','n','op e','e','n','u','enter aurora'],
+    start_to_area: [
+      'e',
+      'ne',
+      'n',
+      'ne',
+      'e',
+      'e',
+      'ne',
+      'n',
+      'n',
+      'n',
+      'n',
+      'n',
+      'n',
+      'n',
+      'op e',
+      'e',
+      'n',
+      'u',
+      'enter aurora',
+    ],
     walk_paths: {
-      'the silver ascent': ['nw','nw','n','n','n','e','e','u','nw','u'],
+      'the silver ascent': ['nw', 'nw', 'n', 'n', 'n', 'e', 'e', 'u', 'nw', 'u'],
     },
   },
   jovar: {
     start_point: 'icewall_port',
-    start_to_area: ['nw','nw','w','w','nw','n','nw','e','n','u','u','w','u','u','n','n','n'],
+    start_to_area: ['nw', 'nw', 'w', 'w', 'nw', 'n', 'nw', 'e', 'n', 'u', 'u', 'w', 'u', 'u', 'n', 'n', 'n'],
     walk_paths: {
-      'throne room': ['n','n','n','n','n'],
-      'residence': ['w','e','e'],
-      'before the palace gates': ['n','n'],
-      'beyond the gates': ['n','n','n'],
-      'guest quarters': ['n','n','n','n','w','w','w','e','e','e','e','e','e'],
-      'stable': ['n','n','n','n','e','e','n','n'],
-      'armory': ['n','n','e','e','s'],
-      'weapon shop': ['n','n','e','e','e'],
-      'smithy': ['n','n','e','e','n'],
-      'the planning room': ['n','n','e','e','n','w'],
+      'throne room': ['n', 'n', 'n', 'n', 'n'],
+      residence: ['w', 'e', 'e'],
+      'before the palace gates': ['n', 'n'],
+      'beyond the gates': ['n', 'n', 'n'],
+      'guest quarters': ['n', 'n', 'n', 'n', 'w', 'w', 'w', 'e', 'e', 'e', 'e', 'e', 'e'],
+      stable: ['n', 'n', 'n', 'n', 'e', 'e', 'n', 'n'],
+      armory: ['n', 'n', 'e', 'e', 's'],
+      'weapon shop': ['n', 'n', 'e', 'e', 'e'],
+      smithy: ['n', 'n', 'e', 'e', 'n'],
+      'the planning room': ['n', 'n', 'e', 'e', 'n', 'w'],
     },
   },
 };
@@ -254,7 +1093,9 @@ function parseCustomAreas(raw: unknown): Record<string, QuestArea> {
     if (!Array.isArray(parsed)) return {};
     const out: Record<string, QuestArea> = {};
     for (const entry of parsed) {
-      const name = String(entry?.name ?? '').trim().toLowerCase();
+      const name = String(entry?.name ?? '')
+        .trim()
+        .toLowerCase();
       const startPoint = String(entry?.startPoint ?? '').trim() as keyof CharacterPaths;
       if (!name || !startPoint) continue;
       out[name] = {
@@ -310,7 +1151,8 @@ export function createQuestBotPlugin(): IPluginModule {
   let latestMove = 0;
   let latestMaxMove = 0;
   let combStepsRemaining: string[] = [];
-  let combComplete = false;
+  let currentSession: SessionRecord | null = null;
+  let questStartTime = 0;
 
   function walk(api: PluginRuntimeApi, cmds: string[]): void {
     for (const cmd of cmds) api.sendCommand(cmd);
@@ -389,7 +1231,6 @@ export function createQuestBotPlugin(): IPluginModule {
       api.sendCommand(dir);
     }
     api.sendCommand(`get all.${itemKeyword}`);
-    combComplete = true;
   }
 
   function resetQuest(): void {
@@ -398,7 +1239,7 @@ export function createQuestBotPlugin(): IPluginModule {
     questArea = null;
     questRoom = null;
     combStepsRemaining = [];
-    combComplete = false;
+    questStartTime = 0;
   }
 
   function returnToRest(api: PluginRuntimeApi): void {
@@ -461,10 +1302,11 @@ export function createQuestBotPlugin(): IPluginModule {
     }
 
     if (pendingEggBuy && Number(api.getConfig().eggQpThreshold ?? '0') > 0) {
-      const eggContainer = String(api.getConfig().eggContainer ?? '').trim() || String(api.getConfig().gemPouch ?? '').trim();
+      const eggContainer =
+        String(api.getConfig().eggContainer ?? '').trim() || String(api.getConfig().gemPouch ?? '').trim();
       debug(api, 'Buying egg');
       api.sendCommand('pq buy egg');
-      if (eggContainer) api.sendCommand(`put egg ${eggContainer}`);
+      if (eggContainer) api.sendCommand(`put egg ${quoteArg(eggContainer)}`);
       pendingEggBuy = false;
     }
 
@@ -486,10 +1328,11 @@ export function createQuestBotPlugin(): IPluginModule {
 
     // Honour a pending egg buy before clearing so we don't miss the breakpoint
     if (pendingEggBuy && Number(api.getConfig().eggQpThreshold ?? '0') > 0) {
-      const eggContainer = String(api.getConfig().eggContainer ?? '').trim() || String(api.getConfig().gemPouch ?? '').trim();
+      const eggContainer =
+        String(api.getConfig().eggContainer ?? '').trim() || String(api.getConfig().gemPouch ?? '').trim();
       debug(api, 'Buying egg before clearing quest');
       api.sendCommand('pq buy egg');
-      if (eggContainer) api.sendCommand(`put egg ${eggContainer}`);
+      if (eggContainer) api.sendCommand(`put egg ${quoteArg(eggContainer)}`);
       pendingEggBuy = false;
     }
 
@@ -509,10 +1352,11 @@ export function createQuestBotPlugin(): IPluginModule {
 
       // worth response has arrived by now — buy egg if threshold was crossed during the wait
       if (pendingEggBuy && Number(api.getConfig().eggQpThreshold ?? '0') > 0) {
-        const eggContainer = String(api.getConfig().eggContainer ?? '').trim() || String(api.getConfig().gemPouch ?? '').trim();
+        const eggContainer =
+          String(api.getConfig().eggContainer ?? '').trim() || String(api.getConfig().gemPouch ?? '').trim();
         debug(api, 'Buying egg before retry request');
         api.sendCommand('pq buy egg');
-        if (eggContainer) api.sendCommand(`put egg ${eggContainer}`);
+        if (eggContainer) api.sendCommand(`put egg ${quoteArg(eggContainer)}`);
         pendingEggBuy = false;
       }
 
@@ -549,7 +1393,6 @@ export function createQuestBotPlugin(): IPluginModule {
     state = 'combing';
     debug(api, `Combing room: ${questRoom}`);
     combStepsRemaining = [...areaData.walk_paths[questRoom]];
-    combComplete = false;
     debug(api, `Comb setup: ${combStepsRemaining.length} step(s)`);
     sendAllCombSteps(api);
   }
@@ -559,10 +1402,11 @@ export function createQuestBotPlugin(): IPluginModule {
     if (!paths) return;
 
     const gemPath = paths.gem_merchant;
-    const tookGemStep = gemPath.length > 0 && latestGold >= 600;
+    const gemThreshold = Math.max(0, Number(api.getConfig().gemGoldThreshold ?? '600') || 600);
+    const tookGemStep = gemPath.length > 0 && latestGold >= gemThreshold;
 
     if (tookGemStep) {
-      debug(api, `Gold: ${latestGold} ≥ 600 — walking to gem merchant`);
+      debug(api, `Gold: ${latestGold} ≥ ${gemThreshold} — walking to gem merchant`);
       walk(api, gemPath);
       const gemPouch = String(api.getConfig().gemPouch ?? '').trim();
       if (gemPouch) {
@@ -570,7 +1414,7 @@ export function createQuestBotPlugin(): IPluginModule {
         api.sendCommand(`put blue ${quotedPouch}`);
       }
     } else if (gemPath.length > 0) {
-      debug(api, `Gold: ${latestGold} < 600 — skipping gem merchant`);
+      debug(api, `Gold: ${latestGold} < ${gemThreshold} — skipping gem merchant`);
     }
 
     api.sendCommand('recall');
@@ -661,15 +1505,16 @@ export function createQuestBotPlugin(): IPluginModule {
         return;
       }
 
-      if (line.includes("May the gods go with you!")) {
+      if (line.includes('May the gods go with you!')) {
         debug(api, 'Quest accepted → navigating');
+        questStartTime = Date.now();
         navigateToArea(api);
         return;
       }
     }
 
     // Quest confirmed complete → gem merchant + rest
-    if (state === 'turning-in' && line.includes("Congratulations on completing the quest!")) {
+    if (state === 'turning-in' && line.includes('Congratulations on completing the quest!')) {
       debug(api, 'Quest complete — heading home');
       completeQuestAndRest(api);
       return;
@@ -689,9 +1534,27 @@ export function createQuestBotPlugin(): IPluginModule {
     // Reward line
     const rewardM = line.match(/granting you (\d+) quest points, and (\d+) gold/i);
     if (rewardM) {
-      latestQp += Number(rewardM[1]);
+      const earnedQp = Number(rewardM[1]);
+      const earnedGold = Number(rewardM[2]);
+      latestQp += earnedQp;
       api.writeTerminal?.(`{G[QuestBot] Reward: {W${rewardM[1]}{G QP, {W${rewardM[2]}{G gold{x\n`);
       checkEggBuyThreshold(api);
+
+      const durationMs = questStartTime > 0 ? Date.now() - questStartTime : 0;
+      if (currentSession) {
+        currentSession.questCount += 1;
+        currentSession.totalQp += earnedQp;
+        currentSession.totalGold += earnedGold;
+        currentSession.totalQuestMs += durationMs;
+        recordQuestCompletion({
+          session: { ...currentSession },
+          qp: earnedQp,
+          gold: earnedGold,
+          durationMs,
+          areaName: questArea,
+        }).catch(() => {});
+      }
+
       questAttemptCount = 0;
       state = 'idle';
       resetQuest();
@@ -715,6 +1578,7 @@ export function createQuestBotPlugin(): IPluginModule {
         startAlias: '',
         beeContainer: '',
         gemPouch: 'gem pouch',
+        gemGoldThreshold: '600',
         autoRestart: true,
         debug: false,
         customAreas: '[]',
@@ -751,6 +1615,14 @@ export function createQuestBotPlugin(): IPluginModule {
           description:
             'Name of the gem pouch to put blue gems into after buying (e.g. "gem pouch"). Leave blank to skip the put command.',
           placeholder: 'gem pouch',
+        },
+        {
+          key: 'gemGoldThreshold',
+          type: 'string',
+          label: 'Gem buy gold threshold',
+          description:
+            'Minimum gold required to trigger the gem merchant step after turning in a quest. Set to 0 to always visit the gem merchant (when the path is configured). Defaults to 600.',
+          placeholder: '600',
         },
         {
           key: 'startAlias',
@@ -864,7 +1736,6 @@ export function createQuestBotPlugin(): IPluginModule {
             } else if (preCombatState === 'combing') {
               debug(api, `Resuming comb in ${questArea ?? '?'} (${combStepsRemaining.length} step(s) left)`);
               state = 'combing';
-              combComplete = false;
               sendAllCombSteps(api);
             } else if (preCombatState === 'navigating') {
               debug(api, `Re-navigating to ${questArea ?? '?'}`);
@@ -897,6 +1768,14 @@ export function createQuestBotPlugin(): IPluginModule {
         }
         running = true;
         resetQuest();
+        currentSession = {
+          startedAt: Date.now(),
+          endedAt: 0,
+          questCount: 0,
+          totalQp: 0,
+          totalGold: 0,
+          totalQuestMs: 0,
+        };
         disableKnockdownTriggers(api);
         api.writeTerminal?.(`{G[QuestBot] Starting quest automation...{x\n`);
         requestQuest(api, true);
@@ -915,6 +1794,11 @@ export function createQuestBotPlugin(): IPluginModule {
           clearTimeout(navRetryTimerId);
           navRetryTimerId = null;
         }
+        if (currentSession && currentSession.questCount > 0) {
+          currentSession.endedAt = Date.now();
+          finalizeSession({ ...currentSession }).catch(() => {});
+        }
+        currentSession = null;
         resetQuest();
         questAttemptCount = 0;
         pendingEggBuy = false;
@@ -945,6 +1829,41 @@ export function createQuestBotPlugin(): IPluginModule {
         const next = !api.getConfig().debug;
         api.updateConfig?.({ debug: next });
         api.writeTerminal?.(`{C[QuestBot] Debug ${next ? 'on' : 'off'}{x\n`);
+        return true;
+      }
+
+      if (cmd === 'pq stats reset') {
+        resetStats().catch(() => {});
+        if (currentSession) {
+          currentSession = {
+            startedAt: Date.now(),
+            endedAt: 0,
+            questCount: 0,
+            totalQp: 0,
+            totalGold: 0,
+            totalQuestMs: 0,
+          };
+        }
+        api.writeTerminal?.(`{Y[QuestBot] Stats reset{x\n`);
+        return true;
+      }
+
+      if (cmd === 'pq stats') {
+        const snap = currentSession ? { ...currentSession } : null;
+        Promise.all([loadAllTime(), loadAllAreaStats()])
+          .then(([at, areas]) => {
+            api.writeTerminal?.(buildStatsLines(snap, at, areas).join('\n') + '\n');
+          })
+          .catch(() => {
+            if (snap)
+              api.writeTerminal?.(
+                buildStatsLines(
+                  snap,
+                  { questCount: 0, totalQp: 0, totalGold: 0, totalQuestMs: 0, sessionCount: 0, firstQuestAt: 0 },
+                  [],
+                ).join('\n') + '\n',
+              );
+          });
         return true;
       }
 
