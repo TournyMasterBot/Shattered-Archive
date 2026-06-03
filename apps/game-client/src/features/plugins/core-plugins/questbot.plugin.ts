@@ -97,9 +97,11 @@ function buildStatsLines(session: SessionRecord | null, at: AllTimeRecord, areas
     const avgQp = Math.round(at.totalQp / at.questCount);
     const avgGold = Math.round(at.totalGold / at.questCount);
     const avgMs = Math.round(at.totalQuestMs / at.questCount);
+    // Count the active session if it has at least one quest and hasn't been finalized yet
+    const activeSessionBonus = session && session.questCount > 0 && session.endedAt === 0 ? 1 : 0;
     lines.push(`{C[QuestBot] ── All Time ──────────────────────────────────{x`);
     lines.push(
-      `  {W${fmtN(at.sessionCount)}{x sessions   {W${fmtN(at.questCount)}{x quests   since {D${fmtDate(at.firstQuestAt)}{x`,
+      `  {W${fmtN(at.sessionCount + activeSessionBonus)}{x sessions   {W${fmtN(at.questCount)}{x quests   since {D${fmtDate(at.firstQuestAt)}{x`,
     );
     lines.push(`  Earned  {W${fmtN(at.totalQp)}{x QP   {W${fmtN(at.totalGold)}{x gold`);
     lines.push(`  /quest  {W${fmtN(avgQp)}{x QP   {W${fmtN(avgGold)}{x gold   {W${fmtMs(avgMs)}{x avg`);
