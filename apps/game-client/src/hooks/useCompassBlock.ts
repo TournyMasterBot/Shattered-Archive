@@ -107,6 +107,21 @@ export function useCompassBlock() {
   }, []);
 
   /* ---------------------------------------------
+   * Track movement attempts from any source
+   * ------------------------------------------- */
+  useEffect(() => {
+    const dispose = ListenEvent<{ dir?: string }>(
+      'shatteredarchive:movement-attempt',
+      (payload) => {
+        const dir = payload?.dir ? normalizeExit(payload.dir) : null;
+        if (dir) pendingMoveRef.current = dir;
+      },
+      { key: 'compassBlock::movement-attempt' },
+    );
+    return () => { try { dispose?.(); } catch { /* ignore */ } };
+  }, []);
+
+  /* ---------------------------------------------
    * Movement attempt
    * ------------------------------------------- */
   const move = useCallback((dir: CompassDirection) => {

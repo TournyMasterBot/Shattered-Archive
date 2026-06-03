@@ -149,7 +149,6 @@ const QUEST_AREAS: Record<string, QuestArea> = {
       'an uneven, hot corridor': ['d','n','n','se','se','e','nw','nw','e','e','s','s','e'],
       'a stone slab platform in fling-fall cavern': ['d'],
       'a room of mirrors': ['w','w','w','nw','s','nw','e','sw','ne','n'],
-      'laboratory a534b': ['pq clear','pq request find'],
       'a long bare hallway': ['e','e','e','e','e'],
     },
   },
@@ -299,11 +298,19 @@ export function createQuestBotPlugin(): IPluginModule {
   let combatBreakPending = false;
   let fleedDuringCombat = false;
   let combatResumeTimerId: ReturnType<typeof setTimeout> | null = null;
+  let preCombatState: BotState = 'idle';
+  let navRetryTimerId: ReturnType<typeof setTimeout> | null = null;
   let questArea: string | null = null;
   let questRoom: string | null = null;
   let questAttemptCount = 0;
   // IDs of Knockdown-group triggers that were enabled when pq start ran (and thus disabled by us).
   let disabledKnockdownIds: string[] = [];
+  let latestQp = 0;
+  let pendingEggBuy = false;
+  let latestMove = 0;
+  let latestMaxMove = 0;
+  let combStepsRemaining: string[] = [];
+  let combComplete = false;
 
   function walk(api: PluginRuntimeApi, cmds: string[]): void {
     for (const cmd of cmds) api.sendCommand(cmd);
@@ -339,6 +346,20 @@ export function createQuestBotPlugin(): IPluginModule {
     disabledKnockdownIds = [];
   }
 
+  function refreshMovement(api: PluginRuntimeApi): void {
+    if (latestMaxMove > 0 && latestMove > latestMaxMove / 3) return;
+    const cmd = String(api.getConfig().refreshCommand ?? 'cast refresh').trim() || 'cast refresh';
+    api.sendCommand(cmd);
+    api.sendCommand(cmd);
+  }
+
+  function checkEggBuyThreshold(api: PluginRuntimeApi): void {
+    const threshold = Number(api.getConfig().eggQpThreshold ?? '0');
+    if (threshold <= 0 || latestQp < threshold || pendingEggBuy) return;
+    pendingEggBuy = true;
+    debug(api, `QP ${latestQp} ≥ ${threshold} — egg buy queued for next cycle`);
+  }
+
   // Execute a named alias through the full alias pipeline (same as typing it in the input bar).
   // Falls back to sendCommand if the runtime isn't available.
   function runAlias(api: PluginRuntimeApi, aliasName: string): void {
@@ -359,22 +380,38 @@ export function createQuestBotPlugin(): IPluginModule {
     if (api.getConfig().debug) api.writeTerminal?.(`{D[QuestBot] ${msg}{x\n`);
   }
 
+  function sendAllCombSteps(api: PluginRuntimeApi): void {
+    if (!itemKeyword) return;
+    const steps = combStepsRemaining.splice(0);
+    debug(api, `Comb: sending all ${steps.length} step(s) synchronously`);
+    for (const dir of steps) {
+      api.sendCommand(`get all.${itemKeyword}`);
+      api.sendCommand(dir);
+    }
+    api.sendCommand(`get all.${itemKeyword}`);
+    combComplete = true;
+  }
+
   function resetQuest(): void {
     item = null;
     itemKeyword = null;
     questArea = null;
     questRoom = null;
+    combStepsRemaining = [];
+    combComplete = false;
   }
 
   function returnToRest(api: PluginRuntimeApi): void {
     const paths = getPaths(api);
     if (!paths) return;
+    api.sendCommand('recall');
+    refreshMovement(api);
     walk(api, paths.to_resting_room);
     walk(api, paths.rest_command);
     state = 'idle';
   }
 
-  function requestQuest(api: PluginRuntimeApi): void {
+  function requestQuest(api: PluginRuntimeApi, fromRecall = false): void {
     const paths = getPaths(api);
     if (!paths) {
       api.writeTerminal?.(`{R[QuestBot] No paths for home location "${api.getConfig().homeLocation}"{x\n`);
@@ -387,6 +424,7 @@ export function createQuestBotPlugin(): IPluginModule {
       running = false;
       questAttemptCount = 0;
       api.sendCommand('recall');
+      refreshMovement(api);
       walk(api, paths.to_resting_room);
       walk(api, paths.rest_command);
       return;
@@ -401,34 +439,101 @@ export function createQuestBotPlugin(): IPluginModule {
       runAlias(api, startAlias);
     }
 
-    const beeContainer = String(api.getConfig().beeContainer ?? '').trim();
-    if (beeContainer) {
-      debug(api, `Getting bees from ${beeContainer}`);
-      api.sendCommand(`get bees ${beeContainer}`);
-    }
-
     state = 'requesting';
     debug(api, 'Walking to quest master');
-    walk(api, paths.to_quest_master);
+
+    if (fromRecall) {
+      // recall + quest_master is pure movement (no spell dependencies).
+      // to_quest_master starts with c fly/c pass which can leave the character
+      // at the wrong position if a spell fails mid-path.
+      api.sendCommand('recall');
+      refreshMovement(api);
+      walk(api, paths.quest_master);
+    } else {
+      const beeContainer = String(api.getConfig().beeContainer ?? '').trim();
+      if (beeContainer) {
+        debug(api, `Getting bees from ${beeContainer}`);
+        api.sendCommand(`get bees ${beeContainer}`);
+      }
+      const qmCmds = [...paths.to_quest_master];
+      qmCmds.pop(); // remove trailing 'pq request find', sent explicitly below
+      walk(api, qmCmds);
+    }
+
+    if (pendingEggBuy && Number(api.getConfig().eggQpThreshold ?? '0') > 0) {
+      const eggContainer = String(api.getConfig().eggContainer ?? '').trim() || String(api.getConfig().gemPouch ?? '').trim();
+      debug(api, 'Buying egg');
+      api.sendCommand('pq buy egg');
+      if (eggContainer) api.sendCommand(`put egg ${eggContainer}`);
+      pendingEggBuy = false;
+    }
+
+    api.sendCommand('pq request find');
     state = 'capturing';
+  }
+
+  function retryWithNewQuest(api: PluginRuntimeApi, reason: string): void {
+    api.writeTerminal?.(`{Y[QuestBot] ${reason}{x\n`);
+
+    if (questAttemptCount >= 3) {
+      api.writeTerminal?.(`{R[QuestBot] 3 consecutive bad quests — returning to rest{x\n`);
+      returnToRest(api);
+      return;
+    }
+
+    // Fetch fresh QP — response arrives during the 45s wait and updates pendingEggBuy
+    api.sendCommand('worth');
+
+    // Honour a pending egg buy before clearing so we don't miss the breakpoint
+    if (pendingEggBuy && Number(api.getConfig().eggQpThreshold ?? '0') > 0) {
+      const eggContainer = String(api.getConfig().eggContainer ?? '').trim() || String(api.getConfig().gemPouch ?? '').trim();
+      debug(api, 'Buying egg before clearing quest');
+      api.sendCommand('pq buy egg');
+      if (eggContainer) api.sendCommand(`put egg ${eggContainer}`);
+      pendingEggBuy = false;
+    }
+
+    api.writeTerminal?.(`{Y[QuestBot] Clearing quest — will retry in 45s (attempt ${questAttemptCount}/3){x\n`);
+    api.sendCommand('pq clear');
+    state = 'requesting';
+
+    if (navRetryTimerId !== null) {
+      clearTimeout(navRetryTimerId);
+    }
+    navRetryTimerId = setTimeout(() => {
+      navRetryTimerId = null;
+      if (!running) return;
+      questAttemptCount++;
+      debug(api, `Quest re-request attempt ${questAttemptCount} of 3`);
+      resetQuest();
+
+      // worth response has arrived by now — buy egg if threshold was crossed during the wait
+      if (pendingEggBuy && Number(api.getConfig().eggQpThreshold ?? '0') > 0) {
+        const eggContainer = String(api.getConfig().eggContainer ?? '').trim() || String(api.getConfig().gemPouch ?? '').trim();
+        debug(api, 'Buying egg before retry request');
+        api.sendCommand('pq buy egg');
+        if (eggContainer) api.sendCommand(`put egg ${eggContainer}`);
+        pendingEggBuy = false;
+      }
+
+      api.sendCommand('pq request find');
+      state = 'capturing';
+    }, 45_000);
   }
 
   function navigateToArea(api: PluginRuntimeApi): void {
     if (!questArea || !questRoom) {
-      api.writeTerminal?.(`{R[QuestBot] Area or room not captured — returning to rest{x\n`);
-      returnToRest(api);
+      retryWithNewQuest(api, 'Area or room not captured — retrying');
       return;
     }
     const areas = getAreas(api);
     const areaData = areas[questArea];
     if (!areaData) {
-      api.writeTerminal?.(`{Y[QuestBot] Unknown area: "${questArea}" — add it via Custom Areas config{x\n`);
-      returnToRest(api);
+      retryWithNewQuest(api, `Unknown area: "${questArea}" — add it via Custom Areas config`);
       return;
     }
     if (!areaData.walk_paths[questRoom]) {
-      api.writeTerminal?.(`{Y[QuestBot] Unknown room "${questRoom}" in "${questArea}" — add it via Custom Areas config{x\n`);
-      returnToRest(api);
+      retryWithNewQuest(api, `Unknown room "${questRoom}" in "${questArea}" — add it via Custom Areas config`);
       return;
     }
 
@@ -443,22 +548,15 @@ export function createQuestBotPlugin(): IPluginModule {
 
     state = 'combing';
     debug(api, `Combing room: ${questRoom}`);
-    const roomPath = areaData.walk_paths[questRoom];
-    for (const dir of roomPath) {
-      api.sendCommand(`get all.${itemKeyword}`);
-      api.sendCommand(dir);
-    }
-    api.sendCommand(`get all.${itemKeyword}`);
+    combStepsRemaining = [...areaData.walk_paths[questRoom]];
+    combComplete = false;
+    debug(api, `Comb setup: ${combStepsRemaining.length} step(s)`);
+    sendAllCombSteps(api);
   }
 
-  function turnIn(api: PluginRuntimeApi): void {
-    state = 'turning-in';
+  function completeQuestAndRest(api: PluginRuntimeApi): void {
     const paths = getPaths(api);
     if (!paths) return;
-    api.sendCommand('~');
-    api.sendCommand('recall');
-    walk(api, paths.quest_master);
-    api.sendCommand('pq complete');
 
     const gemPath = paths.gem_merchant;
     const tookGemStep = gemPath.length > 0 && latestGold >= 600;
@@ -476,6 +574,7 @@ export function createQuestBotPlugin(): IPluginModule {
     }
 
     api.sendCommand('recall');
+    refreshMovement(api);
     walk(api, paths.to_resting_room);
     walk(api, paths.rest_command);
 
@@ -486,6 +585,18 @@ export function createQuestBotPlugin(): IPluginModule {
     }
   }
 
+  function turnIn(api: PluginRuntimeApi): void {
+    state = 'turning-in';
+    const paths = getPaths(api);
+    if (!paths) return;
+    api.sendCommand('~');
+    api.sendCommand('recall');
+    refreshMovement(api);
+    walk(api, paths.quest_master);
+    api.sendCommand('pq complete');
+    api.sendCommand('worth');
+  }
+
   function handleLine(api: PluginRuntimeApi, raw: string): void {
     const line = stripAnsi(raw);
 
@@ -494,9 +605,21 @@ export function createQuestBotPlugin(): IPluginModule {
       if (running) {
         running = false;
         state = 'idle';
+        if (navRetryTimerId !== null) {
+          clearTimeout(navRetryTimerId);
+          navRetryTimerId = null;
+        }
         resetQuest();
         api.writeTerminal?.(`{R[QuestBot] PK interrupt — stopped{x\n`);
       }
+      return;
+    }
+
+    // Track QP from worth output regardless of running state
+    const qpMatch = line.match(/Quest Points\s*:\s*(\d+)/);
+    if (qpMatch) {
+      latestQp = Number(qpMatch[1]);
+      checkEggBuyThreshold(api);
       return;
     }
 
@@ -545,6 +668,13 @@ export function createQuestBotPlugin(): IPluginModule {
       }
     }
 
+    // Quest confirmed complete → gem merchant + rest
+    if (state === 'turning-in' && line.includes("Congratulations on completing the quest!")) {
+      debug(api, 'Quest complete — heading home');
+      completeQuestAndRest(api);
+      return;
+    }
+
     // Item picked up → turn in
     if (state === 'combing') {
       for (const pattern of PICKUP_PATTERNS) {
@@ -559,7 +689,9 @@ export function createQuestBotPlugin(): IPluginModule {
     // Reward line
     const rewardM = line.match(/granting you (\d+) quest points, and (\d+) gold/i);
     if (rewardM) {
+      latestQp += Number(rewardM[1]);
       api.writeTerminal?.(`{G[QuestBot] Reward: {W${rewardM[1]}{G QP, {W${rewardM[2]}{G gold{x\n`);
+      checkEggBuyThreshold(api);
       questAttemptCount = 0;
       state = 'idle';
       resetQuest();
@@ -586,6 +718,9 @@ export function createQuestBotPlugin(): IPluginModule {
         autoRestart: true,
         debug: false,
         customAreas: '[]',
+        refreshCommand: 'cast refresh',
+        eggQpThreshold: '0',
+        eggContainer: '',
       },
       fields: [
         {
@@ -638,6 +773,30 @@ export function createQuestBotPlugin(): IPluginModule {
           description: 'Print each navigation step and state transition to the terminal.',
         },
         {
+          key: 'refreshCommand',
+          type: 'string',
+          label: 'Refresh command',
+          description:
+            'Command used to restore movement after recalling. Sent twice when movement is at or below one third of maximum. Defaults to "cast refresh".',
+          placeholder: 'cast refresh',
+        },
+        {
+          key: 'eggQpThreshold',
+          type: 'string',
+          label: 'Egg buy QP threshold',
+          description:
+            'Auto-run pq buy egg at the quest master when quest points reach this value. Set to 0 or leave blank to disable.',
+          placeholder: '2500',
+        },
+        {
+          key: 'eggContainer',
+          type: 'string',
+          label: 'Egg container',
+          description:
+            'Container to put the egg into after buying (e.g. "shelf" or "pit"). Defaults to the gem pouch if left blank.',
+          placeholder: 'shelf',
+        },
+        {
           key: 'customAreas',
           type: 'textarea',
           label: 'Custom areas (JSON)',
@@ -665,18 +824,24 @@ export function createQuestBotPlugin(): IPluginModule {
       if (evt?.name === 'game:char-data') {
         const p = evt.payload as any;
         if (typeof p?.gold === 'number') latestGold = p.gold;
+        if (typeof p?.move === 'number') latestMove = p.move;
+        if (typeof p?.max_move === 'number') latestMaxMove = p.max_move;
 
         const isFighting = p?.is_fighting === true;
 
         if (isFighting && !lastIsFighting && running) {
           running = false;
+          preCombatState = state;
           state = 'idle';
-          resetQuest();
           combatBreakPending = true;
           fleedDuringCombat = false;
           if (combatResumeTimerId !== null) {
             clearTimeout(combatResumeTimerId);
             combatResumeTimerId = null;
+          }
+          if (navRetryTimerId !== null) {
+            clearTimeout(navRetryTimerId);
+            navRetryTimerId = null;
           }
           (window as any).__SA_RUNTIME__?.runtime?.cancelDoAfterTimers();
           api.writeTerminal?.(`{R[QuestBot] Combat detected — stopped. Will resume in 30s if no flee.{x\n`);
@@ -687,12 +852,28 @@ export function createQuestBotPlugin(): IPluginModule {
             combatResumeTimerId = null;
             combatBreakPending = false;
             if (fleedDuringCombat) {
+              resetQuest();
               api.writeTerminal?.(`{Y[QuestBot] Flee detected — not resuming{x\n`);
               return;
             }
-            api.writeTerminal?.(`{G[QuestBot] Combat over — resuming quest{x\n`);
+            api.writeTerminal?.(`{G[QuestBot] Combat over — resuming{x\n`);
             running = true;
-            requestQuest(api);
+            if (preCombatState === 'turning-in') {
+              debug(api, 'Resuming turn-in');
+              turnIn(api);
+            } else if (preCombatState === 'combing') {
+              debug(api, `Resuming comb in ${questArea ?? '?'} (${combStepsRemaining.length} step(s) left)`);
+              state = 'combing';
+              combComplete = false;
+              sendAllCombSteps(api);
+            } else if (preCombatState === 'navigating') {
+              debug(api, `Re-navigating to ${questArea ?? '?'}`);
+              api.sendCommand('recall');
+              refreshMovement(api);
+              navigateToArea(api);
+            } else {
+              requestQuest(api, true);
+            }
           }, 30_000);
         }
 
@@ -718,7 +899,7 @@ export function createQuestBotPlugin(): IPluginModule {
         resetQuest();
         disableKnockdownTriggers(api);
         api.writeTerminal?.(`{G[QuestBot] Starting quest automation...{x\n`);
-        requestQuest(api);
+        requestQuest(api, true);
         return true;
       }
 
@@ -730,7 +911,13 @@ export function createQuestBotPlugin(): IPluginModule {
           clearTimeout(combatResumeTimerId);
           combatResumeTimerId = null;
         }
+        if (navRetryTimerId !== null) {
+          clearTimeout(navRetryTimerId);
+          navRetryTimerId = null;
+        }
         resetQuest();
+        questAttemptCount = 0;
+        pendingEggBuy = false;
         restoreKnockdownTriggers(api);
         api.writeTerminal?.(`{Y[QuestBot] Stopped{x\n`);
         return true;
