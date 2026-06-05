@@ -96,7 +96,7 @@ const RE_CLAN_SHORT = /^\[\s*(\d+)\s+()(\w+)\]\s*\[([^\]]+)\]\s+([\w']+)/;
 
 // Name - Rank Craft  (who craft output)
 const RE_CRAFT = new RegExp(
-  `^([\\w']+)\\s+-\\s+([\\w\\s]+)\\s+(${[...CRAFT_NAMES].map((c) => c.replace(/[()]/g, '\\$&')).join('|')})`,
+  `^([\\w']+)\\s+-\\s+([\\w\\s]+)\\s+(${[...CRAFT_NAMES].map((c) => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`,
 );
 
 // ── Name parsing ───────────────────────────────────────────────────────
