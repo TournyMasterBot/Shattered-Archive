@@ -86,3 +86,9 @@ desktop.ini
 .jest/
 .claude/settings.local.json
 .claude/settings.json
+
+# ============================================================
+# Security Updates (fetched Dependabot data — not committed)
+# ============================================================
+.security-updates/*
+!.security-updates/.gitkeep
