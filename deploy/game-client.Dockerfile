@@ -1,6 +1,7 @@
-FROM node:20-bookworm-slim AS build
+FROM node:26.1.0-alpine3.23@sha256:e71ac5e964b9201072425d59d2e876359efa25dc96bb1768cb73295728d6e4ea AS build
 WORKDIR /repo
-RUN corepack enable
+ENV COREPACK_ENABLE_STRICT=1
+RUN npm install -g corepack && corepack enable
 
 COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 COPY tsconfig*.json ./
@@ -27,7 +28,9 @@ ENV VITE_ENV=$VITE_ENV
 
 RUN pnpm --filter @shatteredarchive/game-client... build
 
-FROM nginx:alpine AS runtime
+# nginx 1.31.0-alpine
+FROM nginx:alpine@sha256:dc48b7a872a79fb541ba5081d320b11b549231bc63ba465a7495afaa7d2ebcb8 AS runtime
+RUN apk --no-cache upgrade
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY deploy/nginx/game-client.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /repo/apps/game-client/dist /usr/share/nginx/html/

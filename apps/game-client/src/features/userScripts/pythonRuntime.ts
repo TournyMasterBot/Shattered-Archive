@@ -171,6 +171,17 @@ function registerBuiltins(api: ScriptSandboxApi) {
       return v as unknown;
     });
   }
+
+  // doAfter(delay_ms, type, command)
+  if (api.doAfter) {
+    b.doAfter = new sk.builtin.func((pyDelay: unknown, pyType: unknown, pyCmd: unknown) => {
+      const delayMs = Number(pyToJs(pyDelay));
+      const type = String(pyToJs(pyType)) as 'world' | 'alias';
+      const command = String(pyToJs(pyCmd));
+      api.doAfter?.(delayMs, type, command);
+      return pyNone();
+    });
+  }
 }
 
 export function configurePythonForApi(api: ScriptSandboxApi) {

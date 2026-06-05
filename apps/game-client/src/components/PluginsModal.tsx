@@ -15,8 +15,15 @@ interface PluginsModalProps {
 }
 
 export const PluginsModal: React.FC<PluginsModalProps> = ({ isOpen, onClose, connectionId }) => {
-  const { installed, isInstalled, installCorePlugin, removePlugin, setPluginEnabled, getInstallRecord } =
-    usePlugins(connectionId);
+  const {
+    installed,
+    isInstalled,
+    installCorePlugin,
+    removePlugin,
+    setPluginEnabled,
+    getInstallRecord,
+    updatePluginConfig,
+  } = usePlugins(connectionId);
 
   const [activeCssPluginId, setActiveCssPluginId] = React.useState<string | null>(null);
   const [activeConfigPluginId, setActiveConfigPluginId] = React.useState<string | null>(null);
@@ -48,6 +55,8 @@ export const PluginsModal: React.FC<PluginsModalProps> = ({ isOpen, onClose, con
   };
 
   const openConfigFor = (pluginId: string) => {
+    // Ensure the plugin has an install record before opening config
+    if (!isInstalled(pluginId)) installCorePlugin(pluginId);
     setActiveConfigPluginId(pluginId);
   };
 
@@ -86,10 +95,15 @@ export const PluginsModal: React.FC<PluginsModalProps> = ({ isOpen, onClose, con
               const installedNow = isInstalled(p.id);
               const record = getInstallRecord(p.id);
 
+              const isOff = installedNow && !record?.enabled;
+
               return (
-                <div key={p.id} className={styles.row}>
+                <div key={p.id} className={`${styles.row}${isOff ? ` ${styles.rowDisabled}` : ''}`}>
                   <div className={styles.left}>
-                    <div className={styles.name}>{p.manifest.name}</div>
+                    <div className={styles.name}>
+                      {p.manifest.name}
+                      {p.manifest.tags?.includes('wip') && <span className={styles.wipBadge}>⚙ WIP</span>}
+                    </div>
                     <div className={styles.meta}>
                       v{p.manifest.version}
                       {p.manifest.description ? ` • ${p.manifest.description}` : ''}
@@ -174,6 +188,12 @@ export const PluginsModal: React.FC<PluginsModalProps> = ({ isOpen, onClose, con
           onClose={closeConfig}
           connectionId={connectionId}
           pluginId={activeConfigPluginId}
+          initialUserConfig={getInstallRecord(activeConfigPluginId)?.userConfig ?? {}}
+          isEnabled={!!getInstallRecord(activeConfigPluginId)?.enabled}
+          onSave={(pluginId, config) => {
+            updatePluginConfig(pluginId, config);
+            pluginHost.updateEnabledPluginConfig(pluginId, config);
+          }}
         />
       )}
     </>

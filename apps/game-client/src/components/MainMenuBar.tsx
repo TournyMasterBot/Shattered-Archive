@@ -16,6 +16,7 @@ interface MainMenuBarProps {
   onOpenAutoLeveling: () => void;
   onOpenIdentifyObject: () => void;
   onOpenCreatureLore: () => void;
+  onOpenScriptingHelp: () => void;
 }
 
 export const MainMenuBar: React.FC<MainMenuBarProps> = ({
@@ -28,6 +29,7 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
   onOpenAutoLeveling,
   onOpenIdentifyObject,
   onOpenCreatureLore,
+  onOpenScriptingHelp,
 }) => {
   const {
     openRootMenu,
@@ -142,6 +144,17 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
             >
               Equipment…
             </div>
+
+            <div
+              className={styles.subMenuItem}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeAllMenus();
+                onOpenAutoLeveling();
+              }}
+            >
+              Autopilot…
+            </div>
           </div>
         </div>
 
@@ -219,6 +232,16 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
         <div className={`${styles.menuItem} ${styles.menuItemHasSubmenu}`} onClick={() => toggleRootMenu('Help')}>
           Help
           <div className={`${styles.subMenu} ${openRootMenu === 'Help' ? styles.subMenuOpen : ''}`}>
+            <div
+              className={styles.subMenuItem}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeAllMenus();
+                onOpenScriptingHelp();
+              }}
+            >
+              Scripting…
+            </div>
             <a
               className={`${styles.subMenuItem} ${styles.subMenuLink}`}
               href="https://github.com/sponsors/TournyMasterBot"

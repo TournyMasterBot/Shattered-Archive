@@ -1,6 +1,7 @@
-FROM node:20-alpine AS build
+FROM node:26.1.0-alpine3.23@sha256:e71ac5e964b9201072425d59d2e876359efa25dc96bb1768cb73295728d6e4ea AS build
 WORKDIR /repo
-RUN corepack enable
+ENV COREPACK_ENABLE_STRICT=1
+RUN npm install -g corepack && corepack enable
 
 COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 COPY tsconfig*.json ./
@@ -23,11 +24,13 @@ RUN pnpm --filter @shatteredarchive/sdks-server build
 
 RUN pnpm --filter @shatteredarchive/web-server... build
 
-FROM node:20-alpine AS runtime
+FROM node:26.1.0-alpine3.23@sha256:e71ac5e964b9201072425d59d2e876359efa25dc96bb1768cb73295728d6e4ea AS runtime
+RUN apk --no-cache upgrade
 WORKDIR /repo
 
 COPY deploy/.env /repo/.env
-RUN corepack enable
+ENV COREPACK_ENABLE_STRICT=1
+RUN npm install -g corepack && corepack enable
 
 ENV NODE_ENV=production
 ENV PORT=41000

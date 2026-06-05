@@ -45,6 +45,23 @@ export function useVoiceDictation(options: UseVoiceDictationOptions): UseVoiceDi
 
   const [isRecording, setIsRecording] = useState(false);
   const [lastError, setLastError] = useState<string | undefined>(undefined);
+  const errorTimerRef = useRef<number | null>(null);
+
+  const clearErrorTimer = () => {
+    if (errorTimerRef.current !== null) {
+      window.clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = null;
+    }
+  };
+
+  const setTimedError = useCallback((msg: string, dismissMs = 3000) => {
+    clearErrorTimer();
+    setLastError(msg);
+    errorTimerRef.current = window.setTimeout(() => {
+      setLastError(undefined);
+      errorTimerRef.current = null;
+    }, dismissMs);
+  }, []);
 
   // Accumulate final segments until onend
   const finalPartsRef = useRef<string[]>([]);
@@ -70,6 +87,7 @@ export function useVoiceDictation(options: UseVoiceDictationOptions): UseVoiceDi
 
     rec.onstart = () => {
       clearStopTimer();
+      clearErrorTimer();
       setLastError(undefined);
       setIsRecording(true);
       finalPartsRef.current = [];
@@ -89,7 +107,7 @@ export function useVoiceDictation(options: UseVoiceDictationOptions): UseVoiceDi
 
     rec.onerror = (e: SpeechRecognitionErrorEvent) => {
       clearStopTimer();
-      setLastError(e.error || 'speech_error');
+      setTimedError(e.error || 'speech_error');
       setIsRecording(false);
       onEnd?.();
       finalPartsRef.current = [];
@@ -110,6 +128,7 @@ export function useVoiceDictation(options: UseVoiceDictationOptions): UseVoiceDi
 
     return () => {
       clearStopTimer();
+      clearErrorTimer();
       try {
         rec.onstart = null;
         rec.onend = null;
@@ -122,7 +141,7 @@ export function useVoiceDictation(options: UseVoiceDictationOptions): UseVoiceDi
         recRef.current = null;
       }
     };
-  }, [Ctor, isSupported, onFinalText, onStart, onEnd]);
+  }, [Ctor, isSupported, onFinalText, onStart, onEnd, setTimedError]);
 
   const start = useCallback(() => {
     if (!enabled) return;

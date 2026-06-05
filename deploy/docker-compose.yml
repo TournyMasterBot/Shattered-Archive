@@ -6,6 +6,9 @@ name: shatteredarchive-prod
 networks:
   shatteredarchive-prod:
     driver: bridge
+  sa-shared:
+    driver: bridge
+    name: sa-shared
 
 services:
   ############################################################
@@ -28,6 +31,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "5900:5900"
     
     environment:
       NGINX_TLS_INCLUDE_FILE: "tls-off.conf"
@@ -45,6 +49,7 @@ services:
           - web-client.shatteredarchive.dev
           - game-server.shatteredarchive.dev
           - web-server.shatteredarchive.dev
+      sa-shared: {}
 
     healthcheck:
       interval: 10s

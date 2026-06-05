@@ -58,18 +58,16 @@ function hdbg(...args: any[]) {
 }
 
 function hwarn(...args: any[]) {
-  return;
-  if (!isAutoLevelingDebugEnabled()) return;
   // eslint-disable-next-line no-console
   console.warn(HOOK_LOG_PREFIX, ...args);
 }
 
 /* ------------------------------------------------------------------------- */
 
-export function useAutoLeveling(connectionId: string) {
+export function useAutoLeveling(connectionId: string, isConnectedInitial = false) {
   const [config, _setConfig] = useState<AutoLevelConfig>(() => {
     const initial = loadAutoLevelConfig(connectionId, createDefaultAutoLevelConfig());
-    hdbg('init config loaded', { connectionId, enabled: initial.enabled, version: initial.version });
+    hdbg('init config loaded', { connectionId, mode: initial.mode, version: initial.version });
     return initial;
   });
 
@@ -77,7 +75,7 @@ export function useAutoLeveling(connectionId: string) {
   useEffect(() => {
     configRef.current = config;
     hdbg('config state updated', {
-      enabled: config.enabled,
+      mode: config.mode,
       loopRounds: config.loopRounds,
       idleTimeoutMs: config.idleTimeoutMs,
       roundDelay: config.roundLoopTimeMs,
@@ -86,15 +84,21 @@ export function useAutoLeveling(connectionId: string) {
 
   const setConfig = useCallback(
     (next: AutoLevelConfig) => {
-      hdbg('setConfig called', { enabled: next.enabled, version: next.version });
+      hdbg('setConfig called', { mode: next.mode, version: next.version });
       _setConfig(next);
       saveAutoLevelConfig(connectionId, next);
     },
     [connectionId],
   );
 
-  // socket readiness remains a UI safety gate
-  const [socketReady, setSocketReady] = useState(false);
+  // socket readiness — initialise from current connection state so we don't
+  // miss the open event that already fired before this hook mounted.
+  const [socketReady, setSocketReady] = useState(isConnectedInitial);
+  useEffect(() => {
+    // Sync whenever the parent passes a new isConnected value (e.g. reconnect)
+    setSocketReady(isConnectedInitial);
+  }, [isConnectedInitial]);
+
   useEffect(() => {
     const disposeOpen = ListenEvent<unknown>(
       'game:remote-server:open',
@@ -256,6 +260,18 @@ export function useAutoLeveling(connectionId: string) {
     setRunState({ status: 'idle' });
   }, [connectionId]);
 
+  const moveNext = useCallback(() => {
+    engineRef.current?.advanceSightsee('next');
+  }, []);
+
+  const movePrev = useCallback(() => {
+    engineRef.current?.advanceSightsee('prev');
+  }, []);
+
+  const rescanRoom = useCallback(() => {
+    engineRef.current?.rescanRoom();
+  }, []);
+
   // Event-bus controls (crossed swords etc)
   useEffect(() => {
     const disposeStart = ListenEvent(
@@ -294,17 +310,35 @@ export function useAutoLeveling(connectionId: string) {
       { key: 'useAutoLeveling::window::autoleveling-stop' },
     );
 
+    const disposeMoveNext = ListenEvent(
+      'shatteredarchive:autoleveling-move-next',
+      () => {
+        moveNext();
+      },
+      { key: 'useAutoLeveling::window::autoleveling-move-next' },
+    );
+
+    const disposeMovePrev = ListenEvent(
+      'shatteredarchive:autoleveling-move-prev',
+      () => {
+        movePrev();
+      },
+      { key: 'useAutoLeveling::window::autoleveling-move-prev' },
+    );
+
     return () => {
       try {
         disposeStart?.();
         disposePause?.();
         disposeResume?.();
         disposeStop?.();
+        disposeMoveNext?.();
+        disposeMovePrev?.();
       } catch {
         // ignore
       }
     };
-  }, [pause, resume, start, stop]);
+  }, [pause, resume, start, stop, moveNext, movePrev]);
 
   return {
     config,
@@ -318,5 +352,8 @@ export function useAutoLeveling(connectionId: string) {
     pause,
     resume,
     resetToDefaults,
+    moveNext,
+    movePrev,
+    rescanRoom,
   };
 }

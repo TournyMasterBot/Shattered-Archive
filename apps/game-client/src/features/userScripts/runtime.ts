@@ -61,6 +61,7 @@ async function runJavascript(source: string, api: ScriptSandboxApi): Promise<voi
       `"use strict";
 const {
   sendCommand,
+  doAfter,
   log,
   error,
   event,

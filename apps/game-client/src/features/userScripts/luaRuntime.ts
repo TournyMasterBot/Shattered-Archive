@@ -145,6 +145,17 @@ export function bindApiToLuaState(L: any, api: ScriptSandboxApi) {
     });
   }
 
+  // api.doAfter(delayMs, type, command)
+  if (api.doAfter) {
+    setApiField('doAfter', (Linner) => {
+      const delayMs = lua.lua_tonumber(Linner, 1) as number;
+      const type = lua.lua_tojsstring(Linner, 2) as 'world' | 'alias';
+      const command = lua.lua_tojsstring(Linner, 3);
+      api.doAfter?.(delayMs, type, command);
+      return 0;
+    });
+  }
+
   // expose table as global "api"
   lua.lua_setglobal(L, to_luastring('api'));
 
@@ -257,6 +268,17 @@ export function bindApiToLuaState(L: any, api: ScriptSandboxApi) {
       const v = api.getNamedVar?.(name);
       lua.lua_pushstring(Linner, to_luastring(v ?? ''));
       return 1;
+    });
+  }
+
+  // doAfter(delayMs, type, command)
+  if (api.doAfter) {
+    setGlobal('doAfter', (Linner) => {
+      const delayMs = lua.lua_tonumber(Linner, 1) as number;
+      const type = lua.lua_tojsstring(Linner, 2) as 'world' | 'alias';
+      const command = lua.lua_tojsstring(Linner, 3);
+      api.doAfter?.(delayMs, type, command);
+      return 0;
     });
   }
 }

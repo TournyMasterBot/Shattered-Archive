@@ -6,6 +6,8 @@ import { startPluginBundledScripts } from './pluginScriptRunner';
 import { normalizePluginModule } from './normalizePluginModule';
 import { ROUTED_WINDOW_EVENTS } from './routed-gmcp-events';
 import { DispatchEvent, ListenEvent } from '../event-emitter/event-dispatcher';
+import { setPluginOmitRules, type PluginOmitRuleInput } from '../userScripts/triggerOmitStore';
+import { renderDslToAnsi } from '../userScripts/dslToAnsi';
 
 type PluginCleanup = {
   api?: PluginRuntimeApi;
@@ -14,6 +16,7 @@ type PluginCleanup = {
   onDisable?: () => void;
   aliasHandlers?: Array<{ alias: string; run: (inputText: string) => void }>;
   offEvents?: Array<() => void>;
+  actionHandlers?: Map<string, () => void>;
 };
 
 type HostState = {
@@ -23,12 +26,17 @@ type HostState = {
   cleanups: Map<PluginId, PluginCleanup>;
 };
 
-function makeDefaultApi(connectionId: string, pluginId: PluginId, module: IPluginModule): PluginRuntimeApi {
+function makeDefaultApi(
+  connectionId: string,
+  pluginId: PluginId,
+  module: IPluginModule,
+  actionHandlers: Map<string, () => void>,
+): PluginRuntimeApi {
   const onEvent: PluginRuntimeApi['onEvent'] = (eventName, handler) => {
     // Build a stable, HMR-safe dedupe key for this subscription.
     // If the same plugin registers the same event multiple times (or via HMR),
     // the dispatcher registry will replace the old listener automatically.
-    const key = `pluginRuntimeApi::onEvent::${String(eventName)}`;
+    const key = `pluginRuntimeApi::onEvent::${pluginId}::${String(eventName)}`;
 
     // ListenEvent hands us the CustomEvent.detail already
     const dispose = ListenEvent<any>(
@@ -139,6 +147,28 @@ function makeDefaultApi(connectionId: string, pluginId: PluginId, module: IPlugi
       emitTerminalText(`\x1b[38;5;196m[plugin:${pluginId}]\x1b[0m ${msg}\r\n`, 'error');
     },
 
+    writeTerminal: (dslText: string) => {
+      try {
+        const ansi = renderDslToAnsi(dslText);
+        DispatchEvent('shatteredarchive:write-terminal', {
+          rawText: ansi,
+          text: ansi,
+          fromUserScript: true,
+          fromPlugin: true,
+        });
+      } catch {
+        // ignore
+      }
+    },
+
+    registerOmitRules: (rules: PluginOmitRuleInput[]) => {
+      setPluginOmitRules(pluginId, rules);
+    },
+
+    registerAction: (key: string, handler: () => void) => {
+      actionHandlers.set(key, handler);
+    },
+
     onEvent,
     httpGetJson,
 
@@ -203,7 +233,8 @@ export class PluginHost {
 
     const mod = normalizePluginModule(raw);
 
-    const apiBase = makeDefaultApi(s.connectionId, pluginId, mod);
+    const actionHandlers = new Map<string, () => void>();
+    const apiBase = makeDefaultApi(s.connectionId, pluginId, mod, actionHandlers);
 
     const api: PluginRuntimeApi = {
       ...apiBase,
@@ -251,6 +282,7 @@ export class PluginHost {
         if (mod.onDisable) mod.onDisable(api);
       },
       aliasHandlers: scriptBundle.getAliasScripts(),
+      actionHandlers,
     });
   }
 
@@ -266,6 +298,7 @@ export class PluginHost {
     if (c?.onDisable) c.onDisable();
     if (c?.removeBaseCss) c.removeBaseCss();
 
+    setPluginOmitRules(pluginId, []);
     s.cleanups.delete(pluginId);
     s.enabled.delete(pluginId);
   }
@@ -279,6 +312,28 @@ export class PluginHost {
   }
 
   /**
+   * Called from the alias pipeline when no user-script alias matched.
+   * Gives enabled plugins a chance to consume the command via onAlias.
+   * Returns true if a plugin consumed the command (should not be sent to game).
+   */
+  tryExecuteAlias(input: string): boolean {
+    if (!this.state) return false;
+
+    for (const [pluginId, cleanup] of this.state.cleanups.entries()) {
+      const mod = this.state.modules.get(pluginId);
+      if (!mod?.onAlias || !cleanup.api) continue;
+
+      try {
+        if (mod.onAlias(cleanup.api, input)) return true;
+      } catch (err) {
+        cleanup.api.error('onAlias error', err);
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Live update config for an enabled plugin (used by config UI).
    */
   updateEnabledPluginConfig(pluginId: PluginId, patch: Record<string, unknown>) {
@@ -286,6 +341,23 @@ export class PluginHost {
     const c = this.state.cleanups.get(pluginId);
     if (!c?.api) return;
     c.api.updateConfig(patch);
+  }
+
+  /**
+   * Invoke a named action registered by an enabled plugin.
+   * Called from the configure modal action buttons.
+   */
+  invokePluginAction(pluginId: PluginId, actionKey: string): void {
+    if (!this.state) return;
+    const c = this.state.cleanups.get(pluginId);
+    const handler = c?.actionHandlers?.get(actionKey);
+    if (handler) {
+      try {
+        handler();
+      } catch (err) {
+        c?.api?.error('Action error', err);
+      }
+    }
   }
 }
 

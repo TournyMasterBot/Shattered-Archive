@@ -2,6 +2,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import styles from '../styles/LayoutShell.module.scss';
 import { useAffectsBlock } from '../hooks/useAffectsBlock';
+import { ListenEvent } from '../features/event-emitter/event-dispatcher';
+import type { GourdEntry } from '../features/plugins/core-plugins/gourd.plugin';
 
 type AffectsUiSettings = {
   showTime: boolean;
@@ -46,9 +48,42 @@ export const AffectsBlock: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [ui, setUi] = useState<AffectsUiSettings>(() => loadSettings());
 
+  // Gourd plugin state
+  const [gourdActive, setGourdActive] = useState(false);
+  const [gourds, setGourds] = useState<GourdEntry[]>([]);
+  const [activeTab, setActiveTab] = useState<'affects' | 'gourds'>('affects');
+
   useEffect(() => {
     saveSettings(ui);
   }, [ui]);
+
+  // Listen for gourd plugin events
+  useEffect(() => {
+    const offActive = ListenEvent<{ active: boolean }>(
+      'plugin:gourd:active',
+      ({ active }) => {
+        setGourdActive(active);
+        if (!active) {
+          setGourds([]);
+          setActiveTab('affects');
+        }
+      },
+      { key: 'AffectsBlock:plugin:gourd:active' },
+    );
+
+    const offList = ListenEvent<{ list: GourdEntry[] }>(
+      'plugin:gourd:list-updated',
+      ({ list }) => {
+        setGourds(Array.isArray(list) ? list : []);
+      },
+      { key: 'AffectsBlock:plugin:gourd:list-updated' },
+    );
+
+    return () => {
+      offActive();
+      offList();
+    };
+  }, []);
 
   const aggregates = useMemo(() => {
     const map = new Map<string, { lc: string; sumM: number; count: number }>();
@@ -78,104 +113,162 @@ export const AffectsBlock: React.FC = () => {
 
   return (
     <div className={styles.affectsBlock}>
-      <div className={styles.affectsHeader}>
-        <div className={styles.affectsMenuWrap}>
+      {/* ── Tab bar (only when gourd plugin is active) ── */}
+      {gourdActive && (
+        <div className={styles.affectsTabBar}>
           <button
             type="button"
-            className={styles.affectsGearButton}
-            aria-label="Affects display settings"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((v) => !v)}
+            className={`${styles.affectsTab} ${activeTab === 'affects' ? styles.affectsTabActive : ''}`}
+            onClick={() => setActiveTab('affects')}
           >
-            ⚙
+            Affects
           </button>
-
-          {menuOpen && (
-            <div className={styles.affectsMenuPanel} role="menu">
-              <button
-                type="button"
-                className={styles.affectsMenuRow}
-                role="menuitem"
-                onClick={() => toggle('showTime')}
-              >
-                <span className={`${styles.affectsMenuDot} ${ui.showTime ? styles.affectsMenuDotOn : ''}`} />
-                <span>Time</span>
-              </button>
-
-              <button
-                type="button"
-                className={styles.affectsMenuRow}
-                role="menuitem"
-                onClick={() => toggle('showAggregates')}
-              >
-                <span className={`${styles.affectsMenuDot} ${ui.showAggregates ? styles.affectsMenuDotOn : ''}`} />
-                <span>Aggregates</span>
-              </button>
-
-              <button
-                type="button"
-                className={styles.affectsMenuRow}
-                role="menuitem"
-                onClick={() => toggle('showAffects')}
-              >
-                <span className={`${styles.affectsMenuDot} ${ui.showAffects ? styles.affectsMenuDotOn : ''}`} />
-                <span>Affects</span>
-              </button>
-            </div>
-          )}
+          <button
+            type="button"
+            className={`${styles.affectsTab} ${activeTab === 'gourds' ? styles.affectsTabActive : ''}`}
+            onClick={() => setActiveTab('gourds')}
+          >
+            Gourds
+            {gourds.length > 0 && <span className={styles.affectsTabBadge}>{gourds.length}</span>}
+          </button>
         </div>
+      )}
 
-        <div className={styles.affectsTitle}>Affects Summary</div>
-        <div className={styles.affectsTime}>{ui.showTime ? timeOfDay : ''}</div>
-      </div>
+      {/* ── Affects panel ── */}
+      {activeTab === 'affects' && (
+        <>
+          <div className={styles.affectsHeader}>
+            <div className={styles.affectsMenuWrap}>
+              <button
+                type="button"
+                className={styles.affectsGearButton}
+                aria-label="Affects display settings"
+                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen((v) => !v)}
+              >
+                ⚙
+              </button>
 
-      <div className={styles.affectsScroll}>
-        {ui.showAggregates && aggregates.length > 0 && (
-          <div className={styles.affectsAggregatesSection}>
-            {aggregates.map((g) => (
-              <div key={`agg|${g.lc}`} className={styles.affectsAggregateRow}>
-                <div className={styles.affectsAggregateLeft}>
-                  <span className={styles.affectsAggregateLoc}>{g.lc}</span>
-                  {g.count > 1 ? <span className={styles.affectsAggregateCount}>({g.count}x)</span> : null}
+              {menuOpen && (
+                <div className={styles.affectsMenuPanel} role="menu">
+                  <button
+                    type="button"
+                    className={styles.affectsMenuRow}
+                    role="menuitem"
+                    onClick={() => toggle('showTime')}
+                  >
+                    <span className={`${styles.affectsMenuDot} ${ui.showTime ? styles.affectsMenuDotOn : ''}`} />
+                    <span>Time</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={styles.affectsMenuRow}
+                    role="menuitem"
+                    onClick={() => toggle('showAggregates')}
+                  >
+                    <span className={`${styles.affectsMenuDot} ${ui.showAggregates ? styles.affectsMenuDotOn : ''}`} />
+                    <span>Aggregates</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={styles.affectsMenuRow}
+                    role="menuitem"
+                    onClick={() => toggle('showAffects')}
+                  >
+                    <span className={`${styles.affectsMenuDot} ${ui.showAffects ? styles.affectsMenuDotOn : ''}`} />
+                    <span>Affects</span>
+                  </button>
                 </div>
-                <span className={styles.affectsAggregateText}>{g.sumM}</span>
-              </div>
-            ))}
+              )}
+            </div>
+
+            <div className={styles.affectsTitle}>Affects Summary</div>
+            <div className={styles.affectsTime}>{ui.showTime ? timeOfDay : ''}</div>
           </div>
-        )}
 
-        {ui.showAffects && (
-          <>
-            {affects.length === 0 && <div className={styles.affectEmpty}>No active affects.</div>}
-
-            {affects.map((a) => {
-              const durationClass = getDurationClass(a.d);
-
-              return (
-                <div key={`${a.n}|${a.lc}|${a.m}|${a.t}|${a.d}`} className={styles.affectItem}>
-                  <div className={styles.affectName}>
-                    {a.n}{' '}
-                    <span
-                      className={durationClass}
-                      data-duration-class={durationClass || 'none'}
-                      style={{ opacity: 0.7 }}
-                    >
-                      ({a.d})
-                    </span>
-                  </div>
-
-                  {(a.lc && a.lc !== 'none') || a.m !== 0 ? (
-                    <div className={styles.affectDetails}>
-                      {a.lc && a.lc !== 'none' ? `${a.lc}: ` : ''}
-                      {a.m}
+          <div className={styles.affectsScroll}>
+            {ui.showAggregates && aggregates.length > 0 && (
+              <div className={styles.affectsAggregatesSection}>
+                {aggregates.map((g) => (
+                  <div key={`agg|${g.lc}`} className={styles.affectsAggregateRow}>
+                    <div className={styles.affectsAggregateLeft}>
+                      <span className={styles.affectsAggregateLoc}>{g.lc}</span>
+                      {g.count > 1 ? <span className={styles.affectsAggregateCount}>({g.count}x)</span> : null}
                     </div>
-                  ) : null}
+                    <span className={styles.affectsAggregateText}>{g.sumM}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {ui.showAffects && (
+              <>
+                {affects.length === 0 && <div className={styles.affectEmpty}>No active affects.</div>}
+
+                {affects.map((a) => {
+                  const durationClass = getDurationClass(a.d);
+
+                  return (
+                    <div key={`${a.n}|${a.lc}|${a.m}|${a.t}|${a.d}`} className={styles.affectItem}>
+                      <div className={styles.affectName}>
+                        {a.n}{' '}
+                        <span
+                          className={durationClass}
+                          data-duration-class={durationClass || 'none'}
+                          style={{ opacity: 0.7 }}
+                        >
+                          ({a.d})
+                        </span>
+                      </div>
+
+                      {(a.lc && a.lc !== 'none') || a.m !== 0 ? (
+                        <div className={styles.affectDetails}>
+                          {a.lc && a.lc !== 'none' ? `${a.lc}: ` : ''}
+                          {a.m}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ── Gourds panel ── */}
+      {activeTab === 'gourds' && (
+        <>
+          <div className={styles.affectsHeader}>
+            <div className={styles.affectsTitle}>Gourd List</div>
+            <div className={styles.affectsTime}>
+              {gourds.length} gourd{gourds.length !== 1 ? 's' : ''}
+            </div>
+          </div>
+
+          <div className={styles.affectsScroll}>
+            {gourds.length === 0 ? (
+              <div className={styles.affectEmpty}>
+                No gourds tracked. Type <code>scan gourds</code> to populate.
+              </div>
+            ) : (
+              gourds.map((g, i) => (
+                <div key={`${g.name}|${g.nameIndex}`} className={styles.gourdItem}>
+                  <div className={styles.gourdNumber}>#{i + 1}</div>
+                  <div className={styles.gourdInfo}>
+                    <div className={styles.gourdName}>
+                      {g.nameIndex}.{g.name}
+                    </div>
+                    <div className={styles.gourdSpells}>{g.spells.join(', ')}</div>
+                  </div>
                 </div>
-              );
-            })}
-          </>
-        )}
-      </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 };

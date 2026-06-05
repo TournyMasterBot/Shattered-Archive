@@ -5,7 +5,7 @@ import styles from '../styles/LayoutShell.module.scss';
 import Terminal from './Terminal';
 import CommandInput from './CommandInput';
 import RightSidebar from './RightSidebar';
-import { AutoLevelRunState } from '../features/autoleveling/autoleveling-types';
+import { AutoLevelMode, AutoLevelRunState } from '../features/autoleveling/autoleveling-types';
 
 interface LayoutShellProps {
   layoutVars: React.CSSProperties;
@@ -18,8 +18,9 @@ interface LayoutShellProps {
   sendRaw: (data: string) => void;
 
   onOpenAutoLeveling?: () => void;
-  autoLevelingActive?: boolean;
+  autoLevelMode?: AutoLevelMode;
   autoLevelRunState?: AutoLevelRunState;
+  onSightseeRescan?: () => void;
 }
 
 export const LayoutShell: React.FC<LayoutShellProps> = ({
@@ -30,8 +31,9 @@ export const LayoutShell: React.FC<LayoutShellProps> = ({
   isConnected,
   sendRaw,
   onOpenAutoLeveling,
-  autoLevelingActive,
+  autoLevelMode,
   autoLevelRunState,
+  onSightseeRescan,
 }) => {
   return (
     <div className={styles.layoutShell} style={layoutVars}>
@@ -48,8 +50,9 @@ export const LayoutShell: React.FC<LayoutShellProps> = ({
               isConnected={isConnected}
               sendRaw={sendRaw}
               onOpenAutoLeveling={onOpenAutoLeveling}
-              autoLevelingActive={autoLevelingActive}
+              autoLevelMode={autoLevelMode}
               autoLevelRunState={autoLevelRunState}
+              onSightseeRescan={onSightseeRescan}
             />
           </div>
 

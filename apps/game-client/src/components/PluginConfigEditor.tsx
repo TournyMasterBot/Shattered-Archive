@@ -77,6 +77,58 @@ export const PluginConfigEditor: React.FC<Props> = ({ connectionId, pluginId, sc
       );
     }
 
+    if (f.type === 'string') {
+      return (
+        <div key={f.key} style={{ marginBottom: 12 }}>
+          <div style={{ fontWeight: 600 }}>{f.label}</div>
+          {f.description ? <div style={{ opacity: 0.8, marginBottom: 4 }}>{f.description}</div> : null}
+          <input
+            type="text"
+            value={toInputString(val)}
+            placeholder={f.placeholder}
+            onChange={(e) => setField(f.key, e.target.value)}
+            style={{ width: '100%', boxSizing: 'border-box' }}
+          />
+        </div>
+      );
+    }
+
+    if (f.type === 'textarea') {
+      return (
+        <div key={f.key} style={{ marginBottom: 12 }}>
+          <div style={{ fontWeight: 600 }}>{f.label}</div>
+          {f.description ? <div style={{ opacity: 0.8, marginBottom: 4 }}>{f.description}</div> : null}
+          <textarea
+            value={toInputString(val)}
+            placeholder={f.placeholder}
+            rows={6}
+            onChange={(e) => setField(f.key, e.target.value)}
+            style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'monospace' }}
+          />
+        </div>
+      );
+    }
+
+    if (f.type === 'select') {
+      return (
+        <div key={f.key} style={{ marginBottom: 12 }}>
+          <div style={{ fontWeight: 600 }}>{f.label}</div>
+          {f.description ? <div style={{ opacity: 0.8, marginBottom: 4 }}>{f.description}</div> : null}
+          <select
+            value={toInputString(val)}
+            onChange={(e) => setField(f.key, e.target.value)}
+            style={{ width: '100%', boxSizing: 'border-box' }}
+          >
+            {f.options.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+
     return null;
   };
 

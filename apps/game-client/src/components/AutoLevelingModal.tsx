@@ -35,13 +35,18 @@
  *    - there are unsaved changes (draft != config)
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from '../styles/AutoLevelingModal.module.scss';
 
-import type { AutoLevelConfig, AutoLevelRunState, AutoLevelTarget } from '../features/autoleveling/autoleveling-types';
-import { useAutoLeveling } from '../hooks/useAutoLeveling';
+import type {
+  AutoLevelConfig,
+  AutoLevelMode,
+  AutoLevelRunState,
+  AutoLevelTarget,
+} from '../features/autoleveling/autoleveling-types';
 
 import { parseActionsFromEditor, serializeActionsToEditor } from '../features/autoleveling/autoleveling-actions';
+import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 
 import type { Beast, NamedTrainingPath } from '../features/autoleveling/autoleveling-maps-client';
 import {
@@ -53,6 +58,29 @@ import {
   getBeastsCached,
   getContinentNamesCached,
 } from '../features/autoleveling/autoleveling-maps-client';
+import type { BuildStep, UserBuiltPath } from '../features/autoleveling/autoleveling-user-paths';
+import type { ManualTarget } from '../features/autoleveling/autoleveling-saved-targets';
+import type { MudletArea, MudletBuff } from '../features/autoleveling/autoleveling-mudlet-import';
+import {
+  parseMudletScript,
+  mudletDirsToBuildSteps,
+  parseMudletBuffs,
+} from '../features/autoleveling/autoleveling-mudlet-import';
+import {
+  loadSavedTargets,
+  manualToAutoLevel,
+  saveSavedTargets,
+} from '../features/autoleveling/autoleveling-saved-targets';
+import {
+  deleteUserPath,
+  exportPathsToJson,
+  loadUserPaths,
+  parseImportJson,
+  saveUserPaths,
+  serializeBuildPath,
+  triggerJsonDownload,
+  upsertUserPath,
+} from '../features/autoleveling/autoleveling-user-paths';
 
 /* ----------------------------- debug helpers ------------------------------ */
 
@@ -112,7 +140,7 @@ function uiWarn(...args: any[]) {
 
 /* ------------------------------------------------------------------------- */
 
-type TabKey = 'setup' | 'configure';
+type TabKey = 'setup' | 'configure' | 'build';
 
 type StepKey =
   | 'start.pre'
@@ -127,6 +155,9 @@ type StepKey =
   | 'fight.pre'
   | 'fight.exec'
   | 'fight.post'
+  | 'postFight.pre'
+  | 'postFight.exec'
+  | 'postFight.post'
   | 'reset.endRound'
   | 'reset.wait';
 
@@ -135,25 +166,53 @@ interface AutoLevelingModalProps {
   onClose: () => void;
   connectionId: string;
   isConnected: boolean;
+  // Engine state & controls — provided by the single useAutoLeveling instance in MainContainer.
+  config: AutoLevelConfig;
+  setConfig: (next: AutoLevelConfig) => void;
+  runState: AutoLevelRunState;
+  socketReady: boolean;
+  start: () => void;
+  stop: () => void;
+  pause: () => void;
+  resume: () => void;
+  resetToDefaults: () => void;
+  moveNext: () => void;
+  movePrev: () => void;
+  rescanRoom: () => void;
 }
 
 function toRunStateText(runState: AutoLevelRunState): string {
-  // Intent:
-  // - Human-readable status string shown in modal header.
-  // - Mirrors engine runState updates.
   switch (runState.status) {
     case 'idle':
-      return 'Idle';
-    case 'running':
-      return `Running: round ${runState.round} • ${runState.step} • #${runState.actionIndex + 1}`;
-    case 'paused':
-      return `Paused: round ${runState.round} • ${runState.step} • #${runState.actionIndex + 1}`;
     case 'stopping':
-      return 'Stopping…';
+      return 'Not Running';
+
+    case 'waiting':
+      return 'Waiting';
+
+    case 'resting':
+      return 'Idle';
+
+    case 'running': {
+      const step = runState.step ?? '';
+      if (step.startsWith('sightsee:waiting')) return `Sightsee — Ready (round ${runState.round})`;
+      if (step.includes('fight')) return `Fighting (round ${runState.round})`;
+      if (step.includes('move')) return `Moving (round ${runState.round})`;
+      return `Idle (round ${runState.round})`;
+    }
+
+    case 'paused': {
+      const step = runState.step ?? '';
+      if (step.includes('fight')) return `Paused — Fighting (round ${runState.round})`;
+      if (step.includes('move')) return `Paused — Moving (round ${runState.round})`;
+      return `Paused (round ${runState.round})`;
+    }
+
     case 'error':
       return `Error: ${runState.message}`;
+
     default:
-      return 'Idle';
+      return 'Not Running';
   }
 }
 
@@ -179,6 +238,10 @@ function buildStepEditors(config: AutoLevelConfig): Record<StepKey, string> {
     'fight.exec': serializeActionsToEditor(s.fight.exec),
     'fight.post': serializeActionsToEditor(s.fight.post),
 
+    'postFight.pre': serializeActionsToEditor(s.postFight?.pre ?? []),
+    'postFight.exec': serializeActionsToEditor(s.postFight?.exec ?? []),
+    'postFight.post': serializeActionsToEditor(s.postFight?.post ?? []),
+
     'reset.endRound': serializeActionsToEditor(s.reset.endRound),
     'reset.wait': serializeActionsToEditor(s.reset.wait),
   };
@@ -197,6 +260,7 @@ function applyEditors(base: AutoLevelConfig, stepEditors: Record<StepKey, string
       move: { pre: get('move.pre'), exec: get('move.exec'), post: get('move.post') },
       identify: { pre: get('identify.pre'), exec: get('identify.exec'), post: get('identify.post') },
       fight: { pre: get('fight.pre'), exec: get('fight.exec'), post: get('fight.post') },
+      postFight: { pre: get('postFight.pre'), exec: get('postFight.exec'), post: get('postFight.post') },
       reset: { endRound: get('reset.endRound'), wait: get('reset.wait') },
     },
   };
@@ -267,10 +331,24 @@ function beastToTarget(b: Beast): AutoLevelTarget {
   };
 }
 
-export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, onClose, connectionId, isConnected }) => {
-  const { config, setConfig, runState, socketReady, start, stop, pause, resume, resetToDefaults } =
-    useAutoLeveling(connectionId);
-
+export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
+  isOpen,
+  onClose,
+  connectionId,
+  isConnected,
+  config,
+  setConfig,
+  runState,
+  socketReady,
+  start,
+  stop,
+  pause,
+  resume,
+  resetToDefaults,
+  moveNext,
+  movePrev,
+  rescanRoom,
+}) => {
   const [tab, setTab] = useState<TabKey>('setup');
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
@@ -290,6 +368,61 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
   const [trainingPaths, setTrainingPaths] = useState<NamedTrainingPath[]>([]);
   const [loadingTrainingPaths, setLoadingTrainingPaths] = useState(false);
 
+  // Build tab state
+  const [buildContinent, setBuildContinent] = useState('');
+  const [buildAreaNames, setBuildAreaNames] = useState<string[]>([]);
+  const [buildAreaLoading, setBuildAreaLoading] = useState(false);
+  const [buildArea, setBuildArea] = useState('');
+  const [buildMode, setBuildMode] = useState<'auto_level' | 'sightsee'>('auto_level');
+  const [buildSteps, setBuildSteps] = useState<BuildStep[]>([]);
+  const [buildDirInput, setBuildDirInput] = useState('');
+  const [buildMobLook, setBuildMobLook] = useState('');
+  const [buildMobEngage, setBuildMobEngage] = useState('');
+  const [buildPathName, setBuildPathName] = useState('');
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [buildInteractive, setBuildInteractive] = useState(false);
+
+  // Mudlet import state
+  const [mudletImportOpen, setMudletImportOpen] = useState(false);
+  const [mudletScript, setMudletScript] = useState('');
+  const [mudletAreas, setMudletAreas] = useState<MudletArea[] | null>(null);
+  const [mudletSelectedName, setMudletSelectedName] = useState('');
+  const [mudletMessage, setMudletMessage] = useState<string | null>(null);
+  // Parsed buffs and user-editable affect names
+  const [mudletBuffs, setMudletBuffs] = useState<MudletBuff[] | null>(null);
+  const [mudletAffectNames, setMudletAffectNames] = useState<string[]>([]);
+
+  // Persisted user-built paths
+  const [userPaths, setUserPaths] = useState<UserBuiltPath[]>(() => loadUserPaths());
+
+  // Manual targets (Configure tab)
+  const [manualTargets, setManualTargets] = useState<ManualTarget[]>([]);
+  const [manualLookInput, setManualLookInput] = useState('');
+  const [manualEngageInput, setManualEngageInput] = useState('');
+
+  const modalRef = useRef<HTMLDivElement>(null);
+  const dragOffsetRef = useRef<{ x: number; y: number } | null>(null);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+
+  const onHeaderMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+    const rect = modalRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    e.preventDefault();
+    const onMove = (ev: MouseEvent) => {
+      if (!dragOffsetRef.current) return;
+      setPos({ x: ev.clientX - dragOffsetRef.current.x, y: ev.clientY - dragOffsetRef.current.y });
+    };
+    const onUp = () => {
+      dragOffsetRef.current = null;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, []);
+
   const runStateText = useMemo(() => toRunStateText(runState), [runState]);
 
   const hasChanges = useMemo(() => {
@@ -299,6 +432,11 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
 
   useEffect(() => {
     if (!isOpen) return;
+
+    setPos({
+      x: Math.max(0, (window.innerWidth - 1200) / 2),
+      y: Math.max(0, (window.innerHeight - 860) / 2),
+    });
 
     setDraft(config);
     setStepEditors(buildStepEditors(config));
@@ -315,14 +453,27 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
     uiDbg('runState changed', runState);
   }, [isOpen, runState]);
 
+  // Load manual targets when modal opens with a pre-set area
+  useEffect(() => {
+    if (!isOpen) return;
+    const continent = (draft.init.continentName ?? '').trim();
+    const area = (draft.init.areaName ?? '').trim();
+    if (!continent || !area) {
+      setManualTargets([]);
+      return;
+    }
+    setManualTargets(loadSavedTargets(continent, area));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen) return;
     uiDbg('config changed (saved)', {
-      enabled: config.enabled,
+      mode: config.mode,
       loopRounds: config.loopRounds,
       idleTimeoutMs: config.idleTimeoutMs,
     });
-  }, [isOpen, config.enabled, config.loopRounds, config.idleTimeoutMs]);
+  }, [isOpen, config.mode, config.loopRounds, config.idleTimeoutMs]);
 
   const save = useCallback(() => {
     const next = applyEditors(draft, stepEditors);
@@ -337,10 +488,10 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
   }, [config]);
 
   const showStop = useMemo(() => {
-    const v = config.enabled && runState.status === 'running';
-    uiDbg('showStop computed', { enabled: config.enabled, status: runState.status, showStop: v });
+    const v = config.mode !== 'disabled' && runState.status === 'running';
+    uiDbg('showStop computed', { mode: config.mode, status: runState.status, showStop: v });
     return v;
-  }, [config.enabled, runState.status]);
+  }, [config.mode, runState.status]);
 
   const selectedContinentName = draft.init.continentName ?? '';
   const selectedAreaName = draft.init.areaName ?? '';
@@ -552,6 +703,249 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
     };
   }, [isOpen, draft.init.areaId]);
 
+  /* ------------ build tab: area names for selected continent ------------ */
+
+  useEffect(() => {
+    if (!isOpen || !buildContinent) {
+      setBuildAreaNames([]);
+      setBuildArea('');
+      return;
+    }
+    let canceled = false;
+    setBuildAreaLoading(true);
+    (async () => {
+      try {
+        const cached = await getAreaNamesCached(buildContinent);
+        if (!canceled && cached?.length) setBuildAreaNames(uniqStrings(cached));
+        const remote = await fetchAreaNamesRemote(buildContinent);
+        if (!canceled) setBuildAreaNames(uniqStrings(remote));
+      } catch {
+        /* ignore */
+      } finally {
+        if (!canceled) setBuildAreaLoading(false);
+      }
+    })();
+    return () => {
+      canceled = true;
+    };
+  }, [isOpen, buildContinent]);
+
+  /* ------------ build tab: serialised path preview ------------ */
+
+  const buildPathString = useMemo(() => serializeBuildPath(buildSteps), [buildSteps]);
+
+  // Training paths merged from API presets + user-built paths for the currently-selected area
+  const combinedTrainingPaths = useMemo((): NamedTrainingPath[] => {
+    const api = trainingPaths;
+    const user = userPaths
+      .filter(
+        (p) =>
+          p.continentName.toLowerCase() === selectedContinentName.toLowerCase() &&
+          p.areaName.toLowerCase() === selectedAreaName.toLowerCase(),
+      )
+      .map((p) => ({
+        id: p.id,
+        name: `${p.name} (${p.mode === 'auto_level' ? 'Auto' : 'Sightsee'})`,
+        raw: p.raw,
+      }));
+    return [...api, ...user];
+  }, [trainingPaths, userPaths, selectedContinentName, selectedAreaName]);
+
+  /* ------------ user path CRUD ------------ */
+
+  const onSaveUserPath = useCallback(() => {
+    const name = buildPathName.trim();
+    const raw = buildPathString;
+    if (!name || !raw) return;
+
+    const now = new Date().toISOString();
+    const path: UserBuiltPath = {
+      id: crypto.randomUUID(),
+      name,
+      continentName: buildContinent,
+      areaName: buildArea,
+      mode: buildMode,
+      steps: buildSteps,
+      raw,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const next = upsertUserPath(userPaths, path);
+    saveUserPaths(next);
+    setUserPaths(next);
+    setBuildPathName('');
+  }, [buildPathName, buildPathString, buildContinent, buildArea, buildMode, buildSteps, userPaths]);
+
+  const onDeleteUserPath = useCallback(
+    (id: string) => {
+      const next = deleteUserPath(userPaths, id);
+      saveUserPaths(next);
+      setUserPaths(next);
+    },
+    [userPaths],
+  );
+
+  const onExportAll = useCallback(() => {
+    const json = exportPathsToJson(userPaths);
+    const ts = new Date().toISOString().slice(0, 10);
+    triggerJsonDownload(json, `autoleveling-paths-${ts}.json`);
+  }, [userPaths]);
+
+  const onExportSingle = useCallback((path: UserBuiltPath) => {
+    const json = exportPathsToJson([path]);
+    const safe = path.name.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+    triggerJsonDownload(json, `path-${safe}.json`);
+  }, []);
+
+  const onImportFile = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      e.target.value = ''; // reset so same file can be re-imported
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const text = ev.target?.result as string;
+        const result = parseImportJson(text);
+        if (result.imported.length === 0) {
+          setImportMessage(`Nothing imported. ${result.errors[0] ?? 'File contained no valid paths.'}`);
+          return;
+        }
+        let merged = userPaths;
+        for (const p of result.imported) merged = upsertUserPath(merged, p);
+        saveUserPaths(merged);
+        setUserPaths(merged);
+        const skipped = result.skipped > 0 ? ` (${result.skipped} skipped)` : '';
+        setImportMessage(
+          `Imported ${result.imported.length} path${result.imported.length !== 1 ? 's' : ''}${skipped}.`,
+        );
+      };
+      reader.readAsText(file);
+    },
+    [userPaths],
+  );
+
+  const onParseMudlet = useCallback(() => {
+    if (!mudletScript.trim()) {
+      setMudletMessage('Paste a script first.');
+      return;
+    }
+    const result = parseMudletScript(mudletScript);
+    setMudletAreas(result.areas);
+    setMudletSelectedName(result.areas[0]?.name ?? '');
+
+    const buffs = parseMudletBuffs(mudletScript);
+    setMudletBuffs(buffs);
+    setMudletAffectNames(buffs.map((b) => b.inferredAffect));
+
+    const areaPart =
+      result.areas.length === 0
+        ? (result.errors[0] ?? 'No areas found.')
+        : `Found ${result.areas.length} area${result.areas.length !== 1 ? 's' : ''}`;
+    const buffPart = buffs.length > 0 ? `, ${buffs.length} buff command${buffs.length !== 1 ? 's' : ''}.` : '.';
+    setMudletMessage(areaPart + buffPart);
+  }, [mudletScript]);
+
+  const onImportMudletArea = useCallback(() => {
+    const area = mudletAreas?.find((a) => a.name === mudletSelectedName);
+    if (!area) return;
+
+    const steps = mudletDirsToBuildSteps(area.dirs);
+    setBuildSteps(steps);
+    setBuildPathName(area.name);
+
+    // Save mobs into the manual targets store so they appear as checkboxes
+    // in Configure when the user selects this area. Skip any already defined.
+    const continent = buildContinent || selectedContinentName;
+    const areaKey = buildArea || area.name;
+    const existing = loadSavedTargets(continent, areaKey);
+    const existingLooks = new Set(existing.map((t) => t.lookName.trim().toLowerCase()));
+
+    const toAdd = area.mobs
+      .filter((mob) => !existingLooks.has(mob.look.trim().toLowerCase()))
+      .map((mob) => ({ lookName: mob.look, engageName: mob.key }));
+
+    if (toAdd.length > 0) {
+      saveSavedTargets(continent, areaKey, [...existing, ...toAdd]);
+    }
+
+    const skipped = area.mobs.length - toAdd.length;
+    const mobMsg =
+      toAdd.length > 0
+        ? `${toAdd.length} mob${toAdd.length !== 1 ? 's' : ''} saved${skipped > 0 ? `, ${skipped} already existed` : ''}`
+        : `all ${skipped} mob${skipped !== 1 ? 's' : ''} already defined`;
+
+    setMudletMessage(`Loaded ${steps.length} steps. ${mobMsg}. Select the area in Configure to choose targets.`);
+  }, [mudletAreas, mudletSelectedName, buildContinent, buildArea, selectedContinentName]);
+
+  const onAddMudletMobAsStep = useCallback((mob: MudletArea['mobs'][number]) => {
+    setBuildSteps((prev) => [...prev, { kind: 'mob', lookName: mob.look, engageName: mob.key }]);
+  }, []);
+
+  const onApplyBuffsToStart = useCallback(() => {
+    if (!mudletBuffs?.length) return;
+    const newLines = mudletBuffs.map((b, i) => {
+      const affect = mudletAffectNames[i]?.trim() ?? '';
+      return affect ? `if_affect_missing "${affect}" ${b.cmd}` : b.cmd;
+    });
+    setStepEditors((prev) => {
+      const existing = (prev['start.exec'] ?? '').trimEnd();
+      const combined = existing ? `${existing}\n${newLines.join('\n')}` : newLines.join('\n');
+      return { ...prev, 'start.exec': combined };
+    });
+    setMudletMessage(
+      `Added ${newLines.length} buff action${newLines.length !== 1 ? 's' : ''} to Start step. Switch to Configure → Advanced → Start to review.`,
+    );
+  }, [mudletBuffs, mudletAffectNames]);
+
+  const onBuildSelectContinent = useCallback((name: string) => {
+    setBuildContinent(name);
+    setBuildArea('');
+    setBuildAreaNames([]);
+  }, []);
+
+  const onBuildAddDir = useCallback(
+    (dir: string) => {
+      const d = dir.trim().toLowerCase();
+      if (!d) return;
+      setBuildSteps((prev) => [...prev, { kind: 'move', dir: d }]);
+      setBuildDirInput('');
+      if (buildInteractive) {
+        DispatchEvent('shatteredarchive:send-command' as any, { cmd: d, connectionId });
+      }
+    },
+    [buildInteractive, connectionId],
+  );
+
+  const onBuildAddMob = useCallback(() => {
+    const look = buildMobLook.trim();
+    const engage = buildMobEngage.trim();
+    if (!look || !engage) return;
+    setBuildSteps((prev) => [...prev, { kind: 'mob', lookName: look, engageName: engage }]);
+    setBuildMobLook('');
+    setBuildMobEngage('');
+  }, [buildMobLook, buildMobEngage]);
+
+  const onBuildRemoveStep = useCallback((idx: number) => {
+    setBuildSteps((prev) => prev.filter((_, i) => i !== idx));
+  }, []);
+
+  const onBuildMoveStep = useCallback((idx: number, dir: -1 | 1) => {
+    setBuildSteps((prev) => {
+      const next = [...prev];
+      const swap = idx + dir;
+      if (swap < 0 || swap >= next.length) return prev;
+      [next[idx], next[swap]] = [next[swap], next[idx]];
+      return next;
+    });
+  }, []);
+
+  const onBuildApply = useCallback(() => {
+    if (!buildPathString) return;
+    setDraft((p) => ({ ...p, mode: buildMode, init: { ...p.init, trainingPath: buildPathString } }));
+    setTab('configure');
+  }, [buildPathString, buildMode]);
+
   const onSelectContinent = useCallback(
     (continentName: string) => {
       uiDbg('onSelectContinent', { continentName });
@@ -560,6 +954,8 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
       const continentId = idx >= 0 ? String(idx + 1) : null;
 
       uiDbg('onSelectContinent computed continentId', { idx, continentId });
+
+      setManualTargets([]);
 
       commitLocationPatch({
         continentName: continentName || null,
@@ -581,17 +977,21 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
     (areaName: string) => {
       uiDbg('onSelectArea', { areaName });
 
+      const continent = selectedContinentName;
+      const manuals = areaName && continent ? loadSavedTargets(continent, areaName) : [];
+      setManualTargets(manuals);
+
       commitLocationPatch({
         areaName: areaName || null,
         areaId: null,
-        targets: [],
+        targets: manuals.map(manualToAutoLevel),
         trainingPath: null,
       });
 
       setBeasts([]);
       setTrainingPaths([]);
     },
-    [commitLocationPatch],
+    [commitLocationPatch, selectedContinentName],
   );
 
   const isSelected = useCallback(
@@ -701,141 +1101,826 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
   if (!isOpen) return null;
 
   return (
-    <div className={styles.backdrop}>
-      <div className={styles.modal}>
-        <div className={styles.header}>
-          <div className={styles.title}>Auto Leveling</div>
+    <div
+      ref={modalRef}
+      className={styles.modal}
+      role="dialog"
+      aria-modal="true"
+      style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: 5000 }}
+    >
+      <div className={styles.header} onMouseDown={onHeaderMouseDown}>
+        <div className={styles.title}>Autopilot</div>
 
-          <div className={styles.headerRight}>
-            <span className={styles.runState}>{runStateText}</span>
-            <button type="button" className={styles.closeButton} onClick={onClose}>
-              ✕
-            </button>
-          </div>
-        </div>
-
-        <div className={styles.tabs}>
-          <button
-            type="button"
-            className={`${styles.tab} ${tab === 'setup' ? styles.tabActive : ''}`}
-            onClick={() => {
-              uiDbg('tab -> setup');
-              setTab('setup');
-            }}
-          >
-            Setup
-          </button>
-
-          <button
-            type="button"
-            className={`${styles.tab} ${tab === 'configure' ? styles.tabActive : ''}`}
-            onClick={() => {
-              uiDbg('tab -> configure');
-              setTab('configure');
-            }}
-          >
-            Configure
-          </button>
-
-          <div className={styles.spacer} />
-
-          <button
-            type="button"
-            className={styles.discardButton}
-            disabled={!hasChanges}
-            onClick={discard}
-            title={!hasChanges ? 'No changes to discard' : 'Discard draft changes and revert to saved config'}
-          >
-            Discard
-          </button>
-          <button
-            type="button"
-            className={styles.saveButton}
-            disabled={!hasChanges}
-            onClick={save}
-            title={!hasChanges ? 'No changes to save' : 'Save draft changes to persistent config'}
-          >
-            Save
+        <div className={styles.headerRight}>
+          <span className={styles.runState}>{runStateText}</span>
+          <button type="button" className={styles.closeButton} onClick={onClose}>
+            ✕
           </button>
         </div>
+      </div>
 
-        <div className={styles.body}>
-          {tab === 'setup' ? (
-            <div className={styles.section}>
-              <div className={styles.sectionHeader}>
-                <div className={styles.sectionHeaderTitle}>General</div>
-                <div className={styles.sectionHeaderSub}>{hasChanges ? 'Unsaved changes' : ''}</div>
+      <div className={styles.tabs}>
+        <button
+          type="button"
+          className={`${styles.tab} ${tab === 'setup' ? styles.tabActive : ''}`}
+          onClick={() => {
+            uiDbg('tab -> setup');
+            setTab('setup');
+          }}
+        >
+          Setup
+        </button>
+
+        <button
+          type="button"
+          className={`${styles.tab} ${tab === 'configure' ? styles.tabActive : ''}`}
+          onClick={() => {
+            uiDbg('tab -> configure');
+            setTab('configure');
+          }}
+        >
+          Configure
+        </button>
+
+        <button
+          type="button"
+          className={`${styles.tab} ${tab === 'build' ? styles.tabActive : ''}`}
+          onClick={() => {
+            uiDbg('tab -> build');
+            setTab('build');
+          }}
+        >
+          Build
+        </button>
+
+        <div className={styles.spacer} />
+
+        <button
+          type="button"
+          className={styles.discardButton}
+          disabled={!hasChanges}
+          onClick={discard}
+          title={!hasChanges ? 'No changes to discard' : 'Discard draft changes and revert to saved config'}
+        >
+          Discard
+        </button>
+        <button
+          type="button"
+          className={styles.saveButton}
+          disabled={!hasChanges}
+          onClick={save}
+          title={!hasChanges ? 'No changes to save' : 'Save draft changes to persistent config'}
+        >
+          Save
+        </button>
+      </div>
+
+      <div className={styles.body}>
+        {tab === 'build' ? (
+          <div className={styles.section}>
+            {/* ---- Mudlet Import ---- */}
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeaderTitle}>Import from Mudlet</div>
+              <div className={styles.sectionHeaderSub}>
+                <button type="button" className={styles.inlineButton} onClick={() => setMudletImportOpen((p) => !p)}>
+                  {mudletImportOpen ? 'Hide' : 'Show'}
+                </button>
               </div>
+            </div>
 
-              <div className={styles.row}>
-                <label className={styles.labelInline}>
+            {mudletImportOpen && (
+              <>
+                <div className={styles.row}>
+                  <label className={styles.label} style={{ flex: 1 }}>
+                    Paste Mudlet Leveling script
+                    <textarea
+                      className={styles.textarea}
+                      value={mudletScript}
+                      onChange={(e) => setMudletScript(e.target.value)}
+                      placeholder={'Paste a Leveling.areas = { ... } Lua script here'}
+                      style={{ minHeight: 120 }}
+                      spellCheck={false}
+                    />
+                  </label>
+                </div>
+
+                <div className={styles.row}>
+                  <button
+                    type="button"
+                    className={styles.inlineButton}
+                    onClick={onParseMudlet}
+                    disabled={!mudletScript.trim()}
+                  >
+                    Parse script
+                  </button>
+                  {mudletMessage && <span className={styles.buildImportMsg}>{mudletMessage}</span>}
+                </div>
+
+                {mudletAreas &&
+                  mudletAreas.length > 0 &&
+                  (() => {
+                    const area = mudletAreas.find((a) => a.name === mudletSelectedName);
+                    return (
+                      <>
+                        <div className={styles.row}>
+                          <label className={styles.label} style={{ flex: 1 }}>
+                            Select area
+                            <select
+                              className={styles.select}
+                              value={mudletSelectedName}
+                              onChange={(e) => setMudletSelectedName(e.target.value)}
+                            >
+                              {mudletAreas.map((a) => (
+                                <option key={a.name} value={a.name}>
+                                  {a.name} ({a.dirs.length} dirs, {a.mobs.length} mobs)
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+
+                        {area && (
+                          <>
+                            {(area.description || area.levels) && (
+                              <div className={styles.help} style={{ padding: '0 0 4px' }}>
+                                {area.description && (
+                                  <span>
+                                    <b>From:</b> {area.description}
+                                  </span>
+                                )}
+                                {area.levels && (
+                                  <span>
+                                    {' '}
+                                    · <b>Levels:</b> {area.levels}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            <div className={styles.row}>
+                              <button type="button" className={styles.saveButton} onClick={onImportMudletArea}>
+                                Load {area.dirs.length} dirs into builder →
+                              </button>
+                            </div>
+
+                            {area.mobs.length > 0 && (
+                              <>
+                                <div className={styles.sectionHeader}>
+                                  <div className={styles.sectionHeaderTitle}>Mobs ({area.mobs.length})</div>
+                                  <div className={styles.sectionHeaderSub}>
+                                    Add as encounter steps, or configure as targets in the Configure tab
+                                  </div>
+                                </div>
+                                <div className={styles.buildStepList} style={{ maxHeight: 180 }}>
+                                  {area.mobs.map((mob) => (
+                                    <div key={mob.key} className={styles.buildStep}>
+                                      <span className={styles.buildStepBadgeMob}>mob</span>
+                                      <div
+                                        className={styles.buildStepText}
+                                        style={{ display: 'flex', flexDirection: 'column', gap: 1 }}
+                                      >
+                                        <span>{mob.look}</span>
+                                        <span style={{ opacity: 0.55, fontSize: '0.72rem' }}>keyword: {mob.key}</span>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        className={styles.buildStepBtn}
+                                        onClick={() => onAddMudletMobAsStep(mob)}
+                                        title="Append as mob encounter step"
+                                      >
+                                        + Add
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </>
+                            )}
+
+                            {mudletBuffs && mudletBuffs.length > 0 && (
+                              <>
+                                <div className={styles.sectionHeader}>
+                                  <div className={styles.sectionHeaderTitle}>Buff Commands ({mudletBuffs.length})</div>
+                                  <div className={styles.sectionHeaderSub}>
+                                    Applied to Start step — skipped when affect is already active
+                                  </div>
+                                </div>
+                                <div className={styles.buildStepList} style={{ maxHeight: 200 }}>
+                                  {mudletBuffs.map((b, i) => (
+                                    <div key={`${b.role}:${i}`} className={styles.buildStep}>
+                                      <span
+                                        className={styles.buildStepBadgeMove}
+                                        style={{ minWidth: 48, textAlign: 'center' }}
+                                      >
+                                        {b.role}
+                                      </span>
+                                      <div
+                                        className={styles.buildStepText}
+                                        style={{
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          gap: 3,
+                                          flex: 1,
+                                          overflow: 'visible',
+                                        }}
+                                      >
+                                        <span style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{b.cmd}</span>
+                                        <label
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 6,
+                                            fontSize: '0.74rem',
+                                            color: '#aaa',
+                                          }}
+                                        >
+                                          Affect name:
+                                          <input
+                                            className={styles.input}
+                                            style={{ flex: 1, minWidth: 0, padding: '2px 6px', fontSize: '0.78rem' }}
+                                            value={mudletAffectNames[i] ?? ''}
+                                            onChange={(e) =>
+                                              setMudletAffectNames((prev) => {
+                                                const next = [...prev];
+                                                next[i] = e.target.value;
+                                                return next;
+                                              })
+                                            }
+                                            placeholder="e.g. haste  (blank = always cast)"
+                                            spellCheck={false}
+                                          />
+                                        </label>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className={styles.row}>
+                                  <button type="button" className={styles.saveButton} onClick={onApplyBuffsToStart}>
+                                    Apply buffs to Start step →
+                                  </button>
+                                  <div className={styles.help} style={{ padding: 0, alignSelf: 'center' }}>
+                                    Opens Configure → Advanced → Start to review.
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </>
+                        )}
+                      </>
+                    );
+                  })()}
+              </>
+            )}
+
+            {/* ---- Path Builder ---- */}
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeaderTitle}>Path Builder</div>
+              <div className={styles.sectionHeaderSub}>Build a training path, then Apply to Configure</div>
+            </div>
+
+            {/* Location */}
+            <div className={styles.row}>
+              <label className={styles.label}>
+                Continent
+                <select
+                  className={styles.select}
+                  value={buildContinent}
+                  onChange={(e) => onBuildSelectContinent(e.target.value)}
+                  disabled={loadingContinents}
+                >
+                  <option value="">{loadingContinents ? 'Loading…' : 'Select a continent'}</option>
+                  {continentNames.map((c, i) => (
+                    <option key={`${c}:${i}`} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className={styles.label}>
+                Zone
+                <select
+                  className={styles.select}
+                  value={buildArea}
+                  onChange={(e) => setBuildArea(e.target.value)}
+                  disabled={!buildContinent || buildAreaLoading}
+                >
+                  <option value="">
+                    {!buildContinent ? 'Select a continent first' : buildAreaLoading ? 'Loading…' : 'Select a zone'}
+                  </option>
+                  {buildAreaNames.map((a, i) => (
+                    <option key={`${a}:${i}`} value={a}>
+                      {a}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className={styles.label}>
+                Mode
+                <div className={styles.row} style={{ marginTop: 2 }}>
+                  {(['auto_level', 'sightsee'] as const).map((m) => (
+                    <label key={m} className={styles.labelInline}>
+                      <input
+                        className={styles.checkbox}
+                        type="radio"
+                        name="buildMode"
+                        value={m}
+                        checked={buildMode === m}
+                        onChange={() => setBuildMode(m)}
+                      />
+                      {m === 'auto_level' ? 'Auto Level' : 'Sightsee'}
+                    </label>
+                  ))}
+                </div>
+              </label>
+
+              <label
+                className={styles.label}
+                title="When on, each direction step is also sent to the game live — walk through the area while recording the path"
+              >
+                Interactive Build
+                <label
+                  className={`${styles.labelInline} ${buildInteractive ? styles.buildInteractiveActive : ''}`}
+                  style={{ marginTop: 2 }}
+                >
                   <input
                     className={styles.checkbox}
                     type="checkbox"
-                    checked={draft.enabled}
-                    onChange={(e) => {
-                      uiDbg('draft.enabled changed', { value: e.target.checked });
-                      setDraft((p) => ({ ...p, enabled: e.target.checked }));
-                    }}
+                    checked={buildInteractive}
+                    onChange={(e) => setBuildInteractive(e.target.checked)}
                   />
-                  Enabled
+                  {buildInteractive ? 'On — commands sent live' : 'Off'}
                 </label>
+                <div className={styles.help}>
+                  Move through the area normally — each direction you add is sent to the game in real time.
+                </div>
+              </label>
+            </div>
 
-                <label className={styles.labelInline}>
-                  <input
-                    className={styles.checkbox}
-                    type="checkbox"
-                    checked={draft.loopRounds}
-                    onChange={(e) => {
-                      uiDbg('draft.loopRounds changed', { value: e.target.checked });
-                      setDraft((p) => ({ ...p, loopRounds: e.target.checked }));
-                    }}
-                  />
-                  Loop rounds
-                </label>
-
-                <label className={styles.labelInline}>
-                  <input
-                    className={styles.checkbox}
-                    type="checkbox"
-                    checked={draft.fleePk}
-                    onChange={(e) => {
-                      uiDbg('draft.fleePk changed', { value: e.target.checked });
-                      setDraft((p) => ({ ...p, fleePk: e.target.checked }));
-                    }}
-                  />
-                  Flee pk
-                </label>
+            {/* Add direction */}
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeaderTitle}>Add Movement</div>
+            </div>
+            <div className={styles.row}>
+              <div className={styles.buildDirGrid}>
+                {['nw', 'n', 'ne', 'w', '', 'e', 'sw', 's', 'se'].map((d, i) =>
+                  d ? (
+                    <button key={d} type="button" className={styles.buildDirBtn} onClick={() => onBuildAddDir(d)}>
+                      {d}
+                    </button>
+                  ) : (
+                    <span key={`gap:${i}`} />
+                  ),
+                )}
+                {['u', 'd'].map((d) => (
+                  <button key={d} type="button" className={styles.buildDirBtn} onClick={() => onBuildAddDir(d)}>
+                    {d}
+                  </button>
+                ))}
               </div>
+              <label className={styles.label} style={{ flex: 1 }}>
+                Custom direction
+                <div className={styles.row}>
+                  <input
+                    className={styles.input}
+                    value={buildDirInput}
+                    onChange={(e) => setBuildDirInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') onBuildAddDir(buildDirInput);
+                    }}
+                    placeholder="e.g. open door"
+                  />
+                  <button type="button" className={styles.inlineButton} onClick={() => onBuildAddDir(buildDirInput)}>
+                    + Add
+                  </button>
+                </div>
+              </label>
+            </div>
 
-              <div className={styles.sectionHeader}>
-                <div className={styles.sectionHeaderTitle}>Controls</div>
-                <div className={styles.sectionHeaderSub}>Start uses saved config</div>
+            {/* Add mob */}
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeaderTitle}>Add Mob Encounter</div>
+              <div className={styles.sectionHeaderSub}>
+                Stored as <code>look name|engage name</code> in the path
               </div>
-
-              <div className={styles.row}>
+            </div>
+            <div className={styles.row}>
+              <label className={styles.label}>
+                Look name
+                <input
+                  className={styles.input}
+                  value={buildMobLook}
+                  onChange={(e) => setBuildMobLook(e.target.value)}
+                  placeholder="a giant rat"
+                />
+                <div className={styles.help}>The name shown in the room description.</div>
+              </label>
+              <label className={styles.label}>
+                Engage name
+                <input
+                  className={styles.input}
+                  value={buildMobEngage}
+                  onChange={(e) => setBuildMobEngage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') onBuildAddMob();
+                  }}
+                  placeholder="rat"
+                />
+                <div className={styles.help}>The keyword used to start combat.</div>
+              </label>
+              <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: 2 }}>
                 <button
                   type="button"
                   className={styles.inlineButton}
-                  onClick={() => {
-                    uiDbg('start clicked');
-                    start();
-                  }}
-                  title={
-                    hasChanges
-                      ? 'Save or Discard changes before starting'
-                      : !config.enabled
-                        ? 'Enable Auto Leveling'
-                        : !socketReady
-                          ? 'Socket not ready'
-                          : !isConnected
-                            ? 'Not connected'
-                            : ''
-                  }
+                  onClick={onBuildAddMob}
+                  disabled={!buildMobLook.trim() || !buildMobEngage.trim()}
                 >
-                  Start
+                  + Add mob
                 </button>
-                {/*
+              </div>
+            </div>
+
+            {/* Step list */}
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeaderTitle}>Steps</div>
+              <div className={styles.sectionHeaderSub}>
+                {buildSteps.length} step{buildSteps.length !== 1 ? 's' : ''}
+              </div>
+            </div>
+
+            {buildSteps.length === 0 ? (
+              <div className={styles.beastEmpty}>No steps yet. Add movements or mob encounters above.</div>
+            ) : (
+              <div className={styles.buildStepList}>
+                {buildSteps.map((s, i) => (
+                  <div key={i} className={styles.buildStep}>
+                    <span className={s.kind === 'mob' ? styles.buildStepBadgeMob : styles.buildStepBadgeMove}>
+                      {s.kind === 'mob' ? 'mob' : 'move'}
+                    </span>
+                    <span className={styles.buildStepText}>
+                      {s.kind === 'move' ? s.dir : `${s.lookName} | ${s.engageName}`}
+                    </span>
+                    <div className={styles.buildStepActions}>
+                      <button
+                        type="button"
+                        className={styles.buildStepBtn}
+                        onClick={() => onBuildMoveStep(i, -1)}
+                        disabled={i === 0}
+                        title="Move up"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.buildStepBtn}
+                        onClick={() => onBuildMoveStep(i, 1)}
+                        disabled={i === buildSteps.length - 1}
+                        title="Move down"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.buildStepBtn} ${styles.buildStepBtnRemove}`}
+                        onClick={() => onBuildRemoveStep(i)}
+                        title="Remove"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Preview, save, and apply */}
+            {buildSteps.length > 0 && (
+              <>
+                <div className={styles.sectionHeader}>
+                  <div className={styles.sectionHeaderTitle}>Preview</div>
+                </div>
+                <div className={styles.buildPreview}>{buildPathString}</div>
+
+                <div className={styles.sectionHeader}>
+                  <div className={styles.sectionHeaderTitle}>Save Path</div>
+                  <div className={styles.sectionHeaderSub}>Persist to this browser for later use</div>
+                </div>
+                <div className={styles.row}>
+                  <label className={styles.label} style={{ flex: 1 }}>
+                    Path name
+                    <div className={styles.row}>
+                      <input
+                        className={styles.input}
+                        value={buildPathName}
+                        onChange={(e) => setBuildPathName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') onSaveUserPath();
+                        }}
+                        placeholder="e.g. Althainia NE loop"
+                      />
+                      <button
+                        type="button"
+                        className={styles.saveButton}
+                        onClick={onSaveUserPath}
+                        disabled={!buildPathName.trim()}
+                        title={
+                          !buildContinent || !buildArea ? 'Select a continent and zone to associate this path' : ''
+                        }
+                      >
+                        Save
+                      </button>
+                    </div>
+                    {(!buildContinent || !buildArea) && (
+                      <div className={styles.help}>
+                        Tip: select a continent and zone above so this path appears in the Configure dropdown.
+                      </div>
+                    )}
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: 2, gap: 6 }}>
+                    <button type="button" className={styles.saveButton} onClick={onBuildApply}>
+                      Apply to Configure →
+                    </button>
+                    <button type="button" className={styles.discardButton} onClick={() => setBuildSteps([])}>
+                      Clear all
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Saved paths */}
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeaderTitle}>Saved Paths</div>
+              <div className={styles.sectionHeaderSub}>{userPaths.length} saved</div>
+            </div>
+
+            <div className={styles.row} style={{ marginBottom: 6 }}>
+              <button
+                type="button"
+                className={styles.inlineButton}
+                onClick={onExportAll}
+                disabled={userPaths.length === 0}
+                title="Download all saved paths as a JSON file"
+              >
+                Export all
+              </button>
+              <label
+                className={styles.inlineButton}
+                title="Import paths from a JSON file"
+                style={{ cursor: 'pointer' }}
+              >
+                Import
+                <input
+                  type="file"
+                  accept=".json,application/json"
+                  style={{ display: 'none' }}
+                  onChange={onImportFile}
+                />
+              </label>
+              {importMessage && <span className={styles.buildImportMsg}>{importMessage}</span>}
+            </div>
+
+            {userPaths.length === 0 ? (
+              <div className={styles.beastEmpty}>No saved paths yet. Build one above and click Save.</div>
+            ) : (
+              <div className={styles.buildStepList}>
+                {userPaths.map((p) => (
+                  <div key={p.id} className={styles.buildStep}>
+                    <span className={p.mode === 'auto_level' ? styles.buildStepBadgeMove : styles.buildStepBadgeMob}>
+                      {p.mode === 'auto_level' ? 'Auto' : 'Sightsee'}
+                    </span>
+                    <div className={styles.buildStepText} style={{ flexDirection: 'column', display: 'flex', gap: 1 }}>
+                      <span style={{ fontWeight: 600 }}>{p.name}</span>
+                      {(p.continentName || p.areaName) && (
+                        <span style={{ fontSize: '0.72rem', opacity: 0.7 }}>
+                          {[p.continentName, p.areaName].filter(Boolean).join(' › ')}
+                        </span>
+                      )}
+                    </div>
+                    <div className={styles.buildStepActions}>
+                      <button
+                        type="button"
+                        className={styles.buildStepBtn}
+                        onClick={() => {
+                          setBuildSteps(p.steps);
+                          setBuildMode(p.mode);
+                          setBuildContinent(p.continentName);
+                          setBuildArea(p.areaName);
+                          setBuildPathName(p.name);
+                        }}
+                        title="Load into builder"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.buildStepBtn}
+                        onClick={() => onExportSingle(p)}
+                        title="Export this path"
+                      >
+                        Export
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.buildStepBtn} ${styles.buildStepBtnRemove}`}
+                        onClick={() => onDeleteUserPath(p.id)}
+                        title="Delete this path"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : tab === 'setup' ? (
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeaderTitle}>General</div>
+              <div className={styles.sectionHeaderSub}>{hasChanges ? 'Unsaved changes' : ''}</div>
+            </div>
+
+            <div className={styles.row}>
+              {(
+                [
+                  { value: 'disabled', label: 'Disabled', title: 'Engine is off — no automation' },
+                  {
+                    value: 'dry_run',
+                    label: 'Dry Run',
+                    title:
+                      'Walk through the area without engaging mobs — use this to verify routing and lookName matches',
+                  },
+                  {
+                    value: 'auto_level',
+                    label: 'Auto Level',
+                    title: 'Full automation: fights mobs and loops the training path',
+                  },
+                  {
+                    value: 'sightsee',
+                    label: 'Sightsee',
+                    title: 'Step room-by-room using Move Next / Move Prev — no auto-fighting',
+                  },
+                ] as { value: AutoLevelMode; label: string; title: string }[]
+              ).map(({ value, label, title }) => (
+                <label key={value} className={styles.labelInline} title={title}>
+                  <input
+                    className={styles.checkbox}
+                    type="radio"
+                    name="autoLevelMode"
+                    value={value}
+                    checked={draft.mode === value}
+                    onChange={() => setDraft((p) => ({ ...p, mode: value }))}
+                  />
+                  {label}
+                </label>
+              ))}
+
+              <label className={styles.labelInline}>
+                <input
+                  className={styles.checkbox}
+                  type="checkbox"
+                  checked={draft.loopRounds}
+                  onChange={(e) => {
+                    uiDbg('draft.loopRounds changed', { value: e.target.checked });
+                    setDraft((p) => ({ ...p, loopRounds: e.target.checked }));
+                  }}
+                />
+                Loop rounds
+              </label>
+
+              <label className={styles.labelInline}>
+                <input
+                  className={styles.checkbox}
+                  type="checkbox"
+                  checked={draft.fleePk}
+                  onChange={(e) => {
+                    uiDbg('draft.fleePk changed', { value: e.target.checked });
+                    setDraft((p) => ({ ...p, fleePk: e.target.checked }));
+                  }}
+                />
+                Flee pk
+              </label>
+            </div>
+
+            <div className={styles.row}>
+              <label className={styles.label}>
+                Round wait (min)
+                <input
+                  className={styles.input}
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={Math.round((draft.roundLoopTimeMs ?? 300_000) / 60_000)}
+                  onChange={(e) => {
+                    const mins = Math.max(0, Number(e.target.value) || 0);
+                    setDraft((p) => ({ ...p, roundLoopTimeMs: mins * 60_000 }));
+                  }}
+                  disabled={!draft.loopRounds}
+                  style={{ width: 70 }}
+                />
+                <div className={styles.help}>Minutes to wait between rounds when Loop rounds is on.</div>
+              </label>
+
+              <label className={styles.label}>
+                Fight loop (sec)
+                <input
+                  className={styles.input}
+                  type="number"
+                  min={2}
+                  step={0.5}
+                  value={((draft.fightLoopIntervalMs ?? 2_500) / 1000).toFixed(1)}
+                  onChange={(e) => {
+                    const secs = Math.max(2, Number(e.target.value) || 2.5);
+                    setDraft((p) => ({ ...p, fightLoopIntervalMs: Math.round(secs * 1000) }));
+                  }}
+                  style={{ width: 70 }}
+                />
+                <div className={styles.help}>Seconds between each pass of the fight.exec loop.</div>
+              </label>
+
+              <label className={styles.label}>
+                Move settle (ms)
+                <input
+                  className={styles.input}
+                  type="number"
+                  min={0}
+                  step={50}
+                  value={draft.moveSettleMs ?? 600}
+                  onChange={(e) => {
+                    const ms = Math.max(0, Number(e.target.value) || 600);
+                    setDraft((p) => ({ ...p, moveSettleMs: ms }));
+                  }}
+                  style={{ width: 70 }}
+                />
+                <div className={styles.help}>Pause after each movement before the next step.</div>
+              </label>
+
+              <label className={styles.label}>
+                Look settle (ms)
+                <input
+                  className={styles.input}
+                  type="number"
+                  min={0}
+                  step={100}
+                  value={draft.lookSettleMs ?? 500}
+                  onChange={(e) => {
+                    const ms = Math.max(0, Number(e.target.value) || 500);
+                    setDraft((p) => ({ ...p, lookSettleMs: ms }));
+                  }}
+                  style={{ width: 70 }}
+                />
+                <div className={styles.help}>
+                  Pause after look/scan commands to let server response arrive before detecting mobs.
+                </div>
+              </label>
+
+              <label className={styles.label}>
+                Post-fight settle (ms)
+                <input
+                  className={styles.input}
+                  type="number"
+                  min={0}
+                  step={500}
+                  value={draft.postFightSettleMs ?? 2_000}
+                  onChange={(e) => {
+                    const ms = Math.max(0, Number(e.target.value) || 2000);
+                    setDraft((p) => ({ ...p, postFightSettleMs: ms }));
+                  }}
+                  style={{ width: 70 }}
+                />
+                <div className={styles.help}>Pause after a fight ends before re-scanning the room or moving on.</div>
+              </label>
+            </div>
+
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeaderTitle}>Controls</div>
+              <div className={styles.sectionHeaderSub}>Start uses saved config</div>
+            </div>
+
+            <div className={styles.row}>
+              <button
+                type="button"
+                className={styles.inlineButton}
+                onClick={() => {
+                  uiDbg('start clicked');
+                  start();
+                }}
+                title={
+                  hasChanges
+                    ? 'Save or Discard changes before starting'
+                    : config.mode === 'disabled'
+                      ? 'Select a mode before starting'
+                      : !socketReady
+                        ? 'Socket not ready'
+                        : !isConnected
+                          ? 'Not connected'
+                          : ''
+                }
+              >
+                Start
+              </button>
+              {/*
                 {showStop ? (
                   <button
                     type="button"
@@ -849,182 +1934,357 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
                   </button>
                 ) : null}
                   */}
-                {config.enabled ? (
-                  <>
-                    <button
-                      type="button"
-                      className={styles.inlineButton}
-                      onClick={() => {
-                        uiDbg('pause clicked');
-                        pause();
-                      }}
-                      disabled={runState.status !== 'running'}
-                    >
-                      Pause
-                    </button>
+              {config.mode !== 'disabled' ? (
+                <>
+                  <button
+                    type="button"
+                    className={styles.inlineButton}
+                    onClick={() => {
+                      uiDbg('pause clicked');
+                      pause();
+                    }}
+                    disabled={runState.status !== 'running'}
+                  >
+                    Pause
+                  </button>
 
-                    <button
-                      type="button"
-                      className={styles.inlineButton}
-                      onClick={() => {
-                        uiDbg('resume clicked');
-                        resume();
-                      }}
-                      disabled={runState.status !== 'paused'}
-                    >
-                      Resume
-                    </button>
-                  </>
-                ) : null}
+                  <button
+                    type="button"
+                    className={styles.inlineButton}
+                    onClick={() => {
+                      uiDbg('resume clicked');
+                      resume();
+                    }}
+                    disabled={runState.status !== 'paused'}
+                  >
+                    Resume
+                  </button>
 
-                <button
-                  type="button"
-                  className={styles.inlineButton}
-                  onClick={() => {
-                    uiDbg('reset defaults clicked');
-                    resetToDefaults();
-                  }}
-                >
-                  Reset defaults
-                </button>
+                  <button
+                    type="button"
+                    className={styles.inlineButton}
+                    onClick={() => {
+                      uiDbg('stop clicked');
+                      stop();
+                    }}
+                    disabled={runState.status === 'idle' || runState.status === 'stopping'}
+                  >
+                    Stop
+                  </button>
+
+                  {config.mode === 'sightsee' ? (
+                    <>
+                      <button
+                        type="button"
+                        className={styles.inlineButton}
+                        onClick={() => {
+                          uiDbg('move prev clicked');
+                          movePrev();
+                        }}
+                        disabled={runState.status !== 'running' || (runState as any).step === 'sightsee:waiting:noprev'}
+                        title={
+                          (runState as any).step === 'sightsee:waiting:noprev'
+                            ? 'Nothing to go back to'
+                            : 'Send the reverse of the last movement (go back one room)'
+                        }
+                      >
+                        ← Prev
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.inlineButton}
+                        onClick={() => {
+                          uiDbg('move next clicked');
+                          moveNext();
+                        }}
+                        disabled={runState.status !== 'running'}
+                        title="Advance to the next step in the training path"
+                      >
+                        Next →
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.inlineButton}
+                        onClick={() => {
+                          uiDbg('rescan room clicked');
+                          rescanRoom();
+                        }}
+                        disabled={runState.status !== 'running'}
+                        title="Re-fire look/scan commands to refresh the room description"
+                      >
+                        🔍 Look
+                      </button>
+                    </>
+                  ) : null}
+                </>
+              ) : null}
+
+              <button
+                type="button"
+                className={styles.inlineButton}
+                onClick={() => {
+                  uiDbg('reset defaults clicked');
+                  resetToDefaults();
+                }}
+              >
+                Reset defaults
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeaderTitle}>Location</div>
+              <div className={styles.sectionHeaderSub}>
+                {mapsError
+                  ? mapsError
+                  : loadingContinents || loadingAreas || loadingBeasts || loadingTrainingPaths
+                    ? 'Loading…'
+                    : ''}
               </div>
             </div>
-          ) : (
-            <div className={styles.section}>
-              <div className={styles.sectionHeader}>
-                <div className={styles.sectionHeaderTitle}>Location</div>
-                <div className={styles.sectionHeaderSub}>
-                  {mapsError
-                    ? mapsError
-                    : loadingContinents || loadingAreas || loadingBeasts || loadingTrainingPaths
-                      ? 'Loading…'
-                      : ''}
-                </div>
-              </div>
 
-              <div className={styles.row}>
-                <label className={styles.label}>
-                  Continent
-                  <select
-                    className={styles.select}
-                    value={selectedContinentName}
-                    onChange={(e) => onSelectContinent(e.target.value)}
-                    disabled={loadingContinents}
-                  >
-                    <option value="">{loadingContinents ? 'Loading…' : 'Select a continent'}</option>
-                    {continentNames.map((c, i) => (
-                      <option key={`${c}:${i}`} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className={styles.label}>
-                  Area
-                  <select
-                    className={styles.select}
-                    value={selectedAreaName}
-                    onChange={(e) => onSelectArea(e.target.value)}
-                    disabled={!selectedContinentName || loadingAreas}
-                  >
-                    <option value="">
-                      {!selectedContinentName
-                        ? 'Select a continent first'
-                        : loadingAreas
-                          ? 'Loading…'
-                          : 'Select an area'}
+            <div className={styles.row}>
+              <label className={styles.label}>
+                Continent
+                <select
+                  className={styles.select}
+                  value={selectedContinentName}
+                  onChange={(e) => onSelectContinent(e.target.value)}
+                  disabled={loadingContinents}
+                >
+                  <option value="">{loadingContinents ? 'Loading…' : 'Select a continent'}</option>
+                  {continentNames.map((c, i) => (
+                    <option key={`${c}:${i}`} value={c}>
+                      {c}
                     </option>
-                    {areaNames.map((a, i) => (
-                      <option key={`${a}:${i}`} value={a}>
-                        {a}
+                  ))}
+                </select>
+              </label>
+
+              <label className={styles.label}>
+                Area
+                <select
+                  className={styles.select}
+                  value={selectedAreaName}
+                  onChange={(e) => onSelectArea(e.target.value)}
+                  disabled={!selectedContinentName || loadingAreas}
+                >
+                  <option value="">
+                    {!selectedContinentName ? 'Select a continent first' : loadingAreas ? 'Loading…' : 'Select an area'}
+                  </option>
+                  {areaNames.map((a, i) => (
+                    <option key={`${a}:${i}`} value={a}>
+                      {a}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className={styles.label} style={{ flex: 2 }}>
+                Training path
+                {(combinedTrainingPaths.length > 0 || loadingTrainingPaths) && (
+                  <select
+                    className={styles.select}
+                    value={combinedTrainingPaths.find((p) => p.raw === draft.init.trainingPath)?.id ?? ''}
+                    onChange={(e) => {
+                      const found = combinedTrainingPaths.find((p) => p.id === e.target.value);
+                      if (found) {
+                        uiDbg('training path preset selected', { id: found.id, name: found.name });
+                        setDraft((p) => ({ ...p, init: { ...p.init, trainingPath: found.raw } }));
+                      }
+                    }}
+                    disabled={loadingTrainingPaths}
+                  >
+                    <option value="">{loadingTrainingPaths ? 'Loading…' : '— Select a saved path —'}</option>
+                    {combinedTrainingPaths.map((p, i) => (
+                      <option key={`${p.id}:${i}`} value={p.id}>
+                        {p.name}
                       </option>
                     ))}
                   </select>
-                </label>
-
-                <label className={styles.label}>
-                  Training path
-                  <input
-                    className={styles.input}
-                    list="autoleveling-training-paths"
-                    value={draft.init.trainingPath ?? ''}
-                    onChange={(e) => {
-                      uiDbg('draft.init.trainingPath changed', { value: e.target.value });
-                      setDraft((p) => ({ ...p, init: { ...p.init, trainingPath: e.target.value || null } }));
-                    }}
-                    placeholder={loadingTrainingPaths ? 'Loading…' : 'n;n;n;w;w'}
-                  />
-                  <datalist id="autoleveling-training-paths">
-                    {trainingPaths.map((p, i) => (
-                      <option key={`${p.id}:${i}`} value={p.raw} label={p.name} />
-                    ))}
-                  </datalist>
-                  <div className={styles.help}>
-                    Split commands with <code>;</code>. Empty segments are allowed and will be sent.
-                  </div>
-                </label>
-              </div>
-
-              <div className={styles.sectionHeader}>
-                <div className={styles.sectionHeaderTitle}>Combat</div>
-                <div className={styles.sectionHeaderSub}>Only this is required</div>
-              </div>
-
-              <div className={styles.row}>
-                <label className={styles.label} style={{ flex: 1 }}>
-                  Initiation command (optional)
-                  <input
-                    className={styles.input}
-                    value={draft.init.initiationCommand ?? ''}
-                    onChange={(e) => {
-                      uiDbg('draft.init.initiationCommand changed', { value: e.target.value });
-                      setDraft((p) => ({ ...p, init: { ...p.init, initiationCommand: e.target.value || null } }));
-                    }}
-                    placeholder="kill {name}"
-                  />
-                  <div className={styles.help}>
-                    Uses <code>{'{name}'}</code> to substitute a keyword. If left blank, defaults to{' '}
-                    <code>kill {'{name}'}</code>.
-                  </div>
-                </label>
-              </div>
-
-              <div className={styles.sectionHeader}>
-                <div className={styles.sectionHeaderTitle}>Targets</div>
-                <div className={styles.sectionHeaderSub}>
-                  {selectedAreaName ? `${selectedTargets.length} selected` : 'Pick an area to load targets'}
+                )}
+                <input
+                  className={styles.input}
+                  value={draft.init.trainingPath ?? ''}
+                  onChange={(e) => {
+                    uiDbg('draft.init.trainingPath changed', { value: e.target.value });
+                    setDraft((p) => ({ ...p, init: { ...p.init, trainingPath: e.target.value || null } }));
+                  }}
+                  placeholder={loadingTrainingPaths ? 'Loading…' : 'n;n;n;w;w  (or use Build tab)'}
+                />
+                <div className={styles.help}>
+                  Semicolon-separated commands. Use the <strong>Build</strong> tab to construct a path visually. Mob
+                  steps use the format <code>look name|engage name</code>.
                 </div>
-              </div>
+              </label>
+            </div>
 
-              <div className={styles.row}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeaderTitle}>Combat</div>
+              <div className={styles.sectionHeaderSub}>Only this is required</div>
+            </div>
+
+            <div className={styles.row}>
+              <label className={styles.label} style={{ flex: 1 }}>
+                Initiation command (optional)
+                <input
+                  className={styles.input}
+                  value={draft.init.initiationCommand ?? ''}
+                  onChange={(e) => {
+                    uiDbg('draft.init.initiationCommand changed', { value: e.target.value });
+                    setDraft((p) => ({ ...p, init: { ...p.init, initiationCommand: e.target.value || null } }));
+                  }}
+                  placeholder="kill {name}"
+                />
+                <div className={styles.help}>
+                  Uses <code>{'{name}'}</code> to substitute a keyword. If left blank, defaults to{' '}
+                  <code>kill {'{name}'}</code>.
+                </div>
+              </label>
+            </div>
+
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeaderTitle}>Targets</div>
+              <div className={styles.sectionHeaderSub}>
+                {selectedAreaName ? `${selectedTargets.length} selected` : 'Pick an area to load targets'}
+              </div>
+            </div>
+
+            <div className={styles.row}>
+              <button
+                type="button"
+                className={styles.inlineButton}
+                onClick={selectAllTargets}
+                disabled={!selectedAreaName || loadingBeasts || beasts.length === 0}
+              >
+                Select all
+              </button>
+              <button
+                type="button"
+                className={styles.inlineButton}
+                onClick={clearTargets}
+                disabled={!selectedAreaName || selectedTargets.length === 0}
+              >
+                Clear
+              </button>
+            </div>
+
+            {/* Manual target entry */}
+            {selectedAreaName && (
+              <div className={styles.row} style={{ gap: 8, marginBottom: 8 }}>
+                <label className={styles.label} style={{ flex: 1 }}>
+                  Look name
+                  <input
+                    className={styles.input}
+                    value={manualLookInput}
+                    onChange={(e) => setManualLookInput(e.target.value)}
+                    placeholder="e.g. a giant rat"
+                  />
+                </label>
+                <label className={styles.label} style={{ flex: 1 }}>
+                  Engage name
+                  <input
+                    className={styles.input}
+                    value={manualEngageInput}
+                    onChange={(e) => setManualEngageInput(e.target.value)}
+                    placeholder="e.g. rat"
+                  />
+                </label>
                 <button
                   type="button"
                   className={styles.inlineButton}
-                  onClick={selectAllTargets}
-                  disabled={!selectedAreaName || loadingBeasts || beasts.length === 0}
+                  style={{ alignSelf: 'flex-end', marginBottom: 2 }}
+                  disabled={!manualLookInput.trim() || !manualEngageInput.trim()}
+                  onClick={() => {
+                    if (!selectedContinentName || !selectedAreaName) return;
+                    const look = manualLookInput.trim();
+                    const engage = manualEngageInput.trim();
+                    if (!look || !engage) return;
+                    const nextManuals = [...manualTargets, { lookName: look, engageName: engage }];
+                    setManualTargets(nextManuals);
+                    saveSavedTargets(selectedContinentName, selectedAreaName, nextManuals);
+                    setDraft((prev) => ({
+                      ...prev,
+                      init: {
+                        ...prev.init,
+                        targets: [
+                          ...(prev.init.targets ?? []),
+                          manualToAutoLevel({ lookName: look, engageName: engage }),
+                        ],
+                      },
+                    }));
+                    setManualLookInput('');
+                    setManualEngageInput('');
+                  }}
                 >
-                  Select all
-                </button>
-                <button
-                  type="button"
-                  className={styles.inlineButton}
-                  onClick={clearTargets}
-                  disabled={!selectedAreaName || selectedTargets.length === 0}
-                >
-                  Clear
+                  + Add manual target
                 </button>
               </div>
+            )}
 
-              <div className={styles.beastList}>
-                {!selectedAreaName ? (
-                  <div className={styles.beastEmpty}>Select an area to see available targets.</div>
-                ) : loadingBeasts && beasts.length === 0 ? (
-                  <div className={styles.beastEmpty}>Loading targets…</div>
-                ) : beasts.length === 0 ? (
-                  <div className={styles.beastEmpty}>No targets returned for this area.</div>
-                ) : (
-                  beasts.map((b, i) => {
+            <div className={styles.beastList}>
+              {!selectedAreaName ? (
+                <div className={styles.beastEmpty}>Select an area to see available targets.</div>
+              ) : loadingBeasts && beasts.length === 0 ? (
+                <div className={styles.beastEmpty}>Loading targets…</div>
+              ) : beasts.length === 0 && manualTargets.length === 0 ? (
+                <div className={styles.beastEmpty}>No targets returned for this area.</div>
+              ) : (
+                <>
+                  {/* Manual targets first */}
+                  {manualTargets.map((mt, i) => {
+                    const t = manualToAutoLevel(mt);
+                    const checked = isSelected(t.cleanName);
+                    return (
+                      <div key={`manual:${t.cleanName}:${i}`} className={styles.beastRow}>
+                        <input
+                          className={styles.checkbox}
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            // Toggle in draft targets
+                            setDraft((prev) => {
+                              const cur = prev.init.targets ?? [];
+                              const exists = cur.some((x) => String(x.cleanName ?? '').trim() === t.cleanName);
+                              const next = exists
+                                ? cur.filter((x) => String(x.cleanName ?? '').trim() !== t.cleanName)
+                                : [...cur, t];
+                              return { ...prev, init: { ...prev.init, targets: next } };
+                            });
+                          }}
+                        />
+                        <div className={styles.beastMain}>
+                          <div className={styles.beastName}>
+                            {mt.lookName} <span style={{ fontWeight: 400, opacity: 0.7 }}>(manual)</span>
+                          </div>
+                          <div className={styles.beastMeta}>engage: {mt.engageName}</div>
+                          <button
+                            type="button"
+                            className={styles.inlineButton}
+                            style={{ marginLeft: 8 }}
+                            onClick={() => {
+                              // Remove manual target
+                              const nextManuals = manualTargets.filter((_, idx) => idx !== i);
+                              setManualTargets(nextManuals);
+                              saveSavedTargets(selectedContinentName, selectedAreaName, nextManuals);
+                              setDraft((prev) => ({
+                                ...prev,
+                                init: {
+                                  ...prev.init,
+                                  targets: (prev.init.targets ?? []).filter((x) => x.cleanName !== t.cleanName),
+                                },
+                              }));
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {/* API targets */}
+                  {beasts.map((b, i) => {
                     const key = beastStableKey(b);
                     const checked = isSelected(key);
                     const firstKeyword =
@@ -1084,110 +2344,124 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({ isOpen, on
                         </div>
                       </div>
                     );
-                  })
-                )}
-              </div>
-
-              <div className={styles.sectionHeader}>
-                <div className={styles.sectionHeaderTitle}>Advanced</div>
-                <div className={styles.sectionHeaderSub}>Optional power-user configuration</div>
-              </div>
-
-              <div className={styles.row}>
-                <button
-                  type="button"
-                  className={styles.inlineButton}
-                  onClick={() => {
-                    uiDbg('advanced toggled', { next: !advancedOpen });
-                    setAdvancedOpen((p) => !p);
-                  }}
-                >
-                  {advancedOpen ? 'Hide advanced' : 'Show advanced'}
-                </button>
-              </div>
-
-              {advancedOpen ? (
-                <>
-                  <div className={styles.sectionHeader}>
-                    <div className={styles.sectionHeaderTitle}>Configure steps</div>
-                    <div className={styles.sectionHeaderSub}>
-                      The engine owns engagement; fight steps run after engagement succeeds
-                    </div>
-                  </div>
-
-                  <div className={styles.blockCard}>
-                    <div className={styles.blockHeader}>
-                      <div className={styles.blockHeaderLeft}>
-                        <div className={styles.blockNumber}>1</div>
-                        <div className={styles.blockTitle}>Start</div>
-                      </div>
-                    </div>
-                    <div className={styles.blockBody}>
-                      {editor('start.pre', '1a. Pre-start')}
-                      {editor('start.exec', '1b. Start')}
-                      {editor('start.post', '1c. Post-start')}
-                    </div>
-                  </div>
-
-                  <div className={styles.blockCard}>
-                    <div className={styles.blockHeader}>
-                      <div className={styles.blockHeaderLeft}>
-                        <div className={styles.blockNumber}>2</div>
-                        <div className={styles.blockTitle}>Move</div>
-                      </div>
-                    </div>
-                    <div className={styles.blockBody}>
-                      {editor('move.pre', '2a. Pre-move')}
-                      {editor('move.exec', '2b. Move')}
-                      {editor('move.post', '2c. Post-move')}
-                    </div>
-                  </div>
-
-                  <div className={styles.blockCard}>
-                    <div className={styles.blockHeader}>
-                      <div className={styles.blockHeaderLeft}>
-                        <div className={styles.blockNumber}>3</div>
-                        <div className={styles.blockTitle}>Identify</div>
-                      </div>
-                    </div>
-                    <div className={styles.blockBody}>
-                      {editor('identify.pre', '3a. Pre-identify')}
-                      {editor('identify.exec', '3b. Identify')}
-                      {editor('identify.post', '3c. Post-identify')}
-                    </div>
-                  </div>
-
-                  <div className={styles.blockCard}>
-                    <div className={styles.blockHeader}>
-                      <div className={styles.blockHeaderLeft}>
-                        <div className={styles.blockNumber}>4</div>
-                        <div className={styles.blockTitle}>Fight</div>
-                      </div>
-                    </div>
-                    <div className={styles.blockBody}>
-                      {editor('fight.pre', '4a. Pre-fight')}
-                      {editor('fight.exec', '4b. Fight (after engage)')}
-                      {editor('fight.post', '4c. Post-fight')}
-                    </div>
-                  </div>
-
-                  <div className={styles.blockCard}>
-                    <div className={styles.blockHeader}>
-                      <div className={styles.blockHeaderLeft}>
-                        <div className={styles.blockNumber}>5</div>
-                        <div className={styles.blockTitle}>Reset</div>
-                      </div>
-                    </div>
-                    <div className={styles.blockBody}>
-                      {editor('reset.endRound', '5a. End round')}
-                      {editor('reset.wait', '5b. Wait')}
-                    </div>
-                  </div>
+                  })}
                 </>
-              ) : null}
+              )}
             </div>
-          )}
-        </div>
+
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeaderTitle}>Advanced</div>
+              <div className={styles.sectionHeaderSub}>Optional power-user configuration</div>
+            </div>
+
+            <div className={styles.row}>
+              <button
+                type="button"
+                className={styles.inlineButton}
+                onClick={() => {
+                  uiDbg('advanced toggled', { next: !advancedOpen });
+                  setAdvancedOpen((p) => !p);
+                }}
+              >
+                {advancedOpen ? 'Hide advanced' : 'Show advanced'}
+              </button>
+            </div>
+
+            {advancedOpen ? (
+              <>
+                <div className={styles.sectionHeader}>
+                  <div className={styles.sectionHeaderTitle}>Configure steps</div>
+                  <div className={styles.sectionHeaderSub}>
+                    The engine owns engagement; fight steps run after engagement succeeds
+                  </div>
+                </div>
+
+                <div className={styles.blockCard}>
+                  <div className={styles.blockHeader}>
+                    <div className={styles.blockHeaderLeft}>
+                      <div className={styles.blockNumber}>1</div>
+                      <div className={styles.blockTitle}>Start</div>
+                    </div>
+                  </div>
+                  <div className={styles.blockBody}>
+                    {editor('start.pre', '1a. Pre-start')}
+                    {editor('start.exec', '1b. Start')}
+                    {editor('start.post', '1c. Post-start')}
+                  </div>
+                </div>
+
+                <div className={styles.blockCard}>
+                  <div className={styles.blockHeader}>
+                    <div className={styles.blockHeaderLeft}>
+                      <div className={styles.blockNumber}>2</div>
+                      <div className={styles.blockTitle}>Move</div>
+                    </div>
+                  </div>
+                  <div className={styles.blockBody}>
+                    {editor('move.pre', '2a. Pre-move')}
+                    {editor('move.exec', '2b. Move')}
+                    {editor('move.post', '2c. Post-move')}
+                  </div>
+                </div>
+
+                <div className={styles.blockCard}>
+                  <div className={styles.blockHeader}>
+                    <div className={styles.blockHeaderLeft}>
+                      <div className={styles.blockNumber}>3</div>
+                      <div className={styles.blockTitle}>Identify</div>
+                    </div>
+                  </div>
+                  <div className={styles.blockBody}>
+                    {editor('identify.pre', '3a. Pre-identify')}
+                    {editor('identify.exec', '3b. Identify')}
+                    {editor('identify.post', '3c. Post-identify')}
+                  </div>
+                </div>
+
+                <div className={styles.blockCard}>
+                  <div className={styles.blockHeader}>
+                    <div className={styles.blockHeaderLeft}>
+                      <div className={styles.blockNumber}>4</div>
+                      <div className={styles.blockTitle}>Fight</div>
+                    </div>
+                  </div>
+                  <div className={styles.blockBody}>
+                    {editor('fight.pre', '4a. Pre-fight (runs once on engage)')}
+                    {editor('fight.exec', '4b. Fight loop (repeats every fight loop interval)')}
+                    {editor('fight.post', '4c. Post-fight (runs once when fighting ends)')}
+                  </div>
+                </div>
+
+                <div className={styles.blockCard}>
+                  <div className={styles.blockHeader}>
+                    <div className={styles.blockHeaderLeft}>
+                      <div className={styles.blockNumber}>5</div>
+                      <div className={styles.blockTitle}>Post-fight</div>
+                    </div>
+                  </div>
+                  <div className={styles.blockBody}>
+                    {editor('postFight.pre', '5a. Pre post-fight')}
+                    {editor('postFight.exec', '5b. Post-fight (loot, rest, check health)')}
+                    {editor('postFight.post', '5c. Post post-fight')}
+                  </div>
+                </div>
+
+                <div className={styles.blockCard}>
+                  <div className={styles.blockHeader}>
+                    <div className={styles.blockHeaderLeft}>
+                      <div className={styles.blockNumber}>6</div>
+                      <div className={styles.blockTitle}>Reset</div>
+                    </div>
+                  </div>
+                  <div className={styles.blockBody}>
+                    {editor('reset.endRound', '6a. End round')}
+                    {editor('reset.wait', '6b. Wait')}
+                  </div>
+                </div>
+              </>
+            ) : null}
+          </div>
+        )}
       </div>
     </div>
   );

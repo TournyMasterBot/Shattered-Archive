@@ -20,7 +20,17 @@ export type AutoLevelAction =
   | { kind: 'wait_ms'; ms: number }
   | { kind: 'wait_text'; text: string; caseInsensitive?: boolean; timeoutMs?: number }
   | { kind: 'wait_regex'; pattern: string; flags?: string; timeoutMs?: number }
-  | { kind: 'wait_fighting'; value: boolean; timeoutMs?: number };
+  | { kind: 'wait_fighting'; value: boolean; timeoutMs?: number }
+  /** Conditional sends — checked against live GMCP vitals at execution time. */
+  | { kind: 'if_hp_pct_below'; pct: number; cmd: string }
+  | { kind: 'if_mp_pct_below'; pct: number; cmd: string }
+  | { kind: 'if_mv_pct_below'; pct: number; cmd: string }
+  /**
+   * Send cmd only when the named affect is NOT currently active.
+   * affectName is matched case-insensitively against GMCP AffectData.n.
+   * Syntax in the step editor: if_affect_missing "affect name" command
+   */
+  | { kind: 'if_affect_missing'; affectName: string; cmd: string };
 
 export type AutoLevelPhaseTriplet = {
   /**
@@ -42,13 +52,28 @@ export type AutoLevelStepConfig = {
 
   start: AutoLevelPhaseTriplet;
   move: AutoLevelPhaseTriplet;
+
+  /**
+   * Room scan / pre-fight step.
+   * exec typically contains a "look" command; the engine's encounter detection
+   * (lookName match in terminal text) injects a fight sequence when a target is found.
+   */
   identify: AutoLevelPhaseTriplet;
 
   /**
-   * Optional fight actions you want to run *after* engagement succeeds.
-   * (The engine now owns engagement: initiation command + keyword fallbacks.)
+   * Fight step (engine-owned engagement happens before this).
+   * - pre  : runs once when engagement succeeds, before the fight loop starts.
+   * - exec : looped every `fightLoopIntervalMs` while isFighting=true.
+   *          Supports conditional actions: if_hp_pct_below, if_mp_pct_below, if_mv_pct_below.
+   * - post : runs once after the fight loop exits (isFighting=false).
    */
   fight: AutoLevelPhaseTriplet;
+
+  /**
+   * Post-fight step — runs once after isFighting=false.
+   * Typical use: loot corpses, check health, rest if needed.
+   */
+  postFight: AutoLevelPhaseTriplet;
 
   reset: {
     endRound: AutoLevelAction[];
@@ -112,9 +137,11 @@ export type AutoLevelInitConfigV2 = {
   targets: AutoLevelTarget[];
 };
 
+export type AutoLevelMode = 'disabled' | 'dry_run' | 'auto_level' | 'sightsee';
+
 export type AutoLevelConfig = {
   version: 2;
-  enabled: boolean;
+  mode: AutoLevelMode;
 
   init: AutoLevelInitConfigV2;
   steps: AutoLevelStepConfig;
@@ -122,6 +149,32 @@ export type AutoLevelConfig = {
   loopRounds: boolean;
   roundLoopTimeMs: number;
   idleTimeoutMs: number;
+
+  /**
+   * How long to wait (ms) between each iteration of the fight.exec loop.
+   * Defaults to 2500ms. Minimum enforced at 500ms by the engine.
+   */
+  fightLoopIntervalMs: number;
+
+  /**
+   * How long to pause (ms) after a movement command succeeds before the next step.
+   * Defaults to 600ms.
+   */
+  moveSettleMs: number;
+
+  /**
+   * How long to pause (ms) after sending a non-movement command (e.g. `look`) before
+   * processing encounter detections. Allows server response text to arrive before the
+   * engine decides whether a mob is present. Defaults to 500ms.
+   */
+  lookSettleMs: number;
+
+  /**
+   * How long to pause (ms) after the postFight triplet completes before re-scanning
+   * the room or moving on. Gives the server time to settle after looting/resting.
+   * Defaults to 2000ms.
+   */
+  postFightSettleMs: number;
 
   fleePk: boolean;
 };

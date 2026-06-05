@@ -56,6 +56,12 @@ type InjectedEngineAction =
   | {
       kind: '__engage_target';
       target: AutoLevelTarget;
+    }
+  | {
+      kind: '__dry_run_notify';
+      target: AutoLevelTarget;
+      /** The command that would have been sent in auto_level mode. */
+      wouldSend: string;
     };
 
 const ANSI_CSI_RE = /\u001b\[[0-9;]*m/g;
@@ -130,6 +136,32 @@ function isMovementCommand(cmd: string): { isMove: boolean; dir?: string } {
   const first = trimmed.split(/\s+/)[0]?.toLowerCase() ?? '';
   if (MOVE_DIRS.has(first)) return { isMove: true, dir: first };
   return { isMove: false };
+}
+
+const REVERSE_DIR: Record<string, string> = {
+  n: 's',
+  s: 'n',
+  e: 'w',
+  w: 'e',
+  ne: 'sw',
+  sw: 'ne',
+  nw: 'se',
+  se: 'nw',
+  u: 'd',
+  d: 'u',
+  up: 'down',
+  down: 'up',
+  north: 'south',
+  south: 'north',
+  east: 'west',
+  west: 'east',
+};
+
+function reverseMovementCommand(cmd: string): string | null {
+  const c = String(cmd ?? '')
+    .trim()
+    .toLowerCase();
+  return REVERSE_DIR[c] ?? null;
 }
 
 function applyInitiationTemplate(template: string, keyword: string): string {
@@ -211,6 +243,16 @@ export class AutoLevelingEngine {
   // encounter gating
   private encounterLocked = false;
   private lastEncounterMatch: { targetCleanName: string; lookName: string; at: number } | null = null;
+  // dry_run: track mobs already announced this room so we only fire once per mob per room
+  private dryRunAnnouncedThisRoom = new Set<string>();
+
+  // sightsee mode — per-step gate
+  private sightseeWait: null | {
+    promise: Promise<'next' | 'prev'>;
+    resolve: (d: 'next' | 'prev') => void;
+    reject: (e: any) => void;
+  } = null;
+  private lastMovementCmd: string | null = null;
 
   // movement gating
   private moveWait: null | {
@@ -263,6 +305,12 @@ export class AutoLevelingEngine {
     target: AutoLevelTarget;
     lookNameNorm: string; // normalized with normMatch(...)
   }> = [];
+
+  // GMCP vitals — updated by game:char-data events
+  private charVitals = { hp: 0, hpMax: 0, mp: 0, mpMax: 0, mv: 0, mvMax: 0 };
+
+  // GMCP affects — normalized lowercase names of currently-active affects
+  private activeAffects = new Set<string>();
 
   private boundOnTerminalData = (ev: Event) => {
     if (this.stopping || this.paused) {
@@ -332,50 +380,6 @@ export class AutoLevelingEngine {
     });
   };
 
-  private boundOnMovementFailed = (ev: Event) => {
-    if (!this.moveWait) return;
-
-    const ce = ev as CustomEvent<any>;
-    const { cmd, dir, ts, reasonLine } = extractEventMoveKey(ce?.detail);
-
-    if (typeof ts === 'number' && ts < this.moveWait.startedAt - 50) {
-      dbg('movement-failed ignored (stale ts)', {
-        ts,
-        startedAt: this.moveWait.startedAt,
-        expected: { cmd: this.moveWait.cmd, dir: this.moveWait.dir },
-        got: { cmd, dir },
-        detail: ce?.detail,
-      });
-      return;
-    }
-
-    const expectedCmd = this.moveWait.cmd;
-    const expectedDir = this.moveWait.dir;
-
-    const cmdMatch = !!cmd && cmd === expectedCmd;
-    const dirMatch = !cmd && !!dir && !!expectedDir && dir === expectedDir;
-
-    if (!cmdMatch && !dirMatch) {
-      dbg('movement-failed ignored (no match)', {
-        expected: { cmd: expectedCmd, dir: expectedDir },
-        got: { cmd, dir, ts },
-        detail: ce?.detail,
-      });
-      return;
-    }
-
-    const resolve = this.moveWait.resolve;
-
-    this.clearMoveWaitTimer();
-    this.moveWait = null;
-
-    resolve({
-      result: 'failed',
-      cmd: cmd ?? expectedCmd,
-      reasonLine: String(reasonLine ?? ''),
-    });
-  };
-
   private boundOnFlee = (ev: Event) => {
     if (this.stopping || this.paused) return;
 
@@ -388,9 +392,7 @@ export class AutoLevelingEngine {
     if (this.stopping || this.paused) return;
 
     const ce = ev as CustomEvent<any>;
-    console.log('autoleveling-engine observed a creature death', {
-      ce,
-    });
+    dbg('creature death observed', { detail: ce?.detail });
   };
 
   private boundOnCharDataFighting = (ev: Event) => {
@@ -418,6 +420,18 @@ export class AutoLevelingEngine {
     this.setIsFighting(v, `event:${(ev as any).type}`);
   };
 
+  private onCharDataVitals(d: any) {
+    if (!d) return;
+    const hp = Number(d.hp ?? 0);
+    const hpMax = Number(d.max_hp ?? 0);
+    const mp = Number(d.mana ?? 0);
+    const mpMax = Number(d.max_mana ?? 0);
+    const mv = Number(d.move ?? 0);
+    const mvMax = Number(d.max_move ?? 0);
+    this.charVitals = { hp, hpMax, mp, mpMax, mv, mvMax };
+    dbg('charVitals updated', this.charVitals);
+  }
+
   constructor(deps: EngineDeps) {
     this.deps = deps;
   }
@@ -431,56 +445,36 @@ export class AutoLevelingEngine {
       dbg('autoleveling-engine bind()');
 
       this.offListeners = [
-        // Global terminal data
+        // Incoming terminal text — shatteredarchive:raw-data is the authoritative event
+        // Payload shape: { text: string, rawText: string, fromUserScript: boolean }
         ListenEvent<any>(
-          'shatteredarchive:terminal-data',
+          'shatteredarchive:raw-data',
           (payload) => {
             this.boundOnTerminalData({ detail: payload } as any);
           },
-          { key: 'AutoLevelingEngine:terminal-data' },
+          { key: 'AutoLevelingEngine:raw-data' },
         ),
 
-        // GMCP-derived combat state (authoritative)
+        // GMCP char-data — authoritative source for isFighting and vitals
+        // Payload shape: { hp, max_hp, mana, max_mana, move, max_move, is_fighting, ... }
         ListenEvent<any>(
-          'shatteredarchive:char-data',
+          'game:char-data',
           (payload) => {
-            this.boundOnCharDataFighting({ detail: payload, type: 'shatteredarchive:char-data' } as any);
+            this.onCharDataVitals(payload);
+            this.boundOnCharDataFighting({ detail: payload, type: 'game:char-data' } as any);
           },
-          { key: 'AutoLevelingEngine:char-data' },
+          { key: 'AutoLevelingEngine:game:char-data' },
         ),
 
+        // Movement success — fires from game:room-data (new room arrived after a move)
         ListenEvent<any>(
-          'shatteredarchive:gmcp-char-data',
+          'game:room-data',
           (payload) => {
-            this.boundOnCharDataFighting({ detail: payload, type: 'shatteredarchive:gmcp-char-data' } as any);
+            this.boundOnMovementSucceeded({
+              detail: { cmd: this.moveWait?.cmd, dir: this.moveWait?.dir, ts: now() + 100, room: payload },
+            } as any);
           },
-          { key: 'AutoLevelingEngine:gmcp-char-data' },
-        ),
-
-        ListenEvent<any>(
-          'gmcp:char_data',
-          (payload) => {
-            this.boundOnCharDataFighting({ detail: payload, type: 'gmcp:char_data' } as any);
-          },
-          { key: 'AutoLevelingEngine:gmcp:char_data' },
-        ),
-
-        // Handle movement succeeded
-        ListenEvent<any>(
-          'shatteredarchive:movement-succeeded',
-          (payload) => {
-            this.boundOnMovementSucceeded({ detail: payload } as any);
-          },
-          { key: 'AutoLevelingEngine:movement-succeeded' },
-        ),
-
-        // Handle movement failed
-        ListenEvent<any>(
-          'shatteredarchive:movement-failed',
-          (payload) => {
-            this.boundOnMovementFailed({ detail: payload } as any);
-          },
-          { key: 'AutoLevelingEngine:movement-failed' },
+          { key: 'AutoLevelingEngine:room-data' },
         ),
 
         // Handle creature deaths
@@ -490,6 +484,46 @@ export class AutoLevelingEngine {
             this.boundOnCreatureDeath({ detail: payload } as any);
           },
           { key: 'AutoLevelingEngine:event:creature-death' },
+        ),
+
+        // GMCP affects — track active affect names for if_affect_missing
+        ListenEvent<any>(
+          'game:affects-trueup',
+          (payload) => {
+            this.activeAffects.clear();
+            const list: any[] = Array.isArray(payload)
+              ? payload
+              : Array.isArray(payload?.affects)
+                ? payload.affects
+                : [];
+            for (const a of list) {
+              if (a?.n) this.activeAffects.add(String(a.n).trim().toLowerCase());
+            }
+            dbg('affects-trueup', { count: this.activeAffects.size });
+          },
+          { key: 'AutoLevelingEngine:game:affects-trueup' },
+        ),
+
+        ListenEvent<any>(
+          'game:affect-added',
+          (payload) => {
+            if (payload?.n) {
+              this.activeAffects.add(String(payload.n).trim().toLowerCase());
+              dbg('affect-added', { n: payload.n });
+            }
+          },
+          { key: 'AutoLevelingEngine:game:affect-added' },
+        ),
+
+        ListenEvent<any>(
+          'game:affect-removed',
+          (payload) => {
+            if (payload?.n) {
+              this.activeAffects.delete(String(payload.n).trim().toLowerCase());
+              dbg('affect-removed', { n: payload.n });
+            }
+          },
+          { key: 'AutoLevelingEngine:game:affect-removed' },
         ),
 
         // Pause on flee
@@ -565,12 +599,57 @@ export class AutoLevelingEngine {
     this.paused = false;
   }
 
+  /**
+   * Sightsee mode: fire the identify exec commands without advancing the path.
+   * Lets the user re-scan the current room without triggering a fight.
+   */
+  rescanRoom() {
+    if (this.stopping) return;
+    const cfg = this.deps.getConfig();
+    const sendActions = [
+      ...(cfg.steps.identify.pre ?? []),
+      ...(cfg.steps.identify.exec ?? []),
+      ...(cfg.steps.identify.post ?? []),
+    ].filter(
+      (a): a is Extract<typeof a, { kind: 'send' }> =>
+        a.kind === 'send' && String((a as any).cmd ?? '').trim().length > 0,
+    );
+
+    if (sendActions.length > 0) {
+      for (const a of sendActions) {
+        DispatchEvent('shatteredarchive:send-command', { cmd: a.cmd });
+      }
+    } else {
+      // No identify actions configured — send look directly.
+      DispatchEvent('shatteredarchive:send-command', { cmd: 'look' });
+    }
+  }
+
+  /** Sightsee mode: unblock the current waiting step. */
+  advanceSightsee(direction: 'next' | 'prev' = 'next') {
+    if (!this.sightseeWait) {
+      dbg('advanceSightsee: no pending wait');
+      return;
+    }
+    if (direction === 'prev' && !this.lastMovementCmd) {
+      // Nothing to reverse — leave the wait active and tell the user.
+      dbg('advanceSightsee: prev blocked — no prior movement');
+      DispatchEvent('shatteredarchive:write-terminal' as any, {
+        rawText: '\r\n[SIGHTSEE] Nothing to go back to — press Next to advance.\r\n',
+      });
+      return;
+    }
+    const w = this.sightseeWait;
+    this.sightseeWait = null;
+    w.resolve(direction);
+  }
+
   async start(): Promise<void> {
     // single consistent cfg
     const cfg = this.deps.getConfig();
 
     dbg('start() called', {
-      enabled: cfg.enabled,
+      mode: cfg.mode,
       loopRounds: cfg.loopRounds,
       idleTimeoutMs: cfg.idleTimeoutMs,
       trainingPath: cfg.init.trainingPath,
@@ -578,7 +657,7 @@ export class AutoLevelingEngine {
       targetsCount: (cfg.init.targets ?? []).length,
     });
 
-    if (!cfg.enabled) {
+    if (cfg.mode === 'disabled') {
       this.deps.setRunState({ status: 'error', message: 'Auto leveling is disabled' });
       return;
     }
@@ -601,6 +680,9 @@ export class AutoLevelingEngine {
     this.injectedQueue = [];
     this.encounterLocked = false;
     this.lastEncounterMatch = null;
+    this.dryRunAnnouncedThisRoom.clear();
+    this.sightseeWait = null;
+    this.lastMovementCmd = null;
 
     // normalize targets for detection
     this.targets = (cfg.init.targets ?? [])
@@ -620,11 +702,6 @@ export class AutoLevelingEngine {
 
     while (!this.stopping) {
       try {
-        this.deps.setRunState({ status: 'waiting' });
-        dbg('engine waiting for next round', {
-          roundDelay: cfg.roundLoopTimeMs,
-        });
-
         while (this.trainingPathSteps.length > 0) {
           const step = this.trainingPathSteps.shift()!;
 
@@ -637,9 +714,46 @@ export class AutoLevelingEngine {
           }
 
           const mv = isMovementCommand(step);
+
+          // Sightsee: pause before each movement and wait for manual advance.
+          if (mv.isMove && cfg.mode === 'sightsee') {
+            // Encode prev-availability in the step name so the UI can disable the button.
+            const sightseeStep = this.lastMovementCmd ? 'sightsee:waiting' : 'sightsee:waiting:noprev';
+            this.deps.setRunState({ status: 'running', round, step: sightseeStep, actionIndex: 0 });
+            let advance: 'next' | 'prev';
+            try {
+              advance = await new Promise<'next' | 'prev'>((resolve, reject) => {
+                this.sightseeWait = { promise: Promise.resolve('next'), resolve, reject };
+              });
+            } catch {
+              break; // stopped while waiting
+            }
+            if (advance === 'prev') {
+              // Re-insert both the current waiting step AND the last completed step so
+              // the path is fully restored to the state before that last movement.
+              // e.g. forward(n) → waiting(e) → prev  ⟹  path becomes ['n','e',...]
+              // so the next forward re-does 'n' (step 1) rather than jumping to 'e' (step 2).
+              const last = this.lastMovementCmd;
+              this.trainingPathSteps.unshift(step); // put current step back first
+              if (last) this.trainingPathSteps.unshift(last); // then put the completed step before it
+              const rev = reverseMovementCommand(last ?? '');
+              this.lastMovementCmd = null; // consumed — must go forward before prev works again
+              if (rev) {
+                dbg('sightsee prev', { reverse: rev });
+                await this.sendCommand(rev);
+              }
+              continue;
+            }
+          }
+
+          if (mv.isMove) {
+            this.deps.setRunState({ status: 'running', round, step: 'move', actionIndex: 0 });
+          }
+
           const gate = mv.isMove ? this.waitForMovement(step, cfg.idleTimeoutMs) : null;
 
           await this.sendCommand(step);
+          if (mv.isMove) this.lastMovementCmd = step;
 
           if (gate) {
             const res = await gate;
@@ -654,10 +768,23 @@ export class AutoLevelingEngine {
               warn('movement failed (non-fatal)', { cmd: res.cmd, reasonLine: res.reasonLine });
             } else {
               dbg('movement succeeded', { cmd: res.cmd, room: res.room });
+              // New room — reset dry_run announced set so mobs here get announced fresh.
+              this.dryRunAnnouncedThisRoom.clear();
             }
+          } else {
+            // Non-movement command (e.g. look) — wait for the server's response text to
+            // arrive before checking for encounter detections.
+            const settleMs = cfg.lookSettleMs ?? 500;
+            if (settleMs > 0) await this.delayMs(settleMs);
           }
 
           await this.flushInjected(round);
+
+          // After a successful movement, pause briefly before the next step.
+          if (mv.isMove && !this.stopping) {
+            const moveSettle = cfg.moveSettleMs ?? 600;
+            if (moveSettle > 0) await this.delayMs(moveSettle);
+          }
         }
 
         if (!cfg.loopRounds) {
@@ -665,6 +792,9 @@ export class AutoLevelingEngine {
           break;
         }
 
+        // Round complete — signal we are waiting before the next one starts.
+        this.deps.setRunState({ status: 'waiting' });
+        dbg('engine waiting for next round', { roundDelay: cfg.roundLoopTimeMs });
         await this.delayMs(cfg.roundLoopTimeMs);
 
         this.trainingPathSteps = cfg.init.trainingPath.split(';').filter((x) => x?.trim()?.length > 0);
@@ -753,6 +883,37 @@ export class AutoLevelingEngine {
         await this.waitForFighting(a.value, a.timeoutMs);
         return;
 
+      case 'if_hp_pct_below': {
+        const pct = this.charVitals.hpMax > 0 ? (this.charVitals.hp / this.charVitals.hpMax) * 100 : 100;
+        dbg('if_hp_pct_below', { threshold: a.pct, current: pct });
+        if (pct < a.pct) await this.sendCommand(a.cmd);
+        return;
+      }
+
+      case 'if_mp_pct_below': {
+        const pct = this.charVitals.mpMax > 0 ? (this.charVitals.mp / this.charVitals.mpMax) * 100 : 100;
+        dbg('if_mp_pct_below', { threshold: a.pct, current: pct });
+        if (pct < a.pct) await this.sendCommand(a.cmd);
+        return;
+      }
+
+      case 'if_mv_pct_below': {
+        const pct = this.charVitals.mvMax > 0 ? (this.charVitals.mv / this.charVitals.mvMax) * 100 : 100;
+        dbg('if_mv_pct_below', { threshold: a.pct, current: pct });
+        if (pct < a.pct) await this.sendCommand(a.cmd);
+        return;
+      }
+
+      case 'if_affect_missing': {
+        const key = String(a.affectName ?? '')
+          .trim()
+          .toLowerCase();
+        const active = key ? this.activeAffects.has(key) : false;
+        dbg('if_affect_missing', { affectName: key, active });
+        if (!active) await this.sendCommand(a.cmd);
+        return;
+      }
+
       default:
         dbg('unknown action kind (ignored)', a);
         return;
@@ -761,6 +922,7 @@ export class AutoLevelingEngine {
 
   private async sendCommand(cmd: string): Promise<void> {
     if (this.stopping) return;
+    if (!String(cmd ?? '').trim()) return; // never dispatch empty commands
 
     const mv = isMovementCommand(cmd);
     if (mv.isMove) {
@@ -1106,8 +1268,8 @@ export class AutoLevelingEngine {
       initiation,
     });
 
-    const attemptTimeout = Math.min(Math.max(1500, cfg.idleTimeoutMs || 30000), 8000);
-    const gmcpGraceMs = 500;
+    const attemptTimeout = Math.min(Math.max(3000, cfg.idleTimeoutMs || 30000), 10000);
+    const gmcpGraceMs = 800;
 
     for (let i = 0; i < uniqueKeywords.length; i++) {
       if (this.stopping) return false;
@@ -1135,6 +1297,8 @@ export class AutoLevelingEngine {
 
       if (r.reason === 'not_here') {
         dbg('engage not_here -> trying next keyword', { keyword });
+        // Brief pause so we don't burst-fire keyword attempts back-to-back.
+        await this.delayMs(600);
         continue;
       }
 
@@ -1149,7 +1313,7 @@ export class AutoLevelingEngine {
 
   private tryDetectEncounter(textRaw: string) {
     const cfg = this.deps.getConfig();
-    if (!cfg.enabled) return;
+    if (cfg.mode === 'disabled') return;
 
     if (!this.targets || this.targets.length === 0) return;
 
@@ -1160,13 +1324,41 @@ export class AutoLevelingEngine {
       const t = this.targets[i];
       if (!t.lookNameNorm) continue;
 
-      if (clean.includes(t.lookNameNorm)) {
-        this.lastEncounterMatch = { targetCleanName: t.target.cleanName, lookName: t.target.lookName, at: now() };
-        dbg('encounter detected (lookName match)', this.lastEncounterMatch);
+      if (!clean.includes(t.lookNameNorm)) continue;
 
-        this.injectEncounter(t.target);
+      this.lastEncounterMatch = { targetCleanName: t.target.cleanName, lookName: t.target.lookName, at: now() };
+
+      if (cfg.mode === 'sightsee') {
+        dbg('sightsee: encounter injection skipped', { target: t.target.cleanName });
         return;
       }
+
+      if (cfg.mode === 'dry_run') {
+        // Only announce each mob once per room visit.
+        if (this.dryRunAnnouncedThisRoom.has(t.target.cleanName)) {
+          dbg('dry_run: already announced this room, skipping', { target: t.target.cleanName });
+          return;
+        }
+        this.dryRunAnnouncedThisRoom.add(t.target.cleanName);
+
+        // Build the command that would have been sent.
+        const initiation = (cfg.init.initiationCommand ?? '').length
+          ? String(cfg.init.initiationCommand)
+          : 'kill {name}';
+        const firstKeyword =
+          (Array.isArray(t.target.keywords) ? t.target.keywords : [])
+            .map((k) => String(k ?? '').trim())
+            .find((k) => k.length > 0) ?? t.target.cleanName;
+        const wouldSend = applyInitiationTemplate(initiation, firstKeyword);
+
+        dbg('dry_run: injecting notify', { target: t.target.cleanName, wouldSend });
+        this.injectedQueue.unshift({ kind: '__dry_run_notify', target: t.target, wouldSend });
+        return;
+      }
+
+      dbg('encounter detected (lookName match)', this.lastEncounterMatch);
+      this.injectEncounter(t.target);
+      return;
     }
   }
 
@@ -1193,6 +1385,16 @@ export class AutoLevelingEngine {
 
       const a = this.injectedQueue.shift()!;
 
+      if ((a as any).kind === '__dry_run_notify') {
+        const n = a as Extract<InjectedEngineAction, { kind: '__dry_run_notify' }>;
+        const msg = `\r\n[DRY RUN] Would engage: ${n.target.cleanName} — skipping: ${n.wouldSend}\r\n`;
+        DispatchEvent('shatteredarchive:write-terminal' as any, { rawText: msg });
+        dbg('dry_run notify written', { target: n.target.cleanName, wouldSend: n.wouldSend });
+        // Brief pause so the user can read the message before the engine moves on.
+        if (!this.stopping) await this.delayMs(1200);
+        continue;
+      }
+
       if ((a as any).kind === '__engage_target') {
         const eng = a as Extract<InjectedEngineAction, { kind: '__engage_target' }>;
         dbg('flushInjected engage', { target: eng.target.cleanName });
@@ -1206,23 +1408,83 @@ export class AutoLevelingEngine {
         }
 
         const cfg = this.deps.getConfig();
-        await this.runTriplet(cfg.steps.fight, 'fight', round);
+        const loopIntervalMs = Math.max(2000, cfg.fightLoopIntervalMs ?? 2500);
 
-        // Ensure combat has ended before releasing lock
-        if (this.isFighting) {
-          const gateTimeout = Math.max(1000, cfg.idleTimeoutMs || 30000);
-          dbg('waiting for fighting=false to release encounter lock', { timeoutMs: gateTimeout });
-          try {
-            await this.waitForFighting(false, gateTimeout);
-          } catch {
-            this.deps.setRunState({ status: 'error', message: 'Timed out waiting for fight to end' });
-            this.stopping = true;
-            return;
+        // fight.pre — runs once on engage success
+        this.deps.setRunState({ status: 'running', round, step: 'fight.pre', actionIndex: 0 });
+        await this.runActions(cfg.steps.fight.pre, 'fight.pre', round);
+
+        // fight.exec — only loop if there are actions to run.
+        // If fight.exec is empty, just wait for the fight to end naturally.
+        // A step is "present" only if it contains at least one action that isn't a blank send.
+        // This prevents a textarea that was left empty (parser produces [] or [{kind:'send',cmd:''}])
+        // from being treated as having actions and triggering a send loop.
+        const hasFightExec = (cfg.steps.fight.exec ?? []).some(
+          (a) => a.kind !== 'send' || String(a.cmd ?? '').trim().length > 0,
+        );
+        if (hasFightExec) {
+          dbg('fight loop start', { target: eng.target.cleanName, loopIntervalMs });
+          while (!this.stopping && this.isFighting) {
+            await this.waitWhilePausedOrStopped().catch(() => null);
+            if (this.stopping) break;
+
+            this.deps.setRunState({ status: 'running', round, step: 'fight.exec', actionIndex: 0 });
+            await this.runActions(cfg.steps.fight.exec, 'fight.exec', round);
+
+            if (!this.isFighting) break;
+
+            // Wait the loop interval, polling every 200 ms so we exit promptly
+            // when fighting ends without touching the shared waitFighting slot.
+            let waited = 0;
+            const POLL_MS = 200;
+            while (waited < loopIntervalMs && this.isFighting && !this.stopping) {
+              await this.delayMs(POLL_MS);
+              waited += POLL_MS;
+            }
           }
+          dbg('fight loop end', { target: eng.target.cleanName, isFighting: this.isFighting });
+        } else {
+          // No fight actions — wait for combat to end without sending anything.
+          dbg('fight loop skip (no exec actions), waiting for fight end', { target: eng.target.cleanName });
+          if (this.isFighting) {
+            try {
+              await this.waitForFighting(false, Math.max(30_000, cfg.idleTimeoutMs || 30_000));
+            } catch {
+              this.deps.setRunState({ status: 'error', message: 'Timed out waiting for fight to end' });
+              this.stopping = true;
+            }
+          }
+        }
+
+        // fight.post — runs once when fight loop exits
+        this.deps.setRunState({ status: 'running', round, step: 'fight.post', actionIndex: 0 });
+        await this.runActions(cfg.steps.fight.post, 'fight.post', round);
+
+        // postFight triplet — loot, rest, health check
+        this.deps.setRunState({ status: 'running', round, step: 'postFight', actionIndex: 0 });
+        await this.runTriplet(cfg.steps.postFight, 'postFight', round);
+
+        // Brief pause after the fight before re-scanning or moving on.
+        if (!this.stopping) {
+          const postFightSettle = cfg.postFightSettleMs ?? 2_000;
+          if (postFightSettle > 0) await this.delayMs(postFightSettle);
         }
 
         dbg('encounter complete; releasing lock', { target: eng.target.cleanName });
         this.encounterLocked = false;
+
+        // Re-scan the room — there may be more mobs here before we move on.
+        if (!this.stopping) {
+          const cfgRecheck = this.deps.getConfig();
+          this.deps.setRunState({ status: 'running', round, step: 'identify', actionIndex: 0 });
+          await this.runTriplet(cfgRecheck.steps.identify, 'identify', round);
+          // Wait for the server to send back the room description before we check
+          // whether another mob was detected (i.e. injected into the queue).
+          const settleMs = cfgRecheck.lookSettleMs ?? 500;
+          if (settleMs > 0 && !this.stopping) await this.delayMs(settleMs);
+          // If another mob was detected during the re-scan, it will have been injected into
+          // the queue. The while-loop above will pick it up on the next iteration.
+        }
         continue;
       }
 
@@ -1248,6 +1510,16 @@ export class AutoLevelingEngine {
 
   private rejectAllWaits(err: any) {
     dbg('rejectAllWaits', { err: String(err?.message ?? err ?? err) });
+
+    if (this.sightseeWait) {
+      const rej = this.sightseeWait.reject;
+      this.sightseeWait = null;
+      try {
+        rej(err);
+      } catch {
+        /* ignore */
+      }
+    }
 
     if (this.moveWait) {
       this.clearMoveWaitTimer();

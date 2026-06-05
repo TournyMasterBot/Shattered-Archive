@@ -2,11 +2,14 @@
 import type {
   AutoLevelAction,
   AutoLevelConfig,
+  AutoLevelMode,
   AutoLevelPhaseTriplet,
   AutoLevelRunState,
   AutoLevelStepConfig,
 } from './autoleveling-types';
 import { createDefaultAutoLevelConfig } from './autoleveling-defaults';
+
+const VALID_MODES: AutoLevelMode[] = ['disabled', 'dry_run', 'auto_level', 'sightsee'];
 
 function isObj(x: unknown): x is Record<string, any> {
   return !!x && typeof x === 'object';
@@ -61,11 +64,13 @@ function normalizeSteps(x: unknown, fallback: AutoLevelStepConfig): AutoLevelSte
     ? { pre: normalizeActions(x.fight.pre), exec: normalizeActions(x.fight.exec), post: normalizeActions(x.fight.post) }
     : fallback.fight;
 
+  const postFight = normalizeTriplet(x.postFight, fallback.postFight);
+
   const reset = isObj(x.reset)
     ? { endRound: normalizeActions(x.reset.endRound), wait: normalizeActions(x.reset.wait) }
     : fallback.reset;
 
-  return { start, move, identify, fight, reset };
+  return { start, move, identify, fight, postFight, reset };
 }
 
 function normalizeEscapeCommands(x: unknown): string[] {
@@ -76,13 +81,26 @@ function normalizeEscapeCommands(x: unknown): string[] {
 /**
  * Repairs unknown/old/broken shapes into a fully-formed AutoLevelConfig.
  * - Also supports older configs that accidentally placed fleePk/escapeCommands inside init.
+ * - Migrates old `enabled: boolean` to the new `mode: AutoLevelMode` field.
  */
 function normalizeAutoLevelConfig(raw: AutoLevelConfig): AutoLevelConfig {
   const def = createDefaultAutoLevelConfig();
 
+  // Migrate: configs prior to mode used enabled:boolean — map to equivalent mode.
+  const rawMode = (raw as any).mode;
+  const rawEnabled = (raw as any).enabled;
+  const mode: AutoLevelMode = VALID_MODES.includes(rawMode)
+    ? (rawMode as AutoLevelMode)
+    : typeof rawEnabled === 'boolean'
+      ? rawEnabled
+        ? 'auto_level'
+        : 'disabled'
+      : def.mode;
+
   return {
     ...def,
     ...raw,
+    mode,
     init: {
       ...def.init,
       ...(raw as any).init,
@@ -97,6 +115,7 @@ function normalizeAutoLevelConfig(raw: AutoLevelConfig): AutoLevelConfig {
       move: { ...def.steps.move, ...(raw as any).steps?.move },
       identify: { ...def.steps.identify, ...(raw as any).steps?.identify },
       fight: { ...def.steps.fight, ...(raw as any).steps?.fight },
+      postFight: { ...def.steps.postFight, ...(raw as any).steps?.postFight },
       reset: { ...def.steps.reset, ...(raw as any).steps?.reset },
     },
   };

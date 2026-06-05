@@ -240,6 +240,20 @@ function parseInlineObjectVars(input: string): { command: string; vars: Record<s
   return { command, vars };
 }
 
+function parseDoAfter(input: string): { delayMs: number; type: 'world' | 'alias'; command: string } | null {
+  const m = /^\s*doAfter\s*\(\s*(\d+)\s*,\s*(world|alias)\s*,\s*(.+?)\s*\)\s*$/i.exec(input);
+  if (!m) return null;
+
+  const delayMs = parseInt(m[1], 10);
+  if (!Number.isFinite(delayMs) || delayMs < 0) return null;
+
+  const type = m[2].toLowerCase() as 'world' | 'alias';
+  const command = stripOuterQuotes(m[3].trim());
+  if (!command) return null;
+
+  return { delayMs, type, command };
+}
+
 function compileAliasTemplate(template: string): { re: RegExp; vars: string[]; command?: string } | null {
   const raw = safeTrim(template);
   if (!raw) return null;
@@ -309,6 +323,9 @@ export class UserScriptRuntime {
   private activeConnectionId: string = 'default';
   private timerNextFireAt: Map<string, number> = new Map();
   private timerIntervalById: Map<string, number> = new Map();
+  private aliasFallback?: (input: string) => boolean;
+  private doAfterTimers: Set<ReturnType<typeof setTimeout>> = new Set();
+  private afkMode = false;
 
   constructor(options: UserScriptRuntimeOptions = {}) {
     this.sendCommand =
@@ -320,12 +337,13 @@ export class UserScriptRuntime {
     this.onScriptError = options.onScriptError;
     this.lastTick = Date.now();
     this.aliasSplitChar = normalizeSplitChar(options.aliasSplitChar);
+    this.aliasFallback = options.aliasFallback;
 
     this.attachWindowEvents();
   }
 
   private attachWindowEvents() {
-    console.log('Attaching user script runtime events');
+    // Debug: console.log('Attaching user script runtime events');
 
     ListenEvent<any>('shatteredarchive:raw-data', (payload) => {
       void this.processRawEvent(payload);
@@ -435,6 +453,33 @@ export class UserScriptRuntime {
     this.timerNextFireAt.clear();
     this.timerIntervalById.clear();
     this.lastTick = Date.now();
+  }
+
+  public setAfkMode(isAfk: boolean): void {
+    this.afkMode = isAfk;
+  }
+
+  public isAfkMode(): boolean {
+    return this.afkMode;
+  }
+
+  public cancelDoAfterTimers(): void {
+    for (const id of this.doAfterTimers) {
+      clearTimeout(id);
+    }
+    this.doAfterTimers.clear();
+  }
+
+  public scheduleDoAfter(delayMs: number, type: 'world' | 'alias', command: string): void {
+    const timerId = setTimeout(() => {
+      this.doAfterTimers.delete(timerId);
+      if (type === 'alias') {
+        this.executeAlias(command);
+      } else {
+        this.sendCommand(command);
+      }
+    }, delayMs);
+    this.doAfterTimers.add(timerId);
   }
 
   public rebuildTriggerListeners(): void {
@@ -730,10 +775,12 @@ export class UserScriptRuntime {
 
   dispatchGmcpEvent<T extends object>(eventName: string, length: number, rawText: string): void {
     try {
+      /* Debug
       console.log('Dispatching event', {
         eventName,
         rawText,
       });
+      */
       const jsonPart = rawText.slice(length).trim();
       const data = JSON.parse(jsonPart) as T;
       const w = window as any;
@@ -779,6 +826,13 @@ export class UserScriptRuntime {
       }
 
       const trimmedPart = rawPart.trim();
+
+      const doAfterParsed = parseDoAfter(trimmedPart);
+      if (doAfterParsed) {
+        this.scheduleDoAfter(doAfterParsed.delayMs, doAfterParsed.type, doAfterParsed.command);
+        continue;
+      }
+
       const normalizedInput = trimmedPart.toLowerCase();
 
       const objectVarsParsed = parseInlineObjectVars(trimmedPart);
@@ -872,7 +926,8 @@ export class UserScriptRuntime {
       }
 
       if (!matched) {
-        this.sendCommand(rawPart);
+        const consumed = this.aliasFallback?.(rawPart) ?? false;
+        if (!consumed) this.sendCommand(rawPart);
       }
     }
 
@@ -884,6 +939,8 @@ export class UserScriptRuntime {
   public tickTimers(): void {
     const now = Date.now();
     this.lastTick = now;
+
+    if (this.afkMode) return;
 
     const active = new Set<string>();
 
@@ -935,7 +992,17 @@ export class UserScriptRuntime {
     const apiRef = {} as ScriptSandboxApi;
 
     Object.assign(apiRef, {
-      sendCommand: this.sendCommand,
+      sendCommand: (cmd: string) => {
+        const doAfterParsed = parseDoAfter((cmd ?? '').trim());
+        if (doAfterParsed) {
+          this.scheduleDoAfter(doAfterParsed.delayMs, doAfterParsed.type, doAfterParsed.command);
+          return;
+        }
+        this.sendCommand(cmd);
+      },
+      doAfter: (delayMs: number, type: 'world' | 'alias', command: string) => {
+        this.scheduleDoAfter(delayMs, type, command);
+      },
       event: extraContext?.event,
       log: (...args: unknown[]) => console.log(`[Script:${script.name}]`, ...args),
       error: (...args: unknown[]) => console.error(`[Script:${script.name}]`, ...args),

@@ -235,3 +235,76 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Wrapper that positions the floating panel */
+.autoLevelWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Floating control panel */
+.autoLevelPanel {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  z-index: 200;
+  min-width: 160px;
+  background: #1c1c1e;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
+}
+
+.autoLevelPanelStatus {
+  font-size: 0.72rem;
+  color: #aaa;
+  white-space: nowrap;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #333;
+}
+
+.autoLevelPanelRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.autoLevelPanelBtn {
+  flex: 1;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #242424;
+  color: #f0f0f0;
+  font-size: 0.8rem;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition:
+    background 100ms ease,
+    border-color 100ms ease;
+}
+
+.autoLevelPanelBtn:hover:not(:disabled) {
+  background: #2e2e2e;
+  border-color: #777;
+}
+
+.autoLevelPanelBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.autoLevelPanelBtnStop {
+  border-color: #7a2a2a;
+  color: #e57373;
+}
+
+.autoLevelPanelBtnStop:hover:not(:disabled) {
+  background: #2a1212;
+  border-color: #c94a4a;
+}

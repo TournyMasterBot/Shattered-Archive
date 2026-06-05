@@ -85,6 +85,7 @@ export function useGameCommand(options: UseGameCommandOptions): UseGameCommandRe
 
     if (action.flushQueue) {
       queue.flushPending();
+      RuntimeSingleton.Runtime?.cancelDoAfterTimers();
     }
 
     for (const line of action.lines) {

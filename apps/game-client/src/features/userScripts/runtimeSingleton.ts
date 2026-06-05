@@ -2,7 +2,9 @@
 
 import { AccessibilitySettings, getAccessibilitySettings } from '../accessibility/accessibility-settings-store';
 import { STORAGE_KEY_PREFIX_USERSCRIPTS, UserScriptRuntime } from './userScriptRuntime';
-import { ListenDomEvent, ListenEvent, ListenRedispatchMap } from '../event-emitter/event-dispatcher';
+import { pluginHost } from '../plugins/pluginHost';
+import { ListenDomEvent, ListenEvent, ListenRedispatchMap, DispatchEvent } from '../event-emitter/event-dispatcher';
+import { dslToAnsi } from '../chat/dsl-to-ansi';
 import { ShatteredArchiveChatLine } from '../../types/chat-types/chat-line';
 import { appendChatLine, appendChatRaw } from '../chat/chat-store';
 import { GameRemoteServerRaw } from '../../types/event-types/game-remote-server-raw';
@@ -77,6 +79,8 @@ export class RuntimeSingleton {
   // ✅ per-connection named variable store
   private namedVarsByConn: Map<string, Map<string, string>> = new Map();
 
+  private lastAfkState: boolean | null = null;
+
   private constructor() {
     this.userScriptRuntime = new UserScriptRuntime({
       aliasSplitChar: this.settings.commandSplitChar,
@@ -85,6 +89,9 @@ export class RuntimeSingleton {
       getNamedVar: (name: string) => this.getNamedVar(name),
       setNamedVar: (name: string, value: string) => this.setNamedVar(name, value),
       deleteNamedVar: (name: string) => this.deleteNamedVar(name),
+
+      // give enabled plugins a chance to intercept unmatched commands
+      aliasFallback: (input: string) => pluginHost.tryExecuteAlias(input),
     });
 
     this.hydrateRuntime('default');
@@ -151,7 +158,7 @@ export class RuntimeSingleton {
   }
 
   private attachWindowEvents(): void {
-    console.log('Attaching runtime singleton window events');
+    // Debug: console.log('Attaching runtime singleton window events');
 
     // RAW -> shatteredarchive:raw-data (mapped)
     this.disposers.push(
@@ -239,12 +246,40 @@ export class RuntimeSingleton {
       ),
     );
 
+    // AFK guard: disable timers while is_afk is true so the game can time the player out naturally
+    this.disposers.push(
+      ListenEvent<Record<string, unknown>>(
+        'game:char-data',
+        (payload) => {
+          const isAfk = payload?.is_afk === true;
+          if (isAfk === this.lastAfkState) return;
+
+          this.lastAfkState = isAfk;
+          this.userScriptRuntime.setAfkMode(isAfk);
+
+          const msg = isAfk
+            ? '{Y[Timers] AFK detected — timers suspended{x\n'
+            : '{G[Timers] AFK cleared — timers resumed{x\n';
+
+          try {
+            DispatchEvent('shatteredarchive:write-terminal', {
+              rawText: dslToAnsi(msg),
+              fromUserScript: true,
+            });
+          } catch {
+            // ignore
+          }
+        },
+        { key: 'runtimeSingleton::afk::char-data' },
+      ),
+    );
+
     // Chat lines -> chat store (global, always-on)
     this.disposers.push(
       ListenEvent<ShatteredArchiveChatLine>(
         'shatteredarchive:chat-line',
         (payload) => {
-          console.log('Raw chat event', payload);
+          // DEBUG: console.log('Raw chat event', payload);
           const rawText = String(payload?.rawText ?? payload?.text ?? '');
           if (!rawText) return;
 

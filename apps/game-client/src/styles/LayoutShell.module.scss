@@ -401,6 +401,56 @@
 }
 
 /* -------------------------------------------------
+   RIGHT PANE: AFFECTS / GOURDS TABS
+-------------------------------------------------- */
+
+.affectsTabBar {
+  display: flex;
+  flex-shrink: 0;
+  border-bottom: 1px solid #2a2a2a;
+  margin: 0 -8px 4px;
+  padding: 0 8px;
+}
+
+.affectsTab {
+  flex: 1;
+  padding: 4px 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #888;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  text-align: center;
+  transition:
+    color 0.12s,
+    border-color 0.12s;
+
+  &:hover {
+    color: #c0c0c0;
+  }
+}
+
+.affectsTabActive {
+  color: #7ab8f5;
+  border-bottom-color: #4a8fd4;
+}
+
+.affectsTabBadge {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.4;
+  background: #1e3555;
+  color: #7ab8f5;
+  border-radius: 8px;
+  vertical-align: middle;
+}
+
+/* -------------------------------------------------
    RIGHT PANE: AFFECTS
 -------------------------------------------------- */
 .affectsBlock {
@@ -481,6 +531,54 @@
 
 .affectsScroll::-webkit-scrollbar-thumb:hover {
   background-color: #777;
+}
+
+/* -------------------------------------------------
+   RIGHT PANE: GOURDS LIST
+-------------------------------------------------- */
+
+.gourdItem {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 2px;
+  border-bottom: 1px dashed #333;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.gourdNumber {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #4a8fd4;
+  width: 22px;
+  text-align: right;
+}
+
+.gourdInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.gourdName {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #e0e0e0;
+  font-family: 'Consolas', 'Courier New', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gourdSpells {
+  font-size: 0.65rem;
+  color: #a0c8e8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* -------------------------------------------------

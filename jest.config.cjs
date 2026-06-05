@@ -73,6 +73,11 @@ module.exports = {
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 
       moduleNameMapper: {
+        '^@shatteredarchive/types-client$': '<rootDir>/types/types-client/src/index.ts',
+        '^@shatteredarchive/types-global$': '<rootDir>/types/types-global/src/index.ts',
+        '^@shatteredarchive/utils-client/(.+)$': '<rootDir>/utils/utils-client/src/$1.ts',
+        '^@shatteredarchive/utils-client$': '<rootDir>/utils/utils-client/src/index.ts',
+        '^@shatteredarchive/utils-global$': '<rootDir>/utils/utils-global/src/index.ts',
         '^(\\.{1,2}/.*)\\.js$': '$1',
       },
 

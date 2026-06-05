@@ -42,6 +42,29 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
   const unbindRef = React.useRef<null | (() => void)>(null);
   const captureTimerRef = React.useRef<number | null>(null);
 
+  const [pos, setPos] = React.useState({ x: 0, y: 0 });
+  const modalRef = React.useRef<HTMLDivElement>(null);
+  const dragOffsetRef = React.useRef<{ x: number; y: number } | null>(null);
+
+  const onHeaderMouseDown = React.useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+    const rect = modalRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    e.preventDefault();
+    const onMove = (ev: MouseEvent) => {
+      if (!dragOffsetRef.current) return;
+      setPos({ x: ev.clientX - dragOffsetRef.current.x, y: ev.clientY - dragOffsetRef.current.y });
+    };
+    const onUp = () => {
+      dragOffsetRef.current = null;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, []);
+
   const stopCapture = React.useCallback(() => {
     if (captureTimerRef.current != null) {
       window.clearTimeout(captureTimerRef.current);
@@ -106,6 +129,11 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
       setSubmitOk(false);
       return;
     }
+
+    setPos({
+      x: Math.max(0, (window.innerWidth - 760) / 2),
+      y: Math.max(0, (window.innerHeight - 600) / 2),
+    });
 
     // prime from latest snapshot
     setIdentity(getIdentitySnapshot());
@@ -177,8 +205,8 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
         description,
       };
 
-      //const res = await fetch('http://localhost:5000/contribute/identify', {
-      const res = await fetch('https://web-server.shatteredarchive.dev/contribute/identify', {
+      const res = await fetch('http://localhost:5000/contribute/identify', {
+        //const res = await fetch('https://web-server.shatteredarchive.dev/contribute/identify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -213,113 +241,117 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
     lines.length > 0;
 
   return (
-    <div className={styles.backdrop} role="dialog" aria-modal="true" onMouseDown={onClose}>
-      <div className={styles.modal} onMouseDown={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <div className={styles.title}>Contribute · Identify Object</div>
-          <button className={styles.closeBtn} onClick={onClose} type="button">
-            ✕
-          </button>
+    <div
+      ref={modalRef}
+      className={styles.modal}
+      role="dialog"
+      aria-modal="true"
+      style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: 9999 }}
+    >
+      <div className={styles.header} onMouseDown={onHeaderMouseDown}>
+        <div className={styles.title}>Contribute · Identify Object</div>
+        <button className={styles.closeBtn} onClick={onClose} type="button">
+          ✕
+        </button>
+      </div>
+
+      <div className={styles.body}>
+        <div className={styles.topSection}>
+          <div className={styles.formRow}>
+            <label className={styles.label} htmlFor="contrib-identify-short">
+              Short
+            </label>
+            <input
+              id="contrib-identify-short"
+              className={styles.input}
+              value={shortText}
+              onChange={(e) => setShortText(e.target.value)}
+              placeholder="Short label / name…"
+            />
+          </div>
+
+          <div className={styles.formRow}>
+            <label className={styles.label} htmlFor="contrib-identify-long">
+              Long
+            </label>
+            <input
+              id="contrib-identify-long"
+              className={styles.input}
+              value={longText}
+              onChange={(e) => setLongText(e.target.value)}
+              placeholder="Long description…"
+            />
+          </div>
+
+          <div className={styles.actionsRow}>
+            <button
+              className={styles.primaryBtn}
+              type="button"
+              onClick={startIdentifyCapture}
+              disabled={isCapturing || isSubmitting || String(shortText ?? '').trim().length === 0}
+              title={String(shortText ?? '').trim().length === 0 ? 'Enter a Short value first.' : undefined}
+            >
+              Identify
+            </button>
+
+            <div className={styles.hint}>
+              <div>
+                Connection: <span className={styles.mono}>{connectionId}</span>
+              </div>
+              <div>
+                Identity: <span className={styles.mono}>{identityStatus}</span>
+              </div>
+              <div>
+                {isCapturing ? (
+                  <span>
+                    Capturing <span className={styles.mono}>shatteredarchive:raw-data</span> for 1 second…
+                  </span>
+                ) : (
+                  <span>Click Identify to capture 1 second of raw output and send the id command.</span>
+                )}
+              </div>
+            </div>
+
+            {isCapturing ? (
+              <button className={styles.secondaryBtn} type="button" onClick={stopCapture} disabled={isSubmitting}>
+                Stop
+              </button>
+            ) : null}
+          </div>
+
+          {submitError ? <div className={styles.errorBox}>{submitError}</div> : null}
+          {submitOk ? <div className={styles.okBox}>Submitted.</div> : null}
         </div>
 
-        <div className={styles.body}>
-          <div className={styles.topSection}>
-            <div className={styles.formRow}>
-              <label className={styles.label} htmlFor="contrib-identify-short">
-                Short
-              </label>
-              <input
-                id="contrib-identify-short"
-                className={styles.input}
-                value={shortText}
-                onChange={(e) => setShortText(e.target.value)}
-                placeholder="Short label / name…"
-              />
-            </div>
+        <div className={styles.splitter} />
 
-            <div className={styles.formRow}>
-              <label className={styles.label} htmlFor="contrib-identify-long">
-                Long
-              </label>
-              <input
-                id="contrib-identify-long"
-                className={styles.input}
-                value={longText}
-                onChange={(e) => setLongText(e.target.value)}
-                placeholder="Long description…"
-              />
-            </div>
-
-            <div className={styles.actionsRow}>
-              <button
-                className={styles.primaryBtn}
-                type="button"
-                onClick={startIdentifyCapture}
-                disabled={isCapturing || isSubmitting || String(shortText ?? '').trim().length === 0}
-                title={String(shortText ?? '').trim().length === 0 ? 'Enter a Short value first.' : undefined}
-              >
-                Identify
-              </button>
-
-              <div className={styles.hint}>
-                <div>
-                  Connection: <span className={styles.mono}>{connectionId}</span>
+        <div className={styles.detailSection}>
+          {lines.length === 0 ? (
+            <div className={styles.empty}>No captured lines yet.</div>
+          ) : (
+            <div className={styles.lineList}>
+              {lines.map((line, idx) => (
+                <div key={idx} className={styles.lineRow}>
+                  <button
+                    className={styles.deleteBtn}
+                    type="button"
+                    onClick={() => deleteLine(idx)}
+                    aria-label="Delete line"
+                    disabled={isSubmitting}
+                  >
+                    ✕
+                  </button>
+                  <pre className={styles.lineText}>{line}</pre>
                 </div>
-                <div>
-                  Identity: <span className={styles.mono}>{identityStatus}</span>
-                </div>
-                <div>
-                  {isCapturing ? (
-                    <span>
-                      Capturing <span className={styles.mono}>shatteredarchive:raw-data</span> for 1 second…
-                    </span>
-                  ) : (
-                    <span>Click Identify to capture 1 second of raw output and send the id command.</span>
-                  )}
-                </div>
-              </div>
-
-              {isCapturing ? (
-                <button className={styles.secondaryBtn} type="button" onClick={stopCapture} disabled={isSubmitting}>
-                  Stop
-                </button>
-              ) : null}
+              ))}
             </div>
+          )}
+        </div>
 
-            {submitError ? <div className={styles.errorBox}>{submitError}</div> : null}
-            {submitOk ? <div className={styles.okBox}>Submitted.</div> : null}
-          </div>
-
-          <div className={styles.splitter} />
-
-          <div className={styles.detailSection}>
-            {lines.length === 0 ? (
-              <div className={styles.empty}>No captured lines yet.</div>
-            ) : (
-              <div className={styles.lineList}>
-                {lines.map((line, idx) => (
-                  <div key={idx} className={styles.lineRow}>
-                    <button
-                      className={styles.deleteBtn}
-                      type="button"
-                      onClick={() => deleteLine(idx)}
-                      aria-label="Delete line"
-                      disabled={isSubmitting}
-                    >
-                      ✕
-                    </button>
-                    <pre className={styles.lineText}>{line}</pre>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className={styles.footer}>
-            <button className={styles.submitBtn} type="button" onClick={onSubmit} disabled={!canSubmit}>
-              {isSubmitting ? 'Submitting…' : 'Submit'}
-            </button>
-          </div>
+        <div className={styles.footer}>
+          <button className={styles.submitBtn} type="button" onClick={onSubmit} disabled={!canSubmit}>
+            {isSubmitting ? 'Submitting…' : 'Submit'}
+          </button>
         </div>
       </div>
     </div>

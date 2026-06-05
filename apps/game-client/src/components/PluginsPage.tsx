@@ -9,7 +9,7 @@ import { findCorePlugin } from '../features/plugins/registry';
 import { pluginHost } from '../features/plugins/pluginHost';
 
 export const PluginsPage: React.FC<{ connectionId: string }> = ({ connectionId }) => {
-  const { plugins, enablePlugin, disablePlugin } = usePlugins(connectionId);
+  const { plugins, enablePlugin, disablePlugin, updatePluginConfig } = usePlugins(connectionId);
 
   const [configOpen, setConfigOpen] = useState(false);
   const [configPluginId, setConfigPluginId] = useState<PluginId | null>(null);
@@ -47,7 +47,10 @@ export const PluginsPage: React.FC<{ connectionId: string }> = ({ connectionId }
     return (
       <div key={record.pluginId} className={styles.row}>
         <div className={styles.rowMain}>
-          <div className={styles.name}>{mod?.manifest?.name ?? record.pluginId}</div>
+          <div className={styles.name}>
+            {mod?.manifest?.name ?? record.pluginId}
+            {mod?.manifest?.tags?.includes('wip') && <span className={styles.wipBadge}>⚙ WIP</span>}
+          </div>
           <div className={styles.desc}>{mod?.manifest?.description ?? ''}</div>
         </div>
 
@@ -85,6 +88,12 @@ export const PluginsPage: React.FC<{ connectionId: string }> = ({ connectionId }
           onClose={closeConfig}
           connectionId={connectionId}
           pluginId={configPluginId}
+          initialUserConfig={plugins.find((p) => p.id === configPluginId)?.userConfig ?? {}}
+          isEnabled={plugins.find((p) => p.id === configPluginId)?.enabled}
+          onSave={(id, config) => {
+            updatePluginConfig(id, config);
+            pluginHost.updateEnabledPluginConfig(id, config);
+          }}
         />
       ) : null}
     </div>

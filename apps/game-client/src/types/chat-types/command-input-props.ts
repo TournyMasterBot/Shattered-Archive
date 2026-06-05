@@ -1,5 +1,5 @@
 // apps\game-client\src\types\chat-types\command-input-props.ts
-import { AutoLevelRunState } from '../../features/autoleveling/autoleveling-types';
+import { AutoLevelMode, AutoLevelRunState } from '../../features/autoleveling/autoleveling-types';
 
 export interface CommandInputProps {
   sendRaw: (data: string) => void;
@@ -8,15 +8,12 @@ export interface CommandInputProps {
   /** Opens the configuration modal (optional) */
   onOpenAutoLeveling?: () => void;
 
-  /** Whether autoleveling feature is enabled/configured */
-  autoLevelingActive?: boolean;
+  /** Current mode — shows ⚔️ icon when not 'disabled' */
+  autoLevelMode?: AutoLevelMode;
 
-  /** Current run state (for Start/Pause/Resume labeling) */
+  /** Current run state (for button state) */
   autoLevelRunState?: AutoLevelRunState;
 
-  /** Optional direct callbacks; if omitted we dispatch events. */
-  onAutoLevelStart?: () => void;
-  onAutoLevelPause?: () => void;
-  onAutoLevelResume?: () => void;
-  onAutoLevelStop?: () => void;
+  /** Sightsee: re-fire identify commands without advancing the path */
+  onSightseeRescan?: () => void;
 }

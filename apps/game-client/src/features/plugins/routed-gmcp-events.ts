@@ -19,6 +19,7 @@ export const ROUTED_WINDOW_EVENTS: string[] = [
   'event:gear:remove',
   'event:flee:success',
   'event:flee:failed',
+  'shatteredarchive:movement-succeeded',
   'event:damage',
   'event:creature-death',
   'event:level-up',

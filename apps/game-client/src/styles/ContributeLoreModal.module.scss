@@ -29,6 +29,12 @@
   justify-content: space-between;
   padding: 12px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: grab;
+  user-select: none;
+
+  &:active {
+    cursor: grabbing;
+  }
 }
 
 .title {
@@ -282,6 +288,13 @@
 .detailGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Vertically stacked panels */
+.detailStack {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 

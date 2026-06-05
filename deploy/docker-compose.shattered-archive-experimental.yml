@@ -1,3 +1,6 @@
+# Force cache bypass
+# docker-compose -f deploy/docker-compose.shattered-archive-experimental.yml build --no-cache game-client
+
 # docker ps --format "table {{.Names}}\t{{.Status}}"
 # docker exec -it shatteredarchive-nginx sh -lc 'command -v wget || command -v curl || echo "no wget/curl"'
 
@@ -8,6 +11,9 @@ name: shatteredarchive
 networks:
   shatteredarchive:
     driver: bridge
+  sa-shared:
+    driver: bridge
+    name: sa-shared
 
 services:
   ############################################################
@@ -36,6 +42,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "5900:5900"
     
     environment:
       NGINX_TLS_INCLUDE_FILE: "tls-dev.conf"
@@ -60,6 +67,7 @@ services:
           - web-client.shatteredarchive.dev
           - game-server.shatteredarchive.dev
           - web-server.shatteredarchive.dev
+      sa-shared: {}
 
     healthcheck:
       interval: 10s

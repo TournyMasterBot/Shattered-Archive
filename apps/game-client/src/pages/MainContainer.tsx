@@ -35,6 +35,7 @@ import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 import FocusBarVitals from '../components/FocusBarVitals';
 import ContributeIdentifyModal from '../components/ContributeIdentifyModal';
 import ContributeCreatureLoreModal from '../components/ContributeCreatureLoreModal';
+import ScriptingHelpModal from '../components/ScriptingHelpModal';
 
 export const MainContainer: React.FC = () => {
   useVisualViewportHeight();
@@ -79,6 +80,9 @@ export const MainContainer: React.FC = () => {
   const handleOpenIdentifyObject = () => setIsIdentifyModalOpen(true);
   const handleOpenCreatureLore = () => setIsLoreModalOpen(true);
 
+  const [isScriptingHelpOpen, setIsScriptingHelpOpen] = React.useState(false);
+  const handleOpenScriptingHelp = () => setIsScriptingHelpOpen(true);
+
   const connectionId = React.useMemo(() => {
     const host = gameConn.currentHost;
     const port = gameConn.currentPort;
@@ -103,7 +107,7 @@ export const MainContainer: React.FC = () => {
   useEquipmentCapture(connectionId);
   useEquipmentDeltas(connectionId);
 
-  const auto = useAutoLeveling(connectionId);
+  const auto = useAutoLeveling(connectionId, gameConn.isConnected);
 
   React.useEffect(() => {
     pluginHost.setConnection(connectionId);
@@ -137,6 +141,7 @@ export const MainContainer: React.FC = () => {
         onOpenAutoLeveling={handleOpenAutoLeveling}
         onOpenIdentifyObject={handleOpenIdentifyObject}
         onOpenCreatureLore={handleOpenCreatureLore}
+        onOpenScriptingHelp={handleOpenScriptingHelp}
       />
 
       <FocusBarVitals />
@@ -148,8 +153,9 @@ export const MainContainer: React.FC = () => {
         BottomPaneComponent={BottomPane}
         isConnected={gameConn.isConnected}
         sendRaw={gameConn.sendRaw}
-        autoLevelingActive={auto.config.enabled}
+        autoLevelMode={auto.config.mode}
         autoLevelRunState={auto.runState}
+        onSightseeRescan={auto.rescanRoom}
       />
 
       <UserStyleOverrideModal
@@ -207,6 +213,18 @@ export const MainContainer: React.FC = () => {
         onClose={() => setIsAutoLevelingModalOpen(false)}
         connectionId={connectionId}
         isConnected={gameConn.isConnected}
+        config={auto.config}
+        setConfig={auto.setConfig}
+        runState={auto.runState}
+        socketReady={auto.socketReady}
+        start={auto.start}
+        stop={auto.stop}
+        pause={auto.pause}
+        resume={auto.resume}
+        resetToDefaults={auto.resetToDefaults}
+        moveNext={auto.moveNext}
+        movePrev={auto.movePrev}
+        rescanRoom={auto.rescanRoom}
       />
 
       {/* ✅ CHANGED: pass connectionId to both contribute modals */}
@@ -220,6 +238,8 @@ export const MainContainer: React.FC = () => {
         onClose={() => setIsLoreModalOpen(false)}
         connectionId={connectionId}
       />
+
+      <ScriptingHelpModal isOpen={isScriptingHelpOpen} onClose={() => setIsScriptingHelpOpen(false)} />
     </div>
   );
 };

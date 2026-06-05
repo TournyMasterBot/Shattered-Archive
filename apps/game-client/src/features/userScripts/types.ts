@@ -152,4 +152,21 @@ export interface ScriptSandboxApi {
   getNamedVar?: (name: string) => string | undefined;
   setNamedVar?: (name: string, value: string) => void;
   deleteNamedVar?: (name: string) => void;
+
+  /**
+   * Schedule a command to run after a delay.
+   *
+   * @param delayMs   Milliseconds to wait before sending.
+   * @param type      'world' sends the command directly to the server;
+   *                  'alias' runs it through alias processing first.
+   * @param command   The command string to send.
+   *
+   * @example
+   * // Send "jump" to the server after 5 seconds
+   * doAfter(5000, 'world', 'jump');
+   *
+   * // Run the alias "myheal" after 2 seconds
+   * doAfter(2000, 'alias', 'myheal');
+   */
+  doAfter?: (delayMs: number, type: 'world' | 'alias', command: string) => void;
 }

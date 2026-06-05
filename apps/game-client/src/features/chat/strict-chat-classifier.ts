@@ -21,7 +21,7 @@ export function classifyStrictChatSubtype(rawLine: string): ChatSubtype | undefi
   const s = normalizeLine(rawLine);
 
   // TEMP DEBUG (remove after you verify it matches)
-  console.log('[chat strict] normalized=', JSON.stringify(s));
+  // Debug: console.log('[chat strict] normalized=', JSON.stringify(s));
 
   // IMPORTANT: Don’t use the legacy outer gate as a hard requirement.
   // It’s too easy to miss valid lines with color codes/newlines/formatting variations.
