@@ -7,9 +7,7 @@
  * Stored in localStorage. Export/import uses plain JSON.
  */
 
-export type BuildStep =
-  | { kind: 'move'; dir: string }
-  | { kind: 'mob'; lookName: string; engageName: string };
+export type BuildStep = { kind: 'move'; dir: string } | { kind: 'mob'; lookName: string; engageName: string };
 
 export type UserBuiltPath = {
   id: string;
@@ -29,9 +27,7 @@ const EXPORT_VERSION = 1;
 /* ---------- serialization ---------- */
 
 export function serializeBuildPath(steps: BuildStep[]): string {
-  return steps
-    .map((s) => (s.kind === 'move' ? s.dir : `${s.lookName}|${s.engageName}`))
-    .join(';');
+  return steps.map((s) => (s.kind === 'move' ? s.dir : `${s.lookName}|${s.engageName}`)).join(';');
 }
 
 /* ---------- storage ---------- */
@@ -73,11 +69,7 @@ export function deleteUserPath(paths: UserBuiltPath[], id: string): UserBuiltPat
 /* ---------- export ---------- */
 
 export function exportPathsToJson(paths: UserBuiltPath[]): string {
-  return JSON.stringify(
-    { version: EXPORT_VERSION, exportedAt: new Date().toISOString(), paths },
-    null,
-    2,
-  );
+  return JSON.stringify({ version: EXPORT_VERSION, exportedAt: new Date().toISOString(), paths }, null, 2);
 }
 
 export function triggerJsonDownload(json: string, filename: string): void {
@@ -107,11 +99,7 @@ export function parseImportJson(json: string): ImportResult {
   try {
     const obj = JSON.parse(json);
     // Accept both a bare array and the { version, paths } envelope
-    const raw: unknown[] = Array.isArray(obj)
-      ? obj
-      : Array.isArray((obj as any)?.paths)
-        ? (obj as any).paths
-        : [];
+    const raw: unknown[] = Array.isArray(obj) ? obj : Array.isArray((obj as any)?.paths) ? (obj as any).paths : [];
 
     const imported: UserBuiltPath[] = [];
     for (const item of raw) {

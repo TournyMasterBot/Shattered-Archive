@@ -59,17 +59,25 @@ export const AffectsBlock: React.FC = () => {
 
   // Listen for gourd plugin events
   useEffect(() => {
-    const offActive = ListenEvent<{ active: boolean }>('plugin:gourd:active', ({ active }) => {
-      setGourdActive(active);
-      if (!active) {
-        setGourds([]);
-        setActiveTab('affects');
-      }
-    }, { key: 'AffectsBlock:plugin:gourd:active' });
+    const offActive = ListenEvent<{ active: boolean }>(
+      'plugin:gourd:active',
+      ({ active }) => {
+        setGourdActive(active);
+        if (!active) {
+          setGourds([]);
+          setActiveTab('affects');
+        }
+      },
+      { key: 'AffectsBlock:plugin:gourd:active' },
+    );
 
-    const offList = ListenEvent<{ list: GourdEntry[] }>('plugin:gourd:list-updated', ({ list }) => {
-      setGourds(Array.isArray(list) ? list : []);
-    }, { key: 'AffectsBlock:plugin:gourd:list-updated' });
+    const offList = ListenEvent<{ list: GourdEntry[] }>(
+      'plugin:gourd:list-updated',
+      ({ list }) => {
+        setGourds(Array.isArray(list) ? list : []);
+      },
+      { key: 'AffectsBlock:plugin:gourd:list-updated' },
+    );
 
     return () => {
       offActive();
@@ -121,9 +129,7 @@ export const AffectsBlock: React.FC = () => {
             onClick={() => setActiveTab('gourds')}
           >
             Gourds
-            {gourds.length > 0 && (
-              <span className={styles.affectsTabBadge}>{gourds.length}</span>
-            )}
+            {gourds.length > 0 && <span className={styles.affectsTabBadge}>{gourds.length}</span>}
           </button>
         </div>
       )}
@@ -237,7 +243,9 @@ export const AffectsBlock: React.FC = () => {
         <>
           <div className={styles.affectsHeader}>
             <div className={styles.affectsTitle}>Gourd List</div>
-            <div className={styles.affectsTime}>{gourds.length} gourd{gourds.length !== 1 ? 's' : ''}</div>
+            <div className={styles.affectsTime}>
+              {gourds.length} gourd{gourds.length !== 1 ? 's' : ''}
+            </div>
           </div>
 
           <div className={styles.affectsScroll}>
@@ -250,7 +258,9 @@ export const AffectsBlock: React.FC = () => {
                 <div key={`${g.name}|${g.nameIndex}`} className={styles.gourdItem}>
                   <div className={styles.gourdNumber}>#{i + 1}</div>
                   <div className={styles.gourdInfo}>
-                    <div className={styles.gourdName}>{g.nameIndex}.{g.name}</div>
+                    <div className={styles.gourdName}>
+                      {g.nameIndex}.{g.name}
+                    </div>
                     <div className={styles.gourdSpells}>{g.spells.join(', ')}</div>
                   </div>
                 </div>

@@ -30,10 +30,7 @@ export type PluginOmitRuleInput =
   | { matchText: string; eventName?: string; caseInsensitive?: boolean }
   | { pattern: string; flags?: string; eventName?: string };
 
-export function setPluginOmitRules(
-  pluginId: string,
-  rules: PluginOmitRuleInput[],
-): void {
+export function setPluginOmitRules(pluginId: string, rules: PluginOmitRuleInput[]): void {
   if (rules.length === 0) {
     pluginCompiled.delete(pluginId);
     return;

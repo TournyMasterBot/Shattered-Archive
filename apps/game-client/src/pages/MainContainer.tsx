@@ -239,10 +239,7 @@ export const MainContainer: React.FC = () => {
         connectionId={connectionId}
       />
 
-      <ScriptingHelpModal
-        isOpen={isScriptingHelpOpen}
-        onClose={() => setIsScriptingHelpOpen(false)}
-      />
+      <ScriptingHelpModal isOpen={isScriptingHelpOpen} onClose={() => setIsScriptingHelpOpen(false)} />
     </div>
   );
 };

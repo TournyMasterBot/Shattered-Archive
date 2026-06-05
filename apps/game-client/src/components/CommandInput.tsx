@@ -199,7 +199,9 @@ export const CommandInput: React.FC<CommandInputProps> = ({
                 <div className={styles.autoLevelPanelRow}>
                   <button
                     className={styles.autoLevelPanelBtn}
-                    onClick={() => { DispatchEvent('shatteredarchive:autoleveling-move-prev' as any, {}); }}
+                    onClick={() => {
+                      DispatchEvent('shatteredarchive:autoleveling-move-prev' as any, {});
+                    }}
                     disabled={!isSightseePrevAvailable}
                     title={isSightseePrevAvailable ? 'Go back one room' : 'Nothing to go back to'}
                   >
@@ -207,7 +209,9 @@ export const CommandInput: React.FC<CommandInputProps> = ({
                   </button>
                   <button
                     className={styles.autoLevelPanelBtn}
-                    onClick={() => { DispatchEvent('shatteredarchive:autoleveling-move-next' as any, {}); }}
+                    onClick={() => {
+                      DispatchEvent('shatteredarchive:autoleveling-move-next' as any, {});
+                    }}
                     disabled={!isSightseeWaiting}
                     title="Advance to next room"
                   >
@@ -228,7 +232,10 @@ export const CommandInput: React.FC<CommandInputProps> = ({
                 <div className={styles.autoLevelPanelRow}>
                   <button
                     className={styles.autoLevelPanelBtn}
-                    onClick={() => { setPanelOpen(false); onOpenAutoLeveling(); }}
+                    onClick={() => {
+                      setPanelOpen(false);
+                      onOpenAutoLeveling();
+                    }}
                   >
                     ⚙ Settings
                   </button>
@@ -237,21 +244,19 @@ export const CommandInput: React.FC<CommandInputProps> = ({
             </div>
           ) : null}
         </div>
-      ) : (
-        onOpenAutoLeveling ? (
-          <button
-            type="button"
-            className={styles.autoConfigButton}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => onOpenAutoLeveling?.()}
-            disabled={!isConnected}
-            aria-label="Configure auto leveling"
-            title="Configure auto leveling"
-          >
-            ⚙️
-          </button>
-        ) : null
-      )}
+      ) : onOpenAutoLeveling ? (
+        <button
+          type="button"
+          className={styles.autoConfigButton}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => onOpenAutoLeveling?.()}
+          disabled={!isConnected}
+          aria-label="Configure auto leveling"
+          title="Configure auto leveling"
+        >
+          ⚙️
+        </button>
+      ) : null}
 
       {/* Show gear separately when mode active (it's inside the panel already) */}
 

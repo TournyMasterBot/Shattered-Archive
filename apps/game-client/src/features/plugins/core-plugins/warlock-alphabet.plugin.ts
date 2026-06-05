@@ -121,339 +121,339 @@ import type { IPluginModule, PluginRuntimeApi } from '@shatteredarchive/types-cl
 // Use `wa log` to record what actually happened, and `wa set` to adjust item assignments.
 
 interface SpellEntry {
-  uid: string;       // primary recipe (letter multiset)
-  alt?: string;      // alternate valid recipe
+  uid: string; // primary recipe (letter multiset)
+  alt?: string; // alternate valid recipe
   brewable: boolean; // true = confirmed brewable
 }
 
 const SPELL_DB: Record<string, SpellEntry> = {
-  'abandon hope':              { uid: 'AADP', brewable: false },
-  'absorption':                { uid: 'ABIOO', brewable: false },
-  'acid blast':                { uid: 'BCDT', brewable: true },
-  'alarm':                     { uid: 'MRALA', alt: 'ALARM', brewable: true },
-  'alter armor':               { uid: 'ELRRRT', brewable: false },
-  'alter beast':               { uid: 'ABSTT', brewable: false },
-  'alter elements':            { uid: 'LLSTT', brewable: true },
-  'alter self':                { uid: 'FLLT', brewable: false },
-  'amnesia':                   { uid: 'AISENMA', brewable: false },
-  'ancestral honor':           { uid: 'AAOOT', brewable: false },
-  'ancient vow':               { uid: 'CVW', brewable: false },
-  'animal spirit':             { uid: 'AAIIIP', brewable: false },
-  'animate dead':              { uid: 'AAAD', alt: 'AAADD', brewable: true },
-  'animate object':            { uid: 'AAJ', brewable: false },
-  'antimagic shell':           { uid: 'AACGH', brewable: false },
-  'aura of pain':              { uid: 'AAAO', brewable: false },
-  'bark skin':                 { uid: 'KK', brewable: true },
-  'beastform':                 { uid: 'ABFMR', brewable: true },
-  'bind golem':                { uid: 'BGM', brewable: false },
-  'black curse':               { uid: 'BKU', brewable: true },
-  'blackstaff':                { uid: 'BFF', brewable: false },
-  'blend':                     { uid: 'DNELB', brewable: true },
-  'bless':                     { uid: 'SSELB', brewable: true },
-  'blessing of peace':         { uid: 'BFG', brewable: false },
-  'blindness':                 { uid: 'SSENDNILB', brewable: false },
-  'blizzard':                  { uid: 'BDZ', brewable: true },
-  'blizzra':                   { uid: 'ARZZILB', brewable: true },
-  'blur':                      { uid: 'RULB', brewable: false },
-  'bodrums boils':             { uid: 'BBD', brewable: false },
-  'bone blight':               { uid: 'BBH', brewable: false },
-  'brain fever':               { uid: 'ABV', brewable: false },
-  'breaking':                  { uid: 'BGK', brewable: false },
-  'brimstone':                 { uid: 'ENOTSMIRB', brewable: false },
-  'burning hands':             { uid: 'BHU', brewable: true },
-  'call lightning':            { uid: 'GLLL', brewable: true },
-  'call wild':                 { uid: 'CILW', brewable: true },
-  'calm':                      { uid: 'MLAC', brewable: false },
-  'cancellation':              { uid: 'EILLO', brewable: true },
-  'cause critical':            { uid: 'CCCS', brewable: true },
-  'cause decay':               { uid: 'CCSY', brewable: true },
-  'cause fatality':            { uid: 'AAAL', alt: 'AAAF', brewable: true },
-  'cause light':               { uid: 'CGHSU', brewable: true },
-  'cause serious':             { uid: 'ACOUU', brewable: true },
-  'chain lightning':           { uid: 'GGHH', alt: 'CHAINL', brewable: true },
-  'change sex':                { uid: 'GX', brewable: false },
-  'charm person':              { uid: 'CHMOP', brewable: false },
-  'chasm':                     { uid: 'MSAHC', brewable: false },
-  'chill touch':               { uid: 'CCHL', brewable: true },
-  'cliaths hammer':            { uid: 'CHHM', brewable: false },
-  'color spray':               { uid: 'CLRRY', brewable: false },
-  'compelled repentance':      { uid: 'ADPP', brewable: false },
-  'cone of cold':              { uid: 'CCFOO', alt: 'CFC', brewable: true },
-  'cone of fire':              { uid: 'CFFOO', alt: 'CNFF', brewable: true },
-  'cone of lightning':         { uid: 'CFH', brewable: true },
-  'continual light':           { uid: 'ACLLU', brewable: false },
-  'control metal':             { uid: 'CLMTT', brewable: true },
-  'control weather':           { uid: 'CLNW', brewable: false },
-  'corpse host':               { uid: 'CEHSS', brewable: false },
-  'corrosive skin':            { uid: 'CKV', brewable: false },
-  'courage':                   { uid: 'EGARUOC', brewable: false },
-  'create cauldron':           { uid: 'AACDN', brewable: true },
-  'create food':               { uid: 'ADFRT', brewable: false },
-  'create holy symbol':        { uid: 'BYY', alt: 'CYY', brewable: true },
-  'create ranger staff':       { uid: 'AAAG', brewable: false },
-  'create rose':               { uid: 'ESORETAERC', brewable: true },
-  'create runehammer':         { uid: 'CHMU', brewable: false },
-  'create runestaff':          { uid: 'AAFFU', brewable: false },
-  'create spring':             { uid: 'ACGPT', brewable: false },
-  'create tree':               { uid: 'CEEEETT', brewable: true },
-  'create water':              { uid: 'AACRW', brewable: true },
-  'cure blindness':            { uid: 'BCDU', brewable: true },
-  'cure bugbear bite':         { uid: 'ABB', brewable: true },
-  'cure critical':             { uid: 'CCCRR', brewable: true },
-  'cure deafness':             { uid: 'ADEEEF', brewable: false },
-  'cure disease':              { uid: 'ADEEEIS', brewable: true },
-  'cure fatigue':              { uid: 'FUU', brewable: true },
-  'cure light':                { uid: 'CGLR', brewable: false },
-  'cure poison':               { uid: 'CNPSU', brewable: false },
-  'cure serious':              { uid: 'ORRUU', brewable: true },
-  'curse':                     { uid: 'ESRUC', brewable: false },
-  'damned':                    { uid: 'DENMAD', brewable: false },
-  'dark bolt':                 { uid: 'BDK', brewable: false },
-  'dark empower':              { uid: 'DKP', brewable: false },
-  'dark energy':               { uid: 'GKY', brewable: false },
-  'dark essence':              { uid: 'CDEK', brewable: false },
-  'dark heal':                 { uid: 'AADEK', brewable: false },
-  'dark immunity':             { uid: 'KMY', brewable: false },
-  'darkness':                  { uid: 'SSENKRAD', brewable: false },
-  'death shroud':              { uid: 'DDHU', brewable: false },
-  'deflection':                { uid: 'DEFLT', brewable: false },
-  'demonfire':                 { uid: 'DEFM', brewable: true },
-  'destruction':               { uid: 'CDIRTU', brewable: false },
-  'detect evil':               { uid: 'CDLV', brewable: false },
-  'detect good':               { uid: 'CDDG', brewable: true },
-  'detect hidden':             { uid: 'DDD', brewable: true },
-  'detect invis':              { uid: 'CDSV', brewable: false },
-  'detect magic':              { uid: 'CCGM', brewable: true },
-  'detect poison':             { uid: 'NOSIOPTCETED', brewable: false },
-  'detect vampire':            { uid: 'APV', brewable: false },
-  'devotion':                  { uid: 'NOITOVED', brewable: false },
-  'disenchant':                { uid: 'TNAHCNESID', brewable: true },
-  'disjunction':               { uid: 'CDJ', brewable: true },
-  'dispel curse':              { uid: 'CDIPU', brewable: false },
-  'dispel evil':               { uid: 'ELLV', brewable: false },
-  'dispel fog':                { uid: 'DFP', brewable: false },
-  'dispel good':               { uid: 'DDP', brewable: true },
-  'dispel magic':              { uid: 'ADGP', brewable: true },
-  'dispel neutral':            { uid: 'ADIPU', alt: 'PRAISU', brewable: true },
-  'dispel protection':         { uid: 'CDIPP', alt: 'PPOOEE', brewable: true },
-  'divine intervention':       { uid: 'NNNV', brewable: false },
-  'divine protection':         { uid: 'NNPV', alt: 'TTV', brewable: true },
-  'divine staff':              { uid: 'DFV', brewable: false },
-  'dragon fear':               { uid: 'AADEF', brewable: false },
-  'drown':                     { uid: 'NWORD', brewable: false },
-  'earthquake':                { uid: 'HQ', alt: 'QK', brewable: true },
-  'eclipse being':             { uid: 'BCEII', brewable: false },
-  'embalm':                    { uid: 'MLABME', brewable: false },
-  'empath':                    { uid: 'HTAPME', brewable: true },
-  'empower weapon':            { uid: 'PPW', brewable: false },
-  'enchant armor':             { uid: 'MNNRR', brewable: true },
-  'enchantgem':                { uid: 'CGMNN', brewable: false },
-  'enchanting touch':          { uid: 'CCGU', brewable: true },
-  'enchant weapon':            { uid: 'CHPW', brewable: true },
-  'endurance':                 { uid: 'ACDNNRU', brewable: false },
-  'enduring wrath':            { uid: 'DGTW', brewable: false },
-  'energy drain':              { uid: 'GIY', brewable: false },
-  'energy storm':              { uid: 'EGMY', brewable: false },
-  'engulf wind':               { uid: 'FGW', brewable: false },
-  'enhanced constitution':     { uid: 'ACCHS', brewable: false },
-  'enhanced recovery':         { uid: 'CHV', brewable: false },
-  'enhance seed':              { uid: 'CEEEES', brewable: false },
-  'enlarge':                   { uid: 'EGRALNE', alt: 'EERLG', brewable: true },
-  'entangle':                  { uid: 'EEGLNN', brewable: false },
-  'excommunicate':             { uid: 'AIX', brewable: false },
-  'faerie fire':               { uid: 'AEEFII', brewable: true },
-  'faerie flames':             { uid: 'EFFM', brewable: true },
-  'faerie fog':                { uid: 'FFGI', brewable: false },
-  'fake illness':              { uid: 'FKN', brewable: false },
-  'false image':               { uid: 'EFGM', brewable: true },
-  'farsight':                  { uid: 'FHIR', brewable: false },
-  'fasting':                   { uid: 'GNITSAF', brewable: false },
-  'fear':                      { uid: 'RAEF', brewable: true },
-  'feign death':               { uid: 'DEFH', brewable: true },
-  'fervor':                    { uid: 'FORRV', brewable: false },
-  'find familiar':             { uid: 'DFFM', brewable: true },
-  'fireball':                  { uid: 'BFLL', brewable: false },
-  'firebolt':                  { uid: 'BFILT', brewable: false },
-  'fire bomb':                 { uid: 'BBF', brewable: false },
-  'fireproof':                 { uid: 'FFP', brewable: true },
-  'firestorm':                 { uid: 'FMRR', brewable: false },
-  'flamestrike':               { uid: 'FKM', brewable: false },
-  'flame wall':                { uid: 'EFMW', brewable: false },
-  'flaming soul':              { uid: 'FGLL', brewable: false },
-  'floating disc':             { uid: 'ACFII', brewable: true },
-  'fly':                       { uid: 'YLF', brewable: true },
-  'focused aggression':        { uid: 'ADGG', brewable: false },
-  'fog':                       { uid: 'GOF', brewable: false },
-  'force field':               { uid: 'CDFFR', brewable: false },
-  'forget':                    { uid: 'TEGROF', brewable: true },
-  'fortitude':                 { uid: 'DFTT', brewable: false },
-  'frenzy':                    { uid: 'FRZ', brewable: false },
-  'frost shroud':              { uid: 'DFHU', brewable: true },
-  'furnace':                   { uid: 'ECANRUF', brewable: false },
-  'gate':                      { uid: 'ETAG', brewable: true },
-  'giant strength':            { uid: 'AGGTT', brewable: true },
-  'graft flesh':               { uid: 'FFH', brewable: false },
-  'gust':                      { uid: 'TSUG', brewable: false },
-  'harm':                      { uid: 'MRAH', brewable: false },
-  'haste':                     { uid: 'ETSAH', brewable: true },
-  'haste crater':              { uid: 'AACHTT', brewable: false },
-  'haunt':                     { uid: 'TNUAH', brewable: false },
-  'haze':                      { uid: 'EZAH', brewable: false },
-  'heal':                      { uid: 'LAEH', brewable: false },
-  'healing dream':             { uid: 'DGLR', brewable: false },
-  'heart blight':              { uid: 'BHH', brewable: true },
-  'heat metal':                { uid: 'HLMTT', alt: 'HAMATL', brewable: true },
-  'hex':                       { uid: 'XEH', brewable: true },
-  'holy flame':                { uid: 'AFMY', brewable: false },
-  'holy presence':             { uid: 'CHLOP', brewable: false },
-  'holy smite':                { uid: 'HIMY', brewable: false },
-  'holy steed':                { uid: 'DHTY', brewable: false },
-  'holy word':                 { uid: 'DHWY', brewable: false },
-  'host of gargoyles':         { uid: 'GGY', brewable: false },
-  'identify':                  { uid: 'DEFY', brewable: false },
-  'ignite':                    { uid: 'ETINGI', brewable: false },
-  'illumination':              { uid: 'AIIIU', brewable: false },
-  'imbue':                     { uid: 'EUBMI', alt: 'MBU', brewable: true },
-  'imbue mount':               { uid: 'BIMM', brewable: false },
-  'imposter':                  { uid: 'RETSOPMI', brewable: true },
-  'improved invisibility':     { uid: 'BDV', brewable: true },
-  'inferno':                   { uid: 'EFNNR', brewable: false },
-  'influence confidence':      { uid: 'CCCD', brewable: false },
-  'infravision':               { uid: 'AFNN', brewable: false },
-  'infuriate':                 { uid: 'AFIIRT', brewable: false },
-  'insightful gaze':           { uid: 'SZ', brewable: false },
-  'inspire':                   { uid: 'ERIPSNI', brewable: false },
-  'instant regeneration':      { uid: 'AAGIO', brewable: false },
-  'interlace spirit':          { uid: 'APSTT', brewable: true },
-  'intimidate':                { uid: 'IIMTT', brewable: false },
-  'invisibility':              { uid: 'YTILIBISIVNI', brewable: true },
-  'involuntary wizardry':      { uid: 'VZ', brewable: true },
-  'iron grip':                 { uid: 'GIIPR', brewable: false },
-  'jest':                      { uid: 'TSEJ', brewable: false },
-  'kayens shield':             { uid: 'HKY', brewable: false },
-  'know alignment':            { uid: 'EKTW', brewable: true },
-  'know languages':            { uid: 'GGW', brewable: true },
-  'know religion':             { uid: 'GKLR', brewable: true },
-  'lay on hands':              { uid: 'AADHY', brewable: false },
-  'leprosy':                   { uid: 'YSORPEL', brewable: true },
-  'light foot':                { uid: 'FGHTT', brewable: false },
-  'lightning bolt':            { uid: 'BGG', brewable: false },
-  'locate empower':            { uid: 'CMW', brewable: true },
-  'locate object':             { uid: 'AJL', brewable: true },
-  'locate remains':            { uid: 'CILMO', brewable: true },
-  'magewind':                  { uid: 'DGMW', brewable: false },
-  'magic missile':             { uid: 'CGMM', brewable: false },
-  'mass healing':              { uid: 'AAGSS', alt: 'MASSH', brewable: true },
-  'mass invis':                { uid: 'MSSV', alt: 'MASSV', brewable: true },
-  'mendwounds':                { uid: 'DDMO', brewable: false },
-  'mental drain':              { uid: 'AADLMT', brewable: false },
-  'metal storm':               { uid: 'LMMTT', brewable: false },
-  'meteo':                     { uid: 'OETEM', brewable: false },
-  'mind crater':               { uid: 'CDMRR', brewable: false },
-  'mirror image':              { uid: 'AGMRR', alt: 'RRR', brewable: true },
-  'monsoon':                   { uid: 'NOOSNOM', brewable: false },
-  'moon gaze':                 { uid: 'EMZ', brewable: false },
-  'moon pull':                 { uid: 'LLUPNOOM', brewable: false },
-  'moon shadow':               { uid: 'ADOOO', brewable: false },
-  'nature growth':             { uid: 'AGHOW', alt: 'NATURGWO', brewable: true },
-  'natures grip':              { uid: 'GPRU', brewable: false },
-  'nexus':                     { uid: 'SUXEN', brewable: false },
-  'night shield':              { uid: 'DHHL', brewable: false },
-  'night terror':              { uid: 'GHRRR', brewable: false },
-  'nondetection':              { uid: 'NOITCETEDNON', brewable: false },
-  'pass door':                 { uid: 'ADOOPR', brewable: true },
-  'plague':                    { uid: 'AGLPU', brewable: true },
-  'portal':                    { uid: 'LATROP', brewable: true },
-  'possess familiar':          { uid: 'FMP', brewable: true },
-  'poultice':                  { uid: 'ECITLUOP', alt: 'POULTIC', brewable: true },
-  'praise the prophecy':       { uid: 'HHY', brewable: false },
-  'prevent recovery':          { uid: 'CVV', alt: 'PRVNTRCV', brewable: true },
-  'protection cold':           { uid: 'CCDIP', brewable: false },
-  'protection evil':           { uid: 'CLNV', brewable: true },
-  'protection fire':           { uid: 'EEFIIP', brewable: true },
-  'protection good':           { uid: 'DGNP', alt: 'OOOO', brewable: true },
-  'protection neutral':        { uid: 'LTTT', brewable: true },
-  'proximity dispel':          { uid: 'LX', brewable: false },
-  'psionic blast':             { uid: 'ABII', brewable: false },
-  'rainbow pattern':           { uid: 'BPW', alt: 'RAINBWT', brewable: true },
-  'ray of truth':              { uid: 'FHUY', brewable: true },
-  'recant blasphemy':          { uid: 'AABY', brewable: false },
-  'recharge':                  { uid: 'CGHRR', brewable: true },
-  'recover':                   { uid: 'REVOCER', brewable: false },
-  'redirect':                  { uid: 'TCERIDER', brewable: false },
-  'reduce':                    { uid: 'ECUDER', brewable: false },
-  'refresh':                   { uid: 'EEFHRR', brewable: false },
-  'regenerate':                { uid: 'EEEEG', brewable: false },
-  'remove curse':              { uid: 'CMOV', brewable: false },
-  'remove empower':            { uid: 'MVW', brewable: false },
-  'restore armor':             { uid: 'RRRR', brewable: true },
-  'restore mind':              { uid: 'DEIORR', brewable: false },
-  'restore weapon':            { uid: 'EESTW', alt: 'RSTWAPO', brewable: true },
-  'righteous judgement':       { uid: 'GJ', brewable: false },
-  'root':                      { uid: 'TOOR', brewable: false },
-  'sacred bond':               { uid: 'BDD', brewable: false },
-  'sanctuary':                 { uid: 'CNUY', brewable: false },
-  'scorch':                    { uid: 'HCROCS', brewable: false },
-  'scorching winds':           { uid: 'CCW', brewable: false },
-  'scourge':                   { uid: 'EGRUOCS', brewable: true },
-  'self projection':           { uid: 'FJ', brewable: false },
-  'sequestor':                 { uid: 'QS', brewable: true },
-  'shadowbolt':                { uid: 'BLW', brewable: false },
-  'shadowcloak':               { uid: 'CKW', brewable: false },
-  'shadowform':                { uid: 'DFHM', alt: 'DWFS', brewable: true },
-  'shadowlord':                { uid: 'ADDL', brewable: false },
-  'shadow vision':             { uid: 'HIV', brewable: false },
-  'shadow vortex':             { uid: 'WX', brewable: false },
-  'shadow whisper':            { uid: 'DWW', brewable: false },
-  'shake resolve':             { uid: 'AKV', brewable: false },
-  'shield':                    { uid: 'DLEIHS', brewable: true },
-  'shield crater':             { uid: 'CDHIL', brewable: false },
-  'shocking grasp':            { uid: 'CGK', brewable: true },
-  'shrink head':               { uid: 'HHKR', brewable: true },
-  'shrink skull':              { uid: 'HKK', brewable: false },
-  'silence':                   { uid: 'ECNELIS', brewable: true },
-  'sleep':                     { uid: 'PEELS', brewable: false },
-  'slow':                      { uid: 'WOLS', brewable: true },
-  'snakebite':                 { uid: 'BEEK', brewable: true },
-  'solar flare':               { uid: 'FLRRS', brewable: false },
-  'solidify':                  { uid: 'DFLY', brewable: false },
-  'soul harvest':              { uid: 'AHUV', brewable: true },
-  'soulsight':                 { uid: 'GHSSU', alt: 'SOULI', brewable: true },
-  'spell eating':              { uid: 'GLPT', brewable: false },
-  'spirit of protection':      { uid: 'FPP', brewable: false },
-  'spirit of retribution':     { uid: 'BPU', brewable: false },
-  'spiritwalk':                { uid: 'KLP', brewable: true },
-  'spook':                     { uid: 'KOOP', brewable: true },
-  'splinter':                  { uid: 'RETNILPS', brewable: true },
-  'stalagmite':                { uid: 'GLMTT', brewable: false },
-  'stone skin':                { uid: 'KNNSS', brewable: false },
-  'summon elemental':          { uid: 'ELLMM', brewable: true },
-  'summon monster':            { uid: 'MMMSST', brewable: true },
-  'swarm':                     { uid: 'MRAWS', alt: 'SWARM', brewable: true },
-  'teleport':                  { uid: 'TROPELET', brewable: false },
-  'thunderclap':               { uid: 'CDHP', brewable: true },
-  'time stop':                 { uid: 'MOPTT', brewable: false },
-  'tornado':                   { uid: 'ODANROT', brewable: true },
-  'turn undead':               { uid: 'ADUU', brewable: true },
-  'umbra':                     { uid: 'ABMRU', brewable: false },
-  'vacancy':                   { uid: 'AACCV', brewable: false },
-  'ventriloquate':             { uid: 'IQ', brewable: true },
-  'view':                      { uid: 'WEIV', brewable: false },
-  'voodoo doll':               { uid: 'DDV', brewable: false },
-  'vortex of the sun':         { uid: 'FX', brewable: false },
-  'water breathing':           { uid: 'BGW', brewable: false },
-  'wave':                      { uid: 'EVAW', brewable: false },
-  'waves of weariness':        { uid: 'FVW', alt: 'WW', brewable: true },
-  'waypoint':                  { uid: 'IPWY', brewable: false },
-  'weaken':                    { uid: 'EEKNW', brewable: true },
-  'web':                       { uid: 'BEW', brewable: false },
-  'wind breath':               { uid: 'BDEW', brewable: false },
-  'wither':                    { uid: 'REHTIW', brewable: true },
-  'withering enchant':         { uid: 'ACGW', brewable: false },
-  'withstand death':           { uid: 'DDIW', alt: 'WITHDAT', brewable: true },
-  'wizard mark':               { uid: 'KZ', brewable: true },
-  'word of recall':            { uid: 'CFW', alt: 'WRDCALL', brewable: true },
-  'wrath of nature':           { uid: 'FTW', brewable: true },
+  'abandon hope': { uid: 'AADP', brewable: false },
+  absorption: { uid: 'ABIOO', brewable: false },
+  'acid blast': { uid: 'BCDT', brewable: true },
+  alarm: { uid: 'MRALA', alt: 'ALARM', brewable: true },
+  'alter armor': { uid: 'ELRRRT', brewable: false },
+  'alter beast': { uid: 'ABSTT', brewable: false },
+  'alter elements': { uid: 'LLSTT', brewable: true },
+  'alter self': { uid: 'FLLT', brewable: false },
+  amnesia: { uid: 'AISENMA', brewable: false },
+  'ancestral honor': { uid: 'AAOOT', brewable: false },
+  'ancient vow': { uid: 'CVW', brewable: false },
+  'animal spirit': { uid: 'AAIIIP', brewable: false },
+  'animate dead': { uid: 'AAAD', alt: 'AAADD', brewable: true },
+  'animate object': { uid: 'AAJ', brewable: false },
+  'antimagic shell': { uid: 'AACGH', brewable: false },
+  'aura of pain': { uid: 'AAAO', brewable: false },
+  'bark skin': { uid: 'KK', brewable: true },
+  beastform: { uid: 'ABFMR', brewable: true },
+  'bind golem': { uid: 'BGM', brewable: false },
+  'black curse': { uid: 'BKU', brewable: true },
+  blackstaff: { uid: 'BFF', brewable: false },
+  blend: { uid: 'DNELB', brewable: true },
+  bless: { uid: 'SSELB', brewable: true },
+  'blessing of peace': { uid: 'BFG', brewable: false },
+  blindness: { uid: 'SSENDNILB', brewable: false },
+  blizzard: { uid: 'BDZ', brewable: true },
+  blizzra: { uid: 'ARZZILB', brewable: true },
+  blur: { uid: 'RULB', brewable: false },
+  'bodrums boils': { uid: 'BBD', brewable: false },
+  'bone blight': { uid: 'BBH', brewable: false },
+  'brain fever': { uid: 'ABV', brewable: false },
+  breaking: { uid: 'BGK', brewable: false },
+  brimstone: { uid: 'ENOTSMIRB', brewable: false },
+  'burning hands': { uid: 'BHU', brewable: true },
+  'call lightning': { uid: 'GLLL', brewable: true },
+  'call wild': { uid: 'CILW', brewable: true },
+  calm: { uid: 'MLAC', brewable: false },
+  cancellation: { uid: 'EILLO', brewable: true },
+  'cause critical': { uid: 'CCCS', brewable: true },
+  'cause decay': { uid: 'CCSY', brewable: true },
+  'cause fatality': { uid: 'AAAL', alt: 'AAAF', brewable: true },
+  'cause light': { uid: 'CGHSU', brewable: true },
+  'cause serious': { uid: 'ACOUU', brewable: true },
+  'chain lightning': { uid: 'GGHH', alt: 'CHAINL', brewable: true },
+  'change sex': { uid: 'GX', brewable: false },
+  'charm person': { uid: 'CHMOP', brewable: false },
+  chasm: { uid: 'MSAHC', brewable: false },
+  'chill touch': { uid: 'CCHL', brewable: true },
+  'cliaths hammer': { uid: 'CHHM', brewable: false },
+  'color spray': { uid: 'CLRRY', brewable: false },
+  'compelled repentance': { uid: 'ADPP', brewable: false },
+  'cone of cold': { uid: 'CCFOO', alt: 'CFC', brewable: true },
+  'cone of fire': { uid: 'CFFOO', alt: 'CNFF', brewable: true },
+  'cone of lightning': { uid: 'CFH', brewable: true },
+  'continual light': { uid: 'ACLLU', brewable: false },
+  'control metal': { uid: 'CLMTT', brewable: true },
+  'control weather': { uid: 'CLNW', brewable: false },
+  'corpse host': { uid: 'CEHSS', brewable: false },
+  'corrosive skin': { uid: 'CKV', brewable: false },
+  courage: { uid: 'EGARUOC', brewable: false },
+  'create cauldron': { uid: 'AACDN', brewable: true },
+  'create food': { uid: 'ADFRT', brewable: false },
+  'create holy symbol': { uid: 'BYY', alt: 'CYY', brewable: true },
+  'create ranger staff': { uid: 'AAAG', brewable: false },
+  'create rose': { uid: 'ESORETAERC', brewable: true },
+  'create runehammer': { uid: 'CHMU', brewable: false },
+  'create runestaff': { uid: 'AAFFU', brewable: false },
+  'create spring': { uid: 'ACGPT', brewable: false },
+  'create tree': { uid: 'CEEEETT', brewable: true },
+  'create water': { uid: 'AACRW', brewable: true },
+  'cure blindness': { uid: 'BCDU', brewable: true },
+  'cure bugbear bite': { uid: 'ABB', brewable: true },
+  'cure critical': { uid: 'CCCRR', brewable: true },
+  'cure deafness': { uid: 'ADEEEF', brewable: false },
+  'cure disease': { uid: 'ADEEEIS', brewable: true },
+  'cure fatigue': { uid: 'FUU', brewable: true },
+  'cure light': { uid: 'CGLR', brewable: false },
+  'cure poison': { uid: 'CNPSU', brewable: false },
+  'cure serious': { uid: 'ORRUU', brewable: true },
+  curse: { uid: 'ESRUC', brewable: false },
+  damned: { uid: 'DENMAD', brewable: false },
+  'dark bolt': { uid: 'BDK', brewable: false },
+  'dark empower': { uid: 'DKP', brewable: false },
+  'dark energy': { uid: 'GKY', brewable: false },
+  'dark essence': { uid: 'CDEK', brewable: false },
+  'dark heal': { uid: 'AADEK', brewable: false },
+  'dark immunity': { uid: 'KMY', brewable: false },
+  darkness: { uid: 'SSENKRAD', brewable: false },
+  'death shroud': { uid: 'DDHU', brewable: false },
+  deflection: { uid: 'DEFLT', brewable: false },
+  demonfire: { uid: 'DEFM', brewable: true },
+  destruction: { uid: 'CDIRTU', brewable: false },
+  'detect evil': { uid: 'CDLV', brewable: false },
+  'detect good': { uid: 'CDDG', brewable: true },
+  'detect hidden': { uid: 'DDD', brewable: true },
+  'detect invis': { uid: 'CDSV', brewable: false },
+  'detect magic': { uid: 'CCGM', brewable: true },
+  'detect poison': { uid: 'NOSIOPTCETED', brewable: false },
+  'detect vampire': { uid: 'APV', brewable: false },
+  devotion: { uid: 'NOITOVED', brewable: false },
+  disenchant: { uid: 'TNAHCNESID', brewable: true },
+  disjunction: { uid: 'CDJ', brewable: true },
+  'dispel curse': { uid: 'CDIPU', brewable: false },
+  'dispel evil': { uid: 'ELLV', brewable: false },
+  'dispel fog': { uid: 'DFP', brewable: false },
+  'dispel good': { uid: 'DDP', brewable: true },
+  'dispel magic': { uid: 'ADGP', brewable: true },
+  'dispel neutral': { uid: 'ADIPU', alt: 'PRAISU', brewable: true },
+  'dispel protection': { uid: 'CDIPP', alt: 'PPOOEE', brewable: true },
+  'divine intervention': { uid: 'NNNV', brewable: false },
+  'divine protection': { uid: 'NNPV', alt: 'TTV', brewable: true },
+  'divine staff': { uid: 'DFV', brewable: false },
+  'dragon fear': { uid: 'AADEF', brewable: false },
+  drown: { uid: 'NWORD', brewable: false },
+  earthquake: { uid: 'HQ', alt: 'QK', brewable: true },
+  'eclipse being': { uid: 'BCEII', brewable: false },
+  embalm: { uid: 'MLABME', brewable: false },
+  empath: { uid: 'HTAPME', brewable: true },
+  'empower weapon': { uid: 'PPW', brewable: false },
+  'enchant armor': { uid: 'MNNRR', brewable: true },
+  enchantgem: { uid: 'CGMNN', brewable: false },
+  'enchanting touch': { uid: 'CCGU', brewable: true },
+  'enchant weapon': { uid: 'CHPW', brewable: true },
+  endurance: { uid: 'ACDNNRU', brewable: false },
+  'enduring wrath': { uid: 'DGTW', brewable: false },
+  'energy drain': { uid: 'GIY', brewable: false },
+  'energy storm': { uid: 'EGMY', brewable: false },
+  'engulf wind': { uid: 'FGW', brewable: false },
+  'enhanced constitution': { uid: 'ACCHS', brewable: false },
+  'enhanced recovery': { uid: 'CHV', brewable: false },
+  'enhance seed': { uid: 'CEEEES', brewable: false },
+  enlarge: { uid: 'EGRALNE', alt: 'EERLG', brewable: true },
+  entangle: { uid: 'EEGLNN', brewable: false },
+  excommunicate: { uid: 'AIX', brewable: false },
+  'faerie fire': { uid: 'AEEFII', brewable: true },
+  'faerie flames': { uid: 'EFFM', brewable: true },
+  'faerie fog': { uid: 'FFGI', brewable: false },
+  'fake illness': { uid: 'FKN', brewable: false },
+  'false image': { uid: 'EFGM', brewable: true },
+  farsight: { uid: 'FHIR', brewable: false },
+  fasting: { uid: 'GNITSAF', brewable: false },
+  fear: { uid: 'RAEF', brewable: true },
+  'feign death': { uid: 'DEFH', brewable: true },
+  fervor: { uid: 'FORRV', brewable: false },
+  'find familiar': { uid: 'DFFM', brewable: true },
+  fireball: { uid: 'BFLL', brewable: false },
+  firebolt: { uid: 'BFILT', brewable: false },
+  'fire bomb': { uid: 'BBF', brewable: false },
+  fireproof: { uid: 'FFP', brewable: true },
+  firestorm: { uid: 'FMRR', brewable: false },
+  flamestrike: { uid: 'FKM', brewable: false },
+  'flame wall': { uid: 'EFMW', brewable: false },
+  'flaming soul': { uid: 'FGLL', brewable: false },
+  'floating disc': { uid: 'ACFII', brewable: true },
+  fly: { uid: 'YLF', brewable: true },
+  'focused aggression': { uid: 'ADGG', brewable: false },
+  fog: { uid: 'GOF', brewable: false },
+  'force field': { uid: 'CDFFR', brewable: false },
+  forget: { uid: 'TEGROF', brewable: true },
+  fortitude: { uid: 'DFTT', brewable: false },
+  frenzy: { uid: 'FRZ', brewable: false },
+  'frost shroud': { uid: 'DFHU', brewable: true },
+  furnace: { uid: 'ECANRUF', brewable: false },
+  gate: { uid: 'ETAG', brewable: true },
+  'giant strength': { uid: 'AGGTT', brewable: true },
+  'graft flesh': { uid: 'FFH', brewable: false },
+  gust: { uid: 'TSUG', brewable: false },
+  harm: { uid: 'MRAH', brewable: false },
+  haste: { uid: 'ETSAH', brewable: true },
+  'haste crater': { uid: 'AACHTT', brewable: false },
+  haunt: { uid: 'TNUAH', brewable: false },
+  haze: { uid: 'EZAH', brewable: false },
+  heal: { uid: 'LAEH', brewable: false },
+  'healing dream': { uid: 'DGLR', brewable: false },
+  'heart blight': { uid: 'BHH', brewable: true },
+  'heat metal': { uid: 'HLMTT', alt: 'HAMATL', brewable: true },
+  hex: { uid: 'XEH', brewable: true },
+  'holy flame': { uid: 'AFMY', brewable: false },
+  'holy presence': { uid: 'CHLOP', brewable: false },
+  'holy smite': { uid: 'HIMY', brewable: false },
+  'holy steed': { uid: 'DHTY', brewable: false },
+  'holy word': { uid: 'DHWY', brewable: false },
+  'host of gargoyles': { uid: 'GGY', brewable: false },
+  identify: { uid: 'DEFY', brewable: false },
+  ignite: { uid: 'ETINGI', brewable: false },
+  illumination: { uid: 'AIIIU', brewable: false },
+  imbue: { uid: 'EUBMI', alt: 'MBU', brewable: true },
+  'imbue mount': { uid: 'BIMM', brewable: false },
+  imposter: { uid: 'RETSOPMI', brewable: true },
+  'improved invisibility': { uid: 'BDV', brewable: true },
+  inferno: { uid: 'EFNNR', brewable: false },
+  'influence confidence': { uid: 'CCCD', brewable: false },
+  infravision: { uid: 'AFNN', brewable: false },
+  infuriate: { uid: 'AFIIRT', brewable: false },
+  'insightful gaze': { uid: 'SZ', brewable: false },
+  inspire: { uid: 'ERIPSNI', brewable: false },
+  'instant regeneration': { uid: 'AAGIO', brewable: false },
+  'interlace spirit': { uid: 'APSTT', brewable: true },
+  intimidate: { uid: 'IIMTT', brewable: false },
+  invisibility: { uid: 'YTILIBISIVNI', brewable: true },
+  'involuntary wizardry': { uid: 'VZ', brewable: true },
+  'iron grip': { uid: 'GIIPR', brewable: false },
+  jest: { uid: 'TSEJ', brewable: false },
+  'kayens shield': { uid: 'HKY', brewable: false },
+  'know alignment': { uid: 'EKTW', brewable: true },
+  'know languages': { uid: 'GGW', brewable: true },
+  'know religion': { uid: 'GKLR', brewable: true },
+  'lay on hands': { uid: 'AADHY', brewable: false },
+  leprosy: { uid: 'YSORPEL', brewable: true },
+  'light foot': { uid: 'FGHTT', brewable: false },
+  'lightning bolt': { uid: 'BGG', brewable: false },
+  'locate empower': { uid: 'CMW', brewable: true },
+  'locate object': { uid: 'AJL', brewable: true },
+  'locate remains': { uid: 'CILMO', brewable: true },
+  magewind: { uid: 'DGMW', brewable: false },
+  'magic missile': { uid: 'CGMM', brewable: false },
+  'mass healing': { uid: 'AAGSS', alt: 'MASSH', brewable: true },
+  'mass invis': { uid: 'MSSV', alt: 'MASSV', brewable: true },
+  mendwounds: { uid: 'DDMO', brewable: false },
+  'mental drain': { uid: 'AADLMT', brewable: false },
+  'metal storm': { uid: 'LMMTT', brewable: false },
+  meteo: { uid: 'OETEM', brewable: false },
+  'mind crater': { uid: 'CDMRR', brewable: false },
+  'mirror image': { uid: 'AGMRR', alt: 'RRR', brewable: true },
+  monsoon: { uid: 'NOOSNOM', brewable: false },
+  'moon gaze': { uid: 'EMZ', brewable: false },
+  'moon pull': { uid: 'LLUPNOOM', brewable: false },
+  'moon shadow': { uid: 'ADOOO', brewable: false },
+  'nature growth': { uid: 'AGHOW', alt: 'NATURGWO', brewable: true },
+  'natures grip': { uid: 'GPRU', brewable: false },
+  nexus: { uid: 'SUXEN', brewable: false },
+  'night shield': { uid: 'DHHL', brewable: false },
+  'night terror': { uid: 'GHRRR', brewable: false },
+  nondetection: { uid: 'NOITCETEDNON', brewable: false },
+  'pass door': { uid: 'ADOOPR', brewable: true },
+  plague: { uid: 'AGLPU', brewable: true },
+  portal: { uid: 'LATROP', brewable: true },
+  'possess familiar': { uid: 'FMP', brewable: true },
+  poultice: { uid: 'ECITLUOP', alt: 'POULTIC', brewable: true },
+  'praise the prophecy': { uid: 'HHY', brewable: false },
+  'prevent recovery': { uid: 'CVV', alt: 'PRVNTRCV', brewable: true },
+  'protection cold': { uid: 'CCDIP', brewable: false },
+  'protection evil': { uid: 'CLNV', brewable: true },
+  'protection fire': { uid: 'EEFIIP', brewable: true },
+  'protection good': { uid: 'DGNP', alt: 'OOOO', brewable: true },
+  'protection neutral': { uid: 'LTTT', brewable: true },
+  'proximity dispel': { uid: 'LX', brewable: false },
+  'psionic blast': { uid: 'ABII', brewable: false },
+  'rainbow pattern': { uid: 'BPW', alt: 'RAINBWT', brewable: true },
+  'ray of truth': { uid: 'FHUY', brewable: true },
+  'recant blasphemy': { uid: 'AABY', brewable: false },
+  recharge: { uid: 'CGHRR', brewable: true },
+  recover: { uid: 'REVOCER', brewable: false },
+  redirect: { uid: 'TCERIDER', brewable: false },
+  reduce: { uid: 'ECUDER', brewable: false },
+  refresh: { uid: 'EEFHRR', brewable: false },
+  regenerate: { uid: 'EEEEG', brewable: false },
+  'remove curse': { uid: 'CMOV', brewable: false },
+  'remove empower': { uid: 'MVW', brewable: false },
+  'restore armor': { uid: 'RRRR', brewable: true },
+  'restore mind': { uid: 'DEIORR', brewable: false },
+  'restore weapon': { uid: 'EESTW', alt: 'RSTWAPO', brewable: true },
+  'righteous judgement': { uid: 'GJ', brewable: false },
+  root: { uid: 'TOOR', brewable: false },
+  'sacred bond': { uid: 'BDD', brewable: false },
+  sanctuary: { uid: 'CNUY', brewable: false },
+  scorch: { uid: 'HCROCS', brewable: false },
+  'scorching winds': { uid: 'CCW', brewable: false },
+  scourge: { uid: 'EGRUOCS', brewable: true },
+  'self projection': { uid: 'FJ', brewable: false },
+  sequestor: { uid: 'QS', brewable: true },
+  shadowbolt: { uid: 'BLW', brewable: false },
+  shadowcloak: { uid: 'CKW', brewable: false },
+  shadowform: { uid: 'DFHM', alt: 'DWFS', brewable: true },
+  shadowlord: { uid: 'ADDL', brewable: false },
+  'shadow vision': { uid: 'HIV', brewable: false },
+  'shadow vortex': { uid: 'WX', brewable: false },
+  'shadow whisper': { uid: 'DWW', brewable: false },
+  'shake resolve': { uid: 'AKV', brewable: false },
+  shield: { uid: 'DLEIHS', brewable: true },
+  'shield crater': { uid: 'CDHIL', brewable: false },
+  'shocking grasp': { uid: 'CGK', brewable: true },
+  'shrink head': { uid: 'HHKR', brewable: true },
+  'shrink skull': { uid: 'HKK', brewable: false },
+  silence: { uid: 'ECNELIS', brewable: true },
+  sleep: { uid: 'PEELS', brewable: false },
+  slow: { uid: 'WOLS', brewable: true },
+  snakebite: { uid: 'BEEK', brewable: true },
+  'solar flare': { uid: 'FLRRS', brewable: false },
+  solidify: { uid: 'DFLY', brewable: false },
+  'soul harvest': { uid: 'AHUV', brewable: true },
+  soulsight: { uid: 'GHSSU', alt: 'SOULI', brewable: true },
+  'spell eating': { uid: 'GLPT', brewable: false },
+  'spirit of protection': { uid: 'FPP', brewable: false },
+  'spirit of retribution': { uid: 'BPU', brewable: false },
+  spiritwalk: { uid: 'KLP', brewable: true },
+  spook: { uid: 'KOOP', brewable: true },
+  splinter: { uid: 'RETNILPS', brewable: true },
+  stalagmite: { uid: 'GLMTT', brewable: false },
+  'stone skin': { uid: 'KNNSS', brewable: false },
+  'summon elemental': { uid: 'ELLMM', brewable: true },
+  'summon monster': { uid: 'MMMSST', brewable: true },
+  swarm: { uid: 'MRAWS', alt: 'SWARM', brewable: true },
+  teleport: { uid: 'TROPELET', brewable: false },
+  thunderclap: { uid: 'CDHP', brewable: true },
+  'time stop': { uid: 'MOPTT', brewable: false },
+  tornado: { uid: 'ODANROT', brewable: true },
+  'turn undead': { uid: 'ADUU', brewable: true },
+  umbra: { uid: 'ABMRU', brewable: false },
+  vacancy: { uid: 'AACCV', brewable: false },
+  ventriloquate: { uid: 'IQ', brewable: true },
+  view: { uid: 'WEIV', brewable: false },
+  'voodoo doll': { uid: 'DDV', brewable: false },
+  'vortex of the sun': { uid: 'FX', brewable: false },
+  'water breathing': { uid: 'BGW', brewable: false },
+  wave: { uid: 'EVAW', brewable: false },
+  'waves of weariness': { uid: 'FVW', alt: 'WW', brewable: true },
+  waypoint: { uid: 'IPWY', brewable: false },
+  weaken: { uid: 'EEKNW', brewable: true },
+  web: { uid: 'BEW', brewable: false },
+  'wind breath': { uid: 'BDEW', brewable: false },
+  wither: { uid: 'REHTIW', brewable: true },
+  'withering enchant': { uid: 'ACGW', brewable: false },
+  'withstand death': { uid: 'DDIW', alt: 'WITHDAT', brewable: true },
+  'wizard mark': { uid: 'KZ', brewable: true },
+  'word of recall': { uid: 'CFW', alt: 'WRDCALL', brewable: true },
+  'wrath of nature': { uid: 'FTW', brewable: true },
 };
 
 // ── UID helpers ─────────────────────────────────────────────────────────────────
@@ -495,7 +495,10 @@ const DEFAULT_CIPHER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 function parseCipher(raw: unknown): string {
   if (typeof raw !== 'string') return DEFAULT_CIPHER;
-  const clean = raw.trim().toUpperCase().replace(/[^A-Z]/g, '');
+  const clean = raw
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '');
   return clean.length === 26 ? clean : DEFAULT_CIPHER;
 }
 
@@ -541,14 +544,14 @@ function buildEffectiveCipher(configCipher: string, discovered: Record<string, s
 
 interface DeduceResult {
   determined: Record<string, string>; // source → brew (newly found)
-  ambiguous: string[];                // source letters that remain ambiguous
-  inconsistent: string[];             // conflicts with known mappings
+  ambiguous: string[]; // source letters that remain ambiguous
+  inconsistent: string[]; // conflicts with known mappings
 }
 
 function deduceCipherMappings(
   items: Array<{ lore: string }>,
   uid: string,
-  known: Record<string, string>,  // already-known source → brew
+  known: Record<string, string>, // already-known source → brew
 ): DeduceResult {
   // Tally source letters from item first-letters
   const sourceCounts: Record<string, number> = {};
@@ -575,7 +578,9 @@ function deduceCipherMappings(
     if (!srcCount) continue; // this source letter wasn't in this brew
     const tgtAvail = remTarget[tgt] ?? 0;
     if (tgtAvail < srcCount) {
-      inconsistent.push(`${src}→${tgt} (known) conflicts: UID only has ${tgtAvail}× ${tgt} but ${srcCount} items start with ${src}`);
+      inconsistent.push(
+        `${src}→${tgt} (known) conflicts: UID only has ${tgtAvail}× ${tgt} but ${srcCount} items start with ${src}`,
+      );
     } else {
       remTarget[tgt] -= srcCount;
       if (remTarget[tgt] <= 0) delete remTarget[tgt];
@@ -608,17 +613,17 @@ function deduceCipherMappings(
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface ItemDef {
-  label: string;  // user-chosen short key for commands (e.g. "apple", "k1")
-  lore: string;   // in-game lore name / get keyword (e.g. "apple", "kale chips")
+  label: string; // user-chosen short key for commands (e.g. "apple", "k1")
+  lore: string; // in-game lore name / get keyword (e.g. "apple", "kale chips")
   letter: string; // derived: first letter of lore name, uppercased
 }
 
 interface Experiment {
-  items: string[];      // item labels used
-  spell: string;        // spell that came out (normalized)
-  uid: string;          // UID of that spell
-  expected: string;     // UID the user was targeting (may differ if something went wrong)
-  note: string;         // optional notes (e.g. "wrong result", "level too low")
+  items: string[]; // item labels used
+  spell: string; // spell that came out (normalized)
+  uid: string; // UID of that spell
+  expected: string; // UID the user was targeting (may differ if something went wrong)
+  note: string; // optional notes (e.g. "wrong result", "level too low")
   timestamp: number;
 }
 
@@ -676,12 +681,25 @@ function loadState(): PluginState {
       s.gourdRecipes ??= [];
       return s;
     }
-  } catch { /* ignore */ }
-  return { alphabets: { default: emptyAlphabet() }, activeAlphabet: 'default', discoveredCipher: {}, probableCipher: {}, userSpells: {}, gourdRecipes: [] };
+  } catch {
+    /* ignore */
+  }
+  return {
+    alphabets: { default: emptyAlphabet() },
+    activeAlphabet: 'default',
+    discoveredCipher: {},
+    probableCipher: {},
+    userSpells: {},
+    gourdRecipes: [],
+  };
 }
 
 function saveState(state: PluginState): void {
-  try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(STATE_KEY, JSON.stringify(state));
+  } catch {
+    /* ignore */
+  }
 }
 
 function getAlphabet(state: PluginState): AlphabetState {
@@ -772,8 +790,7 @@ function spellStatuses(alpha: AlphabetState, spells: Record<string, SpellEntry>)
   }
   results.sort((a, b) => {
     if (a.canBrew !== b.canBrew) return a.canBrew ? -1 : 1;
-    if (a.missingLetters.length !== b.missingLetters.length)
-      return a.missingLetters.length - b.missingLetters.length;
+    if (a.missingLetters.length !== b.missingLetters.length) return a.missingLetters.length - b.missingLetters.length;
     return a.spell.localeCompare(b.spell);
   });
   return results;
@@ -790,7 +807,11 @@ function parseArgs(s: string): string[] {
     if (s[i] === "'" || s[i] === '"') {
       const q = s[i];
       const close = s.indexOf(q, i + 1);
-      if (close !== -1) { args.push(s.slice(i + 1, close)); i = close + 1; continue; }
+      if (close !== -1) {
+        args.push(s.slice(i + 1, close));
+        i = close + 1;
+        continue;
+      }
     }
     const end = s.indexOf(' ', i);
     args.push(end === -1 ? s.slice(i) : s.slice(i, end));
@@ -803,7 +824,7 @@ function parseArgs(s: string): string[] {
 
 export const DEFAULT_WA_ITEMS = [
   '# Warlock alphabet items — from community ingredient spreadsheet',
-  '# Format:  label = keyword   (keyword used in: get \'keyword\' shelf)',
+  "# Format:  label = keyword   (keyword used in: get 'keyword' shelf)",
   '# Brew letter = brewer cipher applied to first letter of keyword.',
   '# Run "wa auto" after configuring your cipher to auto-assign letters.',
   '#',
@@ -928,7 +949,7 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
       name: 'Warlock Alphabet',
       version: '0.2.0',
       description:
-        'Tracks your warlock brew alphabet. The first letter of each item\'s lore name determines its brew letter. Assign items per letter, look up spell recipes, and generate brew commands.',
+        "Tracks your warlock brew alphabet. The first letter of each item's lore name determines its brew letter. Assign items per letter, look up spell recipes, and generate brew commands.",
       tags: ['wip'],
     },
 
@@ -979,8 +1000,7 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
       const spells: Record<string, SpellEntry> = { ...SPELL_DB, ...state.userSpells };
       const cipher = buildEffectiveCipher(configCipher, state.discoveredCipher);
       const items = parseItems(cfg.items, cipher);
-      const storage =
-        typeof cfg.storage === 'string' && cfg.storage.trim() ? cfg.storage.trim() : 'shelf';
+      const storage = typeof cfg.storage === 'string' && cfg.storage.trim() ? cfg.storage.trim() : 'shelf';
 
       const alpha = getAlphabet(state);
 
@@ -1033,17 +1053,19 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
         for (const item of items) {
           const firstLetter = firstLetterOf(item.lore);
           const brewLetter = item.letter;
-          const letterDisplay = cipherIsIdentity
-            ? `[${brewLetter}]`
-            : `[${firstLetter}→${brewLetter}]`;
+          const letterDisplay = cipherIsIdentity ? `[${brewLetter}]` : `[${firstLetter}→${brewLetter}]`;
           const assigned = Object.values(alpha.assignments).find((a) => a.label === item.label);
-          const status = assigned ? `brew letter ${brewLetter} assigned` : `brew letter ${brewLetter} — not yet set as primary`;
+          const status = assigned
+            ? `brew letter ${brewLetter} assigned`
+            : `brew letter ${brewLetter} — not yet set as primary`;
           api.log(`  ${item.label} = ${item.lore}  ${letterDisplay}  ${status}`);
         }
         if (!cipherIsIdentity) {
           api.log('[WA] Note: brew letter = brewer cipher applied to item first letter. Use "wa cipher" to review.');
         } else {
-          api.log('[WA] Note: no cipher set — brew letter = first letter of lore name. Configure "Brewer cipher" if needed.');
+          api.log(
+            '[WA] Note: no cipher set — brew letter = first letter of lore name. Configure "Brewer cipher" if needed.',
+          );
         }
         return true;
       }
@@ -1057,7 +1079,10 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
           const raw = args[2] ?? '';
           const eqIdx = raw.indexOf('=');
           const from = raw.slice(0, eqIdx).trim().toUpperCase();
-          const to = raw.slice(eqIdx + 1).trim().toUpperCase();
+          const to = raw
+            .slice(eqIdx + 1)
+            .trim()
+            .toUpperCase();
           if (eqIdx === -1 || !/^[A-Z]$/.test(from) || !/^[A-Z]$/.test(to)) {
             api.log('[WA] Usage: wa cipher set <letter>=<letter>');
             api.log('[WA] Example: wa cipher set a=o  (items starting with A contribute brew letter O)');
@@ -1075,8 +1100,12 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
           const raw = args[2] ?? '';
           const eqIdx = raw.indexOf('=');
           const from = raw.slice(0, eqIdx).trim().toUpperCase();
-          const candidates = raw.slice(eqIdx + 1).toUpperCase().split(',')
-            .map(s => s.trim()).filter(s => /^[A-Z]$/.test(s));
+          const candidates = raw
+            .slice(eqIdx + 1)
+            .toUpperCase()
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => /^[A-Z]$/.test(s));
           if (eqIdx === -1 || !/^[A-Z]$/.test(from) || candidates.length === 0) {
             api.log('[WA] Usage: wa cipher maybe <letter>=<candidate>[,<candidate>...]');
             api.log('[WA] Example: wa cipher maybe a=o,n  (A is probably O or N)');
@@ -1089,7 +1118,9 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
           }
           state.probableCipher[from] = candidates;
           saveState(state);
-          api.log(`[WA] Probable: ${from} → ${candidates.join(' or ')}. Use "wa cipher set ${from.toLowerCase()}=<letter>" to confirm.`);
+          api.log(
+            `[WA] Probable: ${from} → ${candidates.join(' or ')}. Use "wa cipher set ${from.toLowerCase()}=<letter>" to confirm.`,
+          );
           return true;
         }
 
@@ -1116,15 +1147,16 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
 
         // wa cipher export
         if (action === 'export') {
-          const unknownLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
-            .filter(l => !state.discoveredCipher[l] && configCipher['ABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(l)] === l);
+          const unknownLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+            .split('')
+            .filter((l) => !state.discoveredCipher[l] && configCipher['ABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(l)] === l);
           if (unknownLetters.length > 0) {
             api.log(`[WA] Cipher not fully known. Unknown: ${unknownLetters.join(' ')}`);
             api.log('[WA] Partial string (? = unknown):');
             let partial = '';
             for (let i = 0; i < 26; i++) {
               const from = String.fromCharCode(65 + i);
-              partial += (state.discoveredCipher[from] ?? (configCipher[i] !== from ? configCipher[i] : '?'));
+              partial += state.discoveredCipher[from] ?? (configCipher[i] !== from ? configCipher[i] : '?');
             }
             api.log(`  ${partial}`);
           } else {
@@ -1135,9 +1167,10 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
         }
 
         // wa cipher — display all 26 letters
-        const hasAny = Object.keys(state.discoveredCipher).length > 0
-          || Object.keys(state.probableCipher).length > 0
-          || configCipher !== DEFAULT_CIPHER;
+        const hasAny =
+          Object.keys(state.discoveredCipher).length > 0 ||
+          Object.keys(state.probableCipher).length > 0 ||
+          configCipher !== DEFAULT_CIPHER;
 
         if (!hasAny) {
           api.log('[WA] Brewer cipher: not configured. Brew letter = item first letter (identity).');
@@ -1161,16 +1194,18 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
             } else if (isConfigMapped) {
               api.log(`  ${from} → ${configVal}  [C]`);
             } else if (probable?.length) {
-              api.log(`  ${from} → (${probable.map(p => `${p}?`).join(' ')})  [~]`);
+              api.log(`  ${from} → (${probable.map((p) => `${p}?`).join(' ')})  [~]`);
               probableCount++;
             } else {
               api.log(`  ${from} → ?  [?]`);
               unknownCount++;
             }
           }
-          if (unknownCount > 0) api.log(`[WA] ${unknownCount} unknown. Use "wa cipher set a=o" or "wa cipher maybe a=o,n".`);
+          if (unknownCount > 0)
+            api.log(`[WA] ${unknownCount} unknown. Use "wa cipher set a=o" or "wa cipher maybe a=o,n".`);
           if (probableCount > 0) api.log(`[WA] ${probableCount} probable. Use "wa cipher set a=o" to confirm.`);
-          if (unknownCount === 0 && probableCount === 0) api.log('[WA] All letters mapped. Use "wa cipher export" to get the config string.');
+          if (unknownCount === 0 && probableCount === 0)
+            api.log('[WA] All letters mapped. Use "wa cipher export" to get the config string.');
         }
         return true;
       }
@@ -1210,15 +1245,16 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
 
       // ── wa cipher-export (legacy alias) ──────────────────────────────────────
       if (sub === 'cipher-export') {
-        const unknownLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
-          .filter(l => !state.discoveredCipher[l] && configCipher['ABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(l)] === l);
+        const unknownLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+          .split('')
+          .filter((l) => !state.discoveredCipher[l] && configCipher['ABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(l)] === l);
         if (unknownLetters.length > 0) {
           api.log(`[WA] Cipher not fully known. Unknown: ${unknownLetters.join(' ')}`);
           api.log('[WA] Partial string (? = unknown):');
           let partial = '';
           for (let i = 0; i < 26; i++) {
             const from = String.fromCharCode(65 + i);
-            partial += (state.discoveredCipher[from] ?? (configCipher[i] !== from ? configCipher[i] : '?'));
+            partial += state.discoveredCipher[from] ?? (configCipher[i] !== from ? configCipher[i] : '?');
           }
           api.log(`  ${partial}`);
         } else {
@@ -1269,14 +1305,18 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
           if (labelMap[l]) return labelMap[l];
           // Auto-create: treat label as lore, log a warning
           const auto = { label: l, lore: l, letter: itemLetter(l, cipher) };
-          api.log(`[WA] Item "${l}" not in Items config — treating lore as "${l}". Add "${l} = lore name" to Items config if the get keyword differs.`);
+          api.log(
+            `[WA] Item "${l}" not in Items config — treating lore as "${l}". Add "${l} = lore name" to Items config if the get keyword differs.`,
+          );
           return auto;
         });
 
         const totalItems = itemLabels.length;
         const uidLetterCount = entry.uid.length;
         if (totalItems !== uidLetterCount) {
-          api.log(`[WA] ⚠ Item count (${totalItems}) ≠ UID letter count (${uidLetterCount}) for "${spellName}" (${entry.uid}).`);
+          api.log(
+            `[WA] ⚠ Item count (${totalItems}) ≠ UID letter count (${uidLetterCount}) for "${spellName}" (${entry.uid}).`,
+          );
           api.log('[WA]   Ensure you listed every item put in the cauldron. Proceeding anyway...');
         }
 
@@ -1309,9 +1349,13 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
           for (const src of result.ambiguous) {
             // Show which brew letters it could be
             const srcCount = itemLabels.filter((l) => firstLetterOf(labelMap[l]!.lore) === src).length;
-            api.log(`  ${src} (${srcCount}× used) — could be any of: ${Object.keys(letterCounts(entry.uid)).join(', ')}`);
+            api.log(
+              `  ${src} (${srcCount}× used) — could be any of: ${Object.keys(letterCounts(entry.uid)).join(', ')}`,
+            );
           }
-          api.log('[WA] Tip: brew spells where all items share the same first letter (e.g. bark skin with two A-items).');
+          api.log(
+            '[WA] Tip: brew spells where all items share the same first letter (e.g. bark skin with two A-items).',
+          );
         }
 
         if (!Object.keys(result.determined).length && !result.ambiguous.length && !result.inconsistent.length) {
@@ -1343,9 +1387,7 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
           api.log(
             `[WA] Warning: item "${item.lore}" (first letter: ${firstLetter}) maps to brew letter "${item.letter}", not "${letter}".`,
           );
-          api.log(
-            '[WA] Assigning anyway — verify the lore name and brewer cipher are correct.',
-          );
+          api.log('[WA] Assigning anyway — verify the lore name and brewer cipher are correct.');
         }
 
         alpha.assignments[letter] = { label, lore: item.lore };
@@ -1396,10 +1438,16 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
       // ── wa lookup <spell> ───────────────────────────────────────────────────
       if (sub === 'lookup') {
         const spellName = args.slice(1).join(' ').toLowerCase();
-        if (!spellName) { api.log('[WA] Usage: wa lookup <spell name>'); return true; }
+        if (!spellName) {
+          api.log('[WA] Usage: wa lookup <spell name>');
+          return true;
+        }
 
         const entry = spells[spellName];
-        if (!entry) { api.log(`[WA] Spell "${spellName}" not found. Use "wa spell-add ${spellName} <UID>" to add it.`); return true; }
+        if (!entry) {
+          api.log(`[WA] Spell "${spellName}" not found. Use "wa spell-add ${spellName} <UID>" to add it.`);
+          return true;
+        }
 
         // Reverse uid to show what the cauldron will display
         const uidReversed = entry.uid.split('').reverse().join('');
@@ -1435,7 +1483,10 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
       // ── wa brew <spell> ─────────────────────────────────────────────────────
       if (sub === 'brew') {
         const spellName = args.slice(1).join(' ').toLowerCase();
-        if (!spellName) { api.log('[WA] Usage: wa brew <spell name>'); return true; }
+        if (!spellName) {
+          api.log('[WA] Usage: wa brew <spell name>');
+          return true;
+        }
 
         api.log('[WA] ⚠ This controls only the FIRST spell effect on the gourd (deterministic).');
         api.log('[WA]   The gourd may also receive a 2nd effect (rules unknown) and a 3rd (always random).');
@@ -1481,7 +1532,9 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
           }
           if (ingredients) api.log(`[WA]   Ingredients: ${ingredients}`);
           saveState(state);
-          api.log(`[WA] Use "wa recipe show" to list all, or "wa recipe show \\"${spell1}\\" \\"${spell2}\\"" for details.`);
+          api.log(
+            `[WA] Use "wa recipe show" to list all, or "wa recipe show \\"${spell1}\\" \\"${spell2}\\"" for details.`,
+          );
           return true;
         }
 
@@ -1637,11 +1690,13 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
       // ── wa spells ───────────────────────────────────────────────────────────
       if (sub === 'spells') {
         const filterBrewable = args[1]?.toLowerCase() === 'brewable';
-        const filterLetter = !filterBrewable && args[1]?.toUpperCase().length === 1
-          ? args[1].toUpperCase() : null;
+        const filterLetter = !filterBrewable && args[1]?.toUpperCase().length === 1 ? args[1].toUpperCase() : null;
 
         const userSpellCount = Object.keys(state.userSpells).length;
-        const totalLabel = userSpellCount > 0 ? `${Object.keys(spells).length} total, ${userSpellCount} user-added` : `${Object.keys(spells).length} total`;
+        const totalLabel =
+          userSpellCount > 0
+            ? `${Object.keys(spells).length} total, ${userSpellCount} user-added`
+            : `${Object.keys(spells).length} total`;
         api.log(`[WA] Spell database (${totalLabel}):`);
         for (const [name, entry] of Object.entries(spells)) {
           if (filterBrewable && !entry.brewable) continue;
@@ -1655,7 +1710,11 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
 
       // ── wa match <letters> ──────────────────────────────────────────────────
       if (sub === 'match') {
-        const lettersInput = args.slice(1).join('').toUpperCase().replace(/[^A-Z]/g, '');
+        const lettersInput = args
+          .slice(1)
+          .join('')
+          .toUpperCase()
+          .replace(/[^A-Z]/g, '');
         if (!lettersInput) {
           api.log('[WA] Usage: wa match <letters>  e.g. wa match KK  or  wa match BDZ');
           return true;
@@ -1751,7 +1810,9 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
         api.log('  wa spell-add <spell> <UID>        — add a spell to your list (e.g. wa spell-add spook KOOP)');
         api.log('');
         api.log('[WA] CIPHER DISCOVERY:');
-        api.log('  wa cipher                         — show all 26 letters (D=confirmed C=config ~=probable ?=unknown)');
+        api.log(
+          '  wa cipher                         — show all 26 letters (D=confirmed C=config ~=probable ?=unknown)',
+        );
         api.log('  wa cipher set a=o                 — confirm A maps to brew letter O');
         api.log('  wa cipher maybe a=o,n             — record A is probably O or N (uncertain)');
         api.log('  wa cipher clear a                 — remove confirmed and/or probable mapping for A');

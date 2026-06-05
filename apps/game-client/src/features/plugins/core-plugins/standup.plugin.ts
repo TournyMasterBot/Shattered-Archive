@@ -81,9 +81,7 @@ export function createStandupPlugin(): IPluginModule {
 
       for (const pattern of patterns) {
         if (line.includes(pattern.toLowerCase())) {
-          const cmd = typeof cfg.standCommand === 'string' && cfg.standCommand.trim()
-            ? cfg.standCommand.trim()
-            : '~st';
+          const cmd = typeof cfg.standCommand === 'string' && cfg.standCommand.trim() ? cfg.standCommand.trim() : '~st';
 
           if (cfg.debug) {
             api.log(`[AutoStandup] matched "${pattern}" → ${cmd}`);

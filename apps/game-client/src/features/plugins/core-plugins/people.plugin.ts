@@ -18,27 +18,64 @@ import { getPerson, setPerson, findPeople, findByOrg, findByCraft, dbSize } from
 // ── Known organizations ────────────────────────────────────────────────
 
 const CLAN_LIST = new Set([
-  'Black Robes', 'Red Robes', 'White Robes', 'Bloodlust',
-  'Shalonesti', 'Justice', 'Knighthood', 'Shadow',
-  'Slayers', 'Wargar', 'Chaos', 'Loner',
-  'Renegade', 'Dragon', 'Demon', 'Angel', 'Balanx',
+  'Black Robes',
+  'Red Robes',
+  'White Robes',
+  'Bloodlust',
+  'Shalonesti',
+  'Justice',
+  'Knighthood',
+  'Shadow',
+  'Slayers',
+  'Wargar',
+  'Chaos',
+  'Loner',
+  'Renegade',
+  'Dragon',
+  'Demon',
+  'Angel',
+  'Balanx',
 ]);
 
 const KINGDOM_MAP: Record<string, string> = {
-  Verminasia: 'VR', Thaxanos: 'THAX', Althainia: 'AL',
-  Arkane: 'AR', 'New Thalos': 'NT', Shalonesti: 'SH', Retired: 'Retired',
+  Verminasia: 'VR',
+  Thaxanos: 'THAX',
+  Althainia: 'AL',
+  Arkane: 'AR',
+  'New Thalos': 'NT',
+  Shalonesti: 'SH',
+  Retired: 'Retired',
 };
 
 const KINGDOM_LIST = new Set([
-  'AR', 'VR', 'SH', 'AL', 'NT', 'THAX',
-  'Abaddon', 'Marauders', 'Ganth', 'Nordmaar', 'Darkonin',
-  'Gray Church', 'Retired', ...Object.values(KINGDOM_MAP),
+  'AR',
+  'VR',
+  'SH',
+  'AL',
+  'NT',
+  'THAX',
+  'Abaddon',
+  'Marauders',
+  'Ganth',
+  'Nordmaar',
+  'Darkonin',
+  'Gray Church',
+  'Retired',
+  ...Object.values(KINGDOM_MAP),
 ]);
 
 const CRAFT_NAMES = new Set([
-  'Spellcrafter', 'Armorcrafter', 'Tailor',
-  'Weaponsmith (Blunt)', 'Weaponsmith (Sharp)',
-  'Smelter', 'Tanner', 'Miller', 'Miner', 'Hunter', 'Lumberjack',
+  'Spellcrafter',
+  'Armorcrafter',
+  'Tailor',
+  'Weaponsmith (Blunt)',
+  'Weaponsmith (Sharp)',
+  'Smelter',
+  'Tanner',
+  'Miller',
+  'Miner',
+  'Hunter',
+  'Lumberjack',
 ]);
 
 // ── Who-list regex patterns ────────────────────────────────────────────
@@ -49,16 +86,13 @@ const RE_KINGDOM_ORG =
   /^\[\s*(\d+)\s+([\w-]+)\s+(\w+)\]\s*(?:\[(?:AFK|Quiet)\]\s*)*(?:\(WANTED\)\s*)?\(([^)]+)\)\s+([\w\s'-]+)/;
 
 // [lvl race class] [AFK?] [ clan ] Name Rank... (no parentheses = clan)
-const RE_CLAN =
-  /^\[\s*(\d+)\s+([\w-]+)\s+(\w+)\]\s*(?:\[(?:AFK|Quiet)\]\s*)*\[([^\]]+)\]\s+([\w\s'-]+)/;
+const RE_CLAN = /^\[\s*(\d+)\s+([\w-]+)\s+(\w+)\]\s*(?:\[(?:AFK|Quiet)\]\s*)*\[([^\]]+)\]\s+([\w\s'-]+)/;
 
 // [lvl  class] (WANTED?) (org) Name (level only + class, no race field)
-const RE_KINGDOM_SHORT =
-  /^\[\s*(\d+)\s+()(\w+)\]\s*(?:\(\w+\)\s*)*\(([^)]+)\)\s+([\w\s']+)/;
+const RE_KINGDOM_SHORT = /^\[\s*(\d+)\s+()(\w+)\]\s*(?:\(\w+\)\s*)*\(([^)]+)\)\s+([\w\s']+)/;
 
 // [lvl  class] [clan] Name
-const RE_CLAN_SHORT =
-  /^\[\s*(\d+)\s+()(\w+)\]\s*\[([^\]]+)\]\s+([\w']+)/;
+const RE_CLAN_SHORT = /^\[\s*(\d+)\s+()(\w+)\]\s*\[([^\]]+)\]\s+([\w']+)/;
 
 // Name - Rank Craft  (who craft output)
 const RE_CRAFT = new RegExp(
@@ -69,13 +103,59 @@ const RE_CRAFT = new RegExp(
 
 // Common rank words that prefix names on who lists
 const RANK_PREFIXES = new Set([
-  'Abbott', 'Admiral', 'Ambassador', 'Apprentice', 'Archmage', 'Baron', 'Bishop',
-  'Captain', 'Cardinal', 'Champion', 'Chancellor', 'Commander', 'Count', 'Dame',
-  'Duchess', 'Duke', 'Earl', 'Elder', 'Emperor', 'General', 'Grand', 'Guardian',
-  'High', 'Inquisitor', 'King', 'Knight', 'Lady', 'Legend', 'Lieutenant', 'Lord',
-  'Magistrate', 'Marshal', 'Master', 'Minister', 'Noble', 'Overlord', 'Prince',
-  'Princess', 'Private', 'Queen', 'Regent', 'Sage', 'Sergeant', 'Sir', 'Sister',
-  'Slave', 'Soldier', 'Sultan', 'Supreme', 'Templar', 'Veteran', 'Warden', 'Warlord',
+  'Abbott',
+  'Admiral',
+  'Ambassador',
+  'Apprentice',
+  'Archmage',
+  'Baron',
+  'Bishop',
+  'Captain',
+  'Cardinal',
+  'Champion',
+  'Chancellor',
+  'Commander',
+  'Count',
+  'Dame',
+  'Duchess',
+  'Duke',
+  'Earl',
+  'Elder',
+  'Emperor',
+  'General',
+  'Grand',
+  'Guardian',
+  'High',
+  'Inquisitor',
+  'King',
+  'Knight',
+  'Lady',
+  'Legend',
+  'Lieutenant',
+  'Lord',
+  'Magistrate',
+  'Marshal',
+  'Master',
+  'Minister',
+  'Noble',
+  'Overlord',
+  'Prince',
+  'Princess',
+  'Private',
+  'Queen',
+  'Regent',
+  'Sage',
+  'Sergeant',
+  'Sir',
+  'Sister',
+  'Slave',
+  'Soldier',
+  'Sultan',
+  'Supreme',
+  'Templar',
+  'Veteran',
+  'Warden',
+  'Warlord',
 ]);
 
 function parseName(raw: string): string {
@@ -205,9 +285,7 @@ export function createPeoplePlugin(): IPluginModule {
     const t = input.trim();
 
     // set status <name> [enemy|neutral|ally]
-    const statusMatch = t.match(
-      /^set\s+status\s+(\S+)(?:\s+(enemy|neutral|ally))?\s*$/i,
-    );
+    const statusMatch = t.match(/^set\s+status\s+(\S+)(?:\s+(enemy|neutral|ally))?\s*$/i);
     if (statusMatch) {
       const name = statusMatch[1].trim();
       const requested = statusMatch[2]?.toLowerCase() as 'enemy' | 'neutral' | 'ally' | undefined;
@@ -215,8 +293,7 @@ export function createPeoplePlugin(): IPluginModule {
       if (!person) {
         api.writeTerminal(`{R"${name}" not found in People database.{x\n`);
       } else {
-        const newStatus =
-          requested ?? (person.status === 'enemy' ? 'neutral' : 'enemy');
+        const newStatus = requested ?? (person.status === 'enemy' ? 'neutral' : 'enemy');
         setPerson(person.name, { status: newStatus });
         api.writeTerminal(`Status of {W${person.name}{x set to ${newStatus}.\n`);
       }
@@ -234,9 +311,7 @@ export function createPeoplePlugin(): IPluginModule {
       } else {
         setPerson(person.name, { team: tag });
         api.writeTerminal(
-          tag
-            ? `{W${person.name}{x assigned to team ${tag}.\n`
-            : `Team for {W${person.name}{x cleared.\n`,
+          tag ? `{W${person.name}{x assigned to team ${tag}.\n` : `Team for {W${person.name}{x cleared.\n`,
         );
       }
       return true;
@@ -249,10 +324,13 @@ export function createPeoplePlugin(): IPluginModule {
     const query = m[2].trim();
 
     let results =
-      show === 'kinfo' ? findByOrg('kingdom', query)
-      : show === 'cinfo' ? findByOrg('clan', query)
-      : show === 'craft' ? findByCraft(query)
-      : findPeople(query);
+      show === 'kinfo'
+        ? findByOrg('kingdom', query)
+        : show === 'cinfo'
+          ? findByOrg('clan', query)
+          : show === 'craft'
+            ? findByCraft(query)
+            : findPeople(query);
 
     if (results.length === 0) {
       api.writeTerminal(`{DNNo players found matching "${query}".{x\n`);
@@ -264,14 +342,9 @@ export function createPeoplePlugin(): IPluginModule {
       const race = (p.race ?? '').padEnd(6);
       const cls = (p.class ?? '').padEnd(3);
       const org = p.org ? `{C(${p.org}){x ` : '';
-      const craft =
-        show === 'craft'
-          ? ` {D— ${p.craftRank ?? ''} ${p.craft ?? ''}{x`.trimEnd()
-          : '';
+      const craft = show === 'craft' ? ` {D— ${p.craftRank ?? ''} ${p.craft ?? ''}{x`.trimEnd() : '';
       const date = p.lastSeen ? new Date(p.lastSeen).toLocaleDateString() : 'unknown';
-      api.writeTerminal(
-        `{W[${lvl} ${race} ${cls}]{x ${org}{W${p.name}{x${craft} {D: ${date}{x\n`,
-      );
+      api.writeTerminal(`{W[${lvl} ${race} ${cls}]{x ${org}{W${p.name}{x${craft} {D: ${date}{x\n`);
     }
 
     api.writeTerminal(`\n{DPlayers found: ${results.length}{x\n`);
@@ -283,8 +356,7 @@ export function createPeoplePlugin(): IPluginModule {
       id: 'people',
       name: 'People',
       version: '0.1.0',
-      description:
-        'Tracks player info (level, race, class, org) from who-list output. Powers the Highlighter plugin.',
+      description: 'Tracks player info (level, race, class, org) from who-list output. Powers the Highlighter plugin.',
     },
 
     configSchema: {

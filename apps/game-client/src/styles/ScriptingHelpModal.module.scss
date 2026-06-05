@@ -114,7 +114,9 @@
   font-size: 0.78rem;
   padding: 6px 14px;
   cursor: pointer;
-  transition: color 0.12s, background 0.12s;
+  transition:
+    color 0.12s,
+    background 0.12s;
 
   &:hover {
     background: #1a1a1a;
@@ -206,7 +208,10 @@
   font-size: 0.74rem;
   padding: 3px 10px;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s;
 
   &:hover {
     background: #1e3555;

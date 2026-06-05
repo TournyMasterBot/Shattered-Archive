@@ -27,18 +27,35 @@ import { stripAnsi } from '../../autoleveling/autoleveling-text';
 // ── Types ─────────────────────────────────────────────────────────────────
 
 interface ColorRule {
-  matchText: string;      // lowercase for comparison
-  rawMatchText: string;   // original case preserved for omit registration
-  color: string;          // single DSL color char, e.g. "r", "B"
-  eventName: string;      // event to listen on
+  matchText: string; // lowercase for comparison
+  rawMatchText: string; // original case preserved for omit registration
+  color: string; // single DSL color char, e.g. "r", "B"
+  eventName: string; // event to listen on
 }
 
 // ── DSL color code validation ───────────────────────────────────────────────
 
 const VALID_DSL_COLORS = new Set([
-  'r', 'R', 'g', 'G', 'y', 'Y', 'b', 'B',
-  'm', 'M', 'c', 'C', 'D', 'w', 'W',
-  'p', 'o', 'n', 'u', 'x',
+  'r',
+  'R',
+  'g',
+  'G',
+  'y',
+  'Y',
+  'b',
+  'B',
+  'm',
+  'M',
+  'c',
+  'C',
+  'D',
+  'w',
+  'W',
+  'p',
+  'o',
+  'n',
+  'u',
+  'x',
 ]);
 
 function normalizeColor(raw: string): string | null {
@@ -112,7 +129,8 @@ export function createColorKitPlugin(): IPluginModule {
       id: 'colorkit',
       name: 'Color Kit',
       version: '0.1.0',
-      description: 'Colorize matched lines without writing trigger scripts. One rule per line: match text | color code.',
+      description:
+        'Colorize matched lines without writing trigger scripts. One rule per line: match text | color code.',
     },
 
     configSchema: {

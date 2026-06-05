@@ -16,7 +16,7 @@ import type { IPluginModule, PluginRuntimeApi } from '@shatteredarchive/types-cl
 // ── Types ─────────────────────────────────────────────────────────────────
 
 interface AffectColorRule {
-  affect: string;    // lowercase for matching
+  affect: string; // lowercase for matching
   upColor: string;
   downColor: string;
 }

@@ -64,7 +64,10 @@ export function manualToAutoLevel(t: ManualTarget): AutoLevelTarget {
   const seen = new Set<string>();
   const keywords: string[] = [];
   for (const k of [engage, ...parts]) {
-    if (k && !seen.has(k)) { seen.add(k); keywords.push(k); }
+    if (k && !seen.has(k)) {
+      seen.add(k);
+      keywords.push(k);
+    }
   }
 
   return {
@@ -85,6 +88,10 @@ export function manualToAutoLevel(t: ManualTarget): AutoLevelTarget {
 function isValidManualTarget(obj: unknown): obj is ManualTarget {
   if (!obj || typeof obj !== 'object') return false;
   const o = obj as any;
-  return typeof o.lookName === 'string' && o.lookName.length > 0 &&
-         typeof o.engageName === 'string' && o.engageName.length > 0;
+  return (
+    typeof o.lookName === 'string' &&
+    o.lookName.length > 0 &&
+    typeof o.engageName === 'string' &&
+    o.engageName.length > 0
+  );
 }

@@ -20,13 +20,13 @@
 import type { BuildStep } from './autoleveling-user-paths';
 
 export type MudletMob = {
-  key: string;   // engage keyword
-  look: string;  // full room description
+  key: string; // engage keyword
+  look: string; // full room description
 };
 
 export type MudletArea = {
   name: string;
-  dirs: string[];      // raw dir entries from Lua (may contain ';' compound cmds)
+  dirs: string[]; // raw dir entries from Lua (may contain ';' compound cmds)
   mobs: MudletMob[];
   description: string;
   levels: string;
@@ -76,12 +76,7 @@ function escapeRegex(s: string): string {
 }
 
 function unescapeLuaString(s: string): string {
-  return s
-    .replace(/\\n/g, '\n')
-    .replace(/\\t/g, '\t')
-    .replace(/\\"/g, '"')
-    .replace(/\\'/g, "'")
-    .replace(/\\\\/g, '\\');
+  return s.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\\\/g, '\\');
 }
 
 /** Extract ["fieldName"] = { "str1", "str2", ... } into a string array. */
@@ -144,8 +139,8 @@ function parseAreaContent(name: string, inner: string): MudletArea {
 
 export type MudletBuff = {
   role: 'haste' | 'fury' | 'detects' | 'sanc';
-  cmd: string;             // individual command (already split from compound ';' strings)
-  inferredAffect: string;  // guessed affect name for if_affect_missing, may be empty
+  cmd: string; // individual command (already split from compound ';' strings)
+  inferredAffect: string; // guessed affect name for if_affect_missing, may be empty
 };
 
 /** Guess the GMCP affect name from a cast/quaff command. */
@@ -181,10 +176,10 @@ export function parseMudletBuffs(lua: string): MudletBuff[] {
   const buffs: MudletBuff[] = [];
 
   const defs: { role: MudletBuff['role']; prop: string; setter: string }[] = [
-    { role: 'haste',   prop: 'hasteAction',   setter: 'setHaste'   },
-    { role: 'fury',    prop: 'fury',           setter: 'setFury'    },
-    { role: 'detects', prop: 'detectsAction',  setter: 'setDetects' },
-    { role: 'sanc',    prop: 'sancAction',     setter: 'setSanc'    },
+    { role: 'haste', prop: 'hasteAction', setter: 'setHaste' },
+    { role: 'fury', prop: 'fury', setter: 'setFury' },
+    { role: 'detects', prop: 'detectsAction', setter: 'setDetects' },
+    { role: 'sanc', prop: 'sancAction', setter: 'setSanc' },
   ];
 
   for (const { role, prop, setter } of defs) {
@@ -192,7 +187,10 @@ export function parseMudletBuffs(lua: string): MudletBuff[] {
     if (!raw || !raw.trim()) continue;
 
     // Split compound commands so each becomes its own buff entry
-    const cmds = raw.split(';').map((s) => s.trim()).filter(Boolean);
+    const cmds = raw
+      .split(';')
+      .map((s) => s.trim())
+      .filter(Boolean);
     for (const cmd of cmds) {
       buffs.push({ role, cmd, inferredAffect: inferAffectName(cmd) });
     }
@@ -263,7 +261,10 @@ export function parseMudletScript(lua: string): MudletParseResult {
 export function mudletDirsToBuildSteps(dirs: string[]): BuildStep[] {
   const steps: BuildStep[] = [];
   for (const dir of dirs) {
-    const parts = dir.split(';').map((s) => s.trim()).filter(Boolean);
+    const parts = dir
+      .split(';')
+      .map((s) => s.trim())
+      .filter(Boolean);
     for (const part of parts) {
       steps.push({ kind: 'move', dir: part });
     }

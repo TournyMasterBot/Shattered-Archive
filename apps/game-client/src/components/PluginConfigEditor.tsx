@@ -120,7 +120,9 @@ export const PluginConfigEditor: React.FC<Props> = ({ connectionId, pluginId, sc
             style={{ width: '100%', boxSizing: 'border-box' }}
           >
             {f.options.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
             ))}
           </select>
         </div>

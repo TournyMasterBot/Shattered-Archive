@@ -139,14 +139,28 @@ function isMovementCommand(cmd: string): { isMove: boolean; dir?: string } {
 }
 
 const REVERSE_DIR: Record<string, string> = {
-  n: 's', s: 'n', e: 'w', w: 'e',
-  ne: 'sw', sw: 'ne', nw: 'se', se: 'nw',
-  u: 'd', d: 'u', up: 'down', down: 'up',
-  north: 'south', south: 'north', east: 'west', west: 'east',
+  n: 's',
+  s: 'n',
+  e: 'w',
+  w: 'e',
+  ne: 'sw',
+  sw: 'ne',
+  nw: 'se',
+  se: 'nw',
+  u: 'd',
+  d: 'u',
+  up: 'down',
+  down: 'up',
+  north: 'south',
+  south: 'north',
+  east: 'west',
+  west: 'east',
 };
 
 function reverseMovementCommand(cmd: string): string | null {
-  const c = String(cmd ?? '').trim().toLowerCase();
+  const c = String(cmd ?? '')
+    .trim()
+    .toLowerCase();
   return REVERSE_DIR[c] ?? null;
 }
 
@@ -456,7 +470,9 @@ export class AutoLevelingEngine {
         ListenEvent<any>(
           'game:room-data',
           (payload) => {
-            this.boundOnMovementSucceeded({ detail: { cmd: this.moveWait?.cmd, dir: this.moveWait?.dir, ts: now() + 100, room: payload } } as any);
+            this.boundOnMovementSucceeded({
+              detail: { cmd: this.moveWait?.cmd, dir: this.moveWait?.dir, ts: now() + 100, room: payload },
+            } as any);
           },
           { key: 'AutoLevelingEngine:room-data' },
         ),
@@ -475,7 +491,11 @@ export class AutoLevelingEngine {
           'game:affects-trueup',
           (payload) => {
             this.activeAffects.clear();
-            const list: any[] = Array.isArray(payload) ? payload : (Array.isArray(payload?.affects) ? payload.affects : []);
+            const list: any[] = Array.isArray(payload)
+              ? payload
+              : Array.isArray(payload?.affects)
+                ? payload.affects
+                : [];
             for (const a of list) {
               if (a?.n) this.activeAffects.add(String(a.n).trim().toLowerCase());
             }
@@ -590,8 +610,9 @@ export class AutoLevelingEngine {
       ...(cfg.steps.identify.pre ?? []),
       ...(cfg.steps.identify.exec ?? []),
       ...(cfg.steps.identify.post ?? []),
-    ].filter((a): a is Extract<typeof a, { kind: 'send' }> =>
-      a.kind === 'send' && String((a as any).cmd ?? '').trim().length > 0,
+    ].filter(
+      (a): a is Extract<typeof a, { kind: 'send' }> =>
+        a.kind === 'send' && String((a as any).cmd ?? '').trim().length > 0,
     );
 
     if (sendActions.length > 0) {
@@ -884,7 +905,9 @@ export class AutoLevelingEngine {
       }
 
       case 'if_affect_missing': {
-        const key = String(a.affectName ?? '').trim().toLowerCase();
+        const key = String(a.affectName ?? '')
+          .trim()
+          .toLowerCase();
         const active = key ? this.activeAffects.has(key) : false;
         dbg('if_affect_missing', { affectName: key, active });
         if (!active) await this.sendCommand(a.cmd);
@@ -1322,9 +1345,10 @@ export class AutoLevelingEngine {
         const initiation = (cfg.init.initiationCommand ?? '').length
           ? String(cfg.init.initiationCommand)
           : 'kill {name}';
-        const firstKeyword = (Array.isArray(t.target.keywords) ? t.target.keywords : [])
-          .map((k) => String(k ?? '').trim())
-          .find((k) => k.length > 0) ?? t.target.cleanName;
+        const firstKeyword =
+          (Array.isArray(t.target.keywords) ? t.target.keywords : [])
+            .map((k) => String(k ?? '').trim())
+            .find((k) => k.length > 0) ?? t.target.cleanName;
         const wouldSend = applyInitiationTemplate(initiation, firstKeyword);
 
         dbg('dry_run: injecting notify', { target: t.target.cleanName, wouldSend });
@@ -1490,7 +1514,11 @@ export class AutoLevelingEngine {
     if (this.sightseeWait) {
       const rej = this.sightseeWait.reject;
       this.sightseeWait = null;
-      try { rej(err); } catch { /* ignore */ }
+      try {
+        rej(err);
+      } catch {
+        /* ignore */
+      }
     }
 
     if (this.moveWait) {

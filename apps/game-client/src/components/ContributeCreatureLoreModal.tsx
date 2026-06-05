@@ -441,254 +441,250 @@ export const ContributeCreatureLoreModal: React.FC<ContributeCreatureLoreModalPr
         </button>
       </div>
 
-        <div className={styles.body}>
-          <div className={styles.topSection}>
-            <div className={styles.formRowFull}>
-              <div className={styles.selectRow}>
-                <div className={styles.selectField}>
-                  <label className={styles.selectLabel} htmlFor="contrib-creaturelore-continent">
-                    Continent
-                  </label>
-                  {continentError || continentNames.length === 0 && !mapsLoading ? (
-                    <input
-                      id="contrib-creaturelore-continent"
-                      className={styles.input}
-                      value={continent}
-                      onChange={(e) => setContinent(e.target.value)}
-                      placeholder="Type continent…"
-                      disabled={isSubmitting}
-                    />
-                  ) : (
-                    <select
-                      id="contrib-creaturelore-continent"
-                      className={`${styles.input} ${styles.select}`}
-                      value={continent}
-                      onChange={(e) => setContinent(e.target.value)}
-                      disabled={isSubmitting}
-                      required
-                    >
-                      <option value="" disabled>
-                        {mapsLoading ? 'Loading continents…' : 'Select continent'}
+      <div className={styles.body}>
+        <div className={styles.topSection}>
+          <div className={styles.formRowFull}>
+            <div className={styles.selectRow}>
+              <div className={styles.selectField}>
+                <label className={styles.selectLabel} htmlFor="contrib-creaturelore-continent">
+                  Continent
+                </label>
+                {continentError || (continentNames.length === 0 && !mapsLoading) ? (
+                  <input
+                    id="contrib-creaturelore-continent"
+                    className={styles.input}
+                    value={continent}
+                    onChange={(e) => setContinent(e.target.value)}
+                    placeholder="Type continent…"
+                    disabled={isSubmitting}
+                  />
+                ) : (
+                  <select
+                    id="contrib-creaturelore-continent"
+                    className={`${styles.input} ${styles.select}`}
+                    value={continent}
+                    onChange={(e) => setContinent(e.target.value)}
+                    disabled={isSubmitting}
+                    required
+                  >
+                    <option value="" disabled>
+                      {mapsLoading ? 'Loading continents…' : 'Select continent'}
+                    </option>
+                    {continentNames.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
                       </option>
-                      {continentNames.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-
-                <div className={styles.selectField}>
-                  <label className={styles.selectLabel} htmlFor="contrib-creaturelore-area">
-                    Area
-                  </label>
-                  {continentError || areaLoadFailedForSelected ? (
-                    <input
-                      id="contrib-creaturelore-area"
-                      className={styles.input}
-                      value={area}
-                      onChange={(e) => setArea(e.target.value)}
-                      placeholder="Type area…"
-                      disabled={isSubmitting}
-                    />
-                  ) : (
-                    <select
-                      id="contrib-creaturelore-area"
-                      className={`${styles.input} ${styles.select}`}
-                      value={area}
-                      onChange={(e) => setArea(e.target.value)}
-                      disabled={isSubmitting || !continent}
-                      required
-                    >
-                      <option value="" disabled>
-                        {!continent
-                          ? 'Select area'
-                          : areasForSelected.length === 0
-                            ? 'Loading areas…'
-                            : 'Select area'}
-                      </option>
-                      {areasForSelected.map((a, i) => (
-                        <option key={`${a}|${i}`} value={a}>
-                          {a}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
+                    ))}
+                  </select>
+                )}
               </div>
 
-              {continentError ? (
-                <div className={styles.errorBox} style={{ marginTop: 8 }}>
-                  Maps: {continentError}
-                </div>
-              ) : null}
-
-              {continent && areaLoadFailedForSelected ? (
-                <div className={styles.errorBox} style={{ marginTop: 8 }}>
-                  Areas for <span className={styles.mono}>{continent}</span>: {areaLoadFailedForSelected}
-                </div>
-              ) : null}
-            </div>
-
-            <div className={styles.formRow}>
-              <label className={styles.label} htmlFor="contrib-creaturelore-short">
-                Short
-              </label>
-              <input
-                id="contrib-creaturelore-short"
-                className={styles.input}
-                value={shortText}
-                onChange={(e) => setShortText(e.target.value)}
-                placeholder="Creature short name…"
-                disabled={isSubmitting || isRunning}
-              />
-            </div>
-
-            <div className={styles.formRow}>
-              <label className={styles.label} htmlFor="contrib-creaturelore-long">
-                Long
-              </label>
-              <input
-                id="contrib-creaturelore-long"
-                className={styles.input}
-                value={longText}
-                onChange={(e) => setLongText(e.target.value)}
-                placeholder="Long description…"
-                disabled={isSubmitting || isRunning}
-              />
-            </div>
-
-            <div className={styles.actionsRow}>
-              <button
-                className={styles.primaryBtn}
-                type="button"
-                onClick={runSequence}
-                disabled={!shortOk || isRunning || isSubmitting}
-                title={!shortOk ? 'Enter a Short value first.' : undefined}
-              >
-                CreatureLore
-              </button>
-
-              <div className={styles.hint}>
-                <div>
-                  Connection: <span className={styles.mono}>{connectionId}</span>
-                </div>
-                <div>
-                  Identity: <span className={styles.mono}>{identityStatus}</span>
-                </div>
-                <div>
-                  {isRunning ? (
-                    stage === 'lore' ? (
-                      <span>
-                        Capturing <span className={styles.mono}>creaturelore</span> for 1 second…
-                      </span>
-                    ) : stage === 'look' ? (
-                      <span>
-                        Capturing <span className={styles.mono}>look</span> for 1 second…
-                      </span>
-                    ) : (
-                      <span>Waiting…</span>
-                    )
-                  ) : (
-                    <span>
-                      Click CreatureLore to capture 1s of <span className={styles.mono}>creaturelore</span>, wait 8s,
-                      then capture 1s of <span className={styles.mono}>look</span>.
-                    </span>
-                  )}
-                </div>
+              <div className={styles.selectField}>
+                <label className={styles.selectLabel} htmlFor="contrib-creaturelore-area">
+                  Area
+                </label>
+                {continentError || areaLoadFailedForSelected ? (
+                  <input
+                    id="contrib-creaturelore-area"
+                    className={styles.input}
+                    value={area}
+                    onChange={(e) => setArea(e.target.value)}
+                    placeholder="Type area…"
+                    disabled={isSubmitting}
+                  />
+                ) : (
+                  <select
+                    id="contrib-creaturelore-area"
+                    className={`${styles.input} ${styles.select}`}
+                    value={area}
+                    onChange={(e) => setArea(e.target.value)}
+                    disabled={isSubmitting || !continent}
+                    required
+                  >
+                    <option value="" disabled>
+                      {!continent ? 'Select area' : areasForSelected.length === 0 ? 'Loading areas…' : 'Select area'}
+                    </option>
+                    {areasForSelected.map((a, i) => (
+                      <option key={`${a}|${i}`} value={a}>
+                        {a}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
-
-              {isRunning ? (
-                <button className={styles.secondaryBtn} type="button" onClick={stopAll} disabled={isSubmitting}>
-                  Stop
-                </button>
-              ) : null}
             </div>
 
-            {submitError ? <div className={styles.errorBox}>{submitError}</div> : null}
-            {submitOk ? <div className={styles.okBox}>Ready / Submitted.</div> : null}
+            {continentError ? (
+              <div className={styles.errorBox} style={{ marginTop: 8 }}>
+                Maps: {continentError}
+              </div>
+            ) : null}
+
+            {continent && areaLoadFailedForSelected ? (
+              <div className={styles.errorBox} style={{ marginTop: 8 }}>
+                Areas for <span className={styles.mono}>{continent}</span>: {areaLoadFailedForSelected}
+              </div>
+            ) : null}
           </div>
 
-          <div className={styles.splitter} />
-
-          {/* Stacked (top/bottom) panels */}
-          <div className={styles.detailSection}>
-            <div className={styles.detailStack}>
-              {/* Lore (top) */}
-              <section className={styles.detailPanel} aria-label="Creature Lore Details">
-                <div className={styles.panelHeader}>
-                  <div className={styles.panelTitle}>Creature Lore Details</div>
-                  <div className={styles.panelMeta}>
-                    <span className={styles.countPill}>{loreLines.length}</span>
-                  </div>
-                </div>
-
-                <div className={styles.panelBody}>
-                  {loreLines.length === 0 ? (
-                    <div className={styles.empty}>No creaturelore lines captured yet.</div>
-                  ) : (
-                    <div className={styles.lineList}>
-                      {loreLines.map((line, idx) => (
-                        <div key={`lore-${idx}`} className={styles.lineRow}>
-                          <button
-                            className={styles.deleteBtn}
-                            type="button"
-                            onClick={() => deleteLoreLine(idx)}
-                            aria-label="Delete line"
-                            disabled={isSubmitting || isRunning}
-                          >
-                            ✕
-                          </button>
-                          <pre className={styles.lineText}>{line}</pre>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </section>
-
-              {/* Look (bottom) */}
-              <section className={styles.detailPanel} aria-label="Creature Look Details">
-                <div className={styles.panelHeader}>
-                  <div className={styles.panelTitle}>Creature Look Details</div>
-                  <div className={styles.panelMeta}>
-                    <span className={styles.countPill}>{lookLines.length}</span>
-                  </div>
-                </div>
-
-                <div className={styles.panelBody}>
-                  {lookLines.length === 0 ? (
-                    <div className={styles.empty}>No look lines captured yet.</div>
-                  ) : (
-                    <div className={styles.lineList}>
-                      {lookLines.map((line, idx) => (
-                        <div key={`look-${idx}`} className={styles.lineRow}>
-                          <button
-                            className={styles.deleteBtn}
-                            type="button"
-                            onClick={() => deleteLookLine(idx)}
-                            aria-label="Delete line"
-                            disabled={isSubmitting || isRunning}
-                          >
-                            ✕
-                          </button>
-                          <pre className={styles.lineText}>{line}</pre>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </section>
-            </div>
+          <div className={styles.formRow}>
+            <label className={styles.label} htmlFor="contrib-creaturelore-short">
+              Short
+            </label>
+            <input
+              id="contrib-creaturelore-short"
+              className={styles.input}
+              value={shortText}
+              onChange={(e) => setShortText(e.target.value)}
+              placeholder="Creature short name…"
+              disabled={isSubmitting || isRunning}
+            />
           </div>
 
-          <div className={styles.footer}>
-            <button className={styles.submitBtn} type="button" onClick={onSubmit} disabled={!canSubmit}>
-              {isSubmitting ? 'Submitting…' : 'Submit'}
+          <div className={styles.formRow}>
+            <label className={styles.label} htmlFor="contrib-creaturelore-long">
+              Long
+            </label>
+            <input
+              id="contrib-creaturelore-long"
+              className={styles.input}
+              value={longText}
+              onChange={(e) => setLongText(e.target.value)}
+              placeholder="Long description…"
+              disabled={isSubmitting || isRunning}
+            />
+          </div>
+
+          <div className={styles.actionsRow}>
+            <button
+              className={styles.primaryBtn}
+              type="button"
+              onClick={runSequence}
+              disabled={!shortOk || isRunning || isSubmitting}
+              title={!shortOk ? 'Enter a Short value first.' : undefined}
+            >
+              CreatureLore
             </button>
+
+            <div className={styles.hint}>
+              <div>
+                Connection: <span className={styles.mono}>{connectionId}</span>
+              </div>
+              <div>
+                Identity: <span className={styles.mono}>{identityStatus}</span>
+              </div>
+              <div>
+                {isRunning ? (
+                  stage === 'lore' ? (
+                    <span>
+                      Capturing <span className={styles.mono}>creaturelore</span> for 1 second…
+                    </span>
+                  ) : stage === 'look' ? (
+                    <span>
+                      Capturing <span className={styles.mono}>look</span> for 1 second…
+                    </span>
+                  ) : (
+                    <span>Waiting…</span>
+                  )
+                ) : (
+                  <span>
+                    Click CreatureLore to capture 1s of <span className={styles.mono}>creaturelore</span>, wait 8s, then
+                    capture 1s of <span className={styles.mono}>look</span>.
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {isRunning ? (
+              <button className={styles.secondaryBtn} type="button" onClick={stopAll} disabled={isSubmitting}>
+                Stop
+              </button>
+            ) : null}
+          </div>
+
+          {submitError ? <div className={styles.errorBox}>{submitError}</div> : null}
+          {submitOk ? <div className={styles.okBox}>Ready / Submitted.</div> : null}
+        </div>
+
+        <div className={styles.splitter} />
+
+        {/* Stacked (top/bottom) panels */}
+        <div className={styles.detailSection}>
+          <div className={styles.detailStack}>
+            {/* Lore (top) */}
+            <section className={styles.detailPanel} aria-label="Creature Lore Details">
+              <div className={styles.panelHeader}>
+                <div className={styles.panelTitle}>Creature Lore Details</div>
+                <div className={styles.panelMeta}>
+                  <span className={styles.countPill}>{loreLines.length}</span>
+                </div>
+              </div>
+
+              <div className={styles.panelBody}>
+                {loreLines.length === 0 ? (
+                  <div className={styles.empty}>No creaturelore lines captured yet.</div>
+                ) : (
+                  <div className={styles.lineList}>
+                    {loreLines.map((line, idx) => (
+                      <div key={`lore-${idx}`} className={styles.lineRow}>
+                        <button
+                          className={styles.deleteBtn}
+                          type="button"
+                          onClick={() => deleteLoreLine(idx)}
+                          aria-label="Delete line"
+                          disabled={isSubmitting || isRunning}
+                        >
+                          ✕
+                        </button>
+                        <pre className={styles.lineText}>{line}</pre>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Look (bottom) */}
+            <section className={styles.detailPanel} aria-label="Creature Look Details">
+              <div className={styles.panelHeader}>
+                <div className={styles.panelTitle}>Creature Look Details</div>
+                <div className={styles.panelMeta}>
+                  <span className={styles.countPill}>{lookLines.length}</span>
+                </div>
+              </div>
+
+              <div className={styles.panelBody}>
+                {lookLines.length === 0 ? (
+                  <div className={styles.empty}>No look lines captured yet.</div>
+                ) : (
+                  <div className={styles.lineList}>
+                    {lookLines.map((line, idx) => (
+                      <div key={`look-${idx}`} className={styles.lineRow}>
+                        <button
+                          className={styles.deleteBtn}
+                          type="button"
+                          onClick={() => deleteLookLine(idx)}
+                          aria-label="Delete line"
+                          disabled={isSubmitting || isRunning}
+                        >
+                          ✕
+                        </button>
+                        <pre className={styles.lineText}>{line}</pre>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
         </div>
+
+        <div className={styles.footer}>
+          <button className={styles.submitBtn} type="button" onClick={onSubmit} disabled={!canSubmit}>
+            {isSubmitting ? 'Submitting…' : 'Submit'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

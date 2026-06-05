@@ -292,12 +292,12 @@ export const DEFAULT_LETTER_MAP_CONFIG = [
 export const DEFAULT_RECIPE_CONFIG = [
   '# Define brew recipes',
   '# Format: name = token token ...',
-  '# Tokens: letter, quoted item, or quantity prefix (2xS, 3x\'ill shard\')',
-  '# Append a symbol (!@$%^&*) to any token to cast that symbol\'s spell on the item between get and put',
+  "# Tokens: letter, quoted item, or quantity prefix (2xS, 3x'ill shard')",
+  "# Append a symbol (!@$%^&*) to any token to cast that symbol's spell on the item between get and put",
   '# Examples: K K*  (continual light on 2nd K)   K K%  (invis on 2nd K)   K K@  (curse on 2nd K)',
   '#',
   '# health = 2xS C P V',
-  '# light  = 2x\'ill shard\'* K',
+  "# light  = 2x'ill shard'* K",
 ].join('\n');
 
 export const DEFAULT_SYMBOL_MAP_CONFIG = [
@@ -322,8 +322,7 @@ export function createBrewPlugin(): IPluginModule {
       id: 'brew',
       name: 'Brew Helper',
       version: '0.1.0',
-      description:
-        'Automates potion brewing. Map letters to items, define recipes, then type: brew <name>',
+      description: 'Automates potion brewing. Map letters to items, define recipes, then type: brew <name>',
     },
 
     configSchema: {
@@ -339,7 +338,8 @@ export function createBrewPlugin(): IPluginModule {
           key: 'letterMap',
           type: 'textarea',
           label: 'Letter map',
-          description: 'Map single letters to item names. One entry per line: LETTER = item name. Lines starting with # are comments.',
+          description:
+            'Map single letters to item names. One entry per line: LETTER = item name. Lines starting with # are comments.',
           placeholder: 'C = cologne\nS = ill shard',
         },
         {
@@ -347,7 +347,7 @@ export function createBrewPlugin(): IPluginModule {
           type: 'textarea',
           label: 'Recipes',
           description:
-            'Define brew recipes. One per line: name = tokens. Tokens: a letter, quoted item, or quantity like 2xS or 3x\'ill shard\'. Append any symbol (!@$%^&*) to a token to cast that symbol\'s mapped spell on the item between get and put. Lines starting with # are comments.',
+            "Define brew recipes. One per line: name = tokens. Tokens: a letter, quoted item, or quantity like 2xS or 3x'ill shard'. Append any symbol (!@$%^&*) to a token to cast that symbol's mapped spell on the item between get and put. Lines starting with # are comments.",
           placeholder: "health = 2xS C P V\nlight = 2x'ill shard' K",
         },
         {

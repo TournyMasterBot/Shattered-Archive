@@ -15,8 +15,15 @@ interface PluginsModalProps {
 }
 
 export const PluginsModal: React.FC<PluginsModalProps> = ({ isOpen, onClose, connectionId }) => {
-  const { installed, isInstalled, installCorePlugin, removePlugin, setPluginEnabled, getInstallRecord, updatePluginConfig } =
-    usePlugins(connectionId);
+  const {
+    installed,
+    isInstalled,
+    installCorePlugin,
+    removePlugin,
+    setPluginEnabled,
+    getInstallRecord,
+    updatePluginConfig,
+  } = usePlugins(connectionId);
 
   const [activeCssPluginId, setActiveCssPluginId] = React.useState<string | null>(null);
   const [activeConfigPluginId, setActiveConfigPluginId] = React.useState<string | null>(null);
@@ -95,9 +102,7 @@ export const PluginsModal: React.FC<PluginsModalProps> = ({ isOpen, onClose, con
                   <div className={styles.left}>
                     <div className={styles.name}>
                       {p.manifest.name}
-                      {p.manifest.tags?.includes('wip') && (
-                        <span className={styles.wipBadge}>⚙ WIP</span>
-                      )}
+                      {p.manifest.tags?.includes('wip') && <span className={styles.wipBadge}>⚙ WIP</span>}
                     </div>
                     <div className={styles.meta}>
                       v{p.manifest.version}

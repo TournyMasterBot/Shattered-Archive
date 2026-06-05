@@ -28,19 +28,17 @@ export interface GourdEntry {
 
 // ── Trigger patterns (from DSL_PNP_Gourd.lua) ─────────────────────────
 
-const RE_GOURD_NAME   = /Name\(s\):\s*'witch potion gourd ([a-zA-Z ]+)'/i;
+const RE_GOURD_NAME = /Name\(s\):\s*'witch potion gourd ([a-zA-Z ]+)'/i;
 const RE_GOURD_SPELLS = /Level \d+ spells of:\s*'(.+)'\./;
-const RE_EVAPORATE    = /potion gourd of (.+) has evaporated from disuse/i;
+const RE_EVAPORATE = /potion gourd of (.+) has evaporated from disuse/i;
 const RE_TOSS_CONFIRM = /^You throw a gourd right at /;
-const RE_LORE_FAIL    = /^Can't make heads or tails of it\./;
-const RE_SCAN_END     = /^You do not have that item\./;
+const RE_LORE_FAIL = /^Can't make heads or tails of it\./;
+const RE_SCAN_END = /^You do not have that item\./;
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
 function sortGourds(db: GourdEntry[]): GourdEntry[] {
-  return [...db].sort((a, b) =>
-    a.name !== b.name ? a.name.localeCompare(b.name) : b.nameIndex - a.nameIndex,
-  );
+  return [...db].sort((a, b) => (a.name !== b.name ? a.name.localeCompare(b.name) : b.nameIndex - a.nameIndex));
 }
 
 /** The mud item reference used in commands: e.g. "2.healing" */

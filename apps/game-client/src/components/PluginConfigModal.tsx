@@ -73,9 +73,10 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
   };
 
   const save = () => {
-    const cleaned = Object.fromEntries(
-      Object.entries(draft).filter(([, v]) => v !== undefined),
-    ) as Record<string, unknown>;
+    const cleaned = Object.fromEntries(Object.entries(draft).filter(([, v]) => v !== undefined)) as Record<
+      string,
+      unknown
+    >;
 
     onSave(pluginId, cleaned);
     onClose();
@@ -238,7 +239,9 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
                       onKeyUp={(e) => e.stopPropagation()}
                     >
                       {f.options.map((o: { value: string; label: string }) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -275,9 +278,7 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
                   >
                     {state === 'done' ? '✓ Synced' : action.label}
                   </button>
-                  {action.description && (
-                    <span className={styles.actionDesc}>{action.description}</span>
-                  )}
+                  {action.description && <span className={styles.actionDesc}>{action.description}</span>}
                 </div>
               );
             })}
@@ -286,7 +287,8 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
 
         {isEnabled === false && (
           <div className={styles.notEnabledBanner}>
-            ⚠ This plugin is currently <strong>disabled</strong>. Enable it from the Plugins list for changes to take effect.
+            ⚠ This plugin is currently <strong>disabled</strong>. Enable it from the Plugins list for changes to take
+            effect.
           </div>
         )}
 

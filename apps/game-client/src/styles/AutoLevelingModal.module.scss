@@ -921,7 +921,9 @@
   font-family: monospace;
   cursor: pointer;
   text-transform: uppercase;
-  transition: background 100ms ease, border-color 100ms ease;
+  transition:
+    background 100ms ease,
+    border-color 100ms ease;
 
   &:hover {
     background: #2a2a2a;
@@ -1002,7 +1004,9 @@
   color: #aaa;
   font-size: 0.75rem;
   cursor: pointer;
-  transition: background 80ms ease, color 80ms ease;
+  transition:
+    background 80ms ease,
+    color 80ms ease;
 
   &:hover:not(:disabled) {
     background: #2a2a2a;

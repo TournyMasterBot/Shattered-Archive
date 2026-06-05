@@ -312,13 +312,17 @@ export function useAutoLeveling(connectionId: string, isConnectedInitial = false
 
     const disposeMoveNext = ListenEvent(
       'shatteredarchive:autoleveling-move-next',
-      () => { moveNext(); },
+      () => {
+        moveNext();
+      },
       { key: 'useAutoLeveling::window::autoleveling-move-next' },
     );
 
     const disposeMovePrev = ListenEvent(
       'shatteredarchive:autoleveling-move-prev',
-      () => { movePrev(); },
+      () => {
+        movePrev();
+      },
       { key: 'useAutoLeveling::window::autoleveling-move-prev' },
     );
 

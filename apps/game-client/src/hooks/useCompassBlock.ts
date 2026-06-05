@@ -118,7 +118,13 @@ export function useCompassBlock() {
       },
       { key: 'compassBlock::movement-attempt' },
     );
-    return () => { try { dispose?.(); } catch { /* ignore */ } };
+    return () => {
+      try {
+        dispose?.();
+      } catch {
+        /* ignore */
+      }
+    };
   }, []);
 
   /* ---------------------------------------------

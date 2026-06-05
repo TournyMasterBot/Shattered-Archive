@@ -25,7 +25,7 @@ import type { IPluginModule, PluginRuntimeApi } from '@shatteredarchive/types-cl
 // ── Types ─────────────────────────────────────────────────────────────────
 
 interface SpellEntry {
-  affect: string;   // lowercase for matching
+  affect: string; // lowercase for matching
   command: string;
 }
 
@@ -59,7 +59,9 @@ function parseSpellList(raw: unknown): SpellEntry[] {
 function extractAffectName(payload: unknown): string {
   if (typeof payload === 'string') return payload.trim().toLowerCase();
   const p = payload as any;
-  return String(p?.n ?? p?.name ?? p?.affect ?? '').trim().toLowerCase();
+  return String(p?.n ?? p?.name ?? p?.affect ?? '')
+    .trim()
+    .toLowerCase();
 }
 
 /**
@@ -76,7 +78,9 @@ function extractTrueupNames(payload: unknown): Set<string> {
 
   const names = new Set<string>();
   for (const item of arr) {
-    const name = String(item?.n ?? item?.name ?? '').trim().toLowerCase();
+    const name = String(item?.n ?? item?.name ?? '')
+      .trim()
+      .toLowerCase();
     if (name) names.add(name);
   }
   return names;
@@ -116,8 +120,8 @@ export function createRespellPlugin(): IPluginModule {
           type: 'textarea',
           label: 'Spell list',
           description:
-            "One spell per line: affect name | cast command. " +
-            "Lines starting with # are comments. " +
+            'One spell per line: affect name | cast command. ' +
+            'Lines starting with # are comments. ' +
             "Omit the | command to default to: cast '<affect name>'",
           placeholder: "sanctuary | cast 'sanctuary'\nhaste | cast 'haste'",
         },
@@ -158,9 +162,7 @@ export function createRespellPlugin(): IPluginModule {
           return;
         }
 
-        const delayMs = typeof cfg.cooldownMs === 'number' && cfg.cooldownMs >= 0
-          ? cfg.cooldownMs
-          : 500;
+        const delayMs = typeof cfg.cooldownMs === 'number' && cfg.cooldownMs >= 0 ? cfg.cooldownMs : 500;
 
         const now = Date.now();
         const last = lastRecast.get(affectName) ?? 0;

@@ -21,8 +21,8 @@ import type { IPluginModule, PluginEvent, PluginRuntimeApi } from '@shatteredarc
 
 interface WeaponEntry {
   fullName: string; // exact match key
-  alias: string;    // short alias for ~get / wield
-  nodrop: boolean;  // if true: ~wield alias; if false: ~get alias + wield alias
+  alias: string; // short alias for ~get / wield
+  nodrop: boolean; // if true: ~wield alias; if false: ~get alias + wield alias
 }
 
 // ── Parsing ─────────────────────────────────────────────────────────────────
@@ -85,8 +85,7 @@ export function createDisarmPlugin(): IPluginModule {
           label: 'Weapon map',
           description:
             'One weapon per line: full item name | alias | nodrop (nodrop is optional). Lines starting with # are comments.',
-          placeholder:
-            'the Magius Staff | magius\na scorched staff covered in charred runes | hoopak | nodrop',
+          placeholder: 'the Magius Staff | magius\na scorched staff covered in charred runes | hoopak | nodrop',
         },
         {
           key: 'debug',

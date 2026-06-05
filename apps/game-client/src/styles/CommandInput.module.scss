@@ -284,7 +284,9 @@
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
-  transition: background 100ms ease, border-color 100ms ease;
+  transition:
+    background 100ms ease,
+    border-color 100ms ease;
 }
 
 .autoLevelPanelBtn:hover:not(:disabled) {

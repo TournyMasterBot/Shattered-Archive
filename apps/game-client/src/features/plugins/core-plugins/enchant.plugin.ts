@@ -48,18 +48,18 @@ type EnchantOutcome =
 // Ordered longest-first so more specific phrases match before sub-strings.
 
 const TRIGGER_PHRASES: Array<{ pattern: string; outcome: EnchantOutcome }> = [
-  { pattern: 'glows a brilliant white',                     outcome: { kind: 'enchanted', delta: 3 } },
-  { pattern: 'glows a brilliant blue',                      outcome: { kind: 'enchanted', delta: 2 } },
-  { pattern: 'glows a brilliant gold',                      outcome: { kind: 'enchanted', delta: 2 } },
-  { pattern: 'glows blue',                                  outcome: { kind: 'enchanted', delta: 1 } },
-  { pattern: 'shimmers with a gold aura',                   outcome: { kind: 'enchanted', delta: 1 } },
-  { pattern: 'glows brightly, then fades...oops',           outcome: { kind: 'faded' } },
-  { pattern: 'glows brightly, then fades to a dull color',  outcome: { kind: 'faded' } },
-  { pattern: "restored to it's original form",              outcome: { kind: 'faded' } },
-  { pattern: 'shivers violently and explodes',              outcome: { kind: 'destroyed' } },
-  { pattern: 'crumbles into dust',                          outcome: { kind: 'destroyed' } },
-  { pattern: 'flares blindingly... and evaporates',         outcome: { kind: 'destroyed' } },
-  { pattern: 'Nothing seemed to happen',                    outcome: { kind: 'nothing' } },
+  { pattern: 'glows a brilliant white', outcome: { kind: 'enchanted', delta: 3 } },
+  { pattern: 'glows a brilliant blue', outcome: { kind: 'enchanted', delta: 2 } },
+  { pattern: 'glows a brilliant gold', outcome: { kind: 'enchanted', delta: 2 } },
+  { pattern: 'glows blue', outcome: { kind: 'enchanted', delta: 1 } },
+  { pattern: 'shimmers with a gold aura', outcome: { kind: 'enchanted', delta: 1 } },
+  { pattern: 'glows brightly, then fades...oops', outcome: { kind: 'faded' } },
+  { pattern: 'glows brightly, then fades to a dull color', outcome: { kind: 'faded' } },
+  { pattern: "restored to it's original form", outcome: { kind: 'faded' } },
+  { pattern: 'shivers violently and explodes', outcome: { kind: 'destroyed' } },
+  { pattern: 'crumbles into dust', outcome: { kind: 'destroyed' } },
+  { pattern: 'flares blindingly... and evaporates', outcome: { kind: 'destroyed' } },
+  { pattern: 'Nothing seemed to happen', outcome: { kind: 'nothing' } },
 ];
 
 function matchTrigger(plain: string): EnchantOutcome | null {
@@ -80,7 +80,10 @@ function parseItemList(raw: unknown): EnchantItem[] {
     const pipeIdx = trimmed.indexOf('|');
     if (pipeIdx === -1) continue;
     const name = trimmed.slice(0, pipeIdx).trim();
-    const typeRaw = trimmed.slice(pipeIdx + 1).trim().toLowerCase();
+    const typeRaw = trimmed
+      .slice(pipeIdx + 1)
+      .trim()
+      .toLowerCase();
     if (!name) continue;
     items.push({ name, type: typeRaw === 'weapon' ? 'weapon' : 'armor' });
   }
@@ -119,10 +122,7 @@ export function createEnchantPlugin(): IPluginModule {
       api.log('No active item. Use: enchant start <item name>');
       return;
     }
-    const fullSpell =
-      spell === 'identify' || spell === 'disenchant'
-        ? spell
-        : `${spell} ${activeItem.type}`;
+    const fullSpell = spell === 'identify' || spell === 'disenchant' ? spell : `${spell} ${activeItem.type}`;
     api.sendCommand(`cast '${fullSpell}' '${activeItem.name}'`);
   }
 
@@ -292,13 +292,22 @@ export function createEnchantPlugin(): IPluginModule {
     }
 
     // enchant restore
-    if (/^enchant\s+restore$/i.test(trimmed)) { castOnItem(api, 'restore'); return true; }
+    if (/^enchant\s+restore$/i.test(trimmed)) {
+      castOnItem(api, 'restore');
+      return true;
+    }
 
     // enchant disenchant
-    if (/^enchant\s+disenchant$/i.test(trimmed)) { castOnItem(api, 'disenchant'); return true; }
+    if (/^enchant\s+disenchant$/i.test(trimmed)) {
+      castOnItem(api, 'disenchant');
+      return true;
+    }
 
     // enchant identify
-    if (/^enchant\s+identify$/i.test(trimmed)) { castOnItem(api, 'identify'); return true; }
+    if (/^enchant\s+identify$/i.test(trimmed)) {
+      castOnItem(api, 'identify');
+      return true;
+    }
 
     // enchant reset
     if (/^enchant\s+reset$/i.test(trimmed)) {
@@ -347,8 +356,7 @@ export function createEnchantPlugin(): IPluginModule {
           key: 'items',
           type: 'textarea',
           label: 'Items to enchant',
-          description:
-            'One item per line: item name | weapon or armor. Lines starting with # are comments.',
+          description: 'One item per line: item name | weapon or armor. Lines starting with # are comments.',
           placeholder: 'fancy sword | weapon\ndragon helm | armor',
         },
         {
@@ -370,8 +378,7 @@ export function createEnchantPlugin(): IPluginModule {
           key: 'targetLevel',
           type: 'number',
           label: 'Auto-enchant target level',
-          description:
-            'Keep casting until this level is reached (max 3). Set to 0 to cast once per command.',
+          description: 'Keep casting until this level is reached (max 3). Set to 0 to cast once per command.',
           min: 0,
           max: 3,
           step: 1,

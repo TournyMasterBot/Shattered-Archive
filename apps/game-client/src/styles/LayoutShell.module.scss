@@ -423,7 +423,9 @@
   border-bottom: 2px solid transparent;
   cursor: pointer;
   text-align: center;
-  transition: color 0.12s, border-color 0.12s;
+  transition:
+    color 0.12s,
+    border-color 0.12s;
 
   &:hover {
     color: #c0c0c0;

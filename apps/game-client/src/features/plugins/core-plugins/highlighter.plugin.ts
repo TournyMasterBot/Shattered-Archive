@@ -19,22 +19,22 @@ import { getPerson } from './peopleDb';
 
 const CLAN_COLORS: Record<string, string> = {
   'Black Robes': '{D',
-  'Red Robes':   '{R',
+  'Red Robes': '{R',
   'White Robes': '{W',
-  'Bloodlust':   '{r',
-  'Shalonesti':  '{G',
-  'Justice':     '{b',
-  'Knighthood':  '{B',
-  'Shadow':      '{D',
-  'Slayers':     '{Y',
-  'Wargar':      '{C',
-  'Chaos':       '{D',
-  'Loner':       '{W',
-  'Renegade':    '{W',
-  'Dragon':      '{G',
-  'Demon':       '{D',
-  'Angel':       '{W',
-  'Balanx':      '{B',
+  Bloodlust: '{r',
+  Shalonesti: '{G',
+  Justice: '{b',
+  Knighthood: '{B',
+  Shadow: '{D',
+  Slayers: '{Y',
+  Wargar: '{C',
+  Chaos: '{D',
+  Loner: '{W',
+  Renegade: '{W',
+  Dragon: '{G',
+  Demon: '{D',
+  Angel: '{W',
+  Balanx: '{B',
 };
 
 const STATUS_SIGNS: Record<string, string> = { enemy: '*', ally: '+' };
@@ -42,13 +42,13 @@ const STATUS_SIGNS: Record<string, string> = { enemy: '*', ally: '+' };
 // ── Default rules (from DSL_PNP_Highlighter.custom.lua) ───────────────
 
 const DEFAULT_RULES = [
-  "# Rules: <regex> | next  OR  <regex> | line",
+  '# Rules: <regex> | next  OR  <regex> | line',
   "# 'next' highlights all who-list lines that follow until a blank line or prompt.",
   "# 'line' highlights names within only the matched line.",
-  "#",
-  "^Players near you:$ | next",
-  "^You quest out with your magic in search of others\\.$ | next",
-  "^Looking around you see:$ | next",
+  '#',
+  '^Players near you:$ | next',
+  '^You quest out with your magic in search of others\\.$ | next',
+  '^Looking around you see:$ | next',
   "^[\\w']+ clan gossips '.*'$ | line",
 ].join('\n');
 
@@ -68,7 +68,10 @@ function parseRules(raw: string): HighlightRule[] {
     const sep = t.lastIndexOf('|');
     if (sep === -1) continue;
     const pat = t.slice(0, sep).trim();
-    const kind = t.slice(sep + 1).trim().toLowerCase();
+    const kind = t
+      .slice(sep + 1)
+      .trim()
+      .toLowerCase();
     if (kind !== 'next' && kind !== 'line') continue;
     try {
       rules.push({ pattern: new RegExp(pat, 'i'), kind: kind as 'next' | 'line', source: pat });
@@ -144,15 +147,10 @@ export function createHighlighterPlugin(): IPluginModule {
   // Who-list entries start with [ followed by optional spaces and a digit.
   const WHO_LINE_OMIT = { pattern: '^\\[\\s*\\d' };
   // Scan entries end with a location phrase.
-  const SCAN_OMIT_RULES = [
-    { matchText: ', right here.' },
-    { matchText: ', nearby to the ' },
-  ];
+  const SCAN_OMIT_RULES = [{ matchText: ', right here.' }, { matchText: ', nearby to the ' }];
 
   function buildOmitRules(currentRules: HighlightRule[], nextModeActive: boolean) {
-    const lineOmits = currentRules
-      .filter((r) => r.kind === 'line')
-      .map((r) => ({ pattern: r.source }));
+    const lineOmits = currentRules.filter((r) => r.kind === 'line').map((r) => ({ pattern: r.source }));
     if (!nextModeActive) return lineOmits;
     return [...lineOmits, WHO_LINE_OMIT, ...SCAN_OMIT_RULES];
   }
@@ -266,8 +264,7 @@ export function createHighlighterPlugin(): IPluginModule {
           key: 'rules',
           type: 'textarea',
           label: 'Highlight rules',
-          description:
-            'One rule per line: <regex> | next  or  <regex> | line. Lines starting with # are comments.',
+          description: 'One rule per line: <regex> | next  or  <regex> | line. Lines starting with # are comments.',
         },
         {
           key: 'debug',
