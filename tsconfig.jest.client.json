@@ -2,6 +2,7 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "module": "ESNext",
+    "moduleResolution": "node",
     "jsx": "react-jsx",
 
     "lib": ["DOM", "ES2022"],
@@ -10,6 +11,14 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
 
-    "noEmit": true
+    "noEmit": true,
+
+    "paths": {
+      "@shatteredarchive/types-client": ["./types/types-client/src/index.ts"],
+      "@shatteredarchive/types-global": ["./types/types-global/src/index.ts"],
+      "@shatteredarchive/utils-client": ["./utils/utils-client/src/index.ts"],
+      "@shatteredarchive/utils-client/*": ["./utils/utils-client/src/*"],
+      "@shatteredarchive/utils-global": ["./utils/utils-global/src/index.ts"]
+    }
   }
 }
