@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "@shatteredarchive/types-server": "workspace:*",
-    "cors": "^2.8.5",
+    "cors": "^2.8.6",
     "express": "^5.2.1",
-    "helmet": "^8.1.0",
+    "helmet": "^8.2.0",
     "uuid": "^13.0.2",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0"

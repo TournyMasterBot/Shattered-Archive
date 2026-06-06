@@ -17,7 +17,7 @@
     "@shatteredarchive/utils-global": "workspace:*",
     "@shatteredarchive/utils-server": "workspace:*",
     "ansi-to-html": "^0.7.2",
-    "dotenv": "^17.2.3",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "winston": "^3.19.0"
   }
