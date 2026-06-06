@@ -18,7 +18,7 @@
     "@shatteredarchive/utils-server": "workspace:*",
     "@types/ws": "^8.18.1",
     "ansi-to-html": "^0.7.2",
-    "dotenv": "^17.2.3",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "winston": "^3.19.0",
     "ws": "^8.21.0"
