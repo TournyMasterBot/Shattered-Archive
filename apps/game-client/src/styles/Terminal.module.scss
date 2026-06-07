@@ -39,6 +39,10 @@
   cursor: pointer;
 }
 
+.playAreaTerminal :global(.xterm-scrollable-element) {
+  touch-action: none;
+}
+
 .playAreaTerminal :global(.xterm-viewport) {
   scrollbar-width: thin;
   scrollbar-color: #555 #111;
