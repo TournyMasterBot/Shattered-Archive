@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../shatteredarchive-mobile"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../DSL"
+		}
+	],
+	"settings": {}
+}
