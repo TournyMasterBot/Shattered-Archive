@@ -4,7 +4,17 @@ import React from 'react';
 import styles from '../styles/LibraryModal.module.scss';
 import useLibrary from '../hooks/useLibrary';
 import { renderDslToHtml } from '../features/library/renderDslColorPreviewHtml';
-import type { LibraryBook, LibraryBookPage, LibraryNote, UserNote, NoteSpool } from '../features/library/library-types';
+import type {
+  LibraryBook,
+  LibraryBookPage,
+  LibraryNote,
+  UserNote,
+  NoteSpool,
+  LibraryExportBundle,
+  ParchmentExport,
+  NoteExport,
+  BookExport,
+} from '../features/library/library-types';
 import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 
 interface LibraryModalProps {
@@ -140,6 +150,113 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
     return confirmDelete(
       `Permanently delete page ${page} from "${title}"?\n\nThis removes the page entry entirely.\nThis cannot be undone.`,
     );
+  };
+
+  // ------------------------------------------------------------------
+  // JSON import / export
+  // ------------------------------------------------------------------
+
+  const buildExportBundle = (): LibraryExportBundle => {
+    const bundle: LibraryExportBundle = { version: 1, exportedAt: Date.now() };
+    if (tab === 'parchment' && lib.notes.length > 0) {
+      bundle.parchment = lib.notes.map(
+        (n): ParchmentExport => ({ title: n.title, body: n.body, createdAt: n.createdAt, updatedAt: n.updatedAt }),
+      );
+    } else if (tab === 'notes' && lib.userNotes.length > 0) {
+      bundle.notes = lib.userNotes.map(
+        (n): NoteExport => ({ spool: n.spool, subject: n.subject, body: n.body, createdAt: n.createdAt, updatedAt: n.updatedAt }),
+      );
+    } else if (tab === 'books' && lib.books.length > 0) {
+      bundle.books = lib.books.map(
+        (b): BookExport => ({
+          title: b.title,
+          keyword: b.keyword,
+          keywordAfterTitle: b.keywordAfterTitle,
+          pages: (b.pages ?? []).map((p) => ({ page: p.page, body: p.body })),
+          createdAt: b.createdAt,
+          updatedAt: b.updatedAt,
+        }),
+      );
+    }
+    return bundle;
+  };
+
+  const parseExportBundle = (json: string): LibraryExportBundle | null => {
+    try {
+      const obj = JSON.parse(json);
+      if (typeof obj !== 'object' || obj === null || (obj as LibraryExportBundle).version !== 1) return null;
+      return obj as LibraryExportBundle;
+    } catch {
+      return null;
+    }
+  };
+
+  const handleExportJson = () => {
+    const label = tab === 'parchment' ? 'parchment' : tab === 'notes' ? 'notes' : 'books';
+    const count = tab === 'parchment' ? lib.notes.length : tab === 'notes' ? lib.userNotes.length : lib.books.length;
+    if (count === 0) {
+      window.alert(`No ${label} to export.`);
+      return;
+    }
+    const bundle = buildExportBundle();
+    const json = JSON.stringify(bundle, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sa-library-${label}-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportJsonClick = () => {
+    importFileInputRef.current?.click();
+  };
+
+  const handleImportJsonFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+
+    const text = await file.text();
+    const bundle = parseExportBundle(text);
+    if (!bundle) {
+      window.alert('Invalid file: not a valid Shattered Archive library export.');
+      return;
+    }
+
+    const label = tab === 'parchment' ? 'parchment' : tab === 'notes' ? 'notes' : 'books';
+    const count =
+      tab === 'parchment' ? (bundle.parchment?.length ?? 0)
+      : tab === 'notes' ? (bundle.notes?.length ?? 0)
+      : (bundle.books?.length ?? 0);
+
+    if (count === 0) {
+      window.alert(`No ${label} found in this file.`);
+      return;
+    }
+
+    const ok = window.confirm(`Import ${count} ${label}? New items will be added to your library.`);
+    if (!ok) return;
+
+    if (tab === 'parchment' && bundle.parchment?.length) {
+      for (const p of bundle.parchment) {
+        const created = await lib.createNote(p.title);
+        await lib.saveNote({ ...created, title: p.title, body: p.body, updatedAt: p.updatedAt });
+      }
+    } else if (tab === 'notes' && bundle.notes?.length) {
+      for (const n of bundle.notes) {
+        const created = await lib.createUserNote(n.spool, n.subject);
+        await lib.saveUserNote({ ...created, spool: n.spool, subject: n.subject, body: n.body, updatedAt: n.updatedAt });
+      }
+    } else if (tab === 'books' && bundle.books?.length) {
+      for (const b of bundle.books) {
+        const created = await lib.createBook(b.title);
+        await lib.saveBook({ ...created, title: b.title, keyword: b.keyword, keywordAfterTitle: b.keywordAfterTitle, pages: b.pages, updatedAt: b.updatedAt });
+      }
+    }
+
+    window.alert(`Imported ${count} ${label}.`);
   };
 
   const handleRequestClose = () => {
@@ -409,6 +526,8 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   // ------------------------------------------------------------------
 
   const [isScribeOpen, setIsScribeOpen] = React.useState(false);
+
+  const importFileInputRef = React.useRef<HTMLInputElement>(null);
 
   // parchment scribe inputs (existing)
   const [scribeParchment, setScribeParchment] = React.useState('');
@@ -738,6 +857,23 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
           </button>
 
           <div className={styles.tabActions}>
+            {(tab === 'parchment' || tab === 'notes' || tab === 'books') && (
+              <>
+                <input
+                  ref={importFileInputRef}
+                  type="file"
+                  accept=".json,application/json"
+                  style={{ display: 'none' }}
+                  onChange={handleImportJsonFile}
+                />
+                <button type="button" className={styles.secondaryButton} onClick={handleImportJsonClick}>
+                  Import JSON
+                </button>
+                <button type="button" className={styles.secondaryButton} onClick={handleExportJson}>
+                  Export JSON
+                </button>
+              </>
+            )}
             {tab === 'parchment' && (
               <button type="button" className={styles.primaryButton} onClick={handleNewParchment}>
                 New Parchment
