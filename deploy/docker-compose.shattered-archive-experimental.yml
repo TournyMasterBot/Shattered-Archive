@@ -69,6 +69,7 @@ services:
           - web-server.shatteredarchive.dev
       sa-shared: {}
 
+    restart: unless-stopped
     healthcheck:
       interval: 10s
       timeout: 3s
@@ -93,6 +94,7 @@ services:
     image: shatteredarchive-game-client
     stdin_open: true
     tty: true
+    restart: unless-stopped
     networks:
       shatteredarchive:
         aliases:
@@ -110,6 +112,7 @@ services:
     image: shatteredarchive-web-client
     stdin_open: true
     tty: true
+    restart: unless-stopped
     networks:
       shatteredarchive:
         aliases:
@@ -125,6 +128,7 @@ services:
     image: shatteredarchive-game-server
     stdin_open: true
     tty: true
+    restart: unless-stopped
     volumes:
       - "C:/Projects/DSL/GameLogs/ShatteredArchive/Docker/game-server:/repo/apps/game-server/log"
     env_file:
@@ -140,6 +144,7 @@ services:
       LOG_FILE_PATH: "/repo/apps/game-server/log/server.log"
       JSON_LOG_FILE_PATH: "/repo/apps/game-server/log/server.log.jsonl"
       LOG_RESPECT_SOH: "true"
+      CORS_ORIGIN: "https://game-client.shatteredarchive.dev,https://web-client.shatteredarchive.dev"
     expose:
       - "31000"
     networks:
@@ -166,6 +171,7 @@ services:
     image: shatteredarchive-web-server
     stdin_open: true
     tty: true
+    restart: unless-stopped
     volumes:
       - "C:/Projects/DSL/GameLogs/ShatteredArchive/Docker/web-server:/repo/apps/web-server/log"
     env_file:
@@ -178,6 +184,7 @@ services:
       LOG_FILE_PATH: "/repo/apps/web-server/log/server.log"
       LOG_JSONL_ENABLED: "true"
       LOG_JSONL_PATH: "/repo/apps/web-server/log/server.log.jsonl"
+      CORS_ORIGIN: "https://game-client.shatteredarchive.dev,https://web-client.shatteredarchive.dev"
     expose:
       - "41000"
     networks:

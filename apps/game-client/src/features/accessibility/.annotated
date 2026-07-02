@@ -1,0 +1,10 @@
+File Index
+
+/accessibility-command.ts
+Purpose: Processes accessibility command prefixes and repeats before sending to game client.
+
+/accessibility-settings-store.ts
+Purpose: Manages accessibility preferences for the game client.
+
+/fontScalePreview.ts
+Purpose: Manages temporary font scaling preview by injecting CSS variables into the document head.

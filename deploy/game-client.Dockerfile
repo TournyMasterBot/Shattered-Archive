@@ -1,4 +1,4 @@
-FROM node:26.1.0-alpine3.23@sha256:e71ac5e964b9201072425d59d2e876359efa25dc96bb1768cb73295728d6e4ea AS build
+FROM node:26.3.1-alpine3.24@sha256:a2dc166a387cc6ca1e62d0c8e265e49ca985d6e60abc9fe6e6c3d6ce8e63f606 AS build
 WORKDIR /repo
 ENV COREPACK_ENABLE_STRICT=1
 RUN npm install -g corepack && corepack enable
@@ -28,8 +28,8 @@ ENV VITE_ENV=$VITE_ENV
 
 RUN pnpm --filter @shatteredarchive/game-client... build
 
-# nginx 1.31.0-alpine
-FROM nginx:alpine@sha256:dc48b7a872a79fb541ba5081d320b11b549231bc63ba465a7495afaa7d2ebcb8 AS runtime
+# nginx 1.31.2-alpine3.23
+FROM nginx:1.31.2-alpine@sha256:81595dd77c2cc4ec66c6721daa3c13b6a1f7bb3a8a2cd3247a874e3bd5c39dd2 AS runtime
 RUN apk --no-cache upgrade
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY deploy/nginx/game-client.conf /etc/nginx/conf.d/default.conf

@@ -5,7 +5,7 @@ import * as https from 'node:https';
 import * as fs from 'node:fs';
 
 import cors, { CorsOptions } from 'cors';
-import helmet from 'helmet';
+import helmet, { HelmetOptions } from 'helmet';
 
 export interface ExpressServiceConfig {
   /** Logical service name, used for logging */
@@ -24,7 +24,7 @@ export interface ExpressServiceConfig {
   /** Optional CA bundle */
   sslCaPath?: string;
 
-  /** CORS origin policy; default: true */
+  /** CORS origin policy. Use parseCorsOrigin() to build from env. Default: localhost only. */
   corsOrigin?: CorsOptions['origin'];
 
   /** See Express docs: trust proxies */
@@ -32,6 +32,12 @@ export interface ExpressServiceConfig {
 
   /** Enable request logging hook */
   enableRequestLogging?: boolean;
+
+  /**
+   * Override Helmet options. The default CSP is `default-src 'none'` which is
+   * correct for JSON-only API services. Override here if the service serves HTML.
+   */
+  helmetOptions?: HelmetOptions;
 }
 
 export type RouteRegistrar = (app: Application) => void;
@@ -43,8 +49,45 @@ export interface IExpressService {
 }
 
 /**
+ * Parses the CORS_ORIGIN environment variable into a cors-compatible origin value.
+ *
+ * Accepted formats:
+ *   (unset)                      → localhost only (http/https, any port)
+ *   *                            → reflect all origins (open/self-hosted; not for production with credentials)
+ *   https://a.example.com        → single exact origin
+ *   https://a.com,https://b.com  → comma-separated exact origins
+ *
+ * Requests with no Origin header (server-to-server) are always allowed through
+ * regardless of this setting, since they cannot exploit CORS.
+ */
+export function parseCorsOrigin(raw: string | undefined): CorsOptions['origin'] {
+  if (!raw) {
+    // Secure default: allow localhost at any port for easy dev/self-host setup
+    return /^https?:\/\/localhost(:\d+)?$/;
+  }
+
+  if (raw === '*') {
+    // Explicit wildcard — caller accepts the risk
+    return true;
+  }
+
+  const allowed = new Set(
+    raw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
+
+  return (origin, callback) => {
+    // No Origin header → server-to-server call; not subject to CORS
+    if (!origin) return callback(null, true);
+    callback(null, allowed.has(origin));
+  };
+}
+
+/**
  * Loads a standardized configuration for an Express service from environment
- * variables. Centralized so apps don’t duplicate config logic.
+ * variables. Centralized so apps don't duplicate config logic.
  *
  * Each service sets its name, but env determines:
  *  - PORT                (default 31000)
@@ -52,7 +95,7 @@ export interface IExpressService {
  *  - SSL_KEY_PATH
  *  - SSL_CERT_PATH
  *  - SSL_CA_PATH
- *  - CORS_ORIGIN
+ *  - CORS_ORIGIN         (see parseCorsOrigin for accepted formats)
  *  - TRUST_PROXY
  *  - REQUEST_LOGGING     ("true" / "false")
  */
@@ -70,7 +113,7 @@ export function getConfigFromEnv(serviceName: string): ExpressServiceConfig {
     sslCertPath: process.env.SSL_CERT_PATH,
     sslCaPath: process.env.SSL_CA_PATH,
 
-    corsOrigin: process.env.CORS_ORIGIN ?? true,
+    corsOrigin: parseCorsOrigin(process.env.CORS_ORIGIN),
     trustProxy:
       process.env.TRUST_PROXY === undefined
         ? undefined
@@ -92,15 +135,18 @@ export function createExpressService(config: ExpressServiceConfig, registerRoute
   // HTTP Security headers
   app.use(
     helmet({
-      contentSecurityPolicy: false,
+      // default-src 'none' is correct for JSON-only API endpoints; callers that
+      // serve HTML should pass helmetOptions with an appropriate CSP policy.
+      contentSecurityPolicy: { directives: { defaultSrc: ["'none'"] } },
       crossOriginEmbedderPolicy: false,
+      ...config.helmetOptions,
     }),
   );
 
   // CORS
   app.use(
     cors({
-      origin: config.corsOrigin ?? true,
+      origin: config.corsOrigin ?? /^https?:\/\/localhost(:\d+)?$/,
       credentials: true,
     }),
   );

@@ -86,12 +86,12 @@ in the package index but not yet baked into the upstream image layer.
 
 ---
 
-## Known open CVEs (as of 2026-05-16)
+## Known open CVEs (as of 2026-06-19)
 
 | Image | Digest prefix | CVEs | Status |
 |-------|--------------|------|--------|
-| `node:26.1.0-alpine3.23` | `e71ac5e9` | 1 high | No upstream fix yet; `apk upgrade` applied |
-| `nginx:1.31.0-alpine` | `dc48b7a8` | 3 high | No upstream fix yet; `apk upgrade` applied |
+| `node:26.3.1-alpine3.24` | `a2dc166a` | 1 high | No upstream fix yet; `apk upgrade` applied |
+| `nginx:1.31.2-alpine3.23` | `81595dd7` | 2 high | No upstream fix yet; `apk upgrade` applied |
 
 Update this table when new patched images are published.
 

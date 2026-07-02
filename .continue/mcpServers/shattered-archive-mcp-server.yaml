@@ -1,16 +1,18 @@
-# docker exec -it comfyui sh -lc "ls -1 /comfyui/models/checkpoints | head -10"
 name: Shattered Archive MCP
 version: 0.0.1
 schema: v1
-mcpServers:
-  - name: Shattered Archive Tools
-    type: stdio
-    command: docker
-    args:
-      - exec
-      - -i
-      - -w
-      - /app
-      - shattered_archive_mcp
-      - node
-      - build/index.js
+# The shattered-archive MCP server is now configured GLOBALLY in
+# ~/.continue/config.yaml as an SSE connection to the Docker container:
+#   type: sse, url: http://localhost:3100/sse   (shattered_mcp in
+#   Shattered-AI/docker-compose.cuda.yml — tools run inside the container,
+#   contained to the /workspace/<project> bind-mounts).
+# Defining it here too would register the same server twice in this workspace.
+# The old stdio form below is kept only as a fallback reference; note the
+# container is named shattered_mcp (not shattered_archive_mcp), and the SSE
+# endpoint is preferred over exec'ing a second server process into it.
+#
+# - name: shattered-archive
+#   type: stdio
+#   command: docker
+#   args: [exec, -i, -w, /app, shattered_mcp, node, build/index.js]
+mcpServers: []
