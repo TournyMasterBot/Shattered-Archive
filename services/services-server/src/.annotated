@@ -1,0 +1,16 @@
+File Index
+
+/express-service.ts
+Purpose: Provides a standardized Express service setup with security defaults and environment-based configuration.
+
+/index.ts
+Purpose: This file exports all available service modules for centralized import throughout the application.
+
+/logger-service.ts
+Purpose: Provides structured logging with SOH gate functionality and daily file rotation.
+
+/mud-client-service.ts
+Purpose: Manages MUD client connections and sessions with telnet support.
+
+/telnet-client-service.ts
+Purpose: Provides telnet client functionality with GMCP support and asynchronous message handling.

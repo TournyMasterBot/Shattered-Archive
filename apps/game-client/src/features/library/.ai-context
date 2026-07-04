@@ -1,0 +1,1 @@
+The library folder contains core functionality for managing digital library data including books, notes, and user content through IndexedDB storage. It provides shared TypeScript types and utilities for rendering library previews, serving as the foundational data layer that supports the main library browsing and note-taking features.

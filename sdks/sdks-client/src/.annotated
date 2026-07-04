@@ -1,0 +1,4 @@
+File Index
+
+/index.ts
+Purpose: Provides a reusable client-side JSON fetching utility with error handling.

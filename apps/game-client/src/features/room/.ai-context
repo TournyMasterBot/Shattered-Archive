@@ -1,0 +1,1 @@
+The 'room' folder contains the roomDataStore.ts file which manages and provides access to the most recent room data payload. This folder serves as the central hub for all room-related data handling and state management within the application. It integrates with other components to ensure consistent room data access throughout the project.

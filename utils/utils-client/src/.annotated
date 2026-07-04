@@ -1,0 +1,10 @@
+File Index
+
+/ansi-to-html.ts
+Purpose: Converts ANSI formatted strings to HTML for consistent terminal-like display in the browser.
+
+/index.ts
+Purpose: This file exports client greeting function and ANSI text processing utilities.
+
+/strip-ansi.ts
+Purpose: Removes ANSI escape codes from strings for clean text output.

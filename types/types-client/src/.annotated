@@ -1,0 +1,4 @@
+File Index
+
+/index.ts
+Purpose: Exports all plugins from the plugins directory for external consumption.

@@ -1,0 +1,16 @@
+File Index
+
+/event-emitter-enums.ts
+Purpose: Defines enumerated event types for different system components.
+
+/event-listen-options.ts
+Purpose: Defines optional configuration options for event listener deduplication and debugging.
+
+/event-registry-key.ts
+Purpose: This file exports a global registry key for event dispatchers.
+
+/event-registry.ts
+Purpose: Registry type for managing event listeners by string keys.
+
+/listener-entry.ts
+Purpose: Defines the structure for event listener registration entries with target, name, callback, and optional settings.

@@ -1,0 +1,13 @@
+File Index
+
+/contribute.md
+Purpose: Enables players to submit item and creature data to the Shattered Archive project.
+
+/questbot.md
+Purpose: Automates DSL quest cycles for characters in specified Wargar, Thaxanos, Shadow, Darkonin, or Verminasia areas.
+
+/user-equipment.md
+Purpose: Tracks character equipment through authoritative snapshots and optimistic live updates.
+
+/user-library.md
+Purpose: This file documents the structure, functionality, and behavior of the LibraryModal component for developers.

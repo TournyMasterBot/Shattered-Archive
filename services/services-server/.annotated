@@ -1,0 +1,10 @@
+File Index
+
+/package.json
+Purpose: This file manages the server package configuration, dependencies, and scripts for the Shattered Archive services project.
+
+/tsconfig.json
+Purpose: This file configures TypeScript compilation settings for a Node.js module with ES2023 library support.
+
+/tsconfig.tsbuildinfo
+Purpose: TypeScript build information file for project compilation tracking.

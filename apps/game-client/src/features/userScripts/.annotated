@@ -1,0 +1,52 @@
+File Index
+
+/dslToAnsi.ts
+Purpose: Converts DSL color codes to ANSI escape sequences for terminal rendering.
+
+/expand-global-vars.ts
+Purpose: Expands global variables in match text while validating non-empty results.
+
+/get-global-vars.ts
+Purpose: Retrieves global variable values by key name from the global variables snapshot.
+
+/globalRuntime.ts
+Purpose: Manages global script execution across JavaScript, TypeScript, Lua, and Python languages with caching and sandboxing.
+
+/globalScriptsStore.ts
+Purpose: Manages persistent storage and caching of global scripts and variables for user-defined code execution.
+
+/luaRuntime.ts
+Purpose: Provides a Lua runtime environment that bridges JavaScript APIs for user scripts.
+
+/pythonRuntime.ts
+Purpose: Enables Python script execution with typed Skulpt integration and API bridging.
+
+/runtime.ts
+Purpose: Handles execution of user scripts in multiple languages within a sandboxed runtime environment.
+
+/runtimeSingleton.test.ts
+Purpose: Tests the singleton instance and runtime initialization of the user scripts module.
+
+/runtimeSingleton.ts
+Purpose: Manages global user script runtime state and named variables across connections.
+
+/safeTrim.ts
+Purpose: Converts any value to a trimmed string safely.
+
+/scriptListSearch.ts
+Purpose: Handles script search parsing, filtering, and trigger tree building for user scripts.
+
+/terminalBridge.ts
+Purpose: Bridge DSL text rendering and terminal output for game client scripts.
+
+/triggerOmitStore.ts
+Purpose: Manages event-based line omission rules with regex and case-insensitive matching.
+
+/types.ts
+Purpose: Defines TypeScript types and interfaces for user script management and sandbox API.
+
+/userScriptRuntime.ts
+Purpose: Manages user script execution, event handling, and global state for in-game automation.
+
+/userVariablesStore.ts
+Purpose: Manages persistent user-defined variables with localStorage backing and template resolution.

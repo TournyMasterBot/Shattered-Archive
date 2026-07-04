@@ -97,6 +97,57 @@ Update this table when new patched images are published.
 
 ---
 
+## AI context indexes (.ai-context / .annotated / @ai- headers)
+
+Directories in this repo carry generated AI indexes: `.ai-context` (folder
+narrative), `.annotated` (per-file one-line purposes), and `AI-ANNOTATION`
+comment headers (`@ai-summary`, `@ai-public`, `@ai-deps`, `@ai-notes`) at the
+top of some code files. Formats are defined in
+`c:\Projects\Shattered-AI\doc\ai-context-conventions.md`.
+
+- **Read them first.** When starting work in an unfamiliar directory, read its
+  `.ai-context` and `.annotated` before opening code files, and trust them for
+  orientation — open only the files you will change or must quote.
+- **Keep them fresh.** After creating or removing files in a directory, refresh
+  that folder's `.annotated` and `.ai-context`. After substantive edits to a
+  code file, update its one-liner in `.annotated` and its `@ai-` header block
+  if it has one. (Edits made through the qwen MCP server refresh directory
+  indexes automatically; edits made directly on the host — i.e. by Claude — do
+  not, so update them yourself.)
+- Don't pad indexes with obvious entries, and preserve hand-written nuance when
+  refreshing — update entries in place rather than regenerating wholesale.
+
+## Delegating bulk reading to local qwen (free)
+
+The `shattered_mcp` container runs a local qwen model with a delegation CLI
+(`docker exec shattered_mcp node build/cli.js summarize|purpose|digest|ask|pack ...`).
+Local inference is free — use it to keep long raw output out of context:
+
+- **Long command output (~150+ lines expected):** builds, test runs, `docker logs`,
+  big diffs. Don't read the raw output — run the command through the wrapper and
+  read the distillate:
+  ```bash
+  bash /c/Projects/Shattered-AI/scripts/qdigest.sh <command...>
+  bash /c/Projects/Shattered-AI/scripts/qdigest.sh -p "what failed and why?" pnpm test
+  bash /c/Projects/Shattered-AI/scripts/qdigest.sh -f <existing-log-file>
+  ```
+  Raw output stays at `Shattered-AI/.qdigest/last.out` for drill-down; the wrapped
+  command's exit code is preserved. Output under 40 lines is shown raw (no inference).
+  Toggle: `qdigest.sh --on|--off|--status` (flag file `.qdigest/disabled`); when
+  disabled it passes raw output through unchanged. Full doc:
+  `c:\Projects\Shattered-AI\doc\qdigest.md`.
+- **If the MCP stack is unavailable** (Docker down, `shattered_mcp` stopped, digest
+  call fails): do NOT degrade your own behavior — the wrapper already falls back to
+  printing the full raw output with the reason. Read it as you normally would, and
+  tell the user once that qwen digestion was skipped and why. The MCP stack is an
+  optimizer, never a gate.
+- **Multi-file orientation:** before reading several files for a task, prefer
+  `cli.js pack "<task>" <files...>` (task-relevant facts/snippets/gotchas) or
+  `summarize`/`purpose` — file paths use the container's `/workspace/...` mounts.
+- Cold model loads can take a minute+ of silence — run these in the background or
+  with a generous timeout; silence is not a hang. Qwen is for extraction and
+  summarization, not judgment: verify anything decision-critical yourself.
+
 ## Project overview (supplement)
 
 See `.github/copilot-instructions.md` for full project structure, branching policy,

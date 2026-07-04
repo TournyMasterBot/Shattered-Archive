@@ -1,0 +1,4 @@
+File Index
+
+/probe-level-up.ts
+Purpose: Parses level-up notification lines to extract character stat gains.

@@ -1,0 +1,13 @@
+File Index
+
+/script-error-info.ts
+Purpose: Defines the structure for storing and transmitting user script error details including ID, name, type, message, stack trace, and timestamp.
+
+/send-command-function.ts
+Purpose: Defines the type signature for a function that sends commands as strings.
+
+/user-script-kind.ts
+Purpose: Defines TypeScript enum for user script types in game client application.
+
+/user-script-runtime-options.ts
+Purpose: Defines the configuration options and callbacks available to user scripts during runtime execution.

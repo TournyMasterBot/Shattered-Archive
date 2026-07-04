@@ -1,0 +1,4 @@
+File Index
+
+/index.ts
+Purpose: Initializes web server with environment config, caching, and offline fallback support.

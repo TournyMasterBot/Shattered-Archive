@@ -1,0 +1,1 @@
+The web-server folder contains the backend server implementation that handles API requests and serves the application's functionality. It includes TypeScript configuration files for proper compilation and dependency management through package.json, making it the core runtime environment for the application's server-side operations.

@@ -1,0 +1,13 @@
+File Index
+
+/audio-asset-store.ts
+Purpose: Manages persistent storage and retrieval of audio assets using IndexedDB.
+
+/audio-beep.ts
+Purpose: Handles audio beep generation and playback based on line content and user settings.
+
+/audio-runtime.ts
+Purpose: Manages global audio runtime state and event listeners for telnet line processing.
+
+/audio-settings-store.ts
+Purpose: Manages user audio settings and beep configurations for the game client.

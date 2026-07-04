@@ -1,0 +1,1 @@
+The terminal folder contains modules for handling terminal-based text extraction and rendering within the Shattered Archive application. It provides the core functionality for processing terminal data shapes and managing terminal event handling. This folder serves as the interface layer between terminal input/output operations and the main application logic.

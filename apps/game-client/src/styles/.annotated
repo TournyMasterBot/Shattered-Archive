@@ -1,0 +1,82 @@
+File Index
+
+/AccessibilitySettingsModal.module.scss
+Purpose: Styles for the accessibility settings modal component.
+
+/AudioSettingsModal.module.scss
+Purpose: CSS modules stylesheet for the audio settings modal component.
+
+/AutoLevelingModal.module.scss
+Purpose: Styles for the auto-leveling modal component in the game client.
+
+/BottomPane.module.scss
+Purpose: Styles for the bottom pane UI component including tab navigation and content areas.
+
+/ChatPane.module.scss
+Purpose: Styles for the chat pane component including layout, pills, scroll regions, and gear menu.
+
+/CommandInput.module.scss
+Purpose: Styles for the command input bar and related microphone controls.
+
+/CompassBlock.module.scss
+Purpose: CSS modules stylesheet for responsive compass block UI component.
+
+/ConnectModal.module.scss
+Purpose: CSS module for styling the game connection modal interface.
+
+/ContributeIdentifyModal.module.scss
+Purpose: Styles for the contribute identify modal component in the game client.
+
+/ContributeLoreModal.module.scss
+Purpose: Stylesheet for a modal component with dark theme and custom scrollbar styling.
+
+/EquipmentHotbar.module.scss
+Purpose: Styles for the equipment hotbar UI component with fixed positioning and pill-shaped item containers.
+
+/EquipmentModal.module.scss
+Purpose: Styles for the equipment modal component with backdrop and scrollable item list.
+
+/FocusBarVitals.module.scss
+Purpose: CSS module for styling the focus bar vitals display with responsive design and visual effects.
+
+/Global.module.scss
+Purpose: Global CSS module defining base styles and layout for the application.
+
+/GraphicsSettingsModal.module.scss
+Purpose: CSS modules stylesheet for the graphics settings modal UI component.
+
+/LayoutShell.module.scss
+Purpose: Defines shared layout tokens and styles for the game client's main shell interface.
+
+/LibraryModal.module.scss
+Purpose: CSS modules stylesheet for the library modal component UI.
+
+/MainContainer.module.scss
+Purpose: Stylesheet defining global layout and responsive container for game client application.
+
+/MainMenuBar.module.scss
+Purpose: Styles for the main application menu bar and its nested submenus.
+
+/PluginConfigModal.module.scss
+Purpose: CSS module for styling the plugin configuration modal dialog.
+
+/PluginsModal.module.scss
+Purpose: Styles for the plugins modal component in the game client application.
+
+/ScriptingHelpModal.module.scss
+Purpose: Provides styling for a dark-themed modal dialog with sidebar navigation and scrollable content.
+
+/SettingsPane.module.scss
+Purpose: CSS module for styling the settings pane menu bar and tabs.
+
+/Terminal.module.scss
+Purpose: Styles for the terminal component in the play area.
+
+/UserScriptSandboxModal.module.scss
+Purpose: Styles for the user script sandbox modal UI component.
+
+/UserStylesOverrideModal.module.scss
+Purpose: Styles for the user styles override modal component.
+
+/_FocusBarShared.scss
+Purpose: Shared SCSS mixins for focus bar styling across game client components.

@@ -1,0 +1,4 @@
+File Index
+
+/logger-service.test.ts
+Purpose: Tests logger service functionality with mocked dependencies.

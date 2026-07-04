@@ -1,0 +1,91 @@
+File Index
+
+/AccessibilitySettingsModal.tsx
+Purpose: Provides a modal interface for users to adjust accessibility settings like font scale and high contrast preferences.
+
+/AffectsBlock.tsx
+Purpose: Displays and manages game affect states with time, aggregates, and plugin integration.
+
+/AudioSettingsModal.tsx
+Purpose: Audio settings modal component for managing beep sounds and audio preferences.
+
+/AutoLevelingModal.tsx
+Purpose: Provides a configuration UI for the autoleveling system with persisted settings and map data loading.
+
+/BottomPane.tsx
+Purpose: Bottom pane component managing mobile UI tabs for compass, chat, and opponent views.
+
+/ChatPane.tsx
+Purpose: Chat pane component for displaying and managing real-time chat messages with subtype filtering and settings.
+
+/CommandInput.tsx
+Purpose: Interactive command input component with voice dictation and auto-leveling controls for game automation.
+
+/CompassBlock.tsx
+Purpose: Interactive 3D compass UI component for directional navigation and movement.
+
+/CompassBlockMobile.tsx
+Purpose: Mobile compass interface for directional navigation in the game client.
+
+/ConnectModal.tsx
+Purpose: Connects users to MUD servers with saved connection management.
+
+/ContributeCreatureLoreModal.tsx
+Purpose: Modal component for contributing creature lore and appearance details.
+
+/ContributeIdentifyModal.tsx
+Purpose: Displays a modal for users to contribute and identify game content.
+
+/EquipmentHotbar.tsx
+Purpose: Displays and manages equipment slots for player characters in the game interface.
+
+/EquipmentModal.tsx
+Purpose: Displays and manages a player's equipment state with hotbar docking options.
+
+/FocusBarVitals.tsx
+Purpose: Displays player vitals and focus bar with damage chunks for HP, MP, and stamina.
+
+/GraphicsSettingsModal.tsx
+Purpose: Provides a modal interface for users to customize and save graphics settings with persistence.
+
+/LayoutShell.tsx
+Purpose: Provides main application layout structure with resizable panes and integrated terminal interface.
+
+/LibraryModal.tsx
+Purpose: Provides a modal interface for managing game library content including parchments, notes, books, and color previews.
+
+/MainMenuBar.tsx
+Purpose: Provides main application menu bar with file, game, plugins, and contribute options.
+
+/MiscPane.tsx
+Purpose: This file implements the miscellaneous settings pane with bestiary, archives, autopilot, and log sections.
+
+/PluginConfigEditor.tsx
+Purpose: Plugin configuration editor component with live updates and validation.
+
+/PluginConfigModal.tsx
+Purpose: Plugin configuration modal component for managing plugin settings and user preferences.
+
+/PluginsModal.tsx
+Purpose: Displays a modal for managing core plugins including installation, configuration, and enabling/disabling them.
+
+/PluginsPage.tsx
+Purpose: Displays and manages plugin enablement and configuration for a game client connection.
+
+/RightSidebar.tsx
+Purpose: Displays and manages the right sidebar UI including status blocks, enemy info, and HUD toggles.
+
+/RoomHeader.tsx
+Purpose: React component displaying room name and flags in a game client interface.
+
+/ScriptingHelpModal.tsx
+Purpose: Provides interactive scripting help documentation with draggable modal and section navigation.
+
+/Terminal.tsx
+Purpose: Interactive terminal component with touch scrolling and inertia support.
+
+/UserScriptSandboxModal.tsx
+Purpose: A React component for managing user script sandboxes with import/export functionality.
+
+/UserStyleOverrideModal.tsx
+Purpose: Provides a modal interface for users to edit and apply custom CSS overrides.

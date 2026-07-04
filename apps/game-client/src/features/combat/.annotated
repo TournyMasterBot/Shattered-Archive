@@ -1,0 +1,13 @@
+File Index
+
+/opponent-buckets.ts
+Purpose: Defines damage condition phrases and health ranges for opponent characters.
+
+/opponent-gates.ts
+Purpose: Defines visual condition descriptions for opponent characters in the combat system.
+
+/opponent-types.ts
+Purpose: Defines types and utilities for managing opponent status display and opacity in a combat UI.
+
+/probe-opponent-condition.ts
+Purpose: Analyzes combat log lines to detect and extract opponent condition statuses.

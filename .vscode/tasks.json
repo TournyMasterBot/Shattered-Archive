@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // Auto-starts the AI stack (ollama-code + shattered_mcp containers and the
+      // check-bridge watcher) on every window open/reload. Idempotent — no-ops when
+      // everything is already up. VS Code asks once to "Allow Automatic Tasks".
+      "label": "ensure-ai-stack",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "C:\\Projects\\Shattered-AI\\scripts\\ensure-ai-stack.ps1"
+      ],
+      "runOptions": { "runOn": "folderOpen" },
+      "presentation": {
+        "reveal": "never",
+        "panel": "dedicated",
+        "close": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+The 'github' folder contains configuration and documentation for GitHub-specific workflows and security settings within the project. It includes setup instructions for Dependabot alerts, local GitHub Actions testing with `act`, and GPG commit signing for GitHub Desktop on Windows. These files help maintain secure, automated, and properly signed contributions to the repository.

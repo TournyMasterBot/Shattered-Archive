@@ -1,0 +1,46 @@
+File Index
+
+/affect-echo.plugin.ts
+Purpose: Echoes affect gains and losses to the terminal with configurable colors.
+
+/brew.plugin.ts
+Purpose: Manages brewing recipes and configurations for in-game item creation.
+
+/colorkit.plugin.ts
+Purpose: Colorize log lines based on configurable rules without trigger scripts.
+
+/disarm.plugin.ts
+Purpose: Automatically re-wields disarmed weapons by mapping item names to aliases.
+
+/enchant.plugin.ts
+Purpose: Automates enchanting loops with item tracking and spell casting.
+
+/gourd.plugin.ts
+Purpose: Tracks and manages potion gourd inventory with scan, quaff, and drop commands.
+
+/highlighter.plugin.ts
+Purpose: Highlights player names by organization in configurable trigger lines.
+
+/people.plugin.ts
+Purpose: Parses player data from game commands into a shared database for tagging and filtering.
+
+/peopleDb.ts
+Purpose: Manages persistent storage and retrieval of character data for the game client.
+
+/questbot-stats-idb.ts
+Purpose: IndexedDB storage for QuestBot statistics with bounded session and aggregate records.
+
+/questbot.plugin.ts
+Purpose: Automates DSL questing cycles with stats tracking and command interfaces.
+
+/respell.plugin.ts
+Purpose: Automatically recasts configured spells when their effects drop in the game.
+
+/roller.plugin.ts
+Purpose: Automatically accepts or rejects stat rolls based on configurable thresholds and prompts.
+
+/standup.plugin.ts
+Purpose: Automatically stands up the player when game messages match configured knockdown patterns.
+
+/warlock-alphabet.plugin.ts
+Purpose: This plugin helps warlocks manage spell recipes by tracking item assignments to brew letters and automating correct insertion order.

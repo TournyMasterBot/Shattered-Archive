@@ -1,0 +1,4 @@
+File Index
+
+/index.ts
+Purpose: Entry point for the game server application initializing environment, HTTP, and WebSocket services.

@@ -1,0 +1,7 @@
+File Index
+
+/package.json
+Purpose: This file manages project metadata, dependencies, and build scripts for a TypeScript/React client service.
+
+/tsconfig.json
+Purpose: This file configures TypeScript compilation settings for a Node.js module with workspace dependencies.

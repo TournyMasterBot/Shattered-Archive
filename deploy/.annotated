@@ -1,28 +1,28 @@
 File Index
 
 /docker notes.md
-Purpose: Docker command reference and workflow notes for project deployment and management.
+Purpose: Docker command reference for managing project containers and services.
 
 /docker-compose.shattered-archive-experimental.yml
-Purpose: This file defines an experimental Docker Compose setup for Shattered Archive development and testing.
+Purpose: This file defines an experimental Docker Compose configuration for the Shattered Archive development environment.
 
 /docker-compose.yml
-Purpose: This file orchestrates a production deployment of a multi-service web application using Docker containers.
+Purpose: This file defines a production-grade Docker Compose setup for deploying a multi-service web application with nginx reverse proxy and game/web clients/servers.
 
 /game-client.Dockerfile
-Purpose: This Dockerfile builds and deploys the game client application with nginx serving the compiled assets.
+Purpose: This Dockerfile builds and deploys the game client application with Nginx serving the production assets.
 
 /game-server.Dockerfile
 Purpose: This Dockerfile builds and runs the game server application in a production environment.
 
 /index.html
-Purpose: This HTML file serves as a local development setup guide for the ShatteredArchive project, instructing users on configuring domain mappings for Docker services.
+Purpose: This HTML file serves as a local development setup guide for the ShatteredArchive project.
 
 /nginx.Dockerfile
-Purpose: Nginx Dockerfile configuring SSL, logging, and entrypoint for edge subdomains.
+Purpose: Nginx Dockerfile configuring SSL, log rotation, and custom TLS settings for edge subdomains.
 
 /web-client.Dockerfile
-Purpose: Dockerfile for building and serving the web client application with nginx.
+Purpose: Dockerfile for building and serving the web client application with Node.js and Nginx.
 
 /web-server.Dockerfile
 Purpose: This Dockerfile builds and runs the web server application in a production environment.

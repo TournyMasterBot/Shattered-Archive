@@ -1,0 +1,1 @@
+The tick folder contains the core game loop management system that handles timing and synchronization between different components. It ensures all game elements update at consistent intervals and maintain proper coordination. The tickStore.ts file serves as the central manager that coordinates these timing operations throughout the application.

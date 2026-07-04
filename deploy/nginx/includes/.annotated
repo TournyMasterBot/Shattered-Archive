@@ -1,0 +1,7 @@
+File Index
+
+/tls-dev.conf
+Purpose: Configures HTTPS routing and proxying for multiple project services using Nginx.
+
+/tls-off.conf
+Purpose: This empty configuration file serves as a placeholder to disable local TLS server blocks in the software project.

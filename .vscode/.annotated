@@ -1,0 +1,7 @@
+File Index
+
+/launch.json
+Purpose: This file configures the debugging environment for running Jest tests in VS Code.
+
+/settings.json
+Purpose: This file configures Jest testing settings and terminal accessibility preferences.

@@ -1,0 +1,19 @@
+File Index
+
+/javascript.md
+Purpose: JavaScript user scripts provide a sandboxed environment for creating aliases, triggers, timers, and persistent global variables with API access.
+
+/lua.md
+Purpose: Defines Lua scripting environment and API for browser-based automation.
+
+/plugins.md
+Purpose: Automates re-wielding weapons after removing them.
+
+/python.md
+Purpose: Python scripts for browser-based execution with bridge API to JavaScript.
+
+/scripting-summary.md
+Purpose: This file explains how to use the client's scripting system for user scripts, globals, variables, and the script API.
+
+/typescript.md
+Purpose: TypeScript user scripts are transpiled to JavaScript at runtime and executed with a defined API for terminal interaction and global variable access.

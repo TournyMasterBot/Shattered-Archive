@@ -1,0 +1,7 @@
+File Index
+
+/damage-map.ts
+Purpose: Maps damage keywords to numerical values for text-based damage interpretation.
+
+/damage-types.ts
+Purpose: Defines standardized damage types and their string representations for consistent game mechanics usage.

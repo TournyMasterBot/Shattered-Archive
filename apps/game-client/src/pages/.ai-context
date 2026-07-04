@@ -1,0 +1,1 @@
+The 'pages' folder contains the main UI components that structure the game client's interface, with MainContainer.tsx serving as the primary layout orchestrator and client-status-page.tsx providing real-time server health monitoring. These components work together to create the core user experience and system oversight functionality within the project's frontend architecture.

@@ -1,0 +1,4 @@
+File Index
+
+/tickStore.ts
+Purpose: Manages game tick timing and synchronization across components.

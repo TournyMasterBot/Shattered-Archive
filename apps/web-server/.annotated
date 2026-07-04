@@ -1,0 +1,10 @@
+File Index
+
+/package.json
+Purpose: This file manages the web server's metadata, dependencies, and executable scripts for building, testing, and running the application.
+
+/tsconfig.json
+Purpose: Configures TypeScript compilation settings for Node.js project with ES2023 target and NodeNext module resolution.
+
+/tsconfig.tsbuildinfo
+Purpose: TypeScript build information file for incremental compilation tracking.

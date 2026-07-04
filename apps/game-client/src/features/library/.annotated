@@ -1,0 +1,10 @@
+File Index
+
+/library-store.ts
+Purpose: Manages IndexedDB storage for library notes, books, and user notes with synchronization and migration support.
+
+/library-types.ts
+Purpose: Defines shared TypeScript types for library data structures across client and server.
+
+/renderDslColorPreviewHtml.ts
+Purpose: Converts DSL color codes into HTML for library previews.

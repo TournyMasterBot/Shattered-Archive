@@ -1,0 +1,19 @@
+File Index
+
+/index.html
+Purpose: This HTML file serves as the main entry point for the Shattered Archive game client application.
+
+/package.json
+Purpose: This file manages project metadata, dependencies, and scripts for a React-based game client application.
+
+/status.html
+Purpose: This HTML file serves as the entry point for the client status web application page.
+
+/tsconfig.json
+Purpose: This file configures TypeScript compilation settings for a React project with ES modules and DOM libraries.
+
+/tsconfig.tsbuildinfo
+Purpose: TypeScript build information file for project compilation tracking.
+
+/vite.config.ts
+Purpose: Vite configuration file for React client with proxy settings and environment variables.

@@ -1,0 +1,1 @@
+The Arkania folder contains the game world's spatial mapping data, with areas.json defining all named locations and zones that players can navigate. This folder serves as the foundational framework for the game's geography and helps organize the virtual environment. It integrates with other project components to provide structured world-building and player movement systems.

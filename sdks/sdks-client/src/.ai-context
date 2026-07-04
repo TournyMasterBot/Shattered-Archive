@@ -1,0 +1,1 @@
+The src folder contains all the source code files for the project's client-side functionality. It houses the index.ts file which provides a reusable JSON fetching utility with error handling for the application. This folder serves as the main codebase that gets compiled into the final distributable files.

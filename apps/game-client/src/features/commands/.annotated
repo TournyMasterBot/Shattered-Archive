@@ -1,0 +1,4 @@
+File Index
+
+/outbound-queue.ts
+Purpose: Manages outbound message queuing and throttled sending with microtask-based pumping.

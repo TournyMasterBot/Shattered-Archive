@@ -1,0 +1,103 @@
+File Index
+
+/useAffectsBlock.ts
+Purpose: Manages and updates in-game affect states with duration tracking and event handling.
+
+/useAutoLeveling.ts
+Purpose: Manages auto-leveling configuration persistence, engine lifecycle, and UI state for game automation.
+
+/useBottomPane.ts
+Purpose: Manages bottom panel tab state and enemy HUD data for the game client.
+
+/useCharData.ts
+Purpose: Provides character data synchronization and state management for game client.
+
+/useChatLog.ts
+Purpose: Provides real-time access to global chat messages for React components.
+
+/useChatPane.ts
+Purpose: Manages chat pane state, scrolling behavior, and message filtering for the game client.
+
+/useCompassBlock.ts
+Purpose: Manages compass direction exits and movement logic for room navigation.
+
+/useConnectModal.ts
+Purpose: Manages connection modal state, saved connections, and local storage persistence for a MUD client.
+
+/useEquipmentCapture.ts
+Purpose: Captures and processes equipment data from terminal output using React hooks.
+
+/useEquipmentDeltas.ts
+Purpose: Manages equipment state changes and deltas from terminal input.
+
+/useEquipmentState.ts
+Purpose: Provides React hook for accessing and subscribing to equipment state, preferences, and profile data.
+
+/useFocusBarVitals.ts
+Purpose: Provides focused health, mana, and stamina percentage values with remaining time for game HUD display.
+
+/useGameCommand.ts
+Purpose: React hook for managing game command input, history, and sending logic.
+
+/useGameConnection.ts
+Purpose: Manages WebSocket connection and communication for a game client.
+
+/useGlobalScripts.ts
+Purpose: Manages global script sources and variables with React hooks for dynamic updates.
+
+/useLayoutShell.ts
+Purpose: Combines multiple HUD state hooks into unified view models for status, affects, and compass blocks.
+
+/useLibrary.ts
+Purpose: Provides React hooks for managing library books and notes with CRUD operations and synchronization.
+
+/useMainContainer.ts
+Purpose: Manages main application container layout, accessibility settings, and CSS overrides.
+
+/useMainMenuBar.ts
+Purpose: Custom React hook managing main menu and modal states for a game client.
+
+/useMiscPane.ts
+Purpose: Manages the active section state for the miscellaneous pane interface.
+
+/usePluginCssOverrides.ts
+Purpose: Manages and applies plugin-specific CSS overrides with localStorage persistence.
+
+/usePlugins.ts
+Purpose: Manages global plugin installation, enabling, and persistence for the game client.
+
+/useRightPaneHud.ts
+Purpose: Manages game HUD state including vitals, enemy health, and active affects.
+
+/useRightSidebar.ts
+Purpose: Manages the state and functionality of the right sidebar in the game client application.
+
+/useRoomHeader.ts
+Purpose: Provides room header data and sector information through React hook with event-based updates.
+
+/useSanctuaryActive.ts
+Purpose: React hook to track sanctuary affect state via event listeners.
+
+/useTerminal.ts
+Purpose: Manages terminal lifecycle, styling, and scrolling behavior for a web-based terminal interface.
+
+/useTickData.ts
+Purpose: This file re-exports the tick data hook and type for use in the game client application.
+
+/useTickTimer.ts
+Purpose: Provides a simplified interface for accessing countdown timer values in game client.
+
+/useUserScriptSandbox.ts
+Purpose: Manages user script execution, sandboxing, and global state within the game client.
+
+/useUserVariables.ts
+Purpose: React hook for managing user-defined variables with real-time synchronization.
+
+/useVisualViewportHeight.ts
+Purpose: Hook to dynamically update CSS height variable based on visual viewport changes.
+
+/useVitalsDamageChunk.ts
+Purpose: Tracks and animates visual damage segments when vital statistics decrease.
+
+/useVoiceDictation.ts
+Purpose: Provides speech recognition functionality with start, stop, and toggle controls for voice dictation.

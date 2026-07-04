@@ -1,0 +1,25 @@
+File Index
+
+/augmented-reality.md
+Purpose: This CSS file implements a collapsible sidebar pane with hover expansion for a web application interface.
+
+/floating-center.md
+Purpose: Provides custom modal styling and hover-triggered display effects for a right pane element.
+
+/left-pane_gourd-right.md
+Purpose: Repositions and styles a gourd pane element to the right side of the main content area.
+
+/play-area-line-height.md
+Purpose: Adjusts line height in terminal play area for consistent row spacing.
+
+/remove-chat-pill-bar.md
+Purpose: This file removes the chat pill bar element from the chat interface using CSS styling.
+
+/resize-bottom-pane.md
+Purpose: This file provides CSS to resize the bottom pane height for mobile optimization.
+
+/right-pane_gourd-left.md
+Purpose: This file implements custom CSS styling to create a fake "Gourd" pane anchored to the main play area's left side.
+
+/right-pane_left-pane.md
+Purpose: Repositions the right pane to the left side while maintaining proper layout structure.

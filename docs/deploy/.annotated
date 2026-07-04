@@ -1,0 +1,13 @@
+File Index
+
+/deploy-readme.md
+Purpose: Deployment instructions for Shattered Archive game using Docker on Ubuntu VPS.
+
+/docker-setup.md
+Purpose: This file guides users through post-installation Docker configuration, including user permissions, automatic startup, and firewall settings.
+
+/repo-setup.md
+Purpose: This file automates setting up a development environment for the Shattered Archive project.
+
+/ubuntu-setup.md
+Purpose: Prepares a fresh Ubuntu VPS for secure Docker installation from official sources.
