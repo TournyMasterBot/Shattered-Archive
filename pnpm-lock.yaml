@@ -217,6 +217,15 @@ importers:
 
   sdks/sdks-server: {}
 
+  services/kingdom-tactics-engine:
+    dependencies:
+      '@shatteredarchive/types-global':
+        specifier: workspace:*
+        version: link:../../types/types-global
+      '@shatteredarchive/utils-global':
+        specifier: workspace:*
+        version: link:../../utils/utils-global
+
   services/services-server:
     dependencies:
       '@shatteredarchive/types-server':

@@ -1,0 +1,10 @@
+File Index
+
+/000-original-prompt.md
+Purpose: This file preserves the original project vision and technical requirements for the kingdom-tactics application.
+
+/ARCHITECTURE.md
+Purpose: Documents the architectural design and structure of the Kingdom Tactics game engine and its component packages.
+
+/ROADMAP.md
+Purpose: This roadmap outlines the phased development plan for the Kingdom Tactics project, defining deliverables, owners, and dependencies for each stage.

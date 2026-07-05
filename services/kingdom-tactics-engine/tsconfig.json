@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    "lib": ["ES2023"],
+
+    // Isomorphic: NO ambient node/DOM types in shipped code. If a shipped module
+    // imports a Node built-in (fs, path, …) or a DOM global, the build fails —
+    // which is exactly the guard we want so the engine stays embeddable in React
+    // Native and the browser. (codegen/ is a dev-time tool and is excluded below.)
+    "types": [],
+
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/codegen/**", "dist", "node_modules"]
+}

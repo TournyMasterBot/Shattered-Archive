@@ -1,0 +1,112 @@
+import type { IGameDataProvider } from '../data/index.js';
+import type { UnitTemplate } from '../model/index.js';
+import type { ISeededRng } from '../rng/index.js';
+import { armorClassMultiplier } from '../data/balance/armor.js';
+import { damageCategory, resistMatches, type DamageCategory } from '../data/dsl/damage-types.js';
+
+/**
+ * The single tuning surface for the damage pipeline. Grid-scaled analogues of the DSL
+ * DamageCalculator constants — changing a value here flows through the live match, the AI,
+ * and every simulator (Phase 3), so balancing damage is one edit in one place.
+ */
+export const DAMAGE_CONSTANTS = {
+  /** AC is divided by this to get the mitigation fraction (bigger = armor matters less). */
+  AC_DIVISOR: 40,
+  /** Weight applied to the armor-type multiplier (Cloth 0 → Plate ×this) when forming AC. */
+  ARMOR_AC_WEIGHT: 20,
+  /** Mitigation is clamped here so armor can never fully negate a hit. */
+  MAX_MITIGATION: 0.9,
+  /** Multiplier when the defender resists the incoming damage type. */
+  RESIST_MULT: 0.5,
+  /** Multiplier when the defender is vulnerable to the incoming damage type. */
+  VULN_MULT: 1.5,
+  /** Sanctuary halves incoming damage (DSL parity). */
+  SANCTUARY_MULT: 0.5,
+  /** Constitution damage-reduction curve: (con - baseline) * perPoint, clamped [0, max]. */
+  CON_BASELINE: 10,
+  CON_PER_POINT: 0.01,
+  CON_MAX_REDUCTION: 0.25,
+  /** ± random variance fraction. 0 = fully deterministic (default); >0 uses rng if given. */
+  VARIANCE: 0,
+} as const;
+
+/** Input to a single damage resolution (one attacker striking one defender). */
+export interface DamageInput {
+  readonly attacker: UnitTemplate;
+  readonly defender: UnitTemplate;
+  /** Terrain key of the DEFENDER's tile (cover applies to the target). */
+  readonly defenderTerrainKey: string;
+  /** Active moon phase key (magi spell power scales with it). */
+  readonly moonPhase: string;
+  /** Active status-effect keys on the defender (e.g. 'sanctuary'). */
+  readonly defenderStatusKeys?: readonly string[];
+  readonly provider: IGameDataProvider;
+  /** Optional; only consulted when DAMAGE_CONSTANTS.VARIANCE > 0. */
+  readonly rng?: ISeededRng;
+}
+
+export interface DamageResult {
+  /** Final damage dealt (integer, floored at 1). */
+  readonly amount: number;
+  /** Damage after magi + constitution, before AC/resist mitigation (for telemetry/tests). */
+  readonly preMitigation: number;
+  readonly wasResisted: boolean;
+  readonly wasVulnerable: boolean;
+  readonly category: DamageCategory;
+}
+
+const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
+
+/**
+ * Resolve how much damage an attack lands, mirroring the DSL DamageCalculator's ORDER:
+ * (1) base power, (2) magi moon scaling, (3) constitution pre-reduction, (4) AC mitigation
+ * (defense + terrain cover + armor type — armor is the primary defensive factor),
+ * (5) resistance/vulnerability, (6) protection (sanctuary), (7) floor at 1. Pure and
+ * deterministic (no RNG unless VARIANCE is tuned on).
+ *
+ * TODO(saves): magic currently auto-hits; the SavesCalculator landing-rate governs whether
+ * a maladiction component lands (see rules/saves.ts + applyAbility), not the damage here.
+ */
+export function resolveDamage(input: DamageInput): DamageResult {
+  const { attacker, defender, provider } = input;
+  const C = DAMAGE_CONSTANTS;
+
+  // (1) base power.
+  let damage = attacker.attackPower;
+
+  // (2) magi moon scaling.
+  if (attacker.traits.includes('magi')) {
+    damage *= provider.moonEffect(input.moonPhase).magiSpellPowerMultiplier;
+  }
+
+  // (3) constitution pre-reduction (before armor, per DSL).
+  const conMod = clamp((defender.stats.con - C.CON_BASELINE) * C.CON_PER_POINT, 0, C.CON_MAX_REDUCTION);
+  damage -= damage * conMod;
+  const preMitigation = damage;
+
+  // (4) AC mitigation: defense + terrain cover + armor-type contribution.
+  const cover = provider.terrainEffect(input.defenderTerrainKey).cover;
+  const armorAc = C.ARMOR_AC_WEIGHT * armorClassMultiplier(defender.armorType);
+  const ac = defender.defense + cover + armorAc;
+  const mitigation = clamp(ac / C.AC_DIVISOR, 0, C.MAX_MITIGATION);
+  damage *= 1 - mitigation;
+
+  // (5) resistance / vulnerability vs the attacker's damage type.
+  const wasResisted = defender.resistances.some((r) => resistMatches(r, attacker.damageType));
+  const wasVulnerable = defender.vulnerabilities.some((v) => resistMatches(v, attacker.damageType));
+  if (wasResisted) damage *= C.RESIST_MULT;
+  if (wasVulnerable) damage *= C.VULN_MULT;
+
+  // (6) protection modifiers (multiplicative, after AC — DSL parity).
+  if (input.defenderStatusKeys?.includes('sanctuary')) damage *= C.SANCTUARY_MULT;
+
+  // (optional) symmetric variance — off by default (deterministic).
+  if (C.VARIANCE > 0 && input.rng) {
+    const swing = 1 + (input.rng.next() * 2 - 1) * C.VARIANCE;
+    damage *= swing;
+  }
+
+  // (7) floor at 1 (never 0), integer.
+  const amount = Math.max(1, Math.round(damage));
+  return { amount, preMitigation, wasResisted, wasVulnerable, category: damageCategory(attacker.damageType) };
+}

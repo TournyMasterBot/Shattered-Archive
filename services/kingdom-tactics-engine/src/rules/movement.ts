@@ -1,0 +1,115 @@
+import type { IGameDataProvider } from '../data/index.js';
+import type { BoardToken, Coord, MatchState, MovePattern, MovementClass } from '../model/index.js';
+import { coordKey, inBounds, occupiedKeys, stepOffsets, tileAt } from './board.js';
+import { templateForMember } from './squadron.js';
+
+/** How a token moves: its pattern + movement class. */
+export interface MovementProfile {
+  readonly move: MovePattern;
+  readonly movementClass: MovementClass;
+}
+
+/**
+ * Resolve a token's movement profile. Units use their UnitTemplate; a squadron
+ * moves as a ground blob paced by its slowest member (min range).
+ */
+export function movementProfile(token: BoardToken, provider: IGameDataProvider): MovementProfile {
+  if (token.kind === 'unit') {
+    const [raceKey, classKey] = token.templateId.split(':');
+    const t = provider.unitTemplate(raceKey, classKey);
+    return { move: t.move, movementClass: t.movementClass };
+  }
+  // Squadron: slowest member's range, always ground.
+  let range = Infinity;
+  let kind: MovePattern['kind'] = 'omni';
+  for (const m of token.members) {
+    const t = templateForMember(m.templateId, provider);
+    if (t.move.range < range) {
+      range = t.move.range;
+      kind = t.move.kind;
+    }
+  }
+  if (!Number.isFinite(range)) range = 0;
+  return { move: { kind, range, jumps: false }, movementClass: 'ground' };
+}
+
+/** Cost to enter a tile for a movement class (flying/aquatic ignore ground cost). */
+function enterCost(
+  state: MatchState,
+  c: Coord,
+  movementClass: MovementClass,
+  provider: IGameDataProvider,
+): number {
+  const tile = tileAt(state.board, c);
+  if (!tile) return Infinity;
+  const eff = provider.terrainEffect(tile.terrain);
+  if (!eff.passable[movementClass]) return Infinity;
+  return movementClass === 'ground' ? eff.moveCost : 1;
+}
+
+/**
+ * All tiles a token may legally move to this turn. Expands the MovePattern up to
+ * `range`, honoring terrain passability + accumulated move cost (ground) and
+ * blocking on occupied tiles — unless `move.jumps`, which ignores intermediate
+ * cost/occupancy (destination must still be empty and passable). Pure.
+ */
+export function legalMoves(
+  state: MatchState,
+  tokenId: string,
+  provider: IGameDataProvider,
+): Coord[] {
+  const token = state.tokens.find((t) => t.instanceId === tokenId);
+  if (!token) return [];
+  const { move, movementClass } = movementProfile(token, provider);
+  if (move.range <= 0) return [];
+
+  const blocked = occupiedKeys(state, tokenId);
+  const offsets = stepOffsets(move.kind);
+  const origin = token.pos;
+
+  // best[key] = least cost to reach; Dijkstra over unit steps (or knight hops).
+  const best = new Map<string, number>([[coordKey(origin), 0]]);
+  // Simple frontier expansion; grids are small so an array frontier is fine.
+  let frontier: Coord[] = [origin];
+
+  while (frontier.length > 0) {
+    const next: Coord[] = [];
+    for (const from of frontier) {
+      const fromCost = best.get(coordKey(from)) ?? Infinity;
+      for (const d of offsets) {
+        const to: Coord = { x: from.x + d.x, y: from.y + d.y };
+        if (!inBounds(state.board, to)) continue;
+        const key = coordKey(to);
+
+        // For non-jump movement, an occupied tile blocks passage entirely.
+        if (!move.jumps && blocked.has(key)) continue;
+
+        const step = move.jumps ? 1 : enterCost(state, to, movementClass, provider);
+        if (!Number.isFinite(step)) continue; // impassable terrain
+
+        // Jump destinations must still be landable (passable + empty).
+        if (move.jumps) {
+          const tile = tileAt(state.board, to);
+          if (!tile || !provider.terrainEffect(tile.terrain).passable[movementClass]) continue;
+        }
+
+        const cost = fromCost + step;
+        if (cost > move.range) continue;
+        if (cost < (best.get(key) ?? Infinity)) {
+          best.set(key, cost);
+          next.push(to);
+        }
+      }
+    }
+    frontier = next;
+  }
+
+  const result: Coord[] = [];
+  for (const [key, cost] of best) {
+    if (cost === 0) continue; // origin
+    if (blocked.has(key)) continue; // cannot end on an occupied tile
+    const [x, y] = key.split(',').map(Number);
+    result.push({ x, y });
+  }
+  return result;
+}

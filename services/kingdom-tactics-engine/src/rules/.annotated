@@ -1,0 +1,58 @@
+File Index
+
+/attack.test.ts
+Purpose: Tests attack and ability resolution logic including damage calculation and status effects.
+
+/attack.ts
+Purpose: Handles attack and ability resolution logic for game tokens.
+
+/board.ts
+Purpose: Provides board geometry, coordinate operations, and movement patterns for a grid-based game.
+
+/damage.test.ts
+Purpose: Tests the damage calculation logic including armor, terrain, resistances, and magical effects.
+
+/damage.ts
+Purpose: Centralized damage calculation and balancing constants for game combat system.
+
+/index.ts
+Purpose: Centralized export of all game rule resolvers and utilities for squadron combat simulation.
+
+/line-of-sight.test.ts
+Purpose: Tests line of sight calculations and tile traversal utilities.
+
+/line-of-sight.ts
+Purpose: Determines if two coordinates have line-of-sight using a supercover algorithm.
+
+/movement.test.ts
+Purpose: Tests movement logic and pathfinding for game units with various terrain and blocking conditions.
+
+/movement.ts
+Purpose: Defines token movement rules and calculates legal move destinations based on terrain and unit properties.
+
+/saves.test.ts
+Purpose: Tests the save calculation and rolling logic for a game system.
+
+/saves.ts
+Purpose: Handles spell save mechanics and landing probability calculations.
+
+/squadron.ts
+Purpose: Aggregate squadron stats from member unit templates using a data provider.
+
+/targeting.test.ts
+Purpose: Tests targeting logic including attack patterns, line-of-sight, and splash damage calculations.
+
+/targeting.ts
+Purpose: Handles token targeting logic including attack patterns, line-of-sight, and legal targets determination.
+
+/turn-order.test.ts
+Purpose: Tests turn order and side cycling logic for a tactical game.
+
+/turn-order.ts
+Purpose: Determines turn order and next active side for game tokens based on initiative.
+
+/victory.test.ts
+Purpose: Tests the victory condition logic for different game modes.
+
+/victory.ts
+Purpose: Evaluates game victory conditions based on match state and mode configuration.

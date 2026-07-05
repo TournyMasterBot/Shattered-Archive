@@ -1,0 +1,169 @@
+import type { IGameDataProvider } from '../data/index.js';
+import type { UnitTemplate } from '../model/index.js';
+import { DAMAGE_CONSTANTS, resolveDamage } from './damage.js';
+
+// --- test doubles -----------------------------------------------------------
+
+const TEMPLATE = (over: Partial<UnitTemplate> = {}): UnitTemplate => ({
+  id: 'Test:Unit',
+  raceKey: 'Test',
+  classKey: 'Unit',
+  name: 'Test Unit',
+  maxHp: 20,
+  stats: { str: 10, int: 10, wis: 10, dex: 10, con: 10 },
+  move: { kind: 'orthogonal', range: 1, jumps: false },
+  attack: { kind: 'melee', range: 1, minRange: 1, areaRadius: 0 },
+  attackPower: 20,
+  defense: 0,
+  movementClass: 'ground',
+  damageType: 'Slash',
+  armorType: 'Cloth',
+  abilities: [],
+  resistances: [],
+  vulnerabilities: [],
+  traits: [],
+  cost: 1,
+  ...over,
+});
+
+/** Provider stub: damage calls moonEffect + terrainEffect. `cover` per terrain, magi mult. */
+function stubProvider(cover = 0, magiMult = 1): IGameDataProvider {
+  return {
+    moonEffect: () => ({ phase: 'x', magiSpellPowerMultiplier: magiMult }),
+    terrainEffect: (key: string) => ({
+      terrainKey: key,
+      moveCost: 1,
+      passable: { ground: true, flying: true, aquatic: true },
+      cover,
+      blocksLoS: false,
+    }),
+  } as unknown as IGameDataProvider;
+}
+
+const base = {
+  defenderTerrainKey: 'Field',
+  moonPhase: 'HalfMoon',
+};
+
+// --- tests ------------------------------------------------------------------
+
+describe('resolveDamage', () => {
+  it('unarmored, no defense: deals full attack power', () => {
+    const r = resolveDamage({
+      attacker: TEMPLATE({ attackPower: 20 }),
+      defender: TEMPLATE({ defense: 0, armorType: 'Cloth', stats: { str: 10, int: 10, wis: 10, dex: 10, con: 10 } }),
+      ...base,
+      provider: stubProvider(0),
+    });
+    expect(r.amount).toBe(20);
+    expect(r.wasResisted).toBe(false);
+    expect(r.category).toBe('physical');
+  });
+
+  it('plate armor mitigates more than cloth', () => {
+    const cloth = resolveDamage({
+      attacker: TEMPLATE({ attackPower: 40 }),
+      defender: TEMPLATE({ armorType: 'Cloth' }),
+      ...base,
+      provider: stubProvider(0),
+    });
+    const plate = resolveDamage({
+      attacker: TEMPLATE({ attackPower: 40 }),
+      defender: TEMPLATE({ armorType: 'Plate' }),
+      ...base,
+      provider: stubProvider(0),
+    });
+    expect(plate.amount).toBeLessThan(cloth.amount);
+  });
+
+  it('terrain cover reduces damage', () => {
+    const open = resolveDamage({
+      attacker: TEMPLATE({ attackPower: 40 }),
+      defender: TEMPLATE({}),
+      ...base,
+      provider: stubProvider(0),
+    });
+    const covered = resolveDamage({
+      attacker: TEMPLATE({ attackPower: 40 }),
+      defender: TEMPLATE({}),
+      ...base,
+      provider: stubProvider(10),
+    });
+    expect(covered.amount).toBeLessThan(open.amount);
+  });
+
+  it('resistance halves and flags; vulnerability increases and flags', () => {
+    const resisted = resolveDamage({
+      attacker: TEMPLATE({ attackPower: 40, damageType: 'Flame' }),
+      defender: TEMPLATE({ resistances: ['Fire'] }),
+      ...base,
+      provider: stubProvider(0, 1),
+    });
+    const vuln = resolveDamage({
+      attacker: TEMPLATE({ attackPower: 40, damageType: 'Flame' }),
+      defender: TEMPLATE({ vulnerabilities: ['Fire'] }),
+      ...base,
+      provider: stubProvider(0, 1),
+    });
+    const neutral = resolveDamage({
+      attacker: TEMPLATE({ attackPower: 40, damageType: 'Flame' }),
+      defender: TEMPLATE({}),
+      ...base,
+      provider: stubProvider(0, 1),
+    });
+    expect(resisted.wasResisted).toBe(true);
+    expect(resisted.amount).toBe(Math.max(1, Math.round(neutral.amount * DAMAGE_CONSTANTS.RESIST_MULT)));
+    expect(vuln.wasVulnerable).toBe(true);
+    expect(vuln.amount).toBeGreaterThan(neutral.amount);
+  });
+
+  it('a magi hits harder at FullMoon than at Empty', () => {
+    const attacker = TEMPLATE({ attackPower: 20, damageType: 'Flame', traits: ['magi'] });
+    const full = resolveDamage({ attacker, defender: TEMPLATE({}), ...base, provider: stubProvider(0, 1.5) });
+    const empty = resolveDamage({ attacker, defender: TEMPLATE({}), ...base, provider: stubProvider(0, 0.5) });
+    expect(full.amount).toBeGreaterThan(empty.amount);
+  });
+
+  it('sanctuary halves incoming damage', () => {
+    const withoutSanc = resolveDamage({
+      attacker: TEMPLATE({ attackPower: 40 }),
+      defender: TEMPLATE({}),
+      ...base,
+      provider: stubProvider(0),
+    });
+    const withSanc = resolveDamage({
+      attacker: TEMPLATE({ attackPower: 40 }),
+      defender: TEMPLATE({}),
+      defenderStatusKeys: ['sanctuary'],
+      ...base,
+      provider: stubProvider(0),
+    });
+    expect(withSanc.amount).toBe(Math.max(1, Math.round(withoutSanc.amount * DAMAGE_CONSTANTS.SANCTUARY_MULT)));
+  });
+
+  it('never deals less than 1 even against overwhelming mitigation', () => {
+    const r = resolveDamage({
+      attacker: TEMPLATE({ attackPower: 1 }),
+      defender: TEMPLATE({ defense: 1000, armorType: 'Plate', resistances: ['Physical'] }),
+      ...base,
+      provider: stubProvider(100),
+    });
+    expect(r.amount).toBe(1);
+  });
+
+  it('high constitution reduces damage taken', () => {
+    const softCon = resolveDamage({
+      attacker: TEMPLATE({ attackPower: 40 }),
+      defender: TEMPLATE({ stats: { str: 10, int: 10, wis: 10, dex: 10, con: 10 } }),
+      ...base,
+      provider: stubProvider(0),
+    });
+    const hardCon = resolveDamage({
+      attacker: TEMPLATE({ attackPower: 40 }),
+      defender: TEMPLATE({ stats: { str: 10, int: 10, wis: 10, dex: 10, con: 30 } }),
+      ...base,
+      provider: stubProvider(0),
+    });
+    expect(hardCon.amount).toBeLessThan(softCon.amount);
+  });
+});

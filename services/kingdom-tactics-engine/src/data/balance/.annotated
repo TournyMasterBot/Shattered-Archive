@@ -1,0 +1,25 @@
+File Index
+
+/armor.ts
+Purpose: Defines armor class multipliers and slot weights for damage mitigation calculations.
+
+/class-kits.ts
+Purpose: Defines tactical class attributes and behaviors for game balance and AI.
+
+/modes.ts
+Purpose: Defines all game modes' configurations for the simulation system.
+
+/moon-effects.ts
+Purpose: Defines moon phase effects on magi spell power with data-driven modifiers.
+
+/race-modifiers.ts
+Purpose: Defines racial stat modifiers and traits that adjust class-based character attributes.
+
+/reclass-kits.ts
+Purpose: Defines reclass kit overrides for specialized class modifications.
+
+/terrain.ts
+Purpose: Defines tactical terrain properties for a 2D battlefield grid.
+
+/unit-costs.ts
+Purpose: Defines dynamic unit cost calculation based on resolved stats rather than static prices.

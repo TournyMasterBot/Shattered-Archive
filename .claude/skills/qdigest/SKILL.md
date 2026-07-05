@@ -59,6 +59,7 @@ Host → container path mapping (bind mounts):
 | `C:/Projects/DslScripts` | `/workspace/dsl-scripts` |
 | `C:/Projects/DslLogViewer` | `/workspace/dsl-log-viewer` |
 | `C:/Projects/shatteredarchive-mobile` | `/workspace/shatteredarchive-mobile` |
+| `C:/Projects/merc-mud` | `/workspace/merc-mud` |
 
 ## Rules
 

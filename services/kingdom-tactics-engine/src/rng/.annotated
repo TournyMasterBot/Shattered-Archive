@@ -1,0 +1,3 @@
+seeded-rng.ts — ISeededRng interface (next/int/pick/state/clone) + Mulberry32 impl (single-uint32 state; seed IS the state so createRng(state) restores a stream) + createRng factory. The engine's only randomness source; never Math.random.
+seeded-rng.test.ts — determinism suite: same seed → identical sequence, different seeds diverge, range checks, state() round-trip, clone independence.
+index.ts — rng barrel (ISeededRng, Mulberry32, createRng); re-exported from the package barrel.

@@ -1,0 +1,4 @@
+File Index
+
+/index.ts
+Purpose: Isomorphic barrel for Kingdom Tactics game engine providing centralized DSL data, deterministic rules, AI policies, and simulators.

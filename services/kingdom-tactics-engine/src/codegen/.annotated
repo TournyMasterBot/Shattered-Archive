@@ -1,0 +1,7 @@
+File Index
+
+/generate-dsl-attributes.ts
+Purpose: Generates TypeScript attribute data files from C# source definitions.
+
+/generate-dsl-data.ts
+Purpose: Generates TypeScript data files from C# constants for game DSL.
