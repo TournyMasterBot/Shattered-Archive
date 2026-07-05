@@ -7,13 +7,19 @@ Purpose: This file specifies patterns for files and directories that Git should 
 Purpose: This file defines repository-wide coding standards, dependency rules, and AI context conventions for consistent, secure, and maintainable code development.
 
 /CODE_OF_CONDUCT.md
-Purpose: Establishes community standards and enforcement guidelines for respectful participation.
+Purpose: Establishes community standards and enforcement for respectful participation.
 
 /CONTRIBUTING.md
 Purpose: This file outlines contribution guidelines, branching strategy, and licensing for the Shattered Archive project.
 
 /DISCLAIMER.md
 Purpose: This file disclaims project affiliation and ownership of game content.
+
+/eslint.config.mjs
+Purpose: This file configures ESLint rules and plugins for a TypeScript/JavaScript codebase with separate settings for client and server environments.
+
+/jest.config.cjs
+Purpose: Configures Jest for running both server and client TypeScript tests with separate environments and settings.
 
 /LICENSE
 Purpose: This file specifies the licensing terms for source-available software with restrictions on commercial use.
@@ -22,7 +28,13 @@ Purpose: This file specifies the licensing terms for source-available software w
 Purpose: This file outlines the terms for commercial use and licensing of ShatteredArchive software.
 
 /LICENSING.md
-Purpose: This file outlines the source-available licensing terms for ShatteredArchive software, permitting free use under specific conditions while requiring a commercial license for monetization.
+Purpose: This file outlines the source available licensing model for ShatteredArchive software, permitting free use under specific conditions while restricting commercial monetization without explicit permission.
+
+/package.json
+Purpose: This file manages project metadata, dependencies, and scripts for a monorepo JavaScript/TypeScript application.
+
+/pnpm-workspace.yaml
+Purpose: Defines workspace packages and build dependencies for a monorepo project.
 
 /PRIVACY.md
 Purpose: This file outlines how user data is collected, stored, and protected by the ShatteredArchive software.
@@ -31,31 +43,19 @@ Purpose: This file outlines how user data is collected, stored, and protected by
 Purpose: This repository provides a monorepo codebase for a MUD tooling ecosystem including client, server, and shared packages.
 
 /SECURITY.md
-Purpose: This file establishes the security vulnerability reporting policy and disclosure process for the ShatteredArchive software project.
+Purpose: This file outlines the security policy and vulnerability reporting procedures for the ShatteredArchive software project.
 
-/SUPPORT.md
-Purpose: Provides guidelines for reporting bugs, security issues, and seeking support for the community-driven ShatteredArchive project.
+/shatteredarchive-ai.code-workspace
+Purpose: This file defines a multi-folder workspace configuration for the shatteredarchive AI project and related components.
+
+/shatteredarchive-mobile.code-workspace
+Purpose: This file configures the Visual Studio Code workspace settings and folder structure for the shatteredarchive-mobile project.
 
 /ShatteredArchive.code-workspace
 Purpose: This file configures a multi-folder workspace for the ShatteredArchive project and its related modules.
 
-/eslint.config.mjs
-Purpose: Configures ESLint rules and settings for a TypeScript/JavaScript codebase with client and server distinctions.
-
-/jest.config.cjs
-Purpose: Configures Jest for running both server and client TypeScript tests with separate environments and settings.
-
-/package.json
-Purpose: This file manages project scripts, dependencies, and configuration for a monorepo software project.
-
-/pnpm-workspace.yaml
-Purpose: Defines workspace package locations and build overrides for a monorepo project.
-
-/shatteredarchive-ai.code-workspace
-Purpose: This file defines a multi-folder workspace configuration for the shatteredarchive AI project.
-
-/shatteredarchive-mobile.code-workspace
-Purpose: This file configures the Visual Studio Code workspace settings and folder structure for the shatteredarchive-mobile project.
+/SUPPORT.md
+Purpose: Provides guidelines for reporting bugs, security issues, and seeking support for the community-driven ShatteredArchive project.
 
 /tsconfig.base.json
 Purpose: Shared TypeScript compiler configuration for consistent project-wide settings.
@@ -67,7 +67,7 @@ Purpose: Configures TypeScript compiler options for Jest client-side testing wit
 Purpose: Configures TypeScript compiler options for Jest test environment.
 
 /tsconfig.jest.server.json
-Purpose: This file configures TypeScript compilation options for Jest server-side tests.
+Purpose: This file configures TypeScript compilation settings for Jest server-side tests.
 
 /tsconfig.json
 Purpose: This file configures TypeScript to reference multiple application projects within the monorepo structure.

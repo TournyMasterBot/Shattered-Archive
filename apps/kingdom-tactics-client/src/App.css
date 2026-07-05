@@ -1,0 +1,127 @@
+.kt-shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 4rem) 1.5rem 3rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.kt-header {
+  text-align: center;
+  margin-bottom: clamp(1.5rem, 4vw, 3rem);
+}
+
+.kt-eyebrow {
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-size: 0.72rem;
+  color: var(--kt-muted);
+}
+
+.kt-title {
+  margin: 0;
+  font-size: clamp(2.4rem, 7vw, 4rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(180deg, #fff 0%, var(--kt-accent) 140%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.kt-subtitle {
+  margin: 0.75rem auto 0;
+  max-width: 40rem;
+  color: var(--kt-text);
+  opacity: 0.85;
+  line-height: 1.5;
+}
+
+.kt-engine-note {
+  margin: 1rem 0 0;
+  font-size: 0.85rem;
+  color: var(--kt-muted);
+}
+
+.kt-engine-note code {
+  color: var(--kt-accent-2);
+  font-size: 0.82rem;
+}
+
+.kt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.kt-card {
+  background: linear-gradient(180deg, var(--kt-panel), var(--kt-bg-2));
+  border: 1px solid var(--kt-border);
+  border-radius: 14px;
+  padding: 1.1rem 1.2rem 1.25rem;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease;
+}
+
+.kt-card:hover {
+  transform: translateY(-2px);
+  border-color: #3a4456;
+}
+
+.kt-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.kt-card-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.kt-card-blurb {
+  margin: 0;
+  color: var(--kt-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.kt-badge {
+  flex: none;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--kt-border);
+  color: var(--kt-muted);
+  white-space: nowrap;
+}
+
+.kt-badge--in-progress {
+  color: #0d0f14;
+  background: var(--kt-accent);
+  border-color: transparent;
+}
+
+.kt-badge--ready {
+  color: #0d0f14;
+  background: #57c785;
+  border-color: transparent;
+}
+
+.kt-footer {
+  margin-top: auto;
+  padding-top: 2.5rem;
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  color: var(--kt-muted);
+  font-size: 0.78rem;
+}

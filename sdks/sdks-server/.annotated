@@ -1,7 +1,7 @@
 File Index
 
 /package.json
-Purpose: This file defines the SDK server package configuration and build scripts.
+Purpose: This file manages the SDK server's metadata, build scripts, and dependencies.
 
 /tsconfig.json
 Purpose: This file configures TypeScript compilation settings for a Node.js project with ES2023 support.

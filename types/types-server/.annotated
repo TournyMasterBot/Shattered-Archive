@@ -1,10 +1,10 @@
 File Index
 
 /package.json
-Purpose: This file manages the server-side TypeScript package configuration and build scripts.
+Purpose: This file configures the TypeScript server types package with build scripts and dependencies.
 
 /tsconfig.json
 Purpose: This file configures TypeScript compilation settings for a Node.js project with ES2023 support.
 
 /tsconfig.tsbuildinfo
-Purpose: TypeScript build information file for project compilation tracking.
+Purpose: TypeScript build information file tracking project dependencies and compilation state.

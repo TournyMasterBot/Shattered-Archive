@@ -1,7 +1,7 @@
 File Index
 
 /package.json
-Purpose: This file manages the client utilities package configuration, build scripts, and dependencies.
+Purpose: This file configures the client utilities package including build scripts and dependencies.
 
 /tsconfig.json
 Purpose: This file configures TypeScript compilation options for a Node.js project with ES2023 support.

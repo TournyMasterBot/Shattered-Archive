@@ -7,4 +7,4 @@ Purpose: This file manages the game server's metadata, dependencies, and executa
 Purpose: This file configures TypeScript compilation settings for a Node.js project using ES2023 and Express types.
 
 /tsconfig.tsbuildinfo
-Purpose: TypeScript build information file for incremental compilation tracking.
+Purpose: TypeScript build information file for project compilation tracking.
