@@ -4,7 +4,7 @@ File Index
 Purpose: This file manages the web server's metadata, dependencies, and executable scripts for building, testing, and running the application.
 
 /tsconfig.json
-Purpose: This file configures TypeScript compilation settings for a Node.js project using ES2023 and Express types.
+Purpose: This file configures TypeScript compilation options for a Node.js project using ES2023 and Express types.
 
 /tsconfig.tsbuildinfo
 Purpose: TypeScript build information file for project compilation tracking.

@@ -1,7 +1,7 @@
 File Index
 
 /accessibility-command.ts
-Purpose: Processes accessibility command prefixes and repeats before sending to game client.
+Purpose: Processes and transforms raw accessibility commands into structured actions for execution.
 
 /accessibility-settings-store.ts
 Purpose: Manages accessibility settings persistence and defaults for the game client.

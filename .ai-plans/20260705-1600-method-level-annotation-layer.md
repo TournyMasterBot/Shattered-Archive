@@ -7,7 +7,7 @@ Task: Add a fourth annotation layer — per-method AI blocks — to the shattere
 Extend the existing annotation system (folder `.annotated`, file-top `AI-ANNOTATION`) with a per-method layer: an idempotent `AI-METHOD` comment block above each function/method giving a one-line purpose, regenerated safely on each run, staleness-aware via a body hash, and maintained passively. Any AI edit — Continue (already calls `markDirty`) or Claude host-side (via a new PostToolUse hook feeding a queue file) — schedules re-annotation. Done when: running the new `annotate_methods` tool on a `.ts`/`.cs`/`.kt`/`.swift` file inserts `AI-METHOD` blocks above methods without touching human comments, a second run is a no-op on unchanged methods, and editing a method body causes only that method's block to refresh.
 
 ## Constraints
-- All annotation inference uses the local qwen model via `withOllamaSlot` (free, GPU-serialized) — NEVER the Anthropic API. Model default `qwen3-coder:30b`, `keep_alive: "1m"`.
+- All annotation inference uses the local qwen model via `withOllamaSlot` (free, GPU-serialized) — NEVER the Anthropic API. Model default `qwen3.6`, `keep_alive: "1m"`.
 - NON-DESTRUCTIVE: only the marker-delimited `AI-METHOD` range is ever inserted/replaced. Human comments, JSDoc, and XML-doc (`///`) lines are never modified.
 - Heuristic regex detection only (no new parser/AST deps). Languages this cut: `.ts .tsx .js .jsx .mjs .cjs .cs .kt .kts .swift` — all brace-delimited. Unmatched/ambiguous constructs are SKIPPED, never guessed.
 - Reuse existing infra: `commentStyleFor`, `annotationField`, `withOllamaSlot`, `annotateIsSkippable`, the dirty-dir/auto-refresh machinery, and the `.mcp-settings.json` toggle pattern. Do not fork them.

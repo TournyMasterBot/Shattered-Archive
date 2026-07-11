@@ -1,4 +1,5 @@
 import type { Coord, Side } from './coord.js';
+import type { StanceKey } from '../data/balance/stances.js';
 
 /** How a token traverses terrain (drives passability + terrain move cost). */
 export type MovementClass = 'ground' | 'flying' | 'aquatic';
@@ -58,11 +59,24 @@ export interface UnitTemplate {
   readonly abilities: readonly string[];
   readonly resistances: readonly string[];
   readonly vulnerabilities: readonly string[];
-  /** e.g. 'large', 'unlimited-mana', 'permadeath', 'magi'. */
+  /** e.g. 'large', 'unlimited-mana', 'permadeath', 'magi', 'toughness'. */
   readonly traits: readonly string[];
 
   /** Deployment-point cost for army building. */
   readonly cost: number;
+
+  /** DSL `IsRecass`: true for a reclass, false for a base class. Drives the army-builder
+   * base/reclass tree and the tier point cost. Optional so combat-only test literals need not set it. */
+  readonly isReclass?: boolean;
+  /** DSL `ClassGroup`: the base-class archetype this class belongs to (Warrior/Thief/Mage/Cleric/Bard).
+   * The army-builder tree groups reclasses under their base class by this. Absent ⇒ the class key. */
+  readonly classGroup?: string;
+  /** Effective caster LEVEL: level cap × the class cast factor (below-level casters cast at a
+   * fraction), + elf (+1). In-match buffs (imbue +3) apply later. Absent ⇒ unknown. */
+  readonly castingLevel?: number;
+  /** Race×class DAMAGE boost/gimp percent already folded into `attackPower` (BoostedClasses:
+   * boost 10 / superboost 20 / SUPERBOOST 30; gimps negative). 0 = no modifier. */
+  readonly damageBoostPct?: number;
 }
 
 /** A time-limited effect on a token (buff/debuff/condition). */
@@ -88,4 +102,7 @@ export interface Unit {
   readonly hasMoved: boolean;
   /** True once this token has taken its action (attack/ability) this turn. */
   readonly hasActed: boolean;
+  /** Combat posture, shifting hit/avoidance + damage. Set as a FREE minor action and persists
+   * across turns. Absent ⇒ 'normal' (a no-op). See data/balance/stances.ts. */
+  readonly stance?: StanceKey;
 }

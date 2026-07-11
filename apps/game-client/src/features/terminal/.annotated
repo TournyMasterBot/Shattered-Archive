@@ -4,4 +4,4 @@ File Index
 Purpose: Extracts printable text from various terminal data shapes without using any type.
 
 /shatteredArchiveTerminal.ts
-Purpose: Manages terminal rendering and event handling for the Shattered Archive application.
+Purpose: Manages terminal rendering, scrolling, and event-based text output for the Shattered Archive application.

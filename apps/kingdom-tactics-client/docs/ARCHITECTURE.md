@@ -1,7 +1,10 @@
 # Kingdom Tactics — Architecture
 
-Status: **DESIGN** (pre-implementation). Companion to
-[`000-original-prompt.md`](./000-original-prompt.md) and [`ROADMAP.md`](./ROADMAP.md).
+Status: **IMPLEMENTED through Phase 7** (engine + server `/ws/kt` gateway + client
+app/dashboard + online `net` slice all built and host-green; Phase 8 Docker wiring and
+the deferred backlog remain — see [`ROADMAP.md`](./ROADMAP.md)). This doc is the design
+of record; where a section describes a future/deferred surface it is noted inline.
+Companion to [`000-original-prompt.md`](./000-original-prompt.md) and [`ROADMAP.md`](./ROADMAP.md).
 
 Kingdom Tactics is a turn-based tactical arena game (Tactics-Arena-Online-style,
 chess-variant movement/attack on a grid) reskinned entirely with **DSL** lore:

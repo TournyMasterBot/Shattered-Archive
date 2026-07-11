@@ -12,7 +12,12 @@ Two PreToolUse hooks already enforce this — don't fight them, delegate first:
 - `.claude/hooks/qdigest-guard.js` denies unwrapped long-output commands.
 - `.claude/hooks/read-pack-guard.js` denies full Reads of files over 40 KB.
 
-## Command output (150+ lines expected)
+## Command output — only when GENUINELY large (~150+ lines)
+
+Reserve qdigest for full/workspace-wide builds, `docker logs`, and big diffs. Compact runs
+don't need it and the guard now exempts them: a single-package `pnpm --filter <pkg> build|test`,
+or any command whose output you bound with a trailing `| head`/`| tail`/`| grep`, is fine to
+read directly.
 
 ```bash
 bash /c/Projects/Shattered-AI/scripts/qdigest.sh <command> [args...]
@@ -39,10 +44,16 @@ Order of preference ("context packs — gzip for prompts", see
 Ranged Read (`offset`+`limit`) is the deliberate escape hatch when full content is
 genuinely required (wholesale rewrite, exact quoting).
 
-## Multi-file orientation (before reading several files)
+## Multi-file orientation — MANDATORY `pack` first (rule, not a preference)
+
+Before reading **3+ files** (or 2+ large/unfamiliar ones) to understand a task, you MUST
+`pack` them first and then open only the `file:line` regions the brief points at. Spend the
+free local GPU, not paid read tokens. Skip only when the MCP stack is down (degrade to direct
+reads, tell the user once), the files are tiny / you already know the exact lines, or you must
+quote/edit verbatim (ranged `Read` then).
 
 ```bash
-docker exec shattered_mcp node build/cli.js pack "<task description>" /workspace/<repo>/<file> [...]
+MSYS_NO_PATHCONV=1 docker exec shattered_mcp node build/cli.js pack "<task description>" /workspace/<repo>/<file> [...]
 docker exec shattered_mcp node build/cli.js summarize /workspace/<repo>/<file>
 docker exec shattered_mcp node build/cli.js purpose /workspace/<repo>/<file>
 docker exec shattered_mcp node build/cli.js ask "<question>" /workspace/<repo>/<file>
@@ -63,6 +74,6 @@ Host → container path mapping (bind mounts):
 
 ## Rules
 
-- Cold model load can take a minute+ of **silence** — use a generous timeout (180s+) or run in background; silence is not a hang.
+- **Cold-model calls MUST be non-blocking (rule):** a cold load sits silent for a minute+ (NOT a hang). Run with `run_in_background: true` or a `timeout` ≥180000 ms — never a short foreground wait (it reads as "stuck" and gets interrupted).
 - Qwen does extraction, not judgment: trust it for "what does this say", verify anything decision-critical yourself (open the file / grep the spool).
 - Read `.ai-context` / `.annotated` in a directory before opening its code files; open only files you will change or must quote.

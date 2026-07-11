@@ -10,7 +10,7 @@ Purpose: Defines the structure for remote server error events in the game client
 Purpose: Defines the structure for GMCP event data exchanged between game client and remote server.
 
 /game-remote-server-raw.ts
-Purpose: Defines the structure for raw server communication events in the game client.
+Purpose: Defines the structure for raw game server events with timestamp and payload fields.
 
 /shattered-archive-gmcp-data.ts
 Purpose: Defines the structure for Shattered Archive GMCP data received from user scripts.

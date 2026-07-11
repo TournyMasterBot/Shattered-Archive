@@ -42,3 +42,6 @@ export {
   type SaveResult,
 } from './saves.js';
 export { applyAttack, applyAbility, type AbilitySpec } from './attack.js';
+export { toAbilitySpec, createAbilityResolver } from './ability-resolver.js';
+export type { CombatContext, CombatHooks } from './combat-hooks.js';
+export { defaultCombatHooks } from './default-combat-hooks.js';

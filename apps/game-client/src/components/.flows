@@ -1,0 +1,300 @@
+# Flows — components
+
+<!-- Human-oriented interaction diagrams for the non-trivial files here. Auto-generated
+     by passive_flows / document_flows; a section regenerates when its file changes.
+     Do not hand-edit a "## <file>" section — it is replaced wholesale. -->
+
+## AutoLevelingModal.tsx
+@flow-hash: b59b8e6c
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant M as AutoLevelingModal
+    participant E as Engine (useAutoLeveling)
+    participant I as IndexedDB (cached maps)
+    participant R as Remote API
+    participant L as localStorage
+    participant S as SavedTargets
+
+    U->>M: Open modal
+    M->>M: Load config from localStorage
+    M->>I: Fetch continent names (cached)
+    M->>R: Fetch continent names (remote)
+    M->>I: Fetch area names (cached)
+    M->>R: Fetch area names (remote)
+    M->>I: Fetch beasts (cached)
+    M->>R: Fetch beasts (remote)
+    M->>R: Fetch training paths (by areaId)
+    M->>S: Load manual targets for area
+    M->>L: Load user paths
+
+    U->>M: Select continent
+    M->>M: Fetch area names for continent
+    U->>M: Select area
+    M->>M: Load manual targets for area
+    M->>M: Fetch beasts for area
+    M->>M: Fetch training paths for area
+
+    U->>M: Edit steps in Configure tab
+    M->>M: Parse textarea to actions
+    M->>L: Save config to localStorage
+
+    U->>M: Click Start
+    M->>E: Call start() with saved config
+    E->>E: Begin autoleveling run
+    E->>R: Send engagement commands
+    E->>R: Handle fight sequence
+    E->>R: Wait for round completion
+    E->>E: Loop if loopRounds=true
+
+    U->>M: Click Build tab
+    M->>M: Load user paths
+    M->>M: Parse Mudlet script
+    M->>M: Convert to build steps
+    M->>M: Save steps to draft
+    M->>L: Save user path to localStorage
+
+    U->>M: Click Save
+    M->>L: Save config to localStorage
+    M->>L: Save user paths to localStorage
+```
+
+Caption: Interaction flow.
+
+## ContributeCreatureLoreModal.tsx
+@flow-hash: 0fd194ac
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant ContributeCreatureLoreModal
+    participant EventDispatcher
+    participant WebServer
+    participant MapsAPI
+    participant Database
+
+    User->>ContributeCreatureLoreModal: Opens modal
+    ContributeCreatureLoreModal->>EventDispatcher: Listen for 'shatteredarchive:identity-updated'
+    ContributeCreatureLoreModal->>EventDispatcher: Listen for 'shatteredarchive:raw-data'
+    ContributeCreatureLoreModal->>MapsAPI: Fetch continent names
+    ContributeCreatureLoreModal->>MapsAPI: Fetch area names per continent
+    ContributeCreatureLoreModal->>WebServer: POST /contribute/creaturelore (on submit)
+
+    loop Capture sequence
+        ContributeCreatureLoreModal->>EventDispatcher: Dispatch 'shatteredarchive:send-command' (creaturelore)
+        EventDispatcher->>ContributeCreatureLoreModal: Receive 'shatteredarchive:raw-data' (lore lines)
+        ContributeCreatureLoreModal->>EventDispatcher: Dispatch 'shatteredarchive:send-command' (look)
+        EventDispatcher->>ContributeCreatureLoreModal: Receive 'shatteredarchive:raw-data' (look lines)
+    end
+
+    ContributeCreatureLoreModal->>Database: Store submitted creature lore/look data
+    WebServer->>Database: Save data
+    ContributeCreatureLoreModal->>User: Show success or error message
+```
+
+Caption: The modal captures creature lore and look data through user commands, fetches map metadata, and submits the data to a backend database.
+
+## ContributeIdentifyModal.tsx
+@flow-hash: 0102d2e1
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant ContributeIdentifyModal
+    participant EventEmitter
+    participant GameClient
+    participant WebServer
+
+    User->>ContributeIdentifyModal: Opens modal
+    ContributeIdentifyModal->>EventEmitter: ListenEvent('shatteredarchive:identity-updated')
+    GameClient->>EventEmitter: DispatchEvent('shatteredarchive:identity-updated')
+    EventEmitter->>ContributeIdentifyModal: Notify identity update
+    ContributeIdentifyModal->>EventEmitter: ListenEvent('shatteredarchive:raw-data')
+    User->>ContributeIdentifyModal: Clicks 'Identify'
+    ContributeIdentifyModal->>GameClient: DispatchEvent('shatteredarchive:send-command')
+    GameClient->>ContributeIdentifyModal: Capture raw data
+    ContributeIdentifyModal->>EventEmitter: Stop listening after 1s
+    User->>ContributeIdentifyModal: Fills form, clicks 'Submit'
+    ContributeIdentifyModal->>WebServer: POST /contribute/identify
+    WebServer->>ContributeIdentifyModal: Response (success/failure)
+    ContributeIdentifyModal->>User: Show success/error message
+```
+
+Caption: Interaction flow.
+
+## MainMenuBar.tsx
+@flow-hash: 8e2ce8ed
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant MainMenuBar
+    participant useMainMenuBar
+    participant GraphicsSettingsModal
+    participant AudioSettingsModal
+    participant AccessibilitySettingsModal
+    participant ExternalLinks
+
+    User->>MainMenuBar: Click menu item
+    MainMenuBar->>useMainMenuBar: toggleRootMenu()
+    useMainMenuBar-->>MainMenuBar: Update state
+    MainMenuBar->>User: Render submenu
+
+    User->>MainMenuBar: Click submenu item
+    MainMenuBar->>useMainMenuBar: toggleGameSettings()
+    useMainMenuBar-->>MainMenuBar: Update state
+    MainMenuBar->>User: Render nested submenu
+
+    User->>MainMenuBar: Click Settings > Audio…
+    MainMenuBar->>useMainMenuBar: openAudioModal()
+    useMainMenuBar-->>MainMenuBar: Update state
+    MainMenuBar->>AudioSettingsModal: Render modal
+
+    User->>MainMenuBar: Click Settings > Accessibility…
+    MainMenuBar->>useMainMenuBar: openAccessibilityModal()
+    useMainMenuBar-->>MainMenuBar: Update state
+    MainMenuBar->>AccessibilitySettingsModal: Render modal
+
+    User->>MainMenuBar: Click File > Connect…
+    MainMenuBar->>MainMenuBar: Call onOpenConnect()
+
+    User->>MainMenuBar: Click Game > Script Sandbox…
+    MainMenuBar->>MainMenuBar: Call onOpenScriptSandbox()
+
+    User->>MainMenuBar: Click External > Open Shattered Archive
+    MainMenuBar->>ExternalLinks: Open URL in new tab
+
+    User->>MainMenuBar: Click Help > Scripting…
+    MainMenuBar->>MainMenuBar: Call onOpenScriptingHelp()
+```
+
+Caption: The MainMenuBar component handles user interactions to open submenus and modals, delegating actions to external handlers and rendering settings modals based on user selections.
+
+## PluginsModal.tsx
+@flow-hash: a06fa3d7
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant PluginsModal
+    participant usePlugins
+    participant pluginHost
+    participant UserStyleOverrideModal
+    participant PluginConfigModal
+
+    User->>PluginsModal: Open modal
+    PluginsModal->>usePlugins: Initialize hooks
+    usePlugins->>PluginsModal: Return plugin state
+
+    loop For each core plugin
+        PluginsModal->>PluginsModal: Render plugin row
+        PluginsModal->>usePlugins: Check install status
+        PluginsModal->>usePlugins: Get install record
+    end
+
+    PluginsModal->>User: Display plugin list
+
+    User->>PluginsModal: Click Install
+    PluginsModal->>usePlugins: installCorePlugin()
+    usePlugins->>pluginHost: Enable plugin
+
+    User->>PluginsModal: Toggle plugin enabled
+    PluginsModal->>usePlugins: setPluginEnabled()
+    usePlugins->>pluginHost: Enable/Disable plugin
+
+    User->>PluginsModal: Click Configure
+    PluginsModal->>usePlugins: installCorePlugin() (if needed)
+    PluginsModal->>PluginConfigModal: Open config modal
+
+    User->>PluginsModal: Click CSS
+    PluginsModal->>UserStyleOverrideModal: Open CSS modal
+
+    User->>PluginsModal: Click Export
+    PluginsModal->>PluginsModal: Export plugin data
+
+    User->>PluginsModal: Click Remove
+    PluginsModal->>usePlugins: removePlugin()
+    usePlugins->>pluginHost: Disable plugin
+```
+
+Caption: The PluginsModal manages plugin installation, configuration, and enabling/disabling, coordinating with hooks, the plugin host, and child modals for CSS and config.
+
+## RightSidebar.tsx
+@flow-hash: 59e7616c
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant RightSidebar.tsx
+    participant useStatusBlockViewModel
+    participant useSanctuaryActive
+    participant localStorage
+    participant event-emitter
+    participant OpponentStatusDetail
+    participant AffectsBlock
+    participant CompassBlock
+    participant RoomHeader
+
+    User->>RightSidebar.tsx: Interacts with UI
+    RightSidebar.tsx->>useStatusBlockViewModel: Fetches vitals
+    RightSidebar.tsx->>useSanctuaryActive: Checks sanctuary status
+    RightSidebar.tsx->>localStorage: Loads HUD config
+    RightSidebar.tsx->>event-emitter: Listens for opponent events
+    event-emitter->>OpponentStatusDetail: Emits opponent status
+    OpponentStatusDetail->>RightSidebar.tsx: Updates enemy UI state
+    RightSidebar.tsx->>localStorage: Saves HUD config
+    RightSidebar.tsx->>AffectsBlock: Renders affects
+    RightSidebar.tsx->>CompassBlock: Renders compass
+    RightSidebar.tsx->>RoomHeader: Renders room header
+```
+
+Caption: The RightSidebar component orchestrates UI rendering and state management for game status, vitals, and enemy information, interacting with hooks, local storage, and event emitters.
+
+## UserScriptSandboxModal.tsx
+@flow-hash: dbf9ae4a
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UserScriptSandboxModal
+    participant useUserScriptSandbox
+    participant getUserScriptStorageKey
+    participant ImportExportModal
+    participant localStorage
+    participant FileReader
+    participant downloadJson
+    participant buildTriggerTree
+    participant filterScriptsByTagQuery
+
+    User->>UserScriptSandboxModal: Open modal
+    UserScriptSandboxModal->>useUserScriptSandbox: Fetch scripts for connectionId
+    useUserScriptSandbox->>localStorage: Read user scripts from storage
+    UserScriptSandboxModal->>getUserScriptStorageKey: Generate storage key
+    UserScriptSandboxModal->>buildTriggerTree: Build trigger tree for display
+    UserScriptSandboxModal->>filterScriptsByTagQuery: Filter scripts by search query
+
+    User->>UserScriptSandboxModal: Click Export
+    UserScriptSandboxModal->>ImportExportModal: Show export modal
+    ImportExportModal->>ImportExportModal: Filter and select scripts
+    ImportExportModal->>ImportExportModal: Build export JSON
+    ImportExportModal->>downloadJson: Download export file
+
+    User->>UserScriptSandboxModal: Click Import
+    UserScriptSandboxModal->>ImportExportModal: Show import modal
+    ImportExportModal->>FileReader: Read import file
+    ImportExportModal->>ImportExportModal: Parse JSON and validate
+    ImportExportModal->>ImportExportModal: Show parsed items for selection
+    ImportExportModal->>useUserScriptSandbox: Merge/replace scripts
+    useUserScriptSandbox->>localStorage: Update storage with new scripts
+
+    User->>UserScriptSandboxModal: Edit script
+    UserScriptSandboxModal->>useUserScriptSandbox: Update script in state
+    useUserScriptSandbox->>localStorage: Persist script changes
+
+    User->>UserScriptSandboxModal: Test script
+    UserScriptSandboxModal->>useUserScriptSandbox: Run script with test data
+    useUserScriptSandbox->>ROUTED_WINDOW_EVENTS: Dispatch test event
+```
+
+Caption: The UserScriptSandboxModal orchestrates user script management, including editing, testing, and importing/exporting scripts through localStorage, with real-time updates and validation.

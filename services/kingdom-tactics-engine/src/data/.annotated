@@ -1,7 +1,1 @@
 File Index
-
-/game-data-provider.test.ts
-Purpose: Validates game data integrity and unit template resolution through comprehensive unit and mode tests.
-
-/index.ts
-Purpose: Centralized access point for all game data and unit template resolution.

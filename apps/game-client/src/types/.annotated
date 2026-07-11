@@ -7,7 +7,7 @@ Purpose: This file provides TypeScript declarations for the fengari-web Lua inte
 Purpose: This file provides TypeScript declarations for the Fengari Lua interpreter library.
 
 /skulpt.d.ts
-Purpose: This file provides TypeScript declarations for the Skulpt Python-to-JS compiler library.
+Purpose: This file provides TypeScript declarations for the Skulpt library module.
 
 /webspeech.d.ts
 Purpose: Provides TypeScript definitions for Web Speech API speech recognition functionality.

@@ -1,0 +1,25 @@
+File Index
+
+/index.ts
+Purpose: Net slice barrel — re-exports OnlineMatchScreen, useKtMatch (+ UseKtMatch/KtConnectConfig), and KtSocket (+ its status/handlers/factory/WebSocketLike types).
+
+/kt-socket.ts
+Purpose: Thin `/ws/kt` client transport — wraps a WebSocketLike opened via an injectable factory, JSON-serializes outgoing KtClientMessages, validates every incoming frame with the engine's parseKtServerMessage (drops garbage → onError, never throws), exposes status + close(); no auto-reconnect in v1.
+
+/kt-socket.test.ts
+Purpose: Tests (DOM-free fake socket) that the factory opens on construct, send serializes a join, a joined frame dispatches typed, garbage frames are dropped with onError, and close() flips status / blocks further sends.
+
+/kt-config.ts
+Purpose: Runtime connection defaults — DEFAULT_KT_WS (from Vite's import.meta.env.VITE_KT_WS, fallback ws://localhost:8090/ws/kt) and DEFAULT_KT_MATCH_ID ('duel-1'). Jest maps this to kt-config.stub.ts (CJS can't parse import.meta).
+
+/kt-config.stub.ts
+Purpose: Jest stub for kt-config — static defaults mirroring the real module's exports, mapped in via moduleNameMapper so tests don't evaluate import.meta.
+
+/OnlineMatchScreen.tsx
+Purpose: Online multiplayer screen — pre-connect form (match id + server URL) → useKtMatch; connected it renders the reused controlled Arena from server snapshots, interactive only on the human's turn, with a status banner, inline errors, and a win/lose/draw over banner. Injectable socketFactory for tests.
+
+/OnlineMatchScreen.css
+Purpose: Screen layout — header row, connect form fields, and status text styling.
+
+/OnlineMatchScreen.test.tsx
+Purpose: Tests (fake socket, within NavProvider) that Connect sends join on open, a joined snapshot renders the arena and a move click submits an action frame, and an over frame shows the winner banner.

@@ -8,8 +8,9 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "jest --config ./jest.config.cjs --runInBand --passWithNoTests",
-    "codegen": "tsx src/codegen/generate-dsl-data.ts && tsx src/codegen/generate-dsl-attributes.ts",
+    "codegen": "tsx src/codegen/generate-dsl-data.ts && tsx src/codegen/generate-dsl-attributes.ts && tsx src/codegen/generate-dsl-abilities.ts",
     "codegen:attrs": "tsx src/codegen/generate-dsl-attributes.ts",
+    "ability:coverage": "tsx src/tools/ability-coverage.ts",
     "format": "prettier --write \"src/**/*.{ts,json}\""
   },
   "dependencies": {

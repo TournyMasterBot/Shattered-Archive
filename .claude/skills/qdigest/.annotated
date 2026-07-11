@@ -1,0 +1,4 @@
+File Index
+
+/SKILL.md
+Purpose: Delegates large local file and command processing to a free qwen model instead of using Claude tokens.

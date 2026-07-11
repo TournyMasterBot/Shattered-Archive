@@ -1,0 +1,7 @@
+File Index
+
+/useMatch.ts
+Purpose: React hook owning one LOCAL match by driving the engine's authoritative LocalMatch (same MatchSession the online gateway uses, minus the socket) — hotseat/single-player get full parity (avoidance, salted combat RNG, real abilities); mirrors the session snapshot into render state.
+
+/useMatch.test.ts
+Purpose: Tests the hook applies a legal move, rejects an illegal action, drives the AI seat then hands back, and reset rebuilds the original match.

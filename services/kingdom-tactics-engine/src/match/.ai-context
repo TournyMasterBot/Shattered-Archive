@@ -1,0 +1,11 @@
+The match folder is the engine's embeddable "match server": the authoritative owner of a single
+match, factored so the SAME code path runs online and offline. MatchSession wraps the deterministic
+reducer with seat ownership, action authorization, the server-only salted combat hooks/RNG, and the
+ability resolver, and can auto-play AI seats — all with no I/O, so a real network gateway can own one
+per connection while local play embeds one directly. LocalMatch is the offline driver: it stands a
+MatchSession up on a single device (claiming every non-AI seat to one 'local' client for hotseat) and
+derives the combat salt from the match seed so offline play is fully reproducible. The design goal is
+that hotseat/single-player lose no functionality relative to online play (avoidance, real abilities,
+salted RNG) while the engine remains the sole owner of the rules — the online server stays the only
+authority that matters for cross-network security. Combat randomness is injected at the edges (crypto
+online via the server, seed-derived locally), keeping this module isomorphic (no Node/DOM built-ins).

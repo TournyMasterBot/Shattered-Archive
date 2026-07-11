@@ -1,0 +1,25 @@
+File Index
+
+/20260704-1924-kingdom-tactics-p1-engine-foundation.md
+Purpose: Establishes the foundational engine package and distilled DSL data for the kingdom tactics game system.
+
+/20260704-2356-kingdom-tactics-p2-rules-resolvers.md
+Purpose: Implement pure, deterministic rules resolvers for line-of-sight, turn order, and victory conditions.
+
+/20260705-0127-kingdom-tactics-p2b-targeting-damage.md
+Purpose: Implement targeting and damage resolution logic for the kingdom tactics engine based on distilled DSL calculators.
+
+/20260705-1500-kingdom-tactics-p3-engine-ai-sim.md
+Purpose: This file outlines the implementation plan for building a deterministic game engine reducer, AI policies, and simulators for a tactics game.
+
+/20260705-1530-kingdom-tactics-combat-reactions-defenses-auras.md
+Purpose: Design and implement automatic combat defenses, shielding auras, and reactive auras within the existing damage resolution pipeline.
+
+/20260705-1600-method-level-annotation-layer.md
+Purpose: Integrates AI-generated method summaries into source files with passive auto-refresh and host-side edit support.
+
+/20260705-1815-qwen-correctness-challenge-gate.md
+Purpose: This file outlines a correctness validation gate for Qwen's code writes, using a second instance to review changes before saving.
+
+/20260705-1930-passive-mermaid-flow-documenter.md
+Purpose: Automatically generates human-readable Mermaid flow diagrams for complex project files to visualize runtime interactions.

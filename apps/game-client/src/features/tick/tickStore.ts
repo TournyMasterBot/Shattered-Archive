@@ -14,6 +14,7 @@ type TickStoreState = {
   lastTickAt: number | null;
   timeOfDay: string;
   remaining: number;
+  connected: boolean;
 };
 
 type TickStore = {
@@ -21,6 +22,7 @@ type TickStore = {
   listeners: Set<() => void>;
   intervalId: number | null;
   tickListenerAttached: boolean;
+  connListenerAttached: boolean;
 
   // IMPORTANT: stable snapshot object reference
   snapshot: TickSnapshot;
@@ -57,11 +59,13 @@ function createStore(): TickStore {
       lastTickAt: null,
       timeOfDay: initial.timeOfDay,
       remaining: initial.remaining,
+      connected: false,
     },
 
     listeners: new Set(),
     intervalId: null,
     tickListenerAttached: false,
+    connListenerAttached: false,
 
     snapshot: initial,
 
@@ -87,6 +91,9 @@ function createStore(): TickStore {
             const raw = typeof data.time === 'string' ? data.time.trim() : '';
             const nextTime = raw || store.state.timeOfDay;
 
+            // A tick can only arrive over a live connection — treat it as proof
+            // of connectivity in case the open event fired before we subscribed.
+            store.state.connected = true;
             store.state.lastTickAt = Date.now();
 
             // reset countdown
@@ -110,9 +117,40 @@ function createStore(): TickStore {
         store.tickListenerAttached = true;
       }
 
+      // attach ONE HMR-safe connection listener pair so the countdown only
+      // advances while a play-server connection is live. On disconnect we clear
+      // the last-tick anchor and reset the display so nothing keeps ticking down.
+      if (!store.connListenerAttached) {
+        const disposeOpen = ListenEvent<any>(
+          'game:remote-server:open',
+          () => {
+            store.state.connected = true;
+          },
+          { key: 'tickStore::event::remote-open' },
+        );
+
+        const disposeClose = ListenEvent<any>(
+          'game:remote-server:close',
+          () => {
+            store.state.connected = false;
+            store.state.lastTickAt = null;
+            store.publishIfChanged('--:--', store.state.durationSec);
+          },
+          { key: 'tickStore::event::remote-close' },
+        );
+
+        (store as any)._disposeConn = () => {
+          disposeOpen();
+          disposeClose();
+        };
+        store.connListenerAttached = true;
+      }
+
       // countdown interval
       if (store.intervalId == null) {
         store.intervalId = window.setInterval(() => {
+          // Do not advance the countdown when there is no active connection.
+          if (!store.state.connected) return;
           if (store.state.lastTickAt == null) return;
 
           const elapsedSec = (Date.now() - store.state.lastTickAt) / 1000;
@@ -145,6 +183,21 @@ function createStore(): TickStore {
 
         (store as any)._disposeTick = undefined;
         store.tickListenerAttached = false;
+      }
+
+      // cleanly dispose the connection listeners
+      if (store.connListenerAttached) {
+        const disposeConn = (store as any)._disposeConn as undefined | (() => void);
+        if (disposeConn) {
+          try {
+            disposeConn();
+          } catch {
+            // ignore
+          }
+        }
+
+        (store as any)._disposeConn = undefined;
+        store.connListenerAttached = false;
       }
     },
 

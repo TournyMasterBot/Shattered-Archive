@@ -1,28 +1,28 @@
 File Index
 
 /crontab-root
-Purpose: This crontab entry runs logrotate every 15 minutes to manage nginx log file sizes.
+Purpose: This crontab entry automates nginx log rotation every 15 minutes using logrotate utility.
 
 /edge-subdomains.conf
 Purpose: Configures nginx routing and proxy settings for multiple subdomains and services.
 
 /edge.conf
-Purpose: This file configures nginx to route HTTPS traffic to different upstream services based on the subdomain requested.
+Purpose: This file configures nginx to route HTTPS traffic to different upstream services based on the hostname.
 
 /entrypoint.sh
-Purpose: This script initializes NGINX server with self-signed TLS certificates for local development.
+Purpose: This script initializes NGINX server with self-signed TLS certificates and configures log rotation for the development environment.
 
 /game-client.conf
 Purpose: This file configures the Nginx server settings for the game client web application.
 
 /logrotate-nginx.conf
-Purpose: Configures daily log rotation for nginx access and error logs with compression and backup retention.
+Purpose: Configures daily rotation and compression of nginx log files with 14-day retention.
 
 /shatteredarchive-dev-stub.conf
 Purpose: This configuration file sets up nginx server settings for the shatteredarchive-dev development environment.
 
 /ssl-params.conf
-Purpose: Configures SSL security parameters and headers for local development with self-signed certificates.
+Purpose: Configures SSL parameters and security headers for local development with self-signed certificates.
 
 /web-client.conf
 Purpose: This file configures the Nginx web server for the client-side application.

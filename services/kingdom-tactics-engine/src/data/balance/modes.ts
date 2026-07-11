@@ -17,7 +17,9 @@ export const GAME_MODES: Record<GameModeId, GameModeConfig> = {
     terrainProfile: 'arena', asymmetric: false,
   },
   skirmish: {
-    id: 'skirmish', name: 'Skirmish', sides: 2, budget: 30, budgetKind: 'points', scale: 'skirmish',
+    // Skirmish-scale modes field an equal NUMBER of units per side — points don't matter at
+    // this scale; point budgets are reserved for the larger battles (relative power balancing).
+    id: 'skirmish', name: 'Skirmish', sides: 2, budget: 5, budgetKind: 'units', scale: 'skirmish',
     usesSquadrons: false, victory: 'rout', board: { width: 10, height: 10 },
     terrainProfile: 'arena', asymmetric: false,
   },
@@ -37,7 +39,8 @@ export const GAME_MODES: Record<GameModeId, GameModeConfig> = {
     terrainProfile: 'siege', asymmetric: true,
   },
   ffa: {
-    id: 'ffa', name: 'Free-for-All', sides: 4, budget: 25, budgetKind: 'points', scale: 'skirmish',
+    // Skirmish-scale free-for-all: equal unit count per side (3 each across 4 sides), not points.
+    id: 'ffa', name: 'Free-for-All', sides: 4, budget: 3, budgetKind: 'units', scale: 'skirmish',
     usesSquadrons: false, victory: 'rout', board: { width: 14, height: 14 },
     terrainProfile: 'arena', asymmetric: false,
   },

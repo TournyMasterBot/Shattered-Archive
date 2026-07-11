@@ -1,10 +1,10 @@
 File Index
 
 /dependabot-alerts-token.md
-Purpose: Configures secure access to Dependabot security alerts via GitHub tokens.
+Purpose: This file explains how to set up a GitHub token with minimal permissions to read Dependabot security alerts.
 
 /github-actions.md
-Purpose: This file explains how to run and test GitHub Actions locally using the `act` tool and Docker.
+Purpose: This file explains how to run and test GitHub Actions locally using Docker and the `act` tool.
 
 /github-signed-commits.md
-Purpose: Configure GPG signing for GitHub Desktop commits on Windows.
+Purpose: Configures GPG-signed commits in GitHub Desktop on Windows.

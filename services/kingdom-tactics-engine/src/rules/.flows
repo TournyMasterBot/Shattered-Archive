@@ -1,0 +1,119 @@
+# Flows — rules
+
+<!-- Human-oriented interaction diagrams for the non-trivial files here. Auto-generated
+     by passive_flows / document_flows; a section regenerates when its file changes.
+     Do not hand-edit a "## <file>" section — it is replaced wholesale. -->
+
+## attack.test.ts
+@flow-hash: 3e133496
+
+```mermaid
+sequenceDiagram
+    participant H as Human (Test Writer)
+    participant T as attack.test.ts
+    participant P as createGameDataProvider()
+    participant A as applyAttack()
+    participant D as resolveDamage()
+    participant L as legalTargets()
+    participant R as RNG stub
+    participant U as Unit state mutation
+
+    H->>T: Run test suite
+    T->>P: Create game data provider
+    P-->>T: provider
+    T->>L: Check legal targets
+    L->>P: Fetch unit templates
+    P-->>L: Templates
+    L-->>T: 'd' is target
+    T->>D: Resolve damage
+    D->>P: Fetch unit templates & moon phase
+    P-->>D: Templates & moon
+    D-->>T: Damage amount
+    T->>A: Apply attack
+    A->>P: Fetch unit templates
+    P-->>A: Templates
+    A->>U: Update defender HP
+    A->>U: Mark attacker as acted
+    U-->>A: Updated state
+    A-->>T: New state
+    T->>T: Assert HP reduced
+    T->>T: Assert hasActed = true
+    T->>T: Assert original state unchanged
+
+    T->>T: Test out-of-range (no-op)
+    T->>A: Apply attack (out of range)
+    A-->>T: Return original state
+
+    T->>T: Test ability with maladiction
+    T->>A: Apply ability (frostbolt)
+    A->>R: Use fixed RNG (roll = 0)
+    R-->>A: Roll result
+    A->>D: Resolve damage
+    D-->>A: Damage amount
+    A->>U: Apply damage
+    A->>U: Apply maladiction (save lands)
+    U-->>A: Updated state
+    A-->>T: New state
+    T->>T: Assert damage applied
+    T->>T: Assert maladiction applied
+
+    T->>T: Test ability with maladiction save fails
+    T->>A: Apply ability (frostbolt)
+    A->>R: Use fixed RNG (roll = 99)
+    R-->>A: Roll result
+    A->>D: Resolve damage
+    D-->>A: Damage amount
+    A->>U: Apply damage
+    A->>U: Skip maladiction (save fails)
+    U-->>A: Updated state
+    A-->>T: New state
+    T->>T: Assert damage applied
+    T->>T: Assert maladiction NOT applied
+```
+
+Caption: The test suite orchestrates game state updates through attack and ability resolution, interacting with a data provider for templates and simulating deterministic RNG for maladiction outcomes.
+
+## attack.ts
+@flow-hash: 764d17bf
+
+```mermaid
+sequenceDiagram
+    participant H as Human Player
+    participant S as MatchState
+    participant T as Token
+    participant P as IGameDataProvider
+    participant R as ISeededRng
+    participant D as Damage Resolver
+    participant L as Legal Target Checker
+    participant A as Attack Function
+    participant B as Ability Function
+    participant M as Save Roller
+    participant U as Unit Template Resolver
+
+    H->>A: initiate attack
+    A->>S: find attacker and target tokens
+    A->>L: check if target is legal
+    L-->>A: return legal target list
+    A->>U: resolve attacker template
+    A->>U: resolve defender template
+    A->>D: calculate damage
+    D-->>A: return damage amount
+    A->>T: mark attacker as acted
+    A->>T: apply damage to defender
+    A-->>S: return updated state
+
+    H->>B: cast ability
+    B->>S: find caster and target tokens
+    B->>U: resolve caster template
+    B->>U: resolve target template
+    B->>D: calculate damage (if any)
+    D-->>B: return damage amount
+    B->>M: roll save for maladiction
+    M-->>B: return save result
+    B->>T: mark caster as acted
+    B->>T: apply damage to target (if any)
+    B->>T: apply status effect (if save landed)
+    B-->>S: return updated state
+```
+
+Caption: The human player initiates attacks or casts abilities, which are processed through token resolution, damage calculation, and status application across the game state.

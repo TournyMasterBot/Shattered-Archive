@@ -1,6 +1,6 @@
 # Plan: Kingdom Tactics — Phase 3 (GameEngine reducer + AI policies + simulators)
 
-Created: 2026-07-05T15:00:00-05:00 · Workspace: /workspace/shattered-archive · Status: ACTIVE
+Created: 2026-07-05T15:00:00-05:00 · Workspace: /workspace/shattered-archive · Status: COMPLETE
 Task: Build the deterministic `engine/` reducer that applies an `Action` to `MatchState` via the Phase-2 rules, two pluggable `ai/` policies (Random, Greedy), and the three `sim/` simulators (Match, Batch, Scenario). This makes the engine self-driving and gives the balance-tuning harness the brief requires.
 
 > RESUMABILITY / OWNERSHIP — READ FIRST
@@ -135,8 +135,19 @@ All exported from `services/kingdom-tactics-engine/src/` (barrels: `rules/index.
   adjusting only import paths if a barrel differs. If something doesn't match reality or a
   test fails for a reason not covered here, STOP and leave a `Progress log` note for Claude
   rather than improvising.
-- **Verify via the server**, one command, wrapped:
-  `bash /c/Projects/Shattered-AI/scripts/qdigest.sh -p "did build pass and how many jest tests passed/failed? show failures" bash -c "pnpm --filter @shatteredarchive/kingdom-tactics-engine build && pnpm --filter @shatteredarchive/kingdom-tactics-engine test 2>&1 | grep -vE 'ts-jest.config..WARN'"`
+- **NEVER run `pnpm install` / `pnpm build` / `pnpm test` (or any command that mutates
+  `node_modules`) from inside the container.** You (qwen) execute in the `shattered_mcp`
+  container, which bind-mounts the HOST repo — including `node_modules` — read-write. A
+  container-side `pnpm install` rewrites that shared `node_modules` with LINUX bin shims and
+  a container store path, which BREAKS the host's Windows toolchain (`'tsc' is not
+  recognized`) and forces a full host reinstall. This already happened once (2026-07-08).
+- **You cannot run the JS build/test suite; that verification is Claude's job on the host.**
+  For a QWEN-SAFE step: transcribe the code + test file, then STOP and report
+  "transcribed, ready for host verify" in the Progress log — do NOT try to run jest/tsc,
+  do NOT `pnpm install`, do NOT hunt for a runner. A host `bash …/qdigest.sh … pnpm … build
+  && … test` uses a `/c/...` host path you can't reach anyway. Leave the box UNCHECKED; the
+  human/Claude runs the suite and checks it off. (You may read a `.ts` file to confirm you
+  transcribed it faithfully — reading is safe; installing/building is not.)
 - **COMPACT-SAFE checkpoints** are marked `⟦COMPACT OK⟧` in each QWEN-SAFE step. At those
   points all needed state is either written to disk or captured in this doc, so it is safe to
   compact/forget conversation history and resume from the doc alone. Check the box, append a
@@ -144,7 +155,7 @@ All exported from `services/kingdom-tactics-engine/src/` (barrels: `rules/index.
 
 ## Steps
 
-### [ ] 1. (CLAUDE) GameEngine reducer + legalActions
+### [x] 1. (CLAUDE) GameEngine reducer + legalActions
 - Do: `hasMoved` is ALREADY on `Unit`+`Squadron` (added 2026-07-05, build green) — no model
   work needed. Create `src/engine/game-engine.ts`. Design + implement (judgment: dual-budget +
   round semantics per v1 decisions 1–2, 6):
@@ -188,7 +199,7 @@ All exported from `services/kingdom-tactics-engine/src/` (barrels: `rules/index.
   is invoked once per non-end-turn action; input state object is unchanged after apply (purity).
 - Verify: build 0 + engine test suite green. Then check the box + Progress log.
 
-### [ ] 2. (CLAUDE) AI policies (Random + Greedy)
+### [x] 2. (CLAUDE) AI policies (Random + Greedy)
 - Do: Create `src/ai/policy.ts` with `export interface IAiPolicy { readonly name: string;
   chooseAction(state: MatchState, side: Side, p: EngineProviders, rng: ISeededRng): Action }`.
   Then `src/ai/random-policy.ts` and `src/ai/greedy-policy.ts`:
@@ -212,7 +223,7 @@ All exported from `services/kingdom-tactics-engine/src/` (barrels: `rules/index.
   real action exists. Use the real provider with concrete ids (e.g. 'Human:Warrior').
 - Verify: build + test green. Box + Progress log.
 
-### [ ] 3. (CLAUDE) MatchSimulator + result types
+### [x] 3. (CLAUDE) MatchSimulator + result types
 - Do: Create `src/sim/types.ts` and `src/sim/match-simulator.ts`.
   - `src/sim/types.ts`:
     ```ts
@@ -251,7 +262,7 @@ All exported from `services/kingdom-tactics-engine/src/` (barrels: `rules/index.
 - Verify: build + test green. Box + Progress log. ⟦This is the last CLAUDE step; 4–6 are
   QWEN-SAFE and depend only on what now exists on disk.⟧
 
-### [ ] 4. (QWEN-SAFE) BatchSimulator
+### [x] 4. (QWEN-SAFE) BatchSimulator
 > Transcribe the code below verbatim. It only wraps `runMatch` (Step 3). Adjust import paths
 > only if a barrel path differs. Do not redesign.
 - Do: Create `src/sim/batch-simulator.ts`:
@@ -312,7 +323,7 @@ All exported from `services/kingdom-tactics-engine/src/` (barrels: `rules/index.
 - If the build/test fails for any reason not obviously a typo you made, STOP and write a
   Progress log note "Step 4 blocked: <digest summary>" for Claude.
 
-### [ ] 5. (QWEN-SAFE) ScenarioSimulator
+### [x] 5. (QWEN-SAFE) ScenarioSimulator
 > Transcribe verbatim. This is the brief's "one player controls both sides" — a manual driver,
 > no AI. It just wraps `applyAction` and records history.
 - Do: Create `src/sim/scenario-simulator.ts`:
@@ -366,10 +377,12 @@ All exported from `services/kingdom-tactics-engine/src/` (barrels: `rules/index.
   `step` a legal move for side 0 then an `{type:'end-turn',side:0}`, assert `getState()`
   reflects the move and `activeSide` flipped, and `history().length === 2`. Assert an illegal
   move leaves state unchanged (same reference or equal) — no throw.
-- Verify (wrapped command). Box + Progress log. `⟦COMPACT OK⟧`
-- STOP-and-report on any non-typo failure.
+- Verify: this is HOST/Claude's job — do NOT run jest/tsc or `pnpm install` in-container
+  (see Qwen operating rules). Transcribe the files, add a Progress-log line "Step 5
+  transcribed, ready for host verify", and leave the box UNCHECKED for the host to confirm.
+- STOP-and-report on anything that doesn't match reality; never improvise a test runner.
 
-### [ ] 6. (QWEN-SAFE) Barrel exports, annotate, full-suite report, complete
+### [x] 6. (QWEN-SAFE) Barrel exports, annotate, full-suite report, complete
 > Pure wiring + reporting. No design.
 - Do:
   1. Add to `src/index.ts` (after the existing `export * from './rules/index.js';`):
@@ -390,7 +403,9 @@ All exported from `services/kingdom-tactics-engine/src/` (barrels: `rules/index.
   2. Create/refresh `.annotated` in `src/engine/`, `src/ai/`, `src/sim/` — one line per file
      in the existing "File Index" style (see `src/rules/.annotated`). Keep it terse. The host
      linter may regenerate these; if so, leave its version.
-  3. Run the wrapped build+test command and REPORT the digest (pass/fail + test count).
+  3. Do the barrel + `.annotated` edits, then STOP — the build+test verification is HOST/
+     Claude's job (do NOT run jest/tsc or `pnpm install` in-container). Log "Step 6 wiring
+     transcribed, ready for host verify" and leave the box for the host to check.
 - Files: `src/index.ts`, `src/engine/.annotated`, `src/ai/.annotated`, `src/sim/.annotated`.
 - Verify: build 0 + full suite green (~112 tests). Then set this doc `Status: COMPLETE`,
   check the box, and append a final Progress log line summarizing the phase. `⟦COMPACT OK⟧`
@@ -440,3 +455,57 @@ All exported from `services/kingdom-tactics-engine/src/` (barrels: `rules/index.
   landed (a missed/negated attack triggers no thorns). Captured in a new DRAFT plan
   `20260705-1530-kingdom-tactics-combat-reactions-defenses-auras.md`; reducer `triggers` hook
   (per-action) noted as distinct from these per-hit combat hooks.
+- 2026-07-08 STEP 1 DONE (CLAUDE). Created `src/engine/game-engine.ts` (`EngineProviders`,
+  `applyAction`, `legalActions`, `IGameEngine`/`GameEngine` facade) + `game-engine.test.ts`
+  (13 tests) + `src/engine/.annotated`. Dual budgets implemented (move sets `hasMoved`,
+  attack/ability set `hasActed`, either order; `legalActions` offers each independently).
+  End-turn resets BOTH flags on the INCOMING side and bumps `turn` only when play wraps to the
+  lowest living side. `triggers` fires once per non-end-turn action, NOT on end-turn; victory
+  re-checked every action; `rngState` persisted via `rng.state()`; decided matches reject
+  further actions. Abilities remain a resolver-gated no-op (v1 decision 3). Open decision left at
+  default: NO move-after-act ordering lock (move guarded only by `!hasMoved`). Verify: build 0,
+  jest 100 passed / 0 failed (was 87). Next: Step 2 (AI Random/Greedy policies).
+- 2026-07-08 STEP 2 DONE (CLAUDE). Created `src/ai/{policy.ts,eval.ts,random-policy.ts,
+  greedy-policy.ts}` + `greedy-policy.test.ts` + `random-policy.test.ts` + `src/ai/.annotated`.
+  `IAiPolicy.chooseAction` returns ONE action per call (sim loop re-invokes until end-turn).
+  `eval.ts` holds the shared, RNG-FREE scoring (so ranking never perturbs the reducer's stream):
+  `scoreAttack` = deterministic `resolveDamage` amount w/ terrain+moon+statuses; plus
+  `nearestEnemyDistance`, `livingEnemies`, `tokenHp`, `templateFor`. RandomPolicy = uniform over
+  non-end-turn acts (decision 4). GreedyPolicy = 1-ply lethal-first (lethal bonus 1e6), else
+  distance-reducing move, else end-turn; ties break tokenId → targetId/coordKey. Verify: build 0,
+  jest 108 passed / 0 failed (was 100). Next: Step 3 (MatchSimulator + result types) — last CLAUDE step.
+- 2026-07-08 STEP 3 DONE (CLAUDE). Created `src/sim/types.ts` (`MatchResult`) +
+  `src/sim/match-simulator.ts` (`MatchConfig`, `runMatch`) + `match-simulator.test.ts` +
+  `src/sim/.annotated`. `runMatch` loops: active side's policy picks ONE action → reducer applies
+  it, repeating until `decided` or `turn > maxTurns` (default 200). Two anti-stall guards:
+  `MAX_ACTIONS_PER_TURN=500` forces end-turn; a no-op (reducer returns same ref) is converted to
+  end-turn, and a no-op end-turn breaks the loop. Result: decided → winner/reason:'victory';
+  else winner:'draw'/reason:'turn-limit'; survivors = living tokens per side. Tests: two-run
+  determinism golden, 2-Greedy-vs-1-weak → winner 0, empty board → draw, maxTurns cap →
+  'turn-limit'. `match-simulator.test.ts` exports `duelState()` for Step 4 to copy. Verify: build 0,
+  jest 112 passed / 0 failed (was 108). **All 3 CLAUDE steps done.** Steps 4-6 are QWEN-SAFE
+  (BatchSimulator, ScenarioSimulator, barrel+annotate+report) with verbatim code — hand to qwen
+  via `/plan resume`, or Claude can transcribe them.
+- 2026-07-08 STEP 4 DONE (qwen transcribed, Claude verified). qwen created
+  `src/sim/batch-simulator.ts` (verbatim `runBatch`/`BatchConfig`/`BatchResult`) +
+  `batch-simulator.test.ts` (5 tests, own inlined helpers after it correctly abandoned an
+  import-from-test-file attempt). Code is CORRECT. Claude cleanup: removed an unnecessary
+  `as unknown as Action` cast; restored `src/sim/.annotated` (qwen/hook had blanked it) with
+  the batch entry. Host verify: build 0, **jest 117 passed / 0 failed** (was 112).
+- 2026-07-08 INCIDENT + GUARDRAIL: qwen (running INSIDE the shattered_mcp container, which
+  bind-mounts the host repo incl. `node_modules` rw) couldn't run the suite, improvised
+  `pnpm install`/jest in-container, and clobbered the host's Windows `node_modules` (Linux
+  bin shims + container store path → `'tsc' is not recognized`, and pnpm wanting to purge on
+  every host command). Fixed on host by a reinstall. Qwen operating rules + Steps 5/6 Verify
+  updated: qwen must NEVER run pnpm install/build/test in-container; build/test verification
+  is HOST/Claude's job — qwen transcribes and leaves the box for the host.
+- 2026-07-08 STEPS 5 + 6 DONE (Claude transcribed + host-verified). Step 5: `src/sim/
+  scenario-simulator.ts` (manual both-sides driver: `step`/`getState`/`history`/`isOver`) +
+  `scenario-simulator.test.ts` (2 tests: manual move+end-turn history; illegal move = same ref).
+  Step 6: barrel `src/index.ts` now re-exports engine + ai (policy/random/greedy) + sim
+  (types/match/batch/scenario); `src/sim/.annotated` gained the scenario entry (engine/ai
+  already annotated in Steps 1-2). Followed the plan and did NOT export `ai/eval.ts` (internal
+  helpers). **PHASE 3 COMPLETE** — build 0, jest 119 passed / 0 failed across 17 suites (was 87
+  at phase start; +32). Engine is now self-driving: applyAction reducer + Random/Greedy policies
+  + Match/Batch/Scenario simulators, all exported. Status → COMPLETE.
+- 2026-07-09T14:22:47.666Z plan complete

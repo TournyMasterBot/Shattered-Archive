@@ -1,0 +1,10 @@
+# apps/kingdom-tactics-server/src
+
+Node entry point for the Kingdom Tactics multiplayer server. Mirrors `apps/game-server`:
+an Express 5 service bootstrapped through `@shatteredarchive/services-server`
+(`getConfigFromEnv` + `createExpressService`) with Winston logging and a `/health` probe.
+This app is the server-authoritative match host — later steps mount a `/ws/kt` WebSocket
+gateway that owns a `GameEngine` per match (from `@shatteredarchive/kingdom-tactics-engine`),
+validates each client action against seat + engine legality, broadcasts state snapshots, and
+can seat an `IAiPolicy` (GreedyPolicy) opponent. All game rules live in the engine; this app
+is transport + match-lifecycle glue only.

@@ -1,0 +1,14 @@
+# apps/kingdom-tactics-server
+
+The Kingdom Tactics multiplayer server (Phase 4). An Express 5 + `ws` Node app that mirrors
+`apps/game-server`'s bootstrap (`@shatteredarchive/services-server`: `getConfigFromEnv` +
+`createExpressService`, Winston logging, `/health`) and mounts a `/ws/kt` WebSocket gateway
+hosting **server-authoritative** matches.
+
+Architecture: all game rules live in `@shatteredarchive/kingdom-tactics-engine`; this app is
+transport + match-lifecycle glue. `src/match/MatchSession` owns a `GameEngine`/`MatchState` per
+match, authorizes each client action (seat ownership + engine legality), and auto-plays an
+`IAiPolicy` (GreedyPolicy) opponent. `src/ws/kt-gateway` mounts the socket, keeps a
+`MatchRegistry` (matchId → session + subscribers), validates untrusted frames against the
+engine's shared `net/protocol` contract, and broadcasts full-state snapshots (v1: no deltas).
+Default port 51000. No auth/reconnect in v1 (Phase 7).

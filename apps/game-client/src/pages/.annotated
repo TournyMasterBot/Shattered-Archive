@@ -1,7 +1,1 @@
 File Index
-
-/MainContainer.tsx
-Purpose: Main container component orchestrating core UI layout and feature modules for the game client.
-
-/client-status-page.tsx
-Purpose: Displays real-time health and latency status for game and web servers.

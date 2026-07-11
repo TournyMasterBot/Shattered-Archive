@@ -10,7 +10,7 @@ Purpose: Defines the structure for a list of affect data objects in the software
 Purpose: Defines the data structure for character statistics and attributes in the game model.
 
 /login-data.ts
-Purpose: Defines the structure for login data records including user and clan information.
+Purpose: Defines the structure for storing and validating user login information including clan and kingdom details.
 
 /room-data.ts
 Purpose: Defines the data structure for room information including name, sector, and exit directions.

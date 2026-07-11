@@ -176,6 +176,9 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
     devDependencies:
+      '@testing-library/react':
+        specifier: ^16.3.2
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@types/react':
         specifier: ^19.2.17
         version: 19.2.17
@@ -191,6 +194,39 @@ importers:
       vite:
         specifier: ^8.0.16
         version: 8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(sass-embedded@1.100.0)(sass@1.100.0)(tsx@4.22.4)
+
+  apps/kingdom-tactics-server:
+    dependencies:
+      '@shatteredarchive/kingdom-tactics-engine':
+        specifier: workspace:*
+        version: link:../../services/kingdom-tactics-engine
+      '@shatteredarchive/services-server':
+        specifier: workspace:*
+        version: link:../../services/services-server
+      '@shatteredarchive/types-server':
+        specifier: workspace:*
+        version: link:../../types/types-server
+      '@shatteredarchive/utils-global':
+        specifier: workspace:*
+        version: link:../../utils/utils-global
+      '@shatteredarchive/utils-server':
+        specifier: workspace:*
+        version: link:../../utils/utils-server
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
+      winston:
+        specifier: ^3.19.0
+        version: 3.19.0
+      ws:
+        specifier: ^8.21.0
+        version: 8.21.0
 
   apps/web-client:
     dependencies:

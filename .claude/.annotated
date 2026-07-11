@@ -1,16 +1,7 @@
 File Index
 
 /settings.json
-Purpose: This file configures bot permissions and registers the qdigest-guard PreToolUse hook that forces long-output shell commands through qdigest.
-
-/hooks/qdigest-guard.js
-Purpose: PreToolUse hook script that denies long-output-prone Bash/PowerShell commands unless wrapped in Shattered-AI's qdigest.sh (local qwen digestion).
-
-/hooks/read-pack-guard.js
-Purpose: PreToolUse hook script that denies full Reads of files over 40 KB, steering toward Grep+ranged Read, qwen summarize/ask, or cli.js pack (context packs).
-
-/skills/qdigest/SKILL.md
-Purpose: Claude Code skill documenting the qdigest/qwen delegation flow — command wrapping, cli.js pack/summarize usage, and host-to-container path mapping.
+Purpose: This file configures automated security checks and hooks for file operations and tool usage.
 
 /settings.local.json
-Purpose: This file defines local development permissions and allowed commands for the ShatteredArchive project.
+Purpose: This file defines local development permissions and access rules for the ShatteredArchive project.

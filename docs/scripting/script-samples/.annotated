@@ -1,7 +1,7 @@
 File Index
 
 /brewing.md
-Purpose: This file documents how to manually script brew commands in the game using the Script Sandbox.
+Purpose: This file documents scripting methods for setting brew commands in a game plugin.
 
 /damage.md
 Purpose: Processes and formats damage event output with colored text based on severity.
@@ -10,7 +10,7 @@ Purpose: Processes and formats damage event output with colored text based on se
 Purpose: Automatically equips mapped weapons when disarming in the game.
 
 /global-scripting.md
-Purpose: Global JavaScript functions for scripting automation and variable management.
+Purpose: This file defines global JavaScript functions accessible across the application's scripting environment.
 
 /legacy-tell-sound.md
 Purpose: Plays a bell sound notification using Web Audio API with autoplay and user gesture fallback.

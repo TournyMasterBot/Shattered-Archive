@@ -1,0 +1,71 @@
+# Flows — data
+
+<!-- Human-oriented interaction diagrams for the non-trivial files here. Auto-generated
+     by passive_flows / document_flows; a section regenerates when its file changes.
+     Do not hand-edit a "## <file>" section — it is replaced wholesale. -->
+
+## game-data-provider.test.ts
+@flow-hash: 145e8cb5
+
+```mermaid
+sequenceDiagram
+    participant TestFile
+    participant GameDataProvider
+    participant ClassKits
+    participant RaceModifiers
+    participant UnitCosts
+    participant RaceAttributes
+    participant SquadronAggregator
+    participant GameModeProvider
+
+    TestFile->>GameDataProvider: createGameDataProvider()
+    GameDataProvider->>ClassKits: Load CLASS_KITS
+    GameDataProvider->>RaceModifiers: Load RACE_MODIFIERS
+    GameDataProvider->>RaceAttributes: Load RACE_ATTRIBUTES
+    GameDataProvider->>UnitCosts: Load computeUnitCost
+
+    TestFile->>GameDataProvider: unitTemplate('Human', 'Warrior')
+    GameDataProvider->>ClassKits: Get Warrior kit
+    GameDataProvider->>RaceModifiers: Get Human modifier
+    GameDataProvider->>UnitCosts: Compute cost from stats
+
+    TestFile->>SquadronAggregator: aggregateSquadron(members, provider)
+    SquadronAggregator->>GameDataProvider: Fetch unit templates
+    GameDataProvider->>ClassKits: Get base stats
+    GameDataProvider->>RaceModifiers: Apply race deltas
+    GameDataProvider->>UnitCosts: Recompute cost
+
+    TestFile->>GameModeProvider: createGameModeProvider()
+    GameModeProvider->>GameModeProvider: Load game mode configs
+    GameModeProvider->>GameModeProvider: Validate mode integrity
+```
+
+Caption: The test file orchestrates interactions between game data providers, constants, and utility functions to validate unit templates and game modes.
+
+## index.ts
+@flow-hash: ae618763
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant GameDataProvider
+    participant GameModeProvider
+    participant DSLFiles
+    participant BalanceFiles
+
+    User->>GameDataProvider: calls unitTemplate(raceKey, classKey)
+    GameDataProvider->>BalanceFiles: loads CLASS_KITS, RECLASS_KITS, RACE_MODIFIERS
+    GameDataProvider->>DSLFiles: loads MORTAL_RACES, CLASSES, etc.
+    GameDataProvider->>BalanceFiles: computes derived unit stats
+    GameDataProvider-->>User: returns UnitTemplate
+
+    User->>GameModeProvider: calls modes()
+    GameModeProvider->>BalanceFiles: loads GAME_MODE_LIST
+    GameModeProvider-->>User: returns GameModeConfig[]
+
+    User->>GameModeProvider: calls mode(id)
+    GameModeProvider->>BalanceFiles: loads GAME_MODES
+    GameModeProvider-->>User: returns GameModeConfig
+```
+
+Caption: The system orchestrates data from DSL and balance files to produce game units and modes, with clear separation of concerns between data loading, transformation, and API exposure.

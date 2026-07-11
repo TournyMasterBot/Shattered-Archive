@@ -1,19 +1,19 @@
 File Index
 
 /add-hosts.ps1
-Purpose: This PowerShell script automatically updates the system hosts file to map local development domains to localhost for a Shattered Archive project.
+Purpose: This PowerShell script automatically updates the system hosts file to map local domain names to localhost for development purposes.
 
 /add-hosts.sh
-Purpose: This script modifies the system hosts file to map local domain names to localhost for development purposes.
+Purpose: This script modifies the system hosts file to map local domain names for a development environment.
 
 /firewall-open-ports.ps1
-Purpose: Automates creation of firewall rules for exposing project ports in different environments.
+Purpose: Opens specified network ports in Windows firewall for a project based on environment mode.
 
 /firewall-open-ports.sh
 Purpose: Opens specified network ports for a project based on environment mode using available firewall tools.
 
 /mkcert-init.sh
-Purpose: This script initializes local development certificates using mkcert for the shatteredarchive project.
+Purpose: Initializes local development SSL certificates for the shatteredarchive project.
 
 /remove-hosts.ps1
 Purpose: Removes ShatteredArchive entries from the system hosts file.
@@ -22,7 +22,7 @@ Purpose: Removes ShatteredArchive entries from the system hosts file.
 Purpose: Removes ShatteredArchive entries from the system hosts file.
 
 /setup-certs.ps1
-Purpose: Generates SSL certificates for local development using mkcert.
+Purpose: Generates self-signed SSL certificates for local development using mkcert.
 
 /setup-certs.sh
-Purpose: Generates local development SSL certificates for multiple subdomains using mkcert.
+Purpose: Generates local development SSL certificates for multiple project domains using mkcert.

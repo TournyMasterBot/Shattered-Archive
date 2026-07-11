@@ -88,12 +88,55 @@ Hard rules:
    `Status: COMPLETE` + log line. Never check off an unverified step; if blocked,
    log `- <ISO> step N blocked: <why>` and leave the box unchecked.
 
+### Hand off to qwen — PRE-FLIGHT before telling the user to run `/plan resume`
+Don't send the user to Continue only to hit "No active plan." `plan_step {}` (bare) scans ALL
+`WORKSPACE_DIRS` for `.ai-plans/*.md`, sorts by mtime, and auto-attaches the most-recent doc with
+`Status: ACTIVE` — Claude-authored docs included (verified in `mcp-ollama/src/index.ts` ~line 3999),
+so NO registration/`plan_start` is needed. But confirm ALL of these first:
+1. **`shattered_mcp` is RUNNING** (probe `bash /c/Projects/Shattered-AI/scripts/qdigest.sh --status`).
+   A stopped container is THE failure mode — a bare `plan_step` returns "No active plan is running."
+2. **Exactly ONE `.ai-plans/*.md` is `Status: ACTIVE`**, and it's the intended one. If several are
+   ACTIVE, the most-recently-MODIFIED wins (editing an old doc bumps its mtime and can steal focus) —
+   mark stale ones COMPLETE/ABANDONED.
+3. **`Status: ACTIVE` sits in the first ~600 bytes** of the doc (the header). The auto-attach only
+   reads `head = file.slice(0, 600)`; the format contract's `Created: … · Status: ACTIVE` header line
+   satisfies this, so don't bury the status.
+4. **The next unchecked step is genuinely (QWEN-SAFE)** — if it's (CLAUDE), qwen will (correctly) STOP;
+   reorder so the qwen step is next, or do the CLAUDE step yourself first.
+5. **Beware the stale container cache** (bit us 2026-07-09). `/plan resume` in Continue reads the
+   in-container active-plan cache (`shattered-archive.plan.json`), NOT a fresh mtime scan. If that
+   cache still points at a PRIOR, already-`Status: COMPLETE` plan (e.g. the previous phase's doc),
+   `/plan resume` re-attaches THAT, reports "plan complete", and NEVER touches your new ACTIVE doc —
+   a silent no-op. Mitigations: prefer telling the user to run a **bare `/plan`** (triggers the
+   `plan_step {}` most-recent-ACTIVE auto-attach) rather than `/plan resume`; and **verify what qwen
+   reports** — it must name the INTENDED doc/step, not "complete". If it says "complete", assume the
+   cache is stale and CHECK the intended step actually landed (files exist) before trusting it.
+Only when 1–5 hold, tell the user: run `/plan` in Continue (bare — avoids the stale-resume cache).
+
 ### Abandon
 Set `Status: ABANDONED`, append `- <ISO> plan abandoned — <why>`.
 
 ### Status
 Report every `Status: ACTIVE` doc across the workspace roots above with
 `<checked>/<total>` steps and the next unchecked step title.
+
+## qwen runs in the container — NEVER let it mutate node_modules
+
+qwen executes inside the `shattered_mcp` container, which bind-mounts the host repos
+(incl. `node_modules`) read-write. So a qwen-run `pnpm install` / `pnpm build` / `pnpm
+test` on a JS workspace rewrites the SHARED `node_modules` with Linux bin shims + a
+container store path, breaking the host's Windows toolchain (`'tsc' is not recognized`)
+and forcing a full host reinstall (this happened 2026-07-08).
+
+When authoring plans and Verify steps for qwen:
+- Do NOT write a Verify step that has qwen run `pnpm install|build|test` (or any
+  `node_modules`-mutating command) in-container. Host-path verify commands
+  (`/c/Projects/...`) are unreachable from the container anyway.
+- The JS build/test verification is a HOST (Claude/human) task. A QWEN-SAFE step should
+  say: transcribe the code + tests, log "transcribed, ready for host verify", and leave
+  the box UNCHECKED for the host to run the suite and check off.
+- qwen MAY read files to confirm faithful transcription — reading is safe; installing/
+  building is not.
 
 ## Interop notes
 - qwen marks steps via `plan_step {"done":true,"notes":...}` — same checkbox +

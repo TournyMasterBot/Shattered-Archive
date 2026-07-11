@@ -1,4 +1,4 @@
 File Index
 
 /roomDataStore.ts
-Purpose: Manages and provides access to the most recent room data payload.
+Purpose: Manages and provides access to the most recent room data payload in the game client.

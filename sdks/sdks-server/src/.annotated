@@ -1,4 +1,4 @@
 File Index
 
 /index.ts
-Purpose: Fetches and parses JSON data from a server URL with error handling.
+Purpose: Fetches JSON data from server URLs with error handling and returns parsed response or null on failure.

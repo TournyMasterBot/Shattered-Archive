@@ -1,3 +1,16 @@
-seeded-rng.ts — ISeededRng interface (next/int/pick/state/clone) + Mulberry32 impl (single-uint32 state; seed IS the state so createRng(state) restores a stream) + createRng factory. The engine's only randomness source; never Math.random.
-seeded-rng.test.ts — determinism suite: same seed → identical sequence, different seeds diverge, range checks, state() round-trip, clone independence.
-index.ts — rng barrel (ISeededRng, Mulberry32, createRng); re-exported from the package barrel.
+File Index
+
+/index.ts
+Purpose: Barrel re-exporting the seeded RNG (ISeededRng/Mulberry32/createRng) and the salted combat RNG (combatSeed/createCombatRng/deriveCombatSalt).
+
+/seeded-rng.ts
+Purpose: Deterministic Mulberry32 seeded RNG behind ISeededRng — the engine's sole randomness source; state() is the seed so streams restore/replay.
+
+/seeded-rng.test.ts
+Purpose: Tests same-seed reproducibility and different-seed divergence.
+
+/combat-rng.ts
+Purpose: Salted combat RNG — mixes a per-match salt + a step counter into a replayable stream (createCombatRng) so defense rolls are deterministic yet unguessable across the network (online: crypto-random secret salt); deriveCombatSalt(seed) gives local/offline play a seed-reproducible salt.
+
+/combat-rng.test.ts
+Purpose: Tests that createCombatRng is reproducible per (salt, step) and diverges on a different salt or step.

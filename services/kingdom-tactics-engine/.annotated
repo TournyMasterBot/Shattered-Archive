@@ -1,16 +1,1 @@
 File Index
-
-/jest.config.cjs
-Purpose: Jest configuration file for the isomorphic kingdom-tactics-engine package to enable isolated testing in Node.js environment.
-
-/package.json
-Purpose: This file manages the project's metadata, dependencies, and build scripts for the kingdom tactics engine.
-
-/tsconfig.jest.json
-Purpose: This file configures TypeScript compilation settings for Jest tests using NodeNext module resolution.
-
-/tsconfig.json
-Purpose: This file configures TypeScript compilation for a Node.js project with isomorphic output and strict type checking.
-
-/tsconfig.tsbuildinfo
-Purpose: TypeScript build information file tracking project dependencies and compilation state.

@@ -1,13 +1,1 @@
 File Index
-
-/index.html
-Purpose: This HTML file serves as the main entry point for the Kingdom Tactics game application.
-
-/package.json
-Purpose: This file manages the client-side project dependencies, scripts, and metadata for the kingdom tactics game.
-
-/tsconfig.json
-Purpose: This file configures TypeScript compilation settings for a React project using ES modules and JSX support.
-
-/vite.config.ts
-Purpose: Vite configuration file for the kingdom-tactics-client application.

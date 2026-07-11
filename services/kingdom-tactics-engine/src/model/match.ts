@@ -29,6 +29,12 @@ export interface MatchState {
   /** 1-based turn counter (increments after every side has acted). */
   readonly turn: number;
   readonly activeSide: Side;
+  /**
+   * The single token the active side has activated this turn (one-unit-per-turn rule).
+   * Undefined until the side acts with a token; once set, only that token may act until the
+   * turn passes (then it is cleared). This is what locks a side to one unit per turn.
+   */
+  readonly activatedTokenId?: string;
   readonly moon: MoonContext;
   /** Seeded RNG state snapshot (see ISeededRng.state()). */
   readonly rngState: number;

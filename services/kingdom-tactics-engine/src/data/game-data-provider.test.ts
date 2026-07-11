@@ -1,7 +1,8 @@
 import { createGameDataProvider, createGameModeProvider } from './index.js';
 import { CLASS_KITS } from './balance/class-kits.js';
+import { CLASS_ATTRIBUTES } from './dsl/class-attributes.js';
 import { RACE_MODIFIERS } from './balance/race-modifiers.js';
-import { computeUnitCost } from './balance/unit-costs.js';
+import { classPointCost, BASE_CLASS_POINTS } from './balance/unit-costs.js';
 import { RACE_ATTRIBUTES } from './dsl/race-attributes.js';
 import { aggregateSquadron } from '../rules/squadron.js';
 import type { GameModeId, SquadronMember, VictoryCondition } from '../model/index.js';
@@ -26,14 +27,40 @@ describe('GameDataProvider.unitTemplate — single source of truth', () => {
     expect(t.stats).toEqual(human?.baseStats);
   });
 
-  it('derives cost from resolved power (so rebalancing stats re-prices the unit)', () => {
-    expect(t.cost).toBe(
-      computeUnitCost({
-        maxHp: t.maxHp,
-        attackPower: t.attackPower,
-        defense: t.defense,
-        moveRange: t.move.range,
-      }),
+  it('prices a base class at the flat base points; a reclass costs more (tier from CP)', () => {
+    // Warrior is a base class → flat base points.
+    expect(t.isReclass).toBe(false);
+    expect(t.cost).toBe(BASE_CLASS_POINTS);
+    // Samurai is a reclass (BaseCpModifier 3) → strictly more than a base class.
+    const samurai = provider.unitTemplate('Human', 'Samurai');
+    expect(samurai.isReclass).toBe(true);
+    expect(samurai.cost).toBeGreaterThan(BASE_CLASS_POINTS);
+    expect(samurai.cost).toBe(classPointCost({ isReclass: true, baseCpModifier: 3 }));
+  });
+
+  it('resolves an absolute caster level: cap×factor + elf bonus', () => {
+    // Human Warrior casts BELOW level (DSL CastsAtLevel=false, 0.5): round(51×0.5)=26, no elf.
+    expect(t.castingLevel).toBe(26);
+    // Human Mage casts at level → 51.
+    expect(provider.unitTemplate('Human', 'Mage').castingLevel).toBe(51);
+    // Shalonesti Elf Warrior: 26 + elf blood (+1) → 27. (Damage boosts are NOT casting affinity.)
+    expect(provider.unitTemplate('ShalonestiElf', 'Warrior').castingLevel).toBe(27);
+  });
+
+  it('folds a race×class damage boost/gimp into attackPower (BoostedClasses)', () => {
+    // ShalonestiElf superboosts Warrior (+20 in BoostedClasses) → +20% damage.
+    const elf = provider.unitTemplate('ShalonestiElf', 'Warrior');
+    expect(elf.damageBoostPct).toBe(20);
+    // Human has no Warrior boost → 0% (attackPower is the raw composed value).
+    expect(t.damageBoostPct).toBe(0);
+  });
+
+  it('grants dwarven Toughness as a KT-scaled defense bonus (DSL -25 AC ⇒ +1 defense ≈ 2.5%)', () => {
+    const dwarf = provider.unitTemplate('MountainDwarf', 'Warrior');
+    expect(dwarf.traits).toContain('toughness');
+    // -25 DSL AC × (AC_DIVISOR 40 / 1000) = +1 KT defense over the same class on a non-toughness race.
+    expect(dwarf.defense).toBe(
+      CLASS_KITS.Warrior.defense + RACE_MODIFIERS.MountainDwarf.defenseDelta + 1,
     );
   });
 
@@ -45,8 +72,20 @@ describe('GameDataProvider.unitTemplate — single source of truth', () => {
     expect(ds.traits).toContain('dragonslayer');
   });
 
-  it('throws clearly when no class kit is authored', () => {
-    expect(() => provider.unitTemplate('Human', 'Bard')).toThrow(/no class kit/i);
+  it('derives a default kit for a class without a hand-authored one (every class playable)', () => {
+    // Bard has no CLASS_KITS entry — it must still resolve via defaultClassKit,
+    // not throw. Derived kit reflects the class group/armor from class-attributes.
+    const bard = provider.unitTemplate('Human', 'Bard');
+    expect(bard.maxHp).toBeGreaterThan(0);
+    expect(bard.attackPower).toBeGreaterThan(0);
+    expect(bard.defense).toBeGreaterThanOrEqual(1);
+    expect(bard.classKey).toBe('Bard');
+  });
+
+  it('resolves a template for every mortal class (none throws)', () => {
+    for (const c of CLASS_ATTRIBUTES) {
+      expect(() => provider.unitTemplate('Human', c.key)).not.toThrow();
+    }
   });
 });
 

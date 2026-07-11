@@ -19,5 +19,5 @@
     "declarationMap": true
   },
   "include": ["src"],
-  "exclude": ["src/**/*.test.ts", "src/codegen/**", "dist", "node_modules"]
+  "exclude": ["src/**/*.test.ts", "src/codegen/**", "src/tools/**", "dist", "node_modules"]
 }

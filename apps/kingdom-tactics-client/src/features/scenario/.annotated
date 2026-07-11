@@ -1,0 +1,13 @@
+File Index
+
+/index.ts
+Purpose: Scenario slice barrel — re-exports ScenarioScreen.
+
+/ScenarioScreen.tsx
+Purpose: Manually drive both sides over a ScenarioSimulator (no AI); Arena controls whichever side is active; shows turn/controlled-side/steps and a completion banner + Reset.
+
+/ScenarioScreen.css
+Purpose: Scenario screen header/controls layout.
+
+/ScenarioScreen.test.tsx
+Purpose: Tests initial side-0 state, that a move step advances state + history, and ending a turn switches the controlled side.

@@ -5,6 +5,34 @@ They extend and are consistent with `.github/copilot-instructions.md`.
 
 ---
 
+## /qwen pre-flight verification (mandatory when the MCP stack is available)
+
+Before elevating a user request to real work, verify its **checkable claims about the
+codebase** against the actual source using the free local qwen model — run the **`/qwen`**
+skill (`.claude/skills/qwen/SKILL.md`). This applies to **every prompt** that asserts
+something falsifiable about the code (a file/symbol/path exists, "X does Y", a config/flag
+value, "handled the same way as Z", "there is no W").
+
+- **If a claim is substantially wrong**, do NOT proceed on it — return it to the user with
+  what the code actually shows (`file:line`) and ask them to correct or confirm intent.
+- **If the prompt is ambiguous, poorly phrased, or rests on an assumption the code cannot
+  reconcile**, prompt the user to refine it (an `AskUserQuestion` either/or) BEFORE acting.
+- **Only then** proceed — ideally with the tightened, fact-corrected prompt qwen produced.
+
+The point is to spend free local GPU catching bad premises up front so paid/cloud work
+gets the right information the first time and avoids extra round trips.
+
+Scope + gating:
+- **Skip** only when the prompt makes no checkable codebase claims (e.g. "continue the
+  plan", "make the button blue") — there is nothing to verify.
+- **Prerequisite:** this check requires a reachable `shattered_mcp` container (probe:
+  `bash /c/Projects/Shattered-AI/scripts/qdigest.sh --status`). If the MCP stack is down,
+  the pre-flight cannot run — proceed with the work normally but tell the user once that
+  claim verification was skipped and why. (Unlike qdigest, verification IS the job here, so
+  when the stack is up the check is not optional.)
+
+---
+
 ## Package manager
 
 - Always use **pnpm** (never npm or yarn) via **Corepack**.
@@ -123,8 +151,11 @@ The `shattered_mcp` container runs a local qwen model with a delegation CLI
 (`docker exec shattered_mcp node build/cli.js summarize|purpose|digest|ask|pack ...`).
 Local inference is free — use it to keep long raw output out of context:
 
-- **Long command output (~150+ lines expected):** builds, test runs, `docker logs`,
-  big diffs. Don't read the raw output — run the command through the wrapper and
+- **Long command output — reserve qdigest for GENUINELY large output (~150+ lines):**
+  full/workspace-wide builds, `docker logs`, big diffs. Compact runs do NOT need the
+  wrapper: a single-package `pnpm --filter <pkg> build|test` or any command whose output
+  you bound with a trailing `| head`/`| tail`/`| grep` is fine to read directly (the
+  qdigest guard now exempts these). For the large cases, run through the wrapper and
   read the distillate:
   ```bash
   bash /c/Projects/Shattered-AI/scripts/qdigest.sh <command...>
@@ -141,12 +172,31 @@ Local inference is free — use it to keep long raw output out of context:
   printing the full raw output with the reason. Read it as you normally would, and
   tell the user once that qwen digestion was skipped and why. The MCP stack is an
   optimizer, never a gate.
-- **Multi-file orientation:** before reading several files for a task, prefer
-  `cli.js pack "<task>" <files...>` (task-relevant facts/snippets/gotchas) or
-  `summarize`/`purpose` — file paths use the container's `/workspace/...` mounts.
-- Cold model loads can take a minute+ of silence — run these in the background or
-  with a generous timeout; silence is not a hang. Qwen is for extraction and
-  summarization, not judgment: verify anything decision-critical yourself.
+- **Multi-file orientation — MANDATORY `pack` first (rule, not a preference):** before
+  reading **3+ files** — or 2+ large/unfamiliar ones — to understand a task, you MUST first
+  run `docker exec shattered_mcp node build/cli.js pack "<task>" <files...>` (use
+  `MSYS_NO_PATHCONV=1`, container `/workspace/...` paths) and read its brief, then open ONLY
+  the specific `file:line` regions it points at. For one large/unfamiliar file, `summarize`/
+  `purpose`/`ask` it instead of full-reading. Spend the free local GPU, not paid read tokens.
+  **Skip only when:** the MCP stack is down (degrade to direct reads and tell the user once);
+  the files are tiny or you already know the exact lines; or you must quote/edit verbatim
+  (then ranged `Read` the region). When in doubt on a multi-file task, `pack` first.
+- **Cold-model calls MUST run non-blocking (rule).** A qwen call (`qdigest.sh`, or
+  `cli.js pack|ask|summarize|purpose|digest`) can sit SILENT for a minute+ while the model
+  cold-loads — that is NOT a hang. Never wait on it in the foreground with a short timeout
+  (it reads as "stuck" and gets interrupted). Run it with `run_in_background: true`, or a
+  generous `timeout` (≥180000 ms). Qwen is for extraction/summarization, not judgment —
+  verify anything decision-critical yourself.
+
+## Shell working directory (no bare `cd`)
+
+The Bash and PowerShell tools PERSIST their working directory across calls, so a bare
+leading `cd` silently drifts the CWD for every later command — a recurring cause of
+"No such file or directory" on paths that actually exist. A PreToolUse hook
+(`.claude/hooks/no-cd-guard.js`) denies a command whose first token is `cd`/`Set-Location`.
+
+- Use **absolute paths** in commands (e.g. `ls /c/Projects/ShatteredArchive/apps`), or
+- wrap a directory change in a **subshell that does not persist**: `bash -c 'cd <dir> && <cmd>'`.
 
 ## Project overview (supplement)
 

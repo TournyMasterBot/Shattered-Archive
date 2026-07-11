@@ -1,0 +1,19 @@
+File Index
+
+/eval.ts
+Purpose: Provides AI scoring helpers for evaluating token health, attacks, and enemy distances in a deterministic manner.
+
+/greedy-policy.test.ts
+Purpose: Tests the greedy AI policy's decision-making logic in combat scenarios.
+
+/greedy-policy.ts
+Purpose: Implements a greedy AI policy that prioritizes lethal attacks, then movement toward enemies.
+
+/policy.ts
+Purpose: Defines the interface for AI decision-making policies in a game engine.
+
+/random-policy.test.ts
+Purpose: Tests the deterministic behavior and action selection of the random AI policy.
+
+/random-policy.ts
+Purpose: Implements a random AI policy that selects legal actions uniformly at random.

@@ -1,4 +1,4 @@
 File Index
 
 /outbound-queue.ts
-Purpose: Manages outbound message queuing and throttled sending with microtask-based pumping.
+Purpose: Manages outbound command queuing and throttled sending to prevent overwhelming the client.

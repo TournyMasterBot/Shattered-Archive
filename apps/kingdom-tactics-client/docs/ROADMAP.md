@@ -6,20 +6,86 @@ if a session runs out. One `.ai-plans/*.md` document drives each phase.
 
 ## Phase table
 
-| Phase | Deliverable | Owner (suggested) | Plan doc |
-|---|---|---|---|
-| 0 | Docs + design (this folder) | Claude | — (done in-session) |
-| 1 | Engine scaffold + distilled DSL data (identity + race/class attributes + terrain) + core model (incl. terrain/squadron) + game-mode configs + rng + interfaces + first tests | Claude starts, qwen fills routine data | `…-kingdom-tactics-p1-engine-foundation.md` |
-| 2 | Rules resolvers (movement/LoS/attack/damage/turn-order/victory) + exhaustive tests | qwen (table-driven, routine) | p2 |
-| 3 | GameEngine reducer + AI policies (Random/Greedy) + MatchSimulator/BatchSimulator/ScenarioSimulator | Claude (judgment) | p3 |
-| 4 | Server app scaffold + `/ws/kt` authoritative match gateway + AI seat | Claude | p4 |
-| 5 | Client app scaffold: arena render, army builder, local match loop, scenario mode | Claude + qwen | p5 |
-| 6 | Client simulator dashboard over `sim/` | qwen | p6 |
-| 7 | Online multiplayer transport hardening (reconnect, reconciliation) | Claude | p7 |
-| 8 | Docker experimental wiring: 2 Dockerfiles, 2 compose services, nginx blocks | Claude | p8 |
+| Phase | Deliverable | Owner (suggested) | Plan doc | Status |
+|---|---|---|---|---|
+| 0 | Docs + design (this folder) | Claude | — (done in-session) | ✅ done |
+| 1 | Engine scaffold + distilled DSL data (identity + race/class attributes + terrain) + core model (incl. terrain/squadron) + game-mode configs + rng + interfaces + first tests | Claude starts, qwen fills routine data | `…-kingdom-tactics-p1-engine-foundation.md` | ✅ done |
+| 2 | Rules resolvers (movement/LoS/attack/damage/turn-order/victory) + exhaustive tests | qwen (table-driven, routine) | p2 + p2b | ✅ done |
+| 3 | GameEngine reducer + AI policies (Random/Greedy) + MatchSimulator/BatchSimulator/ScenarioSimulator | Claude (judgment) | p3 | ✅ done |
+| 4 | Server app scaffold + `/ws/kt` authoritative match gateway + AI seat | Claude | p4 | ✅ done |
+| 5 | Client app: arena render, army builder, local match loop, scenario mode (split A/B/C in delivery) | Claude + qwen | p5 + p5b + p5c | ✅ done |
+| 6 | Client simulator dashboard over `sim/` | qwen | p6 | ✅ done |
+| 7 | Online multiplayer — client `net` slice over `/ws/kt` (transport + hook + OnlineMatchScreen from server snapshots) | Claude | p7 | ✅ done |
+| 8 | Docker experimental wiring: 2 Dockerfiles, 2 compose services, nginx blocks | Claude | p8 | ⬜ next |
 
 > Ordering rule: the **engine** (Phases 1–3) must exist before client/server, because
 > both apps import it. Docker (Phase 8) comes last so it builds real packages.
+
+### Deferred backlog (tracked, not lost)
+
+Deliberately pushed past the v1 of the phase that surfaced them; each needs a new
+engine/transport subsystem, so each gets its own future plan doc:
+
+- **Squadron combat** (battle/siege modes) — `buildMatch` throws on `usesSquadrons`;
+  needs a squadron deploy + combat path in the reducer (Squadron model exists, resolution
+  does not). Deferred from p5c.
+- **Objective / control-point victory** — needs authored objective/control-point tiles +
+  the victory subsystems that read them (structural `TileFeature`s modeled, not placed).
+  Deferred from p5c.
+- **Horde `survive-waves`** — needs an AI wave-spawner (Beastiary reinforcements). Deferred from p5c.
+- **Online transport hardening** — auto-reconnect, snapshot reconciliation, and identity/seat
+  persistence. v1 net slice (p7) has none by design. (This was the original Phase-4/-7 framing;
+  the delivered Phase 7 was the initial online client instead.)
+- ~~**Combat reactions / defenses / auras**~~ — ✅ **DONE (2026-07-10)**: dodge/parry/block, typed
+  shielding auras, and thorns via an opt-in `CombatHooks` seam + authored defense/aura data, wired
+  into the server over a SERVER-ONLY salted, step-counted, replayable-but-unguessable defense RNG.
+  See `.ai-plans/20260705-1530-kingdom-tactics-combat-reactions-defenses-auras.md` (COMPLETE).
+  Remaining sub-items: aura charge/decrement, assigning auras to real class kits, and moving
+  maladiction saves onto the salted stream.
+
+### Ability catalog (distilled 2026-07-10)
+
+The DSL ability catalog is now distilled into checked-in `src/data/dsl/abilities.ts` via
+`pnpm codegen` (`generate-dsl-abilities.ts`): every spell/song/skill (key/name/type) plus
+every class ability group with transitively-resolved member keys, exposed through the data
+provider (`abilities`/`abilityGroups`/`ability`/`abilitiesForGroup`). **Catalog only** — the
+DSL ability files carry name + lore, not mechanics, so damage/stat-scaling (skills→str/dex,
+spells→int-damage/wis-saves, songs→blend) and save-vs-maladiction resolution are **deferred**
+to a future balance-authoring plan that keys mechanics off this catalog and wires an ability
+ACTION through the existing `CombatHooks` + server-salted-RNG seams.
+
+### Ability mechanics (framework 2026-07-10)
+
+Standardized `AbilityMechanics` interface + an authored registry integrate ability effects into
+combat via the existing `abilityResolver` seam. See [`ABILITY-MECHANICS.md`](./ABILITY-MECHANICS.md).
+Unauthored abilities resolve to a **no-op stub** (deterministic). Authoring proceeds kit-by-kit,
+tracked in [`ability-coverage.md`](./ability-coverage.md) (`pnpm … ability:coverage`). Warrior's
+core skills are authored; remaining kits + the wider catalog continue there. Sequenced **after the
+class-roster work** (below) so per-class kits are restriction-correct before ability authoring.
+
+### Class roster & restrictions (2026-07-11)
+
+All **45 mortal classes are now playable**, not just the 5 with hand-authored kits. See
+[`CLASS-ROSTER.md`](./CLASS-ROSTER.md). Classes without a hand kit derive a **default kit** from
+their distilled DSL attributes (`classGroup` archetype + armor tier), so `unitTemplate` never
+throws. A legality layer (`isLegalRaceClass` / `legalClassesForRace` / `legalRacesForClass`)
+enforces the DSL rules: `raceRestrictions` (FORBID list), `csr.requiresRaces` (ALLOW list), and
+**CSR** reclass gating to each team's **single allegiance** (clan/kingdom/faction; religion is
+rolled up into it), all distilled into `class-attributes.ts`. Army building is **single-select
+per unit** (one race + one class) with **one allegiance per team**; the client offers only legal
+classes for the chosen race + team allegiance. Small skirmish-scale modes (Duel/Duo/Skirmish/FFA)
+field **equal unit counts** — points are reserved for the larger battles. **Squadron blend/
+composition** (a race/class mix within one squadron) remains a deferred future plan.
+
+### Combat stances (2026-07-11)
+
+Units hold a **stance** (Normal/Offensive/Defensive for all; Drunken Monkey/Sloshing/Cripple for
+Brewmasters) that shifts hit/avoidance (online, via `CombatHooks`) and damage dealt/taken (both
+local and online, via `resolveDamage`). Set as a **free minor action** (`set-stance`) — no
+move/action cost, exempt from the one-unit-per-turn lock — so a player may re-stance any/all of
+their own units on their turn, then move + attack. `Normal` is a no-op, so pre-stance play is
+unchanged. See [`STANCES.md`](./STANCES.md). AI stance use is deferred (stances aren't enumerated in
+`legalActions`).
 
 ### Future consumer: mobile client (out of initial scope)
 

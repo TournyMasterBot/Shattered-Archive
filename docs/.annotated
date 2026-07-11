@@ -10,13 +10,13 @@ Purpose: This file defines key technical terms and architectural components used
 Purpose: This file explains the internal deployment architecture including Docker, TLS, and nginx routing for the ShatteredArchive project.
 
 /dictation.md
-Purpose: Enables reliable, client-side voice dictation for MUD-style command input.
+Purpose: Enables reliable, client-side voice dictation for MUD-style game commands.
 
 /docker.md
 Purpose: This file documents the Docker-based local development environment for ShatteredArchive.
 
 /game-client.md
-Purpose: This file indexes the game client's architecture, connections, scripting support, and interaction tools.
+Purpose: This file documents the Shattered Archive MUD client's architecture, scripting support, and event system.
 
 /game-server.md
 Purpose: This file documents the protocol and configuration for a WebSocket-to-Telnet proxy server that bridges browser clients to MUD games.
@@ -25,7 +25,7 @@ Purpose: This file documents the protocol and configuration for a WebSocket-to-T
 Purpose: This file indexes application ports for different project components.
 
 /web-client.md
-Purpose: This file indexes the web client module's purpose, location, and server connections.
+Purpose: This file indexes the web client module's overview, location, and server connections.
 
 /web-server.md
-Purpose: This file documents the REST API backend web server that caches and serves map data for the Shattered Archive client.
+Purpose: This file documents the web server's API endpoints, caching strategy, and integration with the Shattered Archive remote server for map data retrieval.

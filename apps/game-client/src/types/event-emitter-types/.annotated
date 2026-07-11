@@ -1,10 +1,10 @@
 File Index
 
 /event-emitter-enums.ts
-Purpose: Defines enumerated event types for different system components.
+Purpose: Defines enumerated event types for different system components in the software project.
 
 /event-listen-options.ts
-Purpose: Defines optional configuration options for event listener deduplication and debugging.
+Purpose: Defines optional configuration options for event listeners with deduplication and debugging capabilities.
 
 /event-registry-key.ts
 Purpose: This file exports a global registry key for event dispatchers.

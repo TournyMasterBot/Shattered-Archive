@@ -17,6 +17,7 @@ export type {
   MoveAction,
   AttackAction,
   AbilityAction,
+  SetStanceAction,
   EndTurnAction,
 } from './action.js';
 export type {
@@ -27,3 +28,14 @@ export type {
   GameModeConfig,
 } from './mode.js';
 export type { MatchState, MoonContext } from './match.js';
+export type {
+  AbilityCategory,
+  AbilityTargeting,
+  AbilityUsageKind,
+  ScalingAttr,
+  AbilityDamageSpec,
+  AbilityMaladictionSpec,
+  AbilityBuffSpec,
+  AbilityUtilitySpec,
+  AbilityMechanics,
+} from './ability.js';

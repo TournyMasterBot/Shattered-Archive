@@ -4,13 +4,13 @@ File Index
 Purpose: Identifies and parses chat message quotes in text buffers for efficient chat detection and extraction.
 
 /chat-settings-store.ts
-Purpose: Manages and persists user chat interface settings and preferences.
+Purpose: Manages and persists user chat pane settings and preferences.
 
 /chat-store.ts
 Purpose: Manages and distributes real-time chat messages with ANSI color support.
 
 /dsl-to-ansi.ts
-Purpose: Maps DSL color codes to ANSI escape sequences for terminal formatting.
+Purpose: Maps DSL color codes to ANSI escape sequences for terminal text formatting.
 
 /strict-chat-classifier.ts
-Purpose: Classifies raw chat input into structured subtypes for normalized text processing.
+Purpose: Classifies raw chat input into structured subtypes for consistent handling.

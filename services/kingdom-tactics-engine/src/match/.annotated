@@ -1,0 +1,16 @@
+File Index
+
+/index.ts
+Purpose: Barrel for match ownership — MatchSession (+ option/result types) and the LocalMatch driver (createLocalMatch).
+
+/match-session.ts
+Purpose: Isomorphic authoritative owner of one match — wraps the reducer with seat ownership + authorization, installs the salted combat hooks/RNG + ability resolver, auto-plays AI seats. Transport-agnostic (no I/O); the SAME class backs the online /ws/kt gateway and local play. Combat salt is injected, never self-generated (keeps it Node/DOM-free).
+
+/match-session.test.ts
+Purpose: Tests seat claim/authorization, legal-action advance, runAiUntilHuman handback, a full human+AI duel to victory, and the salted combat RNG (same salt replays, different salt diverges, salt never serialized).
+
+/local-match.ts
+Purpose: Drives a single LOCAL/offline match over MatchSession with no socket — claims every non-AI seat to one 'local' client (hotseat) and derives the combat salt from the seed (reproducible). Gives the client full feature parity without re-implementing rules. createLocalMatch factory.
+
+/local-match.test.ts
+Purpose: Tests hotseat acting for whichever side is active (and off-turn rejection), single-player AI drive + handback, seed determinism (avoidance included), and byte-identical reset.

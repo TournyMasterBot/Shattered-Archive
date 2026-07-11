@@ -1,4 +1,1 @@
 File Index
-
-/os-browser.ts
-Purpose: Provides browser compatibility for Node's OS module with minimal implementation for Fengari runtime.

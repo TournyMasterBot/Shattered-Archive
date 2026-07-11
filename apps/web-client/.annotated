@@ -4,7 +4,7 @@ File Index
 Purpose: This HTML file serves as the main entry point for the Shattered Archive web application.
 
 /package.json
-Purpose: This file manages project metadata, dependencies, and scripts for a React web client.
+Purpose: This file manages project metadata, dependencies, and scripts for a React web client application.
 
 /status.html
 Purpose: This HTML file serves as the entry point for the client status web application page.

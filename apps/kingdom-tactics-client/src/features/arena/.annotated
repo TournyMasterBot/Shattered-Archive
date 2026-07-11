@@ -1,0 +1,4 @@
+File Index
+
+/Arena.tsx
+Purpose: Grid battlefield renderer + click interaction over a MatchState — select a friendly unit to highlight legal moves/attacks and dispatch move/attack/end-turn, plus a free-minor-action stance panel (legal stances for the selected own unit, incl. Brewmaster). Pure presentation; asks the engine for legality.

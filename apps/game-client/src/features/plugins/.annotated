@@ -10,7 +10,7 @@ Purpose: Manages dynamic CSS styling for plugins with unique identifiers.
 Purpose: Manages plugin lifecycle, execution, and communication within the game client.
 
 /pluginScriptRunner.ts
-Purpose: Executes bundled plugin scripts as triggers, timers, or aliases within a runtime environment.
+Purpose: Runs bundled plugin scripts as triggers, timers, or aliases within a runtime environment.
 
 /registry.ts
 Purpose: Registers and provides access to all core plugins for the game client.

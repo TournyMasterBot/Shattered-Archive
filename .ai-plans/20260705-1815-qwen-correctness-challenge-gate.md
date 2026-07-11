@@ -20,7 +20,7 @@ Give the local qwen agent a correctness quality gate: when the implementer (inst
   - Reuse: `tokenizeCodeLines`/`METHOD_ANNOTATE_EXTS` (annotation engine, added earlier this session, near the annotate_block section), `commentStyleFor` ~4360, `ollamaJson`/`withOllamaSlot`, `annotationField`, settings helpers `readMcpSettings`/`writeMcpSettings`/`MCP_SETTINGS_PATH` ~1551, `passive_annotate` control tool ~1714 (mirror for the toggle), `zBool` ~21.
   - `typescript` package is present in the container (runtime image runs full `pnpm install`); import it lazily (`await import("typescript")`) for real TS/JS syntax diagnostics, falling back to balance-check only if unavailable.
 - Continue prompts (ONE tool call each, `/no_think`): /workspace/shattered-ai/.continue/prompts/passive-annotate.prompt — mirror for the toggle prompt.
-- Build/deploy: rebuild image + recreate container `shattered_mcp` via `docker compose -f docker-compose.cuda.yml build mcp && ... up -d mcp`; verify `docker logs shattered_mcp`. Ollama at `ollama-code:11434`, model `qwen3-coder:30b`.
+- Build/deploy: rebuild image + recreate container `shattered_mcp` via `docker compose -f docker-compose.cuda.yml build mcp && ... up -d mcp`; verify `docker logs shattered_mcp`. Ollama at `ollama-code:11434`, model `qwen3.6`.
 
 ## Steps
 ### [x] 1. (CLAUDE) Challenge-gate core: deterministic checks + reviewer + decision

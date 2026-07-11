@@ -4,7 +4,7 @@ File Index
 Purpose: Parses equipment change messages from game client into structured events.
 
 /eq-parse.ts
-Purpose: Parses equipment snapshot data from text lines into structured TypeScript objects.
+Purpose: Parses equipment snapshot data from text lines into structured format.
 
 /equipment-idb.ts
 Purpose: Manages equipment profiles storage and retrieval using IndexedDB.
