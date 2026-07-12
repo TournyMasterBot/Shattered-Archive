@@ -98,6 +98,30 @@ describe('buildMatch', () => {
     expect(state.armies.map((a) => a.side).sort()).toEqual([0, 1]);
   });
 
+  it('derives a unit alignment from its picked deity, and none when unaffiliated', () => {
+    const good: ArmyRoster = { side: 0, picks: [{ raceKey: 'Human', classKey: 'Cleric', god: 'Kantilles' }] };
+    const evil: ArmyRoster = { side: 1, picks: [{ raceKey: 'Human', classKey: 'Warrior', god: 'Drakkara' }] };
+    const state = buildMatch('duo', [good, evil], providers, { seed: 3 });
+    const g = state.tokens.find((t) => isUnit(t) && t.side === 0) as Unit;
+    const e = state.tokens.find((t) => isUnit(t) && t.side === 1) as Unit;
+    expect(g.god).toBe('Kantilles');
+    expect(g.alignment).toBe('Good'); // Kantilles is a Good god → White moon
+    expect(e.alignment).toBe('Evil'); // Drakkara is Evil → Black moon
+    // A godless pick carries no alignment (no lunar patron).
+    const godless = buildMatch('duel', [warrior(0), warrior(1)], providers, { seed: 3 });
+    const w = godless.tokens.find((t) => isUnit(t) && t.side === 0) as Unit;
+    expect(w.alignment).toBeUndefined();
+  });
+
+  it('sets a three-moon sky from the game-hour, each moon on its own clock', () => {
+    const dawn = buildMatch('duel', [warrior(0), warrior(1)], providers, { seed: 1, gameHour: 0 });
+    expect(dawn.moon.sky).toEqual({ Black: 'Empty', Red: 'Empty', White: 'Empty' });
+    // Advance to where the fast Black moon has waxed to Full but the slow White has not.
+    const later = buildMatch('duel', [warrior(0), warrior(1)], providers, { seed: 1, gameHour: 33 * 4 });
+    expect(later.moon.sky.Black).toBe('FullMoon');
+    expect(later.moon.sky.White).not.toBe('FullMoon');
+  });
+
   it('is deterministic — identical rosters + seed yield an equal state', () => {
     const a = buildMatch('duel', [warrior(0), warrior(1)], providers, { seed: 7 });
     const b = buildMatch('duel', [warrior(0), warrior(1)], providers, { seed: 7 });

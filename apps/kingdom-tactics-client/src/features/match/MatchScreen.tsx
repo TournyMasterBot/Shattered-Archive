@@ -104,8 +104,9 @@ export function MatchScreen({ payload: payloadProp }: { readonly payload?: Match
             </span>
           ))}
         <span>·</span>
-        <span>
-          Moon: {snapshot.moon.type} {snapshot.moon.phase}
+        <span title="Each moon empowers its alignment: White→Good, Red→Neutral, Black→Evil">
+          Moons: ○White {snapshot.moon.sky.White} · ◐Red {snapshot.moon.sky.Red} · ●Black{' '}
+          {snapshot.moon.sky.Black}
         </span>
       </div>
 
@@ -132,6 +133,7 @@ export function MatchScreen({ payload: payloadProp }: { readonly payload?: Match
           state={snapshot}
           controllableSide={controllableSide}
           legalActionsFor={match.legalActionsFor}
+          legalAbilitiesFor={match.legalAbilitiesFor}
           onAct={match.act}
         />
       )}

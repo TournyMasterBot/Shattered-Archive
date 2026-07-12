@@ -43,7 +43,7 @@ function duelState(): MatchState {
     tokens: [unit('a', 'Human:Warrior', { x: 1, y: 1 }, 0), unit('d', 'Human:Warrior', { x: 4, y: 4 }, 1)],
     turn: 1,
     activeSide: 0,
-    moon: { type: 'White', phase: 'HalfMoon' },
+    moon: { gameHour: 0, sky: { Black: 'HalfMoon', Red: 'HalfMoon', White: 'HalfMoon' } },
     rngState: 1,
     status: 'in-progress',
   };

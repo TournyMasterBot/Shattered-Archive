@@ -46,7 +46,7 @@ function stubProvider(cover = 0, magiMult = 1): IGameDataProvider {
 
 const base = {
   defenderTerrainKey: 'Field',
-  moonPhase: 'HalfMoon',
+  moonSky: { Black: 'HalfMoon', Red: 'HalfMoon', White: 'HalfMoon' },
 };
 
 // --- tests ------------------------------------------------------------------
@@ -121,11 +121,20 @@ describe('resolveDamage', () => {
     expect(vuln.amount).toBeGreaterThan(neutral.amount);
   });
 
-  it('a magi hits harder at FullMoon than at Empty', () => {
+  it('a magi hits harder at FullMoon than at Empty under its aligned moon', () => {
     const attacker = TEMPLATE({ attackPower: 20, damageType: 'Flame', traits: ['magi'] });
-    const full = resolveDamage({ attacker, defender: TEMPLATE({}), ...base, provider: stubProvider(0, 1.5) });
-    const empty = resolveDamage({ attacker, defender: TEMPLATE({}), ...base, provider: stubProvider(0, 0.5) });
+    // An Evil magi draws on the Black moon; the stub returns a fixed multiplier per phase.
+    const full = resolveDamage({ attacker, defender: TEMPLATE({}), ...base, attackerAlignment: 'Evil', provider: stubProvider(0, 1.5) });
+    const empty = resolveDamage({ attacker, defender: TEMPLATE({}), ...base, attackerAlignment: 'Evil', provider: stubProvider(0, 0.5) });
     expect(full.amount).toBeGreaterThan(empty.amount);
+  });
+
+  it('an unaligned magi (no deity) draws on no moon — spell power is unscaled', () => {
+    const attacker = TEMPLATE({ attackPower: 20, damageType: 'Flame', traits: ['magi'] });
+    // A ×1.5 moon would boost an aligned magi, but with no alignment the scaling is skipped.
+    const aligned = resolveDamage({ attacker, defender: TEMPLATE({}), ...base, attackerAlignment: 'Good', provider: stubProvider(0, 1.5) });
+    const unaligned = resolveDamage({ attacker, defender: TEMPLATE({}), ...base, provider: stubProvider(0, 1.5) });
+    expect(unaligned.amount).toBeLessThan(aligned.amount);
   });
 
   it('sanctuary halves incoming damage', () => {

@@ -332,3 +332,19 @@ export {
   type StanceKey,
   type StanceModifier,
 } from './balance/stances.js';
+export { alignmentForGod, godsByAlignment } from './balance/religion.js';
+export {
+  MOONS,
+  MOON_FOR_ALIGNMENT,
+  MOON_PHASE_BONUS,
+  MOON_POSITION_REGEN,
+  MOON_PHASE_CYCLE,
+  NO_MOON_BONUS,
+  moonPhaseAt,
+  moonSkyAt,
+  moonBonusForAlignment,
+  type MoonDef,
+  type MoonAlignment,
+  type MoonPhaseBonus,
+  type MoonSky,
+} from './balance/moons.js';

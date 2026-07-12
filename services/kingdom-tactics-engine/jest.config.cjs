@@ -21,7 +21,15 @@ module.exports = {
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
 
   transform: {
-    '^.+\\.ts$': ['ts-jest', { useESM: true, tsconfig: '<rootDir>/tsconfig.jest.json' }],
+    // diagnostics.ignoreCodes silences ts-jest's per-file TS151002 advisory ("hybrid module kind
+    // … only supported in isolatedModules") — it otherwise prints once per test file on every run.
+    // NB: actually enabling isolatedModules (in tsconfig OR here) breaks this ts-jest+ESM setup
+    // ("Cannot use import statement outside a module"), so we suppress the code instead, exactly as
+    // the ts-jest warning itself suggests.
+    '^.+\\.ts$': [
+      'ts-jest',
+      { useESM: true, tsconfig: '<rootDir>/tsconfig.jest.json', diagnostics: { ignoreCodes: [151002] } },
+    ],
   },
 
   moduleNameMapper: {

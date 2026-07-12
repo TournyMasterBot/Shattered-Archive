@@ -2,7 +2,7 @@ import { createGameDataProvider, createGameModeProvider } from '../data/index.js
 import type { Board, Coord, MatchState, Tile, Unit } from '../model/index.js';
 import { createRng, type ISeededRng } from '../rng/index.js';
 import { defaultCombatHooks, legalMoves } from '../rules/index.js';
-import { applyAction, legalActions, type EngineProviders } from './game-engine.js';
+import { applyAction, legalActions, legalAbilityActions, type EngineProviders } from './game-engine.js';
 
 const providers: EngineProviders = {
   data: createGameDataProvider(),
@@ -56,7 +56,7 @@ function state(tokens: Unit[], over: Partial<MatchState> = {}): MatchState {
     tokens,
     turn: 1,
     activeSide: 0,
-    moon: { type: 'White', phase: 'HalfMoon' },
+    moon: { gameHour: 0, sky: { Black: 'HalfMoon', Red: 'HalfMoon', White: 'HalfMoon' } },
     rngState: 1,
     status: 'in-progress',
     ...over,
@@ -185,6 +185,39 @@ describe('legalActions — independent budgets', () => {
     const s = state([unit('a', 'Human:Warrior', { x: 5, y: 5 }, 0)]);
     const acts = legalActions(s, 0, providers);
     expect(acts.filter((a) => a.type === 'end-turn')).toHaveLength(1);
+  });
+
+  it('never enumerates ability actions (UI-driven, like set-stance)', () => {
+    const s = state([unit('cl', 'Human:Cleric', { x: 5, y: 5 }, 0)]);
+    expect(legalActions(s, 0, providers).some((a) => a.type === 'ability')).toBe(false);
+  });
+});
+
+describe('legalAbilityActions (UI-facing ability enumeration)', () => {
+  it('offers a Cleric its cure on every living ally — including itself — but never an enemy', () => {
+    const s = state([
+      unit('cl', 'Human:Cleric', { x: 5, y: 5 }, 0),
+      unit('al', 'Human:Warrior', { x: 6, y: 5 }, 0),
+      unit('en', 'Human:Warrior', { x: 7, y: 5 }, 1),
+    ]);
+    const cure = legalAbilityActions(s, 'cl', providers).filter((a) => a.abilityKey === 'CureLight');
+    const targets = new Set(cure.map((a) => a.target));
+    expect(targets.has('cl')).toBe(true); // a cleric may cure itself
+    expect(targets.has('al')).toBe(true); // and any ally
+    expect(targets.has('en')).toBe(false); // never an enemy
+  });
+
+  it('is empty once the unit has taken its action', () => {
+    const s = state([unit('cl', 'Human:Cleric', { x: 5, y: 5 }, 0, { hasActed: true })]);
+    expect(legalAbilityActions(s, 'cl', providers)).toEqual([]);
+  });
+
+  it('is empty for a locked-out unit (one-unit-per-turn)', () => {
+    const s = state(
+      [unit('cl', 'Human:Cleric', { x: 5, y: 5 }, 0), unit('al', 'Human:Cleric', { x: 6, y: 5 }, 0)],
+      { activatedTokenId: 'al' },
+    );
+    expect(legalAbilityActions(s, 'cl', providers)).toEqual([]);
   });
 });
 

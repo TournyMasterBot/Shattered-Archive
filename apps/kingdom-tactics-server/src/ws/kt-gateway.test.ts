@@ -54,7 +54,7 @@ function dominantMatch(): MatchState {
     tokens: [unit('a1', { x: 3, y: 3 }, 0), unit('a2', { x: 3, y: 4 }, 0), unit('d', { x: 4, y: 3 }, 1, 30)],
     turn: 1,
     activeSide: 0,
-    moon: { type: 'White', phase: 'HalfMoon' },
+    moon: { gameHour: 0, sky: { Black: 'HalfMoon', Red: 'HalfMoon', White: 'HalfMoon' } },
     rngState: 1,
     status: 'in-progress',
   };

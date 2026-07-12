@@ -19,6 +19,7 @@ export function toAbilitySpec(m: AbilityMechanics): AbilitySpec {
     damageScale?: number;
     maladiction?: AbilitySpec['maladiction'];
     buff?: AbilitySpec['buff'];
+    heal?: AbilitySpec['heal'];
   } = { key: m.key };
 
   if (m.damage) {
@@ -38,6 +39,7 @@ export function toAbilitySpec(m: AbilityMechanics): AbilitySpec {
     };
   }
   if (m.buff) spec.buff = m.buff;
+  if (m.heal) spec.heal = m.heal;
 
   return spec;
 }

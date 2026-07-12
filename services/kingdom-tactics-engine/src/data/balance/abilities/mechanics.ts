@@ -111,6 +111,48 @@ export const AUTHORED_MECHANICS: Record<string, AbilityMechanics> = {
     notes: 'Interpose to take an ally\'s place in a fight — marks the ally guarded for a turn.',
   },
 
+  // ── Cleric kit — divine healing (the cure line) ──
+  CureLight: {
+    key: 'CureLight',
+    category: 'support',
+    targeting: 'ally',
+    usage: 'active',
+    scaling: { power: 'wis' },
+    heal: { amount: 8, target: 'ally', wisScale: 0.5 },
+    status: 'authored',
+    notes: 'Cure Light Wounds — a modest divine heal on a wounded ally (or self); scales with the cleric\'s wisdom.',
+  },
+  CureSerious: {
+    key: 'CureSerious',
+    category: 'support',
+    targeting: 'ally',
+    usage: 'active',
+    scaling: { power: 'wis' },
+    heal: { amount: 14, target: 'ally', wisScale: 0.75 },
+    status: 'authored',
+    notes: 'Cure Serious Wounds — a stronger cure than the light version.',
+  },
+  CureCritical: {
+    key: 'CureCritical',
+    category: 'support',
+    targeting: 'ally',
+    usage: 'active',
+    scaling: { power: 'wis' },
+    heal: { amount: 20, target: 'ally', wisScale: 1 },
+    status: 'authored',
+    notes: 'Cure Critical Wounds — a major cure for a grievously wounded ally.',
+  },
+  Heal: {
+    key: 'Heal',
+    category: 'support',
+    targeting: 'ally',
+    usage: 'active',
+    scaling: { power: 'wis' },
+    heal: { amount: 30, target: 'ally', wisScale: 1.25 },
+    status: 'authored',
+    notes: 'Heal — the greatest divine restoration, far beyond the lesser cures.',
+  },
+
   // ── Warrior kit — passive combat proficiencies ──
   EnhancedDamage: passive('EnhancedDamage', 'combat', 'str', 'Chance at bonus damage on each hit.'),
   SecondAttack: passive('SecondAttack', 'combat', 'dex', 'Chance at a second strike each round.'),

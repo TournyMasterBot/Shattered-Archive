@@ -25,6 +25,14 @@ gets the right information the first time and avoids extra round trips.
 Scope + gating:
 - **Skip** only when the prompt makes no checkable codebase claims (e.g. "continue the
   plan", "make the button blue") — there is nothing to verify.
+- **Mechanical verification satisfies this pre-flight — the point is to verify, not to route
+  it through qwen specifically.** For code-EXISTENCE / structural claims (a file/symbol/path
+  exists, "there is no W", "X is wired the same way as Z"), a direct `Grep` + ranged `Read` IS
+  the verification: it is faster and more reliable than qwen and is the preferred tool here (it
+  also matches the "verify mechanically, no silent GPU" preference). Reserve `/qwen` for
+  SEMANTIC / behavioral claims ("X does Y under condition Z", "this is safe because …") where
+  confirming the premise means reasoning across many files. Either way the premise MUST be
+  checked before real work — the choice is only which tool, not whether.
 - **Prerequisite:** this check requires a reachable `shattered_mcp` container (probe:
   `bash /c/Projects/Shattered-AI/scripts/qdigest.sh --status`). If the MCP stack is down,
   the pre-flight cannot run — proceed with the work normally but tell the user once that
@@ -167,6 +175,14 @@ Local inference is free — use it to keep long raw output out of context:
   Toggle: `qdigest.sh --on|--off|--status` (flag file `.qdigest/disabled`); when
   disabled it passes raw output through unchanged. Full doc:
   `c:\Projects\Shattered-AI\doc\qdigest.md`.
+- **Never qdigest a target you're still editing (stale-snapshot trap).** qdigest fits a
+  ONE-SHOT large dump you won't invalidate before reading it. Running it in the background
+  against a build/test suite while you keep editing means the distillate can reflect a
+  PRE-edit snapshot — it bit us 2026-07-11 (it reported an already-fixed test failure, and the
+  real answer came from running jest directly). So for **iterative build/test loops, run the
+  filtered command DIRECTLY** — `pnpm --filter <pkg> test` (optionally `… 2>&1 | grep -E
+  "Tests:|Test Suites:|FAIL"` to bound it) — and read it; reserve qdigest for the ONE final
+  full-suite / workspace-wide run you take after the code has stopped moving.
 - **If the MCP stack is unavailable** (Docker down, `shattered_mcp` stopped, digest
   call fails): do NOT degrade your own behavior — the wrapper already falls back to
   printing the full raw output with the reason. Read it as you normally would, and
@@ -179,14 +195,41 @@ Local inference is free — use it to keep long raw output out of context:
   the specific `file:line` regions it points at. For one large/unfamiliar file, `summarize`/
   `purpose`/`ask` it instead of full-reading. Spend the free local GPU, not paid read tokens.
   **Skip only when:** the MCP stack is down (degrade to direct reads and tell the user once);
-  the files are tiny or you already know the exact lines; or you must quote/edit verbatim
-  (then ranged `Read` the region). When in doubt on a multi-file task, `pack` first.
+  the files are tiny or you already know the exact lines; or the task is **edit-heavy** —
+  you're going to `Edit` these files, so you'll need their exact current text anyway. For that
+  last case, going straight to `Grep` → ranged `Read` is EXPECTED, not a rule violation:
+  `pack`-then-re-read-to-edit is usually net-negative (its cold-load latency plus a second read
+  of the same lines). `pack` earns its keep on READ-ONLY orientation across code you WON'T
+  touch (tracing a flow, "where does X live"); when in doubt on a read-only multi-file sweep,
+  `pack` first.
 - **Cold-model calls MUST run non-blocking (rule).** A qwen call (`qdigest.sh`, or
   `cli.js pack|ask|summarize|purpose|digest`) can sit SILENT for a minute+ while the model
   cold-loads — that is NOT a hang. Never wait on it in the foreground with a short timeout
   (it reads as "stuck" and gets interrupted). Run it with `run_in_background: true`, or a
   generous `timeout` (≥180000 ms). Qwen is for extraction/summarization, not judgment —
   verify anything decision-critical yourself.
+
+## Default working posture: edit-heavy
+
+Most work here is **edit-heavy** (surgical changes to existing code), not read-heavy
+orientation. Default to that posture; the delegation rules above (pack/summarize/digest) are
+for the read-heavy exception — reaching for them on an edit task usually costs more than it
+saves. Concretely, by default:
+
+- **Locate, then window — don't full-read to edit.** `Grep -n` the anchor symbol/string, then
+  ranged-`Read` a tight window (±~30 lines) and `Edit`. Full-read only a genuinely small file
+  (<~80 lines) or when you must follow control flow across the whole file.
+- **Never re-read a file to "verify" an Edit/Write.** They error if they didn't apply, and the
+  harness tracks the file's current state. A PreToolUse guard (`edit-reread-guard.js`) now DENIES
+  an unbounded Read of any file you edited this session — if you truly need a region back (to
+  anchor another edit), Read it with explicit `offset`+`limit` (the escape hatch).
+- **Batch independent reads/edits.** Issue parallel ranged `Read`s of distinct regions in one
+  step; make the independent `Edit`s without round-tripping.
+- **Keep test output tiny.** Run the single filtered `pnpm --filter <pkg> test -- <file>` and, on
+  a full run, bound it: `… 2>&1 | grep -E "Tests:|Test Suites:|FAIL|✕"`. Read the raw failure only
+  when something is red.
+- **Refresh the AI indexes after edits** (`.ai-context`/`.annotated`/`@ai-` headers) per the
+  section below — that upkeep is part of an edit task, not a separate read task.
 
 ## Shell working directory (no bare `cd`)
 

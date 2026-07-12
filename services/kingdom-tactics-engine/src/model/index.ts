@@ -36,6 +36,7 @@ export type {
   AbilityDamageSpec,
   AbilityMaladictionSpec,
   AbilityBuffSpec,
+  AbilityHealSpec,
   AbilityUtilitySpec,
   AbilityMechanics,
 } from './ability.js';

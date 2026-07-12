@@ -46,7 +46,7 @@ function makeState(tokens: Unit[], w = 6, h = 6): MatchState {
     tokens,
     turn: 1,
     activeSide: 0,
-    moon: { type: 'White', phase: 'HalfMoon' },
+    moon: { gameHour: 0, sky: { Black: 'HalfMoon', Red: 'HalfMoon', White: 'HalfMoon' } },
     rngState: 1,
     status: 'in-progress',
   };

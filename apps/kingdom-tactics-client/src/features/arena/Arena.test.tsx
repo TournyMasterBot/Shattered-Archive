@@ -4,6 +4,7 @@ import {
   buildMatch,
   createRng,
   legalActions,
+  legalAbilityActions,
   type Action,
   type ArmyRoster,
   type MoveAction,
@@ -31,6 +32,17 @@ describe('Arena', () => {
     const state = duel();
     render(<Arena state={state} controllableSide={0} legalActionsFor={() => []} onAct={() => {}} />);
     expect(screen.getAllByRole('gridcell')).toHaveLength(state.board.width * state.board.height);
+  });
+
+  it('labels each token with its class glyph and names the class + owner in the tooltip', () => {
+    const state = duel();
+    render(<Arena state={state} controllableSide={0} legalActionsFor={() => []} onAct={() => {}} />);
+    // The class glyph ("War" for a Warrior) is drawn on the token so classes are distinguishable…
+    expect(screen.getAllByText('War').length).toBeGreaterThan(0);
+    // …and the full class name + friend/foe reads out of the cell's accessible label.
+    const s0 = state.tokens.find((t) => t.side === 0)!;
+    const cell = screen.getByLabelText(new RegExp(`\\(${s0.pos.x},${s0.pos.y}\\).*Warrior, yours`));
+    expect(cell).toBeTruthy();
   });
 
   it('selecting a friendly unit highlights legal moves; clicking one emits a move', () => {
@@ -80,6 +92,46 @@ describe('Arena', () => {
 
     fireEvent.click(offensive);
     expect(acts).toContainEqual({ type: 'set-stance', tokenId: s0.instanceId, stance: 'offensive' });
+  });
+
+  it('a Cleric casts Cure Light on a highlighted ally (ability panel → pick target → onAct)', () => {
+    const state = buildMatch(
+      'skirmish',
+      [
+        { side: 0, picks: [{ raceKey: 'Human', classKey: 'Cleric' }, { raceKey: 'Human', classKey: 'Warrior' }] },
+        warrior(1),
+      ],
+      providers,
+      { seed: 1 },
+    );
+    const abilitiesFor = (id: string) => legalAbilityActions(state, id, providers);
+    const acts: Action[] = [];
+    render(
+      <Arena
+        state={state}
+        controllableSide={0}
+        legalActionsFor={legalFor(state)}
+        legalAbilitiesFor={abilitiesFor}
+        onAct={(a) => acts.push(a)}
+      />,
+    );
+
+    // Select the cleric → its ability panel offers Cure Light.
+    const cleric = state.tokens.find((t) => t.instanceId === 's0-u0')!;
+    fireEvent.click(screen.getByLabelText(new RegExp(`\\(${cleric.pos.x},${cleric.pos.y}\\)`)));
+    fireEvent.click(screen.getByRole('button', { name: 'Cast Cure Light' }));
+
+    // Its allies highlight as targets; clicking the wounded ally casts the heal on it.
+    const ally = state.tokens.find((t) => t.instanceId === 's0-u1')!;
+    expect(document.querySelectorAll('.kt-cell--ability').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByLabelText(new RegExp(`\\(${ally.pos.x},${ally.pos.y}\\)`)));
+
+    expect(acts).toContainEqual({
+      type: 'ability',
+      tokenId: 's0-u0',
+      abilityKey: 'CureLight',
+      target: 's0-u1',
+    });
   });
 
   it('is display-only when not interactive (no End turn control)', () => {

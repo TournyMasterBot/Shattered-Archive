@@ -60,7 +60,7 @@ function state(tokens: Unit[]): MatchState {
     tokens,
     turn: 1,
     activeSide: 0,
-    moon: { type: 'White', phase: 'HalfMoon' },
+    moon: { gameHour: 0, sky: { Black: 'HalfMoon', Red: 'HalfMoon', White: 'HalfMoon' } },
     rngState: 1,
     status: 'in-progress',
   };
@@ -78,7 +78,7 @@ describe('applyAttack (integration, real provider)', () => {
       attacker: templateForMember('Human:Warrior', provider),
       defender: templateForMember('Human:Warrior', provider),
       defenderTerrainKey: 'Field',
-      moonPhase: 'HalfMoon',
+      moonSky: { Black: 'HalfMoon', Red: 'HalfMoon', White: 'HalfMoon' },
       defenderStatusKeys: [],
       provider,
     }).amount;
@@ -128,6 +128,36 @@ describe('applyAbility (two-part: damage auto-hits, maladiction rolls save)', ()
     const foe = next.tokens.find((t) => t.instanceId === 'foe') as Unit;
     expect(foe.hp).toBeLessThan(999); // damage still auto-hits
     expect(foe.statuses.map((x) => x.key)).not.toContain('chilled');
+  });
+});
+
+describe('applyAbility — heal (restores HP, capped at max, marks caster acted)', () => {
+  it('restores an ally by base amount + a wisdom bonus', () => {
+    const clericTpl = templateForMember('Human:Cleric', provider);
+    const allyTpl = templateForMember('Human:Warrior', provider);
+    const s = state([
+      { ...unit('cl', 'Human:Cleric', { x: 5, y: 5 }, 0), hp: 10 },
+      { ...unit('al', 'Human:Warrior', { x: 6, y: 5 }, 0), hp: 5 },
+    ]);
+    const cure: AbilitySpec = { key: 'CureLight', heal: { amount: 8, target: 'ally', wisScale: 0.5 } };
+    const next = applyAbility(s, 'cl', 'al', cure, provider, fixedRng(0));
+    const ally = next.tokens.find((t) => t.instanceId === 'al') as Unit;
+    const expected = Math.min(allyTpl.maxHp, 5 + 8 + Math.floor(clericTpl.stats.wis * 0.5));
+    expect(ally.hp).toBe(expected);
+    expect((next.tokens.find((t) => t.instanceId === 'cl') as Unit).hasActed).toBe(true);
+    // Pure: input untouched.
+    expect((s.tokens.find((t) => t.instanceId === 'al') as Unit).hp).toBe(5);
+  });
+
+  it('never overheals past the recipient max HP', () => {
+    const allyTpl = templateForMember('Human:Warrior', provider);
+    const s = state([
+      unit('cl', 'Human:Cleric', { x: 5, y: 5 }, 0),
+      { ...unit('al', 'Human:Warrior', { x: 6, y: 5 }, 0), hp: allyTpl.maxHp - 1 },
+    ]);
+    const heal: AbilitySpec = { key: 'Heal', heal: { amount: 30, target: 'ally', wisScale: 1 } };
+    const next = applyAbility(s, 'cl', 'al', heal, provider, fixedRng(0));
+    expect((next.tokens.find((t) => t.instanceId === 'al') as Unit).hp).toBe(allyTpl.maxHp);
   });
 });
 

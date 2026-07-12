@@ -18,7 +18,7 @@ describe('AUTHORED_MECHANICS registry', () => {
   it('every authored combat/support entry carries a matching payload', () => {
     for (const m of Object.values(AUTHORED_MECHANICS)) {
       if (m.usage === 'passive') continue; // passives legitimately carry no active payload
-      const hasPayload = !!(m.damage || m.maladiction || m.buff || m.utility);
+      const hasPayload = !!(m.damage || m.maladiction || m.buff || m.heal || m.utility);
       expect(hasPayload).toBe(true);
     }
   });
@@ -76,6 +76,13 @@ describe('toAbilitySpec adapter', () => {
   it('maps an ally-support (Rescue) to a buff spec targeting an ally', () => {
     const spec = toAbilitySpec(AUTHORED_MECHANICS.Rescue);
     expect(spec.buff?.target).toBe('ally');
+  });
+
+  it('maps a cleric cure (CureLight) to a heal spec targeting an ally', () => {
+    const spec = toAbilitySpec(AUTHORED_MECHANICS.CureLight);
+    expect(spec.heal?.target).toBe('ally');
+    expect(spec.heal?.amount).toBeGreaterThan(0);
+    expect(spec.damage).toBeUndefined();
   });
 
   it('maps a passive (Parry) to a bare no-op spec (marks acted only)', () => {

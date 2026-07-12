@@ -1,5 +1,5 @@
-import { legalActions, type EngineProviders } from '../engine/game-engine.js';
-import type { Action } from '../model/action.js';
+import { legalActions, legalAbilityActions, type EngineProviders } from '../engine/game-engine.js';
+import type { Action, AbilityAction } from '../model/action.js';
 import type { MatchState } from '../model/match.js';
 import type { GameModeId } from '../model/mode.js';
 import type { IAiPolicy } from '../ai/policy.js';
@@ -82,6 +82,13 @@ export class LocalMatch {
     return legalActions(s, s.activeSide, this.opts.providers).filter(
       (a) => a.type !== 'end-turn' && a.tokenId === tokenId,
     );
+  }
+
+  /** Castable ability actions for the given token this turn (heals/self+ally buffs) — the UI
+   * uses this to drive an ability-cast panel. Empty once the token has acted or is locked out. */
+  legalAbilitiesFor(tokenId: string): AbilityAction[] {
+    const s = this.session.snapshot();
+    return legalAbilityActions(s, tokenId, this.opts.providers);
   }
 
   /** Apply a local human action (any non-AI seat). Returns false and no-ops if the engine rejects it. */

@@ -44,6 +44,16 @@ export interface AbilityBuffSpec {
   readonly target: 'self' | 'ally';
 }
 
+/** Restore hit points to the caster ('self') or an ally — no save, capped at the recipient's
+ * max HP. The clerical cure line (CureLight…Heal). */
+export interface AbilityHealSpec {
+  /** Base HP restored. */
+  readonly amount: number;
+  readonly target: 'self' | 'ally';
+  /** Optional bonus HP = floor(caster WIS × wisScale), so a wiser cleric heals more. Default 0. */
+  readonly wisScale?: number;
+}
+
 /** Non-combat effect marker (movement, detection, transport…). v1 records intent; effect TBD. */
 export interface AbilityUtilitySpec {
   readonly kind: string;
@@ -61,6 +71,7 @@ export interface AbilityMechanics {
   readonly damage?: AbilityDamageSpec;
   readonly maladiction?: AbilityMaladictionSpec;
   readonly buff?: AbilityBuffSpec;
+  readonly heal?: AbilityHealSpec;
   readonly utility?: AbilityUtilitySpec;
   /** 'authored' = a real definition; 'stub' = the no-op fallback for an unauthored ability. */
   readonly status: 'authored' | 'stub';

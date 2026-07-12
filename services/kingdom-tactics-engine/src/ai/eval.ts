@@ -82,7 +82,8 @@ export function scoreAttack(
     attacker: templateFor(attacker, provider),
     defender: templateFor(target, provider),
     defenderTerrainKey: tileAt(state.board, target.pos)?.terrain ?? 'Field',
-    moonPhase: state.moon.phase,
+    moonSky: state.moon.sky,
+    attackerAlignment: attacker.kind === 'unit' ? attacker.alignment : undefined,
     defenderStatusKeys: target.statuses.map((s) => s.key),
     provider,
   }).amount;

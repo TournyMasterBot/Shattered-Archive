@@ -5,14 +5,21 @@ import type { GameModeId } from './mode.js';
 import type { BoardToken } from './squadron.js';
 
 /**
- * The active moon context for a match. Magi spell power keys off this via the
- * data layer's moon effects (data-driven, so a phase's modifier is one number).
+ * The three-moon sky a match is fought under. All THREE moons hang at once, each
+ * governing one alignment (White→Good, Red→Neutral, Black→Evil) and running on its own
+ * clock, so their phases drift independently (DSL Moon.cs). A caster is empowered by the
+ * single moon matching its alignment — see data/balance/moons.ts (moonBonusForAlignment)
+ * and how rules/damage.ts scales magi spell power off the caster's own moon.
  */
 export interface MoonContext {
-  /** MoonTypeKey from data/dsl/moons.ts (Black/Red/White). */
-  readonly type: string;
-  /** MoonPhaseKey (Empty…FullMoon). */
-  readonly phase: string;
+  /** Absolute game-hour the match is set at; each moon's phase derives from it (own cadence). */
+  readonly gameHour: number;
+  /** Each moon's current phase (MoonPhaseKey Empty…FullMoon), keyed by MoonTypeKey. */
+  readonly sky: {
+    readonly Black: string;
+    readonly Red: string;
+    readonly White: string;
+  };
 }
 
 /**

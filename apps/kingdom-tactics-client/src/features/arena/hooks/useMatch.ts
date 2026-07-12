@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import {
   createLocalMatch,
+  type AbilityAction,
   type Action,
   type ArmyRoster,
   type GameModeId,
@@ -27,6 +28,8 @@ export interface UseMatch {
   readonly snapshot: MatchState;
   /** Legal actions the given token can take on the active side this turn. */
   readonly legalActionsFor: (tokenId: string) => Action[];
+  /** Castable ability actions (heals / self+ally buffs) for the given token this turn. */
+  readonly legalAbilitiesFor: (tokenId: string) => AbilityAction[];
   /** Apply a (human) action. Returns false and no-ops if the engine rejects it. */
   readonly act: (action: Action) => boolean;
   /** Auto-play AI-controlled seats until a human seat is active or the match is decided. */
@@ -59,6 +62,11 @@ export function useMatch(opts: UseMatchOptions): UseMatch {
     [],
   );
 
+  const legalAbilitiesFor = useCallback(
+    (tokenId: string): AbilityAction[] => matchRef.current!.legalAbilitiesFor(tokenId),
+    [],
+  );
+
   const act = useCallback((action: Action): boolean => {
     const match = matchRef.current!;
     if (match.isOver()) return false;
@@ -80,5 +88,5 @@ export function useMatch(opts: UseMatchOptions): UseMatch {
     setSnapshot(match.snapshot());
   }, [modeId, rosters, seed, aiPolicies, terrain]);
 
-  return { snapshot, legalActionsFor, act, runAi, reset };
+  return { snapshot, legalActionsFor, legalAbilitiesFor, act, runAi, reset };
 }

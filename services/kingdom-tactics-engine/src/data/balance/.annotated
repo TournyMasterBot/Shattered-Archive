@@ -28,7 +28,13 @@ Purpose: Authored avoidance tuning (DEFENSE_CONSTANTS) — dodge/parry/shield-bl
 Purpose: Defines all game modes' configurations for the simulation system.
 
 /moon-effects.ts
-Purpose: Defines moon phase effects on magi spell power with data-driven modifiers.
+Purpose: Legacy single-moon magi spell-power multiplier by phase (consumed by rules/damage.ts). Superseded conceptually by moons.ts; reconciliation pending.
+
+/moons.ts
+Purpose: Faithful three-moon model (DSL Moon.cs) — Black/Red/White each govern one alignment (Evil/Neutral/Good) and cycle on their own clock (33/45/54 h per phase); per-phase cast-level/saves/mana bonuses + per-position mana-regen; moonSkyAt/moonPhaseAt/moonBonusForAlignment give a unit the bonus of the one moon matching its alignment.
+
+/moons.test.ts
+Purpose: Tests the three-moon model — alignment↔moon mapping, distinct cadences + independent phase drift, per-phase/position bonus tables, and alignment-keyed bonus selection.
 
 /race-modifiers.ts
 Purpose: Defines racial stat modifiers and traits that adjust class-based character attributes.
@@ -41,6 +47,9 @@ Purpose: Authored tactical effects of distilled DSL racial abilities — Toughne
 
 /reclass-kits.ts
 Purpose: Defines reclass kit overrides for specialized class modifications.
+
+/religion.ts
+Purpose: Maps a unit's DSL deity (god) to the moral alignment its worshipper holds (Good/Neutral/Evil; Chaos/unknown → Mixed/unaligned) — the axis the three moons key off. alignmentForGod + godsByAlignment (grouped picker for the army builder).
 
 /stances.ts
 Purpose: Combat stance catalog — Normal/Offensive/Defensive (all units) + Brewmaster Drunken Monkey/Sloshing/Cripple; each carries to-hit/evasion (avoidance) + damage dealt/taken mods. Normal is a no-op. stanceMod/stancesForClass/isStanceLegalFor.

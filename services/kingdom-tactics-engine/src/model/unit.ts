@@ -102,6 +102,12 @@ export interface Unit {
   readonly hasMoved: boolean;
   /** True once this token has taken its action (attack/ability) this turn. */
   readonly hasActed: boolean;
+  /** DSL deity (GodKey, data/dsl/gods.ts) this unit worships — the source of its alignment.
+   * Chosen per unit in army building; absent ⇒ no deity (unaligned re the moons). */
+  readonly god?: string;
+  /** Moral alignment (AlignmentKey: Good/Neutral/Evil/Mixed) derived from `god`. Drives which of
+   * the three moons empowers this unit (White→Good, Red→Neutral, Black→Evil). Absent/Mixed ⇒ no moon. */
+  readonly alignment?: string;
   /** Combat posture, shifting hit/avoidance + damage. Set as a FREE minor action and persists
    * across turns. Absent ⇒ 'normal' (a no-op). See data/balance/stances.ts. */
   readonly stance?: StanceKey;

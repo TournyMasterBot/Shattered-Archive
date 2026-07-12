@@ -6,6 +6,7 @@ import type { MatchState } from '../model/match.js';
 import type { Unit } from '../model/unit.js';
 import type { EngineProviders } from '../engine/game-engine.js';
 import type { RaceClassContext } from '../data/index.js';
+import { alignmentForGod, moonSkyAt } from '../data/index.js';
 import { createRng } from '../rng/index.js';
 
 /**
@@ -30,7 +31,12 @@ import { createRng } from '../rng/index.js';
 export interface ArmyRoster {
   readonly side: Side;
   readonly name?: string;
-  readonly picks: ReadonlyArray<{ readonly raceKey: string; readonly classKey: string }>;
+  readonly picks: ReadonlyArray<{
+    readonly raceKey: string;
+    readonly classKey: string;
+    /** Optional DSL deity (GodKey) — sets the unit's alignment, and thus which moon empowers it. */
+    readonly god?: string;
+  }>;
   /**
    * The army's affiliation (clan/kingdom/faction + god), used to gate CSR reclass picks.
    * Omitted for an unaffiliated army — then CSR classes are illegal (gated out by default).
@@ -108,7 +114,7 @@ export function buildMatch(
   modeId: GameModeId,
   rosters: readonly ArmyRoster[],
   p: EngineProviders,
-  opts?: { seed?: number; terrain?: TerrainChoice },
+  opts?: { seed?: number; terrain?: TerrainChoice; gameHour?: number },
 ): MatchState {
   const mode = p.modes.mode(modeId);
   if (mode.usesSquadrons) {
@@ -120,6 +126,8 @@ export function buildMatch(
 
   const { width, height } = mode.board;
   const seed = opts?.seed ?? 0;
+  // The three moons run on their own clocks off an absolute game-hour; default 0 (all new/Empty).
+  const gameHour = opts?.gameHour ?? 0;
   const tiles: Tile[][] =
     opts?.terrain === 'authored' ? generateTerrainTiles(mode, seed) : flatTiles(width, height);
 
@@ -147,6 +155,7 @@ export function buildMatch(
         hasMoved: false,
         hasActed: false,
         stance: 'normal',
+        ...(pick.god ? { god: pick.god, alignment: alignmentForGod(pick.god) } : {}),
       });
     });
 
@@ -165,7 +174,7 @@ export function buildMatch(
     tokens,
     turn: 1,
     activeSide: 0,
-    moon: { type: 'White', phase: 'HalfMoon' },
+    moon: { gameHour, sky: moonSkyAt(gameHour) },
     rngState: createRng(seed).state(),
     status: 'in-progress',
   };

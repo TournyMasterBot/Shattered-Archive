@@ -64,6 +64,9 @@ export const defaultCombatHooks: CombatHooks = {
     const attackerToken = ctx.state.tokens.find((t) => t.instanceId === ctx.attackerId);
     if (!attackerToken) return ctx.state;
     const attackerTerrain = tileAt(ctx.state.board, attackerToken.pos)?.terrain ?? 'Field';
+    // The thorns-bearer (the defender) is the one striking back, so its alignment picks the moon.
+    const reflector = ctx.state.tokens.find((t) => t.instanceId === ctx.defenderId);
+    const reflectorAlignment = reflector?.kind === 'unit' ? reflector.alignment : undefined;
 
     let total = 0;
     for (const a of reactives) {
@@ -71,7 +74,8 @@ export const defaultCombatHooks: CombatHooks = {
         attacker: ctx.defender, // the thorns-bearer strikes back
         defender: ctx.attacker, // at the original attacker
         defenderTerrainKey: attackerTerrain,
-        moonPhase: ctx.state.moon.phase,
+        moonSky: ctx.state.moon.sky,
+        attackerAlignment: reflectorAlignment,
         defenderStatusKeys: attackerToken.statuses.map((s) => s.key),
         provider: ctx.provider,
       }).amount;

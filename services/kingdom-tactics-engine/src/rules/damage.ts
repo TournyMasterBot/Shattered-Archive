@@ -1,7 +1,8 @@
 import type { IGameDataProvider } from '../data/index.js';
-import type { UnitTemplate } from '../model/index.js';
+import type { MoonContext, UnitTemplate } from '../model/index.js';
 import type { ISeededRng } from '../rng/index.js';
 import { armorClassMultiplier } from '../data/balance/armor.js';
+import { MOON_FOR_ALIGNMENT } from '../data/balance/moons.js';
 import { damageCategory, resistMatches, type DamageCategory } from '../data/dsl/damage-types.js';
 
 /**
@@ -36,8 +37,12 @@ export interface DamageInput {
   readonly defender: UnitTemplate;
   /** Terrain key of the DEFENDER's tile (cover applies to the target). */
   readonly defenderTerrainKey: string;
-  /** Active moon phase key (magi spell power scales with it). */
-  readonly moonPhase: string;
+  /** The three-moon sky (MatchState.moon.sky). A magi's spell power scales with the phase of
+   * the ONE moon matching the attacker's alignment (see `attackerAlignment`). */
+  readonly moonSky: MoonContext['sky'];
+  /** Attacker's alignment (AlignmentKey: Good/Neutral/Evil/Mixed). Selects the empowering moon
+   * for a magi attacker; absent/Mixed ⇒ no lunar patron ⇒ no moon scaling. */
+  readonly attackerAlignment?: string;
   /** Active status-effect keys on the defender (e.g. 'sanctuary'). */
   readonly defenderStatusKeys?: readonly string[];
   readonly provider: IGameDataProvider;
@@ -82,9 +87,16 @@ export function resolveDamage(input: DamageInput): DamageResult {
   // (1) base power.
   let damage = attacker.attackPower;
 
-  // (2) magi moon scaling.
+  // (2) magi moon scaling: a magi draws on the ONE moon governing its alignment
+  // (White→Good, Red→Neutral, Black→Evil). An unaligned magi (Mixed/none — e.g. a Chaos
+  // worshipper or a unit with no deity) has no lunar patron, so it gets no moon scaling.
   if (attacker.traits.includes('magi')) {
-    damage *= provider.moonEffect(input.moonPhase).magiSpellPowerMultiplier;
+    const moonType = (MOON_FOR_ALIGNMENT as Record<string, keyof MoonContext['sky'] | undefined>)[
+      input.attackerAlignment ?? ''
+    ];
+    if (moonType) {
+      damage *= provider.moonEffect(input.moonSky[moonType]).magiSpellPowerMultiplier;
+    }
   }
 
   // (3) constitution pre-reduction (before armor, per DSL).

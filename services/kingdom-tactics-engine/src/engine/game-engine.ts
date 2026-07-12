@@ -12,7 +12,7 @@ import type {
 } from '../model/index.js';
 import type { ISeededRng } from '../rng/index.js';
 import type { IGameDataProvider, IGameModeProvider } from '../data/index.js';
-import { isStanceLegalFor } from '../data/index.js';
+import { isStanceLegalFor, resolveAbilityMechanics } from '../data/index.js';
 import {
   applyAbility,
   applyAttack,
@@ -21,6 +21,7 @@ import {
   legalMoves,
   legalTargets,
   nextActiveSide,
+  templateForMember,
   type AbilitySpec,
   type CombatHooks,
 } from '../rules/index.js';
@@ -336,6 +337,46 @@ export function legalActions(state: MatchState, side: Side, p: EngineProviders):
     }
   }
   actions.push({ type: 'end-turn', side });
+  return actions;
+}
+
+/**
+ * The castable ABILITY actions for a single token — a UI-facing enumeration. Like `set-stance`,
+ * abilities are reducer-accepted but deliberately NOT part of `legalActions`' AI/sim action space
+ * in v1 (so seeded sims/AI stay unchanged); the client lists them separately to drive a cast panel.
+ *
+ * For a living token on the ACTIVE side that still has its ACTION and isn't locked out, returns one
+ * `AbilityAction` per (authored active self/ally ability the token's template grants) × (valid
+ * recipient): a 'self' ability targets the caster; an 'ally' ability targets every living friendly
+ * token (including the caster — a cleric may cure itself). Enemy-targeted (offensive) abilities are
+ * deferred — they need range/targeting work — so v1 surfaces support casting (heals, self/ally buffs).
+ */
+export function legalAbilityActions(
+  state: MatchState,
+  tokenId: string,
+  p: EngineProviders,
+): AbilityAction[] {
+  const token = state.tokens.find((t) => t.instanceId === tokenId);
+  if (!token || token.side !== state.activeSide) return [];
+  if (!isLiving(token) || isLockedOut(state, tokenId) || token.hasActed) return [];
+
+  const templateId = token.kind === 'unit' ? token.templateId : token.members[0].templateId;
+  const abilities = templateForMember(templateId, p.data).abilities;
+  const friendly = state.tokens.filter((t) => t.side === token.side && isLiving(t));
+
+  const actions: AbilityAction[] = [];
+  for (const key of abilities) {
+    const m = resolveAbilityMechanics(key);
+    if (m.status !== 'authored' || m.usage !== 'active') continue;
+    if (m.targeting === 'self') {
+      actions.push({ type: 'ability', tokenId, abilityKey: key, target: tokenId });
+    } else if (m.targeting === 'ally') {
+      for (const ally of friendly) {
+        actions.push({ type: 'ability', tokenId, abilityKey: key, target: ally.instanceId });
+      }
+    }
+    // 'enemy' targeting deferred (v1) — offensive ability casting needs range gating.
+  }
   return actions;
 }
 

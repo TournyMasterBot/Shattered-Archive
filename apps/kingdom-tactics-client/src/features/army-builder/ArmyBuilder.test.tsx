@@ -45,6 +45,14 @@ describe('ArmyBuilder', () => {
     expect(screen.getByText(`Battlemage · ${battlemageCost} pts`)).toBeTruthy();
   });
 
+  it('tags an added unit with its picked deity and derived alignment', () => {
+    renderBuilder();
+    // Pick an Evil deity, then add a unit — the roster row shows the deity + its alignment.
+    fireEvent.change(screen.getByLabelText('Deity'), { target: { value: 'Drakkara' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add Warrior' }));
+    expect(screen.getByText(/Drakkara \(Evil\)/)).toBeTruthy();
+  });
+
   it('hides a class the selected race is forbidden from (Pixie cannot be a Warrior)', () => {
     renderBuilder();
     // Human can build Warrior…

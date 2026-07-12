@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
+  alignmentForGod,
+  godsByAlignment,
   rosterCost,
   validateRoster,
   type ArmyRoster,
@@ -47,6 +49,10 @@ export function ArmyBuilderScreen() {
 
   const [modeId, setModeId] = useState<GameModeId>('skirmish');
   const [raceKey, setRaceKey] = useState('Human');
+  // Deity applied to newly-added units (like Race). A unit's deity sets its alignment, which
+  // decides which of the three moons empowers it (White→Good, Red→Neutral, Black→Evil).
+  const [godKey, setGodKey] = useState('');
+  const godAlignment = alignmentForGod(godKey);
   // Each team fights for ONE allegiance (clan/kingdom/faction, or loner/renegade), stored per side.
   // It gates that team's CSR reclass picks; empty = unaffiliated (no CSR with an allegiance gate).
   const [allegianceBySide, setAllegianceBySide] = useState<Record<number, string>>({});
@@ -145,7 +151,8 @@ export function ArmyBuilderScreen() {
 
   const setSidePicks = (updater: (cur: Pick[]) => Pick[]) =>
     setPicksBySide((prev) => ({ ...prev, [side]: updater(prev[side] ?? []) }));
-  const add = (classKey: string) => setSidePicks((cur) => [...cur, { raceKey, classKey }]);
+  const add = (classKey: string) =>
+    setSidePicks((cur) => [...cur, { raceKey, classKey, ...(godKey ? { god: godKey } : {}) }]);
   const remove = (index: number) => setSidePicks((cur) => cur.filter((_, i) => i !== index));
 
   // Each team's allegiance context; a side with none mirrors side 0 (like its picks).
@@ -211,6 +218,22 @@ export function ArmyBuilderScreen() {
               </option>
             ))}
           </select>
+        </label>
+        <label>
+          Deity{' '}
+          <select aria-label="Deity" value={godKey} onChange={(e) => setGodKey(e.target.value)}>
+            <option value="">None (unaligned)</option>
+            {godsByAlignment().map((grp) => (
+              <optgroup key={grp.group} label={grp.group}>
+                {grp.gods.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          <span className="kt-muted"> {godKey ? `→ ${godAlignment}` : ''}</span>
         </label>
         <label>
           Allegiance{' '}
@@ -364,6 +387,11 @@ export function ArmyBuilderScreen() {
                   <span className="kt-unit-label">
                     {classNameOf.get(p.classKey) ?? p.classKey} · {costOf(p)} pts
                   </span>
+                  {p.god && (
+                    <span className="kt-muted" title={`Worships ${p.god} — ${alignmentForGod(p.god)}`}>
+                      {p.god} ({alignmentForGod(p.god)})
+                    </span>
+                  )}
                   <button
                     type="button"
                     className="kt-btn kt-btn--sm"

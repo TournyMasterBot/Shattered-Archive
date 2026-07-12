@@ -48,7 +48,7 @@ function state(b: Board): MatchState {
     tokens: [],
     turn: 1,
     activeSide: 0,
-    moon: { type: 'White', phase: 'FullMoon' },
+    moon: { gameHour: 0, sky: { Black: 'FullMoon', Red: 'FullMoon', White: 'FullMoon' } },
     rngState: 1,
     status: 'in-progress',
   };

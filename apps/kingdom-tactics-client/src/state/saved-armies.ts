@@ -8,6 +8,8 @@
 export interface ArmyPick {
   readonly raceKey: string;
   readonly classKey: string;
+  /** Optional DSL deity (GodKey) — sets the unit's alignment, hence which moon empowers it. */
+  readonly god?: string;
 }
 
 export interface SavedArmy {
@@ -46,7 +48,10 @@ export function saveArmy(name: string, picks: readonly ArmyPick[]): SavedArmy[] 
   const trimmed = name.trim();
   if (!trimmed) return readStore();
   const next = readStore().filter((a) => a.name !== trimmed);
-  next.push({ name: trimmed, picks: picks.map((p) => ({ raceKey: p.raceKey, classKey: p.classKey })) });
+  next.push({
+    name: trimmed,
+    picks: picks.map((p) => ({ raceKey: p.raceKey, classKey: p.classKey, ...(p.god ? { god: p.god } : {}) })),
+  });
   writeStore(next);
   return next;
 }
