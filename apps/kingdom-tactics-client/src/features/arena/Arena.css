@@ -65,6 +65,13 @@
   outline-offset: -2px;
 }
 
+/* A valid ENEMY recipient for an offensive ability being aimed. Dashed + warm orange so it reads
+   as a hostile cast, distinct from both the green support-cast target and a plain attack's solid red. */
+.kt-cell--ability-enemy {
+  outline: 2px dashed #ff8c42;
+  outline-offset: -2px;
+}
+
 .kt-cell--selected {
   outline: 2px solid #ffd23d;
   outline-offset: -2px;
@@ -160,4 +167,7 @@
 .kt-ability-hint {
   font-size: 0.8rem;
   color: #3ddc84;
+}
+.kt-ability-hint--enemy {
+  color: #ff8c42;
 }

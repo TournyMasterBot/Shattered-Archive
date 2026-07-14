@@ -27,7 +27,8 @@ export interface ArenaProps {
   /** The side the local human controls; interaction is enabled only while it is active. */
   readonly controllableSide: Side;
   readonly legalActionsFor: (tokenId: string) => Action[];
-  /** Castable abilities (heals / self+ally buffs) for a token; enables the ability-cast panel. */
+  /** Castable abilities (heals / self+ally buffs AND enemy-targeted offensive skills/spells) for a
+   * token; enables the ability-cast panel. Enemy targets are range-gated by the engine. */
   readonly legalAbilitiesFor?: (tokenId: string) => AbilityAction[];
   readonly onAct: (action: Action) => void;
   /** Default true; when false the board is display-only (no selection/acting). */
@@ -124,8 +125,19 @@ export function Arena({
     return map;
   }, [pendingAbility, abilityActions]);
 
-  /** Choose an ability to cast: a self-only cast fires immediately; anything with ally targets
-   * enters targeting mode (valid recipients highlight; the next ally click casts it). */
+  // Whether the ability now being aimed targets ENEMIES (→ red highlight + enemy-worded hint)
+  // rather than self/allies (→ green). Every target of a single ability shares one category, so
+  // the side of any highlighted recipient settles it.
+  const pendingTargetsEnemy = useMemo(() => {
+    for (const id of abilityTargets.keys()) {
+      const t = state.tokens.find((tk) => tk.instanceId === id);
+      if (t && t.side !== controllableSide) return true;
+    }
+    return false;
+  }, [abilityTargets, state.tokens, controllableSide]);
+
+  /** Choose an ability to cast: a self-only cast fires immediately; anything with ally OR enemy
+   * targets enters targeting mode (valid recipients highlight; the next target click casts it). */
   function chooseAbility(key: string): void {
     if (!selectedUnit) return;
     const forKey = abilityActions.filter((a) => a.abilityKey === key);
@@ -192,6 +204,8 @@ export function Arena({
             const isMove = moveTargets.has(key);
             const isAttack = token ? attackTargets.has(token.instanceId) : false;
             const isAbilityTarget = token ? abilityTargets.has(token.instanceId) : false;
+            const isEnemyAbilityTarget =
+              isAbilityTarget && token ? token.side !== controllableSide : false;
             const isSelected = token?.instanceId === selectedId;
             const isActivated = token !== undefined && token.instanceId === activatedId;
             const cls = [
@@ -199,7 +213,7 @@ export function Arena({
               `kt-terrain--${tile.terrain.toLowerCase()}`,
               isMove ? 'kt-cell--move' : '',
               isAttack ? 'kt-cell--attack' : '',
-              isAbilityTarget ? 'kt-cell--ability' : '',
+              isAbilityTarget ? (isEnemyAbilityTarget ? 'kt-cell--ability-enemy' : 'kt-cell--ability') : '',
               isSelected ? 'kt-cell--selected' : '',
               isActivated ? 'kt-cell--activated' : '',
             ]
@@ -275,8 +289,12 @@ export function Arena({
             ))}
           </div>
           {pendingAbility && (
-            <span className="kt-ability-hint" role="status">
-              Select a highlighted ally to cast {humanizeAbility(pendingAbility)}.
+            <span
+              className={`kt-ability-hint ${pendingTargetsEnemy ? 'kt-ability-hint--enemy' : ''}`}
+              role="status"
+            >
+              Select a highlighted {pendingTargetsEnemy ? 'enemy' : 'ally'} to cast{' '}
+              {humanizeAbility(pendingAbility)}.
             </span>
           )}
         </div>

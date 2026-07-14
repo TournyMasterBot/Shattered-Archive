@@ -9,6 +9,12 @@
  * ability simply consumes the caster's action with no effect — deterministic, sim-stable. Track
  * progress with `pnpm --filter @shatteredarchive/kingdom-tactics-engine ability:coverage`.
  *
+ * Range note (enemy-targeted only, see AbilityMechanics.range): most skills/spells are "in room"
+ * and set NO `range` — they inherit the caster's `attack.range` (melee 1, Mage cast 3). Only set it
+ * for exceptions: an "adjacent-room" skill → 2 (see Charge); a ranged artillery spell (fireball,
+ * blizzard, lightning bolt, the cones) → 5. Bows are NOT per-item here — bow reach is the Ranger
+ * class kit's `attack.range` (4).
+ *
  * v1 scope note: applied buff/maladiction STATUS keys (stunned/berserk/…) land on the token's
  * statuses[]; their downstream gameplay effects (a 'stunned' unit skipping activation, 'berserk'
  * raising attack) are read by turn-order/resolve in a FOLLOW-UP layer. Weapon masteries and other
@@ -52,6 +58,7 @@ export const AUTHORED_MECHANICS: Record<string, AbilityMechanics> = {
     usage: 'active',
     scaling: { power: 'str' },
     damage: { potency: 1.5 },
+    range: 2, // "adjacent-room" skill exception — a charge closes ground one tile beyond melee
     status: 'authored',
     notes: 'Mounted polearm charge — a heavy opening strike (potency 1.5).',
   },

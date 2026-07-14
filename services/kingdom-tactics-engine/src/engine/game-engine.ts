@@ -16,6 +16,7 @@ import { isStanceLegalFor, resolveAbilityMechanics } from '../data/index.js';
 import {
   applyAbility,
   applyAttack,
+  chebyshev,
   coordEquals,
   evaluateVictory,
   legalMoves,
@@ -346,10 +347,11 @@ export function legalActions(state: MatchState, side: Side, p: EngineProviders):
  * in v1 (so seeded sims/AI stay unchanged); the client lists them separately to drive a cast panel.
  *
  * For a living token on the ACTIVE side that still has its ACTION and isn't locked out, returns one
- * `AbilityAction` per (authored active self/ally ability the token's template grants) × (valid
- * recipient): a 'self' ability targets the caster; an 'ally' ability targets every living friendly
- * token (including the caster — a cleric may cure itself). Enemy-targeted (offensive) abilities are
- * deferred — they need range/targeting work — so v1 surfaces support casting (heals, self/ally buffs).
+ * `AbilityAction` per (authored active ability the token's template grants) × (valid recipient):
+ * a 'self' ability targets the caster; an 'ally' ability targets every living friendly token
+ * (including the caster — a cleric may cure itself); an 'enemy' (offensive) ability targets every
+ * living enemy within its effective reach — the ability's own `range` if authored, else the
+ * caster's weapon range (Chebyshev tiles) — so an out-of-range foe is not offered.
  */
 export function legalAbilityActions(
   state: MatchState,
@@ -361,8 +363,10 @@ export function legalAbilityActions(
   if (!isLiving(token) || isLockedOut(state, tokenId) || token.hasActed) return [];
 
   const templateId = token.kind === 'unit' ? token.templateId : token.members[0].templateId;
-  const abilities = templateForMember(templateId, p.data).abilities;
+  const template = templateForMember(templateId, p.data);
+  const abilities = template.abilities;
   const friendly = state.tokens.filter((t) => t.side === token.side && isLiving(t));
+  const enemies = state.tokens.filter((t) => t.side !== token.side && isLiving(t));
 
   const actions: AbilityAction[] = [];
   for (const key of abilities) {
@@ -374,8 +378,16 @@ export function legalAbilityActions(
       for (const ally of friendly) {
         actions.push({ type: 'ability', tokenId, abilityKey: key, target: ally.instanceId });
       }
+    } else {
+      // 'enemy': one action per LIVING enemy within the ability's effective reach —
+      // its own `range` if authored, else the caster's weapon range (Chebyshev tiles).
+      const reach = m.range ?? template.attack.range;
+      for (const enemy of enemies) {
+        if (chebyshev(token.pos, enemy.pos) <= reach) {
+          actions.push({ type: 'ability', tokenId, abilityKey: key, target: enemy.instanceId });
+        }
+      }
     }
-    // 'enemy' targeting deferred (v1) — offensive ability casting needs range gating.
   }
   return actions;
 }

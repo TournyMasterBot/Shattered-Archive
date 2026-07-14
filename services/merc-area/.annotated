@@ -1,0 +1,43 @@
+File Index
+
+/package.json
+Purpose: Pure dependency-free TypeScript library package for the Merc 2.4 area file format.
+
+/tsconfig.json
+Purpose: Build config enforcing isomorphic purity (types: [] — no node/DOM ambient types in shipped code).
+
+/tsconfig.jest.json
+Purpose: Test-only tsconfig adding node/jest types so tests can read fixture files.
+
+/jest.config.cjs
+Purpose: Self-contained node jest config (root config only collects -server/-client path segments).
+
+/src/reader.ts
+Purpose: Character reader mirroring db.c's fread_letter/number/flag/string/word/to_eol semantics exactly; throws line-numbered ParseError instead of exiting.
+
+/src/types.ts
+Purpose: Data model of the .are FILE grammar (words stored verbatim, flags numeric) plus item-type lookup tables driving the object value grammar.
+
+/src/parse.ts
+Purpose: parseAreaFile — faithful mirror of boot_db's section dispatch and every load_* function (AREA/HELPS/MOBILES/OBJECTS/ROOMS/RESETS/SHOPS/SPECIALS/SOCIALS/SCRIPTS).
+
+/src/emit.ts
+Purpose: emitAreaFile — produces db.c-bootable text; guarantee: parse(emit(parse(x))) deep-equals parse(x) and emission is byte-stable.
+
+/src/validate.ts
+Purpose: validateScripts — semantic #SCRIPTS checks mirroring mob_prog.c/area_reload.c (known trigger, mob in same file, 256-line budget); shared by server 400s and live client feedback.
+
+/src/index.ts
+Purpose: Public exports (types, Reader, parseAreaFile, emitAreaFile, validateScripts, errors).
+
+/src/parse.test.ts
+Purpose: Reader-primitive unit tests, fixture parses (limbo/midgaard), malformed-input rejection, and a parse sweep over every file in the live merc-mud area.lst.
+
+/src/scripts.test.ts
+Purpose: #SCRIPTS parse/emit/round-trip tests (multi-line bodies, absent-section purity, bad terminator/letter) plus validateScripts coverage.
+
+/src/roundtrip.test.ts
+Purpose: The core guarantee suite — semantic round trip + stable emit over fixtures and the entire merc-mud corpus.
+
+/src/__fixtures__/
+Purpose: Checked-in copies of limbo.are and midgaard.are for deterministic tests.

@@ -241,6 +241,13 @@ leading `cd` silently drifts the CWD for every later command — a recurring cau
 - Use **absolute paths** in commands (e.g. `ls /c/Projects/ShatteredArchive/apps`), or
 - wrap a directory change in a **subshell that does not persist**: `bash -c 'cd <dir> && <cmd>'`.
 
+**Path form for NATIVE Windows exes invoked from Bash.** Git-bash converts a `/c/...` token when
+it is the COMMAND, but passes it through verbatim as a string ARGUMENT — so `node -e
+'…readFileSync("/c/Projects/…")'` fails with `C:\c\Projects\…` (ENOENT). When a Windows binary
+(node.exe, etc.) receives a path as data, give it the **`C:/…` form** (or prefix the call with
+`MSYS_NO_PATHCONV=1`). The dedicated Read/Glob/Grep tools take `/c/…` fine — this only bites native
+exes reading a path you passed as an argument/string.
+
 ## Project overview (supplement)
 
 See `.github/copilot-instructions.md` for full project structure, branching policy,

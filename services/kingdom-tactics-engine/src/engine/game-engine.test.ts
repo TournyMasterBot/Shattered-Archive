@@ -207,6 +207,23 @@ describe('legalAbilityActions (UI-facing ability enumeration)', () => {
     expect(targets.has('en')).toBe(false); // never an enemy
   });
 
+  it('offers an enemy-targeted skill only against foes within its effective reach', () => {
+    // Warrior attack range is 1; Kick has no `range` (falls back to weapon reach), Charge has range 2.
+    const s = state([
+      unit('w', 'Human:Warrior', { x: 5, y: 5 }, 0),
+      unit('e1', 'Human:Warrior', { x: 6, y: 5 }, 1), // dist 1
+      unit('e2', 'Human:Warrior', { x: 7, y: 5 }, 1), // dist 2
+      unit('e3', 'Human:Warrior', { x: 8, y: 5 }, 1), // dist 3
+    ]);
+    const acts = legalAbilityActions(s, 'w', providers);
+    const kickTargets = new Set(acts.filter((a) => a.abilityKey === 'Kick').map((a) => a.target));
+    const chargeTargets = new Set(acts.filter((a) => a.abilityKey === 'Charge').map((a) => a.target));
+    // Kick (weapon reach 1) hits only the adjacent foe.
+    expect(kickTargets).toEqual(new Set(['e1']));
+    // Charge (range 2) reaches one tile farther — but never targets an ally or the caster.
+    expect(chargeTargets).toEqual(new Set(['e1', 'e2']));
+  });
+
   it('is empty once the unit has taken its action', () => {
     const s = state([unit('cl', 'Human:Cleric', { x: 5, y: 5 }, 0, { hasActed: true })]);
     expect(legalAbilityActions(s, 'cl', providers)).toEqual([]);

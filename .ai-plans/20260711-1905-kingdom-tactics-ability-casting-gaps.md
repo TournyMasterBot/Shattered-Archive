@@ -35,7 +35,7 @@ enemy and not an out-of-range one; engine + client suites green; docs/indexes/me
   so enemy casting needs enumeration + UI + AI only, not new resolution.
 
 ## Steps
-### [ ] 1. (CLAUDE) Range-gate + enumerate enemy-targeted abilities
+### [x] 1. (CLAUDE) Range-gate + enumerate enemy-targeted abilities
 - Do: add optional `range?: number` to `AbilityMechanics` (absent ⇒ fall back to the caster template's
   `attack.range`). In `legalAbilityActions`, replace the deferred `enemy` branch: for an authored active
   `enemy`-targeting ability, emit one `AbilityAction` per LIVING ENEMY within Chebyshev distance ≤ the
@@ -47,7 +47,7 @@ enemy and not an out-of-range one; engine + client suites green; docs/indexes/me
   a Mage offers an offensive ability on an in-range enemy but NOT an out-of-range one, and a Cleric's cure
   still lists no enemy target.
 
-### [ ] 2. (CLAUDE) Arena: cast an enemy-targeted ability
+### [x] 2. (CLAUDE) Arena: cast an enemy-targeted ability
 - Do: when the pending ability targets enemies, highlight the in-range enemy cells with a distinct class
   (e.g. `.kt-cell--ability-enemy`, red) and dispatch the `AbilityAction` on click, exactly like the ally path.
   Keep green for heals/buffs. Update the hint text ("Select a highlighted enemy…").
@@ -84,3 +84,29 @@ enemy and not an out-of-range one; engine + client suites green; docs/indexes/me
 ## Progress log
 
 - 2026-07-11T19:05:00-04:00 plan created
+- 2026-07-13 Step 1 DONE (Claude). Added optional `range?: number` to `AbilityMechanics`
+  (model/ability.ts; absent ⇒ caster template `attack.range`). Rewrote the deferred `enemy` branch in
+  `legalAbilityActions` (game-engine.ts): emits one `AbilityAction` per living enemy within
+  `chebyshev(caster.pos, enemy.pos) ≤ effective reach`; imported `chebyshev` from rules. Set `range: 2`
+  on Charge (mechanics.ts) to exercise the override vs weapon reach. New test in game-engine.test.ts:
+  a Human:Warrior offers Kick (weapon reach 1) only vs the adjacent foe but Charge (range 2) vs foes at
+  dist 1–2, never dist 3 / allies / self. Full engine suite green (266/266).
+- 2026-07-13 RANGE CONVENTION (user-confirmed design). MUD "room" scope → KT Chebyshev tiles:
+  most spells & skills are "in room" ⇒ OMIT `range`, inherit caster `attack.range` (melee 1, Mage cast 3,
+  Ranger bow 4). Exceptions set explicit `range`: an "adjacent-room" skill ⇒ weapon reach + 1 (=2 for
+  melee, e.g. Charge); a ranged artillery spell (fireball, blizzard, lightning bolt, the fire/cold/lightning
+  cones) ⇒ 5. Cones are a directional AoE SHAPE — `range` only gates reach; cone geometry is future
+  targeting-shape work. Bows are NOT per-item (items.json has no range field, verified) — bow reach is the
+  Ranger kit `attack.range` (4). Documented in model/ability.ts + balance/abilities/mechanics.ts headers.
+  No offensive Mage spells are authored yet, so the "5" tier is forward-looking guidance for that authoring.
+  Next: Step 2 (Arena UI).
+- 2026-07-13 Step 2 DONE (Claude). Arena now casts enemy-targeted abilities. The click-to-cast
+  plumbing (`abilityTargets` map → `handleCell`) was already target-agnostic, so no dispatch change
+  was needed; added only the visual/affordance split: a new `pendingTargetsEnemy` memo (derived from
+  the highlighted recipients' `side`), a per-cell `.kt-cell--ability-enemy` class (dashed warm-orange,
+  distinct from green support-cast and solid-red plain attack), and enemy-worded hint text
+  ("Select a highlighted enemy to cast …"). Files: Arena.tsx, Arena.css. New test in Arena.test.tsx:
+  a warrior with a stubbed enemy-targeted Kick highlights the foe with `.kt-cell--ability-enemy` (0
+  green cells), shows the "enemy" hint, and emits the `ability` action on click. Client arena suite
+  green (9/9). Test stubs `legalAbilitiesFor` on purpose — range-gating is engine-tested (step 1), and
+  the Arena is pure presentation over whatever the enumerator returns. Next: Step 3 (GreedyPolicy heal).

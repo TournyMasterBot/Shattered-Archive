@@ -5,6 +5,7 @@ import {
   createRng,
   legalActions,
   legalAbilityActions,
+  type AbilityAction,
   type Action,
   type ArmyRoster,
   type MoveAction,
@@ -131,6 +132,46 @@ describe('Arena', () => {
       tokenId: 's0-u0',
       abilityKey: 'CureLight',
       target: 's0-u1',
+    });
+  });
+
+  it('casts an enemy-targeted skill: highlights the foe (red) and emits the ability on click', () => {
+    const state = duel();
+    // Range-gating is the engine's job (covered in game-engine.test.ts); the UI just renders
+    // whatever `legalAbilitiesFor` returns, so stub one enemy-targeted Kick against the side-1 foe.
+    const enemy = state.tokens.find((t) => t.side === 1)!;
+    const abilitiesFor = (id: string): AbilityAction[] =>
+      id === 's0-u0'
+        ? [{ type: 'ability', tokenId: 's0-u0', abilityKey: 'Kick', target: enemy.instanceId }]
+        : [];
+    const acts: Action[] = [];
+    render(
+      <Arena
+        state={state}
+        controllableSide={0}
+        legalActionsFor={legalFor(state)}
+        legalAbilitiesFor={abilitiesFor}
+        onAct={(a) => acts.push(a)}
+      />,
+    );
+
+    // Select our warrior → its ability panel offers Kick; choose it to enter targeting.
+    const self = state.tokens.find((t) => t.instanceId === 's0-u0')!;
+    fireEvent.click(screen.getByLabelText(new RegExp(`\\(${self.pos.x},${self.pos.y}\\)`)));
+    fireEvent.click(screen.getByRole('button', { name: 'Cast Kick' }));
+
+    // The foe highlights with the ENEMY class (not the green support class), and the hint says "enemy".
+    expect(document.querySelectorAll('.kt-cell--ability-enemy')).toHaveLength(1);
+    expect(document.querySelectorAll('.kt-cell--ability')).toHaveLength(0);
+    expect(screen.getByRole('status').textContent).toMatch(/highlighted enemy to cast Kick/);
+
+    // Clicking the highlighted enemy casts the ability on it.
+    fireEvent.click(screen.getByLabelText(new RegExp(`\\(${enemy.pos.x},${enemy.pos.y}\\)`)));
+    expect(acts).toContainEqual({
+      type: 'ability',
+      tokenId: 's0-u0',
+      abilityKey: 'Kick',
+      target: enemy.instanceId,
     });
   });
 

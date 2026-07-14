@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    "lib": ["ES2023"],
+
+    // Pure/isomorphic: NO ambient node/DOM types in shipped code. The parser and
+    // emitter operate on strings only (no fs); I/O belongs to the callers. This
+    // guard keeps the library embeddable in the browser client as-is.
+    "types": [],
+
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/__fixtures__/**", "dist", "node_modules"]
+}

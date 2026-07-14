@@ -67,6 +67,16 @@ export interface AbilityMechanics {
   readonly category: AbilityCategory;
   readonly targeting: AbilityTargeting;
   readonly usage: AbilityUsageKind;
+  /** Reach in Chebyshev (king-move) tiles for an enemy-targeted ability. Absent ⇒ fall back to
+   * the caster template's `attack.range`. Ignored for self/ally targeting.
+   *
+   * Convention (MUD "room" scope → KT tiles): most spells and skills are "in room" and OMIT this
+   * (a melee skill then reaches its weapon range 1; a Mage's ordinary spell reaches its casting
+   * range 3). Set it only for the exceptions: a skill that hits an "adjacent room" → weapon reach
+   * + 1 (e.g. 2 for a melee class, as on Charge); a ranged artillery spell (fireball, blizzard,
+   * lightning bolt, the fire/cold/lightning cones) → 5. (Cones are a directional AoE SHAPE — this
+   * scalar only gates their reach; the cone geometry itself is future targeting-shape work.) */
+  readonly range?: number;
   readonly scaling: { readonly power?: ScalingAttr; readonly save?: ScalingAttr };
   readonly damage?: AbilityDamageSpec;
   readonly maladiction?: AbilityMaladictionSpec;

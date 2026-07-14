@@ -1,0 +1,51 @@
+.mb-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.mb-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--mb-border, #3a3a4a);
+}
+
+.mb-header h1 {
+  font-size: 1.15rem;
+  margin: 0;
+}
+
+.mb-nav {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.mb-nav-item {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  color: inherit;
+  font-size: 0.95rem;
+}
+
+.mb-nav-item:hover {
+  border-color: var(--mb-border, #3a3a4a);
+}
+
+.mb-nav-item--active {
+  border-color: var(--mb-accent, #7a6cff);
+  color: var(--mb-accent, #7a6cff);
+}
+
+.mb-main {
+  flex: 1;
+  padding: 1.25rem;
+}
+
+.mb-placeholder {
+  opacity: 0.7;
+}
