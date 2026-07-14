@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    "lib": ["ES2023"],
+    // Tests run under node and read fixture files from disk.
+    "types": ["jest", "node"],
+
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
+    "noEmit": true
+  }
+}

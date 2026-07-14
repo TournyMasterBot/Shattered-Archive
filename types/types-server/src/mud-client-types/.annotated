@@ -1,0 +1,19 @@
+File Index
+
+/mud-client-app.d.ts
+Purpose: Defines TypeScript interfaces for MUD client application and service configuration.
+
+/mud-client-app.js
+Purpose: This file initializes the mud client application with strict mode and ES module support.
+
+/mud-client-app.ts
+Purpose: This file defines the TypeScript interfaces for a MUD client application and its service components.
+
+/telnet-client.d.ts
+Purpose: Defines TypeScript interfaces and types for a telnet client implementation.
+
+/telnet-client.js
+Purpose: This file exports a TypeScript module for a telnet client implementation.
+
+/telnet-client.ts
+Purpose: Provides TypeScript interfaces and methods for implementing a telnet client with MUD server communication capabilities.

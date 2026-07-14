@@ -1,0 +1,4 @@
+File Index
+
+/Arena.tsx
+Purpose: Grid battlefield renderer + click interaction over a MatchState — select a friendly unit to highlight legal moves/attacks and dispatch move/attack/end-turn, plus a free-minor-action stance panel (legal stances for the selected own unit, incl. Brewmaster) and an ability-cast panel (via legalAbilitiesFor: pick a heal/buff → valid allies highlight green → click one to cast, e.g. a Cleric's Cure Light). Each token shows a short class glyph (Warrior→"War") with an HP corner badge, and its cell tooltip/aria-label names the class + friend/foe owner so units are distinguishable at a glance. Pure presentation; asks the engine for legality.

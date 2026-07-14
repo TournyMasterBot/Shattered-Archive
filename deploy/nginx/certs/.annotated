@@ -1,0 +1,7 @@
+File Index
+
+/shatteredarchive.dev-key.pem
+Purpose: This file contains a private key for cryptographic authentication and encryption purposes.
+
+/shatteredarchive.dev.pem
+Purpose: This file contains a development certificate for the shatteredarchive.dev domain.

@@ -51,6 +51,7 @@ services:
           - web-server.shatteredarchive.dev
       sa-shared: {}
 
+    restart: unless-stopped
     healthcheck:
       interval: 10s
       timeout: 3s
@@ -74,6 +75,7 @@ services:
         VITE_ENV: "development"
     image: shatteredarchive-prod-game-client
     container_name: shatteredarchive-prod-game-client
+    restart: unless-stopped
     networks:
       shatteredarchive-prod:
         aliases:
@@ -90,6 +92,7 @@ services:
         VITE_ENV: "docker"
     image: shatteredarchive-prod-web-client
     container_name: shatteredarchive-prod-web-client
+    restart: unless-stopped
     networks:
       shatteredarchive-prod:
         aliases:
@@ -115,8 +118,10 @@ services:
       GAME_PROXY_ALLOW_ALL: "false"
       LOG_DATE_PARTITIONED: "true"
       LOG_RESPECT_SOH: "true"
+      CORS_ORIGIN: "https://game-client.shatteredarchive.dev,https://web-client.shatteredarchive.dev"
     expose:
       - "31000"
+    restart: unless-stopped
     networks:
       shatteredarchive-prod:
         aliases:
@@ -145,8 +150,10 @@ services:
       NODE_ENV: production
       PORT: "41000"
       LOG_LEVEL: "info"
+      CORS_ORIGIN: "https://game-client.shatteredarchive.dev,https://web-client.shatteredarchive.dev"
     expose:
       - "41000"
+    restart: unless-stopped
     networks:
       shatteredarchive-prod:
         aliases:

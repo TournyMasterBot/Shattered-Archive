@@ -1,0 +1,1 @@
+The data folder contains core game assets and unit templates that define the game's mechanics and content. It serves as the central repository for all static game data that other modules reference during runtime. The index.ts file provides unified access to this data, while game-data-provider.test.ts ensures its integrity through automated validation.

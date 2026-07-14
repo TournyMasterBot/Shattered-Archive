@@ -1,0 +1,13 @@
+File Index
+
+/event-dispatcher.ts
+Purpose: Centralized event dispatcher and listener manager for browser-based game client.
+
+/event-get-registry.ts
+Purpose: Provides HMR-safe global event listener registry access.
+
+/event-get-stack-trace.ts
+Purpose: Provides stack trace information for event listeners in TypeScript applications.
+
+/event-should-trace-dispatch.ts
+Purpose: Determines whether event tracing is enabled by checking local storage configuration.

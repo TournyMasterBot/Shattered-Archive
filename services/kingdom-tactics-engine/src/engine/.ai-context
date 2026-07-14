@@ -1,0 +1,1 @@
+The engine folder contains the core game logic that processes player actions and enforces game rules for a turn-based strategy game. It serves as the central processing unit that handles all game state transitions and action validations. The folder includes both the main game engine implementation and its corresponding tests to ensure reliable gameplay mechanics.

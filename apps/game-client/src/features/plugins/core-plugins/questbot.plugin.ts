@@ -1514,9 +1514,18 @@ export function createQuestBotPlugin(): IPluginModule {
       }
     }
 
-    // Quest confirmed complete → gem merchant + rest
+    // Quest item handed to taskmaster (deafness-safe) → gem merchant + rest
+    if (state === 'turning-in' && /^You hand .+ to .+\.$/.test(line)) {
+      debug(api, 'Quest item handed to taskmaster — heading home');
+      state = 'idle';
+      completeQuestAndRest(api);
+      return;
+    }
+
+    // Fallback: taskmaster speech line (filtered when deafened)
     if (state === 'turning-in' && line.includes('Congratulations on completing the quest!')) {
-      debug(api, 'Quest complete — heading home');
+      debug(api, 'Quest complete (speech) — heading home');
+      state = 'idle';
       completeQuestAndRest(api);
       return;
     }

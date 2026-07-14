@@ -1,0 +1,1 @@
+The 'web-server' folder contains the core backend application that handles HTTP requests and serves the web interface. It's the main executable component that runs the application and manages all server-side functionality. The folder includes configuration files for TypeScript compilation and dependency management that enable the server to run properly.

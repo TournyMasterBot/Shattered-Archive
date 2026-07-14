@@ -1,0 +1,7 @@
+File Index
+
+/index.ts
+Purpose: This file exports a server greeting function and ANSI stripping utility.
+
+/strip-ansi.ts
+Purpose: Removes ANSI escape codes from input string.

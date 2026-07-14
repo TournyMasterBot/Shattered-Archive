@@ -1,0 +1,7 @@
+File Index
+
+/index.ts
+Purpose: Exports all members from the plugin-base module for unified access.
+
+/plugin-base.ts
+Purpose: Defines core types and interfaces for plugin architecture and runtime API.

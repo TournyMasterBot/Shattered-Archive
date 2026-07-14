@@ -1,0 +1,135 @@
+.kt-sim {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.kt-sim-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.kt-sim-config {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.75rem;
+  background: #1b2130;
+  border-radius: 6px;
+}
+
+.kt-sim-config input[type='number'] {
+  width: 5rem;
+}
+
+.kt-sim-policies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.kt-sim-progress {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.kt-sim-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.kt-sim-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.kt-sim-bar-row {
+  display: grid;
+  grid-template-columns: 4rem 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.kt-sim-bar-track {
+  display: block;
+  height: 1rem;
+  background: #2a3346;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.kt-sim-bar-fill {
+  display: block;
+  height: 100%;
+  background: #4da3ff;
+}
+
+.kt-sim-bar-fill--s0 {
+  background: #2f6fed;
+}
+.kt-sim-bar-fill--s1 {
+  background: #d63a3a;
+}
+.kt-sim-bar-fill--s2 {
+  background: #2fae6a;
+}
+.kt-sim-bar-fill--s3 {
+  background: #b061e0;
+}
+
+.kt-sim-bar-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+}
+
+.kt-sim-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin: 0;
+}
+
+.kt-sim-stats div {
+  display: flex;
+  flex-direction: column;
+}
+
+.kt-sim-stats dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+.kt-sim-stats dd {
+  margin: 0;
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.kt-sim-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.kt-sim-table caption {
+  text-align: left;
+  opacity: 0.7;
+  padding-bottom: 0.25rem;
+}
+
+.kt-sim-table th,
+.kt-sim-table td {
+  text-align: left;
+  padding: 0.2rem 0.5rem;
+  border-bottom: 1px solid #2a3346;
+}

@@ -1,0 +1,4 @@
+File Index
+
+/index.ts
+Purpose: Entry point for the game server application that initializes environment configuration, Express service, and WebSocket gateway for MUD client proxying.

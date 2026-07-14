@@ -1,0 +1,7 @@
+File Index
+
+/chat-line.ts
+Purpose: Defines the structure for chat message data in the shattered archive game client.
+
+/command-input-props.ts
+Purpose: Defines the props interface for the command input component with auto-leveling and chat functionality.

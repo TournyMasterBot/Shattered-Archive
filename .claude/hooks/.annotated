@@ -1,0 +1,13 @@
+File Index
+
+/method-annotate-queue.js
+Purpose: Updates a queue file with workspace paths of edited code files for method annotation.
+
+/plan-context.js
+Purpose: Injects active plan status into AI prompts to enable continuation of ongoing work.
+
+/qdigest-guard.js
+Purpose: Prevents unauthorized use of long-output commands unless wrapped in qdigest.sh.
+
+/read-pack-guard.js
+Purpose: Prevents expensive full reads of large files by redirecting to cheaper alternative access patterns.

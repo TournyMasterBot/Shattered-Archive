@@ -1,0 +1,64 @@
+File Index
+
+/armor.ts
+Purpose: Defines armor class multipliers and slot weights for damage mitigation calculations.
+
+/auras.test.ts
+Purpose: Tests aura catalog lookups (shield vs reactive) and damage-type filter matching.
+
+/auras.ts
+Purpose: Authored aura catalog — shielding (negate/reduce by damage type) + reactive (thorns) auras, plus lookups and a damage-type filter matcher for the combat hooks.
+
+/class-kits.ts
+Purpose: Hand-authored tactical class kits (5) + defaultClassKit() deriving a playable kit for every other mortal class from its DSL classGroup archetype + armor tier, so no class lacks a kit.
+
+/legality.ts
+Purpose: Race×class legality for army building — raceRestrictions FORBID + csr.requiresRaces ALLOW + CSR gate on a team's single allegiance (religion rolled up); isLegalRaceClass/legalClassesForRace/legalRacesForClass.
+
+/legality.test.ts
+Purpose: Tests restriction semantics — forbidden races, requiresRaces allow-list, CSR gating with/without affiliation context, and the legal-classes/legal-races helpers.
+
+/defenses.test.ts
+Purpose: Tests dodge/parry/block chances (dex + armor scaling) and the seeded rollAvoidance sequence.
+
+/defenses.ts
+Purpose: Authored avoidance tuning (DEFENSE_CONSTANTS) — dodge/parry/shield-block chances + a seeded rollAvoidance the combat hooks roll against.
+
+/modes.ts
+Purpose: Defines all game modes' configurations for the simulation system.
+
+/moon-effects.ts
+Purpose: Legacy single-moon magi spell-power multiplier by phase (consumed by rules/damage.ts). Superseded conceptually by moons.ts; reconciliation pending.
+
+/moons.ts
+Purpose: Faithful three-moon model (DSL Moon.cs) — Black/Red/White each govern one alignment (Evil/Neutral/Good) and cycle on their own clock (33/45/54 h per phase); per-phase cast-level/saves/mana bonuses + per-position mana-regen; moonSkyAt/moonPhaseAt/moonBonusForAlignment give a unit the bonus of the one moon matching its alignment.
+
+/moons.test.ts
+Purpose: Tests the three-moon model — alignment↔moon mapping, distinct cadences + independent phase drift, per-phase/position bonus tables, and alignment-keyed bonus selection.
+
+/race-modifiers.ts
+Purpose: Defines racial stat modifiers and traits that adjust class-based character attributes.
+
+/casting.ts
+Purpose: Caster-level model — computeCastingLevel = round(LEVEL_CAP 51 × class cast factor) + elf (+1); class affinity (+1) is a distinct DSL concept not yet distilled (NOT the damage boosts). Below-level casters (DSL CastsAtLevel=false) use their CastingLevelModifier.
+
+/racial-traits.ts
+Purpose: Authored tactical effects of distilled DSL racial abilities — Toughness (dwarves) → KT defense via a principled DSL-AC→defense conversion (ktDefenseFromDslAc: DSL neg AC = better, ~10 AC≈1%, KT ac/AC_DIVISOR(40); -25 AC ⇒ +1 defense). isElfRace + defense/trait folding for unitTemplate.
+
+/reclass-kits.ts
+Purpose: Defines reclass kit overrides for specialized class modifications.
+
+/religion.ts
+Purpose: Maps a unit's DSL deity (god) to the moral alignment its worshipper holds (Good/Neutral/Evil; Chaos/unknown → Mixed/unaligned) — the axis the three moons key off. alignmentForGod + godsByAlignment (grouped picker for the army builder).
+
+/stances.ts
+Purpose: Combat stance catalog — Normal/Offensive/Defensive (all units) + Brewmaster Drunken Monkey/Sloshing/Cripple; each carries to-hit/evasion (avoidance) + damage dealt/taken mods. Normal is a no-op. stanceMod/stancesForClass/isStanceLegalFor.
+
+/stances.test.ts
+Purpose: Tests the stance catalog — normal is all-zero, offensive/defensive mirror-signed and general, Brewmaster stances gated to Brewmasters.
+
+/terrain.ts
+Purpose: Defines tactical terrain properties for a 2D battlefield grid.
+
+/unit-costs.ts
+Purpose: Unit cost models — classPointCost (SOURCE OF TRUTH for army-building budget: base classes flat 10, reclasses 10 + surcharge scaled from DSL BaseCpModifier tier) + the older stat-derived computeUnitCost (power metric).

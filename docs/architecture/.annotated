@@ -1,0 +1,4 @@
+File Index
+
+/Emitted Events.md
+Purpose: This file maps the event flow from MUD server to browser client including all transformations and routing rules.

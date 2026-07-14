@@ -1,0 +1,155 @@
+# Flows — hooks
+
+<!-- Human-oriented interaction diagrams for the non-trivial files here. Auto-generated
+     by passive_flows / document_flows; a section regenerates when its file changes.
+     Do not hand-edit a "## <file>" section — it is replaced wholesale. -->
+
+## useEquipmentDeltas.ts
+@flow-hash: 4012d14b
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Terminal
+    participant useEquipmentDeltas
+    participant EventDispatcher
+    participant EquipmentStore
+    participant EquipmentProfile
+    participant EqDeltaParser
+    participant TerminalTextExtractor
+
+    User->>Terminal: Sends raw terminal data
+    Terminal->>useEquipmentDeltas: Receives 'shatteredarchive:raw-data' event
+    useEquipmentDeltas->>TerminalTextExtractor: Extracts text from terminal chunk
+    TerminalTextExtractor-->>useEquipmentDeltas: Extracted text lines
+    useEquipmentDeltas->>EqDeltaParser: Parses each line for equipment deltas
+    EqDeltaParser-->>useEquipmentDeltas: Parsed delta events
+    useEquipmentDeltas->>EquipmentStore: Reads current equipment state
+    useEquipmentDeltas->>EquipmentProfile: Gets snapshot data
+    alt Event Type
+        useEquipmentDeltas->>EquipmentStore: Updates equipment state (wield, wear, etc.)
+        useEquipmentDeltas->>EquipmentStore: Patches snapshot data
+        useEquipmentDeltas->>EventDispatcher: Dispatches relevant events (wield, wear, remove, etc.)
+    end
+    EventDispatcher-->>User: Notifies UI of equipment changes
+```
+
+Caption: The hook listens for terminal updates, parses equipment deltas, and synchronizes state and snapshots while dispatching UI events.
+
+## useGameConnection.ts
+@flow-hash: e26904b9
+
+```mermaid
+sequenceDiagram
+    participant H as React Hook (useGameConnection)
+    participant E as EventEmitter
+    participant W as WebSocket
+    participant S as Game Server
+    participant D as DSL Processor
+    participant T as Terminal Writer
+
+    H->>W: Creates WebSocket connection
+    W->>S: Connects via ws:// or wss://
+    S->>W: Sends 'connect' message
+    W->>H: Triggers 'open' event
+    H->>E: Dispatches 'game:remote-server:open'
+
+    H->>W: Sends 'data' message
+    W->>S: Forwards data
+    S->>W: Sends 'raw' or 'gmcp' message
+    W->>H: Triggers 'message' event
+    H->>E: Dispatches 'game:remote-server:raw' or 'game:remote-server:gmcp'
+
+    H->>E: Listens for 'shatteredarchive:send-command'
+    E->>D: Processes DSL to ANSI
+    D->>T: Writes to terminal
+    H->>W: Sends command via WebSocket
+
+    H->>W: Calls disconnect()
+    W->>S: Closes connection
+    W->>H: Triggers 'close' event
+    H->>E: Dispatches 'game:remote-server:close'
+```
+
+Caption: The React hook manages a WebSocket connection to a game server, handling data flow between the client, server, and UI components via event emitters and terminal rendering.
+
+## useMainContainer.ts
+@flow-hash: ccb13052
+
+```mermaid
+sequenceDiagram
+    participant ReactComponent
+    participant useMainContainer
+    participant localStorage
+    participant initBrowserLuaRunner
+    participant ensureAudioRuntimeAttached
+    participant getAccessibilitySettings
+    participant buildAccessibilityCss
+    participant ensureStyleTag
+    participant applyUserCss
+    participant applyCombinedCss
+
+    ReactComponent->>useMainContainer: Hook called
+    useMainContainer->>localStorage: Read rightPaneWidth
+    useMainContainer->>localStorage: Read bottomPaneHeight
+    useMainContainer->>initBrowserLuaRunner: Initialize Lua runtime
+    useMainContainer->>ensureAudioRuntimeAttached: Attach audio runtime
+    useMainContainer->>getAccessibilitySettings: Get accessibility settings
+    useMainContainer->>buildAccessibilityCss: Build accessibility CSS
+    useMainContainer->>ensureStyleTag: Ensure style tag exists
+    useMainContainer->>applyUserCss: Apply user CSS
+    useMainContainer->>applyCombinedCss: Combine and apply all CSS
+    localStorage->>useMainContainer: Return layout values
+    ReactComponent->>useMainContainer: Return layout vars and handlers
+    ReactComponent->>useMainContainer: Return menu state handlers
+    ReactComponent->>useMainContainer: Return CSS override handlers
+    useMainContainer->>localStorage: Save layout changes
+    useMainContainer->>localStorage: Save user CSS
+    ReactComponent->>useMainContainer: Return modal open/close handlers
+```
+
+Caption: The main container hook orchestrates layout sizing, menu state, user CSS overrides, and modal management while interacting with browser storage and external runtime initialization.
+
+## useUserScriptSandbox.ts
+@flow-hash: 30b5a2bf
+
+```mermaid
+sequenceDiagram
+    participant H as Human (UI)
+    participant R as React Hook (useUserScriptSandbox)
+    participant LS as localStorage
+    participant RS as RuntimeSingleton
+    participant GE as GameEmitter
+    participant GS as GlobalScriptsStore
+    participant UV as UserVariablesStore
+    participant API as External API (fetch)
+
+    H->>R: Load scripts
+    R->>LS: Get scripts from localStorage
+    LS-->>R: Return scripts or empty array
+    R->>R: Set scripts state
+
+    H->>R: Create/Update/Delete script
+    R->>R: Update scripts state
+    R->>LS: Save scripts to localStorage
+    LS-->>R: Confirm save
+
+    R->>GE: Listen for socket events
+    GE-->>R: socket open/close
+
+    H->>R: Run script
+    R->>R: Make API base
+    R->>RS: Run script via RuntimeSingleton
+    RS->>GS: Access global vars
+    GS-->>RS: Return global var value
+    RS->>UV: Get user variables
+    UV-->>RS: Return snapshot
+    RS->>API: Make HTTP request
+    API-->>RS: Return response
+    RS->>R: Return result
+
+    R->>GE: Dispatch events (send-command, write-terminal)
+    GE-->>H: UI updates
+```
+
+Caption: The human interacts with the user script sandbox through UI actions, which triggers React hooks to manage scripts, persist them to localStorage, and execute them via RuntimeSingleton, with interaction

@@ -1,0 +1,1 @@
+The 'S Ocean' folder contains the areas.json file which defines the names and structure of game areas for the software project. This folder serves as a centralized location for managing all game area data and configurations. The areas.json file acts as a foundational component that other parts of the project can reference to understand the game world's layout and organization.

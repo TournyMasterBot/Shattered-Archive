@@ -1,0 +1,16 @@
+File Index
+
+/coverage-final-to-summary.cjs
+Purpose: Converts coverage-final.json to coverage-summary.json with percentage calculations.
+
+/fetch-dependabot-alerts.ps1
+Purpose: Fetches and logs open Dependabot security alerts for Shattered-Archive.
+
+/list-coverage-summaries.cjs
+Purpose: Generates a list of coverage summary file paths found in the coverage directory.
+
+/merge-coverage-summary.cjs
+Purpose: Merges multiple coverage summary files into a single report.
+
+/split-coverage-final.cjs
+Purpose: Processes Jest coverage data to generate summarized reports per workspace.

@@ -1,0 +1,1 @@
+The pages folder holds top-level screen components that compose features and state into a full surface. In Part A it contains the MainMenu landing screen; match/builder/scenario surfaces live under features/ and are routed by App.tsx via the nav store.

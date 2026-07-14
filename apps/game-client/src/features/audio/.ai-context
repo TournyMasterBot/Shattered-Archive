@@ -1,0 +1,1 @@
+The audio folder contains all components necessary for managing sound effects and audio playback within the application. It handles everything from initializing audio systems and storing user preferences to generating beeps and managing audio assets. The folder provides a complete audio management solution that integrates with the game client's runtime and persists user settings.

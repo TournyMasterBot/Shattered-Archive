@@ -1,0 +1,22 @@
+File Index
+
+/batch-simulator.test.ts
+Purpose: Tests batch match simulation and AI policy performance.
+
+/batch-simulator.ts
+Purpose: Runs multiple seeded matches to evaluate and tune game balance.
+
+/match-simulator.test.ts
+Purpose: Tests match simulation logic with deterministic AI policies and edge cases.
+
+/match-simulator.ts
+Purpose: Simulates a complete match between AI policies using a deterministic game engine.
+
+/scenario-simulator.test.ts
+Purpose: Tests the ScenarioSimulator's ability to simulate game moves and track state changes.
+
+/scenario-simulator.ts
+Purpose: Simulates game matches under manual control of both sides with full history tracking.
+
+/types.ts
+Purpose: Defines the structure and types for match simulation results and outcomes.

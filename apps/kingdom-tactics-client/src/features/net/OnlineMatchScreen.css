@@ -1,0 +1,40 @@
+.kt-online {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.kt-online-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.kt-online-connect {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 28rem;
+}
+
+.kt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.kt-field input {
+  padding: 0.4rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid var(--kt-border, #444);
+  background: var(--kt-input-bg, #1b1b1f);
+  color: inherit;
+}
+
+.kt-online-status {
+  font-size: 0.95rem;
+  opacity: 0.85;
+}

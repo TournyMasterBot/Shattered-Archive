@@ -1,0 +1,3 @@
+# File Index — apps/kingdom-tactics-server/src
+
+- index.ts — Server entry: loads .env(+override), builds a Winston Logger, bootstraps the Express service via `getConfigFromEnv`/`createExpressService` (services-server) with `/` and `/health`, starts listening, and mounts the `/ws/kt` authoritative match gateway (`setupKtWebSocketGateway`) on the returned http.Server.

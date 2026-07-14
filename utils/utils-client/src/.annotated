@@ -1,0 +1,10 @@
+File Index
+
+/ansi-to-html.ts
+Purpose: Converts ANSI formatted strings to styled HTML output with customizable colors and options.
+
+/index.ts
+Purpose: This file exports client greeting functionality and utility functions for ANSI color code handling.
+
+/strip-ansi.ts
+Purpose: Removes ANSI escape codes from strings to strip colors and formatting.

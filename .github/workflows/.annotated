@@ -1,0 +1,4 @@
+File Index
+
+/ci-test-coverage.yml
+Purpose: This file automates test execution and coverage reporting for pull requests and pushes to specific branches.

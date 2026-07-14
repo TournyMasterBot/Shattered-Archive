@@ -1,0 +1,34 @@
+File Index
+
+/docker notes.md
+Purpose: Docker command reference for building, running, and managing project containers.
+
+/docker-compose.shattered-archive-experimental.yml
+Purpose: Experimental Docker Compose stack for Shattered Archive development/testing; also the ONLY place MUD_WRITE_ENABLED=true is set (mud-builder-server service, sharing C:/Projects/merc-mud/2.4/area with the separately-composed game).
+
+/mud-builder-server.Dockerfile
+Purpose: Digest-pinned multi-stage build of the MUD Builder API server (node alpine, pnpm via strict corepack, port 61000); write gate deliberately unset in the image.
+
+/mud-builder-client.Dockerfile
+Purpose: Digest-pinned multi-stage build of the MUD Builder UI (vite build → nginx static, no VITE_ args — the client calls /api relatively and the edge routes it).
+
+/docker-compose.yml
+Purpose: This file orchestrates a production deployment of a web and game archive platform using Docker containers and nginx reverse proxy.
+
+/game-client.Dockerfile
+Purpose: This Dockerfile builds and deploys the game client application with Node.js and Nginx.
+
+/game-server.Dockerfile
+Purpose: This Dockerfile builds and runs the game server application in a production environment.
+
+/index.html
+Purpose: This HTML file serves as a local development setup guide for the ShatteredArchive project.
+
+/nginx.Dockerfile
+Purpose: Nginx Dockerfile configuring SSL, logging, and entrypoint for edge subdomains.
+
+/web-client.Dockerfile
+Purpose: Dockerfile for building and serving the web client application with Node.js and Nginx.
+
+/web-server.Dockerfile
+Purpose: This Dockerfile builds and runs the web server application in a production environment.

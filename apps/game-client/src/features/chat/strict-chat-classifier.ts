@@ -33,6 +33,7 @@ export function classifyStrictChatSubtype(rawLine: string): ChatSubtype | undefi
   if (textContainsString(s, "You say '")) return 'say';
   if (textContainsString(s, 'You say (')) return 'say';
   if (textContainsString(s, ' says in ')) return 'say';
+  if (textContainsString(s, " says sweetly '")) return 'say';
 
   // GTELL
   if (textContainsString(s, ' tells the group ')) return 'gtell';

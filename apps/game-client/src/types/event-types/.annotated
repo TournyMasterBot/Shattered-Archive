@@ -1,0 +1,25 @@
+File Index
+
+/game-remote-server-close.ts
+Purpose: Defines the structure for remote server close events in the game client.
+
+/game-remote-server-error.ts
+Purpose: Defines the structure for remote server error events in the game client.
+
+/game-remote-server-gmcp.ts
+Purpose: Defines the structure for GMCP event data exchanged between game client and remote server.
+
+/game-remote-server-raw.ts
+Purpose: Defines the structure for raw game server events with timestamp and payload fields.
+
+/shattered-archive-gmcp-data.ts
+Purpose: Defines the structure for Shattered Archive GMCP data received from user scripts.
+
+/shattered-archive-raw-data.ts
+Purpose: Defines the structure for raw data objects in the shattered archive system.
+
+/shattered-archive-server-closed.ts
+Purpose: Defines the data structure for shattered archive server closure events.
+
+/shattered-archive-server-error.ts
+Purpose: Defines the structure for shattered archive server error messages.

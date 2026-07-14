@@ -1,0 +1,19 @@
+File Index
+
+/normalizePluginModule.ts
+Purpose: Normalizes plugin module structure and validates data types for consistent plugin handling.
+
+/pluginCss.ts
+Purpose: Manages dynamic CSS styling for plugins with unique identifiers.
+
+/pluginHost.ts
+Purpose: Manages plugin lifecycle, execution, and communication within the game client.
+
+/pluginScriptRunner.ts
+Purpose: Runs bundled plugin scripts as triggers, timers, or aliases within a runtime environment.
+
+/registry.ts
+Purpose: Registers and provides access to all core plugins for the game client.
+
+/routed-gmcp-events.ts
+Purpose: Defines all GMCP and custom game events routed through the client application.

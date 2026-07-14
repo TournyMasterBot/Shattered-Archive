@@ -1,0 +1,16 @@
+File Index
+
+/CODEOWNERS
+Purpose: This file designates the automated bot as the code owner for the project.
+
+/FUNDING.yml
+Purpose: This file specifies the GitHub sponsorship configuration for the tournymasterbot project.
+
+/PULL_REQUEST_TEMPLATE.md
+Purpose: Standardizes pull request submissions with required sections and checklists for code review consistency.
+
+/copilot-instructions.md
+Purpose: This file provides comprehensive instructions for code generation, testing, and collaboration within the Shattered Archive monorepo.
+
+/dependabot.yml
+Purpose: Automates weekly dependency updates for GitHub Actions and npm packages across a monorepo structure.

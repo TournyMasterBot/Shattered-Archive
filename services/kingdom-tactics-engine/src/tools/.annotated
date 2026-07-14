@@ -1,0 +1,4 @@
+File Index
+
+/ability-coverage.ts
+Purpose: Dev-time CLI (excluded from build; uses node:fs) — prints ability-mechanics coverage per playable class kit + the next kit to author, and writes docs/ability-coverage.md.

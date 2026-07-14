@@ -1,0 +1,4 @@
+File Index
+
+/shatteredarchive-nightly-deploy.sh
+Purpose: This script automates nightly deployment of the Shattered Archive project using Docker Compose.

@@ -1,0 +1,26 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../DSL"
+		},
+		{
+			"path": "../DslScripts"
+		},
+		{
+			"path": "../DslMapper"
+		},
+		{
+			"path": "../DslLogViewer"
+		},
+		{
+			"path": "../shatteredarchive-mobile"
+		},
+		{
+			"path": "../Shattered-AI"
+		}
+	],
+	"settings": {}
+}

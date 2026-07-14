@@ -1,0 +1,4 @@
+File Index
+
+/index.ts
+Purpose: This file exports server health interface and client types for the mud application.

@@ -1,0 +1,37 @@
+File Index
+
+/autoleveling-actions.ts
+Purpose: Parses and serializes autoleveling action scripts from and to a text editor format.
+
+/autoleveling-defaults.ts
+Purpose: Provides default autoleveling configuration with safe, disabled-by-default settings.
+
+/autoleveling-engine.ts
+Purpose: Automates in-game leveling by executing movement and encounter sequences based on configuration.
+
+/autoleveling-index.ts
+Purpose: Centralized export file for autoleveling feature with backward compatibility.
+
+/autoleveling-maps-client.ts
+Purpose: Provides cached and remote loading of autoleveling map data with IndexedDB storage.
+
+/autoleveling-mudlet-import.ts
+Purpose: Imports and converts Mudlet leveling script data into buildable path steps.
+
+/autoleveling-normalize.ts
+Purpose: Normalizes auto-leveling configurations and migrates legacy settings into a standard format.
+
+/autoleveling-saved-targets.ts
+Purpose: Stores and manages manually entered auto-leveling targets per game zone in local storage.
+
+/autoleveling-storage.ts
+Purpose: Manages persistent autoleveling configuration storage with versioned keys and fallback logic.
+
+/autoleveling-text.ts
+Purpose: Processes and normalizes text input for autoleveling functionality.
+
+/autoleveling-types.ts
+Purpose: Defines the TypeScript types and interfaces for the autoleveling feature's configuration and runtime behavior.
+
+/autoleveling-user-paths.ts
+Purpose: Manages user-created training paths for auto-leveling features with local storage persistence and JSON export/import functionality.

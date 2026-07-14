@@ -67,8 +67,10 @@ services:
           - web-client.shatteredarchive.dev
           - game-server.shatteredarchive.dev
           - web-server.shatteredarchive.dev
+          - build.shatteredarchive.dev
       sa-shared: {}
 
+    restart: unless-stopped
     healthcheck:
       interval: 10s
       timeout: 3s
@@ -93,6 +95,7 @@ services:
     image: shatteredarchive-game-client
     stdin_open: true
     tty: true
+    restart: unless-stopped
     networks:
       shatteredarchive:
         aliases:
@@ -110,6 +113,7 @@ services:
     image: shatteredarchive-web-client
     stdin_open: true
     tty: true
+    restart: unless-stopped
     networks:
       shatteredarchive:
         aliases:
@@ -125,6 +129,7 @@ services:
     image: shatteredarchive-game-server
     stdin_open: true
     tty: true
+    restart: unless-stopped
     volumes:
       - "C:/Projects/DSL/GameLogs/ShatteredArchive/Docker/game-server:/repo/apps/game-server/log"
     env_file:
@@ -140,6 +145,7 @@ services:
       LOG_FILE_PATH: "/repo/apps/game-server/log/server.log"
       JSON_LOG_FILE_PATH: "/repo/apps/game-server/log/server.log.jsonl"
       LOG_RESPECT_SOH: "true"
+      CORS_ORIGIN: "https://game-client.shatteredarchive.dev,https://web-client.shatteredarchive.dev"
     expose:
       - "31000"
     networks:
@@ -166,6 +172,7 @@ services:
     image: shatteredarchive-web-server
     stdin_open: true
     tty: true
+    restart: unless-stopped
     volumes:
       - "C:/Projects/DSL/GameLogs/ShatteredArchive/Docker/web-server:/repo/apps/web-server/log"
     env_file:
@@ -178,6 +185,7 @@ services:
       LOG_FILE_PATH: "/repo/apps/web-server/log/server.log"
       LOG_JSONL_ENABLED: "true"
       LOG_JSONL_PATH: "/repo/apps/web-server/log/server.log.jsonl"
+      CORS_ORIGIN: "https://game-client.shatteredarchive.dev,https://web-client.shatteredarchive.dev"
     expose:
       - "41000"
     networks:
@@ -195,6 +203,65 @@ services:
       timeout: 3s
       retries: 12
       start_period: 20s
+
+  ############################################################
+  # MUD BUILDER (build.shatteredarchive.dev)
+  #
+  # The merc-mud GAME deliberately stays in its own compose file
+  # (C:/Projects/merc-mud/docker-compose.yml) so bringing this stack up or
+  # down can never interrupt the running MUD. Game and builder share the
+  # SAME host directory (C:/Projects/merc-mud/2.4/area): the game bind-mounts
+  # it at /opt/merc-mud/area, the builder server at /mud/area. Builder writes
+  # (area files, backups/, reload.signal, copyover.signal) are therefore the
+  # live game files, and the game's area_reload.c picks the signals up.
+  ############################################################
+  mud-builder-server:
+    build:
+      context: ..
+      dockerfile: deploy/mud-builder-server.Dockerfile
+    image: shatteredarchive-mud-builder-server
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    volumes:
+      - "C:/Projects/merc-mud/2.4/area:/mud/area"
+    environment:
+      NODE_ENV: production
+      PORT: "61000"
+      MERC_MUD_PATH: "/mud"
+      MERC_AREA_DIR: "area"
+      # The ONLY place in the repo where the MUD write gate is enabled.
+      MUD_WRITE_ENABLED: "true"
+    expose:
+      - "61000"
+    networks:
+      shatteredarchive:
+        aliases:
+          - mud-builder-server.shatteredarchive.dev
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(61000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  mud-builder-client:
+    build:
+      context: ..
+      dockerfile: deploy/mud-builder-client.Dockerfile
+    image: shatteredarchive-mud-builder-client
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    networks:
+      shatteredarchive:
+        aliases:
+          - mud-builder-client.shatteredarchive.dev
 
 volumes:
   nginx-logrotate-state:

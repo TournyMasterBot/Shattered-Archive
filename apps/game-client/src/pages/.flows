@@ -1,0 +1,57 @@
+# Flows — pages
+
+<!-- Human-oriented interaction diagrams for the non-trivial files here. Auto-generated
+     by passive_flows / document_flows; a section regenerates when its file changes.
+     Do not hand-edit a "## <file>" section — it is replaced wholesale. -->
+
+## MainContainer.tsx
+@flow-hash: 755b65bd
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant MainContainer
+    participant GameConnection
+    participant PluginHost
+    participant UserStyleOverrideStore
+    participant Terminal
+    participant RuntimeSingleton
+    participant AutoLevelingHook
+    participant EquipmentHooks
+    participant PluginsHook
+
+    User->>MainContainer: Renders UI
+    MainContainer->>GameConnection: Initializes connection
+    MainContainer->>UserStyleOverrideStore: Applies CSS overrides
+    MainContainer->>Terminal: Initializes terminal instance
+    MainContainer->>RuntimeSingleton: Gets user script runtime
+    MainContainer->>PluginHost: Sets connection ID
+    MainContainer->>PluginsHook: Loads plugins for connection
+    PluginHost->>PluginHost: Registers core plugins
+    PluginHost->>PluginHost: Enables/disables installed plugins
+    MainContainer->>AutoLevelingHook: Initializes auto leveling
+    MainContainer->>EquipmentHooks: Initializes equipment capture/deltas
+    MainContainer->>MainMenuBar: Renders menu bar
+    MainContainer->>LayoutShell: Renders layout with components
+    MainContainer->>UserStyleOverrideModal: Opens style modal
+    MainContainer->>UserScriptSandboxModal: Opens script sandbox
+    MainContainer->>PluginsModal: Opens plugins modal
+    MainContainer->>ConnectModal: Opens connect modal
+    MainContainer->>LibraryModal: Opens library modal
+    MainContainer->>EquipmentModal: Opens equipment modal
+    MainContainer->>AutoLevelingModal: Opens auto leveling modal
+    MainContainer->>ContributeIdentifyModal: Opens identify modal
+    MainContainer->>ContributeCreatureLoreModal: Opens lore modal
+    MainContainer->>ScriptingHelpModal: Opens scripting help
+    Note over MainContainer,GameConnection: Connection events dispatched
+    GameConnection->>PluginHost: Notifies of connection changes
+    PluginHost->>PluginHost: Updates plugin state
+    Note over MainContainer,AutoLevelingHook: Auto leveling state updates
+    AutoLevelingHook->>AutoLevelingHook: Manages auto leveling config and state
+    Note over MainContainer,EquipmentHooks: Equipment capture and deltas
+    EquipmentHooks->>EquipmentHooks: Handles equipment data
+    Note over MainContainer,PluginsHook: Plugin loading and management
+    PluginsHook->>PluginHost: Loads and manages plugins
+```
+
+Caption: The MainContainer orchestrates user interface rendering, manages connections, applies styles, initializes plugins, and handles modal interactions for game client features.

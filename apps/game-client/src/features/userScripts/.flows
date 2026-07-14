@@ -1,0 +1,118 @@
+# Flows — userScripts
+
+<!-- Human-oriented interaction diagrams for the non-trivial files here. Auto-generated
+     by passive_flows / document_flows; a section regenerates when its file changes.
+     Do not hand-edit a "## <file>" section — it is replaced wholesale. -->
+
+## runtimeSingleton.ts
+@flow-hash: 6ea423fe
+
+```mermaid
+sequenceDiagram
+    participant UserScriptRuntime
+    participant localStorage
+    participant pluginHost
+    participant event-dispatcher
+    participant chat-store
+    participant globalScriptsStore
+    participant AccessibilitySettings
+    participant ChatSettings
+    participant StrictChatClassifier
+    participant dslToAnsi
+    participant Window
+
+    UserScriptRuntime->>localStorage: Load scripts and state
+    UserScriptRuntime->>globalScriptsStore: Get global vars snapshot
+    UserScriptRuntime->>pluginHost: Set alias fallback handler
+    loop Timer Tick
+        Window->>UserScriptRuntime: tickTimers()
+    end
+
+    event-dispatcher->>UserScriptRuntime: Handle game:remote-server:raw
+    event-dispatcher->>UserScriptRuntime: Handle game:remote-server:gmcp
+    event-dispatcher->>UserScriptRuntime: Handle game:remote-server:error
+    event-dispatcher->>UserScriptRuntime: Handle game:remote-server:close
+
+    event-dispatcher->>chat-store: Append chat line
+    chat-store->>StrictChatClassifier: Classify chat subtype
+    StrictChatClassifier-->>chat-store: Return subtype
+    chat-store->>ChatSettings: Get chat settings
+    ChatSettings-->>chat-store: Return settings
+
+    event-dispatcher->>UserScriptRuntime: Handle shatteredarchive:connection-changed
+    UserScriptRuntime->>localStorage: Rehydrate scripts and state
+    UserScriptRuntime->>globalScriptsStore: Get global vars snapshot
+
+    event-dispatcher->>UserScriptRuntime: Handle shatteredarchive:userScripts-updated
+    UserScriptRuntime->>localStorage: Rehydrate scripts and state
+
+    event-dispatcher->>UserScriptRuntime: Handle shatteredarchive:accessibility-updated
+    UserScriptRuntime->>AccessibilitySettings: Get accessibility settings
+
+    event-dispatcher->>UserScriptRuntime: Handle game:char-data
+    UserScriptRuntime->>dslToAnsi: Convert DSL to ANSI
+    dslToAnsi-->>event-dispatcher: Send terminal write event
+
+    event-dispatcher->>UserScriptRuntime: Handle storage event
+    UserScriptRuntime->>localStorage: Rehydrate scripts and state
+
+    event-dispatcher->>UserScriptRuntime: Handle shatteredarchive:named-var:set
+    UserScriptRuntime->>Window: Update named var map
+
+    event-dispatcher->>UserScriptRuntime: Handle shatteredarchive:named-var:delete
+    UserScriptRuntime->>Window: Delete named var from map
+
+    event-dispatcher->>UserScriptRuntime: Handle shatteredarchive:named-var:clear
+    UserScriptRuntime->>Window: Clear named var map
+```
+
+Caption: The RuntimeSingleton orchestrates user script execution, manages connection state and named variables, handles events from the game and UI, and integrates with storage, plugins, and chat systems.
+
+## userScriptRuntime.ts
+@flow-hash: 28dc6c40
+
+```mermaid
+sequenceDiagram
+    participant U as UserScriptRuntime
+    participant E as EventDispatcher
+    participant L as localStorage
+    participant G as globalScriptsStore
+    participant T as triggerOmitStore
+    participant S as ScriptSandboxApi
+
+    U->>E: ListenEvent('shatteredarchive:raw-data')
+    U->>E: ListenEvent('shatteredarchive:gmcp-data')
+    U->>E: ListenEvent('shatteredarchive:userScripts-updated')
+    U->>E: ListenEvent('shatteredarchive:globalVars-updated')
+
+    E->>U: processRawEvent(payload)
+    U->>U: processForSpecialLines(line)
+    U->>E: DispatchEvent('event:*')
+    U->>E: DispatchEvent('shatteredarchive:write-terminal')
+
+    E->>U: processGmcpEvent(payload)
+    U->>U: dispatchGmcpEvent(eventName, rawText)
+    U->>E: DispatchEvent(eventName, data)
+
+    U->>E: ListenEvent('shatteredarchive:alias-fired')
+    U->>U: executeAlias(input)
+    U->>U: executeScript(script, context)
+    U->>S: runUserScript(script, apiRef)
+    S->>E: DispatchEvent('shatteredarchive:send-command')
+    S->>E: DispatchEvent('shatteredarchive:write-terminal')
+
+    U->>U: tickTimers()
+    U->>U: executeScript(script)
+    U->>S: runUserScript(script, apiRef)
+
+    U->>L: loadScriptsFromStorage(connectionId)
+    U->>L: saveScriptsToStorage(connectionId)
+    U->>G: getGlobalVarsSnapshot(connectionId)
+    U->>T: setOmitRules(rules, connectionId)
+
+    U->>E: DispatchEvent('shatteredarchive:userScripts-updated')
+    U->>E: DispatchEvent('shatteredarchive:globalVars-updated')
+    U->>E: DispatchEvent('shatteredarchive:identity-updated')
+```
+
+Caption: The UserScriptRuntime orchestrates script execution, event handling, and storage interactions for user-defined scripts in a MUD client environment.

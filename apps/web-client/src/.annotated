@@ -1,0 +1,10 @@
+File Index
+
+/App.tsx
+Purpose: This file renders the main welcome heading component for the web client application.
+
+/env.d.ts
+Purpose: Defines TypeScript types for Vite environment variables and imports.
+
+/main.tsx
+Purpose: This file serves as the main entry point that initializes and renders the React application.

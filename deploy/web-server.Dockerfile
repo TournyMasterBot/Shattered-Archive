@@ -1,4 +1,4 @@
-FROM node:26.1.0-alpine3.23@sha256:e71ac5e964b9201072425d59d2e876359efa25dc96bb1768cb73295728d6e4ea AS build
+FROM node:26.3.1-alpine3.24@sha256:a2dc166a387cc6ca1e62d0c8e265e49ca985d6e60abc9fe6e6c3d6ce8e63f606 AS build
 WORKDIR /repo
 ENV COREPACK_ENABLE_STRICT=1
 RUN npm install -g corepack && corepack enable
@@ -24,7 +24,7 @@ RUN pnpm --filter @shatteredarchive/sdks-server build
 
 RUN pnpm --filter @shatteredarchive/web-server... build
 
-FROM node:26.1.0-alpine3.23@sha256:e71ac5e964b9201072425d59d2e876359efa25dc96bb1768cb73295728d6e4ea AS runtime
+FROM node:26.3.1-alpine3.24@sha256:a2dc166a387cc6ca1e62d0c8e265e49ca985d6e60abc9fe6e6c3d6ce8e63f606 AS runtime
 RUN apk --no-cache upgrade
 WORKDIR /repo
 

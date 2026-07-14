@@ -1,0 +1,19 @@
+File Index
+
+/affect-data.ts
+Purpose: Defines the data structure for affect entities including name, duration, modifier, location, and type.
+
+/affect-list-data.ts
+Purpose: Defines the structure for a list of affect data objects in the software project.
+
+/char-data.ts
+Purpose: Defines the data structure for character statistics and attributes in the game model.
+
+/login-data.ts
+Purpose: Defines the structure for storing and validating user login information including clan and kingdom details.
+
+/room-data.ts
+Purpose: Defines the data structure for room information including name, sector, and exit directions.
+
+/tick-data.ts
+Purpose: Defines the data structure for tick-level financial market data timestamps.

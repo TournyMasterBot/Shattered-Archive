@@ -1,0 +1,1 @@
+The equipment folder handles all functionality related to managing player gear and inventory within the game client. It processes raw equipment data from the game, cleans and structures it into usable formats, and persists equipment profiles locally. The folder acts as the central hub for equipment state management, parsing, and storage across the entire application.

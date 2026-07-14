@@ -1,0 +1,84 @@
+# Flows — plugins
+
+<!-- Human-oriented interaction diagrams for the non-trivial files here. Auto-generated
+     by passive_flows / document_flows; a section regenerates when its file changes.
+     Do not hand-edit a "## <file>" section — it is replaced wholesale. -->
+
+## pluginHost.ts
+@flow-hash: 49c2682e
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant PluginHost
+    participant EventDispatcher
+    participant PluginModule
+    participant CSSManager
+    participant ScriptRunner
+    participant TriggerOmitStore
+    participant DSLRenderer
+    participant Fetch
+
+    User->>PluginHost: enable(pluginId, userConfig)
+    PluginHost->>PluginModule: normalizePluginModule(rawModule)
+    PluginHost->>CSSManager: applyPluginBaseCss(connectionId, pluginId, css)
+    PluginHost->>ScriptRunner: startPluginBundledScripts(pluginId, scripts, api)
+    PluginHost->>EventDispatcher: ListenEvent(eventName, handler)
+    PluginHost->>TriggerOmitStore: setPluginOmitRules(pluginId, rules)
+    PluginHost->>PluginHost: store cleanup functions
+
+    PluginHost->>PluginModule: call onEnable(api)
+    PluginHost->>PluginModule: call onEvent(api, payload) for each ROUTED_WINDOW_EVENTS
+
+    User->>PluginHost: tryExecuteAlias(input)
+    PluginHost->>PluginModule: call onAlias(api, input)
+    alt if plugin consumes command
+        return true
+    else
+        return false
+    end
+
+    User->>PluginHost: invokePluginAction(pluginId, actionKey)
+    PluginHost->>PluginModule: call registered action handler
+
+    User->>PluginHost: disable(pluginId)
+    PluginHost->>ScriptRunner: stopPluginBundledScripts()
+    PluginHost->>EventDispatcher: removeEventListeners
+    PluginHost->>CSSManager: removePluginBaseCss(connectionId, pluginId)
+    PluginHost->>TriggerOmitStore: setPluginOmitRules(pluginId, [])
+    PluginHost->>PluginHost: remove cleanup functions
+
+    PluginHost->>PluginModule: call onDisable(api)
+    PluginHost->>PluginHost: cleanup state
+
+    PluginHost->>Fetch: httpGetJson(url, options)
+    Fetch-->>PluginHost: JSON response
+
+    PluginHost->>DSLRenderer: renderDslToAnsi(dslText)
+    DSLRenderer-->>PluginHost: ANSI formatted text
+
+    PluginHost->>EventDispatcher: DispatchEvent('shatteredarchive:write-terminal', ...)
+    EventDispatcher->>Terminal: render text
+```
+
+Caption: Interaction flow.
+
+## registry.ts
+@flow-hash: 7b13f1d3
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Registry
+    participant CorePluginModules
+
+    Client->>Registry: Requests plugin by ID
+    Registry->>Registry: Searches CORE_PLUGINS array
+    Registry-->>Client: Returns CorePluginDefinition or undefined
+    alt Plugin found
+        Client->>CorePluginModules: Calls create() function
+        CorePluginModules-->>Client: Returns IPluginModule instance
+    end
+```
+
+Caption: The client requests a plugin by ID, the registry searches for it and returns a definition that can be instantiated into a module.

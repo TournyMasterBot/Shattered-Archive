@@ -646,6 +646,36 @@
 }
 
 /* -------------------------------------------------- */
+/* Scratch pad                                        */
+/* -------------------------------------------------- */
+
+.scratchGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  min-height: 360px;
+}
+
+.scratchField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+
+  .textArea {
+    flex: 1 1 auto;
+    min-height: 0;
+    white-space: pre-wrap;
+  }
+}
+
+.scratchActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* -------------------------------------------------- */
 /* Responsive                                         */
 /* -------------------------------------------------- */
 
@@ -675,6 +705,10 @@
   }
 
   .editorGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .scratchGrid {
     grid-template-columns: 1fr;
   }
 }

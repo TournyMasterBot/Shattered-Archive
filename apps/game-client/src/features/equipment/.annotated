@@ -1,0 +1,19 @@
+File Index
+
+/eq-delta-parse.ts
+Purpose: Parses equipment change messages from game client into structured events.
+
+/eq-parse.ts
+Purpose: Parses equipment snapshot data from text lines into structured format.
+
+/equipment-idb.ts
+Purpose: Manages equipment profiles storage and retrieval using IndexedDB.
+
+/equipment-store.ts
+Purpose: Manages equipment state, preferences, and profiles with local storage and IndexedDB persistence.
+
+/equipment-text.ts
+Purpose: Processes and cleans equipment item names by removing ANSI codes and status prefixes.
+
+/equipment-types.ts
+Purpose: Defines TypeScript types for equipment slots, states, and related data structures in the game client.

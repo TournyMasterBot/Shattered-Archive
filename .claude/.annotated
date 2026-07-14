@@ -1,0 +1,7 @@
+File Index
+
+/settings.json
+Purpose: This file configures automated security checks and hooks for file operations and tool usage.
+
+/settings.local.json
+Purpose: This file defines local development permissions and access rules for the ShatteredArchive project.

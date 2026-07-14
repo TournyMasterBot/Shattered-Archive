@@ -1,0 +1,8 @@
+{
+  "//": "Verification registry for the MCP `check` tool. host:true entries run on the host via `pnpm check:bridge` (in Shattered-AI) — in-container runs are impossible for this pnpm workspace. Order matters: no-name check runs top to bottom, stopping at the first failure.",
+  "commands": {
+    "typecheck": { "run": "pnpm typecheck", "host": true },
+    "lint": { "run": "pnpm lint", "host": true },
+    "test": { "run": "pnpm test", "host": true }
+  }
+}

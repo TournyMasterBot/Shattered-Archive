@@ -1,6 +1,42 @@
 // apps\game-client\src\features\library\library-types.ts
 export type LibraryId = string;
 
+// ── Canonical JSON export/import format ───────────────────────────────────────
+// Shared across the web client, mobile client, and public server.
+// IDs are omitted intentionally — new ones are assigned on import.
+
+export interface LibraryExportBundle {
+  version: 1;
+  exportedAt: number;
+  parchment?: ParchmentExport[];
+  notes?: NoteExport[];
+  books?: BookExport[];
+}
+
+export interface ParchmentExport {
+  title: string;
+  body: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface NoteExport {
+  spool: NoteSpool;
+  subject: string;
+  body: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface BookExport {
+  title: string;
+  keyword: string;
+  keywordAfterTitle: string;
+  pages: Array<{ page: number; body: string }>;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface LibraryNote {
   id: LibraryId;
   connectionId: string;

@@ -1,0 +1,4 @@
+File Index
+
+/outbound-queue.ts
+Purpose: Manages outbound command queuing and throttled sending to prevent overwhelming the client.

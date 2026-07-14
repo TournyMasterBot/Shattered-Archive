@@ -1,0 +1,7 @@
+File Index
+
+/useSimBatch.ts
+Purpose: React wrapper around runSimBatch — owns running/progress/result state, feeds the shared providers singleton, and uses a per-run generation ref to cancel on unmount and ignore re-entrant runs.
+
+/useSimBatch.test.ts
+Purpose: Tests a batch runs to completion (progress → result), and that a second run is ignored while one is in flight.

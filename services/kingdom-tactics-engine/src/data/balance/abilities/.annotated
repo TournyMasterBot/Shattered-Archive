@@ -1,0 +1,13 @@
+File Index
+
+/coverage.ts
+Purpose: Pure per-playable-kit coverage (authored vs stub) from CLASS_KITS ∩ CLASS_ATTRIBUTES abilities; nextIncompleteKit is the authoring resumption pointer.
+
+/mechanics.test.ts
+Purpose: Registry self-consistency, stub fallback, toAbilitySpec mapping per mechanic shape (damage/maladiction/buff/heal/passive), resolver, and Warrior-kit coverage floor.
+
+/mechanics.ts
+Purpose: Hand-authored AUTHORED_MECHANICS registry — standardized AbilityMechanics per ability key, authored from DSL help-file lore. Filled kit-by-kit; absent keys resolve to a no-op stub. (Warrior core skills + the Cleric cure line — CureLight/CureSerious/CureCritical/Heal, HP-restoring `heal` payload, wisdom-scaled — authored.)
+
+/resolve.ts
+Purpose: Model-only resolution — resolveAbilityMechanics(key) returns the authored entry or a no-op stub; isAuthored/stubMechanics. No rules dependency.

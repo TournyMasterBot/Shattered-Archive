@@ -1,0 +1,32 @@
+:root {
+  color-scheme: dark;
+  --kt-bg: #0d0f14;
+  --kt-bg-2: #141822;
+  --kt-panel: #1b212e;
+  --kt-border: #2a3242;
+  --kt-text: #e7ecf3;
+  --kt-muted: #8a93a6;
+  --kt-accent: #c9a24b;
+  --kt-accent-2: #6ea8fe;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #1a2030 0%, transparent 60%),
+    var(--kt-bg);
+  color: var(--kt-text);
+  font-family:
+    'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

@@ -1,0 +1,7 @@
+File Index
+
+/tls-dev.conf
+Purpose: Configures HTTPS routing and proxying for multiple project services including game client, web client, and API servers.
+
+/tls-off.conf
+Purpose: This file serves as a placeholder configuration indicating no local TLS server blocks are included.

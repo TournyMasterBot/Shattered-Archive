@@ -1,0 +1,16 @@
+File Index
+
+/mcp-agent-test-1.md
+Purpose: This file serves as a test artifact for the MCP agent workflow using Docker and SSE.
+
+/mcp-agent-test-2.md
+Purpose: Test file for MCP agent functionality.
+
+/new-test-1.md
+Purpose: This file serves as a placeholder for testing purposes.
+
+/new-test-2.md
+Purpose: This file serves as a secondary test document for validating project functionality.
+
+/test-ai.md
+Purpose: This file verifies MCP server workspace tools can correctly access and write files in the ShatteredArchive project using Linux-style paths.

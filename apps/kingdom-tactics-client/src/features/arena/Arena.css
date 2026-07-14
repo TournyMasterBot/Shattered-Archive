@@ -1,0 +1,173 @@
+.kt-arena {
+  --kt-cell: 2.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.kt-board {
+  display: grid;
+  gap: 2px;
+  background: #1b2130;
+  padding: 2px;
+  border-radius: 6px;
+}
+
+.kt-cell {
+  position: relative;
+  width: var(--kt-cell);
+  height: var(--kt-cell);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: #2a3346;
+  color: #e8ecf4;
+  font: 600 0.7rem/1 system-ui, sans-serif;
+}
+
+.kt-terrain--field {
+  background: #26402c;
+}
+
+.kt-terrain--forest {
+  background: #14351d;
+}
+
+.kt-terrain--water {
+  background: #1c3a5e;
+}
+
+.kt-terrain--mountain {
+  background: #4a4536;
+}
+
+.kt-terrain--hills {
+  background: #35402a;
+}
+
+.kt-cell--move {
+  outline: 2px solid #4da3ff;
+  outline-offset: -2px;
+}
+
+.kt-cell--attack {
+  outline: 2px solid #ff5d5d;
+  outline-offset: -2px;
+}
+
+/* A valid recipient for the ability the player is currently aiming (e.g. a heal target). */
+.kt-cell--ability {
+  outline: 2px solid #3ddc84;
+  outline-offset: -2px;
+}
+
+/* A valid ENEMY recipient for an offensive ability being aimed. Dashed + warm orange so it reads
+   as a hostile cast, distinct from both the green support-cast target and a plain attack's solid red. */
+.kt-cell--ability-enemy {
+  outline: 2px dashed #ff8c42;
+  outline-offset: -2px;
+}
+
+.kt-cell--selected {
+  outline: 2px solid #ffd23d;
+  outline-offset: -2px;
+}
+
+/* The one unit activated this turn (one-unit-per-turn rule). */
+.kt-cell--activated {
+  box-shadow: inset 0 0 0 2px #ffd23d;
+}
+
+.kt-token {
+  width: 82%;
+  height: 82%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Class glyph (e.g. "War", "Cle") — the primary at-a-glance identity of a token. */
+.kt-token-tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+/* Current HP as a small badge in the cell corner, so class + health both read at a glance. */
+.kt-token-hp {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  min-width: 0.85rem;
+  padding: 0 2px;
+  border-radius: 4px 0 4px 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.kt-token--side0 {
+  background: #2f6fed;
+}
+.kt-token--side1 {
+  background: #d63a3a;
+}
+.kt-token--side2 {
+  background: #2fae6a;
+}
+.kt-token--side3 {
+  background: #b061e0;
+}
+
+.kt-arena-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.kt-stance-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+.kt-stance-label {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+.kt-stance-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.kt-ability-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+}
+.kt-ability-label {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+.kt-ability-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.kt-ability-hint {
+  font-size: 0.8rem;
+  color: #3ddc84;
+}
+.kt-ability-hint--enemy {
+  color: #ff8c42;
+}

@@ -1,0 +1,10 @@
+File Index
+
+/package.json
+Purpose: This file manages the game server's metadata, dependencies, and executable scripts for development and production environments.
+
+/tsconfig.json
+Purpose: This file configures TypeScript compilation settings for a Node.js project using ES2023 and Express types.
+
+/tsconfig.tsbuildinfo
+Purpose: TypeScript build information file for project compilation tracking.
