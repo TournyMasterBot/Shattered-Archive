@@ -4,6 +4,7 @@ import { buildEqSnapshot, isEqHeader } from '../features/equipment/eq-parse';
 import { getEquipmentProfile, setEquipmentFromEq, setEqSnapshot } from '../features/equipment/equipment-store';
 import { extractTerminalText } from '../features/terminal/extractTerminalText';
 import { stripItemStatusPrefixes } from '../features/equipment/equipment-text';
+import { ListenEvent } from '../features/event-emitter/event-dispatcher';
 
 const EQ_CAPTURE_VERSION = 'eq-capture.v3.prompt-or-timeout';
 const EQ_IDLE_END_MS = 250; // if no new eq lines arrive for this long, end capture
@@ -104,9 +105,8 @@ export function useEquipmentCapture(connectionId: string) {
   }
 
   useEffect(() => {
-    const onTerminal = (ev: Event) => {
-      const detail = (ev as CustomEvent<unknown>).detail;
-      const chunk = extractTerminalText(detail);
+    const onTerminal = (payload: unknown) => {
+      const chunk = extractTerminalText(payload);
       if (!chunk) return;
 
       const lines = splitIntoLines(chunk);
@@ -147,14 +147,20 @@ export function useEquipmentCapture(connectionId: string) {
       }
     };
 
-    // TMB TODO : window.addEventListener('game:terminal-data', onTerminal as EventListener);
+    // Subscribe to the same raw-data stream the delta hook uses. This was
+    // migrated off the old window 'game:terminal-data' event in #66, but left
+    // commented out — which disconnected eq-snapshot capture entirely.
+    const dispose = ListenEvent<any>('shatteredarchive:raw-data', (payload) => onTerminal(payload), {
+      key: `useEquipmentCapture::terminal::${connectionId}`,
+    });
+
     return () => {
-      /*console.debug(`[eq-capture] hook unmounted (${EQ_CAPTURE_VERSION})`, {
-        connectionId,
-        seenAnyEq: seenAnyEq.current,
-      });*/
       clearIdleTimer();
-      // TMB TODO : window.removeEventListener('game:terminal-data', onTerminal as EventListener);
+      try {
+        dispose?.();
+      } catch {
+        // ignore
+      }
     };
   }, [connectionId]);
 }

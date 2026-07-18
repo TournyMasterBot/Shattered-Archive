@@ -5,7 +5,7 @@ import type { IPluginModule, PluginEvent, PluginRuntimeApi } from '@shatteredarc
  * Weapon map (config textarea): one entry per line.
  *   <full item name> | <alias> [| nodrop]
  *
- * - <full item name>  The exact weapon name as it appears in the event payload.
+ * - <full item name>  The exact weapon name as it appears in your <wielded> eq slot.
  * - <alias>           The short alias used in ~get / wield commands.
  * - nodrop            Optional flag. When present, uses ~wield instead of ~get + wield.
  *
@@ -15,6 +15,10 @@ import type { IPluginModule, PluginEvent, PluginRuntimeApi } from '@shatteredarc
  *   a scorched staff covered in charred runes | hoopak | nodrop
  *
  * Lines starting with # are comments.
+ *
+ * `event:disarm` payload: { wielded: string, attacker: string }. When "Announce
+ * attacker" is on, the attacker is echoed to the terminal in the configured color
+ * before any re-wield attempt (so it fires even if the weapon has no mapping).
  */
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -26,6 +30,49 @@ interface WeaponEntry {
 }
 
 // ── Parsing ─────────────────────────────────────────────────────────────────
+
+/**
+ * Extracts the disarmed weapon name from an `event:disarm` payload.
+ *
+ * The event is fired by the equipment-delta hook as `{ wielded: string }`,
+ * where `wielded` is the weapon that was in the <wielded> slot at the moment
+ * of the disarm (the manager clears the slot immediately after, so the payload
+ * is the only reliable source). A bare string is tolerated for forward/back
+ * compatibility. Leading status tokens like "(Glowing)" are stripped so the
+ * name matches the clean keys in the weapon map.
+ */
+function extractWieldedName(payload: unknown): string | null {
+  const raw =
+    typeof payload === 'string'
+      ? payload
+      : payload && typeof payload === 'object' && typeof (payload as { wielded?: unknown }).wielded === 'string'
+        ? (payload as { wielded: string }).wielded
+        : '';
+
+  let name = raw.trim();
+  // Strip any number of leading "(...)" status tokens: "(Glowing) (Humming) sword" -> "sword"
+  while (name.startsWith('(')) {
+    const end = name.indexOf(')');
+    if (end < 0) break;
+    name = name.slice(end + 1).trimStart();
+  }
+
+  return name.length > 0 ? name : null;
+}
+
+/**
+ * Extracts the attacker's name from an `event:disarm` payload (`{ attacker: string }`).
+ * Absent on older/malformed payloads, so callers must treat this as optional.
+ */
+function extractAttacker(payload: unknown): string | null {
+  const raw =
+    payload && typeof payload === 'object' && typeof (payload as { attacker?: unknown }).attacker === 'string'
+      ? (payload as { attacker: string }).attacker
+      : '';
+
+  const name = raw.trim();
+  return name.length > 0 ? name : null;
+}
 
 function parseWeaponMap(raw: unknown): WeaponEntry[] {
   if (typeof raw !== 'string') return [];
@@ -68,14 +115,16 @@ export function createDisarmPlugin(): IPluginModule {
     manifest: {
       id: 'disarm',
       name: 'Auto Re-wield',
-      version: '0.1.0',
+      version: '0.2.0',
       description:
-        'When your weapon is disarmed, automatically retrieves and re-wields it. Configure a weapon map to match your inventory aliases.',
+        'When your weapon is disarmed, announces who did it and automatically retrieves and re-wields it. Configure a weapon map to match your inventory aliases.',
     },
 
     configSchema: {
       defaults: {
         weapons: DEFAULT_WEAPON_MAP_CONFIG,
+        announceAttacker: true,
+        attackerColor: '{r',
         debug: false,
       },
       fields: [
@@ -86,6 +135,19 @@ export function createDisarmPlugin(): IPluginModule {
           description:
             'One weapon per line: full item name | alias | nodrop (nodrop is optional). Lines starting with # are comments.',
           placeholder: 'the Magius Staff | magius\na scorched staff covered in charred runes | hoopak | nodrop',
+        },
+        {
+          key: 'announceAttacker',
+          type: 'boolean',
+          label: 'Announce attacker',
+          description: 'Echo who disarmed you to the terminal when you get disarmed.',
+        },
+        {
+          key: 'attackerColor',
+          type: 'string',
+          label: 'Announcement color',
+          description: 'DSL color code for the attacker announcement (e.g. {r for red).',
+          placeholder: '{r',
         },
         {
           key: 'debug',
@@ -103,14 +165,20 @@ export function createDisarmPlugin(): IPluginModule {
       const debug = cfg.debug === true;
       const weapons = parseWeaponMap(cfg.weapons);
 
-      const itemName = typeof evt.payload === 'string' ? evt.payload : null;
+      const itemName = extractWieldedName(evt.payload);
+      const attacker = extractAttacker(evt.payload);
 
       if (debug) {
         api.log(`[Auto Re-wield] event:disarm fired — payload: ${JSON.stringify(evt.payload)}`);
       }
 
+      if (cfg.announceAttacker !== false && attacker) {
+        const color = (String(cfg.attackerColor ?? '{r').trim() || '{r') as string;
+        api.writeTerminal(`${color}*** DISARMED by ${attacker}! ***{x\n`);
+      }
+
       if (!itemName) {
-        if (debug) api.log('[Auto Re-wield] payload was not a string, ignoring.');
+        if (debug) api.log('[Auto Re-wield] no wielded weapon in payload, ignoring.');
         return;
       }
 

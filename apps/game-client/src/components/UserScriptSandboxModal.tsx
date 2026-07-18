@@ -1250,6 +1250,20 @@ look`,
     setScriptEnabled(script.id, !script.enabled);
   };
 
+  // Test input may be raw text OR a JSON object/array. When it looks like JSON
+  // ({...} or [...]), deliver the parsed value so handlers that read payload
+  // fields (payload.wielded, payload.text, …) are exercised exactly like a live
+  // event. Plain lines (e.g. "You wield the Darkstaff.") stay strings.
+  const parseTestPayload = (input: string): unknown => {
+    const trimmed = input.trim();
+    if (!/^[[{]/.test(trimmed)) return input;
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return input;
+    }
+  };
+
   const handleTestScript = () => {
     if (!selectedScript) return;
 
@@ -1258,7 +1272,7 @@ look`,
         ? {
             event: {
               name: baseTriggerEventName,
-              payload: triggerTestInput,
+              payload: parseTestPayload(triggerTestInput),
             },
           }
         : undefined;
@@ -1300,7 +1314,7 @@ look`,
         ? {
             event: {
               name: triggerEventName || 'shatteredarchive:raw-data',
-              payload: triggerTestInput,
+              payload: parseTestPayload(triggerTestInput),
             },
           }
         : undefined;
@@ -2009,7 +2023,7 @@ look`,
                           className={styles.configInput}
                           value={triggerTestInput}
                           onChange={(e) => setTriggerTestInput(e.target.value)}
-                          placeholder="Simulated event payload"
+                          placeholder='Payload: raw line, or JSON e.g. {"wielded":"the Darkstaff"}'
                         />
                       </label>
 

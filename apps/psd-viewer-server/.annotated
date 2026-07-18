@@ -1,0 +1,13 @@
+File Index
+
+/package.json
+Purpose: @shatteredarchive/psd-viewer-server manifest — deps ag-psd + pngjs + express + cors; dev/start set --max-old-space-size=8192 for large composites.
+
+/tsconfig.json
+Purpose: NodeNext ESM build config extending the repo base; emits to dist/.
+
+/README.md
+Purpose: What the service does, the endpoint table, the local-first security caveat, and how to run it.
+
+/src/index.ts
+Purpose: The whole service — initializeCanvas ImageData shim (no native canvas), /health, /api/presets (the ~/Downloads sample PSDs that exist), and /api/psd/png which decodes the composite only (ag-psd skipLayerImageData + useImageData) and streams a pngjs-encoded PNG with X-Psd-Width/Height/X-Decode-Ms headers.

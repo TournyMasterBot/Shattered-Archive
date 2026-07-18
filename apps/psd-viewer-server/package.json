@@ -1,0 +1,29 @@
+{
+  "name": "@shatteredarchive/psd-viewer-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsx watch src/index.ts",
+    "start": "cross-env NODE_OPTIONS=--max-old-space-size=8192 node dist/index.js",
+    "test": "jest --config ./jest.config.cjs --runInBand --passWithNoTests",
+    "format": "prettier --write \"src/**/*.{ts,js,json}\""
+  },
+  "dependencies": {
+    "ag-psd": "^30.1.0",
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "pngjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.9.3",
+    "@types/pngjs": "^6.0.5",
+    "cross-env": "^10.1.0",
+    "tsx": "^4.22.4",
+    "typescript": "^5.9.3"
+  }
+}
