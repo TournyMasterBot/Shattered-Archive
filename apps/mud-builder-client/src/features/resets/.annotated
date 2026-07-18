@@ -1,0 +1,7 @@
+File Index
+
+/ResetsPage.test.tsx
+Purpose: Render/edit/reorder/add/remove tests proving form edits emit back into valid reset lines.
+
+/ResetsPage.tsx
+Purpose: Resets tab — #RESETS rows in file order (order is meaning: G/E/P bind to the closest M/O above), per-command compact forms with local-entity vnum pickers, reorder/add/remove, comments read-only; Phase 12b groups each M with its G/E/P riders as a color-coded block (adjacent groups never share a color, lone rows stay plain) whose anchor moves the whole unit; 10-door labels; workbench preview/save/manual flow.

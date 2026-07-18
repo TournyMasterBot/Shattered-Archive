@@ -1,0 +1,7 @@
+File Index
+
+/SocialsPage.test.tsx
+Purpose: Field editing/blanking, early-termination preservation through the manual pane, and add/delete tests against a mocked API.
+
+/SocialsPage.tsx
+Purpose: Socials tab on the workbench hook — social list + per-field message form (blank ⇔ `$` unset, early-terminated socials preserved unless lines are explicitly added); UI states socials load at boot only, so saves take effect at the next copyover.

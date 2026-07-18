@@ -1,1 +1,16 @@
 File Index
+
+/App.css
+Purpose: App chrome styling (header, nav tabs, main layout).
+
+/App.test.tsx
+Purpose: Smoke test that the shell renders and switches sections.
+
+/App.tsx
+Purpose: Top-level tab shell — Areas/Rooms/Mobs/Objects/Resets/Scripts/Socials/Skills/World/Map/Access section nav rendering the matching feature page; holds the areaTarget lift so World-dashboard and Map room links land on the Areas tab with the target open.
+
+/index.css
+Purpose: Global reset + base typography.
+
+/main.tsx
+Purpose: Vite/React entry point mounting App.

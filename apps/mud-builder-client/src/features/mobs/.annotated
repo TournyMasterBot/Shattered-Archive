@@ -1,1 +1,13 @@
 File Index
+
+/MobEditor.test.tsx
+Purpose: Stat/dice/flag/verbatim-word round-trip tests plus MobsPage gated-writes, add/delete, shop/special attach, and manual-edit flows.
+
+/MobEditor.tsx
+Purpose: #MOBILES form editor in grouped fieldsets (Descriptions/Stats/Combat/Position & body) + six flag grids; word fields verbatim, unlisted bits preserved.
+
+/MobExtras.tsx
+Purpose: Shopkeeper + Special function fieldsets for one mob — edits the area's #SHOPS/#SPECIALS sections keyed by the mob's vnum; unlisted buy types and unknown spec_funs preserved "(as written)".
+
+/MobsPage.tsx
+Purpose: Mobs tab — area sidebar + mob list + MobEditor over the shared useAreaWorkbench (preview-first, gated writes).

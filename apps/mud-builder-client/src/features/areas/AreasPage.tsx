@@ -1,9 +1,20 @@
 import { useEffect, useState } from 'react';
 import { parseAreaFile, emitAreaFile, type AreaFile, type Room, type RoomsSection } from '@shatteredarchive/merc-area';
 
-import { api, type AreaListEntry, type Capabilities, type PreviewResult } from '../../api/client.js';
+import {
+  api,
+  ApiError,
+  type AreaListEntry,
+  type Capabilities,
+  type ExternalRef,
+  type PreviewResult,
+} from '../../api/client.js';
+import { addRoom as addRoomToModel, deleteBlockers, newRoomTemplate, nextFreeVnum, removeEntity } from './model-ops.js';
 import RoomEditor from './RoomEditor.js';
+import AreaHeaderEditor from './AreaHeaderEditor.js';
 import PreviewPane from './PreviewPane.js';
+import { ConflictPanel, NewAreaForm, PresenceBadge, PresenceBanner, usePresence } from './workbench.js';
+import ImportAreaPanel from './ImportAreaPanel.js';
 import './areas.css';
 
 type Toast = { kind: 'ok' | 'err'; text: string } | null;
@@ -13,7 +24,7 @@ type Toast = { kind: 'ok' | 'err'; text: string } | null;
  * (primary) or the flagged Manual tab → PREVIEW the exact generated file →
  * download, or (when the server allows writes) save + hot reload / copyover.
  */
-export default function AreasPage() {
+export default function AreasPage({ initialTarget }: { initialTarget?: ExternalRef | null } = {}) {
   const [caps, setCaps] = useState<Capabilities | null>(null);
   const [areas, setAreas] = useState<AreaListEntry[]>([]);
   const [file, setFile] = useState<string | null>(null);
@@ -24,6 +35,10 @@ export default function AreasPage() {
   const [manualEdited, setManualEdited] = useState(false);
   const [preview, setPreview] = useState<PreviewResult | null>(null);
   const [toast, setToast] = useState<Toast>(null);
+  const [importing, setImporting] = useState(false);
+  const [baseHash, setBaseHash] = useState<string | null>(null);
+  const [conflict, setConflict] = useState(false);
+  const { presence, presenceName } = usePresence(file);
 
   const ok = (text: string) => setToast({ kind: 'ok', text });
   const err = (text: string) => setToast({ kind: 'err', text });
@@ -39,17 +54,50 @@ export default function AreasPage() {
       .catch((e) => err((e as Error).message));
   }, []);
 
-  const openArea = async (f: string) => {
+  const openArea = async (f: string, selectRoomVnum?: number) => {
     try {
       const r = await api.getArea(f);
       setFile(f);
       setArea(r.area);
-      setRoomIdx(null);
+      setBaseHash(r.baseHash ?? null);
+      setConflict(false);
+      const loadedRooms = r.area.sections.find((s): s is RoomsSection => s.kind === 'rooms')?.rooms ?? [];
+      const idx = selectRoomVnum === undefined ? -1 : loadedRooms.findIndex((room) => room.vnum === selectRoomVnum);
+      setRoomIdx(idx >= 0 ? idx : null);
       setPreview(null);
       setManualEdited(false);
       setTab('form');
     } catch (e) {
       err((e as Error).message);
+    }
+  };
+
+  // Cross-page navigation target (e.g. a World-dashboard external-ref link).
+  useEffect(() => {
+    if (initialTarget) {
+      setImporting(false);
+      void openArea(initialTarget.file, initialTarget.kind === 'room' ? initialTarget.vnum : undefined);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTarget]);
+
+  /** Open the area (and room, when it is one) that defines an external ref. */
+  const navigateToRef = (ref: ExternalRef) => {
+    setImporting(false);
+    void openArea(ref.file, ref.kind === 'room' ? ref.vnum : undefined);
+  };
+
+  const createArea = async (input: { file: string; name: string; minVnum: number; maxVnum: number }) => {
+    try {
+      const r = await api.createArea(input);
+      const list = await api.listAreas();
+      setAreas(list.areas);
+      await openArea(r.file);
+      ok(`created ${r.file} — ${r.note}`);
+      return true;
+    } catch (e) {
+      err(`create failed: ${(e as Error).message}`);
+      return false;
     }
   };
 
@@ -63,6 +111,36 @@ export default function AreasPage() {
       s === roomsSection ? { ...s, rooms: rooms.map((r, i) => (i === roomIdx ? updated : r)) } : s,
     );
     setArea({ sections });
+    setPreview(null);
+  };
+
+  const addRoom = () => {
+    if (!area) return;
+    const vnum = nextFreeVnum(area);
+    if (vnum === null) {
+      err("no free vnum left in this area's declared range");
+      return;
+    }
+    const next = addRoomToModel(area, newRoomTemplate(vnum));
+    setArea(next);
+    setPreview(null);
+    const nextRooms = next.sections.find((s): s is RoomsSection => s.kind === 'rooms')?.rooms ?? [];
+    setRoomIdx(nextRooms.findIndex((r) => r.vnum === vnum));
+  };
+
+  const deleteRoom = () => {
+    if (!area || !room) return;
+    const blockers = deleteBlockers(area, 'room', room.vnum);
+    if (blockers.length > 0) {
+      err(
+        `cannot delete room #${room.vnum} — still referenced by: ${blockers.slice(0, 3).join('; ')}` +
+          (blockers.length > 3 ? ` (+${blockers.length - 3} more)` : ''),
+      );
+      return;
+    }
+    if (!window.confirm(`Delete room #${room.vnum}? The live room persists until the next copyover.`)) return;
+    setArea(removeEntity(area, 'room', room.vnum));
+    setRoomIdx(null);
     setPreview(null);
   };
 
@@ -93,8 +171,35 @@ export default function AreasPage() {
   const doSave = async () => {
     if (!file || !area) return;
     try {
-      const r = await api.save(file, area);
+      const r = await api.save(file, area, baseHash ?? undefined);
+      if (r.hash) setBaseHash(r.hash);
+      setConflict(false);
       ok(`saved ${file}${r.backupPath ? ' (backup written)' : ''}${manualEdited ? ' — included MANUAL edits' : ''}`);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        setConflict(true);
+        err(`someone else saved ${file} since you loaded it — resolve the conflict below`);
+        return;
+      }
+      err(`save failed: ${(e as Error).message}`);
+    }
+  };
+
+  const conflictReload = async () => {
+    if (!file) return;
+    if (!window.confirm(`Discard YOUR unsaved changes to ${file} and reload what is on disk now?`)) return;
+    await openArea(file);
+    ok(`reloaded ${file} from disk — your previous edits were discarded`);
+  };
+
+  const conflictSaveAnyway = async () => {
+    if (!file || !area) return;
+    if (!window.confirm(`Overwrite ${file} with YOUR version, discarding the other builder's save? A backup of theirs is taken first.`)) return;
+    try {
+      const r = await api.save(file, area); // no baseHash: unconditional
+      if (r.hash) setBaseHash(r.hash);
+      setConflict(false);
+      ok(`saved ${file} over the conflicting version${r.backupPath ? ' (their version is in the backup)' : ''}`);
     } catch (e) {
       err(`save failed: ${(e as Error).message}`);
     }
@@ -150,6 +255,14 @@ export default function AreasPage() {
 
       <aside className="mb-area-list">
         <h3>Areas</h3>
+        <NewAreaForm
+          writesOff={!caps?.writeEnabled}
+          gateTip={!caps?.writeEnabled ? 'Disk writes are disabled (MUD_WRITE_ENABLED is not set)' : undefined}
+          onCreate={createArea}
+        />
+        <button type="button" className={importing ? 'mb-active' : ''} onClick={() => setImporting((v) => !v)}>
+          Import .are file…
+        </button>
         <ul>
           {areas.map((a) => (
             <li key={a.file}>
@@ -161,16 +274,45 @@ export default function AreasPage() {
               >
                 {a.name ?? a.file} {a.error ? '⚠' : ''}
               </button>
+              <PresenceBadge presence={presence} presenceName={presenceName} file={a.file} />
             </li>
           ))}
         </ul>
       </aside>
 
       <main className="mb-area-main">
-        {!area && <p className="mb-muted">Select an area to begin.</p>}
+        {importing && (
+          <ImportAreaPanel
+            writesOff={writesOff}
+            gateTip={gateTip}
+            onClose={() => setImporting(false)}
+            onImported={async (f, note) => {
+              setImporting(false);
+              try {
+                const list = await api.listAreas();
+                setAreas(list.areas);
+                await openArea(f);
+              } catch (e) {
+                err((e as Error).message);
+                return;
+              }
+              ok(`imported ${f} — ${note}`);
+            }}
+          />
+        )}
 
-        {area && (
+        {!importing && !area && <p className="mb-muted">Select an area to begin.</p>}
+
+        {!importing && area && (
           <>
+            <PresenceBanner presence={presence} presenceName={presenceName} file={file} />
+            {conflict && file && (
+              <ConflictPanel
+                file={file}
+                onReload={() => void conflictReload()}
+                onSaveAnyway={() => void conflictSaveAnyway()}
+              />
+            )}
             <div className="mb-toolbar">
               <strong>{file}</strong>
               <span className="mb-tabs">
@@ -226,9 +368,22 @@ export default function AreasPage() {
             )}
 
             {tab === 'form' && (
+              <AreaHeaderEditor
+                area={area}
+                onChange={(next) => {
+                  setArea(next);
+                  setPreview(null);
+                }}
+              />
+            )}
+
+            {tab === 'form' && (
               <div className="mb-editor-split">
                 <nav className="mb-room-list">
                   <h4>Rooms ({rooms.length})</h4>
+                  <button type="button" onClick={addRoom}>
+                    + Add room
+                  </button>
                   <ul>
                     {rooms.map((r, i) => (
                       <li key={r.vnum}>
@@ -247,8 +402,19 @@ export default function AreasPage() {
                   </ul>
                 </nav>
                 <section>
-                  {room ? <RoomEditor room={room} onChange={updateRoom} /> : <p className="mb-muted">Pick a room.</p>}
-                  {preview && <PreviewPane preview={preview} />}
+                  {room ? (
+                    <>
+                      <div className="mb-entity-actions">
+                        <button type="button" className="mb-danger" onClick={deleteRoom}>
+                          Delete room #{room.vnum}
+                        </button>
+                      </div>
+                      <RoomEditor room={room} onChange={updateRoom} />
+                    </>
+                  ) : (
+                    <p className="mb-muted">Pick a room.</p>
+                  )}
+                  {preview && <PreviewPane preview={preview} onNavigate={navigateToRef} />}
                 </section>
               </div>
             )}

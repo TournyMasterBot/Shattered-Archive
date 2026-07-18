@@ -1,1 +1,49 @@
 File Index
+
+/emit.ts
+Purpose: AreaFile → canonical .are text emitter (letter-form flag vectors, doors 0-9 since Phase 12b, doors-before-extra-descriptions room sub-block order, M/R script entries, LF line endings); EmitError on inexpressible models.
+
+/groups-stock.ts
+Purpose: Generated stock groups.dat table (STOCK_GROUPS) — checked in via pnpm codegen, mirrors const.c group_table.
+
+/groups.test.ts
+Purpose: groups.dat parse/emit/validate tests: stock round trip, prefix member resolution, cycle guard, rating sentinels.
+
+/groups.ts
+Purpose: groups.dat overlay format — parse/emit/validate (prefix member resolution against skills+groups, cycle = error, -1/0/1+ rating sentinels) + stockGroupsFile.
+
+/index.ts
+Purpose: Public package surface — re-exports types, parse/emit, Reader, validation (scripts/refs incl. Phase 11 resolver hook + collectDefinedEntities), skills and groups modules.
+
+/parse.test.ts
+Purpose: Parser unit tests per section kind plus error-position assertions.
+
+/parse.ts
+Purpose: .are text → AreaFile parser mirroring db.c consumption (section registry, tilde strings, dice/flag vectors; doors 0-9 and R room-script entries since Phase 12b); ParseError carries line context.
+
+/reader.ts
+Purpose: Token/line reader over raw area text (tilde-terminated strings, numbers with letter-form flag vectors via flagConvert) — the parsing substrate.
+
+/refs.test.ts
+Purpose: validateRefs/collectDefinedEntities tests: fully-linked clean file, in-range dangling = error (even when a resolver could resolve it), out-of-range = warning without a resolver, resolver turns proven refs into external links and unresolved ones into "any listed area" warnings, soft exit-key semantics, stock-corpus sweep (no save-blocking errors).
+
+/roundtrip.test.ts
+Purpose: The load-bearing guarantee: every area.lst file parses → emits → re-parses byte-identically (canonical form).
+
+/scripts.test.ts
+Purpose: Script validation tests: trigger vocabulary, mob-in-file attachment, body budget, preserved-verbatim unknown resets.
+
+/skills-stock.ts
+Purpose: Generated stock skills tables (STOCK_SKILLS, SKILL_SPELL_FUNS, STOCK_FUN_TARGET_PAIRS) — checked in via pnpm codegen, mirrors const.c skill_table.
+
+/skills.test.ts
+Purpose: skills.dat parse/emit/validate tests: stock round trip, (fun,target) stock-pair guard, malformed rows.
+
+/skills.ts
+Purpose: skills.dat overlay format — parse/emit/validate ((fun,target) must be a stock-proven pair — boot crash guard) + stockSkillsFile/stockSkill.
+
+/types.ts
+Purpose: The AreaFile model: every section kind (area header, mobiles, objects, rooms w/ exits+extra descrs, resets, shops, specials, helps, socials, scripts) as typed records mirroring db.c field order; Phase 12b: RoomExit.door 0-9, MobScript.attach 'mob'|'room' (R entries) + ROOM_SCRIPT_TRIGGERS.
+
+/validate.ts
+Purpose: Semantic validation beyond syntax — validateScripts (trigger vocabulary incl. the room branch + #SCRIPTS-after-#ROOMS order guard, budgets), collectRefs/validateRefs (in-range dangling = error, out-of-range = warning, or with the Phase 11 opts.resolveExternal hook: proven refs → structured RefsSummary.external links, unresolved → "any listed area" warnings; Phase 12b adds D/R reset bound errors mirroring db.c exit(1) and `warp <vnum>` body targets as room refs), collectDefinedEntities (world-index surface), vnumsOutsideRange (header shrink guard), isKnownSpecFun, shop/special duplicate semantics.

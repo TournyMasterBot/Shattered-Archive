@@ -49,7 +49,8 @@ execution of multiple applications and services during development.
 
 ```text
 apps/       – End-user applications (game client, game server,
-              web client, web server)
+              web client, web server, kingdom-tactics pair, and the
+              MUD builder pair — see docs/mud-builder/README.md)
 sdks/       – SDKs for integration and extension
 services/   – Backend and service-layer components
 types/      – Shared type definitions and contracts

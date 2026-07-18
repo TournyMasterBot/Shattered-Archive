@@ -1,40 +1,10 @@
 File Index
 
+/jest.config.cjs
+Purpose: Self-contained node jest config; maps merc-area and workspace types to TS sources.
+
 /package.json
 Purpose: Express-based API server package (port 61000) bridging the builder UI to the merc-mud area folder.
 
 /tsconfig.json
 Purpose: NodeNext build config mirroring kingdom-tactics-server.
-
-/jest.config.cjs
-Purpose: Self-contained node jest config; maps merc-area and workspace types to TS sources.
-
-/.env
-Purpose: Local dev environment (port, log paths, MERC_MUD_PATH); MUD_WRITE_ENABLED deliberately absent = writes gated off.
-
-/src/index.ts
-Purpose: Process entry: logger, optional .env loading (warn, never die), createExpressService on PORT (default 61000).
-
-/src/config.ts
-Purpose: MudBuilderConfig from env — MERC_MUD_PATH/MERC_AREA_DIR and the writeEnabled gate (only the literal "true" enables writes).
-
-/src/app.ts
-Purpose: Route registration split from the listener for isolated testing; /health, /api/capabilities, mounts area + reload routes with an AreaStore.
-
-/src/area-store.ts
-Purpose: All disk access: area.lst listing, parse/emit via merc-area, emit-validated-before-anything rule, atomic writes with timestamped backups, write-gate enforcement (403), reload sentinel writer, path-traversal guard.
-
-/src/diff.ts
-Purpose: Minimal prefix/suffix line diff for preview responses (no O(n²) LCS on 8k-line files).
-
-/src/routes/areas.ts
-Purpose: GET list/model/download, POST preview (never writes; returns scripts summary), write-gated PUT; preview+PUT 400 on semantically invalid scripts; every handler wrapped so no error escapes as a crash.
-
-/src/routes/reload.ts
-Purpose: POST /api/reload {mode: hot|copyover} — writes the corresponding sentinel file, write-gated.
-
-/src/app.test.ts
-Purpose: Health/capabilities smoke tests + config gate unit tests.
-
-/src/routes/areas.test.ts
-Purpose: Route tests against a temp fixture dir: listing, preview+diff, download, write gate off/on, atomic save+backup, sentinel writes, non-round-trippable model rejection, scripts summary + invalid-script 400s.

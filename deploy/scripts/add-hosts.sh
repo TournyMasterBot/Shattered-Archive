@@ -19,6 +19,7 @@ BLOCK=$(cat <<'EOF'
 127.0.0.1 game-server.shatteredarchive.dev
 127.0.0.1 web-client.shatteredarchive.dev
 127.0.0.1 web-server.shatteredarchive.dev
+127.0.0.1 build.shatteredarchive.dev
 # END ShatteredArchive
 EOF
 )

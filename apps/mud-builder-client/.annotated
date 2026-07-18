@@ -1,61 +1,10 @@
 File Index
 
+/jest.config.cjs
+Purpose: Self-contained jsdom jest config; maps merc-area to TS source and stubs CSS imports.
+
 /package.json
 Purpose: Vite React 19 UI package (dev port 60080) for the MUD Builder; depends on merc-area for local parse/emit.
 
 /vite.config.ts
 Purpose: Dev server on 60080 with /api and /health proxied to mud-builder-server (61000).
-
-/jest.config.cjs
-Purpose: Self-contained jsdom jest config; maps merc-area to TS source and stubs CSS imports.
-
-/src/App.tsx
-Purpose: App shell with Areas/Rooms/Mobs/Objects/Scripts nav; Areas, Mobs, Objects, and Scripts host real editors (rooms edit via Areas).
-
-/src/api/client.ts
-Purpose: Typed fetch wrappers for the server API (capabilities, list, get, preview, save, reload); server errors surface as thrown messages.
-
-/src/data/flags.ts
-Purpose: Typed flag/word tables ported from the superseded 2.4-builder prototype (bit values match merc.h): room flags/sectors plus mob act/affect/off/resist vectors, races/attack types/positions/sexes/sizes, and object extra/wear/weapon flags, conditions, liquids.
-
-/src/features/areas/AreasPage.tsx
-Purpose: The vertical slice: area list → room list → editor; preview-first toolbar (Preview/Download always on; Save/Hot reload/Copyover disabled+tooltipped when the server gates writes); flagged Manual-edit tab that parses raw text through merc-area before touching the model.
-
-/src/features/areas/RoomEditor.tsx
-Purpose: Form-first room editor (name, description, sector, heal/mana, flag checkboxes, exit rows) — the PRIMARY editing surface.
-
-/src/features/areas/PreviewPane.tsx
-Purpose: Shows the exact generated file text plus the server's line diff before any save.
-
-/src/features/areas/RoomEditor.test.tsx
-Purpose: Component tests — editor round trip, gated-write disabled state, manual-edit badge flow.
-
-/src/features/areas/workbench.tsx
-Purpose: Shared area-editing plumbing (Phase 3): useAreaWorkbench hook (caps/list/model/preview/save/reload state+actions) plus AreaSidebar/WorkbenchToolbar/WorkbenchToast/FlagGrid/WordInput widgets — Mobs and Objects pages build on this instead of re-copying ScriptsPage.
-
-/src/features/mobs/MobsPage.tsx
-Purpose: Mob editing slice: area list → mobs by vnum → MobEditor; edit-only (no add/delete — resets/scripts reference vnums); preview-first + write-gated toolbar.
-
-/src/features/mobs/MobEditor.tsx
-Purpose: Form editor for one #MOBILES entry — descriptions, dice, AC, verbatim word fields (datalist suggestions, unknowns preserved), and act/affect/off/imm/res/vuln FlagGrids that never disturb unlisted bits.
-
-/src/features/mobs/MobEditor.test.tsx
-Purpose: Component tests — stat/dice/word round trip, unlisted-bit preservation, page listing/gating flow against a mocked API.
-
-/src/features/objects/ObjectsPage.tsx
-Purpose: Object editing slice: area list → objects by vnum → ObjectEditor; edit-only; preview-first + write-gated toolbar.
-
-/src/features/objects/ObjectEditor.tsx
-Purpose: Form editor for one #OBJECTS entry — the five values re-labelled and number/word-typed per item type via merc-area objValueKinds (weapon dice, container capacity, drink liquid, wand charges, potion spells), wear/extra FlagGrids, extra-descriptions add/edit/remove; A/F affect lines preserved.
-
-/src/features/objects/ObjectEditor.test.tsx
-Purpose: Component tests — weapon/container value round trips, per-type relabelling, extra-descr editing, emitted-text proof ("sword 1 12 slash 0"), page gating flow.
-
-/src/features/scripts/ScriptsPage.tsx
-Purpose: Scripts authoring slice (Phase 2): area list → scripts by mob → editor; live validateScripts errors block Preview/Save; manages the #SCRIPTS section in the model (adds last, removes when empty); same preview-first + write-gated toolbar as rooms.
-
-/src/features/scripts/ScriptEditor.tsx
-Purpose: Single-script form (mob picker, trigger dropdown, per-trigger phrase hints, body textarea) with the command vocabulary documented beside it.
-
-/src/features/scripts/ScriptEditor.test.tsx
-Purpose: Component tests — editor round trip, vocabulary panel, page listing/gating/add/delete flows against a mocked API.

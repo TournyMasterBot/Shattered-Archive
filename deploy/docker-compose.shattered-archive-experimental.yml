@@ -232,6 +232,12 @@ services:
       MERC_AREA_DIR: "area"
       # The ONLY place in the repo where the MUD write gate is enabled.
       MUD_WRITE_ENABLED: "true"
+      # Builder auth (Phase 9) needs NO env var here: with writes enabled the
+      # guard is always on, and the server generates a per-install master key
+      # on first run at /mud/area/backups/builder-auth.json (the bind mount
+      # above — git-ignored in merc-mud, survives recreation). Read it there;
+      # mint API keys via the UI's Access tab. MUD_BUILDER_AUTH=off exists for
+      # LOCAL testing only and must never be set in this file.
     expose:
       - "61000"
     networks:

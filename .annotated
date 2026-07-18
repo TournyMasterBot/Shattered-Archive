@@ -43,7 +43,7 @@ Purpose: This file configures a Visual Studio Code workspace including multiple 
 Purpose: Configures ESLint rules and settings for a TypeScript/JavaScript project with client and server distinctions.
 
 /jest.config.cjs
-Purpose: Configures Jest test execution for both server and client environments with separate project settings.
+Purpose: Aggregates Jest projects — delegates to package-local jest.config.cjs files (KT/mud-builder apps, engine, merc-area) and keeps generic server/client projects for the rest, with those packages excluded to avoid double runs.
 
 /package.json
 Purpose: This file manages project metadata, dependencies, and automation scripts for a multi-package Node.js application.

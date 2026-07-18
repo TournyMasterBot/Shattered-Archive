@@ -5,6 +5,7 @@ import {
   type AreaFile,
   type MobScript,
   type MobilesSection,
+  type RoomsSection,
   type ScriptsSection,
 } from '@shatteredarchive/merc-area';
 
@@ -64,6 +65,10 @@ export default function ScriptsPage() {
     .filter((s): s is MobilesSection => s.kind === 'mobiles')
     .flatMap((s) => s.mobiles)
     .map((m) => ({ vnum: m.vnum, shortDescr: m.shortDescr }));
+  const rooms = (area?.sections ?? [])
+    .filter((s): s is RoomsSection => s.kind === 'rooms')
+    .flatMap((s) => s.rooms)
+    .map((r) => ({ vnum: r.vnum, name: r.name }));
   const summary = area ? validateScripts(area) : null;
 
   const setScripts = (next: MobScript[]) => {
@@ -90,6 +95,24 @@ export default function ScriptsPage() {
     setScripts([
       ...scripts,
       { mobVnum: mobs[0].vnum, trigger: 'speech', phrase: '', body: 'say Hello, $n!' },
+    ]);
+    setScriptIdx(scripts.length);
+  };
+
+  const addRoomScript = () => {
+    if (rooms.length === 0) {
+      err('this area has no rooms to script');
+      return;
+    }
+    setScripts([
+      ...scripts,
+      {
+        attach: 'room',
+        mobVnum: rooms[0].vnum,
+        trigger: 'entry',
+        phrase: '',
+        body: 'echo A strange force seizes you!\nwarp 3001',
+      },
     ]);
     setScriptIdx(scripts.length);
   };
@@ -240,19 +263,22 @@ export default function ScriptsPage() {
                           setPreview(null);
                         }}
                       >
-                        #{s.mobVnum} {s.trigger}
+                        {s.attach === 'room' ? 'room ' : ''}#{s.mobVnum} {s.trigger}
                         {s.phrase ? ` '${s.phrase}'` : ''}
                       </button>
                     </li>
                   ))}
                 </ul>
                 <button type="button" onClick={addScript}>
-                  + Add script
+                  + Add mob script
+                </button>
+                <button type="button" onClick={addRoomScript}>
+                  + Add room script
                 </button>
               </nav>
               <section>
                 {script ? (
-                  <ScriptEditor script={script} mobs={mobs} onChange={updateScript} onDelete={deleteScript} />
+                  <ScriptEditor script={script} mobs={mobs} rooms={rooms} onChange={updateScript} onDelete={deleteScript} />
                 ) : (
                   <p className="mb-muted">Pick a script or add one.</p>
                 )}

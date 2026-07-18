@@ -1,1 +1,10 @@
 File Index
+
+/ObjectEditor.test.tsx
+Purpose: Per-item-type value editing, extra-description add/remove, and model→file emit round-trip tests.
+
+/ObjectEditor.tsx
+Purpose: #OBJECTS form editor in grouped fieldsets (Descriptions/Basics/Values/flags/extra descriptions); the five values are re-labelled + re-typed per item type via objValueKinds.
+
+/ObjectsPage.tsx
+Purpose: Objects tab — area sidebar + object list + ObjectEditor over the shared useAreaWorkbench (preview-first, gated writes).

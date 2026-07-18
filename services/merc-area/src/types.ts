@@ -218,7 +218,7 @@ export interface ObjectsSection {
 // ── #ROOMS ───────────────────────────────────────────────────────────────────
 
 export interface RoomExit {
-  /** Door direction 0-5 (N E S W U D). */
+  /** Door direction 0-9 (N E S W U D NE NW SE SW — diagonals 6-9 are the Phase 12b engine extension). */
   door: number;
   description: string;
   keyword: string;
@@ -342,15 +342,62 @@ export const SCRIPT_TRIGGERS = [
 export type ScriptTrigger = (typeof SCRIPT_TRIGGERS)[number];
 
 /**
- * One mob script: `M <mobVnum> <trigger> <phrase~>` followed by a
- * tilde-terminated body of script lines. `trigger` is stored verbatim (the
- * parser does not validate it — validation is a server/C concern so files can
- * round-trip even while being edited).
+ * Trigger vocabulary for ROOM scripts (mob_prog.c rp_trigger_lookup) — the C
+ * side is the authority. Rooms fire on a walker entering via normal movement;
+ * warp arrivals deliberately do not re-trigger (no chain teleports).
+ */
+export const ROOM_SCRIPT_TRIGGERS = ['entry'] as const;
+
+export type RoomScriptTrigger = (typeof ROOM_SCRIPT_TRIGGERS)[number];
+
+/**
+ * Spec_fun vocabulary mirrored by hand from merc-mud/2.4/src/special.c
+ * spec_table — the C side is the authority. An unknown name in #SPECIALS is
+ * fatal at boot (load_specials: bug + exit), so validation treats it as an
+ * error. Note spec_lookup PREFIX-matches (case-insensitive), so any prefix of
+ * one of these names is also accepted by the game.
+ */
+export const SPEC_FUNS = [
+  'spec_breath_any',
+  'spec_breath_acid',
+  'spec_breath_fire',
+  'spec_breath_frost',
+  'spec_breath_gas',
+  'spec_breath_lightning',
+  'spec_cast_adept',
+  'spec_cast_cleric',
+  'spec_cast_judge',
+  'spec_cast_mage',
+  'spec_cast_undead',
+  'spec_executioner',
+  'spec_fido',
+  'spec_guard',
+  'spec_janitor',
+  'spec_mayor',
+  'spec_poison',
+  'spec_thief',
+  'spec_nasty',
+  'spec_troll_member',
+  'spec_ogre_member',
+  'spec_patrolman',
+] as const;
+
+export type SpecFun = (typeof SPEC_FUNS)[number];
+
+/**
+ * One script: `M <mobVnum> <trigger> <phrase~>` (mob) or `R <roomVnum>
+ * <trigger> <phrase~>` (room, Phase 12b) followed by a tilde-terminated body
+ * of script lines. `trigger` is stored verbatim (the parser does not validate
+ * it — validation is a server/C concern so files can round-trip even while
+ * being edited).
  */
 export interface MobScript {
+  /** Absent/'mob' = M entry; 'room' = R entry (mobVnum then holds the ROOM vnum). */
+  attach?: 'mob' | 'room';
+  /** Vnum of the attached mob (M) or room (R). Field name is historical. */
   mobVnum: number;
   trigger: string;
-  /** Match argument: substring for act/speech, percent for rand, ignored otherwise. */
+  /** Match argument: substring for act/speech, percent for rand, ignored otherwise (rooms: unused). */
   phrase: string;
   /** Script lines separated by '\n' (no trailing newline). */
   body: string;

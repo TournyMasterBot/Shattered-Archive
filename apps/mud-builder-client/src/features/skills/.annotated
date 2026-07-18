@@ -1,0 +1,13 @@
+File Index
+
+/SkillsPage.tsx
+Purpose: Skills tab (Phase 7) — edits skills.dat, the boot-time data overlay onto the compiled skill_table (NOT an area file: one global optional file, own fetch/save flow); name/slot/gsn read-only, spell-function picker with the stock (fun,target) pair guard, msg_obj null checkbox, manual pane with back-apply, copyover-only note, revert-to-stock DELETE. Hosts the Skills/Groups sub-view switch (Phase 8). Phase 12: holds baseHash (null=stock), conditional saves, ConflictPanel on 409 (reload / save-anyway).
+
+/SkillsPage.test.tsx
+Purpose: SkillsPage tests — stock fallback render, mana edit reflected in PUT body + emitted text, manual-pane back-apply, unproven-pair error disables save vs proven-swap warning, msg_obj null checkbox mapping, Phase 12 conflict flow (baseHash in PUT, 409 panel, save-anyway without hash, reload refetch).
+
+/GroupsView.tsx
+Purpose: Groups sub-view (Phase 8) — edits groups.dat, the boot-time overlay onto group_table; per-class "available" toggle mapping the -1 sentinel, cost NumFields, member list with skill/group picker + prefix-resolution hints (mirrors group_add: skill-first), cycle errors disable save, manual pane, copyover note, revert-to-stock DELETE. Phase 12: baseHash conditional saves + ConflictPanel on 409.
+
+/GroupsView.test.tsx
+Purpose: GroupsView tests — stock render + cleric cost edit in PUT body, -1 toggle round trip into emitted text, cycle rejection disables save + resolution hints ('invis' → invisibility), member add reflected in manual pane, Phase 12 409 conflict panel + unconditional save-anyway retry.

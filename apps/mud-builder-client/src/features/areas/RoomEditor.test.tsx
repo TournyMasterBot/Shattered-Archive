@@ -98,4 +98,74 @@ describe('AreasPage write gating', () => {
     await waitFor(() => expect(screen.getByText('MANUAL EDITS')).toBeTruthy());
     expect(screen.getByRole('button', { name: /#100 The Manual Room/ })).toBeTruthy();
   });
+
+  it('edits the area header from the form and warns when the range shrinks below a used vnum (Phase 6)', async () => {
+    render(<AreasPage />);
+    fireEvent.click(await screen.findByRole('button', { name: /Tiny/ }));
+    const nameInput = (await screen.findByLabelText('Area name')) as HTMLInputElement;
+    expect(nameInput.value).toBe('Tiny');
+
+    fireEvent.change(nameInput, { target: { value: 'Tiny Renamed' } });
+    fireEvent.change(screen.getByLabelText('Min vnum'), { target: { value: '150' } });
+    // Room 100 now falls outside 150-199 → inline warning.
+    expect(screen.getByText(/no longer covers defined vnum/).textContent).toContain('100');
+
+    fireEvent.change(screen.getByLabelText('Min vnum'), { target: { value: '90' } });
+    expect(screen.queryByText(/no longer covers defined vnum/)).toBeNull();
+
+    // The rename reached the model: the manual pane emits the new header.
+    fireEvent.click(screen.getByRole('button', { name: /Manual edit/ }));
+    const textarea = (await screen.findByLabelText('Raw area file text')) as HTMLTextAreaElement;
+    expect(textarea.value).toContain('Tiny Renamed~');
+    expect(textarea.value).toContain('90 199');
+  });
+
+  it('gates "+ New area" off with writes', async () => {
+    render(<AreasPage />);
+    const btn = (await screen.findByRole('button', { name: '+ New area' })) as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+  });
+});
+
+describe('AreasPage new-area creation (writes enabled, Phase 5)', () => {
+  beforeEach(() => {
+    globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const json = (body: unknown, status = 200) =>
+        ({ ok: status < 400, status, statusText: 'X', json: async () => body }) as Response;
+      if (url.endsWith('/api/capabilities')) return json({ writeEnabled: true, mercAreaPath: 'x' });
+      if (url.endsWith('/api/areas') && init?.method === 'POST') {
+        const body = JSON.parse(String(init.body)) as { file: string; name: string };
+        expect(body).toEqual({ file: 'myzone.are', name: 'My Zone', minVnum: 300, maxVnum: 399 });
+        return json({ file: body.file, created: true, requiresCopyover: true, note: 'copyover needed' }, 201);
+      }
+      if (url.endsWith('/api/areas')) {
+        return json({ areas: [{ file: 'tiny.are', name: 'Tiny' }, { file: 'myzone.are', name: 'My Zone' }] });
+      }
+      if (url.endsWith('/api/areas/myzone.are')) {
+        const { parseAreaFile } = await import('@shatteredarchive/merc-area');
+        return json({
+          file: 'myzone.are',
+          area: parseAreaFile('#AREA\nmyzone.are~\nMy Zone~\n{ 1 99} Builder  My Zone~\n300 399\n\n#$\n'),
+        });
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    }) as unknown as typeof fetch;
+  });
+
+  it('creates a new area (appends .are), refreshes the list, and opens it', async () => {
+    render(<AreasPage />);
+    fireEvent.click(await screen.findByRole('button', { name: '+ New area' }));
+
+    fireEvent.change(screen.getByLabelText('New area file name'), { target: { value: 'myzone' } });
+    fireEvent.change(screen.getByLabelText('New area name'), { target: { value: 'My Zone' } });
+    fireEvent.change(screen.getByLabelText('New area min vnum'), { target: { value: '300' } });
+    fireEvent.change(screen.getByLabelText('New area max vnum'), { target: { value: '399' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }));
+
+    await waitFor(() => expect(screen.getByText(/created myzone.are/)).toBeTruthy());
+    expect(screen.getByRole('button', { name: /My Zone/ })).toBeTruthy();
+    // The new (empty) area is open and ready for a first room.
+    expect(screen.getByRole('button', { name: '+ Add room' })).toBeTruthy();
+  });
 });

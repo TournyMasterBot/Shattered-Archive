@@ -1,1 +1,10 @@
 File Index
+
+/ScriptEditor.test.tsx
+Purpose: Trigger/phrase/body editing and delete-button tests.
+
+/ScriptEditor.tsx
+Purpose: Single-script form (mob OR room picker per attach kind, trigger list switches to ROOM_SCRIPT_TRIGGERS for room scripts, phrase with per-trigger hint, monospace body, per-kind command vocabulary crib incl. the Phase 12b room warp set) in the shared mb-field layout.
+
+/ScriptsPage.tsx
+Purpose: Scripts tab — script list per area (room entries labeled), separate "+ Add mob script"/"+ Add room script" buttons (Phase 12b: room scripts default to an entry-trigger warp), add/delete scripts, live validateScripts feedback, preview-first save/reload.

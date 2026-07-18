@@ -22,7 +22,7 @@ Purpose: Removes ShatteredArchive entries from the system hosts file.
 Purpose: Removes ShatteredArchive entries from the system hosts file.
 
 /setup-certs.ps1
-Purpose: Generates self-signed SSL certificates for local development using mkcert.
+Purpose: Generates the local dev TLS cert via mkcert into deploy/nginx/certs — apex + *.shatteredarchive.dev wildcard so every one-level subdomain is covered.
 
 /setup-certs.sh
-Purpose: Generates local development SSL certificates for multiple project domains using mkcert.
+Purpose: Bash twin of setup-certs.ps1 — same apex + wildcard cert into deploy/nginx/certs (the dir nginx mounts).

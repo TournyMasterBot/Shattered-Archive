@@ -1,1 +1,40 @@
 File Index
+
+/AreaHeaderEditor.tsx
+Purpose: #AREA header form (name/credits/vnum range) with an inline warning when the range no longer covers a defined vnum; the server enforces the same shrink guard plus overlap-vs-area.lst on save.
+
+/AreasPage.test.tsx
+Purpose: Phase 11 tests: conditional save sends/refreshes baseHash, 409 → conflict panel (save-anyway resends WITHOUT hash; reload refetches and clears), presence badge + banner rendering from mocked /api/presence.
+
+/AreasPage.tsx
+Purpose: Areas tab — area list (with presence badges), area header fieldset (AreaHeaderEditor), room picker, RoomEditor, preview/diff (external-ref links navigate via navigateToRef), manual raw-text edit path (flagged MANUAL EDITS), the Phase 10 "Import .are file…" toggle, and Phase 11 conditional saves (baseHash state, 409 conflict panel, reload/save-anyway) + initialTarget cross-page navigation from the World tab.
+
+/ImportAreaPanel.test.tsx
+Purpose: Import panel tests: clean validate→commit (overwrite defaults false), error-blocked commit, explicit-overwrite gating for existing files, writes-off disable, stale-report invalidation on input change, resolved external-ref listing.
+
+/ImportAreaPanel.tsx
+Purpose: .are import panel (Phase 10) — file picker/paste → server quarantine report (blocking errors, warnings, resolved external refs, entity summary, canonical text with download) → commit gated on clean report + explicit overwrite checkbox; any input change invalidates the report.
+
+/PreviewPane.test.tsx
+Purpose: Phase 11 tests: resolved external refs render as links (click → onNavigate) or plain text without the callback; unresolved vnums stay in the warning list.
+
+/PreviewPane.tsx
+Purpose: Renders a PreviewResult — exact generated file text plus diff-vs-disk with added/removed coloring, real-warning list, and ExternalRefList (shared with the import panel): resolved cross-area refs as navigable links via optional onNavigate.
+
+/RoomEditor.test.tsx
+Purpose: RoomEditor form round-trip and flag-toggle tests + AreasPage gating/header-editor/new-area tests.
+
+/RoomEditor.tsx
+Purpose: Form-first room editor (mb-field idiom the other editors follow): name/description, sector/heal/mana, room flags, exits table.
+
+/areas.css
+Purpose: All builder styling — sidebar/toolbar/toast, compact form system (mb-field label-above inputs, mb-fieldset groups, mb-form-grid, mb-dice-row, mb-flag-grid, mb-form width cap), preview/diff colors, world dashboard table, Phase 10 import panel + audit table, Phase 11 presence badge/banner, conflict panel, ref-link buttons.
+
+/model-ops.test.ts
+Purpose: Vnum allocation, template emit/parse round trip, and delete-blocking tests.
+
+/model-ops.ts
+Purpose: Pure create/delete model operations — nextFreeVnum (single-namespace range allocation), bootable mob/object/room templates, section-aware insertion, removeEntity, deleteBlockers (reverse refs computed on the post-delete model), shop/special ops (getShop/upsertShop/removeShop, getSpecial/setSpecial/removeSpecial), social ops (socialsOf/newSocialTemplate/upsertSocial/removeSocial; blank fields map to `$`).
+
+/workbench.tsx
+Purpose: useAreaWorkbench shared state/actions (open area w/ baseHash, preview, download, gated conditional save with 409 conflict handling + reload/save-anyway, reload, manual raw-text edit with parse-validated back-apply, createArea) + Phase 11 usePresence (20s heartbeat+poll, silent failures)/othersEditing + shared widgets: AreaSidebar (presence badges), NewAreaForm, WorkbenchToolbar (presence banner + conflict panel), ConflictPanel, PresenceBanner, PresenceBadge, WorkbenchManualPane, WorkbenchToast, FlagGrid, WordInput, NumField, TextField.

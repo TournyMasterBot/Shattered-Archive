@@ -1,8 +1,9 @@
 /**
  * Emitter for Merc 2.4 area files. Produces text that merc-mud/2.4/src/db.c
- * boots directly. Flags are emitted as plain decimal (fread_flag accepts
- * digits), strings as tilde-terminated blocks, and words are quoted when they
- * contain whitespace (fread_word supports '/" quoting).
+ * boots directly. Flags are emitted in db.c's letter form ('A'=1 … 'z'=2^51,
+ * the spelling hand-written area files use; decimal only for values letters
+ * cannot express), strings as tilde-terminated blocks, and words are quoted
+ * when they contain whitespace (fread_word supports '/" quoting).
  *
  * Guarantee (verified by the round-trip suite): parse(emit(area)) is
  * deep-equal to area for any model produced by parseAreaFile.
@@ -60,6 +61,23 @@ function dice(d: Dice): string {
   return `${d.number}d${d.type}+${d.bonus}`;
 }
 
+/**
+ * Flag vector in db.c's letter form ('A'=1 … 'Z'=2^25, 'a'=2^26 … 'z'=2^51),
+ * the spelling hand-written area files use. Zero, negatives, and bits beyond
+ * 'z' fall back to decimal, which fread_flag accepts equally. Bit tests use
+ * division (not `&`) because JS bitwise ops truncate to 32 bits.
+ */
+function flag(n: number): string {
+  if (!Number.isSafeInteger(n) || n <= 0 || n >= 2 ** 52) return String(n);
+  let out = '';
+  for (let bit = 0; bit < 52; bit++) {
+    if (Math.floor(n / 2 ** bit) % 2 === 1) {
+      out += bit < 26 ? String.fromCharCode(65 + bit) : String.fromCharCode(97 + bit - 26);
+    }
+  }
+  return out;
+}
+
 function tail(comment: string): string {
   return comment === '' ? '' : ` ${comment}`;
 }
@@ -101,9 +119,11 @@ function emitSection(section: AreaSection): string {
 function emitScripts(s: ScriptsSection): string {
   let out = '#SCRIPTS\n';
   for (const sc of s.scripts) {
-    out += `M ${sc.mobVnum} ${word(sc.trigger, `script trigger for mob ${sc.mobVnum}`)} `;
-    out += str(sc.phrase, `script phrase for mob ${sc.mobVnum}`);
-    out += str(sc.body, `script body for mob ${sc.mobVnum}`);
+    const what = sc.attach === 'room' ? 'room' : 'mob';
+    out += `${sc.attach === 'room' ? 'R' : 'M'} ${sc.mobVnum} `;
+    out += `${word(sc.trigger, `script trigger for ${what} ${sc.mobVnum}`)} `;
+    out += str(sc.phrase, `script phrase for ${what} ${sc.mobVnum}`);
+    out += str(sc.body, `script body for ${what} ${sc.mobVnum}`);
   }
   out += '#0\n\n';
   return out;
@@ -144,14 +164,14 @@ function emitMobile(m: Mobile): string {
   out += str(m.longDescr, `mob #${m.vnum} longDescr`);
   out += str(m.description, `mob #${m.vnum} description`);
   out += str(m.race, `mob #${m.vnum} race`);
-  out += `${m.act} ${m.affectedBy} ${m.alignment} ${m.group}\n`;
+  out += `${flag(m.act)} ${flag(m.affectedBy)} ${m.alignment} ${m.group}\n`;
   out += `${m.level} ${m.hitroll} ${dice(m.hit)} ${dice(m.mana)} ${dice(m.damage)} ${word(m.damType, `mob #${m.vnum} damType`)}\n`;
   out += `${m.ac.join(' ')}\n`;
-  out += `${m.offFlags} ${m.immFlags} ${m.resFlags} ${m.vulnFlags}\n`;
+  out += `${flag(m.offFlags)} ${flag(m.immFlags)} ${flag(m.resFlags)} ${flag(m.vulnFlags)}\n`;
   out += `${word(m.startPos, 'startPos')} ${word(m.defaultPos, 'defaultPos')} ${word(m.sex, 'sex')} ${m.wealth}\n`;
-  out += `${m.form} ${m.parts} ${word(m.size, 'size')} ${word(m.material, 'material')}\n`;
+  out += `${flag(m.form)} ${flag(m.parts)} ${word(m.size, 'size')} ${word(m.material, 'material')}\n`;
   for (const f of m.flagRemovals) {
-    out += `F ${word(f.field, 'flag removal field')} ${f.vector}\n`;
+    out += `F ${word(f.field, 'flag removal field')} ${flag(f.vector)}\n`;
   }
   return out;
 }
@@ -169,7 +189,7 @@ function emitObject(o: MudObject): string {
   out += str(o.shortDescr, `obj #${o.vnum} shortDescr`);
   out += str(o.description, `obj #${o.vnum} description`);
   out += str(o.material, `obj #${o.vnum} material`);
-  out += `${word(o.itemType, `obj #${o.vnum} itemType`)} ${o.extraFlags} ${o.wearFlags}\n`;
+  out += `${word(o.itemType, `obj #${o.vnum} itemType`)} ${flag(o.extraFlags)} ${flag(o.wearFlags)}\n`;
 
   const kinds = objValueKinds(o.itemType);
   const values = o.values.map((v, i) => {
@@ -178,7 +198,7 @@ function emitObject(o: MudObject): string {
       return word(v, `obj #${o.vnum} value[${i}]`);
     }
     if (typeof v !== 'number') throw new EmitError(`obj #${o.vnum} value[${i}] must be a number for item type '${o.itemType}'`);
-    return String(v);
+    return kinds[i] === 'flag' ? flag(v) : String(v);
   });
   out += `${values.join(' ')}\n`;
 
@@ -189,7 +209,7 @@ function emitObject(o: MudObject): string {
     out += `A\n${a.location} ${a.modifier}\n`;
   }
   for (const f of o.flagAffects) {
-    out += `F ${f.where} ${f.location} ${f.modifier} ${f.bitvector}\n`;
+    out += `F ${f.where} ${f.location} ${f.modifier} ${flag(f.bitvector)}\n`;
   }
   for (const e of o.extraDescrs) {
     out += 'E\n';
@@ -210,9 +230,9 @@ function emitRoom(room: Room): string {
   let out = `#${room.vnum}\n`;
   out += str(room.name, `room #${room.vnum} name`);
   out += str(room.description, `room #${room.vnum} description`);
-  out += `${room.areaNumber} ${room.roomFlags} ${room.sectorType}\n`;
+  out += `${room.areaNumber} ${flag(room.roomFlags)} ${room.sectorType}\n`;
   for (const ex of room.exits) {
-    if (ex.door < 0 || ex.door > 5) throw new EmitError(`room #${room.vnum} exit has bad door ${ex.door}`);
+    if (ex.door < 0 || ex.door > 9) throw new EmitError(`room #${room.vnum} exit has bad door ${ex.door}`);
     out += `D${ex.door}\n`;
     out += str(ex.description, `room #${room.vnum} exit ${ex.door} description`);
     out += str(ex.keyword, `room #${room.vnum} exit ${ex.door} keyword`);

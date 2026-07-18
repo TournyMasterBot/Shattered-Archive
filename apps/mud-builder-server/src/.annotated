@@ -1,1 +1,34 @@
 File Index
+
+/app.test.ts
+Purpose: registerRoutes smoke tests: health, capabilities gating flags.
+
+/app.ts
+Purpose: Registers all routes on an Express app; Phase 9 ordering contract lives here (authGuard → auditMiddleware → routes) plus the Phase 10 rule that the scoped 2mb import parser registers before the app-wide 1mb one.
+
+/area-store.ts
+Purpose: Disk access for the MUD area dir: strict file-name validation, emit-validated-before-anything, atomic writes + timestamped backups, area.lst registration with overlap guards, header-range change guard, the Phase 10 quarantine import (importArea report / importAreaCommit gated write), and Phase 11 areaHash/conditional writeArea (baseHash → AreaConflictError 409) + worldVnumIndex/resolveRefs (mtime-cached cross-area vnum resolution).
+
+/audit.ts
+Purpose: Append-only audit trail (Phase 9): auditMiddleware records every accepted non-GET /api/* mutation (previews and /api/presence excluded) as a JSON line in backups/audit.log; appendAudit never throws.
+
+/auth-store.ts
+Purpose: Phase 9 credential store: first-run master key generation into auth/builder-auth.json (Phase 12b: legacy backups/ copy migrated by atomic rename; file re-read on mtime change so generate-master-key.sh rotations apply without restart), sha256-hashed API keys (create/rotate/revoke), timing-safe verify, corrupt-file lockdown (never overwrites).
+
+/config.ts
+Purpose: Env-derived server config: MERC_MUD_PATH/area path, writeEnabled (MUD_WRITE_ENABLED), authEnabled (writes on and MUD_BUILDER_AUTH not "off"), authDataPath (area auth dir, Phase 12b) + auditDataPath (area backups dir, audit.log stays put).
+
+/diff.ts
+Purpose: Minimal line-diff (first differing window) used by area previews.
+
+/groups-store.ts
+Purpose: groups.dat overlay store (Phase 8): stock fallback, validation (prefix member resolution, cycle guard), gated atomic writes; Phase 12 hash() (null=stock) + conditional write (baseHash mismatch → 409 before backup, success returns new hash).
+
+/index.ts
+Purpose: HTTP listener; boot log announces write gate and auth state (auth file path or writes-without-auth warning).
+
+/presence.ts
+Purpose: Advisory in-memory presence registry (Phase 11): heartbeat/list with a 60s TTL, injectable clock, lazy expiry (no timers); never a lock, never touches disk.
+
+/skills-store.ts
+Purpose: skills.dat overlay store (Phase 7): stock fallback, (fun,target) stock-pair validation, gated atomic writes; Phase 12 hash() (null=stock) + conditional write (baseHash mismatch → 409 before backup, success returns new hash).

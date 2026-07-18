@@ -1,1 +1,4 @@
 File Index
+
+/client.ts
+Purpose: Thin fetch wrappers for mud-builder-server (capabilities, areas incl. baseHash/conditional save, reload, world incl. Phase 12b limitPressure, skills/groups incl. Phase 12 baseHash conditional overlay saves, Phase 9 auth key management, Phase 10 import preview/commit + audit tail, Phase 11 presence/presenceBeat + ExternalRef/PresenceEntry types, Phase 12 areaMap/worldMap + map response types now carrying exit locks + room warps) — attaches the stored builder token (localStorage 'mb-token') as a Bearer header on every request; errors throw ApiError with status, 401s hint at the Access tab.

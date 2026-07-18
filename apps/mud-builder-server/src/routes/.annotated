@@ -1,1 +1,58 @@
 File Index
+
+/areas.test.ts
+Purpose: Route tests both gate states: listing/preview/diff/download, script + dangling-vnum 400s, atomic save with backup, reload signals, new-area creation (area.lst registration, overlap 400, duplicate 409), header range guards (shrink/overlap 400s, rename saves), Phase 11 conditional saves (baseHash 409 with disk untouched) and world-index ref resolution with live cache invalidation.
+
+/areas.ts
+Purpose: Area REST API — list/get(+baseHash)/preview(diff+scripts+refs incl. resolved external links)/download/save plus POST /api/areas new-area creation (copyover-flagged); optional baseHash makes PUT conditional (409 {error,currentHash}); scripts + vnum-ref + header-range validation 400s before disk; no error escapes a handler.
+
+/audit-view.test.ts
+Purpose: GET /api/audit tests via full registerRoutes: empty-before-any-mutation, anonymous 401 / API-key 403, newest-first order + ?limit, unparseable line degrades to { raw }.
+
+/audit-view.ts
+Purpose: GET /api/audit (Phase 10) — master-only, read-only tail of backups/audit.log (newest first, default 100 / cap 500); missing file = empty, bad line = { raw }; never truncates the log.
+
+/auth.test.ts
+Purpose: Guard + lifecycle tests via full registerRoutes: first-run key gen, 401/403 matrix, create→use→rotate→revoke, master rotation, per-install uniqueness, guard-off mode, corrupt-file lockdown, audit lines without secrets.
+
+/auth.ts
+Purpose: Phase 9 access guard — authGuard middleware (non-GET /api/* requires a valid bearer) + master-only /api/auth key-management routes (list/create/rotate/revoke, rotate-master); plaintext tokens only in create/rotate responses; exports requireMaster for the audit viewer.
+
+/groups.test.ts
+Purpose: /api/groups tests both gating modes: stock fallback GET (27 groups), preview text + cycle 400, 403 when writes disabled, PUT/backup/DELETE round trip, unknown-member 400, corrupt-overlay fallback with parseError, Phase 12 baseHash matrix (null first save, stale 409 disk untouched, fresh, legacy).
+
+/groups.ts
+Purpose: groups.dat REST API (Phase 8) — GET (overlay or stock fallback, +baseHash) , POST preview, gated PUT (optional baseHash → conditional, 409 carries currentHash) with copyover note, DELETE (revert to compiled table); same never-crash safe() contract as areas/skills.
+
+/import.test.ts
+Purpose: .are import tests both gate states: clean preview (no writes) + commit (byte-identical disk, area.lst registration, copyover flag), broken/overlap 400s with zero writes, overwrite 409-then-backup, >1mb body via the scoped parser, oversized/binary/traversal store guards.
+
+/import.ts
+Purpose: .are import API (Phase 10) — POST /api/import/area/preview (quarantine report, never writes) + gated PUT /api/import/area commit; scoped 2mb JSON parser registered before the app-wide 1mb one.
+
+/map.test.ts
+Purpose: /api/map tests: single-area shape with internal/external/dangling exits told apart (external carries file+name), 404 unlisted / 400 invalid name, world aggregation of areas + directional links with a broken file tolerated.
+
+/map.ts
+Purpose: Read-only map aggregates (Phase 12) — GET /api/map/:file (rooms+exits with locks, cross-area targets resolved via worldVnumIndex to {file,name}, Phase 12b `warps` from R-script `warp <vnum>` lines) and GET /api/map (world graph: area nodes + directional cross-area exit links with per-exit detail); never writes, never audited, unparseable files listed with parseError.
+
+/presence.test.ts
+Purpose: Presence tests: registry unit (heartbeat/list/refresh, lazy TTL expiry via injected clock), standalone routes (anonymous heartbeat, 400 guards), full-app auth-on (401 anon, credential-named entry, open GET, never audited).
+
+/presence.ts
+Purpose: Advisory presence routes (Phase 11): guarded POST /api/presence heartbeat (name from the acting credential, returned to the caller) + open GET listing live entries; scoped 4kb parser; excluded from auditing.
+
+/reload.ts
+Purpose: POST /api/reload — writes the hot (reload.signal, per-file) or copyover (copyover.signal) sentinel the game polls; write-gated.
+
+/skills.test.ts
+Purpose: /api/skills tests both gating modes: stock fallback GET, preview text + validation 400s, 403 when writes disabled, PUT/backup/DELETE round trip, unproven-pair 400, corrupt-overlay fallback with parseError, Phase 12 baseHash matrix (null first save, stale 409 disk untouched, fresh/wrong/legacy/400).
+
+/skills.ts
+Purpose: skills.dat REST API (Phase 7) — GET (overlay or stock fallback, +baseHash), POST preview, gated PUT (optional baseHash → conditional, 409 carries currentHash; exports readBaseHash shared with groups) with copyover note, DELETE (revert to compiled table); same never-crash safe() contract as areas.
+
+/world.test.ts
+Purpose: /api/world aggregation tests: counts, cross-area warning, and a listed-but-broken file reported instead of dropped.
+
+/world.ts
+Purpose: GET /api/world — read-only aggregate over every area.lst entry (header, entity counts, resolver-backed refs: errors, proven-INVALID warnings, resolved external links) plus Phase 12b limitPressure (world-wide spawn demand per mob/object vs the tightest reset limit, db.c decoding, flagged on the defining area); unparseable files stay listed with their parse error.

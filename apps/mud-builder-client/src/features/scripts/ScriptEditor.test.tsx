@@ -65,6 +65,38 @@ describe('ScriptEditor', () => {
     expect(screen.getByText('Command vocabulary')).toBeTruthy();
     expect(screen.getByText(/mload <mob-vnum>/)).toBeTruthy();
   });
+
+  it('switches to the room vocabulary and room picker for attach: room (Phase 12b)', () => {
+    const onChange = jest.fn();
+    const roomScript: MobScript = {
+      attach: 'room',
+      mobVnum: 110,
+      trigger: 'entry',
+      phrase: '',
+      body: 'warp 3001',
+    };
+    render(
+      <ScriptEditor
+        script={roomScript}
+        mobs={MOBS}
+        rooms={[
+          { vnum: 110, name: 'Trap Room' },
+          { vnum: 111, name: 'Other Room' },
+        ]}
+        onChange={onChange}
+        onDelete={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/warp <room-vnum>/)).toBeTruthy();
+    expect(screen.queryByText(/mload <mob-vnum>/)).toBeNull();
+
+    const triggerSelect = screen.getByLabelText('Script trigger') as HTMLSelectElement;
+    expect([...triggerSelect.options].map((o) => o.value)).toEqual(['entry']);
+
+    fireEvent.change(screen.getByLabelText('Script room'), { target: { value: '111' } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ attach: 'room', mobVnum: 111 }));
+  });
 });
 
 describe('ScriptsPage', () => {
@@ -108,9 +140,9 @@ describe('ScriptsPage', () => {
   it('adds a script for the first mob with a speech default', async () => {
     render(<ScriptsPage />);
     fireEvent.click(await screen.findByRole('button', { name: /Tiny/ }));
-    await screen.findByRole('button', { name: '+ Add script' });
+    await screen.findByRole('button', { name: '+ Add mob script' });
 
-    fireEvent.click(screen.getByRole('button', { name: '+ Add script' }));
+    fireEvent.click(screen.getByRole('button', { name: '+ Add mob script' }));
     expect(screen.getByText('Scripts (2)')).toBeTruthy();
     expect((screen.getByLabelText('Script trigger') as HTMLSelectElement).value).toBe('speech');
     expect((screen.getByLabelText('Script body') as HTMLTextAreaElement).value).toContain('say Hello');

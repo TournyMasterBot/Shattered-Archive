@@ -1,6 +1,41 @@
-/** @type {import('jest').Config} */
+/**
+ * Repo-root Jest config.
+ *
+ * Packages listed by PATH own a self-contained local jest.config.cjs (they need
+ * settings the generic projects below don't have: workspace deps resolved to TS
+ * sources, CSS/asset stubs for jsdom, kt-config stubs). Keep new settings in the
+ * package config, not here — the root only aggregates.
+ *
+ * The generic `server`/`client` projects collect the remaining packages by their
+ * `-server`/`-client` path segment; the path-listed packages are excluded from
+ * them via testPathIgnorePatterns so no suite runs twice.
+ *
+ * @type {import('jest').Config}
+ */
+
+// Packages with their own jest.config.cjs — excluded from the generic projects.
+const LOCAL_CONFIG_PACKAGES = [
+  '<rootDir>/apps/kingdom-tactics-client',
+  '<rootDir>/apps/kingdom-tactics-server',
+  '<rootDir>/apps/mud-builder-client',
+  '<rootDir>/apps/mud-builder-server',
+  '<rootDir>/services/kingdom-tactics-engine',
+  '<rootDir>/services/merc-area',
+];
+
+const LOCAL_CONFIG_IGNORES = [
+  '/apps/kingdom-tactics-client/',
+  '/apps/kingdom-tactics-server/',
+  '/apps/mud-builder-client/',
+  '/apps/mud-builder-server/',
+  '/services/kingdom-tactics-engine/',
+  '/services/merc-area/',
+];
+
 module.exports = {
   projects: [
+    ...LOCAL_CONFIG_PACKAGES,
+
     // -------------------------
     // SERVER TESTS (Node)
     // -------------------------
@@ -34,7 +69,7 @@ module.exports = {
         '^(\\.{1,2}/.*)\\.js$': '$1',
       },
 
-      testPathIgnorePatterns: ['/node_modules/', '/dist/', '/coverage/'],
+      testPathIgnorePatterns: ['/node_modules/', '/dist/', '/coverage/', ...LOCAL_CONFIG_IGNORES],
       coverageDirectory: '<rootDir>/coverage/server',
       coverageReporters: ['json-summary'],
     },
@@ -81,7 +116,7 @@ module.exports = {
         '^(\\.{1,2}/.*)\\.js$': '$1',
       },
 
-      testPathIgnorePatterns: ['/node_modules/', '/dist/', '/coverage/'],
+      testPathIgnorePatterns: ['/node_modules/', '/dist/', '/coverage/', ...LOCAL_CONFIG_IGNORES],
       coverageDirectory: '<rootDir>/coverage/client',
       coverageReporters: ['json-summary'],
     },
