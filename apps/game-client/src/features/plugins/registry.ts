@@ -7,6 +7,8 @@ import { createBrewPlugin } from './core-plugins/brew.plugin';
 import { createDisarmPlugin } from './core-plugins/disarm.plugin';
 import { createColorKitPlugin } from './core-plugins/colorkit.plugin';
 import { createWeaponFlagSquelchPlugin } from './core-plugins/weapon-flag-squelch.plugin';
+import { createCombatCompressionPlugin } from './core-plugins/combat-compression.plugin';
+import { createStunHighlightPlugin } from './core-plugins/stun-highlight.plugin';
 import { createEnchantPlugin } from './core-plugins/enchant.plugin';
 import { createGourdPlugin } from './core-plugins/gourd.plugin';
 import { createPeoplePlugin } from './core-plugins/people.plugin';
@@ -56,6 +58,16 @@ export const CORE_PLUGINS: CorePluginDefinition[] = [
     id: 'weapon-flag-squelch',
     manifest: createWeaponFlagSquelchPlugin().manifest,
     create: createWeaponFlagSquelchPlugin,
+  },
+  {
+    id: 'combat-compression',
+    manifest: createCombatCompressionPlugin().manifest,
+    create: createCombatCompressionPlugin,
+  },
+  {
+    id: 'stun-highlight',
+    manifest: createStunHighlightPlugin().manifest,
+    create: createStunHighlightPlugin,
   },
   {
     id: 'enchant',
