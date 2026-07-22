@@ -1,0 +1,95 @@
+/** Thin fetch wrappers for auth-server. Every call is same-origin cookie auth (credentials: 'include') — auth-client never reads or stores the session token itself. */
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+export interface AccountSummary {
+  id: string;
+  username: string;
+  mustChangePassword: boolean;
+  emailOnFile: boolean;
+  emailVerified: boolean;
+}
+
+export interface ChallengePrompt {
+  questionId: string;
+  prompt: string;
+}
+
+export interface Challenge {
+  challengeId: string;
+  prompts: ChallengePrompt[];
+}
+
+export interface SignupResult {
+  username: string;
+  password: string;
+  note: string;
+}
+
+export interface ApiKeyInfo {
+  id: string;
+  service: string;
+  label: string;
+  createdAt: string;
+  expiresAt?: string | null;
+  revokedAt?: string;
+}
+
+/** create/rotate responses — the only place a plaintext token ever appears. rotate omits service/label. */
+export interface IssuedKey {
+  id: string;
+  token: string;
+  service?: string;
+  label?: string;
+  expiresAt?: string | null;
+  note: string;
+}
+
+async function request<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, { ...init, credentials: 'include' });
+  const body = (await res.json().catch(() => ({}))) as T & { error?: string };
+  if (!res.ok) {
+    throw new ApiError(body.error ?? `${res.status} ${res.statusText}`, res.status);
+  }
+  return body;
+}
+
+function postJson<T>(url: string, payload?: unknown): Promise<T> {
+  return request<T>(url, {
+    method: 'POST',
+    ...(payload !== undefined ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) } : {}),
+  });
+}
+
+export const api = {
+  challenge: () => request<Challenge>('/api/auth/challenge'),
+  signup: (input: { username: string; challengeId: string; answers: Record<string, string> }) =>
+    postJson<SignupResult>('/api/auth/signup', input),
+  login: (username: string, password: string) => postJson<AccountSummary>('/api/auth/login', { username, password }),
+  logout: () => postJson<{ loggedOut: boolean }>('/api/auth/logout'),
+  me: () => request<AccountSummary>('/api/auth/me'),
+  forgotPassword: (username: string) => postJson<{ message: string }>('/api/auth/forgot-password', { username }),
+  resetPassword: (token: string, newPassword: string) =>
+    postJson<{ message: string }>('/api/auth/reset-password', { token, newPassword }),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    postJson<{ message: string }>('/api/account/change-password', { currentPassword, newPassword }),
+  requestEmail: (email: string) => postJson<{ message: string }>('/api/account/email', { email }),
+  verifyEmail: (token: string) => postJson<{ message: string }>('/api/account/email/verify', { token }),
+  rotateMaster: () => postJson<{ message: string; epoch: number }>('/api/account/rotate-master'),
+
+  listKeys: () => request<{ keys: ApiKeyInfo[] }>('/api/keys'),
+  createKey: (service: string, label: string, expiresAt: string | null) =>
+    postJson<IssuedKey>('/api/keys', { service, label, expiresAt }),
+  rotateKey: (id: string) => request<IssuedKey>(`/api/keys/${encodeURIComponent(id)}/rotate`, { method: 'POST' }),
+  revokeKey: (id: string) =>
+    request<ApiKeyInfo & { revoked: boolean }>(`/api/keys/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+};

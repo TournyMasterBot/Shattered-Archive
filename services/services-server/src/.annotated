@@ -1,10 +1,16 @@
 File Index
 
+/auth-introspect-client.test.ts
+Purpose: signAssertion shape/cross-keypair rejection/ms-unit window, introspect() success/valid-false/non-2xx-throw/network-error-propagation via mocked fetch.
+
+/auth-introspect-client.ts
+Purpose: Signs a compact Ed25519 { service, iat, exp, nonce } assertion (epoch MILLISECONDS — matches auth-server's service-key-store.ts, NOT Unix seconds) and calls auth-server's POST /api/introspect; deliberately duplicates the compact format from apps/auth-server/src/crypto-primitives.ts rather than importing across the app boundary (Phase 2 plan's Constraints).
+
 /express-service.ts
 Purpose: Provides a standardized Express.js service configuration with security defaults and environment-based setup.
 
 /index.ts
-Purpose: This file re-exports all services to simplify imports throughout the application.
+Purpose: This file re-exports all services to simplify imports throughout the application, including auth-introspect-client.ts (Phase 2 centralized auth).
 
 /logger-service.ts
 Purpose: Provides structured logging with file rotation, JSON formatting, and SOH detection for server applications.

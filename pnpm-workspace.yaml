@@ -9,6 +9,11 @@ allowBuilds:
   '@parcel/watcher': true
   '@swc/core': true
   esbuild: true
+  # Optional Node-side deps of @huggingface/transformers (game-client only
+  # uses its browser/WASM path via dynamic import) — no build scripts needed.
+  onnxruntime-node: false
+  protobufjs: false
+  sharp: false
   unrs-resolver: true
 
 onlyBuiltDependencies:

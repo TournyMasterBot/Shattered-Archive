@@ -87,6 +87,13 @@
   cursor: not-allowed;
 }
 
+/* Default state of #voice-dictation-mic-slot: hidden until the
+   voice-dictation plugin sets an inline display style to reveal it (see
+   the comment above the button in CommandInput.tsx). */
+.micSlotHidden {
+  display: none;
+}
+
 /* -------------------------------------------------
    MICROPHONE STATES
 -------------------------------------------------- */

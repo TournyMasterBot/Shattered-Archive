@@ -1,0 +1,55 @@
+File Index
+
+/account-store.test.ts
+Purpose: createAccount/duplicate rejection, authenticate, changePassword/adminSetTemporaryPassword epoch bumps, email verify + password reset flows, corrupt-file lockdown.
+
+/account-store.ts
+Purpose: Username accounts — scrypt password hashing, the epoch counter both change-password and rotate-master bump, pending email-verify/password-reset token flows; hashes BEFORE re-checking for a duplicate username (closes a TOCTOU race scrypt's latency would otherwise leave open).
+
+/app.ts
+Purpose: Registers all HTTP routes on an Express app (health check + the four route modules); sets trust proxy for the per-IP challenge throttle behind nginx.
+
+/config.ts
+Purpose: Typed env accessor (PORT, DATA_DIR, DATA_ENCRYPTION_KEY/_FILE, SMTP_*, PUBLIC_ORIGIN).
+
+/crypto-primitives.test.ts
+Purpose: Encrypt/decrypt round-trip + tamper rejection, loadDataKey's full precedence chain including first-boot self-generation and reuse, sign/verify round-trip + wrong-keypair rejection.
+
+/crypto-primitives.ts
+Purpose: AES-256-GCM at-rest envelope (encryptJson/decryptJson, throws on a bad tag), loadDataKey()'s env-var/mounted-file/self-generate-on-first-boot precedence, and Ed25519 helpers (generateServiceKeypair/signAssertion/verifyAssertion) for the service-to-service introspect guard.
+
+/deps.ts
+Purpose: AuthServerDeps — the stores/mailer/throttle/publicOrigin bundle threaded through registerRoutes; kept separate from app.ts to avoid a type-only import cycle with the route modules.
+
+/encrypted-file-store.ts
+Purpose: Generic base shared by account/key/service-key stores — atomic tmp+rename writes of an encrypted envelope, mtime-cached reload, corrupt/undecryptable file LOCKS the store rather than silently resetting it.
+
+/errors.ts
+Purpose: AuthError — the one typed failure-with-status class shared across every store and route in this app (not cross-imported from mud-builder-server, but centralized once here rather than duplicated per store).
+
+/index.ts
+Purpose: HTTP listener — env loading, fail-fast on an unusable data encryption key (never starts serving without one), builds the AuthServerDeps bundle, listens.
+
+/key-store.test.ts
+Purpose: Mint/verify for both kinds, expiresAt null-vs-dated-vs-expired, epoch-mismatch invalidation, listKeys shape, rotate/revoke ownership 404s, revokeById.
+
+/key-store.ts
+Purpose: API keys AND browser sessions as ONE record type — mintApiKey/mintSession/verify (sha256 + timingSafeEqual + not-revoked + not-expired + mintedAtEpoch === the account's CURRENT epoch, supplied by the caller so this store never reaches into account-store directly); revokeById for logout (no ownership/kind filter) vs. ownership-checked rotateKey/revokeKey for the key-management routes.
+
+/logger.ts
+Purpose: Minimal winston console+JSON logger (deliberately not services-server's Logger — no file-rotation dependency needed here).
+
+/mailer.ts
+Purpose: Pluggable mail transport — console/log fallback with zero SMTP config (must work for local dev), nodemailer transport when SMTP_HOST is set; used only by the two recovery-link flows (email verify, password reset).
+
+/questions-store.test.ts
+Purpose: Pool-too-small rejection, normalized case-insensitive answer matching, single-use + expiry enforcement, per-IP throttle capacity/refill/independence.
+
+/questions-store.ts
+Purpose: Anti-bot signup challenge — PLAIN (deliberately unencrypted, hand-edited) dsl-questions.json pool, mtime-reloaded; in-memory single-use challenge instances (3 random questions, 10min TTL, marks used even on failure); ChallengeThrottle is a basic per-IP token bucket, no new dependency.
+
+/service-key-store.test.ts
+Purpose: Valid assertion accept, unregistered/impostor-key rejection, two-key rotation window, revoked-key rejection, stale/future/over-wide-window rejection, nonce replay rejection.
+
+/service-key-store.ts
+Purpose: Per-service Ed25519 public-key registry for /api/introspect — multiple non-revoked keys per service expected during a rotation window; verifyAssertion() peek-decodes the claimed service WITHOUT trusting it (used only to pick which keys to try), re-validates iat/exp/nonce off the cryptographically VERIFIED payload, and tracks seen nonces to reject replays.

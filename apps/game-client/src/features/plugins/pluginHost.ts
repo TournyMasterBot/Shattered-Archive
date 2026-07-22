@@ -119,8 +119,12 @@ function makeDefaultApi(
     args
       .map((a) => {
         if (typeof a === 'string') return a;
+        // Error objects JSON.stringify to "{}" (message/stack are non-enumerable),
+        // which hides the actual failure reason from users reading plugin logs.
+        if (a instanceof Error) return `${a.name}: ${a.message}`;
         try {
-          return JSON.stringify(a);
+          const json = JSON.stringify(a);
+          return json === undefined ? String(a) : json;
         } catch {
           return String(a);
         }

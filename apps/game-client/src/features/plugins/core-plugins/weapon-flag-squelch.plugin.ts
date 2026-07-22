@@ -37,7 +37,7 @@ import type { IPluginModule, PluginRuntimeApi } from '@shatteredarchive/types-cl
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
-interface FlagPattern {
+export interface FlagPattern {
   configKey: string;
   categoryLabel: string; // flag group, for field ordering/labeling only
   variantLabel: string; // which distinct echo line within the group
@@ -47,7 +47,9 @@ interface FlagPattern {
 
 // ── Patterns (regex source strings; 'm' flag applied uniformly) ────────────
 
-const PATTERNS: FlagPattern[] = [
+// Exported so other plugins (e.g. text-to-speech's combat-compression mode)
+// can reuse these verified proc-echo patterns instead of re-deriving them.
+export const PATTERNS: FlagPattern[] = [
   // Frost (C)
   {
     configKey: 'squelchFrostFreezes',

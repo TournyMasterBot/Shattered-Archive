@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "jest --config ../../jest.config.cjs --runInBand --rootDir .",
+    "test": "jest --config ../../jest.config.cjs --runInBand --testPathPatterns services/services-server",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\""
   },
   "dependencies": {

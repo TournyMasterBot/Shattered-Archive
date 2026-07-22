@@ -15,6 +15,8 @@
 
 // Packages with their own jest.config.cjs — excluded from the generic projects.
 const LOCAL_CONFIG_PACKAGES = [
+  '<rootDir>/apps/auth-client',
+  '<rootDir>/apps/auth-server',
   '<rootDir>/apps/kingdom-tactics-client',
   '<rootDir>/apps/kingdom-tactics-server',
   '<rootDir>/apps/mud-builder-client',
@@ -24,6 +26,8 @@ const LOCAL_CONFIG_PACKAGES = [
 ];
 
 const LOCAL_CONFIG_IGNORES = [
+  '/apps/auth-client/',
+  '/apps/auth-server/',
   '/apps/kingdom-tactics-client/',
   '/apps/kingdom-tactics-server/',
   '/apps/mud-builder-client/',

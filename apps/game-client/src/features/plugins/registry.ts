@@ -16,6 +16,8 @@ import { createHighlighterPlugin } from './core-plugins/highlighter.plugin';
 import { createAffectEchoPlugin } from './core-plugins/affect-echo.plugin';
 import { createWarlockAlphabetPlugin } from './core-plugins/warlock-alphabet.plugin';
 import { createQuestBotPlugin } from './core-plugins/questbot.plugin';
+import { createVoiceDictationPlugin } from './core-plugins/voice-dictation.plugin';
+import { createTextToSpeechPlugin } from './core-plugins/text-to-speech.plugin';
 
 export interface CorePluginDefinition {
   id: PluginId;
@@ -103,6 +105,16 @@ export const CORE_PLUGINS: CorePluginDefinition[] = [
     id: 'questbot',
     manifest: createQuestBotPlugin().manifest,
     create: createQuestBotPlugin,
+  },
+  {
+    id: 'voice-dictation',
+    manifest: createVoiceDictationPlugin().manifest,
+    create: createVoiceDictationPlugin,
+  },
+  {
+    id: 'text-to-speech',
+    manifest: createTextToSpeechPlugin().manifest,
+    create: createTextToSpeechPlugin,
   },
 ];
 

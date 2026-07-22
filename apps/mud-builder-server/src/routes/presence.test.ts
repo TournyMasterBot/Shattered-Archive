@@ -108,6 +108,7 @@ describe('presence routes (full app, auth ON)', () => {
       authEnabled: true,
       authDataPath: path.join(dir, 'auth'),
       auditDataPath: path.join(dir, 'backups'),
+      authServerUrl: 'http://localhost:62000',
     };
     const app = express();
     registerRoutes(app, config);

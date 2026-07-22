@@ -1,0 +1,37 @@
+File Index
+
+/account.ts
+Purpose: Session-guarded account actions (change-password, email, email/verify, rotate-master), blocked while mustChangePassword is set except change-password itself; change-password and rotate-master both mint a FRESH session at the new epoch before responding.
+
+/account.test.ts
+Purpose: mustChangePassword allowlist enforcement, change-password wrong-current/too-short/success-invalidates-old-session-and-mints-fresh, rotate-master same, email verify wrong-token, email format validation.
+
+/auth.ts
+Purpose: Public-ish flows — anti-bot challenge, signup (one-time password shown once), login/logout/me, forgot/reset password (anti-enumeration: forgot-password always returns the same response; reset-password never auto-logs-in).
+
+/auth.test.ts
+Purpose: Challenge shape, signup success/wrong-answer/duplicate, login success/failure, me session requirement + mustChangePassword allowlist, logout revocation, forgot-password identical-response invariant, full reset-password flow with no auto-login.
+
+/introspect.ts
+Purpose: Server-to-server ONLY — POST /api/introspect gated by a signed X-Service-Assertion header (never a session cookie); an invalid/missing/unverifiable ASSERTION is 401, an unknown/expired TOKEN being introspected is a normal {valid:false}.
+
+/introspect.test.ts
+Purpose: Missing/bad assertion 401s, valid token/unknown token, expired API key, two-key rotation window, revoked service key, stale/future assertion, replayed nonce.
+
+/keys.ts
+Purpose: Session-guarded API key management (list/create/rotate/revoke), blocked entirely during mustChangePassword; mintApiKey reads the account's CURRENT epoch fresh per request rather than trusting the session.
+
+/keys.test.ts
+Purpose: Session/mustChangePassword gating, create+list shape (no token/sha256 leak), past/future expiresAt validation, rotate/revoke including cross-account 404 ownership checks.
+
+/safe.ts
+Purpose: Shared try/catch route wrapper — maps a thrown AuthError to its HTTP status, anything else to a 500.
+
+/session-guard.ts
+Purpose: Cookie -> keyStore.verify() session guard, plus mustChangePasswordGuard enforcing the Constraints allowlist (GET /api/auth/me, POST /api/account/change-password, POST /api/auth/logout stay reachable); builds its allowlist key from req.originalUrl, NOT req.path — req.path is mount-relative inside an app.use(path, ...)-registered middleware, a real bug this app hit and fixed during manual smoke-testing.
+
+/test-helpers.ts
+Purpose: Shared route-test scaffolding (not a *.test.ts itself) — starts a real Express server on a random port against a tmp data dir with a seeded 3-question pool, a recording test mailer, and signup/login/cookie helpers.
+
+/validation.ts
+Purpose: Request-body validators shared across route modules — requireString, strict requireNewUsername (signup only), requireNewPassword (12-char minimum), requireChallengeAnswers, requireOptionalExpiresAt (null/absent = forever, otherwise must be a real future date).

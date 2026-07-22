@@ -1,0 +1,101 @@
+.auc-app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  font-family: system-ui, sans-serif;
+}
+
+.auc-header h1 {
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.auc-placeholder {
+  color: #888;
+}
+
+.auc-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.auc-nav-item {
+  background: none;
+}
+
+.auc-nav-item--active {
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.auc-page h2 {
+  font-size: 1.15rem;
+  margin-bottom: 0.75rem;
+}
+
+.auc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 0.6rem;
+}
+
+.auc-field > span {
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.auc-field input {
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #3a3a4a;
+  background: transparent;
+  color: inherit;
+}
+
+.auc-fieldset {
+  border: 1px solid #3a3a4a;
+  border-radius: 6px;
+  padding: 0.5rem 0.9rem 0.65rem;
+  margin: 0 0 0.9rem;
+}
+
+.auc-fieldset > legend {
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0.85;
+  padding: 0 0.35rem;
+}
+
+.auc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.6rem;
+}
+
+.auc-list li {
+  padding: 0.3rem 0;
+  border-bottom: 1px solid #2a2a36;
+}
+
+.auc-toast {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+}
+
+.auc-toast--ok {
+  background: #1f4d2a;
+  color: #c9efce;
+}
+
+.auc-toast--err {
+  background: #55221e;
+  color: #f3c4bf;
+}
+
+.auc-muted {
+  opacity: 0.65;
+}

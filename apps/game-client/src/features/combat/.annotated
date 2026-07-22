@@ -11,3 +11,6 @@ Purpose: Defines types and utilities for managing opponent status display and op
 
 /probe-opponent-condition.ts
 Purpose: Analyzes combat log lines to detect and extract opponent condition statuses.
+
+/self-condition-buckets.ts
+Purpose: Player-facing ("You...") reword of opponent-buckets.ts's same health tiers, for consumers that only have raw hp/hpMax numbers (no condition line to parse).

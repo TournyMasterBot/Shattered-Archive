@@ -1,0 +1,43 @@
+File Index
+
+/main.tsx
+Purpose: Standard createRoot/StrictMode bootstrap.
+
+/App.tsx
+Purpose: The whole app's routing — switches on useAuthSession()'s status between the public flows (login/signup/forgot-password), ForcedChangePage, and the logged-in shell (account/keys nav); also parses /reset-password?token=... and /verify-email?token=... off window.location once on mount to hand the right page its landing token.
+
+/App.css
+Purpose: Every auc-* class (field/fieldset/toast/list/nav) — a from-scratch namespace mirroring mud-builder-client's mb-* layout idiom, never importing its CSS directly.
+
+/index.css
+Purpose: Minimal root reset (color-scheme, body margin).
+
+/api/client.ts
+Purpose: Typed fetch wrapper (ApiError, request<T>) covering every Phase 1 auth-server endpoint; always credentials:'include'; response shapes cross-checked against routes/account.ts and key-store.ts directly (e.g. rotateKey's response omits service/label, unlike mintApiKey's — IssuedKey's fields are optional to match).
+
+/auth/useAuthSession.ts
+Purpose: loading|loggedOut|mustChangePassword|ready state machine off GET /api/auth/me; a 401 (or any other fetch failure) resolves to loggedOut with the message in `error` — 'loading' has no rendered error slot in App.tsx, so nothing may stay stuck there.
+
+/auth/useAuthSession.test.ts
+Purpose: Status transitions from a mocked /api/auth/me (401/must-change/ready), login()/logout() update account+status, non-401 failures land on loggedOut with a visible error instead of hanging on loading.
+
+/features/auth/SignupPage.tsx
+Purpose: GET /api/auth/challenge -> 3-question form -> POST /api/auth/signup -> show the one-time password exactly once; a failed challenge (400, never says which answer was wrong) discards the challenge and fetches a fresh one rather than retrying the stale one.
+
+/features/auth/LoginPage.tsx
+Purpose: Username/password form calling the onLogin callback (useAuthSession.login).
+
+/features/auth/ForgotPasswordPage.tsx
+Purpose: Two sub-flows in one component — request a reset email (no token yet) vs. set a new password (token from landing on /reset-password?token=...).
+
+/features/auth/ForcedChangePage.tsx
+Purpose: Blocks everything but itself/logout while mustChangePassword is set — UX-only; auth-server's own allowlist (session-guard.ts) is what actually enforces this.
+
+/features/account/AccountPage.tsx
+Purpose: Change-password, add/verify email (auto-verifies once on mount via a pendingEmailToken prop when landing on /verify-email?token=..., then drops the token from the URL so a refresh can't re-verify an already-consumed one), rotate-master behind a window.confirm.
+
+/features/keys/KeysPage.tsx
+Purpose: List/create/rotate/revoke API keys with the show-once token box — structurally mirrors mud-builder-client's AccessPage key panel almost directly (same ApiKeyInfo/IssuedKey shapes).
+
+/features/keys/KeysPage.test.tsx
+Purpose: List/create-shows-token-once/rotate-revoke-behind-confirm/confirm-dismissed-is-a-noop, mocked fetch — mirrors AccessPage.test.tsx's coverage depth.

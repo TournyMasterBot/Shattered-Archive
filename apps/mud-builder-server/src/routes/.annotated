@@ -16,7 +16,7 @@ Purpose: GET /api/audit (Phase 10) — master-only, read-only tail of backups/au
 Purpose: Guard + lifecycle tests via full registerRoutes: first-run key gen, 401/403 matrix, create→use→rotate→revoke, master rotation, per-install uniqueness, guard-off mode, corrupt-file lockdown, audit lines without secrets.
 
 /auth.ts
-Purpose: Phase 9 access guard — authGuard middleware (non-GET /api/* requires a valid bearer) + master-only /api/auth key-management routes (list/create/rotate/revoke, rotate-master); plaintext tokens only in create/rotate responses; exports requireMaster for the audit viewer.
+Purpose: Phase 9 access guard — authGuard middleware (non-GET /api/* requires a valid bearer) + master-only /api/auth key-management routes (list/create/rotate/revoke, rotate-master); plaintext tokens only in create/rotate responses; exports requireMaster for the audit viewer. Phase 2 (centralized auth service) adds GET /api/auth/introspect-check?token=... — additive proof that a real /api/introspect call against auth-server works, reusing this same master-only mount rather than a new guard.
 
 /groups.test.ts
 Purpose: /api/groups tests both gating modes: stock fallback GET (27 groups), preview text + cycle 400, 403 when writes disabled, PUT/backup/DELETE round trip, unknown-member 400, corrupt-overlay fallback with parseError, Phase 12 baseHash matrix (null first save, stale 409 disk untouched, fresh, legacy).

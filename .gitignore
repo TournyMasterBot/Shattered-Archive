@@ -29,6 +29,11 @@ coverage/*
 !meta-scripts/**/*.js
 jwt-secret.dat
 
+# auth-server: per-app encrypted JSON stores, and the private key files that
+# services calling /api/introspect hold on their OWN host (Phase 2) — never commit.
+apps/auth-server/data/
+shattered-service.key
+
 # ============================================================
 # Logs
 # ============================================================

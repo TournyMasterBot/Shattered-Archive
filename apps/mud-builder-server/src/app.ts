@@ -58,7 +58,7 @@ export function registerRoutes(app: Application, config: MudBuilderConfig = getM
     app.use(auditMiddleware(config.auditDataPath));
   }
   if (authStore) {
-    registerAuthRoutes(app, authStore);
+    registerAuthRoutes(app, authStore, config);
     registerAuditViewRoutes(app, authStore, config.auditDataPath);
   }
 

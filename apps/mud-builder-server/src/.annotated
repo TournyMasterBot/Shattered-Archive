@@ -4,7 +4,7 @@ File Index
 Purpose: registerRoutes smoke tests: health, capabilities gating flags.
 
 /app.ts
-Purpose: Registers all routes on an Express app; Phase 9 ordering contract lives here (authGuard → auditMiddleware → routes) plus the Phase 10 rule that the scoped 2mb import parser registers before the app-wide 1mb one.
+Purpose: Registers all routes on an Express app; Phase 9 ordering contract lives here (authGuard → auditMiddleware → routes) plus the Phase 10 rule that the scoped 2mb import parser registers before the app-wide 1mb one; passes config through to registerAuthRoutes for its Phase 2 introspect-check route.
 
 /area-store.ts
 Purpose: Disk access for the MUD area dir: strict file-name validation, emit-validated-before-anything, atomic writes + timestamped backups, area.lst registration with overlap guards, header-range change guard, the Phase 10 quarantine import (importArea report / importAreaCommit gated write), and Phase 11 areaHash/conditional writeArea (baseHash → AreaConflictError 409) + worldVnumIndex/resolveRefs (mtime-cached cross-area vnum resolution).
@@ -16,7 +16,7 @@ Purpose: Append-only audit trail (Phase 9): auditMiddleware records every accept
 Purpose: Phase 9 credential store: first-run master key generation into auth/builder-auth.json (Phase 12b: legacy backups/ copy migrated by atomic rename; file re-read on mtime change so generate-master-key.sh rotations apply without restart), sha256-hashed API keys (create/rotate/revoke), timing-safe verify, corrupt-file lockdown (never overwrites).
 
 /config.ts
-Purpose: Env-derived server config: MERC_MUD_PATH/area path, writeEnabled (MUD_WRITE_ENABLED), authEnabled (writes on and MUD_BUILDER_AUTH not "off"), authDataPath (area auth dir, Phase 12b) + auditDataPath (area backups dir, audit.log stays put).
+Purpose: Env-derived server config: MERC_MUD_PATH/area path, writeEnabled (MUD_WRITE_ENABLED), authEnabled (writes on and MUD_BUILDER_AUTH not "off"), authDataPath (area auth dir, Phase 12b) + auditDataPath (area backups dir, audit.log stays put); Phase 2 (centralized auth) authServerUrl + optional servicePrivateKeyPath for the introspect-check route.
 
 /diff.ts
 Purpose: Minimal line-diff (first differing window) used by area previews.

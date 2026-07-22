@@ -37,6 +37,10 @@ module.exports = {
   moduleNameMapper: {
     // Resolve workspace deps to their TS sources so tests don't require a prior build.
     '^@shatteredarchive/merc-area$': '<rootDir>/../../services/merc-area/src/index.ts',
+    // Scoped to just this file (not the package's full index.ts barrel) — the barrel also
+    // exports mud-client-service.ts, which pulls in uuid (ESM-only, chokes ts-jest's CJS
+    // transform). Nothing in this app's test graph needs another services-server export.
+    '^@shatteredarchive/services-server$': '<rootDir>/../../services/services-server/src/auth-introspect-client.ts',
     '^@shatteredarchive/types-server$': '<rootDir>/../../types/types-server/src/index.ts',
     '^@shatteredarchive/types-global$': '<rootDir>/../../types/types-global/src/index.ts',
     '^@shatteredarchive/utils-global$': '<rootDir>/../../utils/utils-global/src/index.ts',

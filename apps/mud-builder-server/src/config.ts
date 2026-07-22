@@ -32,6 +32,10 @@ export interface MudBuilderConfig {
   authDataPath: string;
   /** Where the append-only audit.log lives (still the backups/ dir). */
   auditDataPath: string;
+  /** Base URL of the centralized auth-server, for GET /api/auth/introspect-check (Phase 2). */
+  authServerUrl: string;
+  /** Path to this service's registered introspect private key (`register-service` output). Unset = introspect-check is unconfigured. */
+  servicePrivateKeyPath?: string;
 }
 
 export function getMudBuilderConfig(env: NodeJS.ProcessEnv = process.env): MudBuilderConfig {
@@ -47,5 +51,7 @@ export function getMudBuilderConfig(env: NodeJS.ProcessEnv = process.env): MudBu
     authEnabled: writeEnabled && env.MUD_BUILDER_AUTH !== 'off',
     authDataPath: path.join(areaPath, 'auth'),
     auditDataPath: path.join(areaPath, 'backups'),
+    authServerUrl: env.AUTH_SERVER_URL ?? 'http://localhost:62000',
+    servicePrivateKeyPath: env.SERVICE_PRIVATE_KEY_PATH || undefined,
   };
 }

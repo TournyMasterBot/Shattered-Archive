@@ -9,7 +9,8 @@
     "test": "jest --config ./jest.config.cjs --runInBand --passWithNoTests",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\"",
     "dev": "tsx src/index.ts",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "introspect-check": "tsx scripts/introspect-check.ts"
   },
   "dependencies": {
     "@shatteredarchive/kingdom-tactics-engine": "workspace:*",

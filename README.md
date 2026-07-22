@@ -49,8 +49,10 @@ execution of multiple applications and services during development.
 
 ```text
 apps/       – End-user applications (game client, game server,
-              web client, web server, kingdom-tactics pair, and the
-              MUD builder pair — see docs/mud-builder/README.md)
+              web client, web server, kingdom-tactics pair, the
+              MUD builder pair — see docs/mud-builder/README.md — and
+              the auth-client/auth-server pair, the centralized login
+              service — see docs/auth-client.md and docs/auth-server.md)
 sdks/       – SDKs for integration and extension
 services/   – Backend and service-layer components
 types/      – Shared type definitions and contracts
@@ -214,6 +216,8 @@ the ShatteredArchive website:
 - Game Server docs: `docs/game-server.md`
 - Web Client docs: `docs/web-client.md`
 - Web Server docs: `docs/web-server.md`
+- Auth Server docs: `docs/auth-server.md` (run instructions: `apps/auth-server/README.md`)
+- Auth Client docs: `docs/auth-client.md`
 - GitHub & workflow docs: `docs/github/`
 
 ---

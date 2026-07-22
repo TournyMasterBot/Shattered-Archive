@@ -1,0 +1,10 @@
+File Index
+
+/advancedSttEngine.ts
+Purpose: Dynamic-import wrapper around @huggingface/transformers running a wav2vec2 CTC model (literal, non-generative — no translation/rewording risk); tracks a download manifest, detects prior installs, and handles update checks.
+
+/voiceDictationSettings.ts
+Purpose: Small localStorage-backed settings store written/read by the merged voice-dictation plugin (engine, language, advanced model choice, custom vocabulary).
+
+/voiceDictationVocabulary.ts
+Purpose: Word-level fuzzy correction of transcribed text toward a user-maintained MUD vocabulary list (neither STT engine supports true recognition-time vocabulary biasing).

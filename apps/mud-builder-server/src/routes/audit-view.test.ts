@@ -19,6 +19,7 @@ function makeConfig(dir: string): MudBuilderConfig {
     authEnabled: true,
     authDataPath: path.join(dir, 'auth'),
     auditDataPath: path.join(dir, 'backups'),
+    authServerUrl: 'http://localhost:62000',
   };
 }
 

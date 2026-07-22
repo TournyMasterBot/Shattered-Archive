@@ -49,6 +49,7 @@ services:
           - web-client.shatteredarchive.dev
           - game-server.shatteredarchive.dev
           - web-server.shatteredarchive.dev
+          - auth.shatteredarchive.dev
       sa-shared: {}
 
     restart: unless-stopped
@@ -169,3 +170,66 @@ services:
       timeout: 3s
       retries: 12
       start_period: 20s
+
+  ############################################################
+  # AUTH SERVER (auth.shatteredarchive.dev) — additive, like mud-builder:
+  # nothing in Phase 1 requires it to be up (no consumer calls /api/introspect
+  # until Phase 2), so it must never block the rest of the stack from
+  # starting. NOT in nginx's depends_on: for that reason.
+  ############################################################
+  auth-server:
+    build:
+      context: ..
+      dockerfile: deploy/auth-server.Dockerfile
+    image: shatteredarchive-prod-auth-server
+    container_name: shatteredarchive-prod-auth-server
+    restart: unless-stopped
+    volumes:
+      - auth-server-data:/repo/apps/auth-server/data
+      - auth-server-secrets:/repo/apps/auth-server/secrets
+    environment:
+      NODE_ENV: production
+      PORT: "62000"
+      LOG_LEVEL: "info"
+      DATA_DIR: "/repo/apps/auth-server/data"
+      # Mounted-file secret (auth-server-secrets, above) — self-generated on first boot,
+      # persists across recreation. See crypto-primitives.ts's loadDataKey() precedence.
+      DATA_ENCRYPTION_KEY_FILE: "/repo/apps/auth-server/secrets/encryption.key"
+      PUBLIC_ORIGIN: "https://auth.shatteredarchive.dev"
+    expose:
+      - "62000"
+    networks:
+      shatteredarchive-prod:
+        aliases:
+          - auth-server.shatteredarchive.dev
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(62000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  ############################################################
+  # AUTH CLIENT (auth.shatteredarchive.dev, / split) — additive, like
+  # auth-server: no expose/ports, nginx reaches it by container name.
+  ############################################################
+  auth-client:
+    build:
+      context: ..
+      dockerfile: deploy/auth-client.Dockerfile
+    image: shatteredarchive-prod-auth-client
+    container_name: shatteredarchive-prod-auth-client
+    restart: unless-stopped
+    networks:
+      shatteredarchive-prod:
+        aliases:
+          - auth-client.shatteredarchive.dev
+
+volumes:
+  auth-server-data:
+  auth-server-secrets:

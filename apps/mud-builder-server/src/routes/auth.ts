@@ -1,6 +1,10 @@
+import fs from 'fs';
+
 import express, { type Application, type Request, type RequestHandler, type Response } from 'express';
+import { introspect } from '@shatteredarchive/services-server';
 
 import { AuthError, type AuthStore } from '../auth-store.js';
+import type { MudBuilderConfig } from '../config.js';
 
 /**
  * AI-ANNOTATION
@@ -93,7 +97,14 @@ function requireLabel(req: Request): string {
   return label.trim();
 }
 
-export function registerAuthRoutes(app: Application, store: AuthStore): void {
+// The identity mud-builder-server registers under with auth-server's `register-service` script.
+const INTROSPECT_SERVICE_NAME = 'mud-builder-server';
+
+export function registerAuthRoutes(
+  app: Application,
+  store: AuthStore,
+  introspectConfig: Pick<MudBuilderConfig, 'authServerUrl' | 'servicePrivateKeyPath'>,
+): void {
   // Scoped to /api/auth: an app-wide parser here would cap EVERY later
   // route's body at 64kb (first parser wins), breaking large area saves.
   app.use('/api/auth', express.json({ limit: '64kb' }));
@@ -134,6 +145,39 @@ export function registerAuthRoutes(app: Application, store: AuthStore): void {
     safe((_req, res) => {
       const { token } = store.rotateMaster();
       res.json({ token, note: `${SHOW_ONCE_NOTE}; the old master key is now invalid` });
+    }),
+  );
+
+  /**
+   * Phase 2 (centralized auth service): a small, additive, master-only proof
+   * that the Ed25519 introspect mechanism works end to end against a real
+   * registered service key — NOT a replacement for the builder token guard
+   * above, which keeps gating every mutation exactly as before.
+   */
+  app.get(
+    '/api/auth/introspect-check',
+    safe(async (req, res) => {
+      const token = typeof req.query.token === 'string' ? req.query.token : '';
+      if (!token) throw new AuthError('query param "token" is required', 400);
+      if (!introspectConfig.authServerUrl || !introspectConfig.servicePrivateKeyPath) {
+        throw new AuthError(
+          'introspect-check is not configured: set AUTH_SERVER_URL and SERVICE_PRIVATE_KEY_PATH',
+          501,
+        );
+      }
+      let privateKeyPem: string;
+      try {
+        privateKeyPem = fs.readFileSync(introspectConfig.servicePrivateKeyPath, 'utf8');
+      } catch (e) {
+        throw new AuthError(`cannot read SERVICE_PRIVATE_KEY_PATH: ${(e as Error).message}`, 500);
+      }
+      try {
+        const result = await introspect(introspectConfig.authServerUrl, INTROSPECT_SERVICE_NAME, privateKeyPem, token);
+        res.json(result);
+      } catch (e) {
+        // A wrong/unregistered key surfaces here as auth-server's 401 wrapped in introspect()'s Error — never a crash.
+        throw new AuthError(`introspect call failed: ${(e as Error).message}`, 502);
+      }
     }),
   );
 }

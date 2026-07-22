@@ -1,7 +1,7 @@
 File Index
 
 /jest.config.cjs
-Purpose: Self-contained node jest config; maps merc-area and workspace types to TS sources.
+Purpose: Self-contained node jest config; maps merc-area and workspace types to TS sources. services-server is mapped to just auth-introspect-client.ts (not the package's full index.ts barrel) — the barrel also pulls in mud-client-service.ts's ESM-only uuid dependency, which ts-jest can't transform.
 
 /package.json
 Purpose: Express-based API server package (port 61000) bridging the builder UI to the merc-mud area folder.
