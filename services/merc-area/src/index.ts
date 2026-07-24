@@ -46,3 +46,45 @@ export {
   type GroupsSummary,
 } from './groups.js';
 export { STOCK_GROUPS } from './groups-stock.js';
+export {
+  simulateResets,
+  WEAR_SLOTS,
+  type SimulateResetsOptions,
+  type SimulateResetsResult,
+  type SimRoomState,
+  type SimMobGroup,
+  type SimObjectNode,
+  type SimEquippedObject,
+  type SimDoorState,
+  type DoorState,
+} from './simulate.js';
+export {
+  validateSpellSpec,
+  TAR_CHAR_OFFENSIVE,
+  TAR_CHAR_DEFENSIVE,
+  TAR_CHAR_SELF,
+  DAMAGE_TYPE_CODE,
+  APPLY_LOCATION_CODE,
+  APPLY_LOCATION_MACRO,
+  AFF_FLAG_MACRO,
+  CURE_CONDITION_GSN,
+  type SpellSpec,
+  type SpellSpecSummary,
+  type ValidateSpellSpecOptions,
+  type DamageArchetype,
+  type BuffArchetype,
+  type DebuffArchetype,
+  type HealArchetype,
+  type CureArchetype,
+  type DamageType,
+  type ApplyLocation,
+  type AffFlag,
+  type CureCondition,
+  type SaveType,
+} from './spell-spec.js';
+export {
+  generateSpellC,
+  generateOverlayRow,
+  type GeneratedSpellC,
+  type RegistryAnchor,
+} from './spell-codegen.js';

@@ -1,10 +1,16 @@
 File Index
 
 /SkillsPage.tsx
-Purpose: Skills tab (Phase 7) — edits skills.dat, the boot-time data overlay onto the compiled skill_table (NOT an area file: one global optional file, own fetch/save flow); name/slot/gsn read-only, spell-function picker with the stock (fun,target) pair guard, msg_obj null checkbox, manual pane with back-apply, copyover-only note, revert-to-stock DELETE. Hosts the Skills/Groups sub-view switch (Phase 8). Phase 12: holds baseHash (null=stock), conditional saves, ConflictPanel on 409 (reload / save-anyway).
+Purpose: Skills tab (Phase 7) — edits skills.dat, the boot-time data overlay onto the compiled skill_table (NOT an area file: one global optional file, own fetch/save flow); name/slot/gsn read-only, spell-function picker with the stock (fun,target) pair guard, msg_obj null checkbox, manual pane with back-apply, copyover-only note, revert-to-stock DELETE. Hosts the Skills/Groups/New-spell-codegen sub-view switch (Phases 8, 14a). Phase 12: holds baseHash (null=stock), conditional saves, ConflictPanel on 409 (reload / save-anyway).
 
 /SkillsPage.test.tsx
 Purpose: SkillsPage tests — stock fallback render, mana edit reflected in PUT body + emitted text, manual-pane back-apply, unproven-pair error disables save vs proven-swap warning, msg_obj null checkbox mapping, Phase 12 conflict flow (baseHash in PUT, 409 panel, save-anyway without hash, reload refetch).
+
+/CodegenView.test.tsx
+Purpose: CodegenView tests: add-spec + live 4-section preview, archetype switch swaps fieldsets, stock-name collision disables save, save carries baseHash, 409 conflict panel + save-anyway, spec removal.
+
+/CodegenView.tsx
+Purpose: New-spell codegen sub-view (Phase 14a) — index-keyed DRAFT spec list (pre-deploy data, so index identity, unlike name-keyed skill rows), per-archetype fieldsets, LIVE 4-section C patch preview via generateSpellC called client-side (merc-area is bundled, same precedent as validateSkills), informational skills.dat-shape preview (labeled: editable via the Skills page only AFTER the const.c patch is compiled in — never a live save), patch download as a client-side blob, spec-manifest PUT with baseHash + ConflictPanel.
 
 /GroupsView.tsx
 Purpose: Groups sub-view (Phase 8) — edits groups.dat, the boot-time overlay onto group_table; per-class "available" toggle mapping the -1 sentinel, cost NumFields, member list with skill/group picker + prefix-resolution hints (mirrors group_add: skill-first), cycle errors disable save, manual pane, copyover note, revert-to-stock DELETE. Phase 12: baseHash conditional saves + ConflictPanel on 409.

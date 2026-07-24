@@ -12,6 +12,7 @@ import {
 import { ApiError, api } from '../../api/client.js';
 import { ConflictPanel, NumField, TextField } from '../areas/workbench.js';
 import GroupsView from './GroupsView.js';
+import CodegenView from './CodegenView.js';
 import '../areas/areas.css';
 
 /**
@@ -59,7 +60,7 @@ export default function SkillsPage() {
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
   const [manualText, setManualText] = useState('');
-  const [view, setView] = useState<'skills' | 'groups'>('skills');
+  const [view, setView] = useState<'skills' | 'groups' | 'codegen'>('skills');
   // Conditional-save identity (Phase 12): null = stock (no overlay on disk yet)
   const [baseHash, setBaseHash] = useState<string | null>(null);
   const [conflict, setConflict] = useState(false);
@@ -193,9 +194,13 @@ export default function SkillsPage() {
           <button type="button" className={view === 'groups' ? 'mb-active' : ''} onClick={() => setView('groups')}>
             Groups
           </button>
+          <button type="button" className={view === 'codegen' ? 'mb-active' : ''} onClick={() => setView('codegen')}>
+            New spell (codegen)
+          </button>
         </div>
 
         {view === 'groups' && <GroupsView writeEnabled={writeEnabled} />}
+        {view === 'codegen' && <CodegenView writeEnabled={writeEnabled} />}
 
         {view === 'skills' && (
           <p className="mb-muted">

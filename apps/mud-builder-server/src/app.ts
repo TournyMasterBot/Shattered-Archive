@@ -7,10 +7,13 @@ import { registerAreaRoutes } from './routes/areas.js';
 import { registerReloadRoutes } from './routes/reload.js';
 import { registerWorldRoutes } from './routes/world.js';
 import { registerMapRoutes } from './routes/map.js';
+import { registerSpawnRoutes } from './routes/spawn.js';
 import { SkillsStore } from './skills-store.js';
 import { registerSkillsRoutes } from './routes/skills.js';
 import { GroupsStore } from './groups-store.js';
 import { registerGroupsRoutes } from './routes/groups.js';
+import { CodegenStore } from './codegen-store.js';
+import { registerCodegenRoutes } from './routes/codegen.js';
 import { AuthStore } from './auth-store.js';
 import { authGuard, registerAuthRoutes } from './routes/auth.js';
 import { registerAuditViewRoutes } from './routes/audit-view.js';
@@ -52,7 +55,7 @@ export function registerRoutes(app: Application, config: MudBuilderConfig = getM
   const authStore = config.authEnabled ? new AuthStore(config.authDataPath) : null;
   if (authStore) {
     authStore.init();
-    app.use(authGuard(authStore));
+    app.use(authGuard(authStore, config));
   }
   if (config.writeEnabled) {
     app.use(auditMiddleware(config.auditDataPath));
@@ -73,6 +76,9 @@ export function registerRoutes(app: Application, config: MudBuilderConfig = getM
   registerReloadRoutes(app, store);
   registerWorldRoutes(app, store);
   registerMapRoutes(app, store);
-  registerSkillsRoutes(app, new SkillsStore(config.areaPath, config.writeEnabled));
+  registerSpawnRoutes(app, store);
+  const skillsStore = new SkillsStore(config.areaPath, config.writeEnabled);
+  registerSkillsRoutes(app, skillsStore);
   registerGroupsRoutes(app, new GroupsStore(config.areaPath, config.writeEnabled));
+  registerCodegenRoutes(app, new CodegenStore(config.areaPath, config.writeEnabled), skillsStore);
 }

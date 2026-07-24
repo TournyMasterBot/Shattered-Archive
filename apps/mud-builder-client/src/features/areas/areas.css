@@ -619,3 +619,44 @@
 .mb-ref-link:hover {
   color: #1a4d80;
 }
+
+.mb-room-spawn-link {
+  margin-left: 0.75rem;
+  font-size: 0.75em;
+  font-weight: normal;
+}
+
+/* ── Resets: Simulate pane (Phase 13) ──────────────────────────── */
+
+.mb-simulate .mb-row {
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin: 0.5rem 0;
+}
+
+.mb-spawn-warnings {
+  margin-bottom: 0.5rem;
+}
+
+.mb-spawn-room {
+  border: 1px solid rgba(127, 127, 127, 0.3);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.4rem;
+}
+
+.mb-spawn-room summary {
+  cursor: pointer;
+}
+
+.mb-spawn-list {
+  margin: 0.4rem 0 0.2rem 0;
+  padding-left: 1.2rem;
+}
+
+.mb-spawn-gear,
+.mb-spawn-contents {
+  margin: 0.2rem 0;
+  padding-left: 1.2rem;
+  font-size: 0.9em;
+}

@@ -122,3 +122,66 @@ describe('MapPage exit fidelity (Phase 12b)', () => {
     expect(screen.getByText(/non-returning/)).toBeTruthy();
   });
 });
+
+describe('MapPage spawn overlay (Phase 13)', () => {
+  const SPAWN_RESULT = {
+    rooms: [
+      {
+        room: 100,
+        mobs: [
+          { vnum: 9001, name: 'the town guard', count: 2, equipped: [], carried: [] },
+          { vnum: 9002, name: 'the captain', count: 1, equipped: [], carried: [] },
+        ],
+        objects: [],
+      },
+      // Object-only room: must NOT get a badge (the overlay counts mobs).
+      { room: 101, mobs: [], objects: [{ vnum: 9100, name: 'a fountain', contents: [] }] },
+    ],
+    doors: [],
+    randomizedExits: [],
+    warnings: [],
+  };
+
+  beforeEach(() => {
+    (globalThis.fetch as jest.Mock).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      const json = (body: unknown) => ({ ok: true, status: 200, json: async () => body }) as unknown as Response;
+      if (url.endsWith('/api/areas')) return json({ areas: [{ file: 'tiny.are', name: 'Tiny' }] });
+      if (url.endsWith('/api/map/tiny.are')) return json(TINY_MAP);
+      if (url.endsWith('/api/areas/tiny.are/spawn')) return json(SPAWN_RESULT);
+      throw new Error(`unexpected fetch ${url}`);
+    });
+  });
+
+  it('renders per-room mob-count badges from mocked spawn data once toggled on', async () => {
+    const { container } = render(<MapPage />);
+    await screen.findByRole('button', { name: 'room #100 The Test Room' });
+
+    // Off by default: no badge, no spawn fetch.
+    expect(container.querySelector('.mb-map-spawn-badge')).toBeNull();
+    expect(
+      (globalThis.fetch as jest.Mock).mock.calls.map((c) => String(c[0])),
+    ).not.toEqual(expect.arrayContaining([expect.stringContaining('/spawn')]));
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Spawns' }));
+
+    await screen.findByText('3'); // 2 guards + 1 captain in room 100
+    const badges = container.querySelectorAll('.mb-map-spawn-badge');
+    expect(badges).toHaveLength(1); // room 101 is object-only — no badge
+    expect(badges[0].querySelector('title')?.textContent).toContain('3 mobs spawn here');
+    expect(screen.getByText(/mobs at boot/)).toBeTruthy(); // legend entry appears with the overlay
+  });
+
+  it('toggling the overlay off hides the badges', async () => {
+    const { container } = render(<MapPage />);
+    await screen.findByRole('button', { name: 'room #100 The Test Room' });
+
+    const toggle = screen.getByRole('checkbox', { name: 'Spawns' });
+    fireEvent.click(toggle);
+    await screen.findByText('3');
+
+    fireEvent.click(toggle);
+    expect(container.querySelector('.mb-map-spawn-badge')).toBeNull();
+    expect(screen.queryByText(/mobs at boot/)).toBeNull();
+  });
+});

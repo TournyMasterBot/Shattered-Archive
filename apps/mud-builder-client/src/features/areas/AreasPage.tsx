@@ -24,7 +24,10 @@ type Toast = { kind: 'ok' | 'err'; text: string } | null;
  * (primary) or the flagged Manual tab → PREVIEW the exact generated file →
  * download, or (when the server allows writes) save + hot reload / copyover.
  */
-export default function AreasPage({ initialTarget }: { initialTarget?: ExternalRef | null } = {}) {
+export default function AreasPage({
+  initialTarget,
+  onOpenSpawn,
+}: { initialTarget?: ExternalRef | null; onOpenSpawn?: (vnum: number) => void } = {}) {
   const [caps, setCaps] = useState<Capabilities | null>(null);
   const [areas, setAreas] = useState<AreaListEntry[]>([]);
   const [file, setFile] = useState<string | null>(null);
@@ -409,7 +412,7 @@ export default function AreasPage({ initialTarget }: { initialTarget?: ExternalR
                           Delete room #{room.vnum}
                         </button>
                       </div>
-                      <RoomEditor room={room} onChange={updateRoom} />
+                      <RoomEditor room={room} onChange={updateRoom} onOpenSpawn={onOpenSpawn} />
                     </>
                   ) : (
                     <p className="mb-muted">Pick a room.</p>

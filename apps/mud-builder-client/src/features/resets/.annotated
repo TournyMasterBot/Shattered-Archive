@@ -1,7 +1,13 @@
 File Index
 
 /ResetsPage.test.tsx
-Purpose: Render/edit/reorder/add/remove tests proving form edits emit back into valid reset lines.
+Purpose: Render/edit/reorder/add/remove tests proving form edits emit back into valid reset lines; mocks GET .../spawn (Phase 13) so SimulatePane's now-unconditional render doesn't hit the fetch mock's "unexpected fetch" throw.
 
 /ResetsPage.tsx
-Purpose: Resets tab — #RESETS rows in file order (order is meaning: G/E/P bind to the closest M/O above), per-command compact forms with local-entity vnum pickers, reorder/add/remove, comments read-only; Phase 12b groups each M with its G/E/P riders as a color-coded block (adjacent groups never share a color, lone rows stay plain) whose anchor moves the whole unit; 10-door labels; workbench preview/save/manual flow.
+Purpose: Resets tab — #RESETS rows in file order (order is meaning: G/E/P bind to the closest M/O above), per-command compact forms with local-entity vnum pickers, reorder/add/remove, comments read-only; Phase 12b groups each M with its G/E/P riders as a color-coded block (adjacent groups never share a color, lone rows stay plain) whose anchor moves the whole unit; 10-door labels; workbench preview/save/manual flow; renders SimulatePane (Phase 13) below the form, passing an optional initialRoomTarget prop through from App.tsx's cross-tab lift.
+
+/SimulatePane.test.tsx
+Purpose: Mocked-fetch tests: gear-tree rendering (equipped slot label + nested P contents inside carried objects), warnings shown above the room list, boot-state disclaimer always present, room filter by vnum/name, initialRoomTarget seeds the filter and auto-opens the single match, fetch-error state (no crash), Refresh re-fetches.
+
+/SimulatePane.tsx
+Purpose: Renders GET /api/areas/:file/spawn (Phase 13, merc-area's simulateResets) as a per-room <details> accordion — mobs with gear trees (equipped + carried, recursive P contents), room objects, door states, randomized-exit rooms — merging the API's separate rooms/doors/randomizedExits lists into one per-room view client-side; warnings up top, a boot-state disclaimer, a room filter (vnum or resolved room name), a Refresh button, and an optional initialRoomTarget prop for the RoomEditor cross-tab hand-off. Strictly a VIEW over the on-disk saved file, same convention as World/Map — does not reflect unsaved edits above.

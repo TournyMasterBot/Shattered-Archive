@@ -13,10 +13,16 @@ Purpose: GET /api/audit tests via full registerRoutes: empty-before-any-mutation
 Purpose: GET /api/audit (Phase 10) — master-only, read-only tail of backups/audit.log (newest first, default 100 / cap 500); missing file = empty, bad line = { raw }; never truncates the log.
 
 /auth.test.ts
-Purpose: Guard + lifecycle tests via full registerRoutes: first-run key gen, 401/403 matrix, create→use→rotate→revoke, master rotation, per-install uniqueness, guard-off mode, corrupt-file lockdown, audit lines without secrets.
+Purpose: Guard + lifecycle tests via full registerRoutes: first-run key gen, 401/403 matrix, create→use→rotate→revoke, master rotation, per-install uniqueness, guard-off mode, corrupt-file lockdown, audit lines without secrets. Phase 4 block: introspect fallback against a fake auth-server (local-first no-network-call proof, unconfigured no-op, valid/invalid/unreachable/hanging/bad-key-path cases).
 
 /auth.ts
-Purpose: Phase 9 access guard — authGuard middleware (non-GET /api/* requires a valid bearer) + master-only /api/auth key-management routes (list/create/rotate/revoke, rotate-master); plaintext tokens only in create/rotate responses; exports requireMaster for the audit viewer. Phase 2 (centralized auth service) adds GET /api/auth/introspect-check?token=... — additive proof that a real /api/introspect call against auth-server works, reusing this same master-only mount rather than a new guard.
+Purpose: Phase 9 access guard — authGuard middleware (non-GET /api/* requires a valid bearer) + master-only /api/auth key-management routes (list/create/rotate/revoke, rotate-master); plaintext tokens only in create/rotate responses; exports requireMaster for the audit viewer. Phase 2 (centralized auth service) adds GET /api/auth/introspect-check?token=... — additive proof that a real /api/introspect call against auth-server works, reusing this same master-only mount rather than a new guard. Phase 4: authGuard itself now falls back to introspect() (bounded ~3s timeout) for any token the local store misses, producing a BuilderActor{kind:'account'} — local-store tokens are checked first and never touch the network; requireMaster is untouched (master identity stays host-local only).
+
+/codegen.test.ts
+Purpose: /api/codegen tests: empty GET on missing file, 401 write gate, 400 invalid spec + stock-name collision, save emits an audit line, 409 stale baseHash, text/plain patch download content, unknown-funName 404.
+
+/codegen.ts
+Purpose: New-spell codegen API (Phase 14a) — GET /api/codegen/spells (open, {specs, baseHash}), gated+audited PUT (every spec re-validated via validateSpellSpec against stock + live skills.dat overlay names, 400 on any error), GET /api/codegen/spells/:funName/patch (open, regenerates the 4-section C patchText on the fly as text/plain, 404 unknown). Specs are builder metadata only — the game never reads spells.json; deployment stays human.
 
 /groups.test.ts
 Purpose: /api/groups tests both gating modes: stock fallback GET (27 groups), preview text + cycle 400, 403 when writes disabled, PUT/backup/DELETE round trip, unknown-member 400, corrupt-overlay fallback with parseError, Phase 12 baseHash matrix (null first save, stale 409 disk untouched, fresh, legacy).
@@ -37,13 +43,19 @@ Purpose: /api/map tests: single-area shape with internal/external/dangling exits
 Purpose: Read-only map aggregates (Phase 12) — GET /api/map/:file (rooms+exits with locks, cross-area targets resolved via worldVnumIndex to {file,name}, Phase 12b `warps` from R-script `warp <vnum>` lines) and GET /api/map (world graph: area nodes + directional cross-area exit links with per-exit detail); never writes, never audited, unparseable files listed with parseError.
 
 /presence.test.ts
-Purpose: Presence tests: registry unit (heartbeat/list/refresh, lazy TTL expiry via injected clock), standalone routes (anonymous heartbeat, 400 guards), full-app auth-on (401 anon, credential-named entry, open GET, never audited).
+Purpose: Presence tests: registry unit (heartbeat/list/refresh, lazy TTL expiry via injected clock), standalone routes (anonymous heartbeat, 400 guards), full-app auth-on (401 anon, credential-named entry, open GET, never audited). Phase 4 case: a centrally-issued token heartbeats under its auth-server label via the same fake-introspect pattern as auth.test.ts.
 
 /presence.ts
 Purpose: Advisory presence routes (Phase 11): guarded POST /api/presence heartbeat (name from the acting credential, returned to the caller) + open GET listing live entries; scoped 4kb parser; excluded from auditing.
 
 /reload.ts
 Purpose: POST /api/reload — writes the hot (reload.signal, per-file) or copyover (copyover.signal) sentinel the game polls; write-gated.
+
+/spawn.test.ts
+Purpose: GET /api/areas/:file/spawn tests: an M/E/G-style chain (guard wielding a local sword) plus a cross-area P (a local chest holding an object whose template is only defined in a neighbor area) proving the real worldVnumIndex resolver is wired in, not just a local lookup; a broken neighbor file in area.lst doesn't break a healthy file's spawn preview; requesting spawn for the broken file itself 400s (parse error) rather than 500ing; 404/400 filename guards.
+
+/spawn.ts
+Purpose: Read-only spawn preview (Phase 13) — GET /api/areas/:file/spawn runs merc-area's simulateResets over the parsed on-disk model with worldVnumIndex wired as the cross-area resolver; mirrors routes/areas.ts's `safe()` error taxonomy (AreaStoreError→its status, ParseError→400, else 500) rather than map.ts's simpler one, since a parse failure must 400 here.
 
 /skills.test.ts
 Purpose: /api/skills tests both gating modes: stock fallback GET, preview text + validation 400s, 403 when writes disabled, PUT/backup/DELETE round trip, unproven-pair 400, corrupt-overlay fallback with parseError, Phase 12 baseHash matrix (null first save, stale 409 disk untouched, fresh/wrong/legacy/400).

@@ -3,27 +3,79 @@ import fs from 'fs';
 import express, { type Application, type Request, type RequestHandler, type Response } from 'express';
 import { introspect } from '@shatteredarchive/services-server';
 
-import { AuthError, type AuthStore } from '../auth-store.js';
+import { AuthError, type AuthStore, type BuilderActor } from '../auth-store.js';
 import type { MudBuilderConfig } from '../config.js';
 
 /**
  * AI-ANNOTATION
  * @ai-summary Builder auth (Phase 9): the global write guard (non-GET /api/*
- *   requires a valid bearer — master key or active API key) and the master-only
- *   key-management routes (/api/auth/keys list/create/rotate/revoke,
- *   /api/auth/rotate-master). Plaintext tokens appear only in create/rotate
- *   responses — shown once, never stored, never logged.
+ *   requires a valid bearer — master key, active local API key, or (Phase 4) a
+ *   centrally-issued account key that passes introspection against auth-server)
+ *   and the master-only key-management routes (/api/auth/keys list/create/
+ *   rotate/revoke, /api/auth/rotate-master). Plaintext tokens appear only in
+ *   create/rotate responses — shown once, never stored, never logged.
  * @ai-public authGuard, registerAuthRoutes
  * @ai-notes Key management requires the MASTER key even for GET — key metadata
  *   is operator data, not game data, so the "reads stay open" rule does not
- *   apply under /api/auth.
+ *   apply under /api/auth. The Phase 4 introspect fallback is local-first and
+ *   opt-in: a token the local store recognizes never touches the network, and
+ *   with no authServerUrl/servicePrivateKeyPath configured behavior is
+ *   byte-identical to pre-Phase-4.
  */
 
 const SHOW_ONCE_NOTE = 'store this token now — it is shown only once and only a hash is kept';
 
+// The identity mud-builder-server registers under with auth-server's `register-service` script.
+const INTROSPECT_SERVICE_NAME = 'mud-builder-server';
+
+// Bounds the Phase 4 fallback call so a hung/unreachable auth-server 401s instead of hanging
+// the request. Local-store tokens (master/API key) never reach this path at all.
+const INTROSPECT_TIMEOUT_MS = 3_000;
+
 function bearerToken(req: Request): string {
   const header = req.headers.authorization ?? '';
   return header.startsWith('Bearer ') ? header.slice('Bearer '.length).trim() : '';
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`timed out after ${ms}ms`)), ms);
+    promise.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e: unknown) => {
+        clearTimeout(timer);
+        reject(e);
+      },
+    );
+  });
+}
+
+/**
+ * Phase 4: a token the local store doesn't recognize may still be a real, centrally-issued
+ * account key (minted via auth-client's `POST /api/keys {service:'mud-builder-server'}`) —
+ * check it against auth-server before giving up. Never throws: unconfigured, an unreadable
+ * key file, a network error, a timeout, or `{valid:false}` all just mean "not an account
+ * actor", leaving the caller to 401 exactly as it did before this existed.
+ */
+async function tryIntrospect(
+  config: Pick<MudBuilderConfig, 'authServerUrl' | 'servicePrivateKeyPath'>,
+  token: string,
+): Promise<BuilderActor | null> {
+  if (!config.authServerUrl || !config.servicePrivateKeyPath) return null;
+  try {
+    const privateKeyPem = fs.readFileSync(config.servicePrivateKeyPath, 'utf8');
+    const result = await withTimeout(
+      introspect(config.authServerUrl, INTROSPECT_SERVICE_NAME, privateKeyPem, token),
+      INTROSPECT_TIMEOUT_MS,
+    );
+    if (!result.valid) return null;
+    return { kind: 'account', accountId: result.accountId ?? '', label: result.label ?? result.accountId ?? 'account' };
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -32,14 +84,24 @@ function bearerToken(req: Request): string {
  * case-insensitive by default, so a path check like startsWith('/api/') can
  * be sidestepped with '/API/…' while the route still matches. Reads (GET/
  * HEAD) and preflight stay open; this server serves nothing else mutable.
+ *
+ * Local-first: `store.verify()` (sha256/timing-safe, no I/O beyond the
+ * already-cached auth file) is tried first and unconditionally — only a LOCAL
+ * miss falls through to the Phase 4 introspect fallback, so master-key and
+ * local-API-key holders never pay a network round trip or depend on
+ * auth-server being reachable.
  */
-export function authGuard(store: AuthStore): RequestHandler {
-  return (req, res, next) => {
+export function authGuard(
+  store: AuthStore,
+  introspectConfig: Pick<MudBuilderConfig, 'authServerUrl' | 'servicePrivateKeyPath'>,
+): RequestHandler {
+  return async (req, res, next) => {
     if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
       next();
       return;
     }
-    const actor = store.verify(bearerToken(req));
+    const token = bearerToken(req);
+    const actor = store.verify(token) ?? (token ? await tryIntrospect(introspectConfig, token) : null);
     if (!actor) {
       res.status(401).json({ error: 'a valid builder token is required (Authorization: Bearer <token>)' });
       return;
@@ -96,9 +158,6 @@ function requireLabel(req: Request): string {
   }
   return label.trim();
 }
-
-// The identity mud-builder-server registers under with auth-server's `register-service` script.
-const INTROSPECT_SERVICE_NAME = 'mud-builder-server';
 
 export function registerAuthRoutes(
   app: Application,

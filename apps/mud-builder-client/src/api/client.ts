@@ -1,4 +1,4 @@
-import type { AreaFile, GroupEntry, SkillEntry } from '@shatteredarchive/merc-area';
+import type { AreaFile, GroupEntry, SimulateResetsResult, SkillEntry, SpellSpec } from '@shatteredarchive/merc-area';
 
 /** Thin fetch wrappers for mud-builder-server. All errors surface as thrown Error with the server's message. */
 
@@ -151,6 +151,22 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return body;
 }
 
+/** Like request(), but for the one endpoint that answers text/plain (a generated C patch), not JSON. */
+async function requestText(url: string, init?: RequestInit): Promise<string> {
+  const token = getStoredToken();
+  const headers: Record<string, string> = {
+    ...((init?.headers as Record<string, string> | undefined) ?? {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  const res = await fetch(url, { ...init, headers });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    const message = body.error ?? `${res.status} ${res.statusText}`;
+    throw new ApiError(res.status === 401 ? `${message} — set your builder token in the Access tab` : message, res.status);
+  }
+  return res.text();
+}
+
 export interface WorldAreaSummary {
   file: string;
   name?: string;
@@ -238,6 +254,7 @@ export const api = {
   world: () => request<{ areas: WorldAreaSummary[] }>('/api/world'),
   areaMap: (file: string) => request<AreaMapResponse>(`/api/map/${encodeURIComponent(file)}`),
   worldMap: () => request<WorldMapResponse>('/api/map'),
+  spawn: (file: string) => request<SimulateResetsResult>(`/api/areas/${encodeURIComponent(file)}/spawn`),
   getArea: (file: string) =>
     request<{ file: string; area: AreaFile; baseHash: string }>(`/api/areas/${encodeURIComponent(file)}`),
   preview: (file: string, area: AreaFile) =>
@@ -296,6 +313,14 @@ export const api = {
       body: JSON.stringify(baseHash === undefined ? { groups } : { groups, baseHash }),
     }),
   deleteGroups: () => request<{ removed: boolean; note: string }>('/api/groups', { method: 'DELETE' }),
+  codegenSpells: () => request<{ specs: SpellSpec[]; baseHash: string | null }>('/api/codegen/spells'),
+  saveCodegenSpells: (specs: SpellSpec[], baseHash?: string | null) =>
+    request<{ saved: boolean; warnings: string[]; hash?: string }>('/api/codegen/spells', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(baseHash === undefined ? { specs } : { specs, baseHash }),
+    }),
+  codegenPatch: (funName: string) => requestText(`/api/codegen/spells/${encodeURIComponent(funName)}/patch`),
   authKeys: () => request<{ keys: ApiKeyInfo[] }>('/api/auth/keys'),
   createKey: (label: string) =>
     request<IssuedToken>('/api/auth/keys', {

@@ -1,7 +1,7 @@
 File Index
 
 /AccessPage.tsx
-Purpose: Access tab (Phase 9) — builder token entry (stored in localStorage) with a live status probe (open/none/invalid/API key/master via GET /api/auth/keys), and the master-only API-key panel: create/rotate/revoke behind confirms, show-once issued-token box, master rotation that swaps the stored token automatically; Phase 10 adds a master-only Audit log table (newest first, refresh).
+Purpose: Access tab (Phase 9) — builder token entry (stored in localStorage) with a live status probe (open/none/invalid/API key/master via GET /api/auth/keys), and the master-only API-key panel: create/rotate/revoke behind confirms, show-once issued-token box, master rotation that swaps the stored token automatically; Phase 10 adds a master-only Audit log table (newest first, refresh). Phase 4 (centralized auth): no code change — the token field is source-agnostic, so a key minted via auth-client (service "mud-builder-server") lands in the same 'key' status bucket; only the 'none' status copy was updated to mention that option.
 
 /AccessPage.test.tsx
 Purpose: Access tab tests: token prompt→master unlock, API-key status without management, rejected-token flag, create with show-once token, rotate/revoke behind confirms, master-only audit table (and its absence for API keys).

@@ -1,10 +1,10 @@
 File Index
 
 /MapPage.test.tsx
-Purpose: MapPage tests — first area renders rooms + portal stub, room click hands off a room ref to onOpenRoom, portal click fetches and renders the neighboring area's map in place.
+Purpose: MapPage tests — first area renders rooms + portal stub, room click hands off a room ref to onOpenRoom, portal click fetches and renders the neighboring area's map in place; Phase 13 spawn overlay: off-by-default (no /spawn fetch), toggle on renders per-room mob-count badges (object-only rooms excluded) + legend entry, toggle off hides them.
 
 /MapPage.tsx
-Purpose: Map tab (Phase 12) — SVG area map from /api/map/:file: rooms on the BFS grid (click → Areas tab via areaTarget lift), classification-aware exit edges (Phase 12b: arrowheads for one-way, dashed red non-returning, self-loop rings, amber door markers with lock-state titles, dotted violet script-warp edges) + an HTML legend, dashed portal stubs for cross-area exits/warps (click → that area's map), drag-pan/wheel-zoom viewBox, area picker + Area/World mode toggle; strictly a view, nothing mutates.
+Purpose: Map tab (Phase 12) — SVG area map from /api/map/:file: rooms on the BFS grid (click → Areas tab via areaTarget lift), classification-aware exit edges (Phase 12b: arrowheads for one-way, dashed red non-returning, self-loop rings, amber door markers with lock-state titles, dotted violet script-warp edges) + an HTML legend, dashed portal stubs for cross-area exits/warps (click → that area's map), drag-pan/wheel-zoom viewBox, area picker + Area/World mode toggle; Phase 13: "Spawns" toolbar toggle fetches /api/areas/:file/spawn (only while on) and overlays green top-left mob-count badges on room nodes; strictly a view, nothing mutates.
 
 /WorldMap.test.tsx
 Purpose: WorldMap tests — nodes for all areas incl. broken flagged, link tooltip lists the connecting exit, node click calls onOpenArea.
@@ -19,4 +19,4 @@ Purpose: layoutArea unit tests — linear east corridor on one row, N/E/S/W loop
 Purpose: Pure BFS grid layout (no deps): 10-direction door deltas (Phase 12b — diagonals own the corner cells, U/D ring-placed near the source), per-component BFS from the lowest vnum with components stacked vertically, collision probe along the direction then ring fallback, REV_DIR-based exit classification (two-way/one-way/non-returning/loop) with locks carried onto edges, warp edges + warp portal stubs, dangling exits drawn as nothing; normalized to a (0,0) origin.
 
 /map.css
-Purpose: Map tab styles — mode toggle, SVG canvas (grab cursor), room/portal node + edge classes (external dashed amber; Phase 12b: one-way/non-returning/warp/loop edge variants, arrowheads, rotated door marker, legend swatches), world node/link classes with broken-state variant.
+Purpose: Map tab styles — mode toggle, SVG canvas (grab cursor), room/portal node + edge classes (external dashed amber; Phase 12b: one-way/non-returning/warp/loop edge variants, arrowheads, rotated door marker, legend swatches; Phase 13: spawn toggle, green spawn badge, spawn legend swatch), world node/link classes with broken-state variant.

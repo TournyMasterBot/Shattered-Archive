@@ -16,6 +16,19 @@ import type { BuilderActor } from './auth-store.js';
 
 const AUDIT_FILE = 'audit.log';
 
+/** Human-readable actor tag for an audit line — covers all three BuilderActor kinds. */
+function describeActor(actor: BuilderActor | undefined): string {
+  if (!actor) return 'anonymous';
+  switch (actor.kind) {
+    case 'master':
+      return 'master';
+    case 'key':
+      return `key:${actor.id} (${actor.label})`;
+    case 'account':
+      return `account:${actor.accountId} (${actor.label})`;
+  }
+}
+
 /** Appends one timestamped JSON line. Never throws. */
 export function appendAudit(dataDir: string, entry: Record<string, unknown>): void {
   try {
@@ -47,7 +60,7 @@ export function auditMiddleware(dataDir: string): RequestHandler {
         method: req.method,
         route: req.originalUrl,
         status: res.statusCode,
-        actor: actor ? (actor.kind === 'master' ? 'master' : `key:${actor.id} (${actor.label})`) : 'anonymous',
+        actor: describeActor(actor),
       });
     });
     next();

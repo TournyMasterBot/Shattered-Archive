@@ -1,5 +1,7 @@
+import crypto from 'crypto';
 import express from 'express';
 import fs from 'fs';
+import http from 'http';
 import os from 'os';
 import path from 'path';
 import type { AddressInfo } from 'net';
@@ -47,6 +49,43 @@ function putGroups(base: string, token?: string): Promise<Response> {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify(stockGroupsFile()),
+  });
+}
+
+/**
+ * A real Ed25519 private key, written to a temp file — `introspect()` signs a real
+ * assertion with it (`crypto.createPrivateKey` throws on a fake/malformed PEM), but
+ * these tests' fake auth-server never verifies the signature, only the response it's
+ * told to return — so the key's actual identity doesn't matter, only its shape.
+ */
+function makeServiceKeyFile(): string {
+  const { privateKey } = crypto.generateKeyPairSync('ed25519');
+  const pem = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-svc-key-'));
+  const file = path.join(dir, 'shattered-service.key');
+  fs.writeFileSync(file, pem, 'utf8');
+  return file;
+}
+
+/** Minimal stand-in for auth-server's POST /api/introspect: canned JSON, tracks hit count. */
+function startFakeIntrospect(respond: () => unknown): Promise<{ server: Server; url: string; hits: () => number }> {
+  let hits = 0;
+  const server = http.createServer((req, res) => {
+    if (req.method === 'POST' && req.url === '/api/introspect') {
+      hits++;
+      req.on('data', () => undefined);
+      req.on('end', () => {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(respond()));
+      });
+      return;
+    }
+    res.writeHead(404).end();
+  });
+  return new Promise((resolve) => {
+    server.listen(0, '127.0.0.1', () => {
+      resolve({ server, url: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, hits: () => hits });
+    });
   });
 }
 
@@ -319,6 +358,126 @@ describe('auth dir move + master-key rotation (Phase 12b)', () => {
       expect((await putGroups(base, 'rotated-master-token')).status).toBe(200);
     } finally {
       await new Promise((r) => server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('Phase 4: centralized-auth introspect fallback', () => {
+  it('local-first: a valid master key never contacts auth-server even when configured', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-auth-p4-local-'));
+    const fake = await startFakeIntrospect(() => ({ valid: true, accountId: 'acct1', service: 'mud-builder-server', label: 'alice' }));
+    const { server, base } = await startApp(
+      makeConfig(dir, { authServerUrl: fake.url, servicePrivateKeyPath: makeServiceKeyFile() }),
+    );
+    try {
+      const master = readMasterKey(dir);
+      expect((await putGroups(base, master)).status).toBe(200);
+      expect(fake.hits()).toBe(0);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('unconfigured (no authServerUrl/servicePrivateKeyPath): unknown token 401s, no network attempted', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-auth-p4-unconfigured-'));
+    const fake = await startFakeIntrospect(() => ({ valid: true, accountId: 'acct1', service: 'mud-builder-server', label: 'alice' }));
+    // authServerUrl deliberately left at makeConfig's default and servicePrivateKeyPath omitted —
+    // the fallback requires BOTH, so it must never fire even though a URL is present.
+    const { server, base } = await startApp(makeConfig(dir));
+    try {
+      expect((await putGroups(base, 'a-centrally-issued-token')).status).toBe(401);
+      expect(fake.hits()).toBe(0);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('a token unknown locally but valid per auth-server passes the gate and audits as an account actor', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-auth-p4-valid-'));
+    const fake = await startFakeIntrospect(() => ({ valid: true, accountId: 'acct1', service: 'mud-builder-server', label: 'alice' }));
+    const { server, base } = await startApp(
+      makeConfig(dir, { authServerUrl: fake.url, servicePrivateKeyPath: makeServiceKeyFile() }),
+    );
+    try {
+      expect((await putGroups(base, 'a-centrally-issued-token')).status).toBe(200);
+      expect(fake.hits()).toBe(1);
+      const audit = fs.readFileSync(path.join(dir, 'backups', 'audit.log'), 'utf8');
+      expect(audit).toContain('account:acct1 (alice)');
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('auth-server says {valid:false}: 401, nothing written', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-auth-p4-invalid-'));
+    const fake = await startFakeIntrospect(() => ({ valid: false }));
+    const { server, base } = await startApp(
+      makeConfig(dir, { authServerUrl: fake.url, servicePrivateKeyPath: makeServiceKeyFile() }),
+    );
+    try {
+      expect((await putGroups(base, 'a-revoked-or-unknown-token')).status).toBe(401);
+      expect(fs.existsSync(path.join(dir, 'groups.dat'))).toBe(false);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('auth-server unreachable (connection refused): 401, not a crash', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-auth-p4-unreachable-'));
+    // Nothing is listening on this port — fetch fails fast (ECONNREFUSED), well under the
+    // fallback's timeout, so this test doesn't need to wait it out.
+    const { server, base } = await startApp(
+      makeConfig(dir, { authServerUrl: 'http://127.0.0.1:1', servicePrivateKeyPath: makeServiceKeyFile() }),
+    );
+    try {
+      expect((await putGroups(base, 'anything')).status).toBe(401);
+    } finally {
+      await new Promise((r) => server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('auth-server hangs (accepts but never responds): 401 within the bounded timeout, not a hang', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-auth-p4-hang-'));
+    const hangingServer = http.createServer(() => {
+      /* never calls res.end() — simulates a stuck auth-server */
+    });
+    await new Promise<void>((resolve) => hangingServer.listen(0, '127.0.0.1', resolve));
+    const hangUrl = `http://127.0.0.1:${(hangingServer.address() as AddressInfo).port}`;
+    const { server, base } = await startApp(
+      makeConfig(dir, { authServerUrl: hangUrl, servicePrivateKeyPath: makeServiceKeyFile() }),
+    );
+    try {
+      expect((await putGroups(base, 'anything')).status).toBe(401);
+    } finally {
+      await new Promise((r) => server.close(r));
+      hangingServer.closeAllConnections?.();
+      await new Promise((r) => hangingServer.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }, 10_000);
+
+  it('unreadable/missing servicePrivateKeyPath: falls through to 401, never throws', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-auth-p4-badkey-'));
+    const fake = await startFakeIntrospect(() => ({ valid: true, accountId: 'acct1', service: 'mud-builder-server', label: 'alice' }));
+    const { server, base } = await startApp(
+      makeConfig(dir, { authServerUrl: fake.url, servicePrivateKeyPath: path.join(dir, 'does-not-exist.key') }),
+    );
+    try {
+      expect((await putGroups(base, 'anything')).status).toBe(401);
+      expect(fake.hits()).toBe(0);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
       fs.rmSync(dir, { recursive: true, force: true });
     }
   });

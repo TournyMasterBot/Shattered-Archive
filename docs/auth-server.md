@@ -20,7 +20,17 @@ validate bearer tokens against. It does nothing by itself: it only manages accou
 issues/verifies per-service API keys and browser sessions mapped to one master identity.
 Signup is open and username-based, gated by a 3-question anti-bot challenge. Phase 2 added
 the browser UI (`apps/auth-client`, [`docs/auth-client.md`](./auth-client.md)) and a real
-`/api/introspect` consumer — `mud-builder-server`'s `GET /api/auth/introspect-check`.
+`/api/introspect` consumer — `mud-builder-server`'s `GET /api/auth/introspect-check`
+(diagnostic-only proof that the mechanism works). Phase 4 went further: `mud-builder-server`'s
+actual write guard (`authGuard`) now falls back to introspection for any bearer token its own
+local `builder-auth.json` store doesn't recognize, so a key minted through `auth-client` with
+`service: 'mud-builder-server'` authenticates real mutations there — local master/API-key
+holders are unaffected and never depend on `auth-server` being reachable, since the local
+store is always checked first. Both are code-complete and live-verified against real local
+processes; neither is active in a **deployed** `mud-builder-server` yet — its compose service
+block sets neither `AUTH_SERVER_URL` nor `SERVICE_PRIVATE_KEY_PATH` (a deliberate Phase 2
+choice, not an oversight — see [Deployment](#deployment)), so a deployed instance still
+behaves exactly as it did pre-Phase-2.
 
 For local setup instructions, see [`../apps/auth-server/README.md`](../apps/auth-server/README.md).
 
@@ -218,7 +228,18 @@ resolver+variable pattern (same as `build.shatteredarchive.dev`) so the edge sta
 cleanly even if `auth-server` isn't running. The data-encryption key is delivered via a
 mounted file in a dedicated `auth-server-secrets` volume — self-generated on first boot,
 persists across container recreation, kept separate from `auth-server-data` so a leaked
-data volume alone can't be decrypted. See [`deploy.md`](./deploy.md) for the general
+data volume alone can't be decrypted.
+
+Consumers are wired into deploy on a case-by-case basis. `mud-builder-server` (present only
+in the experimental compose, not prod) currently has neither `AUTH_SERVER_URL` nor
+`SERVICE_PRIVATE_KEY_PATH` set in its `environment:` block, and no service-key file is
+mounted into its container — this was a deliberate Phase 2 decision to keep the introspect
+fallback opt-in until asked for, not something Phase 4 changed. To activate it: run
+`register-service mud-builder-server` against the deployed `auth-server`, mount the printed
+private key into the `mud-builder-server` container (a new secret volume, mirroring
+`auth-server-secrets`), and add both env vars to its compose `environment:` block.
+
+See [`deploy.md`](./deploy.md) for the general
 deployment architecture.
 
 ---

@@ -53,6 +53,16 @@ describe('RoomEditor', () => {
     const exited = onChange.mock.calls.at(-1)![0] as Room;
     expect(exited.exits[0].toVnum).toBe(105);
   });
+
+  it('shows a spawn-preview link only when onOpenSpawn is given, and passes the room vnum (Phase 13)', () => {
+    const { rerender } = render(<RoomEditor room={ROOM} onChange={jest.fn()} />);
+    expect(screen.queryByText('See what spawns here →')).toBeNull();
+
+    const onOpenSpawn = jest.fn();
+    rerender(<RoomEditor room={ROOM} onChange={jest.fn()} onOpenSpawn={onOpenSpawn} />);
+    fireEvent.click(screen.getByText('See what spawns here →'));
+    expect(onOpenSpawn).toHaveBeenCalledWith(100);
+  });
 });
 
 describe('AreasPage write gating', () => {

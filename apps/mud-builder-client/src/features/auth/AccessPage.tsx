@@ -8,6 +8,13 @@ import '../areas/areas.css';
  * the service MASTER key — the API-key management panel (create / rotate /
  * revoke, master rotation). Plaintext tokens appear exactly once, in the
  * show-once box right after create/rotate; only hashes exist server-side.
+ *
+ * Phase 4 (centralized auth): the token field is agnostic to WHERE a token
+ * came from — a key minted through auth-client with service
+ * "mud-builder-server" works here too (the server introspects it against
+ * auth-server on a local miss), landing in the same 'key' status bucket as a
+ * local API key since neither is master. No client-side change was needed
+ * for the mechanism itself, only this status copy.
  */
 
 type TokenStatus =
@@ -21,7 +28,7 @@ type TokenStatus =
 const STATUS_TEXT: Record<TokenStatus, string> = {
   loading: 'Checking access…',
   open: 'This deployment does not require a builder token — saves follow the write gate only.',
-  none: 'A builder token is required to save changes. Paste yours below (ask the operator, or read the master key from builder-auth.json on the host).',
+  none: 'A builder token is required to save changes. Paste yours below (ask the operator, read the master key from builder-auth.json on the host, or — if this deployment runs the centralized auth service — log into auth-client and mint a key with service "mud-builder-server").',
   invalid: 'The stored token was REJECTED — it may have been revoked or rotated. Enter a current one.',
   key: 'Token accepted (API key). Saves are enabled in this browser.',
   master: 'Master key accepted — API keys can be managed below.',

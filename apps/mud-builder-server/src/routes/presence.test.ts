@@ -1,5 +1,7 @@
+import crypto from 'crypto';
 import express from 'express';
 import fs from 'fs';
+import http from 'http';
 import os from 'os';
 import path from 'path';
 import type { AddressInfo } from 'net';
@@ -150,5 +152,64 @@ describe('presence routes (full app, auth ON)', () => {
     const auditPath = path.join(dir, 'backups', 'audit.log');
     const audited = fs.existsSync(auditPath) ? fs.readFileSync(auditPath, 'utf8') : '';
     expect(audited).not.toContain('/api/presence');
+  });
+});
+
+describe('presence routes: Phase 4 account actor names the heartbeat', () => {
+  it('a centrally-issued token heartbeats under its auth-server label, not "anonymous"', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-presence-p4-'));
+    const fakeIntrospect = http.createServer((req, res) => {
+      req.on('data', () => undefined);
+      req.on('end', () => {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ valid: true, accountId: 'acct1', service: 'mud-builder-server', label: 'alice' }));
+      });
+    });
+    await new Promise<void>((resolve) => fakeIntrospect.listen(0, '127.0.0.1', resolve));
+    const fakeUrl = `http://127.0.0.1:${(fakeIntrospect.address() as AddressInfo).port}`;
+
+    const { privateKey } = crypto.generateKeyPairSync('ed25519');
+    const keyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-presence-p4-key-'));
+    const keyPath = path.join(keyDir, 'shattered-service.key');
+    fs.writeFileSync(keyPath, privateKey.export({ type: 'pkcs8', format: 'pem' }).toString(), 'utf8');
+
+    const config: MudBuilderConfig = {
+      mercMudPath: dir,
+      mercAreaDir: '.',
+      areaPath: dir,
+      writeEnabled: true,
+      authEnabled: true,
+      authDataPath: path.join(dir, 'auth'),
+      auditDataPath: path.join(dir, 'backups'),
+      authServerUrl: fakeUrl,
+      servicePrivateKeyPath: keyPath,
+    };
+    const app = express();
+    registerRoutes(app, config);
+    let server!: Server;
+    let base!: string;
+    await new Promise<void>((resolve) => {
+      server = app.listen(0, '127.0.0.1', () => {
+        base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+        resolve();
+      });
+    });
+    try {
+      const post = await fetch(`${base}/api/presence`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer a-centrally-issued-token' },
+        body: JSON.stringify({ file: 'tiny.are' }),
+      });
+      expect(post.status).toBe(200);
+      const list = (await (await fetch(`${base}/api/presence`)).json()) as {
+        entries: { file: string; name: string }[];
+      };
+      expect(list.entries).toEqual([expect.objectContaining({ file: 'tiny.are', name: 'alice' })]);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fakeIntrospect.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+      fs.rmSync(keyDir, { recursive: true, force: true });
+    }
   });
 });

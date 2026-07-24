@@ -43,8 +43,17 @@ export interface ApiKeyInfo {
   revokedAt?: string;
 }
 
-/** Who a verified bearer token belongs to. */
-export type BuilderActor = { kind: 'master' } | { kind: 'key'; id: string; label: string };
+/**
+ * Who a verified bearer token belongs to. `account` (Phase 4, centralized auth) is never
+ * produced by this store's own `verify()` — it's assembled by `authGuard` when a token
+ * unrecognized locally passes introspection against the centralized auth-server. It carries
+ * a `label` like `key` does so the existing `actor.kind === 'master' ? 'master' : actor.label`
+ * ternaries in audit.ts/presence.ts keep working unmodified.
+ */
+export type BuilderActor =
+  | { kind: 'master' }
+  | { kind: 'key'; id: string; label: string }
+  | { kind: 'account'; accountId: string; label: string };
 
 interface AuthFileData {
   masterKey: string;

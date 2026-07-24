@@ -141,7 +141,7 @@ services:
       LOG_LEVEL: "debug"
       DOTENV_CONFIG_QUIET: "true"
       GAME_PROXY_ALLOW_ALL: "false"
-      GAME_PROXY_ALLOWLIST: "dsl-mud.org:4000,dsl-mud.org:8000,localhost:4000"
+      GAME_PROXY_ALLOWLIST: "dsl-mud.org:4000,dsl-mud.org:8000,localhost:4000,host.docker.internal:4000"
       LOG_DATE_PARTITIONED: "true"
       LOG_FILE_PATH: "/repo/apps/game-server/log/server.log"
       JSON_LOG_FILE_PATH: "/repo/apps/game-server/log/server.log.jsonl"

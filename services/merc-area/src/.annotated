@@ -13,7 +13,7 @@ Purpose: groups.dat parse/emit/validate tests: stock round trip, prefix member r
 Purpose: groups.dat overlay format — parse/emit/validate (prefix member resolution against skills+groups, cycle = error, -1/0/1+ rating sentinels) + stockGroupsFile.
 
 /index.ts
-Purpose: Public package surface — re-exports types, parse/emit, Reader, validation (scripts/refs incl. Phase 11 resolver hook + collectDefinedEntities), skills and groups modules.
+Purpose: Public package surface — re-exports types, parse/emit, Reader, validation (scripts/refs incl. Phase 11 resolver hook + collectDefinedEntities), skills and groups modules, and (Phase 13) simulateResets + its result/option types.
 
 /parse.test.ts
 Purpose: Parser unit tests per section kind plus error-position assertions.
@@ -33,6 +33,12 @@ Purpose: The load-bearing guarantee: every area.lst file parses → emits → re
 /scripts.test.ts
 Purpose: Script validation tests: trigger vocabulary, mob-in-file attachment, body budget, preserved-verbatim unknown resets.
 
+/simulate.test.ts
+Purpose: simulateResets tests, each keyed to a specific db.c reset_area branch: M+E+G chain, global vs room-local M limits, O dedup, P container chaining (incl. onto a just-given, not-yet-in-a-room object), D lock states 0/1/2 defaulting doors to open, R marker (no reordering), the mob==null vs !last orphan-G/E distinction (only the former warns, matching db.c's own bug() call), cross-area resolver, identical-loadout grouping.
+
+/simulate.ts
+Purpose: Reset simulator (Phase 13) — simulateResets(area, {resolveExternal}) computes FIRST-BOOT-ONLY spawn state (per-room mobs w/ equipped+carried, room objects w/ nested P contents, door states, randomized-exit markers, warnings) as a line-faithful mirror of db.c reset_area's M/O/P/G/E/D/R state machine incl. the shared last/LastMob threaded across the whole reset list. Deliberately not modeled (documented in the file header): the P/G/E object-limit's 1-in-5 random bypass (always deterministic-skip instead), shop-keeper unlimited restock, pet-shop/cost/alignment-zap side effects, container lock write-back.
+
 /skills-stock.ts
 Purpose: Generated stock skills tables (STOCK_SKILLS, SKILL_SPELL_FUNS, STOCK_FUN_TARGET_PAIRS) — checked in via pnpm codegen, mirrors const.c skill_table.
 
@@ -41,6 +47,18 @@ Purpose: skills.dat parse/emit/validate tests: stock round trip, (fun,target) st
 
 /skills.ts
 Purpose: skills.dat overlay format — parse/emit/validate ((fun,target) must be a stock-proven pair — boot crash guard) + stockSkillsFile/stockSkill.
+
+/spell-codegen.test.ts
+Purpose: spell-codegen.ts golden-file tests (Phase 14a): byte-exact per-archetype .c function + const.c row fixtures, alphabetical anchor logic (incl. the before/after distinction for const.c's multi-line entries), overlay-row round trip through skills.ts's real emitter/parser.
+
+/spell-codegen.ts
+Purpose: SpellSpec → reviewable 4-section C patch (Phase 14a) — magic.h decl + magic.c function + skills_data.c fun_registry line + a NEW const.c skill_table row (skills.dat can only overlay data on an EXISTING row, never introduce one — see file header). Anchors are quoted verbatim source lines, never line numbers; const.c anchors "before" the alphabetical successor's opening line (its entries are multi-line, so "after" a predecessor's opening line would land mid-entry). generateOverlayRow's SkillEntry output is the "what this looks like once deployed" preview, fed into the const.c row — never written live to skills.dat.
+
+/spell-spec.test.ts
+Purpose: SpellSpec model tests (Phase 14a): archetype/target compatibility matrix, naming collisions, field bounds, C-string/skills.dat-line safety.
+
+/spell-spec.ts
+Purpose: Declarative NEW-spell spec model (Phase 14a) — closed archetype set (damage/buff/debuff/heal/cure) each lifted from a real stock spell body (spell_flamestrike/spell_acid_blast, spell_armor, spell_blindness, spell_cure_light, spell_cure_blindness), validateSpellSpec (naming/target/field-bounds checks). Builder metadata only — the game never reads a stored spec; see spell-codegen.ts for what actually gets deployed.
 
 /types.ts
 Purpose: The AreaFile model: every section kind (area header, mobiles, objects, rooms w/ exits+extra descrs, resets, shops, specials, helps, socials, scripts) as typed records mirroring db.c field order; Phase 12b: RoomExit.door 0-9, MobScript.attach 'mob'|'room' (R entries) + ROOM_SCRIPT_TRIGGERS.

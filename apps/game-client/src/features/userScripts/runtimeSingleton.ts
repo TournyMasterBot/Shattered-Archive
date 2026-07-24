@@ -18,6 +18,7 @@ import { ShatteredArchiveServerClosed } from '../../types/event-types/shattered-
 import { getGlobalVarsSnapshot } from './globalScriptsStore';
 import { getChatSettings } from '../chat/chat-settings-store';
 import { classifyStrictChatSubtype } from '../chat/strict-chat-classifier';
+import { attachGmcpRouter } from '../gmcp/gmcpRouter';
 
 declare global {
   interface Window {
@@ -188,6 +189,11 @@ export class RuntimeSingleton {
         { key: 'runtimeSingleton::redispatch::gmcp' },
       ),
     );
+
+    // GMCP -> typed game:char-data / game:room-data / game:tick /
+    // game:affects-trueup / game:affect-added / game:affect-removed
+    // (parses the raw "pkg {json}" wire text -- see gmcpRouter.ts)
+    this.disposers.push(attachGmcpRouter());
 
     // ERROR -> shatteredarchive:server-error
     this.disposers.push(

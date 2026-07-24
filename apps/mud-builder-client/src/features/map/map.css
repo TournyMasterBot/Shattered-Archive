@@ -43,6 +43,15 @@
   font-size: 0.85rem;
 }
 
+.mb-map-spawn-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #9aa3b2;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
 .mb-map-error {
   color: #e5534b;
 }
@@ -199,6 +208,29 @@
   font-size: 12px;
   text-anchor: middle;
   font-family: inherit;
+}
+
+/* Phase 13 spawn overlay badge — top-left corner (the self-loop ring owns top-right) */
+.mb-map-spawn-badge circle {
+  fill: #3fb950;
+  stroke: #14161c;
+  stroke-width: 1.5;
+}
+
+.mb-map-spawn-badge text {
+  fill: #0e1116;
+  font-size: 10px;
+  font-weight: 700;
+  text-anchor: middle;
+  font-family: inherit;
+}
+
+.mb-legend-swatch--spawn {
+  width: 10px;
+  height: 10px;
+  border: 0;
+  border-radius: 50%;
+  background: #3fb950;
 }
 
 .mb-map-portal rect {

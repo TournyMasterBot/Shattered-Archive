@@ -3,6 +3,7 @@ import type { AreaFile, Reset, ResetComment, ResetsSection } from '@shatteredarc
 
 import PreviewPane from '../areas/PreviewPane.js';
 import { AreaSidebar, WorkbenchManualPane, WorkbenchToast, WorkbenchToolbar, useAreaWorkbench } from '../areas/workbench.js';
+import SimulatePane from './SimulatePane.js';
 import '../areas/areas.css';
 
 type ResetEntry = Reset | ResetComment;
@@ -136,7 +137,7 @@ const DOOR_STATES = ['open', 'closed', 'closed + locked'];
  * the most recent M/O above them). Same preview-first, write-gated flow as the
  * other tabs; comment lines are preserved read-only.
  */
-export default function ResetsPage() {
+export default function ResetsPage({ initialRoomTarget }: { initialRoomTarget?: { vnum: number } | null } = {}) {
   const wb = useAreaWorkbench();
   const [newCommand, setNewCommand] = useState<Reset['command']>('M');
 
@@ -394,6 +395,8 @@ export default function ResetsPage() {
               </div>
             </div>
             )}
+
+            <SimulatePane file={wb.file} area={wb.area} initialRoomTarget={initialRoomTarget} />
 
             {wb.preview && <PreviewPane preview={wb.preview} onNavigate={(ref) => void wb.openArea(ref.file)} />}
           </>

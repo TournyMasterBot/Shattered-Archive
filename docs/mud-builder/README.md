@@ -447,6 +447,78 @@ anything found in another area stays a clickable link. And the select
 dropdowns are readable again (the app forces a dark `color-scheme`, so the
 native option list no longer paints light-on-light).
 
+## Reset simulator: see what actually spawns (Phase 13)
+
+The Resets tab gained a **Simulate** pane that answers the most common builder
+question — *"what does this area actually spawn, where?"* — straight from the
+parsed model, before any reload. A pure simulator in `merc-area`
+(`simulateResets`) mirrors stock `db.c reset_area` semantics exactly: the
+`LastMob` state machine threaded across the whole reset list (an unrelated
+reset between an `M` and its `G` can break the chain, just like the real
+game), `M` limits, `G`/`E` give-and-equip with the `>50 → 6` / `-1 →
+unlimited` limit decoding, `P` into the most-recently-created matching
+container, `D` door lock states on both sides, and `R` reported as
+"randomized" without inventing an order.
+
+- **Per-room accordion**: every room that receives a spawn shows its mobs with
+  full gear trees (equipped slots + carried items, `P`-nested container
+  contents recursively), room objects with contents, door states, and a
+  randomized-exits marker. Identical loadouts group into one entry with a
+  count ("3 guards"); any gear variance keeps entries separate.
+- **Warnings, not silence**: the cases `db.c` silently skips — broken vnum
+  refs, a `G`/`E` with no live mob, a `P` with no container — surface as
+  warnings at the top. Cross-area vnums resolve through the world index
+  (Phase 11), so stock files simulate warning-free.
+- **Boot-state only**, and the pane says so: it models a fresh boot with empty
+  rooms — repop drift from players and kills is out of scope.
+- **Click-through both ways**: each room in the Areas editor offers "See what
+  spawns here →" (jumps to the Simulate pane filtered to that room), and the
+  **Map tab grew a "Spawns" toggle** that overlays per-room mob counts as
+  green badges on the room nodes, with a legend entry while it's on.
+- Everything is read-only (`GET /api/areas/:file/spawn`) and reflects the
+  last **saved** state, like the World and Map tabs — the MUD is never
+  involved, let alone restarted.
+
+## New spells: C codegen assist (Phase 14a)
+
+The Skills tab gained a third sub-view — **"New spell (codegen)"** — that lets a builder
+author a brand-new spell declaratively and get back a reviewable C patch, without ever
+writing, compiling, or deploying anything themselves.
+
+- **Scope correction, stated plainly:** skill DATA has been authorable via skills.dat
+  since Phase 7, but skills.dat can only overlay data onto a row that **already exists**
+  in the compiled `skill_table[]` — the C loader (`load_skills_overlay`) skips any row
+  whose name it doesn't already recognize, every boot, forever. A brand-new spell's
+  deployable artifact is therefore **not** a skills.dat row; it's a fourth patch section —
+  a new `skill_table[]` struct literal in `const.c`. `MAX_SKILL` (150) has deliberate
+  headroom over the ~100 stock rows for exactly this. Once that section is compiled in,
+  the spell is an ordinary stock row from then on, editable via the existing Skills
+  sub-view like "armor" or "bless" always have been.
+- **Closed archetype set, each lifted from a real stock spell body, not invented:**
+  `damage` (`spell_flamestrike`/`spell_acid_blast` shape — `dice(base + level/div, size)`,
+  optional save-halves), `buff` (`spell_armor` — no save, self/other guard messages),
+  `debuff` (`spell_blindness` — bitvector-gated guard, save negates), `heal`
+  (`spell_cure_light` shape), `cure` (`spell_cure_blindness` shape, strips an existing
+  compiled condition — blindness/poison/plague — never invents a new one).
+- **The generated patch has four labeled sections** (`magic.h` decl, `magic.c` function,
+  `skills_data.c` fun_registry line, `const.c` skill_table row), each anchored to a
+  verbatim quoted line from current source — never a line number, since those drift.
+  const.c's anchor is deliberately an "insert BEFORE the next entry" anchor, not "insert
+  after the previous one": that array's entries are multi-line struct literals, so
+  anchoring on a predecessor's mere opening line would land the insertion in the middle of
+  that predecessor's own entry.
+- **Nothing is ever auto-deployed.** Specs persist as builder metadata in
+  `<area>/codegen/spells.json` (the game never reads this file); the patch is
+  preview-and-download only. Applying it to `merc-mud/2.4/src`, compiling, and
+  redeploying the engine stays a human action.
+- **Verified end-to-end** (2026-07-24): a generated "spark bolt" damage spell was applied
+  to a scratch copy of the engine, compiled cleanly, booted in a throwaway container, and
+  actually cast in a live session — `skill_lookup` resolved it by name, mana was deducted
+  correctly, and it dealt damage exactly per its spec. A follow-up review pass
+  compile-verified all five archetype templates together in one scratch build (zero
+  compiler warnings), with each new row proven to resolve by name at boot via a skills.dat
+  overlay naming all five ("5 row(s) applied, 0 skipped" + `rom --skills-test` ALL PASS).
+
 ## Guarantees (and their limits)
 
 - Anything the emitter writes re-parses identically and boots in unmodified
@@ -538,4 +610,9 @@ loop-back, door-blocked, teleport — with a legend), resets display as
 color-grouped mob units that move as one, the World dashboard flags
 limit-pressured mobs/objects and proven-undefined refs as INVALID, and the
 master key lives in `<area>/auth/` with a host-side rotation script
-(`pnpm generate-master-key`) that revokes all API keys (Phase 12b).
+(`pnpm generate-master-key`) that revokes all API keys (Phase 12b). A
+read-only reset simulator mirroring `db.c reset_area` shows the post-boot
+spawn state per room — mobs with gear trees, container contents, door states,
+warnings for what db.c silently skips — in the Resets tab's Simulate pane,
+linked from each room editor, and as an optional mob-count badge overlay on
+the area map (Phase 13).

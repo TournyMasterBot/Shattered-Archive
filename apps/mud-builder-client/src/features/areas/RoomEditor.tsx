@@ -5,10 +5,12 @@ import { ROOM_FLAGS, SECTOR_TYPES, DOOR_NAMES, LOCK_STATES } from '../../data/fl
 interface Props {
   room: Room;
   onChange: (room: Room) => void;
+  /** When given, a link jumps to the Resets tab's Simulate pane filtered to this room (Phase 13). */
+  onOpenSpawn?: (vnum: number) => void;
 }
 
 /** Form-first room editor (the PRIMARY editing surface). */
-export default function RoomEditor({ room, onChange }: Props) {
+export default function RoomEditor({ room, onChange, onOpenSpawn }: Props) {
   const set = (patch: Partial<Room>) => onChange({ ...room, ...patch });
 
   const setExit = (idx: number, patch: Partial<RoomExit>) => {
@@ -29,6 +31,11 @@ export default function RoomEditor({ room, onChange }: Props) {
     <div className="mb-room-editor">
       <h3>
         Room #{room.vnum} <span className="mb-muted">— UI editor</span>
+        {onOpenSpawn && (
+          <button type="button" className="mb-ref-link mb-room-spawn-link" onClick={() => onOpenSpawn(room.vnum)}>
+            See what spawns here →
+          </button>
+        )}
       </h3>
 
       <label className="mb-field">

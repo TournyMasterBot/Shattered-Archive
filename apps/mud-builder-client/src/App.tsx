@@ -44,6 +44,8 @@ export default function App() {
   const [section, setSection] = useState<BuilderSection>('areas');
   // Cross-page target: a World-dashboard link lands on the Areas tab with this open.
   const [areaTarget, setAreaTarget] = useState<ExternalRef | null>(null);
+  // Cross-page target: a RoomEditor "see what spawns here" link lands on the Resets tab filtered to this room (Phase 13).
+  const [resetsRoomTarget, setResetsRoomTarget] = useState<{ vnum: number } | null>(null);
 
   return (
     <div className="mb-app">
@@ -66,13 +68,19 @@ export default function App() {
 
       <main className="mb-main">
         {section === 'areas' ? (
-          <AreasPage initialTarget={areaTarget} />
+          <AreasPage
+            initialTarget={areaTarget}
+            onOpenSpawn={(vnum) => {
+              setResetsRoomTarget({ vnum });
+              setSection('resets');
+            }}
+          />
         ) : section === 'mobs' ? (
           <MobsPage />
         ) : section === 'objects' ? (
           <ObjectsPage />
         ) : section === 'resets' ? (
-          <ResetsPage />
+          <ResetsPage initialRoomTarget={resetsRoomTarget} />
         ) : section === 'scripts' ? (
           <ScriptsPage />
         ) : section === 'socials' ? (

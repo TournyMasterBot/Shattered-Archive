@@ -4,7 +4,9 @@ Centralized login service for the Shattered Archive ecosystem. It manages accoun
 issues/verifies per-service API keys and browser sessions mapped to one master identity.
 Phase 2 added the browser UI (`apps/auth-client`, run alongside this via `pnpm
 start:oauth`) and a real consumer of `/api/introspect` (`mud-builder-server`'s `GET
-/api/auth/introspect-check`).
+/api/auth/introspect-check`, a diagnostic-only proof). Phase 4 made `mud-builder-server`'s
+actual write guard accept a centrally-issued account key too — see
+[`docs/auth-server.md`](../../docs/auth-server.md) for both.
 
 See [`../../docs/auth-server.md`](../../docs/auth-server.md) for the full API reference,
 and this app's `.ai-context` for the design rationale (epoch-based invalidation, at-rest
@@ -84,8 +86,19 @@ pnpm --filter @shatteredarchive/auth-server revoke-service-key <service-name> <k
 `revoke-service-key` is the second half of a no-downtime rotation: register a new key, roll
 it out, confirm it's live, then revoke the old one. Same `--`-omission note as above applies.
 
-`mud-builder-server` is a real, deployed Phase 2 consumer — see its
-`SERVICE_PRIVATE_KEY_PATH`/`AUTH_SERVER_URL` env vars and `GET /api/auth/introspect-check`.
+`mud-builder-server` is a real consumer — see its `SERVICE_PRIVATE_KEY_PATH`/
+`AUTH_SERVER_URL` env vars. Phase 2 wired the diagnostic-only `GET
+/api/auth/introspect-check`; Phase 4 made its actual write guard (`authGuard`) fall back to
+introspection for any bearer token unrecognized by the local `builder-auth.json` store — a
+key minted here with `service: 'mud-builder-server'` authenticates a real mutation there,
+local-key holders unaffected and no network dependency for them. Code-complete and
+live-verified against real local processes for both phases. **Not yet active in either
+deployed compose file**, though: `mud-builder-server`'s service block in
+`deploy/docker-compose.shattered-archive-experimental.yml` sets neither env var (and
+`mud-builder-server` isn't in prod `docker-compose.yml` at all), so a deployed instance still
+behaves exactly as it did before Phase 2/4 — this was a deliberate choice in Phase 2 ("do not
+wire into compose unless the user asks"), not an oversight, but it means the introspect
+fallback is currently local-dev-only in practice.
 
 ## Running via the monorepo root
 

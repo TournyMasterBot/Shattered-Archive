@@ -63,6 +63,7 @@ beforeEach(() => {
       return json({ file: 'tiny.are', saved: true, backupPath: null });
     }
     if (url.endsWith('/api/areas/tiny.are')) return json({ file: 'tiny.are', area: parseAreaFile(AREA_TEXT) });
+    if (url.endsWith('/spawn')) return json({ rooms: [], doors: [], randomizedExits: [], warnings: [] });
     throw new Error(`unexpected fetch ${url}`);
   }) as unknown as typeof fetch;
 });

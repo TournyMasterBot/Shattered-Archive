@@ -11,10 +11,13 @@ import './map.css';
  * @ai-summary Map tab (Phase 12): SVG area map (rooms on a BFS grid, exits as
  *   edges, cross-area exits as portal stubs that jump to the neighbor's map)
  *   plus a world-level mode (WorldMap). Pan by drag, zoom by wheel. Clicking a
- *   room hands off to the Areas tab via the areaTarget lift.
+ *   room hands off to the Areas tab via the areaTarget lift. Phase 13: optional
+ *   "Spawns" toolbar toggle overlays per-room boot-state mob counts (green
+ *   top-left badge) from the read-only /spawn aggregate.
  * @ai-public MapPage (default)
  * @ai-notes Strictly a VIEW — nothing here mutates. Data comes from the
- *   read-only /api/map endpoints; layout is client-side (layout.ts).
+ *   read-only /api/map + /api/areas/:file/spawn endpoints; layout is
+ *   client-side (layout.ts). Spawn data is fetched only while the toggle is on.
  */
 
 const CELL_W = 170;
@@ -44,11 +47,13 @@ const centerOf = (cell: [number, number]): [number, number] => [
 function AreaMapSvg({
   file,
   layout,
+  spawnCounts,
   onOpenRoom,
   onOpenPortal,
 }: {
   file: string;
   layout: AreaLayout;
+  spawnCounts?: Map<number, number>;
   onOpenRoom?: (ref: ExternalRef) => void;
   onOpenPortal: (file: string) => void;
 }) {
@@ -198,6 +203,7 @@ function AreaMapSvg({
       {layout.rooms.map((room) => {
         const px = PAD + room.x * CELL_W;
         const py = PAD + room.y * CELL_H;
+        const spawnCount = spawnCounts?.get(room.vnum) ?? 0;
         return (
           <g
             key={room.vnum}
@@ -222,6 +228,16 @@ function AreaMapSvg({
             <text x={px + NODE_W / 2} y={py + 42} className="mb-map-room-name">
               {truncate(room.name, 20)}
             </text>
+            {/* Spawn badge sits top-LEFT — the 12b self-loop ring owns the top-right corner. */}
+            {spawnCount > 0 && (
+              <g className="mb-map-spawn-badge">
+                <title>{`${spawnCount} mob${spawnCount === 1 ? '' : 's'} spawn${spawnCount === 1 ? 's' : ''} here at boot — see Resets ▸ Simulate`}</title>
+                <circle cx={px + 4} cy={py + 4} r={9} />
+                <text x={px + 4} y={py + 7.5}>
+                  {spawnCount}
+                </text>
+              </g>
+            )}
           </g>
         );
       })}
@@ -263,6 +279,9 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
   const [layout, setLayout] = useState<AreaLayout | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showSpawns, setShowSpawns] = useState(false);
+  const [spawnCounts, setSpawnCounts] = useState<Map<number, number> | null>(null);
+  const [spawnError, setSpawnError] = useState<string | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -297,6 +316,31 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
       live = false;
     };
   }, [file, mode]);
+
+  // Spawn overlay (Phase 13): only fetched while toggled on in area mode, so the
+  // overlay costs nothing until a builder asks for it. Counts are boot-state mob
+  // instances per room from the read-only /spawn aggregate.
+  useEffect(() => {
+    if (!file || mode !== 'area' || !showSpawns) return;
+    let live = true;
+    setSpawnCounts(null);
+    setSpawnError(null);
+    api
+      .spawn(file)
+      .then((res) => {
+        if (!live) return;
+        const counts = new Map<number, number>();
+        for (const room of res.rooms) {
+          const total = room.mobs.reduce((sum, m) => sum + m.count, 0);
+          if (total > 0) counts.set(room.room, total);
+        }
+        setSpawnCounts(counts);
+      })
+      .catch((e) => live && setSpawnError((e as Error).message));
+    return () => {
+      live = false;
+    };
+  }, [file, mode, showSpawns]);
 
   const openPortal = useCallback((target: string) => {
     setFile(target);
@@ -333,6 +377,16 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
             </select>
           </label>
         ) : null}
+        {mode === 'area' ? (
+          <label className="mb-map-spawn-toggle">
+            <input
+              type="checkbox"
+              checked={showSpawns}
+              onChange={(e) => setShowSpawns(e.target.checked)}
+            />{' '}
+            Spawns
+          </label>
+        ) : null}
         {mode === 'area' && data ? (
           <span className="mb-map-meta">
             {data.rooms.length} rooms
@@ -343,6 +397,9 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
       </div>
 
       {error ? <p className="mb-map-error">{error}</p> : null}
+      {mode === 'area' && showSpawns && spawnError ? (
+        <p className="mb-map-error">Spawn overlay unavailable: {spawnError}</p>
+      ) : null}
 
       {mode === 'area' ? (
         <div className="mb-map-legend" aria-label="Map legend">
@@ -367,6 +424,11 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
           <span>
             <i className="mb-legend-swatch mb-legend-swatch--external" /> cross-area
           </span>
+          {showSpawns ? (
+            <span>
+              <i className="mb-legend-swatch mb-legend-swatch--spawn" /> mobs at boot (count)
+            </span>
+          ) : null}
         </div>
       ) : null}
 
@@ -381,7 +443,13 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
         layout.rooms.length === 0 ? (
           <p className="mb-map-empty">This area has no rooms yet.</p>
         ) : (
-          <AreaMapSvg file={file} layout={layout} onOpenRoom={onOpenRoom} onOpenPortal={openPortal} />
+          <AreaMapSvg
+            file={file}
+            layout={layout}
+            spawnCounts={showSpawns ? spawnCounts ?? undefined : undefined}
+            onOpenRoom={onOpenRoom}
+            onOpenPortal={openPortal}
+          />
         )
       ) : null}
     </div>

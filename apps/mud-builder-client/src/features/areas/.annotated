@@ -4,13 +4,13 @@ File Index
 Purpose: #AREA header form (name/credits/vnum range) with an inline warning when the range no longer covers a defined vnum; the server enforces the same shrink guard plus overlap-vs-area.lst on save.
 
 /areas.css
-Purpose: All builder styling — sidebar/toolbar/toast, compact form system (mb-field label-above inputs, mb-fieldset groups, mb-form-grid, mb-dice-row, mb-flag-grid, mb-form width cap), preview/diff colors, world dashboard table, Phase 10 import panel + audit table, Phase 11 presence badge/banner, conflict panel, ref-link buttons.
+Purpose: All builder styling — sidebar/toolbar/toast, compact form system (mb-field label-above inputs, mb-fieldset groups, mb-form-grid, mb-dice-row, mb-flag-grid, mb-form width cap), preview/diff colors, world dashboard table, Phase 10 import panel + audit table, Phase 11 presence badge/banner, conflict panel, ref-link buttons (incl. Phase 13's mb-room-spawn-link), Phase 13 Simulate pane (mb-spawn-room accordion, mb-spawn-list/gear/contents nesting, mb-spawn-warnings).
 
 /AreasPage.test.tsx
 Purpose: Phase 11 tests: conditional save sends/refreshes baseHash, 409 → conflict panel (save-anyway resends WITHOUT hash; reload refetches and clears), presence badge + banner rendering from mocked /api/presence.
 
 /AreasPage.tsx
-Purpose: Areas tab — area list (with presence badges), area header fieldset (AreaHeaderEditor), room picker, RoomEditor, preview/diff (external-ref links navigate via navigateToRef), manual raw-text edit path (flagged MANUAL EDITS), the Phase 10 "Import .are file…" toggle, and Phase 11 conditional saves (baseHash state, 409 conflict panel, reload/save-anyway) + initialTarget cross-page navigation from the World tab.
+Purpose: Areas tab — area list (with presence badges), area header fieldset (AreaHeaderEditor), room picker, RoomEditor, preview/diff (external-ref links navigate via navigateToRef), manual raw-text edit path (flagged MANUAL EDITS), the Phase 10 "Import .are file…" toggle, and Phase 11 conditional saves (baseHash state, 409 conflict panel, reload/save-anyway) + initialTarget cross-page navigation from the World tab; threads an optional onOpenSpawn prop straight through to RoomEditor (Phase 13).
 
 /ImportAreaPanel.test.tsx
 Purpose: Import panel tests: clean validate→commit (overwrite defaults false), error-blocked commit, explicit-overwrite gating for existing files, writes-off disable, stale-report invalidation on input change, resolved external-ref listing.
@@ -31,10 +31,10 @@ Purpose: Phase 11 tests: resolved external refs render as links (click → onNav
 Purpose: Renders a PreviewResult — exact generated file text plus diff-vs-disk with added/removed coloring, real-warning list, and ExternalRefList (shared with the import panel): resolved cross-area refs as navigable links via optional onNavigate.
 
 /RoomEditor.test.tsx
-Purpose: RoomEditor form round-trip and flag-toggle tests + AreasPage gating/header-editor/new-area tests.
+Purpose: RoomEditor form round-trip and flag-toggle tests (incl. Phase 13's conditional "see what spawns here" link) + AreasPage gating/header-editor/new-area tests.
 
 /RoomEditor.tsx
-Purpose: Form-first room editor (mb-field idiom the other editors follow): name/description, sector/heal/mana, room flags, exits table.
+Purpose: Form-first room editor (mb-field idiom the other editors follow): name/description, sector/heal/mana, room flags, exits table; optional onOpenSpawn (Phase 13) renders a link that hands the room vnum up to App.tsx's resetsRoomTarget lift, landing on the Resets tab's Simulate pane filtered to this room.
 
 /workbench.tsx
 Purpose: useAreaWorkbench shared state/actions (open area w/ baseHash, preview, download, gated conditional save with 409 conflict handling + reload/save-anyway, reload, manual raw-text edit with parse-validated back-apply, createArea) + Phase 11 usePresence (20s heartbeat+poll, silent failures)/othersEditing + shared widgets: AreaSidebar (presence badges), NewAreaForm, WorkbenchToolbar (presence banner + conflict panel), ConflictPanel, PresenceBanner, PresenceBadge, WorkbenchManualPane, WorkbenchToast, FlagGrid, WordInput, NumField, TextField.

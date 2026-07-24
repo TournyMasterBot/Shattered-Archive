@@ -39,6 +39,9 @@ importers:
       cors:
         specifier: ^2.8.6
         version: 2.8.6
+      cross-env:
+        specifier: ^10.1.0
+        version: 10.1.0
       eslint:
         specifier: ^9.39.4
         version: 9.39.4
