@@ -31,7 +31,9 @@ jwt-secret.dat
 
 # auth-server: per-app encrypted JSON stores, and the private key files that
 # services calling /api/introspect hold on their OWN host (Phase 2) — never commit.
-apps/auth-server/data/
+apps/auth-server/data/*
+!apps/auth-server/data/.gitkeep
+!apps/auth-server/data/dsl-questions.example.json
 shattered-service.key
 
 # ============================================================

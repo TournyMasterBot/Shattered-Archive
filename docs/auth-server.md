@@ -27,10 +27,10 @@ local `builder-auth.json` store doesn't recognize, so a key minted through `auth
 `service: 'mud-builder-server'` authenticates real mutations there — local master/API-key
 holders are unaffected and never depend on `auth-server` being reachable, since the local
 store is always checked first. Both are code-complete and live-verified against real local
-processes; neither is active in a **deployed** `mud-builder-server` yet — its compose service
-block sets neither `AUTH_SERVER_URL` nor `SERVICE_PRIVATE_KEY_PATH` (a deliberate Phase 2
-choice, not an oversight — see [Deployment](#deployment)), so a deployed instance still
-behaves exactly as it did pre-Phase-2.
+processes; since 2026-07-24, the fallback is also **wired into the deployed
+`mud-builder-server`** in the experimental compose stack — see [Deployment](#deployment).
+(It was left unwired through Phase 2/4 by deliberate choice, not an oversight, until asked
+for.)
 
 For local setup instructions, see [`../apps/auth-server/README.md`](../apps/auth-server/README.md).
 
@@ -231,13 +231,18 @@ persists across container recreation, kept separate from `auth-server-data` so a
 data volume alone can't be decrypted.
 
 Consumers are wired into deploy on a case-by-case basis. `mud-builder-server` (present only
-in the experimental compose, not prod) currently has neither `AUTH_SERVER_URL` nor
-`SERVICE_PRIVATE_KEY_PATH` set in its `environment:` block, and no service-key file is
-mounted into its container — this was a deliberate Phase 2 decision to keep the introspect
-fallback opt-in until asked for, not something Phase 4 changed. To activate it: run
-`register-service mud-builder-server` against the deployed `auth-server`, mount the printed
-private key into the `mud-builder-server` container (a new secret volume, mirroring
-`auth-server-secrets`), and add both env vars to its compose `environment:` block.
+in the experimental compose, not prod) is the first: as of 2026-07-24, its compose service
+block sets `AUTH_SERVER_URL` (the `auth-server.shatteredarchive.dev` docker-network alias —
+`localhost`, the container's own default, does not resolve to the auth-server container) and
+`SERVICE_PRIVATE_KEY_PATH`, and mounts a git-ignored `apps/mud-builder-server/secrets/`
+bind mount (mirroring `auth-server-secrets`'s intent, but a plain bind mount rather than a
+named volume since it holds a per-install PEM file an operator minted, not
+server-self-generated state) containing `shattered-service.key`, the private half printed
+once by `register-service mud-builder-server` when it was registered against the deployed
+`auth-server`'s live data. Rotating it: register a NEW key, replace the mounted file,
+recreate `mud-builder-server`, confirm `GET /api/auth/introspect-check` reports `valid:true`
+for a real account key, THEN `revoke-service-key mud-builder-server <old-key-id>` — revoking
+before the new key is confirmed live would 401 every account-key holder in between.
 
 See [`deploy.md`](./deploy.md) for the general
 deployment architecture.

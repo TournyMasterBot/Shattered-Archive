@@ -1,6 +1,6 @@
 # Plan: MUD Builder — Phase 14b (map exit editing: drag-to-connect rooms, edge editing, staged saves)
 
-Created: 2026-07-23T18:00:00-05:00 · Workspace: /workspace/shattered-archive · Status: IN PROGRESS
+Created: 2026-07-23T18:00:00-05:00 · Workspace: /workspace/shattered-archive · Status: COMPLETE
 Task: Make the area map an exit EDITOR: drag from room A to room B to create an exit
 (direction inferred from grid position, two-way by default), click an edge to edit its
 door/lock/key or delete it, with a staged-changes tray and preview-first saves through the
@@ -88,7 +88,7 @@ game container untouched.
   header (undici drops manual Host — Phase 12b).
 
 ## Steps
-### [ ] 1. (CLAUDE) Pure exit-op module + tests
+### [x] 1. (CLAUDE) Pure exit-op module + tests
 - Do: new `features/map/exit-edit.ts` (client-local, pure, zero React): op types
   `ExitOp = {op:'addExit', from, door, to, twoWay, locks, key} | {op:'updateExit', from,
   door, locks, key} | {op:'removeExit', from, door, alsoReverse}`; `applyOps(area: AreaFile,
@@ -104,7 +104,7 @@ game container untouched.
   (new), exit-edit.test.ts (new)
 - Verify (HOST): `pnpm --filter @shatteredarchive/mud-builder-client test` green.
 
-### [ ] 2. (CLAUDE) MapPage edit-mode scaffolding + model adapter
+### [x] 2. (CLAUDE) MapPage edit-mode scaffolding + model adapter
 - Do: "Edit exits" toggle in the map toolbar (area mode only). On enter: fetch
   `api.getArea(file)` (model + baseHash) alongside the map fetch; hold `{baseArea, baseHash,
   ops}` state. Derive the rendered map from the OPS-APPLIED model via a small local adapter
@@ -119,7 +119,7 @@ game container untouched.
 - Verify (HOST): client suite green; existing view-mode tests untouched and passing
   (behavior-identical default is a Constraint, prove it by NOT editing those tests).
 
-### [ ] 3. (CLAUDE) Drag-to-connect interaction + direction popover
+### [x] 3. (CLAUDE) Drag-to-connect interaction + direction popover
 - Do: in edit mode, pointerdown on a room node starts an exit-drag (stopPropagation so the
   canvas doesn't pan): render a ghost dashed line from the source room center to the cursor
   (track in SVG coords via the existing viewBox math). Pointerup on ANOTHER room opens a
@@ -136,7 +136,7 @@ game container untouched.
   rendered layout AND the tray; Escape cancels; canvas pan still works from background
   (fireEvent.pointerDown on the svg itself does not open a popover).
 
-### [ ] 4. (CLAUDE) Edge popover + staged-changes tray
+### [x] 4. (CLAUDE) Edge popover + staged-changes tray
 - Do: in edit mode, clicking a room-to-room edge opens the edge popover: direction + rooms
   (read-only header), lock-state select, key vnum, Delete button with "also remove reverse"
   checkbox shown ONLY when a REV_DIR reverse exit exists; external/portal edges get a
@@ -149,7 +149,7 @@ game container untouched.
   state, delete removes both sides when checked, tray lists ops, per-item undo restores
   the removed edge in the rendered layout.
 
-### [ ] 5. (CLAUDE) Save pipeline + RoomEditor 10-door fix
+### [x] 5. (CLAUDE) Save pipeline + RoomEditor 10-door fix
 - Do: Save button → compute final model via applyOps → call `api.preview(file, model)` and
   show the returned diff in a confirm panel (the preview-first tenet; reuse the Areas
   preview presentation if extractable, else a minimal mono pane w/ Confirm/Cancel) →
@@ -165,7 +165,7 @@ game container untouched.
 - Verify (HOST): client suite green; `npx tsc --noEmit` in the client package clean (vite
   build alone does not typecheck).
 
-### [ ] 6. (CLAUDE) Live E2E on a scratch area + docs + close-out
+### [x] 6. (CLAUDE) Live E2E on a scratch area + docs + close-out
 - Do: driver (scratchpad, `node --use-system-ca`, edge vhost): record game StartedAt; POST
   a scratch area (unused vnum range from /api/world); PUT two rooms into it; replicate the
   UI save path — GET the area (baseHash), applyOps one two-way addExit, PUT with hash;
@@ -194,3 +194,120 @@ game container untouched.
   step 5), AreaMapSvg pan-handler collision risk (MapPage.tsx onPointerDown/Move/Up).
 - 2026-07-24T00:00 plan abandoned (Claude) — user chose 14a (spell codegen assist) to
   execute first. Revivable: design decisions above still hold if picked up later.
+- 2026-07-24T19:30 plan revived (Claude Sonnet 5) — 14a shipped and was reviewed/signed
+  off; user asked to continue this plan next. Re-verified the Context section's file:line
+  refs against current source before starting (mechanical pre-flight): all held, only minor
+  line drift from 14a's unrelated additions to client.ts (getArea now :258, preview :260-261;
+  REV_DIR/DOOR_NAMES/layoutArea/ConflictPanel/RoomEditor 6-door cap all exactly as recorded).
+- 2026-07-24T19:55 step 1 done — `features/map/exit-edit.ts` + tests: ExitOp union,
+  applyOps immutable replay (addExit two-way w/ REV_DIR mirroring + occupied-slot/non-local
+  one-way downgrade warnings, updateExit, removeExit w/ alsoReverse), inferDirection (8
+  compass sectors via atan2, never up/down), describeOp. 27/27 tests, tsc clean.
+- 2026-07-24T20:20 step 2 done — MapPage.tsx edit-mode scaffolding: "Edit exits" toggle
+  (area mode only), api.getArea fetch on toggle-on/area-switch-while-editing, ops staged in
+  state and replayed via applyOps → editLayout (areaToMapRooms adapter added to exit-edit.ts,
+  unit-tested separately), guardDiscard (window.confirm) wired into the mode buttons, area
+  picker, and portal clicks so no area/mode switch can silently drop staged ops, Spawns
+  checkbox force-disabled while editing. View-mode tests were NOT touched and still pass,
+  proving behavior-identical default per the Constraints. New MapPage tests prove edit mode
+  renders the full AreaFile (api.getArea), not the /api/map projection, via a fixture that
+  deliberately differs between the two endpoints. Full client suite 139/139, tsc clean.
+  .annotated refreshed for the two new files + MapPage.tsx/MapPage.test.tsx one-liners.
+- 2026-07-24T20:50 step 3 done — drag-to-connect + direction popover, both inside
+  AreaMapSvg (MapPage.tsx): room pointerdown starts a ghost drag line (stopPropagation so
+  the existing pan handler never engages), pointerup on another room opens an HTML
+  create-exit popover (direction prefilled via inferDirection off the two rooms' GRID
+  cells — not raw pixels — two-way checkbox default on, lock-state select, key vnum,
+  Create/Cancel) positioned over the SVG via a new .mb-map-canvas wrapper div; Escape
+  cancels at any stage (drag, armed-keyboard, or open popover); an Enter-to-arm/Enter-to-
+  connect keyboard path mirrors the same flow for a11y parity with the old click-to-open
+  behavior it replaces in edit mode. Confirm calls a new onCreateExit prop → MapPage
+  pushes an addExit ExitOp; a "N staged change(s)" toolbar badge now reflects `ops.length`
+  (fulfills the step's "adds ... to the tray" verify language — the full per-item tray
+  panel is step 4). 9 new MapPage tests (drag opens popover w/ correct inferred direction,
+  self-drop cancels, confirm stages+renders the new edge, cancel stages nothing, Escape
+  cancels, keyboard path, background pointerdown never opens a popover); full client
+  suite 146/146, tsc clean. One incidental fix: a pre-existing act() warning surfaced by a
+  new world-mode test was closed by mocking `/api/map` and awaiting WorldMap's own
+  settle, not by touching WorldMap itself. .annotated refreshed for MapPage.tsx/.test.tsx.
+- 2026-07-24T21:20 step 4 done — edge popover + staged-changes tray. Clicking an
+  internal/external edge (never warp — script-derived, not a RoomExit) resolves the full
+  RoomExit via a new `resolveExit` prop (reads editedArea directly; LayoutEdge doesn't
+  carry key) and opens either a read-only cross-area note or an editable popover
+  (lock-state, key vnum, Update → updateExit op; Delete → removeExit op, "also remove
+  reverse" gated on `classification==='two-way'` — the exact condition under which
+  applyRemoveExit's alsoReverse actually acts, chosen over the plan's looser "a REV_DIR
+  reverse exit exists" wording to avoid a checkbox that silently no-ops on a
+  non-returning edge). Deliberate scope addition beyond the plan's literal text: extended
+  `areaToMapRooms` with an optional `resolveExternal` oracle wired to the area's
+  already-fetched /api/map data (`data` state, never disabled while editing), so an
+  EXISTING cross-area exit still renders as a portal stub + read-only popover in edit
+  mode as the plan's step 4 spec assumed — a newly staged cross-area exit still stays
+  dangling (creation remains out of scope). Tray docked under the legend: one line per
+  op via describeOp (against baseArea, since room names are never touched by ExitOps),
+  per-item ✕ undo (drop + re-replay), Discard all, and a disabled placeholder Save
+  button badged with the op count (wired live in step 5 — the toolbar's now-redundant
+  step-3 staged-count badge was removed since the tray header shows the same count).
+  10 new MapPage tests (prefill from current lock/key, also-remove-reverse only offered
+  on true two-way, Update stages + tray shows it, Delete+alsoReverse removes both edge
+  directions from the render, per-item undo restores it, Discard all clears everything).
+  Full client suite 152/152, tsc clean. .annotated refreshed (MapPage.tsx/.test.tsx,
+  exit-edit.ts/.test.ts for the resolveExternal addition).
+- 2026-07-24T21:50 step 5 done — save pipeline + RoomEditor 10-door fix. Save button
+  now calls api.preview(file, editedArea), renders the existing PreviewPane (imported
+  straight from features/areas — reused verbatim per the plan's preference) with
+  Confirm/Cancel; Confirm calls api.save(file, editedArea, baseHash). Success clears
+  ops, closes the preview, and calls a new refetchAfterSave() that re-pulls BOTH
+  api.getArea and api.areaMap so edit mode's base model and view mode's projection are
+  both current post-write, then toasts. 409 renders the reused ConflictPanel
+  (features/areas/workbench.js) with the SAME semantics as AreasPage: Reload (a second
+  window.confirm, then discard ops + refetch) vs Save-anyway (a second window.confirm,
+  then an unconditional PUT with no baseHash of the STAGED model, not the stale base).
+  401 needed no special handling — client.ts's request() already appends "— set your
+  builder token in the Access tab" to any 401 message, and ops are already left intact
+  on every non-success path since they're only cleared in the success branches; verified
+  with a dedicated test rather than assumed. RoomEditor.tsx: addExit's door allocator and
+  the +add-exit disabled cap were still hardcoded to the pre-12b 6-door set
+  ([0,1,2,3,4,5], `length >= 6`) even though the direction SELECT already listed all 10
+  DOOR_NAMES — swapped both to derive from DOOR_NAMES.length; grepped the whole client
+  for other hardcoded door-count assumptions per the plan's instruction, found none
+  else. 10 new MapPage tests (preview-then-save success + refetch proof via a GET
+  call-count spy, cancel-leaves-ops-staged, 401 message + ops-intact, 409→reload
+  discards ops, 409→save-anyway sends the edited model unconditionally) + 1 new
+  RoomEditor test (7th exit addable, full 10-name direction list, cap now at 10). Full
+  client suite 158/158, tsc clean. .annotated refreshed (MapPage.tsx/.test.tsx,
+  RoomEditor.tsx/.test.tsx).
+- 2026-07-24T22:20 step 6 done, plan COMPLETE. Deployed builder pair was still on
+  pre-14b images (last rebuilt during the 14a review, ~1h before this step) — rebuilt +
+  recreated (`docker compose -f deploy/docker-compose.shattered-archive-experimental.yml
+  build/up -d mud-builder-server mud-builder-client`); edge confirmed healthy
+  (`/api/capabilities` 200, writeEnabled=true). Live E2E driver (scratchpad
+  `p14b-e2e.mjs`, `node --use-system-ca`, hit the vhost per the edge-vhost caveat) against
+  a scratch area (p14bscratch.are, vnum range 200-299, an unused gap found via
+  /api/world): created via POST, two bare rooms PUT in, then the UI save path replicated
+  exactly (GET baseHash → apply one two-way addExit op by hand, mirroring exit-edit.ts's
+  applyOps → PUT with hash) — ALL 10 assertions passed: GET showed the exit on both
+  rooms with the correctly reversed door (1 east / 3 west via REV_DIR), /api/map drew it
+  as a resolved internal edge (no `external` tag), and a second PUT reusing the now-stale
+  hash 409'd. Cleanup done in the correct order (memory: reverse order kills the next
+  boot) — area.lst entry removed first, then the .are file and both its .bak backups
+  deleted; `git -C merc-mud status` confirms no residue (area.lst and the scratch file
+  don't appear in the diff; the one pre-existing firefield.are diff predates this step).
+  merc-mud2.4 StartedAt byte-identical before and after
+  (2026-07-24T23:31:17.834496816Z) — the live game was never touched or restarted.
+  Docs: added a "Map exit editor" README section (stage-not-live model, drag-to-connect
+  + inferred direction + occupied-slot/non-local downgrade, edge popover incl. the
+  cross-area-read-only case, the RoomEditor 10-door fix, the E2E summary) and extended
+  the Scope paragraph, which had ALSO never been updated for Phase 14a — fixed both in
+  the same edit. `.annotated` was kept current incrementally at every step rather than
+  batched here; MapPage's `@ai-summary` header (not just `@ai-notes`) got one more
+  sentence for Phase 14b to match the file's own convention.
+  **UI verification caveat**: no browser-automation tool (Playwright/Puppeteer/screenshot)
+  is available in this environment, so the interactive drag/popover/tray flow was NOT
+  visually verified in a real browser — confirmed instead via jsdom tests that render the
+  actual components and fire real pointer/keyboard/click events (158/158 green), a clean
+  `tsc --noEmit`, a clean production `vite build`, and the live API-level E2E above. This
+  matches the project's established verification method for this feature (no Playwright
+  anywhere in the repo; prior phases 10-14a were all verified the same API-driver way) —
+  noting the gap explicitly per instruction rather than claiming a browser check that
+  didn't happen.

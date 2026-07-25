@@ -20,7 +20,7 @@ export default function RoomEditor({ room, onChange, onOpenSpawn }: Props) {
 
   const addExit = () => {
     const used = new Set(room.exits.map((e) => e.door));
-    const door = [0, 1, 2, 3, 4, 5].find((d) => !used.has(d));
+    const door = DOOR_NAMES.map((_, d) => d).find((d) => !used.has(d));
     if (door === undefined) return;
     set({ exits: [...room.exits, { door, description: '', keyword: '', locks: 0, key: 0, toVnum: 0 }] });
   };
@@ -107,7 +107,7 @@ export default function RoomEditor({ room, onChange, onOpenSpawn }: Props) {
       <fieldset className="mb-exits">
         <legend>
           Exits{' '}
-          <button type="button" onClick={addExit} disabled={room.exits.length >= 6}>
+          <button type="button" onClick={addExit} disabled={room.exits.length >= DOOR_NAMES.length}>
             + add exit
           </button>
         </legend>

@@ -481,4 +481,30 @@ describe('Phase 4: centralized-auth introspect fallback', () => {
       fs.rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  it('requireMaster (GET /api/auth/keys) also falls back to introspection: an account actor gets 403, not 401', async () => {
+    // Regression test: requireMaster used to check ONLY the local store, so a real
+    // introspection-valid account key landed in its bare-401 bucket instead of the
+    // 403 "not master" bucket — mud-builder-client's AccessPage status probe reads
+    // that as "token REJECTED" even though the same key authenticates saves fine.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-auth-p4-requiremaster-'));
+    const fake = await startFakeIntrospect(() => ({ valid: true, accountId: 'acct1', service: 'mud-builder-server', label: 'alice' }));
+    const { server, base } = await startApp(
+      makeConfig(dir, { authServerUrl: fake.url, servicePrivateKeyPath: makeServiceKeyFile() }),
+    );
+    try {
+      const asAccount = await fetch(`${base}/api/auth/keys`, {
+        headers: { Authorization: 'Bearer a-centrally-issued-token' },
+      });
+      expect(asAccount.status).toBe(403);
+      expect(fake.hits()).toBe(1);
+
+      const anonymous = await fetch(`${base}/api/auth/keys`);
+      expect(anonymous.status).toBe(401);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });

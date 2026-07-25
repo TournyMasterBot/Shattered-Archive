@@ -45,7 +45,7 @@ describe('KeysPage', () => {
     render(<KeysPage />);
     await screen.findByText('laptop');
 
-    fireEvent.change(screen.getByPlaceholderText('e.g. mud-builder-server'), { target: { value: 'game-server' } });
+    fireEvent.change(screen.getByLabelText('Service'), { target: { value: 'mud-builder-server' } });
     fireEvent.change(screen.getByPlaceholderText('e.g. laptop, ci driver'), { target: { value: 'ci driver' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create API key' }));
 
@@ -55,6 +55,21 @@ describe('KeysPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
     expect(screen.queryByLabelText('Issued token')).toBeNull();
+  });
+
+  it('offers only known services in the Service select, disabled until one is chosen', async () => {
+    render(<KeysPage />);
+    await screen.findByText('laptop');
+
+    const select = screen.getByLabelText('Service') as HTMLSelectElement;
+    const optionValues = Array.from(select.options).map((o) => o.value);
+    expect(optionValues).toEqual(['', 'mud-builder-server']);
+
+    fireEvent.change(screen.getByPlaceholderText('e.g. laptop, ci driver'), { target: { value: 'ci driver' } });
+    expect((screen.getByRole('button', { name: 'Create API key' }) as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.change(select, { target: { value: 'mud-builder-server' } });
+    expect((screen.getByRole('button', { name: 'Create API key' }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it('rotates and revokes keys behind confirms', async () => {

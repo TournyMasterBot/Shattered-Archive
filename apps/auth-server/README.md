@@ -92,13 +92,18 @@ it out, confirm it's live, then revoke the old one. Same `--`-omission note as a
 introspection for any bearer token unrecognized by the local `builder-auth.json` store — a
 key minted here with `service: 'mud-builder-server'` authenticates a real mutation there,
 local-key holders unaffected and no network dependency for them. Code-complete and
-live-verified against real local processes for both phases. **Not yet active in either
-deployed compose file**, though: `mud-builder-server`'s service block in
-`deploy/docker-compose.shattered-archive-experimental.yml` sets neither env var (and
-`mud-builder-server` isn't in prod `docker-compose.yml` at all), so a deployed instance still
-behaves exactly as it did before Phase 2/4 — this was a deliberate choice in Phase 2 ("do not
-wire into compose unless the user asks"), not an oversight, but it means the introspect
-fallback is currently local-dev-only in practice.
+live-verified against real local processes for both phases, and, since 2026-07-24, **wired
+into the experimental compose deployment too**: `mud-builder-server`'s service block in
+`deploy/docker-compose.shattered-archive-experimental.yml` mounts the registered
+`shattered-service.key` (git-ignored, on the `apps/mud-builder-server/secrets/` bind mount)
+and sets `SERVICE_PRIVATE_KEY_PATH`/`AUTH_SERVER_URL` (the latter pointed at the
+`auth-server.shatteredarchive.dev` docker-network alias, not `localhost` — the container's
+own default). `mud-builder-server` still isn't in prod `docker-compose.yml` at all, so this
+remains experimental-stack-only. Rotating the registered key: `register-service
+mud-builder-server` again (new key id), replace the mounted `shattered-service.key`,
+recreate the container, THEN `revoke-service-key mud-builder-server <old key id>` once the
+new one is confirmed live — never revoke first, that's the outage window this two-step
+order exists to avoid.
 
 ## Running via the monorepo root
 

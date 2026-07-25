@@ -14,13 +14,18 @@ import type { MudBuilderConfig } from '../config.js';
  *   and the master-only key-management routes (/api/auth/keys list/create/
  *   rotate/revoke, /api/auth/rotate-master). Plaintext tokens appear only in
  *   create/rotate responses — shown once, never stored, never logged.
- * @ai-public authGuard, registerAuthRoutes
+ * @ai-public authGuard, requireMaster, registerAuthRoutes
  * @ai-notes Key management requires the MASTER key even for GET — key metadata
  *   is operator data, not game data, so the "reads stay open" rule does not
  *   apply under /api/auth. The Phase 4 introspect fallback is local-first and
  *   opt-in: a token the local store recognizes never touches the network, and
  *   with no authServerUrl/servicePrivateKeyPath configured behavior is
- *   byte-identical to pre-Phase-4.
+ *   byte-identical to pre-Phase-4. requireMaster ALSO falls back to
+ *   introspection (added after a real bug: a valid account actor used to land
+ *   in requireMaster's bare 401 bucket instead of the 403 "not master" bucket,
+ *   which mud-builder-client's AccessPage status probe reads as "token
+ *   REJECTED" — the account key worked everywhere else, just looked broken in
+ *   the Access tab).
  */
 
 const SHOW_ONCE_NOTE = 'store this token now — it is shown only once and only a hash is kept';
@@ -111,10 +116,24 @@ export function authGuard(
   };
 }
 
-/** Master-only gate — used under /api/auth and by the audit viewer (operator data). */
-export function requireMaster(store: AuthStore): RequestHandler {
-  return (req, res, next) => {
-    const actor = store.verify(bearerToken(req));
+/**
+ * Master-only gate — used under /api/auth and by the audit viewer (operator data).
+ * Falls back to introspection like authGuard: a valid account actor that ISN'T master
+ * still needs to resolve to a REAL actor (403 "key management requires the master key"),
+ * not a bare 401 — the client's status probe (mud-builder-client's AccessPage, GET
+ * /api/auth/keys) distinguishes "a recognized non-master credential" (403 → shows the
+ * ordinary "key accepted, saves enabled" status) from "nothing valid at all" (401 →
+ * shows "token was REJECTED"). Before this fell back to introspection, a real,
+ * introspection-valid account key landed in the 401 bucket and looked rejected in the
+ * UI even though it authenticated saves fine everywhere else.
+ */
+export function requireMaster(
+  store: AuthStore,
+  introspectConfig: Pick<MudBuilderConfig, 'authServerUrl' | 'servicePrivateKeyPath'>,
+): RequestHandler {
+  return async (req, res, next) => {
+    const token = bearerToken(req);
+    const actor = store.verify(token) ?? (token ? await tryIntrospect(introspectConfig, token) : null);
     if (!actor) {
       res.status(401).json({ error: 'a valid builder token is required (Authorization: Bearer <token>)' });
       return;
@@ -167,7 +186,7 @@ export function registerAuthRoutes(
   // Scoped to /api/auth: an app-wide parser here would cap EVERY later
   // route's body at 64kb (first parser wins), breaking large area saves.
   app.use('/api/auth', express.json({ limit: '64kb' }));
-  app.use('/api/auth', requireMaster(store));
+  app.use('/api/auth', requireMaster(store, introspectConfig));
 
   app.get(
     '/api/auth/keys',

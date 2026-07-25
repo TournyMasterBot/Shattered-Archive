@@ -296,6 +296,15 @@ kinds of credential, both sent as `Authorization: Bearer <token>`:
   once, in the show-once box right after create/rotate. The master key itself
   can also be rotated from the Access tab (the browser swaps to the new value
   automatically, and `builder-auth.json` is rewritten).
+- **A centrally-issued account key**, minted from `auth-client`'s Keys page
+  (tag it with service `mud-builder-server` — that field is just a label for
+  your own organization, the server doesn't filter on it) against your
+  `auth.shatteredarchive.dev` login. The builder falls back to asking
+  auth-server about any bearer token its own local store doesn't recognize —
+  master-key and local-API-key holders never pay that round trip or depend on
+  auth-server being reachable, since the local store is always checked first.
+  Deployed stack only (wired 2026-07-24; see `docs/auth-server.md`'s
+  Deployment section for the compose wiring).
 
 Paste a token once in the Access tab; it lives in this browser's localStorage
 and rides along on every request. The tab reports what the server thinks of
@@ -519,6 +528,44 @@ writing, compiling, or deploying anything themselves.
   compiler warnings), with each new row proven to resolve by name at boot via a skills.dat
   overlay naming all five ("5 row(s) applied, 0 skipped" + `rom --skills-test` ALL PASS).
 
+## Map exit editor: drag-to-connect, edit, and delete (Phase 14b)
+
+The Map tab's Area mode gained an **"Edit exits" toggle** that turns the read-only room
+grid into a lightweight exit editor — no new server surface, no new save mechanism, just
+the existing preview-first + baseHash pipeline pointed at the exits inside the full
+AreaFile the Areas tab already edits.
+
+- **Staged, not live.** Turning edit mode on fetches the full AreaFile (`api.getArea`,
+  never the `/api/map` projection — that payload lacks non-exit room fields and would
+  destroy data if saved) and every change becomes an op (`addExit` / `updateExit` /
+  `removeExit`) appended to an ordered list, replayed immutably over that base model. The
+  rendered map is always the REPLAYED result, so what you see staged is exactly what
+  Save would write. Per-item undo in the tray is just "drop the op, re-replay" — there is
+  no separate undo stack to keep in sync.
+- **Drag a room onto another room to connect them.** The direction is inferred from the
+  two rooms' relative grid position (nearest of the 8 compass doors — up/down stay
+  picker-only, since there's no geometry to infer them from), defaulting to a two-way
+  exit. If the target's reverse-door slot is already occupied, or the target isn't a
+  room in this area, the exit downgrades to one-way with a tray warning rather than
+  silently overwriting or failing. A keyboard path (Enter to arm "connect from #vnum",
+  Enter on a second room to complete it) mirrors the same flow for accessibility.
+- **Click an edge to edit or delete it.** The popover shows the current lock state and
+  key vnum, an "also remove reverse" checkbox (offered only when the reverse exit
+  genuinely points back here — a non-returning neighbor's exit is never silently
+  touched), and Delete. A cross-area edge (resolved the same way the Map tab already
+  resolves portals) opens read-only — creating or editing a link into another area's
+  file is out of scope here; use that area's own file.
+- **RoomEditor's exit form was quietly capped at 6 doors** — a pre-12b leftover from
+  before the engine's diagonal doors existed. Fixed alongside this work: the "+ add
+  exit" button and its door allocator now span the full 10-direction rose, matching the
+  direction dropdown (which already listed all 10) and the map's own fidelity.
+- **Verified end-to-end** (2026-07-24): a scratch area on the deployed edge had two rooms
+  PUT in, then a two-way exit staged and saved exactly the way the UI does it (GET for
+  baseHash → apply the op → PUT with that hash) — the GET afterward showed the exit on
+  BOTH rooms with the correct reversed door, `/api/map` drew it as a resolved internal
+  edge, and a second PUT reusing the now-stale hash 409'd as expected. The area and its
+  `area.lst` registration were removed afterward; the live game was never restarted.
+
 ## Guarantees (and their limits)
 
 - Anything the emitter writes re-parses identically and boots in unmodified
@@ -615,4 +662,13 @@ read-only reset simulator mirroring `db.c reset_area` shows the post-boot
 spawn state per room — mobs with gear trees, container contents, door states,
 warnings for what db.c silently skips — in the Resets tab's Simulate pane,
 linked from each room editor, and as an optional mob-count badge overlay on
-the area map (Phase 13).
+the area map (Phase 13). A brand-new spell can be authored declaratively from
+one of five closed archetypes (damage/buff/debuff/heal/cure) and gets back a
+reviewable four-section C patch, though applying it, compiling, and
+redeploying the engine stays a human action — the builder never writes,
+compiles, or deploys engine code itself (Phase 14a). The Map tab's Area mode
+has an opt-in exit editor: drag a room onto another to stage a connecting
+exit (direction inferred, two-way by default), click an existing edge to
+change its lock/key or delete it, undo any staged change individually, and
+save through the same preview-first + baseHash pipeline as everything else
+(Phase 14b).

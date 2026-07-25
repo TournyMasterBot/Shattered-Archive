@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 import RoomEditor from './RoomEditor.js';
 import AreasPage from './AreasPage.js';
-import type { Room } from '@shatteredarchive/merc-area';
+import type { Room, RoomExit } from '@shatteredarchive/merc-area';
 
 const ROOM: Room = {
   vnum: 100,
@@ -52,6 +52,55 @@ describe('RoomEditor', () => {
     fireEvent.change(screen.getByLabelText('Exit 0 target vnum'), { target: { value: '105' } });
     const exited = onChange.mock.calls.at(-1)![0] as Room;
     expect(exited.exits[0].toVnum).toBe(105);
+  });
+
+  it('offers all 10 compass doors and allows a 7th+ exit past the old 6-door cap (Phase 14b)', () => {
+    const sixExits: RoomExit[] = [0, 1, 2, 3, 4, 5].map((door) => ({
+      door,
+      description: '',
+      keyword: '',
+      locks: 0,
+      key: 0,
+      toVnum: 200 + door,
+    }));
+    const sixDoorRoom: Room = { ...ROOM, exits: sixExits };
+    const onChange = jest.fn();
+    const { rerender } = render(<RoomEditor room={sixDoorRoom} onChange={onChange} />);
+
+    const addBtn = screen.getByRole('button', { name: '+ add exit' });
+    expect((addBtn as HTMLButtonElement).disabled).toBe(false); // no longer capped at 6
+
+    fireEvent.click(addBtn);
+    const updated = onChange.mock.calls.at(-1)![0] as Room;
+    expect(updated.exits).toHaveLength(7);
+    expect(updated.exits[6].door).toBe(6); // northeast — first free door past N/E/S/W/U/D
+
+    rerender(<RoomEditor room={updated} onChange={onChange} />);
+    const select = screen.getByLabelText('Exit 6 direction') as HTMLSelectElement;
+    const optionLabels = Array.from(select.options).map((o) => o.textContent);
+    expect(optionLabels).toEqual([
+      'North',
+      'East',
+      'South',
+      'West',
+      'Up',
+      'Down',
+      'Northeast',
+      'Northwest',
+      'Southeast',
+      'Southwest',
+    ]);
+
+    const tenExits: RoomExit[] = Array.from({ length: 10 }, (_, door) => ({
+      door,
+      description: '',
+      keyword: '',
+      locks: 0,
+      key: 0,
+      toVnum: 300 + door,
+    }));
+    rerender(<RoomEditor room={{ ...ROOM, exits: tenExits }} onChange={onChange} />);
+    expect((screen.getByRole('button', { name: '+ add exit' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('shows a spawn-preview link only when onOpenSpawn is given, and passes the room vnum (Phase 13)', () => {

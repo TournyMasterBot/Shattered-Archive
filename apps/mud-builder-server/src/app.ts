@@ -62,7 +62,7 @@ export function registerRoutes(app: Application, config: MudBuilderConfig = getM
   }
   if (authStore) {
     registerAuthRoutes(app, authStore, config);
-    registerAuditViewRoutes(app, authStore, config.auditDataPath);
+    registerAuditViewRoutes(app, authStore, config.auditDataPath, config);
   }
 
   const store = new AreaStore(config.areaPath, config.writeEnabled);

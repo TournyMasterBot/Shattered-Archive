@@ -3,6 +3,7 @@ import path from 'path';
 import type { Application } from 'express';
 
 import type { AuthStore } from '../auth-store.js';
+import type { MudBuilderConfig } from '../config.js';
 import { requireMaster } from './auth.js';
 
 /**
@@ -19,8 +20,13 @@ import { requireMaster } from './auth.js';
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 500;
 
-export function registerAuditViewRoutes(app: Application, store: AuthStore, dataDir: string): void {
-  app.get('/api/audit', requireMaster(store), (req, res) => {
+export function registerAuditViewRoutes(
+  app: Application,
+  store: AuthStore,
+  dataDir: string,
+  introspectConfig: Pick<MudBuilderConfig, 'authServerUrl' | 'servicePrivateKeyPath'>,
+): void {
+  app.get('/api/audit', requireMaster(store, introspectConfig), (req, res) => {
     try {
       const raw = Number(req.query.limit);
       const limit = Number.isInteger(raw) && raw > 0 ? Math.min(raw, MAX_LIMIT) : DEFAULT_LIMIT;

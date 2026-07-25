@@ -1,8 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { api, type AreaListEntry, type AreaMapResponse, type ExternalRef } from '../../api/client.js';
+import type { AreaFile, RoomExit, RoomsSection } from '@shatteredarchive/merc-area';
+
+import { api, ApiError, type AreaListEntry, type AreaMapResponse, type ExternalRef, type PreviewResult } from '../../api/client.js';
+import { ConflictPanel } from '../areas/workbench.js';
+import PreviewPane from '../areas/PreviewPane.js';
 import { LOCK_STATES } from '../../data/flags.js';
-import { DOOR_NAMES, layoutArea, type AreaLayout } from './layout.js';
+import { applyOps, areaToMapRooms, describeOp, inferDirection, type ExitOp } from './exit-edit.js';
+import { DOOR_NAMES, layoutArea, type AreaLayout, type LayoutEdge, type PlacedRoom } from './layout.js';
 import WorldMap from './WorldMap.js';
 import './map.css';
 
@@ -13,11 +18,20 @@ import './map.css';
  *   plus a world-level mode (WorldMap). Pan by drag, zoom by wheel. Clicking a
  *   room hands off to the Areas tab via the areaTarget lift. Phase 13: optional
  *   "Spawns" toolbar toggle overlays per-room boot-state mob counts (green
- *   top-left badge) from the read-only /spawn aggregate.
+ *   top-left badge) from the read-only /spawn aggregate. Phase 14b: an opt-in
+ *   "Edit exits" mode turns the same canvas into an exit editor — drag room to
+ *   room to connect, click an edge to change/delete it, staged-changes tray,
+ *   save through the existing preview/baseHash pipeline (see @ai-notes).
  * @ai-public MapPage (default)
- * @ai-notes Strictly a VIEW — nothing here mutates. Data comes from the
- *   read-only /api/map + /api/areas/:file/spawn endpoints; layout is
- *   client-side (layout.ts). Spawn data is fetched only while the toggle is on.
+ * @ai-notes View mode (default) is strictly read-only, driven by /api/map +
+ *   /api/areas/:file/spawn. Phase 14b adds an opt-in "Edit exits" mode: fetches
+ *   the full AreaFile via api.getArea and stages edits as an ExitOp list —
+ *   exit-edit.ts replays the ops immutably (never mutates the fetched model),
+ *   projected back through the SAME layoutArea via areaToMapRooms so the two
+ *   modes share one renderer. Saving flows through the existing
+ *   api.preview/api.save baseHash pipeline (AreasPage precedent) — no new
+ *   server surface. Spawn overlay is force-disabled while editing (staged
+ *   exits would make its counts misleading).
  */
 
 const CELL_W = 170;
@@ -27,6 +41,8 @@ const NODE_H = 56;
 const PORTAL_W = 140;
 const PORTAL_H = 44;
 const PAD = 40;
+
+type Toast = { kind: 'ok' | 'err'; text: string } | null;
 
 interface ViewBox {
   x: number;
@@ -48,14 +64,26 @@ function AreaMapSvg({
   file,
   layout,
   spawnCounts,
+  editMode = false,
   onOpenRoom,
   onOpenPortal,
+  onCreateExit,
+  resolveExit,
+  onUpdateExit,
+  onRemoveExit,
 }: {
   file: string;
   layout: AreaLayout;
   spawnCounts?: Map<number, number>;
+  /** Phase 14b: enables drag-to-connect + keyboard connect; room click/onOpenRoom is suppressed while on. */
+  editMode?: boolean;
   onOpenRoom?: (ref: ExternalRef) => void;
   onOpenPortal: (file: string) => void;
+  onCreateExit?: (from: number, door: number, to: number, twoWay: boolean, locks: number, key: number) => void;
+  /** Full RoomExit record for an existing exit — feeds the edge popover's lock/key prefill. */
+  resolveExit?: (from: number, door: number) => RoomExit | undefined;
+  onUpdateExit?: (from: number, door: number, locks: number, key: number) => void;
+  onRemoveExit?: (from: number, door: number, alsoReverse: boolean) => void;
 }) {
   const fullW = PAD * 2 + Math.max(layout.width - 1, 0) * CELL_W + NODE_W;
   const fullH = PAD * 2 + Math.max(layout.height - 1, 0) * CELL_H + NODE_H;
@@ -63,9 +91,56 @@ function AreaMapSvg({
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number; view: ViewBox } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
+  // Exit-drag (Phase 14b): `ghost` tracks the in-progress drag line (SVG coords),
+  // `armedFrom` is the keyboard-connect equivalent (Enter on a room arms it, Enter on
+  // a second room completes it — no pointer needed), `draft` is the confirm popover.
+  const [ghost, setGhost] = useState<{ fromVnum: number; fromCell: [number, number]; x: number; y: number } | null>(
+    null,
+  );
+  const [armedFrom, setArmedFrom] = useState<number | null>(null);
+  const [draft, setDraft] = useState<{
+    fromVnum: number;
+    toVnum: number;
+    door: number;
+    twoWay: boolean;
+    locks: number;
+    keyVnum: number;
+    anchor: { left: number; top: number };
+  } | null>(null);
+
+  // Edge popover (existing exit): editable for internal exits, read-only when the
+  // exit's target isn't a local room but a cross-area portal (server-resolved via
+  // `data`/resolveExternal — see areaToMapRooms). `twoWay` gates the "also remove
+  // reverse" checkbox — only offered when the reverse slot genuinely points back here.
+  const [edgeDraft, setEdgeDraft] = useState<{
+    fromVnum: number;
+    toVnum: number;
+    door: number;
+    external: boolean;
+    twoWay: boolean;
+    locks: number;
+    keyVnum: number;
+    alsoReverse: boolean;
+    anchor: { left: number; top: number };
+  } | null>(null);
+
   useEffect(() => {
     setView({ x: 0, y: 0, w: fullW, h: fullH });
   }, [file, fullW, fullH]);
+
+  // Escape cancels whichever exit-connect step is in progress.
+  useEffect(() => {
+    if (!ghost && !draft && !edgeDraft && armedFrom === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setGhost(null);
+      setDraft(null);
+      setEdgeDraft(null);
+      setArmedFrom(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [ghost, draft, edgeDraft, armedFrom]);
 
   const onWheel = useCallback((e: React.WheelEvent<SVGSVGElement>) => {
     const factor = e.deltaY > 0 ? 1.15 : 1 / 1.15;
@@ -76,28 +151,143 @@ function AreaMapSvg({
     });
   }, [fullW]);
 
+  const clientToSvg = useCallback(
+    (clientX: number, clientY: number): [number, number] => {
+      const rect = svgRef.current?.getBoundingClientRect();
+      if (!rect || rect.width === 0 || rect.height === 0) return [view.x, view.y];
+      return [view.x + ((clientX - rect.left) / rect.width) * view.w, view.y + ((clientY - rect.top) / rect.height) * view.h];
+    },
+    [view],
+  );
+
+  const openDraftFor = useCallback(
+    (fromVnum: number, fromCell: [number, number], toVnum: number, toCell: [number, number], anchor: { left: number; top: number }) => {
+      setEdgeDraft(null);
+      setDraft({ fromVnum, toVnum, door: inferDirection(fromCell, toCell), twoWay: true, locks: 0, keyVnum: 0, anchor });
+    },
+    [],
+  );
+
+  const onEdgeActivate = useCallback(
+    (edge: LayoutEdge, anchor: { left: number; top: number }) => {
+      if (!editMode || edge.kind === 'warp') return;
+      const exit = resolveExit?.(edge.fromVnum, edge.door);
+      if (!exit) return; // editLayout is derived from the same model this resolves against — shouldn't miss
+      setDraft(null);
+      setEdgeDraft({
+        fromVnum: edge.fromVnum,
+        toVnum: exit.toVnum,
+        door: edge.door,
+        external: edge.kind === 'external',
+        twoWay: edge.classification === 'two-way',
+        locks: exit.locks,
+        keyVnum: exit.key,
+        alsoReverse: false,
+        anchor,
+      });
+    },
+    [editMode, resolveExit],
+  );
+
+  const startExitDrag = useCallback(
+    (room: PlacedRoom, e: React.PointerEvent) => {
+      e.stopPropagation();
+      const [x, y] = clientToSvg(e.clientX, e.clientY);
+      setGhost({ fromVnum: room.vnum, fromCell: [room.x, room.y], x, y });
+    },
+    [clientToSvg],
+  );
+
+  const finishExitDrag = useCallback(
+    (room: PlacedRoom, e: React.PointerEvent) => {
+      if (!ghost) return;
+      e.stopPropagation();
+      if (room.vnum !== ghost.fromVnum) {
+        openDraftFor(ghost.fromVnum, ghost.fromCell, room.vnum, [room.x, room.y], { left: e.clientX, top: e.clientY });
+      }
+      setGhost(null);
+    },
+    [ghost, openDraftFor],
+  );
+
+  const onRoomKeyDown = useCallback(
+    (room: PlacedRoom, e: React.KeyboardEvent<SVGGElement>) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      if (!editMode) {
+        onOpenRoom?.({ kind: 'room', vnum: room.vnum, where: 'map', file, name: room.name });
+        return;
+      }
+      e.preventDefault();
+      if (armedFrom === null) {
+        setArmedFrom(room.vnum);
+        return;
+      }
+      if (armedFrom === room.vnum) {
+        setArmedFrom(null);
+        return;
+      }
+      const fromRoom = layout.rooms.find((r) => r.vnum === armedFrom);
+      setArmedFrom(null);
+      if (!fromRoom) return;
+      const anchorRect = e.currentTarget.getBoundingClientRect();
+      openDraftFor(fromRoom.vnum, [fromRoom.x, fromRoom.y], room.vnum, [room.x, room.y], {
+        left: anchorRect.left,
+        top: anchorRect.bottom,
+      });
+    },
+    [editMode, armedFrom, layout.rooms, file, onOpenRoom, openDraftFor],
+  );
+
+  const confirmDraft = useCallback(() => {
+    if (!draft) return;
+    onCreateExit?.(draft.fromVnum, draft.door, draft.toVnum, draft.twoWay, draft.locks, draft.keyVnum);
+    setDraft(null);
+  }, [draft, onCreateExit]);
+
+  const confirmEdgeUpdate = useCallback(() => {
+    if (!edgeDraft) return;
+    onUpdateExit?.(edgeDraft.fromVnum, edgeDraft.door, edgeDraft.locks, edgeDraft.keyVnum);
+    setEdgeDraft(null);
+  }, [edgeDraft, onUpdateExit]);
+
+  const confirmEdgeDelete = useCallback(() => {
+    if (!edgeDraft) return;
+    onRemoveExit?.(edgeDraft.fromVnum, edgeDraft.door, edgeDraft.alsoReverse);
+    setEdgeDraft(null);
+  }, [edgeDraft, onRemoveExit]);
+
   const onPointerDown = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
       dragRef.current = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, view };
     },
     [view],
   );
-  const onPointerMove = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== e.pointerId) return;
-    const clientW = svgRef.current?.clientWidth || 800;
-    const scale = drag.view.w / clientW;
-    setView({
-      ...drag.view,
-      x: drag.view.x - (e.clientX - drag.startX) * scale,
-      y: drag.view.y - (e.clientY - drag.startY) * scale,
-    });
-  }, []);
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent<SVGSVGElement>) => {
+      if (ghost) {
+        const [x, y] = clientToSvg(e.clientX, e.clientY);
+        setGhost((g) => (g ? { ...g, x, y } : g));
+        return;
+      }
+      const drag = dragRef.current;
+      if (!drag || drag.pointerId !== e.pointerId) return;
+      const clientW = svgRef.current?.clientWidth || 800;
+      const scale = drag.view.w / clientW;
+      setView({
+        ...drag.view,
+        x: drag.view.x - (e.clientX - drag.startX) * scale,
+        y: drag.view.y - (e.clientY - drag.startY) * scale,
+      });
+    },
+    [ghost, clientToSvg],
+  );
   const onPointerUp = useCallback(() => {
     dragRef.current = null;
+    setGhost(null);
   }, []);
 
   return (
+    <div className="mb-map-canvas">
     <svg
       ref={svgRef}
       className="mb-map-svg"
@@ -138,16 +328,34 @@ function AreaMapSvg({
         const [x1, y1] = centerOf(edge.from);
         // Loop-back: the exit re-enters its own room — draw a self-loop ring.
         if (edge.classification === 'loop') {
+          const clickable = editMode && edge.kind !== 'warp';
           return (
-            <circle
+            <g
               key={`e${i}`}
-              className="mb-map-edge mb-map-edge--loop"
-              cx={x1 + NODE_W / 2 - 6}
-              cy={y1 - NODE_H / 2 + 6}
-              r={10}
+              role={clickable ? 'button' : undefined}
+              tabIndex={clickable ? 0 : undefined}
+              aria-label={clickable ? `edge #${edge.fromVnum} ${DOOR_NAMES[edge.door] ?? '?'}` : undefined}
+              onClick={clickable ? (e) => onEdgeActivate(edge, { left: e.clientX, top: e.clientY }) : undefined}
+              onKeyDown={
+                clickable
+                  ? (e) => {
+                      if (e.key !== 'Enter' && e.key !== ' ') return;
+                      e.preventDefault();
+                      const r = e.currentTarget.getBoundingClientRect();
+                      onEdgeActivate(edge, { left: r.left, top: r.bottom });
+                    }
+                  : undefined
+              }
             >
-              <title>{`#${edge.fromVnum} ${DOOR_NAMES[edge.door] ?? '?'}: loops back into the same room`}</title>
-            </circle>
+              <circle
+                className="mb-map-edge mb-map-edge--loop"
+                cx={x1 + NODE_W / 2 - 6}
+                cy={y1 - NODE_H / 2 + 6}
+                r={10}
+              >
+                <title>{`#${edge.fromVnum} ${DOOR_NAMES[edge.door] ?? '?'}: loops back into the same room`}</title>
+              </circle>
+            </g>
           );
         }
         let [x2, y2] = centerOf(edge.to);
@@ -180,8 +388,29 @@ function AreaMapSvg({
                 : undefined;
         const mx = (x1 + x2) / 2;
         const my = (y1 + y2) / 2;
+        const clickable = editMode && edge.kind !== 'warp';
         return (
-          <g key={`e${i}`}>
+          <g
+            key={`e${i}`}
+            role={clickable ? 'button' : undefined}
+            tabIndex={clickable ? 0 : undefined}
+            aria-label={
+              clickable
+                ? `edge #${edge.fromVnum} ${DOOR_NAMES[edge.door] ?? '?'}${edge.kind === 'external' ? ' (cross-area)' : ''}`
+                : undefined
+            }
+            onClick={clickable ? (e) => onEdgeActivate(edge, { left: e.clientX, top: e.clientY }) : undefined}
+            onKeyDown={
+              clickable
+                ? (e) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return;
+                    e.preventDefault();
+                    const r = e.currentTarget.getBoundingClientRect();
+                    onEdgeActivate(edge, { left: r.left, top: r.bottom });
+                  }
+                : undefined
+            }
+          >
             <line
               className={cls}
               x1={x1}
@@ -192,6 +421,17 @@ function AreaMapSvg({
             >
               {title && <title>{title}</title>}
             </line>
+            {clickable && (
+              <line
+                x1={x1}
+                y1={y1}
+                x2={x2}
+                y2={y2}
+                stroke="transparent"
+                strokeWidth={14}
+                pointerEvents="stroke"
+              />
+            )}
             {(edge.locks ?? 0) > 0 && (
               <rect className="mb-map-door" x={mx - 5} y={my - 5} width={10} height={10}>
                 <title>{`${DOOR_NAMES[edge.door] ?? '?'} from #${edge.fromVnum}: ${LOCK_STATES.find((l) => l.value === edge.locks)?.label ?? `door (locks ${edge.locks})`}`}</title>
@@ -200,27 +440,37 @@ function AreaMapSvg({
           </g>
         );
       })}
+      {ghost
+        ? (() => {
+            const [gx1, gy1] = centerOf(ghost.fromCell);
+            return <line className="mb-map-edge mb-map-edge--ghost" x1={gx1} y1={gy1} x2={ghost.x} y2={ghost.y} />;
+          })()
+        : null}
       {layout.rooms.map((room) => {
         const px = PAD + room.x * CELL_W;
         const py = PAD + room.y * CELL_H;
         const spawnCount = spawnCounts?.get(room.vnum) ?? 0;
+        const armed = editMode && armedFrom === room.vnum;
         return (
           <g
             key={room.vnum}
-            className="mb-map-room"
+            className={armed ? 'mb-map-room mb-map-room--armed' : 'mb-map-room'}
             role="button"
             tabIndex={0}
             aria-label={`room #${room.vnum} ${room.name}`}
-            onClick={() =>
-              onOpenRoom?.({ kind: 'room', vnum: room.vnum, where: 'map', file, name: room.name })
-            }
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                onOpenRoom?.({ kind: 'room', vnum: room.vnum, where: 'map', file, name: room.name });
-              }
+            onPointerDown={editMode ? (e) => startExitDrag(room, e) : undefined}
+            onPointerUp={editMode ? (e) => finishExitDrag(room, e) : undefined}
+            onClick={() => {
+              if (editMode) return;
+              onOpenRoom?.({ kind: 'room', vnum: room.vnum, where: 'map', file, name: room.name });
             }}
+            onKeyDown={(e) => onRoomKeyDown(room, e)}
           >
-            <title>{`#${room.vnum} ${room.name} — click to edit in Areas`}</title>
+            <title>
+              {editMode
+                ? `#${room.vnum} ${room.name} — drag to another room to connect an exit, or press Enter`
+                : `#${room.vnum} ${room.name} — click to edit in Areas`}
+            </title>
             <rect x={px} y={py} width={NODE_W} height={NODE_H} rx={6} />
             <text x={px + NODE_W / 2} y={py + 22} className="mb-map-room-vnum">
               #{room.vnum}
@@ -268,6 +518,144 @@ function AreaMapSvg({
         );
       })}
     </svg>
+    {draft && (
+      <div
+        className="mb-map-create-popover"
+        style={{ left: draft.anchor.left, top: draft.anchor.top }}
+        role="dialog"
+        aria-label="Create exit"
+      >
+        <div className="mb-map-popover-header">
+          #{draft.fromVnum} → #{draft.toVnum}
+        </div>
+        <label className="mb-field">
+          <span>Direction</span>
+          <select
+            aria-label="Exit direction"
+            value={draft.door}
+            onChange={(e) => setDraft((d) => (d ? { ...d, door: Number(e.target.value) } : d))}
+          >
+            {DOOR_NAMES.map((name, i) => (
+              <option key={i} value={i}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="mb-flag">
+          <input
+            type="checkbox"
+            checked={draft.twoWay}
+            onChange={(e) => setDraft((d) => (d ? { ...d, twoWay: e.target.checked } : d))}
+          />
+          Two-way
+        </label>
+        <label className="mb-field">
+          <span>Lock state</span>
+          <select
+            aria-label="Lock state"
+            value={draft.locks}
+            onChange={(e) => setDraft((d) => (d ? { ...d, locks: Number(e.target.value) } : d))}
+          >
+            {LOCK_STATES.map((l) => (
+              <option key={l.value} value={l.value}>
+                {l.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="mb-field">
+          <span>Key vnum</span>
+          <input
+            type="number"
+            aria-label="Key vnum"
+            value={draft.keyVnum}
+            onChange={(e) => setDraft((d) => (d ? { ...d, keyVnum: Number(e.target.value) } : d))}
+          />
+        </label>
+        <div className="mb-map-popover-actions">
+          <button type="button" onClick={confirmDraft}>
+            Create
+          </button>
+          <button type="button" onClick={() => setDraft(null)}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    )}
+    {edgeDraft && (
+      <div
+        className="mb-map-edge-popover"
+        style={{ left: edgeDraft.anchor.left, top: edgeDraft.anchor.top }}
+        role="dialog"
+        aria-label="Edit exit"
+      >
+        <div className="mb-map-popover-header">
+          #{edgeDraft.fromVnum} {DOOR_NAMES[edgeDraft.door] ?? '?'} → #{edgeDraft.toVnum}
+        </div>
+        {edgeDraft.external ? (
+          <>
+            <p className="mb-muted">Cross-area — edit from that area's file.</p>
+            <div className="mb-map-popover-actions">
+              <button type="button" onClick={() => setEdgeDraft(null)}>
+                Close
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <label className="mb-field">
+              <span>Lock state</span>
+              <select
+                aria-label="Edit lock state"
+                value={edgeDraft.locks}
+                onChange={(e) => setEdgeDraft((d) => (d ? { ...d, locks: Number(e.target.value) } : d))}
+              >
+                {LOCK_STATES.map((l) => (
+                  <option key={l.value} value={l.value}>
+                    {l.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="mb-field">
+              <span>Key vnum</span>
+              <input
+                type="number"
+                aria-label="Edit key vnum"
+                value={edgeDraft.keyVnum}
+                onChange={(e) => setEdgeDraft((d) => (d ? { ...d, keyVnum: Number(e.target.value) } : d))}
+              />
+            </label>
+            <div className="mb-map-popover-actions">
+              <button type="button" onClick={confirmEdgeUpdate}>
+                Update
+              </button>
+            </div>
+            <hr className="mb-map-popover-divider" />
+            {edgeDraft.twoWay && (
+              <label className="mb-flag">
+                <input
+                  type="checkbox"
+                  checked={edgeDraft.alsoReverse}
+                  onChange={(e) => setEdgeDraft((d) => (d ? { ...d, alsoReverse: e.target.checked } : d))}
+                />
+                Also remove reverse exit
+              </label>
+            )}
+            <div className="mb-map-popover-actions">
+              <button type="button" className="mb-danger" onClick={confirmEdgeDelete}>
+                Delete
+              </button>
+              <button type="button" onClick={() => setEdgeDraft(null)}>
+                Cancel
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    )}
+    </div>
   );
 }
 
@@ -282,6 +670,21 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
   const [showSpawns, setShowSpawns] = useState(false);
   const [spawnCounts, setSpawnCounts] = useState<Map<number, number> | null>(null);
   const [spawnError, setSpawnError] = useState<string | null>(null);
+
+  // Edit mode (Phase 14b).
+  const [editMode, setEditMode] = useState(false);
+  const [baseArea, setBaseArea] = useState<AreaFile | null>(null);
+  const [baseHash, setBaseHash] = useState<string | undefined>(undefined);
+  const [areaLoading, setAreaLoading] = useState(false);
+  const [ops, setOps] = useState<ExitOp[]>([]);
+  const [preview, setPreview] = useState<PreviewResult | null>(null);
+  const [conflict, setConflict] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<Toast>(null);
+  const spawnsActive = showSpawns && !editMode;
+
+  const ok = (text: string) => setToast({ kind: 'ok', text });
+  const err = (text: string) => setToast({ kind: 'err', text });
 
   useEffect(() => {
     let live = true;
@@ -321,7 +724,7 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
   // overlay costs nothing until a builder asks for it. Counts are boot-state mob
   // instances per room from the read-only /spawn aggregate.
   useEffect(() => {
-    if (!file || mode !== 'area' || !showSpawns) return;
+    if (!file || mode !== 'area' || !spawnsActive) return;
     let live = true;
     setSpawnCounts(null);
     setSpawnError(null);
@@ -340,11 +743,172 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
     return () => {
       live = false;
     };
-  }, [file, mode, showSpawns]);
+  }, [file, mode, spawnsActive]);
 
-  const openPortal = useCallback((target: string) => {
-    setFile(target);
+  // Fetches the FULL AreaFile (never the /api/map projection — it lacks non-exit
+  // room fields and would destroy data if saved) whenever edit mode turns on or
+  // the mapped area changes while editing. Also the reset point for staged ops:
+  // every fetch here means the base model just changed, so ops from the PREVIOUS
+  // base no longer apply.
+  useEffect(() => {
+    if (!file || mode !== 'area' || !editMode) {
+      setBaseArea(null);
+      setBaseHash(undefined);
+      setOps([]);
+      return;
+    }
+    let live = true;
+    setAreaLoading(true);
+    api
+      .getArea(file)
+      .then((res) => {
+        if (!live) return;
+        setBaseArea(res.area);
+        setBaseHash(res.baseHash);
+        setOps([]);
+      })
+      .catch((e) => live && setError((e as Error).message))
+      .finally(() => live && setAreaLoading(false));
+    return () => {
+      live = false;
+    };
+  }, [file, mode, editMode]);
+
+  const { area: editedArea, warnings: opWarnings } = useMemo(() => {
+    if (!baseArea) return { area: null as AreaFile | null, warnings: [] as string[] };
+    return applyOps(baseArea, ops);
+  }, [baseArea, ops]);
+
+  // The server already cross-area-resolved exits in the last /api/map fetch (`data`) —
+  // reuse it as an oracle so edit mode can still show a portal stub + read-only popover
+  // for an EXISTING external exit, while a newly staged one (not in `data`) stays
+  // dangling (cross-area exit CREATION is out of scope for this phase).
+  const resolveExternal = useCallback(
+    (fromVnum: number, door: number, toVnum: number) => {
+      const exit = data?.rooms.find((r) => r.vnum === fromVnum)?.exits.find((e) => e.door === door && e.toVnum === toVnum);
+      return exit?.external;
+    },
+    [data],
+  );
+
+  const editLayout = useMemo(
+    () => (editedArea ? layoutArea(areaToMapRooms(editedArea, resolveExternal)) : null),
+    [editedArea, resolveExternal],
+  );
+
+  const activeLayout = editMode ? editLayout : layout;
+
+  const resolveExit = useCallback(
+    (from: number, door: number): RoomExit | undefined => {
+      const section = editedArea?.sections.find((s): s is RoomsSection => s.kind === 'rooms');
+      return section?.rooms.find((r) => r.vnum === from)?.exits.find((e) => e.door === door);
+    },
+    [editedArea],
+  );
+
+  /** Staged ops would silently vanish on any area/mode switch — confirm first. */
+  const guardDiscard = useCallback(() => {
+    if (ops.length === 0) return true;
+    return window.confirm('Discard unsaved exit changes?');
+  }, [ops]);
+
+  const toggleEditMode = useCallback(() => {
+    if (editMode && !guardDiscard()) return;
+    setEditMode((v) => !v);
+  }, [editMode, guardDiscard]);
+
+  const openPortal = useCallback(
+    (target: string) => {
+      if (!guardDiscard()) return;
+      setFile(target);
+    },
+    [guardDiscard],
+  );
+
+  const onCreateExit = useCallback(
+    (from: number, door: number, to: number, twoWay: boolean, locks: number, key: number) => {
+      setOps((prev) => [...prev, { op: 'addExit', from, door, to, twoWay, locks, key }]);
+    },
+    [],
+  );
+
+  const onUpdateExit = useCallback((from: number, door: number, locks: number, key: number) => {
+    setOps((prev) => [...prev, { op: 'updateExit', from, door, locks, key }]);
   }, []);
+
+  const onRemoveExit = useCallback((from: number, door: number, alsoReverse: boolean) => {
+    setOps((prev) => [...prev, { op: 'removeExit', from, door, alsoReverse }]);
+  }, []);
+
+  const undoOp = useCallback((index: number) => {
+    setOps((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  /** Pulls the canonical post-save state back in — both the edit-mode base model and the view-mode projection. */
+  const refetchAfterSave = async (targetFile: string) => {
+    const [freshArea, freshMap] = await Promise.all([api.getArea(targetFile), api.areaMap(targetFile)]);
+    setBaseArea(freshArea.area);
+    setBaseHash(freshArea.baseHash);
+    setData(freshMap);
+    setLayout(layoutArea(freshMap.rooms));
+  };
+
+  const doPreviewSave = async () => {
+    if (!file || !editedArea) return;
+    try {
+      setPreview(await api.preview(file, editedArea));
+    } catch (e) {
+      err(`preview failed: ${(e as Error).message}`);
+    }
+  };
+
+  const doSave = async () => {
+    if (!file || !editedArea) return;
+    setSaving(true);
+    try {
+      const r = await api.save(file, editedArea, baseHash);
+      setOps([]);
+      setPreview(null);
+      setConflict(false);
+      await refetchAfterSave(file);
+      ok(`saved ${file}${r.backupPath ? ' (backup written)' : ''}`);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        setConflict(true);
+        err(`someone else saved ${file} since you loaded it — resolve the conflict below`);
+      } else {
+        err(`save failed: ${(e as Error).message}`);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const conflictReload = async () => {
+    if (!file) return;
+    if (!window.confirm(`Discard YOUR staged exit changes to ${file} and reload what is on disk now?`)) return;
+    setOps([]);
+    setPreview(null);
+    setConflict(false);
+    await refetchAfterSave(file);
+    ok(`reloaded ${file} from disk — your staged exit changes were discarded`);
+  };
+
+  const conflictSaveAnyway = async () => {
+    if (!file || !editedArea) return;
+    if (!window.confirm(`Overwrite ${file} with YOUR version, discarding the other builder's save? A backup of theirs is taken first.`))
+      return;
+    try {
+      const r = await api.save(file, editedArea); // no baseHash: unconditional
+      setOps([]);
+      setPreview(null);
+      setConflict(false);
+      await refetchAfterSave(file);
+      ok(`saved ${file} over the conflicting version${r.backupPath ? " (their version is in the backup)" : ''}`);
+    } catch (e) {
+      err(`save failed: ${(e as Error).message}`);
+    }
+  };
 
   return (
     <div className="mb-map-page">
@@ -353,14 +917,20 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
           <button
             type="button"
             className={mode === 'area' ? 'mb-map-mode-btn mb-map-mode-btn--active' : 'mb-map-mode-btn'}
-            onClick={() => setMode('area')}
+            onClick={() => {
+              if (!guardDiscard()) return;
+              setMode('area');
+            }}
           >
             Area
           </button>
           <button
             type="button"
             className={mode === 'world' ? 'mb-map-mode-btn mb-map-mode-btn--active' : 'mb-map-mode-btn'}
-            onClick={() => setMode('world')}
+            onClick={() => {
+              if (!guardDiscard()) return;
+              setMode('world');
+            }}
           >
             World
           </button>
@@ -368,7 +938,14 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
         {mode === 'area' ? (
           <label className="mb-map-picker">
             Area{' '}
-            <select value={file ?? ''} onChange={(e) => setFile(e.target.value)} aria-label="Area to map">
+            <select
+              value={file ?? ''}
+              onChange={(e) => {
+                if (!guardDiscard()) return;
+                setFile(e.target.value);
+              }}
+              aria-label="Area to map"
+            >
               {areas.map((a) => (
                 <option key={a.file} value={a.file}>
                   {a.name ? `${a.name} (${a.file})` : a.file}
@@ -378,20 +955,41 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
           </label>
         ) : null}
         {mode === 'area' ? (
-          <label className="mb-map-spawn-toggle">
+          <button
+            type="button"
+            className={editMode ? 'mb-map-mode-btn mb-map-mode-btn--active' : 'mb-map-mode-btn'}
+            aria-pressed={editMode}
+            onClick={toggleEditMode}
+          >
+            Edit exits
+          </button>
+        ) : null}
+        {mode === 'area' ? (
+          <label
+            className="mb-map-spawn-toggle"
+            title={editMode ? 'Disabled while editing exits — staged changes would make counts misleading' : undefined}
+          >
             <input
               type="checkbox"
               checked={showSpawns}
+              disabled={editMode}
               onChange={(e) => setShowSpawns(e.target.checked)}
             />{' '}
             Spawns
           </label>
         ) : null}
+        {editMode && opWarnings.length > 0 ? (
+          <span className="mb-map-edit-warning" role="status">
+            {opWarnings.length} warning{opWarnings.length === 1 ? '' : 's'}
+          </span>
+        ) : null}
         {mode === 'area' && data ? (
           <span className="mb-map-meta">
-            {data.rooms.length} rooms
+            {editMode && editLayout ? editLayout.rooms.length : data.rooms.length} rooms
             {layout && layout.portals.length > 0 ? ` · ${layout.portals.length} cross-area exits` : ''}
-            {' · drag to pan, wheel to zoom, click a room to edit'}
+            {editMode
+              ? ' · edit mode: drag a room onto another to add an exit, click an edge to change or remove it'
+              : ' · drag to pan, wheel to zoom, click a room to edit'}
           </span>
         ) : null}
       </div>
@@ -432,23 +1030,87 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
         </div>
       ) : null}
 
+      {editMode && ops.length > 0 ? (
+        <div className="mb-map-tray" aria-label="Staged exit changes">
+          <div className="mb-map-tray-header">
+            <span>{ops.length} staged change{ops.length === 1 ? '' : 's'}</span>
+            <button type="button" onClick={() => setOps([])}>
+              Discard all
+            </button>
+            <button
+              type="button"
+              className="mb-map-tray-save"
+              disabled={saving || conflict}
+              aria-label={`Save (${ops.length})`}
+              onClick={() => void doPreviewSave()}
+            >
+              Save ({ops.length})
+            </button>
+          </div>
+          <ul className="mb-map-tray-list">
+            {ops.map((op, i) => (
+              <li key={i}>
+                <span>{describeOp(op, baseArea ?? { sections: [] })}</span>
+                <button type="button" aria-label={`Undo staged change ${i + 1}`} onClick={() => undoOp(i)}>
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {toast && (
+        <div className={`mb-toast mb-toast--${toast.kind}`} role="status" onClick={() => setToast(null)}>
+          {toast.text}
+        </div>
+      )}
+
+      {editMode && conflict && file ? (
+        <ConflictPanel file={file} onReload={() => void conflictReload()} onSaveAnyway={() => void conflictSaveAnyway()} />
+      ) : editMode && preview ? (
+        <div className="mb-map-save-confirm">
+          <PreviewPane preview={preview} />
+          <div className="mb-map-popover-actions">
+            <button type="button" onClick={() => void doSave()} disabled={saving}>
+              {saving ? 'Saving…' : 'Confirm save'}
+            </button>
+            <button type="button" onClick={() => setPreview(null)} disabled={saving}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {mode === 'world' ? (
-        <WorldMap onOpenArea={(f) => {
-          setFile(f);
-          setMode('area');
-        }} />
+        <WorldMap
+          onOpenArea={(f) => {
+            if (!guardDiscard()) return;
+            setFile(f);
+            setMode('area');
+          }}
+        />
       ) : loading && !layout ? (
         <p className="mb-map-loading">Loading map…</p>
-      ) : layout && file ? (
-        layout.rooms.length === 0 ? (
-          <p className="mb-map-empty">This area has no rooms yet.</p>
+      ) : editMode && areaLoading && !editLayout ? (
+        <p className="mb-map-loading">Loading area for editing…</p>
+      ) : activeLayout && file ? (
+        activeLayout.rooms.length === 0 ? (
+          <p className="mb-map-empty">
+            {editMode ? 'This area has no rooms yet — add one from the Areas tab first.' : 'This area has no rooms yet.'}
+          </p>
         ) : (
           <AreaMapSvg
             file={file}
-            layout={layout}
-            spawnCounts={showSpawns ? spawnCounts ?? undefined : undefined}
+            layout={activeLayout}
+            spawnCounts={spawnsActive ? spawnCounts ?? undefined : undefined}
+            editMode={editMode}
             onOpenRoom={onOpenRoom}
             onOpenPortal={openPortal}
+            onCreateExit={onCreateExit}
+            resolveExit={resolveExit}
+            onUpdateExit={onUpdateExit}
+            onRemoveExit={onRemoveExit}
           />
         )
       ) : null}

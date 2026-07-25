@@ -31,10 +31,10 @@ Purpose: Phase 11 tests: resolved external refs render as links (click → onNav
 Purpose: Renders a PreviewResult — exact generated file text plus diff-vs-disk with added/removed coloring, real-warning list, and ExternalRefList (shared with the import panel): resolved cross-area refs as navigable links via optional onNavigate.
 
 /RoomEditor.test.tsx
-Purpose: RoomEditor form round-trip and flag-toggle tests (incl. Phase 13's conditional "see what spawns here" link) + AreasPage gating/header-editor/new-area tests.
+Purpose: RoomEditor form round-trip and flag-toggle tests (incl. Phase 13's conditional "see what spawns here" link), the Phase 14b 10-door fix (7th+ exit addable, all 10 compass names offered, cap now sits at 10) + AreasPage gating/header-editor/new-area tests.
 
 /RoomEditor.tsx
-Purpose: Form-first room editor (mb-field idiom the other editors follow): name/description, sector/heal/mana, room flags, exits table; optional onOpenSpawn (Phase 13) renders a link that hands the room vnum up to App.tsx's resetsRoomTarget lift, landing on the Resets tab's Simulate pane filtered to this room.
+Purpose: Form-first room editor (mb-field idiom the other editors follow): name/description, sector/heal/mana, room flags, exits table (Phase 14b: addExit/the +add-exit cap now span all 10 DOOR_NAMES doors, not the pre-12b 6-door leftover — the direction SELECT already offered all 10, only the allocator/cap were stale); optional onOpenSpawn (Phase 13) renders a link that hands the room vnum up to App.tsx's resetsRoomTarget lift, landing on the Resets tab's Simulate pane filtered to this room.
 
 /workbench.tsx
 Purpose: useAreaWorkbench shared state/actions (open area w/ baseHash, preview, download, gated conditional save with 409 conflict handling + reload/save-anyway, reload, manual raw-text edit with parse-validated back-apply, createArea) + Phase 11 usePresence (20s heartbeat+poll, silent failures)/othersEditing + shared widgets: AreaSidebar (presence badges), NewAreaForm, WorkbenchToolbar (presence banner + conflict panel), ConflictPanel, PresenceBanner, PresenceBadge, WorkbenchManualPane, WorkbenchToast, FlagGrid, WordInput, NumField, TextField.

@@ -141,12 +141,18 @@ services:
       LOG_LEVEL: "debug"
       DOTENV_CONFIG_QUIET: "true"
       GAME_PROXY_ALLOW_ALL: "false"
-      GAME_PROXY_ALLOWLIST: "dsl-mud.org:4000,dsl-mud.org:8000,localhost:4000,host.docker.internal:4000"
+      GAME_PROXY_ALLOWLIST: "dsl-mud.org:4000,dsl-mud.org:8000,localhost:4000,host.docker.internal:4000,simulacrum.shatteredarchive.dev:4000"
       LOG_DATE_PARTITIONED: "true"
       LOG_FILE_PATH: "/repo/apps/game-server/log/server.log"
       JSON_LOG_FILE_PATH: "/repo/apps/game-server/log/server.log.jsonl"
       LOG_RESPECT_SOH: "true"
       CORS_ORIGIN: "https://game-client.shatteredarchive.dev,https://web-client.shatteredarchive.dev"
+    # merc-mud (simulacrum) runs in its own compose stack, publishing 4000 on the
+    # Windows host — not on this network. host-gateway resolves the same as
+    # host.docker.internal, letting the allowlist above use the friendly subdomain
+    # name (matching the Windows hosts-file entry) instead of the Docker-internal one.
+    extra_hosts:
+      - "simulacrum.shatteredarchive.dev:host-gateway"
     expose:
       - "31000"
     networks:
@@ -226,6 +232,12 @@ services:
     restart: unless-stopped
     volumes:
       - "C:/Projects/merc-mud/2.4/area:/mud/area"
+      # Ed25519 private half for the auth-server introspect fallback (Phase 4) —
+      # git-ignored (see .gitignore's `shattered-service.key` pattern), minted via
+      # `pnpm --filter @shatteredarchive/auth-server register-service mud-builder-server`
+      # run against auth-server's live data dir/key, never regenerate this casually:
+      # rotation needs revoke-service-key on the OLD key id after the new one is live.
+      - "../apps/mud-builder-server/secrets:/repo/apps/mud-builder-server/secrets:ro"
     environment:
       NODE_ENV: production
       PORT: "61000"
@@ -235,10 +247,17 @@ services:
       MUD_WRITE_ENABLED: "true"
       # Builder auth (Phase 9) needs NO env var here: with writes enabled the
       # guard is always on, and the server generates a per-install master key
-      # on first run at /mud/area/backups/builder-auth.json (the bind mount
-      # above — git-ignored in merc-mud, survives recreation). Read it there;
-      # mint API keys via the UI's Access tab. MUD_BUILDER_AUTH=off exists for
-      # LOCAL testing only and must never be set in this file.
+      # on first run at /mud/area/auth/builder-auth.json (the bind mount above —
+      # git-ignored in merc-mud, survives recreation; auth moved from backups/ to
+      # auth/ in Phase 12b). Read it there; mint API keys via the UI's Access tab.
+      # MUD_BUILDER_AUTH=off exists for LOCAL testing only and must never be set
+      # in this file.
+      # Phase 4: centrally-issued account keys (minted via auth-client) also
+      # authenticate here, via auth-server's /api/introspect. AUTH_SERVER_URL
+      # must resolve on the docker network, NOT localhost (this container's
+      # default) — the alias below matches auth-server's own service block.
+      AUTH_SERVER_URL: "http://auth-server.shatteredarchive.dev:62000"
+      SERVICE_PRIVATE_KEY_PATH: "/repo/apps/mud-builder-server/secrets/shattered-service.key"
     expose:
       - "61000"
     networks:
@@ -285,7 +304,11 @@ services:
     tty: true
     restart: unless-stopped
     volumes:
-      - auth-server-data:/repo/apps/auth-server/data
+      # Bind-mounted (not a named volume) on purpose: dsl-questions.json in here is a
+      # deliberately-plain, operator-hand-edited file (see questions-store.ts) — it needs
+      # a real host path to edit with a text editor. auth-server-secrets stays a named
+      # volume: the encryption key must NOT be casually host-editable/visible.
+      - ../apps/auth-server/data:/repo/apps/auth-server/data
       - auth-server-secrets:/repo/apps/auth-server/secrets
     environment:
       NODE_ENV: production
@@ -333,5 +356,4 @@ services:
 
 volumes:
   nginx-logrotate-state:
-  auth-server-data:
   auth-server-secrets:

@@ -2,6 +2,16 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { api, ApiError, type ApiKeyInfo } from '../../api/client.js';
 
+/**
+ * `service` is purely a label on the issued key (auth-server's /api/introspect never
+ * filters on it — see routes/introspect.ts) but a free-text field let users create keys
+ * tagged for a service that either doesn't exist or is spelled inconsistently across
+ * their own keys. This is the list of services that actually consume introspection
+ * today (mud-builder-server registered its Ed25519 key via `register-service` — see
+ * docs/auth-server.md). Add a new entry here once another service registers for real.
+ */
+const KNOWN_SERVICES = ['mud-builder-server'] as const;
+
 /** List/create/rotate/revoke API keys — structurally mirrors mud-builder-client's AccessPage key panel. */
 export default function KeysPage() {
   const [keys, setKeys] = useState<ApiKeyInfo[]>([]);
@@ -121,7 +131,14 @@ export default function KeysPage() {
         <legend>Create a new key</legend>
         <label className="auc-field">
           <span>Service</span>
-          <input value={service} onChange={(e) => setService(e.target.value)} placeholder="e.g. mud-builder-server" />
+          <select value={service} onChange={(e) => setService(e.target.value)}>
+            <option value="">Select a service…</option>
+            {KNOWN_SERVICES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="auc-field">
           <span>Label</span>

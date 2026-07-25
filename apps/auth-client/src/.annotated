@@ -37,7 +37,7 @@ Purpose: Blocks everything but itself/logout while mustChangePassword is set —
 Purpose: Change-password, add/verify email (auto-verifies once on mount via a pendingEmailToken prop when landing on /verify-email?token=..., then drops the token from the URL so a refresh can't re-verify an already-consumed one), rotate-master behind a window.confirm.
 
 /features/keys/KeysPage.tsx
-Purpose: List/create/rotate/revoke API keys with the show-once token box — structurally mirrors mud-builder-client's AccessPage key panel almost directly (same ApiKeyInfo/IssuedKey shapes).
+Purpose: List/create/rotate/revoke API keys with the show-once token box — structurally mirrors mud-builder-client's AccessPage key panel almost directly (same ApiKeyInfo/IssuedKey shapes). The "Service" field is a `<select>` restricted to KNOWN_SERVICES (currently just mud-builder-server, the one real registered consumer) rather than free text — the tag is purely a label (auth-server's /api/introspect never filters on it), but a typo/inconsistent free-text value was confusing across a user's own key list.
 
 /features/keys/KeysPage.test.tsx
-Purpose: List/create-shows-token-once/rotate-revoke-behind-confirm/confirm-dismissed-is-a-noop, mocked fetch — mirrors AccessPage.test.tsx's coverage depth.
+Purpose: List/create-shows-token-once/rotate-revoke-behind-confirm/confirm-dismissed-is-a-noop, mocked fetch — mirrors AccessPage.test.tsx's coverage depth; plus a case proving the Service select only offers KNOWN_SERVICES and the create button stays disabled until one is chosen.

@@ -185,7 +185,11 @@ services:
     container_name: shatteredarchive-prod-auth-server
     restart: unless-stopped
     volumes:
-      - auth-server-data:/repo/apps/auth-server/data
+      # Bind-mounted (not a named volume) on purpose: dsl-questions.json in here is a
+      # deliberately-plain, operator-hand-edited file (see questions-store.ts) — it needs
+      # a real host path to edit with a text editor. auth-server-secrets stays a named
+      # volume: the encryption key must NOT be casually host-editable/visible.
+      - ../apps/auth-server/data:/repo/apps/auth-server/data
       - auth-server-secrets:/repo/apps/auth-server/secrets
     environment:
       NODE_ENV: production
@@ -231,5 +235,4 @@ services:
           - auth-client.shatteredarchive.dev
 
 volumes:
-  auth-server-data:
   auth-server-secrets:
