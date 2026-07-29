@@ -283,6 +283,10 @@ importers:
       ws:
         specifier: ^8.21.0
         version: 8.21.0
+    devDependencies:
+      cross-env:
+        specifier: ^10.1.0
+        version: 10.1.0
 
   apps/mud-builder-client:
     dependencies:
@@ -395,6 +399,61 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  apps/scrum-poker-client:
+    dependencies:
+      '@shatteredarchive/scrum-poker-core':
+        specifier: workspace:*
+        version: link:../../services/scrum-poker-core
+      react:
+        specifier: ^19.2.7
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.2.7
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@testing-library/react':
+        specifier: ^16.3.2
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@types/react':
+        specifier: ^19.2.17
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.17)
+      '@vitejs/plugin-react-swc':
+        specifier: ^4.3.1
+        version: 4.3.1(vite@8.1.5(@types/node@25.9.3)(esbuild@0.28.1)(sass-embedded@1.100.0)(sass@1.100.0)(tsx@4.22.4))
+      cross-env:
+        specifier: ^10.1.0
+        version: 10.1.0
+      vite:
+        specifier: ^8.0.16
+        version: 8.1.5(@types/node@25.9.3)(esbuild@0.28.1)(sass-embedded@1.100.0)(sass@1.100.0)(tsx@4.22.4)
+
+  apps/scrum-poker-server:
+    dependencies:
+      '@shatteredarchive/scrum-poker-core':
+        specifier: workspace:*
+        version: link:../../services/scrum-poker-core
+      '@shatteredarchive/services-server':
+        specifier: workspace:*
+        version: link:../../services/services-server
+      '@shatteredarchive/types-server':
+        specifier: workspace:*
+        version: link:../../types/types-server
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
+      ws:
+        specifier: ^8.21.0
+        version: 8.21.0
+
   apps/web-client:
     dependencies:
       react:
@@ -458,6 +517,8 @@ importers:
         version: link:../../utils/utils-global
 
   services/merc-area: {}
+
+  services/scrum-poker-core: {}
 
   services/services-server:
     dependencies:

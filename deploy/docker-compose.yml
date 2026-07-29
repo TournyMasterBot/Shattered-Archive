@@ -50,6 +50,7 @@ services:
           - game-server.shatteredarchive.dev
           - web-server.shatteredarchive.dev
           - auth.shatteredarchive.dev
+          - scrum-poker.shatteredarchive.dev
       sa-shared: {}
 
     restart: unless-stopped
@@ -234,5 +235,69 @@ services:
         aliases:
           - auth-client.shatteredarchive.dev
 
+  ############################################################
+  # SCRUM POKER (scrum-poker.shatteredarchive.dev) — additive, like auth: not in nginx's
+  # depends_on, so it can never block the rest of the stack from starting. Single subdomain
+  # for client+server; the client calls same-origin /api/scrum and /ws/scrum.
+  #
+  # Deliberately NOT wired to auth-server — an accounts-free tool by design. The
+  # room id (a UUID) is membership; the host token minted at creation is the only organizer notion.
+  ############################################################
+  scrum-poker-server:
+    build:
+      context: ..
+      dockerfile: deploy/scrum-poker-server.Dockerfile
+    image: shatteredarchive-prod-scrum-poker-server
+    container_name: shatteredarchive-prod-scrum-poker-server
+    restart: unless-stopped
+    volumes:
+      # Named volume: rooms.json is pure application data, never hand-edited on the host.
+      # It survives a container recreate, so a team's room config outlives a deploy.
+      - "scrum-poker-data:/repo/apps/scrum-poker-server/data"
+    environment:
+      NODE_ENV: production
+      PORT: "63000"
+      LOG_LEVEL: "info"
+      DATA_DIR: "/repo/apps/scrum-poker-server/data"
+      CORS_ORIGIN: "https://scrum-poker.shatteredarchive.dev"
+      # An hour of inactivity drops a participant; a month drops the whole room.
+      SCRUM_IDLE_TIMEOUT_MS: "3600000"
+      SCRUM_ROOM_TTL_MS: "2592000000"
+    expose:
+      - "63000"
+    networks:
+      shatteredarchive-prod:
+        aliases:
+          - scrum-poker-server.shatteredarchive.dev
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(63000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  scrum-poker-client:
+    build:
+      context: ..
+      dockerfile: deploy/scrum-poker-client.Dockerfile
+      args:
+        # The app's single ad placement. Leave both empty and nothing renders — the page
+        # makes no request to any ad network.
+        VITE_AD_CLIENT: ""
+        VITE_AD_SLOT: ""
+    image: shatteredarchive-prod-scrum-poker-client
+    container_name: shatteredarchive-prod-scrum-poker-client
+    restart: unless-stopped
+    networks:
+      shatteredarchive-prod:
+        aliases:
+          - scrum-poker-client.shatteredarchive.dev
+
 volumes:
   auth-server-secrets:
+  scrum-poker-data:

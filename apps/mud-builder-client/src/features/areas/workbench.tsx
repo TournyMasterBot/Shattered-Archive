@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { emitAreaFile, parseAreaFile, type AreaFile } from '@shatteredarchive/merc-area';
 
 import {
@@ -10,8 +10,10 @@ import {
   type PreviewResult,
 } from '../../api/client.js';
 import type { FlagDef } from '../../data/flags.js';
+import { Toast as ToastView, type ToastState } from '../shared/Toast.js';
 
-type Toast = { kind: 'ok' | 'err'; text: string } | null;
+/** @deprecated use ToastState from features/shared/Toast.js — kept as an alias so existing imports keep compiling. */
+type Toast = ToastState;
 
 /**
  * Shared state + actions for every "pick an area → edit a slice → preview →
@@ -29,7 +31,10 @@ export interface AreaWorkbench {
   writesOff: boolean;
   gateTip: string | undefined;
   setToast: (t: Toast) => void;
+  ok: (text: string) => void;
   err: (text: string) => void;
+  warn: (text: string) => void;
+  info: (text: string) => void;
   openArea: (f: string) => Promise<void>;
   /** Replace the working model (clears any stale preview). */
   setAreaModel: (next: AreaFile) => void;
@@ -57,6 +62,10 @@ export interface AreaWorkbench {
   applyManual: () => void;
   /** Create a new area file (server registers it in area.lst); opens it on success. */
   createArea: (input: { file: string; name: string; minVnum: number; maxVnum: number }) => Promise<boolean>;
+  /** True when `area` differs from the last successful open/save/reload — nothing tracks this beyond a snapshot compare. */
+  isDirty: boolean;
+  /** No-ops (returns true) when clean; window.confirm's naming actionLabel when dirty. */
+  confirmDiscard: (actionLabel: string) => boolean;
 }
 
 /** Heartbeat cadence — one third of the server's 60s presence TTL. */
@@ -119,9 +128,16 @@ export function useAreaWorkbench(): AreaWorkbench {
   const [baseHash, setBaseHash] = useState<string | null>(null);
   const [conflict, setConflict] = useState(false);
   const { presence, presenceName } = usePresence(file);
+  /** Snapshot of `area` as of the last successful open/save/reload — the dirty baseline. State (not a ref): must trigger a re-render so `isDirty` recomputes. */
+  const [syncedSnapshot, setSyncedSnapshot] = useState<string | null>(null);
+  const syncSnapshot = (a: AreaFile | null) => {
+    setSyncedSnapshot(a ? JSON.stringify(a) : null);
+  };
 
   const ok = (text: string) => setToast({ kind: 'ok', text });
   const err = (text: string) => setToast({ kind: 'err', text });
+  const warn = (text: string) => setToast({ kind: 'warn', text });
+  const info = (text: string) => setToast({ kind: 'info', text });
 
   useEffect(() => {
     api
@@ -139,6 +155,7 @@ export function useAreaWorkbench(): AreaWorkbench {
       const r = await api.getArea(f);
       setFile(f);
       setArea(r.area);
+      syncSnapshot(r.area);
       setBaseHash(r.baseHash ?? null);
       setConflict(false);
       setPreview(null);
@@ -184,6 +201,7 @@ export function useAreaWorkbench(): AreaWorkbench {
       const r = await api.save(file, area, baseHash ?? undefined);
       if (r.hash) setBaseHash(r.hash);
       setConflict(false);
+      syncSnapshot(area);
       ok(`saved ${file}${r.backupPath ? ' (backup written)' : ''}${manualEdited ? ' — included MANUAL edits' : ''}`);
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
@@ -209,6 +227,7 @@ export function useAreaWorkbench(): AreaWorkbench {
       const r = await api.save(file, area); // no baseHash: unconditional
       if (r.hash) setBaseHash(r.hash);
       setConflict(false);
+      syncSnapshot(area);
       ok(`saved ${file} over the conflicting version${r.backupPath ? ' (their version is in the backup)' : ''}`);
     } catch (e) {
       err(`save failed: ${(e as Error).message}`);
@@ -281,6 +300,26 @@ export function useAreaWorkbench(): AreaWorkbench {
     ? 'Disk writes are disabled (MUD_WRITE_ENABLED is not set) — preview/download only'
     : undefined;
 
+  const isDirty = useMemo(
+    () => area != null && syncedSnapshot != null && JSON.stringify(area) !== syncedSnapshot,
+    [area, syncedSnapshot],
+  );
+  const confirmDiscard = (actionLabel: string): boolean => {
+    if (!isDirty) return true;
+    return window.confirm(`You have unsaved changes to ${file}. Discard them and ${actionLabel}?`);
+  };
+
+  /** Browser-level "are you sure" on tab close/refresh while dirty — covers every consumer of this hook for free. */
+  useEffect(() => {
+    if (!isDirty) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [isDirty]);
+
   return {
     caps,
     areas,
@@ -291,7 +330,10 @@ export function useAreaWorkbench(): AreaWorkbench {
     writesOff,
     gateTip,
     setToast,
+    ok,
     err,
+    warn,
+    info,
     openArea,
     setAreaModel,
     doPreview,
@@ -310,6 +352,8 @@ export function useAreaWorkbench(): AreaWorkbench {
     toggleManual,
     applyManual,
     createArea,
+    isDirty,
+    confirmDiscard,
   };
 }
 
@@ -381,12 +425,7 @@ export function PresenceBadge({
 }
 
 export function WorkbenchToast({ wb }: { wb: AreaWorkbench }) {
-  if (!wb.toast) return null;
-  return (
-    <div className={`mb-toast mb-toast--${wb.toast.kind}`} role="status" onClick={() => wb.setToast(null)}>
-      {wb.toast.text}
-    </div>
-  );
+  return <ToastView toast={wb.toast} onDismiss={() => wb.setToast(null)} />;
 }
 
 /**
@@ -466,18 +505,31 @@ export function NewAreaForm({
   );
 }
 
-export function AreaSidebar({ wb }: { wb: AreaWorkbench }) {
+export function AreaSidebar({
+  wb,
+  onBeforeOpen,
+  extraToolbar,
+}: {
+  wb: AreaWorkbench;
+  /** Optional guard run before switching areas (e.g. wb.confirmDiscard) — returning false cancels the switch. Omit for the default "always proceed" behavior every other tab already has. */
+  onBeforeOpen?: (file: string) => boolean;
+  /** Extra content rendered between "+ New area" and the area list (e.g. Areas' own "Import .are file…" toggle). */
+  extraToolbar?: ReactNode;
+}) {
   return (
     <aside className="mb-area-list">
       <h3>Areas</h3>
       <NewAreaForm writesOff={wb.writesOff} gateTip={wb.gateTip} onCreate={wb.createArea} />
+      {extraToolbar}
       <ul>
         {wb.areas.map((a) => (
           <li key={a.file}>
             <button
               type="button"
               className={a.file === wb.file ? 'mb-active' : ''}
-              onClick={() => void wb.openArea(a.file)}
+              onClick={() => {
+                if (!onBeforeOpen || onBeforeOpen(a.file)) void wb.openArea(a.file);
+              }}
               title={a.error ?? a.credits}
             >
               {a.name ?? a.file} {a.error ? '⚠' : ''}
@@ -511,6 +563,11 @@ export function WorkbenchToolbar({
       )}
       <div className="mb-toolbar">
       <strong>{wb.file}</strong>
+      {wb.isDirty && (
+        <span className="mb-unsaved-indicator" title="Unsaved changes">
+          ● unsaved changes
+        </span>
+      )}
       <button type="button" className={wb.manualOpen ? 'mb-active' : ''} onClick={wb.toggleManual}>
         Manual edit ⚠
       </button>

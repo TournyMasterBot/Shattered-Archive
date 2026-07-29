@@ -1,16 +1,25 @@
 File Index
 
 /auth-introspect-client.test.ts
-Purpose: signAssertion shape/cross-keypair rejection/ms-unit window, introspect() success/valid-false/non-2xx-throw/network-error-propagation via mocked fetch.
+Purpose: signAssertion shape/cross-keypair rejection/ms-unit window, introspect() success/valid-false/non-2xx-throw/network-error-propagation via mocked fetch. Phase F adds the symmetric exchangeCode() coverage (signed assertion + grantType body/success/non-2xx-throw/network-error-propagation).
 
 /auth-introspect-client.ts
-Purpose: Signs a compact Ed25519 { service, iat, exp, nonce } assertion (epoch MILLISECONDS — matches auth-server's service-key-store.ts, NOT Unix seconds) and calls auth-server's POST /api/introspect; deliberately duplicates the compact format from apps/auth-server/src/crypto-primitives.ts rather than importing across the app boundary (Phase 2 plan's Constraints).
+Purpose: Signs a compact Ed25519 { service, iat, exp, nonce } assertion (epoch MILLISECONDS — matches auth-server's service-key-store.ts, NOT Unix seconds) and calls auth-server's POST /api/introspect; deliberately duplicates the compact format from apps/auth-server/src/crypto-primitives.ts rather than importing across the app boundary (Phase 2 plan's Constraints). IntrospectResult gained optional username/expiresAt/tokenType (Phase 15) and globalRole (Phase A) — the shared wire type both auth-server's response and every consumer (e.g. mud-builder-server's BuilderActor) are typed against. matchesAudience() is the guard every consumer must apply so a valid token minted for a DIFFERENT service is a refusal. Phase F adds exchangeCode() (POST /api/token-exchange, grantType 'authorization_code' only — same signed-assertion idiom as introspect; ExchangeResult was already defined here from an earlier phase but nothing implemented the call until now) — first real consumer is kingdom-tactics-server's own login callback (a STANDARD Phase A consumer with its own key, unlike game-client's Phase D pattern of borrowing another service's key).
+
+/auth-tiers.ts
+Purpose: Consumer-side mirror of the hub tier model (authoritative copy: apps/auth-server/src/global-tiers.ts) — GLOBAL_TIERS and SERVICE_TIERS as DISTINCT highest-first ladders, tierRank, and the strictly-below canManage (peers refuse; unknown tiers fail CLOSED).
+
+/auth-tiers.test.ts
+Purpose: Ladder order/distinctness, full canManage strictly-below matrix on the global ladder, service-ladder middle tiers, unknown-tier fail-closed on either side.
+
+/auth.ts
+Purpose: Phase G — auth-only aggregate (`export *` of auth-introspect-client.ts + auth-tiers.ts, nothing else) for consumers that want both without the connection-oriented modules (mud-client-service.ts/telnet-client-service.ts, which pull in the ESM-only `uuid` dep). Added because mud-builder-server's jest config maps the bare `@shatteredarchive/services-server` specifier straight to source for testing (no prior build required) and was scoped to auth-introspect-client.ts alone — needing SERVICE_TIERS/canManage too meant that mapping needed a target exporting both; this file is that target, real source, not a test-only shim.
 
 /express-service.ts
 Purpose: Provides a standardized Express.js service configuration with security defaults and environment-based setup.
 
 /index.ts
-Purpose: This file re-exports all services to simplify imports throughout the application, including auth-introspect-client.ts (Phase 2 centralized auth).
+Purpose: This file re-exports all services to simplify imports throughout the application, including auth-introspect-client.ts (Phase 2 centralized auth) and auth-tiers.ts (Phase A delegated-role ladders).
 
 /logger-service.ts
 Purpose: Provides structured logging with file rotation, JSON formatting, and SOH detection for server applications.

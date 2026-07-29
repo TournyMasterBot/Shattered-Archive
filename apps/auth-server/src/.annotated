@@ -1,13 +1,19 @@
 File Index
 
 /account-store.test.ts
-Purpose: createAccount/duplicate rejection, authenticate, changePassword/adminSetTemporaryPassword epoch bumps, email verify + password reset flows, corrupt-file lockdown.
+Purpose: createAccount/duplicate rejection, authenticate, changePassword/adminSetTemporaryPassword epoch bumps, email verify + password reset flows, globalRole set/clear + unknown-tier 400, corrupt-file lockdown.
 
 /account-store.ts
-Purpose: Username accounts — scrypt password hashing, the epoch counter both change-password and rotate-master bump, pending email-verify/password-reset token flows; hashes BEFORE re-checking for a duplicate username (closes a TOCTOU race scrypt's latency would otherwise leave open).
+Purpose: Username accounts — scrypt password hashing, the epoch counter both change-password and rotate-master bump, pending email-verify/password-reset token flows; hashes BEFORE re-checking for a duplicate username (closes a TOCTOU race scrypt's latency would otherwise leave open). Phase A: optional globalRole tier ('user' = field absent) via setGlobalRole (host scripts + A2's strictly-below admin routes); A2 adds listAll (full records — routes must map to public fields).
 
 /app.ts
-Purpose: Registers all HTTP routes on an Express app (health check + the four route modules); sets trust proxy for the per-IP challenge throttle behind nginx.
+Purpose: Registers all HTTP routes on an Express app (health check + the seven route modules incl. Phase A's sso + token-exchange and A2's admin); sets trust proxy for the per-IP challenge throttle behind nginx.
+
+/audit-log.test.ts
+Purpose: JSONL shape — one line per entry, timestamp, action/detail round-trip.
+
+/audit-log.ts
+Purpose: A2 append-only JSONL audit trail (role changes, temp-passwords) under DATA_DIR — written for the operator's grep, never read back by the app; mirrors mud-builder's audit.log precedent.
 
 /config.ts
 Purpose: Typed env accessor (PORT, DATA_DIR, DATA_ENCRYPTION_KEY/_FILE, SMTP_*, PUBLIC_ORIGIN).
@@ -19,10 +25,13 @@ Purpose: Encrypt/decrypt round-trip + tamper rejection, loadDataKey's full prece
 Purpose: AES-256-GCM at-rest envelope (encryptJson/decryptJson, throws on a bad tag), loadDataKey()'s env-var/mounted-file/self-generate-on-first-boot precedence, and Ed25519 helpers (generateServiceKeypair/signAssertion/verifyAssertion) for the service-to-service introspect guard.
 
 /deps.ts
-Purpose: AuthServerDeps — the stores/mailer/throttle/publicOrigin bundle threaded through registerRoutes; kept separate from app.ts to avoid a type-only import cycle with the route modules.
+Purpose: AuthServerDeps — the stores/mailer/throttle/loginLockout/publicOrigin bundle threaded through registerRoutes; kept separate from app.ts to avoid a type-only import cycle with the route modules.
 
 /encrypted-file-store.ts
 Purpose: Generic base shared by account/key/service-key stores — atomic tmp+rename writes of an encrypted envelope, mtime-cached reload, corrupt/undecryptable file LOCKS the store rather than silently resetting it.
+
+/global-tiers.ts
+Purpose: The AUTHORITATIVE hub-global tier ladder (owner > admin > moderator > user) + isGlobalTier guard; services-server's auth-tiers.ts mirrors it for consumers (deliberate duplication across the app boundary, same rationale as the assertion format).
 
 /errors.ts
 Purpose: AuthError — the one typed failure-with-status class shared across every store and route in this app (not cross-imported from mud-builder-server, but centralized once here rather than duplicated per store).
@@ -31,13 +40,19 @@ Purpose: AuthError — the one typed failure-with-status class shared across eve
 Purpose: HTTP listener — env loading, fail-fast on an unusable data encryption key (never starts serving without one), builds the AuthServerDeps bundle, listens.
 
 /key-store.test.ts
-Purpose: Mint/verify for both kinds, expiresAt null-vs-dated-vs-expired, epoch-mismatch invalidation, listKeys shape, rotate/revoke ownership 404s, revokeById.
+Purpose: Mint/verify for all kinds, expiresAt null-vs-dated-vs-expired, epoch-mismatch invalidation, listKeys shape (excludes exchange tokens), rotate/revoke ownership 404s, revokeById, Phase A exchange-token audience/TTL/purge behavior.
 
 /key-store.ts
-Purpose: API keys AND browser sessions as ONE record type — mintApiKey/mintSession/verify (sha256 + timingSafeEqual + not-revoked + not-expired + mintedAtEpoch === the account's CURRENT epoch, supplied by the caller so this store never reaches into account-store directly); revokeById for logout (no ownership/kind filter) vs. ownership-checked rotateKey/revokeKey for the key-management routes.
+Purpose: API keys, browser sessions, AND Phase A exchange tokens ('sso' 7d login / 'obo' 2min on-behalf-of, minted by mintExchangeToken with service = the token's AUDIENCE) as ONE record type — verify (sha256 + timingSafeEqual + not-revoked + not-expired + mintedAtEpoch === the account's CURRENT epoch, supplied by the caller so this store never reaches into account-store directly); revokeById for logout (no ownership/kind filter) vs. ownership-checked rotateKey/revokeKey for the key-management routes. mintExchangeToken purges sso/obo records >24h past expiry (they always expire, so they'd accumulate forever); countKind gives purge visibility, countForAccount gives A2's LIVE per-account credential counts.
 
 /logger.ts
 Purpose: Minimal winston console+JSON logger (deliberately not services-server's Logger — no file-rotation dependency needed here).
+
+/login-lockout.test.ts
+Purpose: Free-attempts-then-lock, natural expiry, escalating doubling-with-cap across repeat offenses, independent username/IP tracking (either locked blocks), recordSuccess resets, case/whitespace-insensitive username matching — via an injectable clock, no real sleeps.
+
+/login-lockout.ts
+Purpose: Phase 15 fail2ban-style escalating soft lockout for POST /api/auth/login — in-memory Map keyed by normalized username AND separately by source IP (either locked blocks the attempt); first N failures free, each further one doubles the lock duration up to a cap, recordSuccess clears both keys. No OS-level enforcement (plan constraint) — pure in-app counting, same "no new dependency" tradeoff as ChallengeThrottle.
 
 /mailer.ts
 Purpose: Pluggable mail transport — console/log fallback with zero SMTP config (must work for local dev), nodemailer transport when SMTP_HOST is set; used only by the two recovery-link flows (email verify, password reset).
@@ -49,7 +64,13 @@ Purpose: Pool-too-small rejection, normalized case-insensitive answer matching, 
 Purpose: Anti-bot signup challenge — PLAIN (deliberately unencrypted, hand-edited) dsl-questions.json pool, mtime-reloaded; in-memory single-use challenge instances (3 random questions, 10min TTL, marks used even on failure); ChallengeThrottle is a basic per-IP token bucket, no new dependency.
 
 /service-key-store.test.ts
-Purpose: Valid assertion accept, unregistered/impostor-key rejection, two-key rotation window, revoked-key rejection, stale/future/over-wide-window rejection, nonce replay rejection.
+Purpose: Valid assertion accept, unregistered/impostor-key rejection, two-key rotation window, revoked-key rejection, stale/future/over-wide-window rejection, nonce replay rejection, Phase A redirect-URI exact-match/validation/removal + isRegisteredService needing a live key.
 
 /service-key-store.ts
-Purpose: Per-service Ed25519 public-key registry for /api/introspect — multiple non-revoked keys per service expected during a rotation window; verifyAssertion() peek-decodes the claimed service WITHOUT trusting it (used only to pick which keys to try), re-validates iat/exp/nonce off the cryptographically VERIFIED payload, and tracks seen nonces to reject replays.
+Purpose: Per-service Ed25519 public-key registry for /api/introspect and /api/token-exchange — multiple non-revoked keys per service expected during a rotation window; verifyAssertion() peek-decodes the claimed service WITHOUT trusting it (used only to pick which keys to try), re-validates iat/exp/nonce off the cryptographically VERIFIED payload, and tracks seen nonces to reject replays. Phase A: per-service SSO redirectUris (exact-match, http(s) only, no fragments, add requires the service to pre-exist) + isRegisteredService (at least one non-revoked key); A2 adds listServices for the delegation surface.
+
+/sso-code-store.test.ts
+Purpose: Single-use redeem, burn-on-mismatched-service, exact redirect-URI match, 60s expiry via the injectable clock, unknown-code rejection.
+
+/sso-code-store.ts
+Purpose: One-time SSO authorization codes — in-memory ONLY by design (restart voids them), 60s TTL, single-use, bound to {account, service, redirectUri}; any redeem attempt BURNS the code even on a mismatch (no brute-forcing bindings against a stolen code), null on every failure without saying which check failed.

@@ -36,6 +36,36 @@ export interface MudBuilderConfig {
   authServerUrl: string;
   /** Path to this service's registered introspect private key (`register-service` output). Unset = introspect-check is unconfigured. */
   servicePrivateKeyPath?: string;
+  /**
+   * Phase 15: a second, independent, default-off gate for the engine-rebuild feature —
+   * alongside whatever container capabilities (docker socket, CLI) are or aren't present.
+   * Both must be true for POST /api/rebuild to do anything.
+   */
+  rebuildEnabled: boolean;
+  /**
+   * Phase 15: where THIS PROCESS can read the full merc-mud repo tree (docker-compose.yml,
+   * 2.4/src/const.c, the Dockerfile build context) — in the deployed container this is the
+   * Step 5 read-only /host-merc-mud mount, distinct from mercMudPath (which only exposes the
+   * area/ subfolder, writable). In local dev (no container boundary) it's the same value as
+   * mercMudPath's own default.
+   */
+  mercMudRepoPath: string;
+  /**
+   * Phase 15: the REAL host-filesystem path to the merc-mud repo, as the DOCKER DAEMON (which
+   * always runs on the true host, never inside a container) needs to see it for bind-mount
+   * sources — used only to generate the rebuild pipeline's absolute-path compose override
+   * (Step 6 finding: relative bind mounts resolve incorrectly when compose is invoked from
+   * inside a container). In this single-operator deployment this never actually differs from
+   * mercMudRepoPath's default; kept as its own field for clarity about whose filesystem view
+   * it describes.
+   */
+  mercMudHostPath: string;
+  /** Phase 15: same idea as mercMudRepoPath, for the ShatteredArchive repo itself (the compose file + Dockerfiles for the builder pair). */
+  shatteredArchiveRepoPath: string;
+  /** Phase 15: same idea as mercMudHostPath, for the ShatteredArchive repo. */
+  shatteredArchiveHostPath: string;
+  /** Phase H: mud-builder-client's own origin, for the dashboard summary's link-out. Unset = omitted from the response, never guessed. */
+  clientUrl?: string;
 }
 
 export function getMudBuilderConfig(env: NodeJS.ProcessEnv = process.env): MudBuilderConfig {
@@ -53,5 +83,11 @@ export function getMudBuilderConfig(env: NodeJS.ProcessEnv = process.env): MudBu
     auditDataPath: path.join(areaPath, 'backups'),
     authServerUrl: env.AUTH_SERVER_URL ?? 'http://localhost:62000',
     servicePrivateKeyPath: env.SERVICE_PRIVATE_KEY_PATH || undefined,
+    rebuildEnabled: env.MUD_REBUILD_ENABLED === 'true',
+    mercMudRepoPath: env.MERC_MUD_REPO_PATH ?? mercMudPath,
+    mercMudHostPath: env.MERC_MUD_HOST_PATH ?? 'C:/Projects/merc-mud',
+    shatteredArchiveRepoPath: env.SHATTERED_ARCHIVE_REPO_PATH ?? 'C:/Projects/ShatteredArchive',
+    shatteredArchiveHostPath: env.SHATTERED_ARCHIVE_HOST_PATH ?? 'C:/Projects/ShatteredArchive',
+    clientUrl: env.MUD_BUILDER_CLIENT_URL || undefined,
   };
 }

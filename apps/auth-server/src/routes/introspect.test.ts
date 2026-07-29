@@ -75,6 +75,47 @@ describe('introspect route', () => {
     expect(body.label).toBe('introspect test key');
   });
 
+  it('Phase 15: a valid API key introspects with username, expiresAt, and tokenType', async () => {
+    const { publicKeyPem, privateKeyPem } = generateServiceKeypair();
+    harness.deps.serviceKeyStore.registerKey('consumer-service', publicKeyPem);
+
+    const cookie = await fullyOnboardedSession(harness.base, 'dana');
+    const token = await mintApiKeyViaHttp(harness.base, cookie);
+
+    const res = await fetch(`${harness.base}/api/introspect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Service-Assertion': assertionFor('consumer-service', privateKeyPem) },
+      body: JSON.stringify({ token }),
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { valid: boolean; username: string; expiresAt: string | null; tokenType: string };
+    expect(body.username).toBe('dana');
+    expect(body.expiresAt).toBeNull(); // mintApiKeyViaHttp mints a forever key (no expiresAt given)
+    expect(body.tokenType).toBe('api');
+  });
+
+  it('Phase 15: a browser session introspects with tokenType "session" and its own expiresAt', async () => {
+    const { publicKeyPem, privateKeyPem } = generateServiceKeypair();
+    harness.deps.serviceKeyStore.registerKey('consumer-service', publicKeyPem);
+
+    const cookie = await fullyOnboardedSession(harness.base, 'edna');
+    // Sessions are cookie-only over HTTP, but the SAME token is a plain bearer string to introspect —
+    // pull it out of the cookie the way a service consumer never would, purely to exercise this path.
+    const sessionToken = decodeURIComponent(cookie.split('=')[1]);
+
+    const res = await fetch(`${harness.base}/api/introspect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Service-Assertion': assertionFor('consumer-service', privateKeyPem) },
+      body: JSON.stringify({ token: sessionToken }),
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { valid: boolean; username: string; expiresAt: string | null; tokenType: string };
+    expect(body.valid).toBe(true);
+    expect(body.username).toBe('edna');
+    expect(body.tokenType).toBe('session');
+    expect(typeof body.expiresAt).toBe('string'); // sessions always carry a real TTL, never null
+  });
+
   it('returns {valid:false} (not an error) for an unknown token, given a valid assertion', async () => {
     const { publicKeyPem, privateKeyPem } = generateServiceKeypair();
     harness.deps.serviceKeyStore.registerKey('consumer-service', publicKeyPem);

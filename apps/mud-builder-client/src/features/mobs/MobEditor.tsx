@@ -12,6 +12,7 @@ import {
   SIZES,
 } from '../../data/flags.js';
 import { FlagGrid, NumField, TextField, WordInput } from '../areas/workbench.js';
+import SaveAsSnippetButton from '../content/SaveAsSnippetButton.js';
 
 function DiceField({
   label,
@@ -64,6 +65,7 @@ export default function MobEditor({ mob, onChange }: { mob: Mobile; onChange: (m
     <div className="mb-form mb-mob-editor">
       <h4>
         Mob #{mob.vnum} — {mob.shortDescr}
+        <SaveAsSnippetButton kind="mob" data={mob} />
       </h4>
 
       <fieldset className="mb-fieldset">

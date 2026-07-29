@@ -6,6 +6,9 @@ import { registerAuthRoutes } from './routes/auth.js';
 import { registerAccountRoutes } from './routes/account.js';
 import { registerKeysRoutes } from './routes/keys.js';
 import { registerIntrospectRoutes } from './routes/introspect.js';
+import { registerSsoRoutes } from './routes/sso.js';
+import { registerTokenExchangeRoutes } from './routes/token-exchange.js';
+import { registerAdminRoutes } from './routes/admin.js';
 
 /**
  * Registers all HTTP routes on the given Express app.
@@ -31,4 +34,7 @@ export function registerRoutes(app: Application, deps: AuthServerDeps): void {
   registerAccountRoutes(app, deps);
   registerKeysRoutes(app, deps);
   registerIntrospectRoutes(app, deps);
+  registerSsoRoutes(app, deps);
+  registerTokenExchangeRoutes(app, deps);
+  registerAdminRoutes(app, deps);
 }

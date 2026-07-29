@@ -1,4 +1,4 @@
-import { listSavedArmies, saveArmy, removeArmy } from './saved-armies';
+import { listSavedArmies, saveArmy, removeArmy, replaceAllArmies } from './saved-armies';
 
 beforeEach(() => globalThis.localStorage.clear());
 
@@ -31,5 +31,14 @@ describe('saved-armies', () => {
     expect(listSavedArmies().find((a) => a.name === 'Keep')?.picks).toEqual([
       { raceKey: 'Human', classKey: 'Mage' },
     ]);
+  });
+
+  it('replaceAllArmies wholesale-overwrites (not merges) the local collection', () => {
+    saveArmy('Local1', [{ raceKey: 'Human', classKey: 'Warrior' }]);
+    saveArmy('Local2', [{ raceKey: 'Human', classKey: 'Ranger' }]);
+
+    replaceAllArmies([{ name: 'FromCloud', picks: [{ raceKey: 'Elf', classKey: 'Mage' }] }]);
+
+    expect(listSavedArmies()).toEqual([{ name: 'FromCloud', picks: [{ raceKey: 'Elf', classKey: 'Mage' }] }]);
   });
 });

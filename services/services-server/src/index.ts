@@ -3,3 +3,4 @@ export * from './mud-client-service.js';
 export * from './telnet-client-service.js';
 export * from './logger-service.js';
 export * from './auth-introspect-client.js';
+export * from './auth-tiers.js';

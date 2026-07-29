@@ -25,7 +25,9 @@ function describeActor(actor: BuilderActor | undefined): string {
     case 'key':
       return `key:${actor.id} (${actor.label})`;
     case 'account':
-      return `account:${actor.accountId} (${actor.label})`;
+      // Phase 15: label is the KEY's label (e.g. "ci driver"); username (when introspection
+      // returned one) is the actual human — both are worth having in an audit line.
+      return `account:${actor.accountId} (${actor.label})${actor.username ? ` [${actor.username}]` : ''}`;
   }
 }
 
@@ -42,14 +44,23 @@ export function appendAudit(dataDir: string, entry: Record<string, unknown>): vo
 /**
  * Records every ACCEPTED (2xx/3xx) non-GET /api/* request on response finish.
  * Previews are excluded — they never touch disk. Presence heartbeats are
- * excluded — transient in-memory state, not a mutation. Install before the routes.
+ * excluded — transient in-memory state, not a mutation. State-refresh requests
+ * (Phase 14c) are excluded — a read trigger, not authoring; auditing it would
+ * spam the log every time a builder opens the Simulate pane. Install before
+ * the routes.
  */
 export function auditMiddleware(dataDir: string): RequestHandler {
   return (req, res, next) => {
     // lowercase: Express route matching is case-insensitive, so '/API/…' still mutates
     const path = req.path.toLowerCase();
     const read = req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS';
-    if (read || !path.startsWith('/api/') || path.endsWith('/preview') || path.startsWith('/api/presence')) {
+    if (
+      read ||
+      !path.startsWith('/api/') ||
+      path.endsWith('/preview') ||
+      path.startsWith('/api/presence') ||
+      path.startsWith('/api/state')
+    ) {
       next();
       return;
     }

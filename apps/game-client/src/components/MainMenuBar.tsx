@@ -10,6 +10,7 @@ interface MainMenuBarProps {
   onOpenCustomStyles: () => void;
   onOpenScriptSandbox: () => void;
   onOpenConnect: () => void;
+  onOpenAccount: () => void;
   onOpenPlugins: () => void;
   onOpenLibrary: () => void;
   onOpenEquipment: () => void;
@@ -23,6 +24,7 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
   onOpenCustomStyles,
   onOpenScriptSandbox,
   onOpenConnect,
+  onOpenAccount,
   onOpenPlugins,
   onOpenLibrary,
   onOpenEquipment,
@@ -85,6 +87,17 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
               }}
             >
               Connect…
+            </div>
+
+            <div
+              className={styles.subMenuItem}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeAllMenus();
+                onOpenAccount();
+              }}
+            >
+              Account…
             </div>
           </div>
         </div>

@@ -1,0 +1,16 @@
+File Index
+
+/authTokenStore.ts
+Purpose: Phase D — localStorage wrapper for the cloud-account bearer token (getToken/setToken/clearToken/isExpired), single key `shatteredArchive.auth.token`, matching this codebase's existing per-feature idiom (own STORAGE_KEY, inline try/catch, no shared wrapper — see useConnectModal.ts for the same shape).
+
+/siteApi.ts
+Purpose: Phase D — the C# service (Server.Web.Public) game-client pairs with. SITE_ORIGIN (absolute, for the login-start page navigation — not subject to CORS) vs. siteApiBase() (relative `/api/site` via the dev proxy in dev, avoiding CORS entirely; the real absolute origin in prod, relying on the Cors:AllowedOrigins tightening added alongside these endpoints).
+
+/gameSso.ts
+Purpose: Phase D — startLogin() navigates the whole page to this site's user/game-sso/start hand-off (game-client has no service key of its own — the C# backend performs the actual code exchange, key-custody constraint). Re-exports authFragment.ts's parseAuthFragment for convenience.
+
+/authFragment.ts
+Purpose: Phase D — the PURE parser for the game-sso callback's URL fragment (#auth_token=...&expires_at=... on success, #auth_error=1 on failure), deliberately split out of gameSso.ts: this repo's Jest "client" project cannot compile `import.meta` (which siteApi.ts uses) anywhere in a module's import graph, so the one genuinely testable piece lives with zero such imports. Unit-tested (authFragment.test.ts).
+
+/cloudSync.ts
+Purpose: Phase D — whole-collection fetch wrappers (loadScripts/saveScripts/loadPluginConfigs/savePluginConfigs) against the C# site's per-account UserContentController (api/user-content/scripts, api/user-content/plugin-configs). A 401 clears the stored token and reports `unauthenticated` rather than throwing, so callers can show a clean "please log in again" instead of crashing. Same `import.meta` (siteApi.ts) testability gap as gameSso.ts — verified live instead (see AccountModal/useAccountModal, plan doc Step 3 evidence).

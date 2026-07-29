@@ -13,6 +13,7 @@ import {
 
 import { ApiError, api } from '../../api/client.js';
 import { ConflictPanel, NumField } from '../areas/workbench.js';
+import { Toast, type ToastState } from '../shared/Toast.js';
 import '../areas/areas.css';
 
 /**
@@ -35,7 +36,7 @@ export default function GroupsView({ writeEnabled }: { writeEnabled: boolean }) 
   const [source, setSource] = useState<'overlay' | 'stock'>('stock');
   const [selected, setSelected] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
-  const [toast, setToast] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [toast, setToast] = useState<ToastState>(null);
   const [manualOpen, setManualOpen] = useState(false);
   const [manualText, setManualText] = useState('');
   const [newMember, setNewMember] = useState('');
@@ -53,7 +54,7 @@ export default function GroupsView({ writeEnabled }: { writeEnabled: boolean }) 
         setConflict(false);
         if (r.parseError) setToast({ kind: 'err', text: `on-disk groups.dat is unreadable (${r.parseError}) — showing the compiled table` });
       })
-      .catch((e) => setToast({ kind: 'err', text: (e as Error).message }));
+      .catch((e) => setToast({ kind: 'err', text: `server unreachable: ${(e as Error).message}` }));
   };
 
   useEffect(() => {
@@ -94,7 +95,7 @@ export default function GroupsView({ writeEnabled }: { writeEnabled: boolean }) 
         setConflict(true);
         return;
       }
-      setToast({ kind: 'err', text: (e as Error).message });
+      setToast({ kind: 'err', text: `save failed: ${(e as Error).message}` });
     }
   };
 
@@ -108,7 +109,7 @@ export default function GroupsView({ writeEnabled }: { writeEnabled: boolean }) 
       setConflict(false);
       setToast({ kind: 'ok', text: `groups.dat saved — ${r.note}` });
     } catch (e) {
-      setToast({ kind: 'err', text: (e as Error).message });
+      setToast({ kind: 'err', text: `save failed: ${(e as Error).message}` });
     }
   };
 
@@ -121,7 +122,7 @@ export default function GroupsView({ writeEnabled }: { writeEnabled: boolean }) 
       setBaseHash(null);
       setToast({ kind: 'ok', text: 'overlay removed — the compiled table returns at the next copyover' });
     } catch (e) {
-      setToast({ kind: 'err', text: (e as Error).message });
+      setToast({ kind: 'err', text: `revert failed: ${(e as Error).message}` });
     }
   };
 
@@ -147,7 +148,7 @@ export default function GroupsView({ writeEnabled }: { writeEnabled: boolean }) 
       setManualOpen(false);
       setToast({ kind: 'ok', text: 'manual text applied to the forms' });
     } catch (e) {
-      setToast({ kind: 'err', text: (e as Error).message });
+      setToast({ kind: 'err', text: `manual text does not parse: ${(e as Error).message}` });
     }
   };
 
@@ -161,11 +162,7 @@ export default function GroupsView({ writeEnabled }: { writeEnabled: boolean }) 
 
   return (
     <>
-      {toast && (
-        <p className={`mb-toast ${toast.kind === 'err' ? 'mb-toast--err' : ''}`} onClick={() => setToast(null)}>
-          {toast.text}
-        </p>
-      )}
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
       <p className="mb-muted">
         Edits the game&apos;s skill GROUP data (groups.dat) — creation costs (customize), gain/train bundles and
         membership — currently showing the {source === 'overlay' ? 'authored overlay' : 'compiled stock table'}. Changes

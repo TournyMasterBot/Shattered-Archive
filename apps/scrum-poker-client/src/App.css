@@ -1,0 +1,577 @@
+/* Layout and components for Scrum Poker. One stylesheet — the app is a handful of screens. */
+
+.sp-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.sp-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.sp-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 650;
+  font-size: 1.05rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.sp-brand-mark {
+  font-size: 1.2rem;
+}
+
+.sp-header-room {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-left: auto;
+  min-width: 0;
+}
+
+.sp-room-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sp-room-code {
+  font-family: ui-monospace, 'Cascadia Mono', monospace;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.sp-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sp-header-room + .sp-header-actions {
+  margin-left: 0;
+}
+
+.sp-header > .sp-header-actions:only-of-type {
+  margin-left: auto;
+}
+
+/* ── Page frame ─────────────────────────────────────────────────────────── */
+
+.sp-main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 24px 20px 32px;
+}
+
+.sp-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.sp-card + .sp-card {
+  margin-top: 16px;
+}
+
+.sp-section-title {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.sp-section-hint {
+  margin: 0 0 16px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* ── Controls ───────────────────────────────────────────────────────────── */
+
+.sp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.sp-field label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.sp-field input[type='text'],
+.sp-field textarea {
+  padding: 9px 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.sp-field-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.sp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.sp-btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.sp-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sp-btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.sp-btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.sp-btn-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: transparent;
+}
+
+.sp-btn-danger:hover:not(:disabled) {
+  background: var(--danger-soft);
+}
+
+.sp-btn-icon {
+  padding: 7px 9px;
+  line-height: 1;
+}
+
+.sp-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.sp-toggle-row:last-of-type {
+  border-bottom: none;
+}
+
+.sp-toggle-row span {
+  font-size: 0.9rem;
+}
+
+/* ── Landing ────────────────────────────────────────────────────────────── */
+
+.sp-landing-lede {
+  text-align: center;
+  margin: 8px 0 28px;
+}
+
+.sp-landing-lede h1 {
+  margin: 0 0 8px;
+  font-size: 1.9rem;
+}
+
+.sp-landing-lede p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.sp-landing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.sp-landing-grid .sp-card + .sp-card {
+  margin-top: 0;
+}
+
+/* Holds a full invite URL or a bare UUID — monospace helps, but the wide letter-spacing a
+   short numeric code wanted would push either one out of view. */
+.sp-code-input {
+  font-family: ui-monospace, 'Cascadia Mono', monospace;
+  font-size: 0.85rem;
+  text-overflow: ellipsis;
+}
+
+/* ── Card deck ──────────────────────────────────────────────────────────── */
+
+.sp-deck {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sp-deck-card {
+  width: 62px;
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 1.15rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 0.08s ease,
+    border-color 0.08s ease,
+    background 0.08s ease;
+}
+
+.sp-deck-card:hover:not(:disabled) {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+}
+
+.sp-deck-card:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.sp-deck-card.is-selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  transform: translateY(-4px);
+}
+
+/* ── Participants ───────────────────────────────────────────────────────── */
+
+.sp-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sp-table th {
+  text-align: left;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  padding: 0 8px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sp-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sp-table tr:last-child td {
+  border-bottom: none;
+}
+
+.sp-table-you {
+  margin-left: 6px;
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sp-vote-cell {
+  width: 120px;
+  text-align: right;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-vote-pending {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.sp-vote-hidden {
+  display: inline-block;
+  min-width: 34px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.sp-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 12px 0;
+  margin: 0;
+}
+
+/* ── Toolbar and results ────────────────────────────────────────────────── */
+
+.sp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.sp-toolbar-spacer {
+  flex: 1;
+}
+
+.sp-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.sp-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  min-width: 84px;
+}
+
+.sp-stat-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.sp-stat-value {
+  font-size: 1.15rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-consensus {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--success-soft);
+  color: var(--success);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.sp-distribution {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.sp-distribution-chip {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+
+.sp-distribution-chip b {
+  color: var(--text-muted);
+  font-weight: 550;
+  margin-left: 4px;
+}
+
+/* ── Banners ────────────────────────────────────────────────────────────── */
+
+.sp-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  border: 1px solid transparent;
+}
+
+.sp-banner-info {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.sp-banner-error {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.sp-banner .sp-banner-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.sp-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.sp-status-dot.is-open {
+  background: var(--success);
+}
+
+.sp-status-dot.is-retrying {
+  background: var(--danger);
+}
+
+/* ── Modal ──────────────────────────────────────────────────────────────── */
+
+.sp-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 12, 17, 0.55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 16px;
+  overflow-y: auto;
+  z-index: 20;
+}
+
+.sp-modal {
+  width: 100%;
+  max-width: 520px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px;
+}
+
+.sp-modal-head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.sp-modal-head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.sp-modal-head button {
+  margin-left: auto;
+}
+
+.sp-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+/* ── Ad slot ────────────────────────────────────────────────────────────── */
+
+/*
+ * The single ad placement in the app. Bounded height and a muted label so it reads as a
+ * footer, not a takeover — the whole point of stripping the reference site's eight slots.
+ */
+.sp-ad {
+  max-width: var(--max-width);
+  margin: 0 auto 24px;
+  padding: 0 20px;
+}
+
+.sp-ad-inner {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  min-height: 90px;
+  max-height: 120px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+}
+
+.sp-ad-label {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.sp-ad-placeholder {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+
+.sp-footer {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  padding: 0 20px 24px;
+}
+
+@media (max-width: 560px) {
+  .sp-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .sp-header-room {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .sp-deck-card {
+    width: 56px;
+    height: 78px;
+  }
+
+  .sp-distribution {
+    margin-left: 0;
+  }
+}

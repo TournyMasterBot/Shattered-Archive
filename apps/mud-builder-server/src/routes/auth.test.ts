@@ -10,7 +10,10 @@ import type { Server } from 'http';
 import { stockGroupsFile } from '@shatteredarchive/merc-area';
 
 import { registerRoutes } from '../app.js';
+import { AuthStore } from '../auth-store.js';
 import type { MudBuilderConfig } from '../config.js';
+import { RoleStore } from '../role-store.js';
+import { requireRebuildAllowed } from './auth.js';
 
 function makeConfig(dir: string, overrides: Partial<MudBuilderConfig> = {}): MudBuilderConfig {
   return {
@@ -22,6 +25,11 @@ function makeConfig(dir: string, overrides: Partial<MudBuilderConfig> = {}): Mud
     authDataPath: path.join(dir, 'auth'),
     auditDataPath: path.join(dir, 'backups'),
     authServerUrl: 'http://localhost:62000',
+    rebuildEnabled: false,
+    mercMudRepoPath: dir,
+    mercMudHostPath: 'C:/Projects/merc-mud',
+    shatteredArchiveRepoPath: 'C:/Projects/ShatteredArchive',
+    shatteredArchiveHostPath: 'C:/Projects/ShatteredArchive',
     ...overrides,
   };
 }
@@ -415,6 +423,32 @@ describe('Phase 4: centralized-auth introspect fallback', () => {
     }
   });
 
+  it('Phase 15: username/expiresAt from introspect flow through to the audit line', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-auth-p15-enrich-'));
+    const fake = await startFakeIntrospect(() => ({
+      valid: true,
+      accountId: 'acct2',
+      service: 'mud-builder-server',
+      label: 'ci driver key',
+      username: 'melchaleve',
+      expiresAt: '2026-08-01T00:00:00.000Z',
+      tokenType: 'api',
+    }));
+    const { server, base } = await startApp(
+      makeConfig(dir, { authServerUrl: fake.url, servicePrivateKeyPath: makeServiceKeyFile() }),
+    );
+    try {
+      expect((await putGroups(base, 'a-centrally-issued-token')).status).toBe(200);
+      const audit = fs.readFileSync(path.join(dir, 'backups', 'audit.log'), 'utf8');
+      // label (the key's own label) AND username (the actual human) both present, distinctly.
+      expect(audit).toContain('account:acct2 (ci driver key) [melchaleve]');
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('auth-server says {valid:false}: 401, nothing written', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-auth-p4-invalid-'));
     const fake = await startFakeIntrospect(() => ({ valid: false }));
@@ -501,6 +535,234 @@ describe('Phase 4: centralized-auth introspect fallback', () => {
 
       const anonymous = await fetch(`${base}/api/auth/keys`);
       expect(anonymous.status).toBe(401);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('Phase 15/G: requireRebuildAllowed', () => {
+  /** Mounts the guard alone on a throwaway route — rebuild.ts wires it onto the real /api/rebuild. */
+  function startRebuildApp(
+    dir: string,
+    introspectConfig: Pick<MudBuilderConfig, 'authServerUrl' | 'servicePrivateKeyPath'>,
+  ): Promise<{ server: Server; base: string; store: AuthStore; roleStore: RoleStore }> {
+    const store = new AuthStore(path.join(dir, 'auth'));
+    store.init();
+    const roleStore = new RoleStore(path.join(dir, 'auth'));
+    const app = express();
+    app.post('/test/rebuild', requireRebuildAllowed(store, introspectConfig, roleStore), (_req, res) => {
+      res.json({ ok: true });
+    });
+    return new Promise((resolve) => {
+      const server = app.listen(0, '127.0.0.1', () => {
+        resolve({ server, base: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, store, roleStore });
+      });
+    });
+  }
+
+  function postRebuild(base: string, token?: string): Promise<Response> {
+    return fetch(`${base}/test/rebuild`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+  }
+
+  it('401s with no token', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-rebuild-anon-'));
+    const { server, base } = await startRebuildApp(dir, { authServerUrl: 'http://127.0.0.1:1' });
+    try {
+      expect((await postRebuild(base)).status).toBe(401);
+    } finally {
+      await new Promise((r) => server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('the master key always passes, regardless of any local role grant', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-rebuild-master-'));
+    const { server, base } = await startRebuildApp(dir, { authServerUrl: 'http://127.0.0.1:1' });
+    try {
+      const master = readMasterKey(dir);
+      expect((await postRebuild(base, master)).status).toBe(200);
+    } finally {
+      await new Promise((r) => server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('a local API key 403s outright, even with a label matching an admin-tier account username', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-rebuild-localkey-'));
+    const { server, base, store, roleStore } = await startRebuildApp(dir, { authServerUrl: 'http://127.0.0.1:1' });
+    try {
+      roleStore.setTier('acct1', 'melchaleve', 'admin', 'test-setup');
+      const { token } = store.createKey('melchaleve');
+      const res = await postRebuild(base, token);
+      expect(res.status).toBe(403);
+      expect(((await res.json()) as { error: string }).error).toMatch(/admin tier or above/);
+    } finally {
+      await new Promise((r) => server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('an admin-tier account with a short-lived expiry passes', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-rebuild-ok-'));
+    const soon = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(); // 3 days out
+    const fake = await startFakeIntrospect(() => ({
+      valid: true,
+      accountId: 'acct1',
+      service: 'mud-builder-server',
+      label: 'rebuild key',
+      username: 'melchaleve',
+      expiresAt: soon,
+      tokenType: 'api',
+    }));
+    const { server, base, roleStore } = await startRebuildApp(dir, {
+      authServerUrl: fake.url,
+      servicePrivateKeyPath: makeServiceKeyFile(),
+    });
+    roleStore.setTier('acct1', 'melchaleve', 'admin', 'test-setup');
+    try {
+      expect((await postRebuild(base, 'a-centrally-issued-token')).status).toBe(200);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('an owner-tier account also passes (admin tier and above)', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-rebuild-owner-'));
+    const soon = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+    const fake = await startFakeIntrospect(() => ({
+      valid: true,
+      accountId: 'acct1',
+      service: 'mud-builder-server',
+      label: 'rebuild key',
+      username: 'melchaleve',
+      expiresAt: soon,
+      tokenType: 'api',
+    }));
+    const { server, base, roleStore } = await startRebuildApp(dir, {
+      authServerUrl: fake.url,
+      servicePrivateKeyPath: makeServiceKeyFile(),
+    });
+    roleStore.setTier('acct1', 'melchaleve', 'owner', 'test-setup');
+    try {
+      expect((await postRebuild(base, 'a-centrally-issued-token')).status).toBe(200);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('an admin-tier account with NO expiry (a forever key) 403s', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-rebuild-forever-'));
+    const fake = await startFakeIntrospect(() => ({
+      valid: true,
+      accountId: 'acct1',
+      service: 'mud-builder-server',
+      label: 'rebuild key',
+      username: 'melchaleve',
+      expiresAt: null,
+      tokenType: 'api',
+    }));
+    const { server, base, roleStore } = await startRebuildApp(dir, {
+      authServerUrl: fake.url,
+      servicePrivateKeyPath: makeServiceKeyFile(),
+    });
+    roleStore.setTier('acct1', 'melchaleve', 'admin', 'test-setup');
+    try {
+      const res = await postRebuild(base, 'a-centrally-issued-token');
+      expect(res.status).toBe(403);
+      expect(((await res.json()) as { error: string }).error).toMatch(/short-lived token/);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('an admin-tier account with an expiry MORE than 7 days out 403s', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-rebuild-toolong-'));
+    const tooFar = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days out
+    const fake = await startFakeIntrospect(() => ({
+      valid: true,
+      accountId: 'acct1',
+      service: 'mud-builder-server',
+      label: 'rebuild key',
+      username: 'melchaleve',
+      expiresAt: tooFar,
+      tokenType: 'api',
+    }));
+    const { server, base, roleStore } = await startRebuildApp(dir, {
+      authServerUrl: fake.url,
+      servicePrivateKeyPath: makeServiceKeyFile(),
+    });
+    roleStore.setTier('acct1', 'melchaleve', 'admin', 'test-setup');
+    try {
+      const res = await postRebuild(base, 'a-centrally-issued-token');
+      expect(res.status).toBe(403);
+      expect(((await res.json()) as { error: string }).error).toMatch(/expiring within 7 days/);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('a valid, short-lived account with no local role grant (defaults to user tier) 403s', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-rebuild-notallowed-'));
+    const soon = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+    const fake = await startFakeIntrospect(() => ({
+      valid: true,
+      accountId: 'acct2',
+      service: 'mud-builder-server',
+      label: 'someone else',
+      username: 'someone-else',
+      expiresAt: soon,
+      tokenType: 'api',
+    }));
+    const { server, base } = await startRebuildApp(dir, {
+      authServerUrl: fake.url,
+      servicePrivateKeyPath: makeServiceKeyFile(),
+    });
+    try {
+      const res = await postRebuild(base, 'a-centrally-issued-token');
+      expect(res.status).toBe(403);
+      expect(((await res.json()) as { error: string }).error).toMatch(/admin tier or above/);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('a manager-tier account (below admin) 403s', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-rebuild-manager-'));
+    const soon = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+    const fake = await startFakeIntrospect(() => ({
+      valid: true,
+      accountId: 'acct1',
+      service: 'mud-builder-server',
+      label: 'rebuild key',
+      username: 'melchaleve',
+      expiresAt: soon,
+      tokenType: 'api',
+    }));
+    const { server, base, roleStore } = await startRebuildApp(dir, {
+      authServerUrl: fake.url,
+      servicePrivateKeyPath: makeServiceKeyFile(),
+    });
+    roleStore.setTier('acct1', 'melchaleve', 'manager', 'test-setup');
+    try {
+      const res = await postRebuild(base, 'a-centrally-issued-token');
+      expect(res.status).toBe(403);
+      expect(((await res.json()) as { error: string }).error).toMatch(/admin tier or above/);
     } finally {
       await new Promise((r) => server.close(r));
       await new Promise((r) => fake.server.close(r));

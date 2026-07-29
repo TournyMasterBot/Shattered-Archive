@@ -1,5 +1,7 @@
 import { ROOM_SCRIPT_TRIGGERS, SCRIPT_TRIGGERS, type MobScript } from '@shatteredarchive/merc-area';
 
+import SaveAsSnippetButton from '../content/SaveAsSnippetButton.js';
+
 interface MobOption {
   vnum: number;
   shortDescr: string;
@@ -39,6 +41,7 @@ export default function ScriptEditor({ script, mobs, rooms = [], onChange, onDel
 
   return (
     <div className="mb-form mb-script-editor">
+      <SaveAsSnippetButton kind="script" data={script} />
       <div className="mb-row">
         <label className="mb-field mb-field--grow">
           <span>{isRoom ? 'Room' : 'Mob'}</span>

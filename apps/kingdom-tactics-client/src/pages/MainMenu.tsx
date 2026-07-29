@@ -48,6 +48,9 @@ export function MainMenu() {
         <button type="button" className="kt-btn" onClick={() => navigate('online')}>
           Online Match
         </button>
+        <button type="button" className="kt-btn" onClick={() => navigate('account')}>
+          Account
+        </button>
       </nav>
     </div>
   );

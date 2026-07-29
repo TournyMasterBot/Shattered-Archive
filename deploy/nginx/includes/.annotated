@@ -1,7 +1,7 @@
 File Index
 
 /tls-dev.conf
-Purpose: Configures HTTPS routing and proxying for multiple project services including game client, web client, and API servers.
+Purpose: Configures HTTPS routing and proxying for multiple project services including game client, web client, and API servers. MUST mirror edge-subdomains.conf's HTTP (port 80) blocks route-for-route, one file per scheme — there is no shared/DRY'd routing between the two. Phase F: added kingdom-tactics.shatteredarchive.dev's HTTPS block; a real deploy gap (this block didn't exist for the first deploy pass — https:// 404'd at the default catch-all since kt-server's own KT_CLIENT_ALLOWED_RETURN_ORIGINS is https-only) caught by live-testing the real public hostname end to end, not by review. Any FUTURE new subdomain added to edge-subdomains.conf needs the identical block added HERE too, or it silently only half-works (HTTP fine, HTTPS 404). Scrum Poker (2026-07-28) followed that rule from the start — its HTTPS block landed alongside the HTTP one, and route parity between the two was checked mechanically (both expose exactly /api/scrum/, /ws/scrum, = /health, /). The websocket block matters especially here: the client picks wss:// whenever the page is https, so an HTTPS block missing /ws/scrum would leave a room that loads but never connects.
 
 /tls-off.conf
 Purpose: This file serves as a placeholder configuration indicating no local TLS server blocks are included.

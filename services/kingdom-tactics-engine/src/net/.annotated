@@ -1,1 +1,4 @@
 File Index
+
+/protocol.ts
+Purpose: The `/ws/kt` wire contract shared by kt-client and kt-server (`KtClientMessage`/`KtServerMessage` unions, `isKtClientMessage`/`isKtServerMessage` type guards, `parseKtClientMessage`/`parseKtServerMessage`). Phase F: `KtJoinMessage` gained an optional `token` field (hub bearer token for accountId resolution) — additive only, `KT_PROTOCOL_VERSION` NOT bumped since omitting it is byte-identical to the pre-Phase-F anonymous join.

@@ -21,8 +21,11 @@ const LOCAL_CONFIG_PACKAGES = [
   '<rootDir>/apps/kingdom-tactics-server',
   '<rootDir>/apps/mud-builder-client',
   '<rootDir>/apps/mud-builder-server',
+  '<rootDir>/apps/scrum-poker-client',
+  '<rootDir>/apps/scrum-poker-server',
   '<rootDir>/services/kingdom-tactics-engine',
   '<rootDir>/services/merc-area',
+  '<rootDir>/services/scrum-poker-core',
 ];
 
 const LOCAL_CONFIG_IGNORES = [
@@ -32,8 +35,11 @@ const LOCAL_CONFIG_IGNORES = [
   '/apps/kingdom-tactics-server/',
   '/apps/mud-builder-client/',
   '/apps/mud-builder-server/',
+  '/apps/scrum-poker-client/',
+  '/apps/scrum-poker-server/',
   '/services/kingdom-tactics-engine/',
   '/services/merc-area/',
+  '/services/scrum-poker-core/',
 ];
 
 module.exports = {

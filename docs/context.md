@@ -119,6 +119,8 @@ The `apps/web-server` in this repo is a Node.js caching proxy deployed at `https
 | [features/user-equipment.md](./features/user-equipment.md) | Equipment capture + delta system |
 | [features/contribute.md](./features/contribute.md) | Identify + Creature Lore submission feature |
 | [features/user-library.md](./features/user-library.md) | Library/spell browsing feature |
+| [features/user-account.md](./features/user-account.md) | Optional hub login + cloud save/load of scripts & plugin configs |
+| [features/kingdom-tactics-account.md](./features/kingdom-tactics-account.md) | Kingdom Tactics (separate app): optional hub login, match history + replay, army-layout cloud sync |
 | [scripting/javascript.md](./scripting/javascript.md) | JS script API reference |
 | [scripting/typescript.md](./scripting/typescript.md) | TS script API reference |
 | [scripting/lua.md](./scripting/lua.md) | Lua runtime notes |

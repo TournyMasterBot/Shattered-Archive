@@ -1,71 +1,151 @@
+/* auc-* namespace, restyled in Phase A2 around the shared tokens in index.css
+   (the C#-site-derived reference identity style). Class names are stable —
+   pages/tests depend on them, only the look changed. */
+
 .auc-app {
-  max-width: 480px;
+  max-width: 560px;
   margin: 0 auto;
   padding: 2rem 1rem;
-  font-family: system-ui, sans-serif;
+}
+
+/* The admin tables need room; everything else stays a comfortable column. */
+.auc-app:has(.auc-page--wide) {
+  max-width: 980px;
 }
 
 .auc-header h1 {
-  font-size: 1.4rem;
-  margin-bottom: 1rem;
+  color: var(--title);
+  font-size: 1.45rem;
+  letter-spacing: 0.01em;
+  margin: 0 0 0.35rem;
+}
+
+.auc-header {
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--panel-border);
+  background:
+    linear-gradient(to right, var(--accent), var(--accent-warm)) left bottom / 120px 2px no-repeat;
 }
 
 .auc-placeholder {
-  color: #888;
+  color: var(--sub);
 }
 
 .auc-nav {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  margin-top: 0.85rem;
+  flex-wrap: wrap;
 }
 
+.auc-nav button,
 .auc-nav-item {
-  background: none;
+  background: var(--chip);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem 0.9rem;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.auc-nav button:hover {
+  color: var(--hover-warm);
+  border-color: var(--accent);
 }
 
 .auc-nav-item--active {
+  color: var(--accent);
+  border-color: var(--accent);
   font-weight: 600;
-  text-decoration: underline;
+}
+
+.auc-page,
+.auc-main > .auc-toast {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.1rem 1.25rem 1.25rem;
+}
+
+.auc-page + .auc-page {
+  margin-top: 1rem;
 }
 
 .auc-page h2 {
-  font-size: 1.15rem;
-  margin-bottom: 0.75rem;
+  color: var(--title);
+  font-size: 1.1rem;
+  margin: 0 0 0.85rem;
+}
+
+.auc-page h2 + .auc-muted {
+  margin-top: -0.5rem;
 }
 
 .auc-field {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  margin-bottom: 0.6rem;
+  gap: 0.25rem;
+  margin-bottom: 0.7rem;
 }
 
 .auc-field > span {
   font-size: 0.78rem;
-  opacity: 0.75;
+  color: var(--sub);
 }
 
-.auc-field input {
+.auc-field input,
+.auc-page input,
+.auc-page select {
   font: inherit;
-  padding: 0.35rem 0.5rem;
-  border-radius: 6px;
-  border: 1px solid #3a3a4a;
-  background: transparent;
-  color: inherit;
+  color: var(--text);
+  padding: 0.4rem 0.55rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.auc-page input:focus,
+.auc-page select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.auc-page button {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--chip);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+}
+
+.auc-page button:hover:not(:disabled) {
+  color: var(--hover-warm);
+  border-color: var(--accent);
+}
+
+.auc-page button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .auc-fieldset {
-  border: 1px solid #3a3a4a;
-  border-radius: 6px;
-  padding: 0.5rem 0.9rem 0.65rem;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.9rem 0.7rem;
   margin: 0 0 0.9rem;
 }
 
 .auc-fieldset > legend {
   font-size: 0.8rem;
   font-weight: 600;
-  opacity: 0.85;
+  color: var(--sub);
   padding: 0 0.35rem;
 }
 
@@ -76,26 +156,94 @@
 }
 
 .auc-list li {
-  padding: 0.3rem 0;
-  border-bottom: 1px solid #2a2a36;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--row-odd);
+}
+
+.auc-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  font-size: 0.9rem;
+}
+
+.auc-table th {
+  background: var(--chip);
+  color: var(--sub);
+  text-align: left;
+  font-weight: 600;
+  padding: 0.5rem 0.65rem;
+}
+
+.auc-table td {
+  padding: 0.45rem 0.65rem;
+  border-top: 1px solid var(--panel-border);
+}
+
+.auc-table tbody tr:nth-child(even) {
+  background: var(--row-even);
+}
+
+.auc-table tbody tr:nth-child(odd) {
+  background: var(--row-odd);
+}
+
+.auc-search {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.auc-search input {
+  flex: 1;
+}
+
+.auc-row-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.auc-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0.75rem 0 1.4rem;
 }
 
 .auc-toast {
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  margin-bottom: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius);
+  margin-bottom: 0.85rem;
 }
 
 .auc-toast--ok {
-  background: #1f4d2a;
-  color: #c9efce;
+  background: var(--ok-bg);
+  color: var(--ok-fg);
 }
 
 .auc-toast--err {
-  background: #55221e;
-  color: #f3c4bf;
+  background: var(--err-bg);
+  color: var(--err-fg);
+}
+
+.auc-toast input {
+  font-family: var(--font-mono);
+  width: 100%;
+  margin: 0.4rem 0;
+  color: inherit;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.5rem;
 }
 
 .auc-muted {
-  opacity: 0.65;
+  color: var(--sub);
+  opacity: 0.9;
 }

@@ -1,6 +1,8 @@
 /**
  * GENERATED from merc-mud/2.4/src/const.c skill_table — do not hand-edit.
- * Regenerate with the gen-skills-stock.js codegen after any const.c change.
+ * Regenerate with `pnpm --filter @shatteredarchive/merc-area gen-skills-stock`
+ * (scripts/gen-skills-stock.ts) after any const.c skill_table change, then
+ * review the diff before committing.
  * Row 0 ("reserved", spell_fun 0) is excluded: it is not authorable.
  */
 
@@ -100,6 +102,7 @@ export const SKILL_SPELL_FUNS: readonly string[] = [
   "spell_shocking_grasp",
   "spell_sleep",
   "spell_slow",
+  "spell_spark_bolt",
   "spell_stone_skin",
   "spell_summon",
   "spell_teleport",
@@ -203,6 +206,7 @@ export const STOCK_FUN_TARGET_PAIRS: readonly string[] = [
   "spell_shocking_grasp 1",
   "spell_sleep 1",
   "spell_slow 1",
+  "spell_spark_bolt 1",
   "spell_stone_skin 3",
   "spell_summon 0",
   "spell_teleport 3",
@@ -296,6 +300,7 @@ export const STOCK_SKILLS: readonly StockSkillRow[] = [
   { name: "shocking grasp", spellFun: "spell_shocking_grasp", target: 1, position: 7, levels: [10, 53, 14, 13], ratings: [1, 1, 2, 2], minMana: 15, beats: 12, nounDamage: "shocking grasp", msgOff: "!Shocking Grasp!", msgObj: "", slot: 53, hasGsn: false },
   { name: "sleep", spellFun: "spell_sleep", target: 1, position: 8, levels: [10, 53, 11, 53], ratings: [1, 1, 2, 2], minMana: 15, beats: 12, nounDamage: "", msgOff: "You feel less tired.", msgObj: "", slot: 38, hasGsn: true },
   { name: "slow", spellFun: "spell_slow", target: 1, position: 7, levels: [23, 30, 29, 32], ratings: [1, 1, 2, 2], minMana: 30, beats: 12, nounDamage: "", msgOff: "You feel yourself speed up.", msgObj: "", slot: 515, hasGsn: false },
+  { name: "spark bolt", spellFun: "spell_spark_bolt", target: 1, position: 7, levels: [1, 1, 1, 1], ratings: [1, 1, 1, 1], minMana: 15, beats: 12, nounDamage: "spark bolt", msgOff: "!Spark Bolt!", msgObj: "", slot: 0, hasGsn: false },
   { name: "stone skin", spellFun: "spell_stone_skin", target: 3, position: 8, levels: [25, 40, 40, 45], ratings: [1, 1, 2, 2], minMana: 12, beats: 18, nounDamage: "", msgOff: "Your skin feels soft again.", msgObj: "", slot: 66, hasGsn: false },
   { name: "summon", spellFun: "spell_summon", target: 0, position: 8, levels: [24, 12, 29, 22], ratings: [1, 1, 2, 2], minMana: 50, beats: 12, nounDamage: "", msgOff: "!Summon!", msgObj: "", slot: 40, hasGsn: false },
   { name: "teleport", spellFun: "spell_teleport", target: 3, position: 7, levels: [13, 22, 25, 36], ratings: [1, 1, 2, 2], minMana: 35, beats: 12, nounDamage: "", msgOff: "!Teleport!", msgObj: "", slot: 2, hasGsn: false },

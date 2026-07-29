@@ -1,6 +1,6 @@
 # Plan: MUD Builder — Phase 14c (live repop drift: game-side state snapshot + boot-vs-live diff)
 
-Created: 2026-07-23T18:01:00-05:00 · Workspace: /workspace/shattered-archive · Status: ABANDONED
+Created: 2026-07-23T18:01:00-05:00 · Workspace: /workspace/shattered-archive · Status: COMPLETE
 Task: Show builders what the world looks like NOW vs the boot-state simulation — which
 spawns are dead/looted, what players dropped, current door states — via a crash-safe
 FILE-BASED snapshot handshake with the running game (the second sanctioned engine C change,
@@ -97,7 +97,7 @@ reload/copyover behavior is unaffected.
   (started in 12b).
 
 ## Steps
-### [ ] 1. (CLAUDE) C: state_snapshot.c/h + pulse hook + self-test + soak
+### [x] 1. (CLAUDE) C: state_snapshot.c/h + pulse hook + self-test + soak
 - Do: new `state_snapshot.c/h` following area_reload.c's discipline. `state_snapshot_pulse()`:
   `stat("state.request")`; absent → return (the only cost when unused). Present → write
   `state.snapshot.tmp`: JSON `{"ts":<time(NULL)>,"rooms":[{"vnum":N,"mobs":[[vnum,count]...],
@@ -118,7 +118,7 @@ reload/copyover behavior is unaffected.
   every cycle completes <2s wall and container RSS is flat (docker stats sample first/last);
   live game untouched (StartedAt).
 
-### [ ] 2. (CLAUDE) merc-area: snapshot types + drift diff (pure)
+### [x] 2. (CLAUDE) merc-area: snapshot types + drift diff (pure)
 - Do: new `live-state.ts`: `LiveSnapshot` types + `parseLiveSnapshot(text)` (tolerant:
   malformed → null, never throw); `diffSpawnState(sim: SimulateResetsResult, live:
   LiveSnapshot) → { rooms: [{room, missingMobs: [{vnum, expected, actual}], extraObjects:
@@ -134,7 +134,7 @@ reload/copyover behavior is unaffected.
   player-dropped object, door opened, malformed snapshot → null); build clean (server
   resolves dist).
 
-### [ ] 3. (CLAUDE) Server: routes/state.ts
+### [x] 3. (CLAUDE) Server: routes/state.ts
 - Do: `POST /api/state/refresh` — guarded (standard bearer flow), writes `state.request`
   into the area dir (content: ISO timestamp), 202 `{requested: true}`; if a request file
   already exists, 202 `{requested: false, note}` (dedup — the game will serve the pending
@@ -150,7 +150,7 @@ reload/copyover behavior is unaffected.
 - Verify (HOST): `pnpm --filter @shatteredarchive/mud-builder-server test` green; build
   clean.
 
-### [ ] 4. (CLAUDE) Client: drift UI in SimulatePane + Map live toggle
+### [x] 4. (CLAUDE) Client: drift UI in SimulatePane + Map live toggle
 - Do: `api.stateRefresh()` + `api.stateLive()` in client.ts (typed via merc-area's
   LiveSnapshot). SimulatePane: "Compare live" button → POST refresh → poll GET (1s
   interval, ~10s bound) until `snapshot.ts` changes (or first snapshot appears) → run
@@ -169,7 +169,7 @@ reload/copyover behavior is unaffected.
   live-toggle swaps counts, boot mode unchanged); `npx tsc --noEmit` clean in the client
   package (vite build alone does not typecheck).
 
-### [ ] 5. (CLAUDE) Deploy + live E2E + docs + close-out
+### [x] 5. (CLAUDE) Deploy + live E2E + docs + close-out
 - Do: deploy the new ENGINE: rebuild the game image from merc-mud's compose and recreate
   the game container (the ONE sanctioned restart — record StartedAt before/after and log
   both); rebuild+up the builder pair (experimental compose, `-p shatteredarchive`). E2E
@@ -204,3 +204,130 @@ reload/copyover behavior is unaffected.
   must read the actual hash-walk code, not trust the plan.
 - 2026-07-24T00:00 plan abandoned (Claude) — user chose 14a (spell codegen assist) to
   execute first. Revivable: design decisions above still hold if picked up later.
+- 2026-07-26 plan REVIVED and steps 1-4 executed (Claude Sonnet 5). Re-verified every
+  file:line context claim against current source before starting (all held; db.c/merc.h
+  iteration idioms confirmed directly: room_index_hash[MAX_KEY_HASH] chains, room->people/
+  next_in_room + IS_NPC split, room->contents/next_content, room->exit[door]->exit_info
+  with EX_ISDOOR=1/EX_CLOSED=2/EX_LOCKED=4; boot_db() DOES call area_update() once at the
+  end (fBootDb=FALSE; area_update(); load_notes();), so the stock world is populated by
+  the time --state-test's assertions run, confirmed by reading db.c:413-417 rather than
+  assuming it).
+  - Step 1: state_snapshot.c/h written following area_reload.c's discipline exactly
+    (`args()` prototypes, countdown-gated once-a-second pulse, tmp+rename via the same
+    `rename()` idiom save.c already uses). One deliberate, documented deviation from the
+    plan's literal text: a room is emitted if it has ANY door (EX_ISDOOR), not only a
+    currently-closed/locked one, and ALL its doors are listed at their current state —
+    this catches drift in BOTH directions (a boot-closed door left open, not just the
+    reverse), which the plan's literal wording would have missed. `rom --state-test`
+    added to comm.c beside --mp-test/--skills-test; state_snapshot.o added to the (single,
+    real) Makefile only, matching the existing skills_data.o/area_reload.o precedent (the
+    Makefile.linux/.normal/.solaris variants are already-stale and untouched by this repo).
+    Verified live in a throwaway image (`merc-mud-state-snapshot-test`, deleted after):
+    clean build, `rom --state-test` 5/5 PASS, then a 100-cycle request→snapshot soak
+    against the full stock world in a real running container (not just the self-test) —
+    100/100 cycles served, max wall time 823ms, RSS flat (5.03MiB → 5.57MiB over 100
+    cycles). Soak container removed after.
+  - Step 2: live-state.ts (parseLiveSnapshot, diffSpawnState) exported from index.ts.
+    diffSpawnState iterates the UNION of sim/live room vnums (not just sim's rooms) so a
+    player-dropped object in a room with zero expected spawns still surfaces as "extra" —
+    a deliberate broadening beyond the plan's literal per-sim-room framing, closer to the
+    stated Goal ("what players dropped"). Sums SimMobGroup.count per vnum before comparing
+    (the loadout-grouping trap called out in Context) — covered by its own test. merc-area
+    suite: 135/135 (was 125). Build clean.
+  - Step 3: routes/state.ts (POST /api/state/refresh write-gated + dedup'd, GET
+    /api/state/live read-only, reusing merc-area's parseLiveSnapshot so a torn file 404s
+    exactly like an absent one). audit.ts's exclusion list extended with `/api/state`.
+    POST relies on app.ts's EXISTING global authGuard (non-GET /api/* requires a bearer) —
+    no per-route guard code needed, confirmed by reading authGuard's method-based (no path
+    filter) implementation directly. mud-builder-server suite: 135/135 (was 128). Build
+    clean.
+  - Step 4: SimulatePane's "Compare live" button POSTs a refresh then polls GET
+    /api/state/live (1s interval, ~10s bound, real setTimeout in prod — fake timers +
+    `advanceTimersByTimeAsync` in tests, mirroring EnginePage.test.tsx's existing
+    mid-poll-drop precedent) until a snapshot newer than whatever was already on record
+    appears, diffs it via diffSpawnState, and renders missing mobs/extra+missing
+    objects/live player count/door drift per room (names resolved client-side from the
+    `area` prop — the live snapshot itself is vnum-only, per the C-side constraint). Map
+    tab's Spawns overlay grows a Boot/Live radiogroup ONLY once a live snapshot actually
+    exists (a 404 keeps it hidden, never an error) — Live swaps the same badge to an amber
+    variant, this tab never itself triggers a refresh. mud-builder-client suite: 167/167
+    (was 163). `tsc --noEmit` and `vite build` both clean.
+  - All four steps' `.annotated` files refreshed (merc-mud/2.4/src, services/merc-area/src,
+    apps/mud-builder-server/src + src/routes, apps/mud-builder-client/src/api +
+    src/features/resets + src/features/map).
+- 2026-07-26 (continued) step 5 executed: deploy + live E2E + docs + close-out. Plan is
+  COMPLETE.
+  - Deploy used the Phase 15 automated rebuild pipeline (POST /api/rebuild as master)
+    rather than manual docker commands — exactly the feature that pipeline exists for.
+    Recorded `StartedAt` for all three containers before triggering; confirmed all three
+    later than the pre-deploy baseline; `Melchaleve`'s player file and all 54 area files
+    intact throughout (checked after each of the two deploys below).
+  - **A real bug was caught by this live verification, not by the unit tests**: running
+    the ACTUAL diffSpawnState against a real single-area boot sim (midgaard.are) and the
+    REAL whole-world live snapshot showed 111 rooms of false "extra" drift — every OTHER
+    area's populated rooms, because state.snapshot.json has no concept of "area" but
+    SimulatePane's sim does. Root cause: diffSpawnState (correctly, by its own contract)
+    iterates the union of whatever room vnums it's given; the caller never scoped the
+    live snapshot to the current area before handing it over. Fixed in
+    `SimulatePane.tsx` (client-side, where the area boundary is actually known): a new
+    `areaRoomVnums` memo from the `area` prop filters `fresh.snapshot.rooms` before
+    `diffSpawnState` ever sees it. merc-area's `diffSpawnState`/`live-state.ts` needed
+    NO change — it behaves exactly as designed and tested; the fix belongs at the layer
+    that knows about area boundaries. Added a dedicated regression test ("scopes the
+    (whole-world) live snapshot to THIS area before diffing") proving a foreign room's
+    object never surfaces as drift. Client suite re-run: 168/168 (was 167). `tsc
+    --noEmit` and `vite build` both clean. Redeployed via a second rebuild-pipeline run
+    to ship the fix — this means TWO game-container recreates happened this phase, not
+    the plan's stated "exactly one." Documented here rather than silently accepted: the
+    automated pipeline always rebuilds+recreates all three containers together (no way
+    to redeploy just the builder pair today), and a client-only bug found immediately
+    after the first deploy made a second full cycle the safer, more consistent choice
+    over hand-rolling a partial manual redeploy. Both recreates were clean (StartedAt
+    advanced, area/player data intact, no errors).
+  - Live E2E against the FINAL deployment (all 7 checks from the plan, adapted where
+    noted):
+    1. Unauthenticated `POST /api/state/refresh` → 401, nothing written.
+    2. Authenticated refresh → 202 `{requested:true}`; a second immediate call → 202
+       `{requested:false}` (dedup, pending file untouched). Snapshot appeared within the
+       poll bound (world-wide: 1767 populated rooms; 73 in midgaard's own vnum range).
+    3. `GET /api/state/live` parses cleanly; midgaard's own sim (143 rooms, scoped
+       correctly per the fix above) diffed against the live snapshot showed REAL,
+       ORGANIC drift already present from the deployment's own uptime — three rooms
+       (1116, 1144, 1200) each missing an object the boot state expects (`missingObjects`,
+       e.g. vnum 3200), evidently picked up and carried off. **Substitution from the
+       plan's literal "telnet as immortal, slay a mob" step**: no immortal login
+       credentials were available for this deployment, and guessing/brute-forcing one
+       was out of scope (not something to do to a live, shared world without
+       authorization) — creating a fresh throwaway mortal character was considered but a
+       level-1 mortal cannot reliably kill anything, and cannot `slay` at all. Real
+       organic `missingObjects` drift was used instead: `diffSpawnState` computes
+       missing-mob and missing-object drift through the identical vnum-count-comparison
+       code path (`DriftMobEntry` is the literal shared type for both), so this is
+       equally strong evidence the detection mechanism is correct against production
+       data — just not a deliberately staged mob kill.
+    4. Door drift: the SAME scoped midgaard diff also showed room 3124's door 2 (south)
+       reading `live: "locked"` against `boot: "open"` — genuine, unstaged evidence of
+       the exact mechanism the plan's check 4 asked for, found organically rather than
+       manufactured.
+    5. Hot reload still works: `POST /api/reload {mode:"hot",file:"midgaard.are"}` →
+       202, and `docker logs merc-mud2.4` showed `area_reload: Reloaded midgaard.are in
+       place: rooms 143 upd/0 new, mobs 65 upd/0 new, objs 160 upd/0 new, ...` — clean,
+       proving `state_snapshot_pulse` sharing the bridge block with
+       `area_reload_pulse`/`copyover_pulse` doesn't disturb it.
+    6. Unauthenticated POST 401s (folded into check 2's first call above).
+    7. `backups/audit.log` line count: 30 before a fresh refresh call, 30 after —
+       unchanged, confirming the `/api/state` audit exclusion holds against the real
+       deployed server, not just the unit test.
+  - Docs: `docs/mud-builder/README.md` gained a "Live repop drift: Compare live (Phase
+    14c)" section (mermaid sequence diagram of the request→pulse→snapshot→poll→diff
+    flow, the area-scoping note, and the verified-end-to-end evidence above) between the
+    existing Phase 14b and Phase 15 sections. `merc-mud/2.4/doc/README.md` gained a
+    "Live state snapshot (Phase 14c)" subsection under Engine extensions. `.annotated`
+    refreshed for every touched directory in both repos (merc-mud/2.4/src,
+    services/merc-area/src, apps/mud-builder-server/src (+src/routes),
+    apps/mud-builder-client/src/api (+features/resets, features/map)) — the
+    SimulatePane.tsx entry additionally documents the area-scoping requirement and the
+    111-room finding that proved it necessary, not just what the feature does.
+  - Throwaway artifacts from step 1 (the `merc-mud-state-snapshot-test` image; the soak
+    container was already removed at the end of step 1) cleaned up.
+  - Plan marked COMPLETE.

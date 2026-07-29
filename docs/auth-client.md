@@ -54,6 +54,13 @@ For local setup, see [`../apps/auth-client`](../apps/auth-client) (run alongside
 | `ForcedChangePage` | `mustChangePassword: true` | Blocking password-change screen; logout is the only other option |
 | `AccountPage` | logged-in, "Account" tab | Change password, add/verify email, rotate-master (behind a confirm) |
 | `KeysPage` | logged-in, "API keys" tab | List/create/rotate/revoke API keys, show-once token box |
+| `SsoApprovePage` | `/sso/authorize?service=…&redirect_uri=…&state=…` | Phase A SSO consent: login (and forced change) run first, then approve mints a one-time code via `POST /api/sso/approve` and redirects back with `code`+`state`; deny returns `error=access_denied`; malformed params render an error card and never redirect |
+| `AdminPage` | logged-in, "Admin" tab (visible only when `me().globalRole` ≠ `user`; the API enforces regardless) | A2 hub admin: searchable/paged user table with live credential counts, strictly-below role select + one-time recovery passwords (shown once), and the delegation panel linking out to each service's own role admin |
+
+A2 also restyled the whole client around design tokens extracted from the C# site's
+`site.css` (dark panels, pill nav, striped rounded tables, blue/orange accents) — the
+tokens live in `src/index.css` as CSS custom properties and are the constellation's
+reference identity style going forward.
 
 # Configuration
 

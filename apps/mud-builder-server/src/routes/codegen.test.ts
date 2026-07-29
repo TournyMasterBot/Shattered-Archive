@@ -20,6 +20,11 @@ function makeConfig(dir: string, overrides: Partial<MudBuilderConfig> = {}): Mud
     authDataPath: path.join(dir, 'auth'),
     auditDataPath: path.join(dir, 'backups'),
     authServerUrl: 'http://localhost:62000',
+    rebuildEnabled: false,
+    mercMudRepoPath: dir,
+    mercMudHostPath: 'C:/Projects/merc-mud',
+    shatteredArchiveRepoPath: 'C:/Projects/ShatteredArchive',
+    shatteredArchiveHostPath: 'C:/Projects/ShatteredArchive',
     ...overrides,
   };
 }

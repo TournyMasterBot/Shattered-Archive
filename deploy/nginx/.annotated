@@ -4,7 +4,7 @@ File Index
 Purpose: This crontab entry automates nginx log rotation every 15 minutes using logrotate utility.
 
 /edge-subdomains.conf
-Purpose: Configures nginx routing and proxy settings for multiple subdomains and services.
+Purpose: Configures nginx routing and proxy settings for multiple subdomains and services. Phase F: added a kingdom-tactics.shatteredarchive.dev server block (single subdomain for BOTH kingdom-tactics-client and -server — /api/kt/, /ws/kt (WebSocket upgrade), and /health proxy to the server; everything else to the client), mirroring the build.shatteredarchive.dev/auth.shatteredarchive.dev pattern, not a separate client/server subdomain pair. Live-verified via Host-header-override curl/http.request calls (no browser available in this environment) through the real recreated nginx container — every other subdomain regression-checked in the same pass. Scrum Poker (2026-07-28): added a scrum-poker.shatteredarchive.dev block on the same single-subdomain, resolver+variable pattern — /api/scrum/, /ws/scrum (WebSocket, proxy_read_timeout 3600 for long quiet stretches between stories) and /health to scrum-poker-server:63000, everything else to the SPA. Verified by running the REAL extracted block in a throwaway nginx container with the real images network-aliased as scrum-poker-server/-client: nginx -t clean, and all four routes plus a 101 upgrade exercised end-to-end without touching the live stack.
 
 /edge.conf
 Purpose: This file configures nginx to route HTTPS traffic to different upstream services based on the hostname.
@@ -15,8 +15,14 @@ Purpose: This script initializes NGINX server with self-signed TLS certificates 
 /game-client.conf
 Purpose: This file configures the Nginx server settings for the game client web application.
 
+/kingdom-tactics-client.conf
+Purpose: Phase F — per-container nginx conf baked into the kingdom-tactics-client image (SPA static serve, try_files fallback to index.html). Identical shape to mud-builder-client.conf; the edge subdomain routing lives in edge-subdomains.conf, not here.
+
 /logrotate-nginx.conf
 Purpose: Configures daily rotation and compression of nginx log files with 14-day retention.
+
+/scrum-poker-client.conf
+Purpose: Per-container nginx conf baked into the scrum-poker-client image (SPA static serve, try_files fallback to index.html). Same shape as mud-builder-client.conf, but the fallback is load-bearing here rather than incidental: room URLs are real paths (/room/3f2504e0-4f89-41d3-9a0c-0305e82c3301) meant to be pasted into chat and opened cold, so a direct hit must serve index.html rather than 404.
 
 /shatteredarchive-dev-stub.conf
 Purpose: This configuration file sets up nginx server settings for the shatteredarchive-dev development environment.

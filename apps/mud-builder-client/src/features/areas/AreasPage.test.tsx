@@ -83,7 +83,7 @@ describe('AreasPage conflict + presence (Phase 11)', () => {
   const openTiny = async () => {
     render(<AreasPage />);
     fireEvent.click(await screen.findByRole('button', { name: /^Tiny/ }));
-    await screen.findByText('UI editor');
+    await screen.findByRole('button', { name: 'Save' });
   };
 
   it('sends the loaded baseHash on save and stores the returned hash', async () => {

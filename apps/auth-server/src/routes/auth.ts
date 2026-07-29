@@ -24,6 +24,8 @@ function toPublicSummary(account: AccountRecord) {
     mustChangePassword: account.mustChangePassword,
     emailOnFile: Boolean(account.email),
     emailVerified: Boolean(account.emailVerifiedAt),
+    // A2, additive: lets the client decide whether to surface the Admin section.
+    globalRole: account.globalRole ?? 'user',
   };
 }
 
@@ -69,8 +71,19 @@ export function registerAuthRoutes(app: Application, deps: AuthServerDeps): void
     safe(async (req, res) => {
       const username = requireString(req.body, 'username');
       const password = requireString(req.body, 'password');
+      const ip = req.ip ?? 'unknown';
+
+      const msLocked = deps.loginLockout.msLocked(username, ip);
+      if (msLocked > 0) {
+        throw new AuthError(`too many failed attempts — try again in ${Math.ceil(msLocked / 1000)}s`, 429);
+      }
+
       const account = await deps.accountStore.authenticate(username, password);
-      if (!account) throw new AuthError('invalid username or password', 401);
+      if (!account) {
+        deps.loginLockout.recordFailure(username, ip);
+        throw new AuthError('invalid username or password', 401);
+      }
+      deps.loginLockout.recordSuccess(username, ip);
 
       const session = deps.keyStore.mintSession(account.id, account.epoch);
       res.setHeader('Set-Cookie', sessionCookieHeader(session.token));

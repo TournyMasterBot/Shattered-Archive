@@ -29,7 +29,14 @@ describe('KeyStore', () => {
   it('mints and verifies an API key with no expiration ("forever")', () => {
     const { token } = store.mintApiKey(ACCOUNT_ID, 'test-service', 'my key', null, 0);
     const verified = store.verify(token, epochLookup(0));
-    expect(verified).toEqual({ accountId: ACCOUNT_ID, keyId: expect.any(String), service: 'test-service', label: 'my key', kind: 'api' });
+    expect(verified).toEqual({
+      accountId: ACCOUNT_ID,
+      keyId: expect.any(String),
+      service: 'test-service',
+      label: 'my key',
+      kind: 'api',
+      expiresAt: null,
+    });
   });
 
   it('rejects an expired API key', () => {
@@ -104,5 +111,40 @@ describe('KeyStore', () => {
     const { id, token } = store.mintSession(ACCOUNT_ID, 0);
     store.revokeById(id);
     expect(store.verify(token, epochLookup(0))).toBeNull();
+  });
+
+  it('mints and verifies an SSO exchange token carrying its audience service', () => {
+    const { token, expiresAt } = store.mintExchangeToken(ACCOUNT_ID, 'svc-audience', 'sso', 'sso login', 60_000, 0);
+    expect(Date.parse(expiresAt)).toBeGreaterThan(Date.now());
+    const verified = store.verify(token, epochLookup(0));
+    expect(verified?.kind).toBe('sso');
+    expect(verified?.service).toBe('svc-audience');
+    expect(verified?.expiresAt).toBe(expiresAt);
+  });
+
+  it('an expired OBO token stops verifying, and epoch invalidation applies to exchange tokens too', () => {
+    const { token: expired } = store.mintExchangeToken(ACCOUNT_ID, 'svc-t', 'obo', 'obo:svc-caller', -1000, 0);
+    expect(store.verify(expired, epochLookup(0))).toBeNull();
+    const { token } = store.mintExchangeToken(ACCOUNT_ID, 'svc-t', 'obo', 'obo:svc-caller', 60_000, 0);
+    expect(store.verify(token, epochLookup(0))).not.toBeNull();
+    expect(store.verify(token, epochLookup(1))).toBeNull();
+  });
+
+  it('exchange tokens never appear in listKeys (kind filter)', () => {
+    store.mintExchangeToken(ACCOUNT_ID, 'svc-a', 'sso', 'sso login', 60_000, 0);
+    store.mintExchangeToken(ACCOUNT_ID, 'svc-b', 'obo', 'obo:svc-a', 60_000, 0);
+    expect(store.listKeys(ACCOUNT_ID)).toEqual([]);
+  });
+
+  it('minting an exchange token purges sso/obo records long past expiry, but never api/session records', () => {
+    const dayMs = 24 * 60 * 60 * 1000;
+    // Expired 25h ago — past the 24h purge grace.
+    store.mintExchangeToken(ACCOUNT_ID, 'svc-old', 'sso', 'stale', -25 * 60 * 60 * 1000, 0);
+    const pastDate = new Date(Date.now() - 2 * dayMs).toISOString();
+    store.mintApiKey(ACCOUNT_ID, 'svc-api', 'long-expired api key stays', pastDate, 0);
+    expect(store.countKind('sso')).toBe(1);
+    store.mintExchangeToken(ACCOUNT_ID, 'svc-new', 'sso', 'fresh', 60_000, 0);
+    expect(store.countKind('sso')).toBe(1); // stale purged, fresh remains
+    expect(store.countKind('api')).toBe(1); // api records untouched
   });
 });

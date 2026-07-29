@@ -1,1 +1,4 @@
 File Index
+
+/AccountModal.module.scss
+Purpose: Phase D — AccountModal.tsx's CSS module. Visual language mirrors ConnectModal.module.scss (backdrop/modal/header/closeButton, primary/secondaryButton) at AudioSettingsModal's narrower single-column width; adds statusOk/statusErr lines for save/load feedback.

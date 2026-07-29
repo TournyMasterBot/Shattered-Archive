@@ -16,6 +16,39 @@ export interface AccountSummary {
   mustChangePassword: boolean;
   emailOnFile: boolean;
   emailVerified: boolean;
+  /** A2: hub-global tier ('user' default) — drives Admin-section visibility client-side; the API enforces regardless. */
+  globalRole?: string;
+}
+
+export interface AdminUserRow {
+  id: string;
+  username: string;
+  globalRole: string;
+  createdAt: string;
+  mustChangePassword: boolean;
+  emailOnFile: boolean;
+  emailVerified: boolean;
+  counts: Record<string, number>;
+  manageable: boolean;
+}
+
+export interface AdminUsersPage {
+  users: AdminUserRow[];
+  total: number;
+  assignableTiers: string[];
+}
+
+export interface AdminService {
+  serviceName: string;
+  activeKeys: number;
+  redirectUris: string[];
+}
+
+export interface TempPasswordResult {
+  id: string;
+  username: string;
+  temporaryPassword: string;
+  note: string;
 }
 
 export interface ChallengePrompt {
@@ -84,6 +117,16 @@ export const api = {
     postJson<{ message: string }>('/api/account/change-password', { currentPassword, newPassword }),
   requestEmail: (email: string) => postJson<{ message: string }>('/api/account/email', { email }),
   verifyEmail: (token: string) => postJson<{ message: string }>('/api/account/email/verify', { token }),
+  /** SSO consent (Phase A): mints the one-time code the consumer's backend exchanges. */
+  ssoApprove: (service: string, redirectUri: string) => postJson<{ code: string }>('/api/sso/approve', { service, redirectUri }),
+
+  /** A2 admin surface — every call 403s for a plain 'user' tier. */
+  adminListUsers: (query: string, offset: number, limit: number) =>
+    request<AdminUsersPage>(`/api/admin/users?query=${encodeURIComponent(query)}&offset=${offset}&limit=${limit}`),
+  adminSetRole: (id: string, role: string) =>
+    postJson<{ id: string; username: string; globalRole: string }>(`/api/admin/users/${encodeURIComponent(id)}/role`, { role }),
+  adminTempPassword: (id: string) => postJson<TempPasswordResult>(`/api/admin/users/${encodeURIComponent(id)}/temp-password`),
+  adminServices: () => request<{ services: AdminService[] }>('/api/admin/services'),
   rotateMaster: () => postJson<{ message: string; epoch: number }>('/api/account/rotate-master'),
 
   listKeys: () => request<{ keys: ApiKeyInfo[] }>('/api/keys'),

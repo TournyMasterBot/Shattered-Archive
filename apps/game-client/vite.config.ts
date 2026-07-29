@@ -19,6 +19,10 @@ export default defineConfig(({ mode }) => {
   const webWsTarget = env.VITE_WEB_WS; // e.g. ws://localhost:41000
   const webSecure = env.VITE_WEB_SECURE === 'true';
 
+  // Phase D: the C# service (Server.Web.Public) — a DIFFERENT backend from
+  // web-server above, used for the game-sso hand-off + cloud-sync APIs.
+  const siteApiTarget = env.VITE_SITE_API; // e.g. http://localhost:5000
+
   console.log('Loaded environment', {
     port,
     gameApiTarget,
@@ -27,6 +31,7 @@ export default defineConfig(({ mode }) => {
     webApiTarget,
     webWsTarget,
     webSecure,
+    siteApiTarget,
   });
 
   return {
@@ -83,6 +88,15 @@ export default defineConfig(({ mode }) => {
           ws: true,
           changeOrigin: true,
           secure: webSecure,
+        },
+
+        // HTTP → the C# service (Server.Web.Public): game-sso + cloud-sync APIs
+        // /api/site/* (dev) -> /* on the site API — keeps these same-origin in
+        // dev so no CORS is involved at all (see features/auth/siteApi.ts).
+        '/api/site': {
+          target: siteApiTarget,
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/api\/site/, ''),
         },
       },
     },

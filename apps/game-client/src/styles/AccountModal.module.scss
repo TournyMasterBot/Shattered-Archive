@@ -1,0 +1,145 @@
+/* apps/game-client/src/styles/AccountModal.module.scss */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+}
+
+.modal {
+  width: 460px;
+  max-width: 92vw;
+
+  background: #101010;
+  border: 1px solid #333;
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85);
+
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  background: #181818;
+  border-bottom: 1px solid #333;
+}
+
+.title {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.closeButton {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: #ccc;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 4px;
+
+  &:hover {
+    color: #fff;
+    background: #333;
+    border-radius: 3px;
+  }
+}
+
+.body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: #d0d0d0;
+}
+
+.blurb {
+  color: #a0a0a0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.connectionLine {
+  font-size: 0.75rem;
+  color: #a0d5ff;
+}
+
+.statusOk {
+  font-size: 0.74rem;
+  color: #9fe0a0;
+}
+
+.statusErr {
+  font-size: 0.74rem;
+  color: #ff9f9f;
+}
+
+.actionsColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.footer {
+  padding: 8px 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  border-top: 1px solid #262626;
+}
+
+.primaryButton,
+.secondaryButton {
+  border-radius: 3px;
+  font-size: 0.78rem;
+  padding: 5px 12px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-align: left;
+}
+
+.primaryButton {
+  background: #2f6bff;
+  color: #fff;
+  border-color: #244fc0;
+
+  &:hover:not(:disabled) {
+    background: #345fff;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.secondaryButton {
+  background: #222;
+  color: #ccc;
+  border-color: #444;
+
+  &:hover:not(:disabled) {
+    background: #2c2c2c;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+@media (max-width: 520px) {
+  .modal {
+    width: 94vw;
+  }
+}

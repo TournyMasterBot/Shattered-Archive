@@ -116,6 +116,7 @@ describe('ScriptsPage', () => {
   });
 
   it('lists scripts by mob and shows live validation errors for unknown triggers', async () => {
+    window.confirm = jest.fn(() => true);
     render(<ScriptsPage />);
     fireEvent.click(await screen.findByRole('button', { name: /Tiny/ }));
 

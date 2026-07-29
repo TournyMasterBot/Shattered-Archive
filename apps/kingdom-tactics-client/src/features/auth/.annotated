@@ -1,0 +1,31 @@
+File Index
+
+/authTokenStore.ts
+Purpose: Phase F — localStorage wrapper for the cloud-account bearer token (getToken/setToken/clearToken/isExpired), key `kt.auth.token`, matching this codebase's per-feature idiom (own STORAGE_KEY, inline try/catch — see `state/saved-armies.ts` for the same shape).
+
+/kt-auth-config.ts
+Purpose: Phase F — the ONLY file in this feature reading `import.meta.env` (SITE_ORIGIN for the login-navigation, siteApiBase() for fetch calls — dev-proxy-relative vs. absolute). Jest can't parse `import.meta`, so the client jest config maps `./kt-auth-config` to `kt-auth-config.stub.ts` — mirrors `features/net/kt-config.ts`'s established pattern for the exact same problem, NOT game-client's different "split pure logic out" approach (this repo's own precedent wins).
+
+/kt-auth-config.stub.ts
+Purpose: Jest stub for kt-auth-config.ts — static defaults, kept in sync by hand (same convention as kt-config.stub.ts).
+
+/authFragment.ts
+Purpose: Phase F — pure parser for the kt-sso callback's URL fragment (#auth_token=...&expires_at=... / #auth_error=1). Deliberately import.meta-free so it needs no jest stub-swap; the one genuinely unit-tested piece of the login flow (authFragment.test.ts).
+
+/ktSso.ts
+Purpose: Phase F — startLogin() navigates the whole page to kt-server's OWN `/api/kt/auth/start` (kingdom-tactics-server is a real backend and performs its own SSO code exchange with its own registered key — NOT game-client's Phase D pattern of borrowing another service's key). Re-exports authFragment.ts's parseAuthFragment.
+
+/useAuthCallback.ts
+Purpose: Phase F — on mount, reads window.location.hash for the kt-sso callback's result, stores a successful token, strips the fragment via history.replaceState. Mounted once at the top of App.tsx (no router in this app). Mirrors game-client's useAuthCallback (Phase D).
+
+/cloudSync.ts
+Purpose: Phase F — fetch wrappers for kt-server's account-scoped HTTP surface: loadMatchHistory, loadReplay(id) (server runs replayMatch and returns the resulting state sequence — never the stored salt), loadArmyLayouts/saveArmyLayouts. A discriminated CloudSyncResult (`ok`/`unauthenticated`/`error`) — a 401 clears the stored token via authTokenStore. Mirrors game-client's cloudSync.ts (Phase D) shape.
+
+/useAccountScreen.ts
+Purpose: Phase F — AccountScreen's state/actions: login trigger, logout (local-only), match-history fetch + per-entry replay fetch (drives a step index into the returned snapshot sequence), army-layout save/load-with-confirm (load calls state/saved-armies.ts's new replaceAllArmies — a deliberate overwrite). Mirrors game-client's useAccountModal (Phase D) split. `handleViewReplay` rejects an empty snapshots array with a status message rather than storing it — a genuinely-recorded match always has ≥1 snapshot, so an empty result means a corrupted stored entry; the render side indexes `replaySnapshots[replayStep]` unconditionally once set, so letting `[]` through would have rendered `undefined` (caught in Phase F's final review pass, not by an earlier test). Covered by `useAccountScreen.test.ts` (renderHook + jest.mock on cloudSync/authTokenStore/ktSso/saved-armies).
+
+/AccountScreen.tsx
+Purpose: Phase F — the new `'account'` Screen (state/nav.tsx). Logged-out: a single login button. Logged-in: army-layout cloud save/load, a match-history list with a "Replay" action per entry. The replay sub-view reuses `Arena` in `interactive={false}` mode (no re-implementation of board rendering) with Prev/Next step controls over the server-replayed snapshot sequence. Never gates any existing functionality — logged out remains the default, fully-supported state.
+
+/AccountScreen.css
+Purpose: AccountScreen.tsx's styles — reuses this app's existing sparse `kt-` class conventions (kt-btn, kt-card, kt-hud from MatchScreen/App.css) rather than inventing new visual language; note the base `.kt-btn` class itself has no CSS definition anywhere in this codebase today (a pre-existing gap, not introduced here) — buttons render with default browser styling app-wide.

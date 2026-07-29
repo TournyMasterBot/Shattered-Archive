@@ -1,6 +1,7 @@
 import type { Room, RoomExit } from '@shatteredarchive/merc-area';
 
 import { ROOM_FLAGS, SECTOR_TYPES, DOOR_NAMES, LOCK_STATES } from '../../data/flags.js';
+import SaveAsSnippetButton from '../content/SaveAsSnippetButton.js';
 
 interface Props {
   room: Room;
@@ -27,6 +28,14 @@ export default function RoomEditor({ room, onChange, onOpenSpawn }: Props) {
 
   const removeExit = (idx: number) => set({ exits: room.exits.filter((_, i) => i !== idx) });
 
+  const setExtraDescr = (i: number, keyword: string, description: string) => {
+    set({ extraDescrs: room.extraDescrs.map((ed, j) => (j === i ? { keyword, description } : ed)) });
+  };
+
+  const addExtraDescr = () => set({ extraDescrs: [...room.extraDescrs, { keyword: '', description: '' }] });
+
+  const removeExtraDescr = (i: number) => set({ extraDescrs: room.extraDescrs.filter((_, j) => j !== i) });
+
   return (
     <div className="mb-room-editor">
       <h3>
@@ -36,6 +45,7 @@ export default function RoomEditor({ room, onChange, onOpenSpawn }: Props) {
             See what spawns here →
           </button>
         )}
+        <SaveAsSnippetButton kind="room" data={room} />
       </h3>
 
       <label className="mb-field">
@@ -104,6 +114,41 @@ export default function RoomEditor({ room, onChange, onOpenSpawn }: Props) {
         ))}
       </fieldset>
 
+      <fieldset className="mb-fieldset">
+        <legend>Extra descriptions ({room.extraDescrs.length})</legend>
+        {room.extraDescrs.map((ed, i) => (
+          <div key={i} className="mb-extra-descr">
+            <div className="mb-row mb-row--stretch">
+              <label className="mb-field">
+                <span>Keyword(s)</span>
+                <input
+                  aria-label={`Extra description ${i + 1} keywords`}
+                  value={ed.keyword}
+                  onChange={(e) => setExtraDescr(i, e.target.value, ed.description)}
+                />
+              </label>
+              <div className="mb-row-actions">
+                <button type="button" onClick={() => removeExtraDescr(i)}>
+                  Remove
+                </button>
+              </div>
+            </div>
+            <label className="mb-field">
+              <span>Text</span>
+              <textarea
+                aria-label={`Extra description ${i + 1} text`}
+                rows={3}
+                value={ed.description}
+                onChange={(e) => setExtraDescr(i, ed.keyword, e.target.value)}
+              />
+            </label>
+          </div>
+        ))}
+        <button type="button" onClick={addExtraDescr}>
+          + Add extra description
+        </button>
+      </fieldset>
+
       <fieldset className="mb-exits">
         <legend>
           Exits{' '}
@@ -112,52 +157,64 @@ export default function RoomEditor({ room, onChange, onOpenSpawn }: Props) {
           </button>
         </legend>
         {room.exits.map((ex, i) => (
-          <div key={i} className="mb-exit-row">
-            <select
-              value={ex.door}
-              onChange={(e) => setExit(i, { door: Number(e.target.value) })}
-              aria-label={`Exit ${i} direction`}
-            >
-              {DOOR_NAMES.map((d, di) => (
-                <option key={di} value={di}>
-                  {d}
-                </option>
-              ))}
-            </select>
-            <input
-              type="number"
-              value={ex.toVnum}
-              onChange={(e) => setExit(i, { toVnum: Number(e.target.value) })}
-              aria-label={`Exit ${i} target vnum`}
-              title="Target room vnum"
-            />
-            <select
-              value={ex.locks}
-              onChange={(e) => setExit(i, { locks: Number(e.target.value) })}
-              aria-label={`Exit ${i} lock state`}
-            >
-              {LOCK_STATES.map((l) => (
-                <option key={l.value} value={l.value}>
-                  {l.label}
-                </option>
-              ))}
-            </select>
-            <input
-              placeholder="keyword (door name)"
-              value={ex.keyword}
-              onChange={(e) => setExit(i, { keyword: e.target.value })}
-              aria-label={`Exit ${i} keyword`}
-            />
-            <input
-              type="number"
-              value={ex.key}
-              onChange={(e) => setExit(i, { key: Number(e.target.value) })}
-              aria-label={`Exit ${i} key vnum`}
-              title="Key object vnum (-1 = none)"
-            />
-            <button type="button" onClick={() => removeExit(i)} title="Remove exit">
-              ✕
-            </button>
+          <div key={i} className="mb-exit-block">
+            <div className="mb-exit-row">
+              <select
+                value={ex.door}
+                onChange={(e) => setExit(i, { door: Number(e.target.value) })}
+                aria-label={`Exit ${i} direction`}
+              >
+                {DOOR_NAMES.map((d, di) => (
+                  <option key={di} value={di}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                value={ex.toVnum}
+                onChange={(e) => setExit(i, { toVnum: Number(e.target.value) })}
+                aria-label={`Exit ${i} target vnum`}
+                title="Target room vnum"
+              />
+              <select
+                value={ex.locks}
+                onChange={(e) => setExit(i, { locks: Number(e.target.value) })}
+                aria-label={`Exit ${i} lock state`}
+              >
+                {LOCK_STATES.map((l) => (
+                  <option key={l.value} value={l.value}>
+                    {l.label}
+                  </option>
+                ))}
+              </select>
+              <input
+                placeholder="keyword (door name)"
+                value={ex.keyword}
+                onChange={(e) => setExit(i, { keyword: e.target.value })}
+                aria-label={`Exit ${i} keyword`}
+              />
+              <input
+                type="number"
+                value={ex.key}
+                onChange={(e) => setExit(i, { key: Number(e.target.value) })}
+                aria-label={`Exit ${i} key vnum`}
+                title="Key object vnum (-1 = none)"
+              />
+              <button type="button" onClick={() => removeExit(i)} title="Remove exit">
+                ✕
+              </button>
+            </div>
+            <label className="mb-field mb-exit-description">
+              <span>Look text (optional)</span>
+              <textarea
+                rows={2}
+                placeholder="e.g. You see an open door leading south."
+                value={ex.description}
+                onChange={(e) => setExit(i, { description: e.target.value })}
+                aria-label={`Exit ${i} description`}
+              />
+            </label>
           </div>
         ))}
       </fieldset>

@@ -1,4 +1,5 @@
 import { startTestApp, signupViaHttp, signupAndLogin, extractCookie, type TestHarness } from './test-helpers.js';
+import { LoginLockout } from '../login-lockout.js';
 
 describe('auth routes', () => {
   let harness: TestHarness;
@@ -74,6 +75,42 @@ describe('auth routes', () => {
       body: JSON.stringify({ username, password: 'wrong' }),
     });
     expect(res.status).toBe(401);
+  });
+
+  it('locks out after repeated failed logins (429 + retry hint), blocks even the correct password while locked, and recovers after expiry', async () => {
+    harness.deps.loginLockout = new LoginLockout(1, 50, 50); // 1 free attempt, then a 50ms lock
+    const { username, password } = await signupViaHttp(harness.base, 'jill');
+
+    const attemptWrong = () =>
+      fetch(`${harness.base}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password: 'wrong' }),
+      });
+
+    expect((await attemptWrong()).status).toBe(401);
+    expect((await attemptWrong()).status).toBe(401);
+    const lockedRes = await attemptWrong();
+    expect(lockedRes.status).toBe(429);
+    const lockedBody = (await lockedRes.json()) as { error: string };
+    expect(lockedBody.error).toMatch(/too many failed attempts/);
+
+    // The CORRECT password is rejected too while locked — the lockout check runs before authenticate().
+    const correctWhileLocked = await fetch(`${harness.base}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    expect(correctWhileLocked.status).toBe(429);
+
+    // Once the lock naturally expires, the correct password works again.
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    const afterExpiry = await fetch(`${harness.base}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    expect(afterExpiry.status).toBe(200);
   });
 
   it('GET /api/auth/me requires a session', async () => {

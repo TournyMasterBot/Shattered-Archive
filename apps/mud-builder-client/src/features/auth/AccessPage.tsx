@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { api, ApiError, getStoredToken, setStoredToken, type ApiKeyInfo, type AuditEntry } from '../../api/client.js';
+import { invalidateAccountActorCache } from './accountActor.js';
+import { Toast, type ToastState } from '../shared/Toast.js';
 import '../areas/areas.css';
 
 /**
@@ -40,7 +42,7 @@ export default function AccessPage() {
   const [keys, setKeys] = useState<ApiKeyInfo[]>([]);
   const [newLabel, setNewLabel] = useState('');
   const [freshToken, setFreshToken] = useState<{ what: string; token: string } | null>(null);
-  const [toast, setToast] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [toast, setToast] = useState<ToastState>(null);
   const [audit, setAudit] = useState<AuditEntry[] | null>(null);
 
   const loadAudit = useCallback(async () => {
@@ -73,7 +75,7 @@ export default function AccessPage() {
         setKeys([]);
       }
     } catch (e) {
-      setToast({ kind: 'err', text: (e as Error).message });
+      setToast({ kind: 'err', text: `server unreachable: ${(e as Error).message}` });
     }
   }, []);
 
@@ -91,11 +93,13 @@ export default function AccessPage() {
     if (!token) return;
     setStoredToken(token);
     setTokenInput('');
+    invalidateAccountActorCache();
     await probe();
   };
 
   const forgetToken = async () => {
     setStoredToken('');
+    invalidateAccountActorCache();
     await probe();
   };
 
@@ -104,7 +108,7 @@ export default function AccessPage() {
       await action();
       setToast({ kind: 'ok', text: `${what} — done` });
     } catch (e) {
-      setToast({ kind: 'err', text: (e as Error).message });
+      setToast({ kind: 'err', text: `${what} failed: ${(e as Error).message}` });
     }
   };
 
@@ -155,7 +159,7 @@ export default function AccessPage() {
   return (
     <div className="mb-page">
       <h2>Access</h2>
-      {toast ? <p className={toast.kind === 'ok' ? 'mb-toast mb-toast--ok' : 'mb-toast mb-toast--err'}>{toast.text}</p> : null}
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
       <p>{STATUS_TEXT[status]}</p>
 
       {status !== 'open' && status !== 'loading' ? (

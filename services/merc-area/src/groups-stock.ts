@@ -1,8 +1,8 @@
 /**
  * GENERATED FILE — do not edit by hand.
- * Mirror of the compiled group_table in merc-mud/2.4/src/const.c,
- * produced by the gen-groups-stock.js codegen (see Phase 8 plan).
- * Source table: 27 groups (MAX_GROUP 30, MAX_IN_GROUP 15).
+ * Mirror of the compiled group_table in merc-mud/2.4/src/const.c, produced by
+ * `pnpm --filter @shatteredarchive/merc-area gen-skills-stock`
+ * (scripts/gen-skills-stock.ts). Source table: 27 groups.
  */
 
 export interface StockGroupRow {

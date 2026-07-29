@@ -1,7 +1,7 @@
 File Index
 
 /index.ts
-Purpose: Barrel for match ownership — MatchSession (+ option/result types) and the LocalMatch driver (createLocalMatch).
+Purpose: Barrel for match ownership — MatchSession (+ option/result types), the LocalMatch driver (createLocalMatch), and (Phase F) replayMatch.
 
 /local-match.test.ts
 Purpose: Tests hotseat acting for whichever side is active (and off-turn rejection), single-player AI drive + handback, seed determinism (avoidance included), and byte-identical reset.
@@ -10,7 +10,10 @@ Purpose: Tests hotseat acting for whichever side is active (and off-turn rejecti
 Purpose: Drives a single LOCAL/offline match over MatchSession with no socket — claims every non-AI seat to one 'local' client (hotseat) and derives the combat salt from the seed (reproducible). Gives the client full feature parity without re-implementing rules. Exposes legalActionsFor + legalAbilitiesFor (castable heals/self+ally buffs for the UI). createLocalMatch factory.
 
 /match-session.test.ts
-Purpose: Tests seat claim/authorization, legal-action advance, runAiUntilHuman handback, a full human+AI duel to victory, and the salted combat RNG (same salt replays, different salt diverges, salt never serialized).
+Purpose: Tests seat claim/authorization, legal-action advance, runAiUntilHuman handback, a full human+AI duel to victory, and the salted combat RNG (same salt replays, different salt diverges, salt never serialized). Phase F: also covers claimSeat's optional accountId (recorded, never affects the claim decision, cleared by releaseSeat), getActionLog/replaySeed/claimedSeats/initial()/tryClaimForRecording (exactly-once), and replayAction.
 
 /match-session.ts
-Purpose: Isomorphic authoritative owner of one match — wraps the reducer with seat ownership + authorization, installs the salted combat hooks/RNG + ability resolver, auto-plays AI seats. Transport-agnostic (no I/O); the SAME class backs the online /ws/kt gateway and local play. Combat salt is injected, never self-generated (keeps it Node/DOM-free).
+Purpose: Isomorphic authoritative owner of one match — wraps the reducer with seat ownership + authorization, installs the salted combat hooks/RNG + ability resolver, auto-plays AI seats. Transport-agnostic (no I/O); the SAME class backs the online /ws/kt gateway and local play. Combat salt is injected, never self-generated (keeps it Node/DOM-free). Phase F: claimSeat takes an optional accountId (from /ws/kt's introspected join token), stored separately in seatAccounts and read via claimedSeats() — purely additive metadata for history/persistence, never consulted by seat-ownership authorization itself. Also gained: actionLog (every applied action, human+AI, in order), initial()/replaySeed() (everything replayMatch needs to reconstruct the match — combatSalt is SERVER-SIDE ONLY, never send to a client), replayAction() (applies without seat authorization, for replaying an already-trusted log), and tryClaimForRecording() (exactly-once finalization claim — pure bookkeeping, no I/O, so a caller with no persistence concern can ignore it entirely).
+
+/replay.ts
+Purpose: Phase F — replayMatch(): deterministically reconstructs a completed match from its recorded actionLog by replaying it through a FRESH MatchSession seeded with the ORIGINAL seed/combatSalt (never re-deciding AI moves — the log already IS the complete record of every human+AI action). SERVER-SIDE USE ONLY, same as replaySeed() itself. Proven non-vacuous in match-session.test.ts: a different combatSalt genuinely diverges from the recorded outcome, the original salt genuinely reproduces it exactly.

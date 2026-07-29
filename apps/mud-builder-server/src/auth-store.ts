@@ -53,7 +53,15 @@ export interface ApiKeyInfo {
 export type BuilderActor =
   | { kind: 'master' }
   | { kind: 'key'; id: string; label: string }
-  | { kind: 'account'; accountId: string; label: string };
+  | {
+      kind: 'account';
+      accountId: string;
+      label: string;
+      username?: string;
+      expiresAt?: string | null;
+      /** Phase G: hub-global tier ('owner'/'admin'/'moderator'/'user') from introspect — undefined only pre-Phase-A. */
+      globalRole?: string;
+    };
 
 interface AuthFileData {
   masterKey: string;

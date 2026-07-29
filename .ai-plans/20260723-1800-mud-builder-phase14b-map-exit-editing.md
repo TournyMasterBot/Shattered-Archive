@@ -1,14 +1,10 @@
 # Plan: MUD Builder — Phase 14b (map exit editing: drag-to-connect rooms, edge editing, staged saves)
 
-Created: 2026-07-23T18:00:00-05:00 · Workspace: /workspace/shattered-archive · Status: COMPLETE
+Created: 2026-07-23T18:00:00-05:00 · Workspace: /workspace/shattered-archive · Status: COMPLETE (independently reviewed 2026-07-25)
 Task: Make the area map an exit EDITOR: drag from room A to room B to create an exit
 (direction inferred from grid position, two-way by default), click an edge to edit its
 door/lock/key or delete it, with a staged-changes tray and preview-first saves through the
 existing conditional-save pipeline.
-
-> One of three Phase 14 candidate plans (14a/14b/14c) drafted 2026-07-23. When one is chosen
-> for execution, set the other two to ABANDONED (revivable). All steps are (CLAUDE) — sized
-> for Claude Opus execution.
 
 ## Goal
 In edit mode a builder can connect two rooms with a dragged exit (10-direction picker
@@ -311,3 +307,79 @@ game container untouched.
   anywhere in the repo; prior phases 10-14a were all verified the same API-driver way) —
   noting the gap explicitly per instruction rather than claiming a browser check that
   didn't happen.
+- 2026-07-25 independent post-hoc review (Claude Sonnet 5), re-verified from a fresh
+  session (no memory of writing the original code) rather than trusting the progress log
+  above at face value. Findings — every step's code and the claims made for it hold:
+  - Re-ran the full client suite fresh: `pnpm --filter @shatteredarchive/mud-builder-client
+    test` → **158/158 passed**, 21 suites; `npx tsc --noEmit` in the client package →
+    **clean**. `git status` (ShatteredArchive) → only this plan file modified, matching
+    the "zero new server surface" constraint.
+  - Step 1 (exit-edit.ts): read the full 192-line module + 218-line test file. `applyOps`
+    is a genuine immutable rebuild (spreads rooms/exits, never mutates `section.rooms` in
+    place); `SECTOR_DOORS = [1,8,2,9,3,7,0,6]` hand-checked against `DOOR_NAMES`
+    (0=north..9=southwest) and `atan2` sign convention — all 8 sectors resolve to the
+    correct compass door, up/down (4,5) are structurally unreachable from
+    `inferDirection`. `REV_DIR[1] === 3` (east↔west) confirmed against `layout.ts:70`.
+    Tests cover exactly the claimed cases (two-way both-sides, occupied-reverse downgrade,
+    non-local-target downgrade, alsoReverse remove incl. mismatched-reverse warning,
+    replay determinism, all 8 sectors + never-up/down + shallow-diagonal snap +
+    zero-delta default, `areaToMapRooms` incl. the `resolveExternal` oracle).
+  - Steps 2/3/4/5 (MapPage.tsx, 1119 lines): read in full. Confirmed against source, not
+    just the log: `stopPropagation` in both `startExitDrag`/`finishExitDrag` so drag never
+    leaks into the pan handler; edit mode fetches via `api.getArea` and derives
+    `editedArea`/`editLayout` through `applyOps`→`areaToMapRooms`→`layoutArea` (never the
+    `/api/map` projection) — proven by a MapPage.test.tsx fixture that deliberately
+    diverges between the two endpoints; `guardDiscard` (`window.confirm`) is wired into
+    the mode buttons, area picker, and portal clicks; Spawns checkbox is
+    `disabled={editMode}`; the edge-delete "also remove reverse" checkbox is gated on
+    `edgeDraft.twoWay` (`classification==='two-way'`), matching the progress log's stated
+    deliberate deviation from the plan's looser wording; save pipeline is
+    `api.preview`→`PreviewPane`→confirm→`api.save(file, editedArea, baseHash)`, success
+    clears ops and calls `refetchAfterSave` (re-pulls both `api.getArea` and
+    `api.areaMap`), 409 sets `conflict` → reused `ConflictPanel` with Reload
+    (confirm→discard ops→refetch) / Save-anyway (confirm→unconditional PUT of the staged
+    model, no baseHash); ops are structurally never touched in any catch/error branch, only
+    in the three success paths — matches the "ops intact on every non-success path" claim.
+    The 401 "— set your builder token in the Access tab" suffix is confirmed live in
+    `api/client.ts:149,165`, not just asserted.
+  - Step 5 (RoomEditor 10-door fix): read the full 166-line file. `addExit`'s allocator is
+    `DOOR_NAMES.map((_, d) => d).find((d) => !used.has(d))` (searches all 10, not
+    `[0,1,2,3,4,5]`) and the "+ add exit" button is `disabled={room.exits.length >=
+    DOOR_NAMES.length}` (10, not 6) — both confirmed by direct read, not grep alone.
+    `RoomEditor.test.tsx`'s "offers all 10 compass doors and allows a 7th+ exit" test
+    genuinely exercises the fix end-to-end (button enabled past 6 exits, 7th exit lands on
+    door 6/northeast, select lists all 10 names). Grepped the whole client for
+    `>= 6`/`[0,1,2,3,4,5]` residue — the only hit is a test fixture variable named
+    `sixExits`, not a live cap.
+  - Step 6 (docs/annotated/E2E/close-out): `docs/mud-builder/README.md` has the "Map exit
+    editor" section (line 531) and the Scope paragraph mentions both 14a and 14b (line
+    669+) — read both, content matches the implementation exactly (staged-not-live model,
+    inferred direction, occupied-slot/non-local downgrade, cross-area read-only, the
+    10-door fix, the E2E summary). `.annotated` for `features/map/` and `features/areas/`
+    read in full — accurate and specific, not generic filler. `git -C merc-mud status`
+    shows no residue from the scratch area (`p14bscratch.are`) or its backups; the
+    pre-existing `firefield.are` diff the log calls out as unrelated is still the only
+    area-file diff (a large set of unrelated in-flight engine C-source changes — const.c,
+    magic.c, gmcp_compose.c, etc. — are also present but are pre-existing, unrelated work,
+    not something this plan touched). The original E2E's 10 assertions (door reversal 1↔3
+    via REV_DIR, resolved internal edge on `/api/map`, stale-hash 409) were not re-run
+    live against a new scratch area — re-verified by construction instead, since the exact
+    op-application logic the E2E exercised is the same `exit-edit.ts` code already
+    unit-verified above and the server-side endpoints it drives (`api.getArea`/`api.save`/
+    `api.preview`/`/api/map`) are pre-existing, untouched by this plan (confirmed: zero
+    server-side diff in this plan's file list).
+  - **One anomaly noted, not attributable to this plan or this review**: `merc-mud2.4`'s
+    `StartedAt` is now `2026-07-25T12:42:19.423707688Z`, different from the
+    `2026-07-24T23:31:17.834496816Z` recorded at every checkpoint through the Phase 14b
+    close-out and the same-day auth-server bug fix. This review made zero write/restart
+    calls to the game container (only test runs, greps, reads, and one non-mutating
+    `GET /api/capabilities`) — the restart happened at some point between the auth-fix
+    close-out and this review, outside this session's actions, most plausibly tied to the
+    unrelated in-flight engine-source changes visible in `git -C merc-mud status` (a
+    separate concern from Phase 14b's game-untouched claim, which held for the window it
+    was actually responsible for).
+  - **Sign-off**: all 6 steps hold. Code matches the plan's design constraints (ops-replay
+    not mutation, full-AreaFile editing not the map projection, zero new server surface,
+    two-way-default with downgrade, cross-area creation out of scope, 10-door rose),
+    158/158 tests pass, tsc is clean, docs and `.annotated` are accurate, and no residue
+    or regression was found. Correctness: **CONFIRMED**.

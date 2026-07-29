@@ -1,1 +1,7 @@
 File Index
+
+/useAuthCallback.ts
+Purpose: Phase D — on mount, reads window.location.hash for the game-sso hand-off's result (features/auth/authFragment.ts's parseAuthFragment), stores a successful token via authTokenStore, then strips the fragment via history.replaceState so it never lingers in browser history. No router exists in this app, so this runs as a plain effect from MainContainer rather than a dedicated callback route.
+
+/useAccountModal.ts
+Purpose: Phase D — Account modal's state/actions: login trigger (gameSso.startLogin), logout (local token clear only), and save/load-to-cloud for the CURRENT connection's scripts + plugins via cloudSync.ts. Save reads through UserScriptRuntime's public loadScriptsFromStorage/getStorageKey (no private-API reach); Load writes localStorage directly for both scripts and the global plugins key, then does a full page reload rather than trying to live-patch every derived runtime/plugin-host state — deliberately simpler and safer for a destructive, user-confirmed action.

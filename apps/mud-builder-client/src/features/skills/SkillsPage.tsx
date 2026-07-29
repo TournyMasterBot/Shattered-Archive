@@ -13,6 +13,7 @@ import { ApiError, api } from '../../api/client.js';
 import { ConflictPanel, NumField, TextField } from '../areas/workbench.js';
 import GroupsView from './GroupsView.js';
 import CodegenView from './CodegenView.js';
+import { Toast, type ToastState } from '../shared/Toast.js';
 import '../areas/areas.css';
 
 /**
@@ -57,7 +58,7 @@ export default function SkillsPage() {
   const [writeEnabled, setWriteEnabled] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
-  const [toast, setToast] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [toast, setToast] = useState<ToastState>(null);
   const [manualOpen, setManualOpen] = useState(false);
   const [manualText, setManualText] = useState('');
   const [view, setView] = useState<'skills' | 'groups' | 'codegen'>('skills');
@@ -119,7 +120,7 @@ export default function SkillsPage() {
         setConflict(true);
         return;
       }
-      setToast({ kind: 'err', text: (e as Error).message });
+      setToast({ kind: 'err', text: `save failed: ${(e as Error).message}` });
     }
   };
 
@@ -133,7 +134,7 @@ export default function SkillsPage() {
       setConflict(false);
       setToast({ kind: 'ok', text: `skills.dat saved — ${r.note}` });
     } catch (e) {
-      setToast({ kind: 'err', text: (e as Error).message });
+      setToast({ kind: 'err', text: `save failed: ${(e as Error).message}` });
     }
   };
 
@@ -146,7 +147,7 @@ export default function SkillsPage() {
       setBaseHash(null);
       setToast({ kind: 'ok', text: 'overlay removed — the compiled table returns at the next copyover' });
     } catch (e) {
-      setToast({ kind: 'err', text: (e as Error).message });
+      setToast({ kind: 'err', text: `revert failed: ${(e as Error).message}` });
     }
   };
 
@@ -172,7 +173,7 @@ export default function SkillsPage() {
       setManualOpen(false);
       setToast({ kind: 'ok', text: 'manual text applied to the forms' });
     } catch (e) {
-      setToast({ kind: 'err', text: (e as Error).message });
+      setToast({ kind: 'err', text: `manual text does not parse: ${(e as Error).message}` });
     }
   };
 
@@ -180,11 +181,7 @@ export default function SkillsPage() {
 
   return (
     <div className="mb-areas">
-      {toast && (
-        <p className={`mb-toast ${toast.kind === 'err' ? 'mb-toast--err' : ''}`} onClick={() => setToast(null)}>
-          {toast.text}
-        </p>
-      )}
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
       <main className="mb-area-main">
         <h3>Skills &amp; spells</h3>
         <div className="mb-entity-actions">

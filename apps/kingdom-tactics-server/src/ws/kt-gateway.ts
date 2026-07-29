@@ -114,11 +114,14 @@ export class MatchRegistry {
 }
 
 /** Auto-play AI seats to a human turn (or victory), broadcasting a snapshot per action + `over`. */
-function driveAi(session: MatchSession, registry: MatchRegistry): void {
+function driveAi(session: MatchSession, registry: MatchRegistry, onMatchComplete?: (session: MatchSession) => void): void {
   for (const state of session.runAiUntilHuman()) {
     registry.broadcast(session.matchId, { type: 'snapshot', matchId: session.matchId, state });
   }
-  if (session.isOver()) registry.broadcast(session.matchId, overMessage(session));
+  if (session.isOver()) {
+    registry.broadcast(session.matchId, overMessage(session));
+    if (session.tryClaimForRecording()) onMatchComplete?.(session);
+  }
 }
 
 function overMessage(session: MatchSession): KtServerMessage {
@@ -133,17 +136,31 @@ function overMessage(session: MatchSession): KtServerMessage {
 /**
  * Handle one parsed client message. Direct replies go to `conn.send`; state changes are
  * broadcast to the whole match. Socket-free by design (the caller owns the transport).
+ *
+ * `accountId` (Phase F) is the ALREADY-RESOLVED result of introspecting a `join` message's
+ * optional `token` (resolution is async and network-bound, so it happens in the caller —
+ * see `setupKtWebSocketGateway`'s `resolveAccountId` — keeping this function itself
+ * synchronous and trivially testable with a fake `send`, no socket or network mocking).
+ * Ignored for every message type except `join`.
+ *
+ * `onMatchComplete` (Phase F) fires exactly once per match, the first time it transitions to
+ * decided (guarded by `session.tryClaimForRecording()` — both call sites below can observe
+ * "over", e.g. a client re-joining an already-decided match, but only the first ever fires
+ * this). Intentionally just a callback, not a store reference — persistence stays out of this
+ * transport-layer function.
  */
 export function handleClientMessage(
   conn: KtClientConn,
   msg: KtClientMessage,
   registry: MatchRegistry,
+  accountId?: string,
+  onMatchComplete?: (session: MatchSession) => void,
 ): void {
   switch (msg.type) {
     case 'join': {
       const session = registry.getOrCreate(msg.matchId);
       const side: Side = msg.side ?? 0; // v1: the joining human takes side 0; AI holds side 1.
-      const claim = session.claimSeat(side, conn.clientId);
+      const claim = session.claimSeat(side, conn.clientId, accountId);
       if (!claim.ok) {
         conn.send({ type: 'error', matchId: msg.matchId, message: claim.reason });
         return;
@@ -159,7 +176,7 @@ export function handleClientMessage(
         protocol: KT_PROTOCOL_VERSION,
       });
       // If an AI seat happens to be active first, play it out before handing control over.
-      driveAi(session, registry);
+      driveAi(session, registry, onMatchComplete);
       return;
     }
 
@@ -182,9 +199,10 @@ export function handleClientMessage(
       });
       if (session.isOver()) {
         registry.broadcast(msg.matchId, overMessage(session));
+        if (session.tryClaimForRecording()) onMatchComplete?.(session);
         return;
       }
-      driveAi(session, registry);
+      driveAi(session, registry, onMatchComplete);
       return;
     }
 
@@ -211,7 +229,19 @@ export function handleClientMessage(
 /** Mount the `/ws/kt` gateway on an existing HTTP server. Returns the wss + registry. */
 export function setupKtWebSocketGateway(
   server: http.Server,
-  opts: MatchRegistryOptions & { onError?: (err: unknown) => void } = {},
+  opts: MatchRegistryOptions & {
+    onError?: (err: unknown) => void;
+    /**
+     * Phase F: resolves a `join` message's optional bearer token to an accountId.
+     * MUST NOT throw/reject — a missing, invalid, expired, or unreachable-auth-server
+     * token all resolve the same way (`undefined`), degrading to today's fully
+     * anonymous join rather than rejecting it. Omit entirely to disable token
+     * handling altogether (every join is anonymous, byte-identical to pre-Phase-F).
+     */
+    resolveAccountId?: (token: string) => Promise<string | undefined>;
+    /** Phase F: fires exactly once per match, right when it transitions to decided — see `handleClientMessage`'s doc for the exactly-once guarantee. Typically wired to a persistence store's record() call. */
+    onMatchComplete?: (session: MatchSession) => void;
+  } = {},
 ): { wss: WebSocketServer; registry: MatchRegistry } {
   const wss = new WebSocketServer({ server, path: '/ws/kt' });
   const registry = new MatchRegistry(opts);
@@ -231,12 +261,21 @@ export function setupKtWebSocketGateway(
         conn.send({ type: 'error', matchId: conn.matchId, message: 'invalid message' });
         return;
       }
-      try {
-        handleClientMessage(conn, msg, registry);
-      } catch (err) {
-        opts.onError?.(err);
-        conn.send({ type: 'error', matchId: conn.matchId, message: getErrorMessage(err) });
-      }
+      (async () => {
+        // Resolve BEFORE the try/catch below: resolveAccountId's own contract already
+        // guarantees it never throws, but this keeps a misbehaving implementation from
+        // ever turning into a rejected join instead of an anonymous one.
+        let accountId: string | undefined;
+        if (msg.type === 'join' && msg.token && opts.resolveAccountId) {
+          accountId = await opts.resolveAccountId(msg.token).catch(() => undefined);
+        }
+        try {
+          handleClientMessage(conn, msg, registry, accountId, opts.onMatchComplete);
+        } catch (err) {
+          opts.onError?.(err);
+          conn.send({ type: 'error', matchId: conn.matchId, message: getErrorMessage(err) });
+        }
+      })();
     });
 
     ws.on('close', () => {

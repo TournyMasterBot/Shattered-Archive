@@ -9,12 +9,11 @@ import {
   type ScriptsSection,
 } from '@shatteredarchive/merc-area';
 
-import { api, type AreaListEntry, type Capabilities, type PreviewResult } from '../../api/client.js';
+import { api, type AreaListEntry, type Capabilities, type PreviewResult, type SnippetKind } from '../../api/client.js';
 import ScriptEditor from './ScriptEditor.js';
 import PreviewPane from '../areas/PreviewPane.js';
+import { Toast, type ToastState } from '../shared/Toast.js';
 import '../areas/areas.css';
-
-type Toast = { kind: 'ok' | 'err'; text: string } | null;
 
 /**
  * Scripts authoring slice: pick an area → scripts listed by mob → edit in the
@@ -23,14 +22,20 @@ type Toast = { kind: 'ok' | 'err'; text: string } | null;
  * stay gated behind the server capability flag. Validation runs LIVE with the
  * same rules the server and the C engine enforce.
  */
-export default function ScriptsPage() {
+export default function ScriptsPage({
+  pendingSnippet,
+}: {
+  /** Phase G: "Load into editor" from the My Content tab — adds a new script seeded from the snippet's saved trigger/phrase/body, retargeted to the current area's first mob/room (the snippet's stored mobVnum is almost certainly from a different area). */
+  pendingSnippet?: { kind: SnippetKind; data: unknown } | null;
+} = {}) {
   const [caps, setCaps] = useState<Capabilities | null>(null);
   const [areas, setAreas] = useState<AreaListEntry[]>([]);
   const [file, setFile] = useState<string | null>(null);
   const [area, setArea] = useState<AreaFile | null>(null);
   const [scriptIdx, setScriptIdx] = useState<number | null>(null);
   const [preview, setPreview] = useState<PreviewResult | null>(null);
-  const [toast, setToast] = useState<Toast>(null);
+  const [dirty, setDirty] = useState(false);
+  const [toast, setToast] = useState<ToastState>(null);
 
   const ok = (text: string) => setToast({ kind: 'ok', text });
   const err = (text: string) => setToast({ kind: 'err', text });
@@ -53,9 +58,16 @@ export default function ScriptsPage() {
       setArea(r.area);
       setScriptIdx(null);
       setPreview(null);
+      setDirty(false);
     } catch (e) {
       err((e as Error).message);
     }
+  };
+
+  /** No shared useAreaWorkbench here (own hand-rolled state) — a small local dirty flag, same idea as its isDirty. */
+  const switchArea = (f: string) => {
+    if (dirty && !window.confirm(`You have unsaved changes to ${file}. Discard them and switch areas?`)) return;
+    void openArea(f);
   };
 
   const scriptsSection = area?.sections.find((s): s is ScriptsSection => s.kind === 'scripts');
@@ -85,6 +97,7 @@ export default function ScriptsPage() {
     }
     setArea({ sections });
     setPreview(null);
+    setDirty(true);
   };
 
   const addScript = () => {
@@ -97,6 +110,7 @@ export default function ScriptsPage() {
       { mobVnum: mobs[0].vnum, trigger: 'speech', phrase: '', body: 'say Hello, $n!' },
     ]);
     setScriptIdx(scripts.length);
+    ok(`added a script for mob #${mobs[0].vnum}`);
   };
 
   const addRoomScript = () => {
@@ -115,6 +129,7 @@ export default function ScriptsPage() {
       },
     ]);
     setScriptIdx(scripts.length);
+    ok(`added a script for room #${rooms[0].vnum}`);
   };
 
   const updateScript = (updated: MobScript) => {
@@ -122,10 +137,31 @@ export default function ScriptsPage() {
     setScripts(scripts.map((s, i) => (i === scriptIdx ? updated : s)));
   };
 
+  useEffect(() => {
+    if (!pendingSnippet || pendingSnippet.kind !== 'script') return;
+    if (!area) {
+      err('pick an area first, then use Load from My Content again');
+      return;
+    }
+    const snippet = pendingSnippet.data as MobScript;
+    const isRoom = snippet.attach === 'room';
+    const target = isRoom ? rooms[0] : mobs[0];
+    if (!target) {
+      err(`this area has no ${isRoom ? 'rooms' : 'mobiles'} to attach the snippet to`);
+      return;
+    }
+    setScripts([...scripts, { ...snippet, mobVnum: target.vnum }]);
+    setScriptIdx(scripts.length);
+    ok(`added a script from snippet for ${isRoom ? 'room' : 'mob'} #${target.vnum}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingSnippet]);
+
   const deleteScript = () => {
-    if (scriptIdx === null) return;
+    if (scriptIdx === null || !script) return;
+    if (!window.confirm(`Delete this ${script.attach === 'room' ? 'room' : 'mob'} script (${script.trigger})?`)) return;
     setScripts(scripts.filter((_, i) => i !== scriptIdx));
     setScriptIdx(null);
+    ok('script deleted');
   };
 
   const doPreview = async () => {
@@ -156,6 +192,7 @@ export default function ScriptsPage() {
     if (!file || !area) return;
     try {
       const r = await api.save(file, area);
+      setDirty(false);
       ok(`saved ${file}${r.backupPath ? ' (backup written)' : ''}`);
     } catch (e) {
       err(`save failed: ${(e as Error).message}`);
@@ -183,11 +220,7 @@ export default function ScriptsPage() {
 
   return (
     <div className="mb-areas">
-      {toast && (
-        <div className={`mb-toast mb-toast--${toast.kind}`} role="status" onClick={() => setToast(null)}>
-          {toast.text}
-        </div>
-      )}
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
 
       <aside className="mb-area-list">
         <h3>Areas</h3>
@@ -197,7 +230,7 @@ export default function ScriptsPage() {
               <button
                 type="button"
                 className={a.file === file ? 'mb-active' : ''}
-                onClick={() => void openArea(a.file)}
+                onClick={() => switchArea(a.file)}
                 title={a.error ?? a.credits}
               >
                 {a.name ?? a.file} {a.error ? '⚠' : ''}

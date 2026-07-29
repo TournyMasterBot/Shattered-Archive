@@ -10,3 +10,4 @@ export {
   type ApplyResult,
 } from './match-session.js';
 export { LocalMatch, createLocalMatch, type LocalMatchOptions } from './local-match.js';
+export { replayMatch } from './replay.js';

@@ -12,6 +12,9 @@ import { AccountStore } from '../account-store.js';
 import { KeyStore } from '../key-store.js';
 import { QuestionsStore, ChallengeThrottle } from '../questions-store.js';
 import { ServiceKeyStore } from '../service-key-store.js';
+import { SsoCodeStore } from '../sso-code-store.js';
+import { AuditLog } from '../audit-log.js';
+import { LoginLockout } from '../login-lockout.js';
 import type { Mailer } from '../mailer.js';
 import type { AuthServerDeps } from '../deps.js';
 
@@ -51,8 +54,11 @@ export function startTestApp(): Promise<TestHarness> {
     keyStore: new KeyStore(dir, key),
     questionsStore: new QuestionsStore(dir),
     serviceKeyStore: new ServiceKeyStore(dir, key),
+    ssoCodeStore: new SsoCodeStore(),
     challengeThrottle: new ChallengeThrottle(1000, 1), // effectively unthrottled for tests
+    loginLockout: new LoginLockout(1000, 1, 1), // effectively unthrottled for tests
     mailer,
+    auditLog: new AuditLog(dir),
     publicOrigin: 'http://localhost:62080',
   };
 

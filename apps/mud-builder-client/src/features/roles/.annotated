@@ -1,0 +1,7 @@
+File Index
+
+/RolesPage.tsx
+Purpose: Phase G Roles tab — "your access" card always visible (master/key/account, with local tier + hub global role for account actors); a management table that only renders when GET /api/roles succeeds (a 403 there just means "you can't manage roles," not an error — hidden, not shown-and-broken). Grant form's tier select is capped at the same ceiling the server enforces (never offers 'owner') so a forced-past-the-UI request is the only way to even try, and the server still 400s that too. Same "hide what you can't do, server enforces it for real" convention as auth-client's AdminPage.
+
+/RolesPage.test.tsx
+Purpose: Roles tab tests: plain-user standing with no table, master standing text, grant list rendering + tier options excluding 'owner', granting a role and seeing the list refresh.

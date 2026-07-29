@@ -7,7 +7,7 @@ import type { ArmyRoster, GameModeId, TerrainChoice } from '@shatteredarchive/ki
  * surfaces; `screen` selects which one renders and `matchPayload` carries the setup a match
  * screen needs.
  */
-export type Screen = 'menu' | 'army-builder' | 'match' | 'scenario' | 'simulator' | 'online';
+export type Screen = 'menu' | 'army-builder' | 'match' | 'scenario' | 'simulator' | 'online' | 'account';
 
 /** Everything a match screen needs to deterministically seed a match via `buildMatch`. */
 export interface MatchStartPayload {

@@ -20,6 +20,7 @@ import {
 
 import { ApiError, api } from '../../api/client.js';
 import { ConflictPanel, NumField, TextField } from '../areas/workbench.js';
+import { Toast, type ToastState } from '../shared/Toast.js';
 import '../areas/areas.css';
 
 /**
@@ -89,7 +90,7 @@ function newSpec(archetype: SpellSpec['archetype']): SpellSpec {
 export default function CodegenView({ writeEnabled }: { writeEnabled: boolean }) {
   const [specs, setSpecs] = useState<SpellSpec[] | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
-  const [toast, setToast] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [toast, setToast] = useState<ToastState>(null);
   const [baseHash, setBaseHash] = useState<string | null>(null);
   const [conflict, setConflict] = useState(false);
 
@@ -102,7 +103,7 @@ export default function CodegenView({ writeEnabled }: { writeEnabled: boolean })
         setConflict(false);
         setSelected(null);
       })
-      .catch((e) => setToast({ kind: 'err', text: (e as Error).message }));
+      .catch((e) => setToast({ kind: 'err', text: `server unreachable: ${(e as Error).message}` }));
   };
 
   useEffect(() => {
@@ -177,7 +178,7 @@ export default function CodegenView({ writeEnabled }: { writeEnabled: boolean })
         setConflict(true);
         return;
       }
-      setToast({ kind: 'err', text: (e as Error).message });
+      setToast({ kind: 'err', text: `save failed: ${(e as Error).message}` });
     }
   };
 
@@ -190,7 +191,7 @@ export default function CodegenView({ writeEnabled }: { writeEnabled: boolean })
       setConflict(false);
       setToast({ kind: 'ok', text: 'spec manifest saved' });
     } catch (e) {
-      setToast({ kind: 'err', text: (e as Error).message });
+      setToast({ kind: 'err', text: `save failed: ${(e as Error).message}` });
     }
   };
 
@@ -206,11 +207,7 @@ export default function CodegenView({ writeEnabled }: { writeEnabled: boolean })
 
   return (
     <>
-      {toast && (
-        <p className={`mb-toast ${toast.kind === 'err' ? 'mb-toast--err' : ''}`} onClick={() => setToast(null)}>
-          {toast.text}
-        </p>
-      )}
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
       <p className="mb-muted">
         Author a brand-new spell declaratively. This does NOT write, compile, or deploy anything — it generates a
         4-section C patch (magic.h, magic.c, skills_data.c, const.c) for a human to review and apply by hand. Specs

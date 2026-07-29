@@ -1,0 +1,13 @@
+File Index
+
+/ContentPage.tsx
+Purpose: Phase G "My Content" tab — a builder's own private Room/Mob/Object/Script templates, grouped by kind, listing name + updated date. Rename/delete are whole-collection PUTs (matching the server's actual /api/snippets shape — no per-item routes), and "Load into editor" hands `{kind, data}` up to App.tsx's `onLoad`, which lands on the matching tab with a brand-new entity pre-filled from the snippet.
+
+/SaveAsSnippetButton.tsx
+Purpose: Phase G — the "Save as snippet" action shared by RoomEditor/MobEditor/ObjectEditor/ScriptEditor (one component embedded in all four rather than duplicated, since the logic — prompt for a name, fetch-mutate-save via /api/snippets, toast — is identical regardless of entity kind). Renders nothing (not shown-then-403'd) for a non-account actor via accountActor.ts's useIsAccountActor(), since master/local-key/anonymous callers have no accountId to own a snippet under.
+
+/SaveAsSnippetButton.test.tsx
+Purpose: Renders nothing for a non-account actor; saves a snippet and shows the confirmation toast for an account actor; does nothing (no /api/snippets call at all) when the name prompt is cancelled.
+
+/ContentPage.test.tsx
+Purpose: Empty-state message with no snippets; groups by kind and "Load into editor" calls onLoad with the snippet's raw data; rename; delete behind a confirm.

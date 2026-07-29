@@ -1,8 +1,5 @@
 File Index
 
-/dsl-questions.example.json
-Purpose: Tracked, plain-JSON starter template (3 obviously-fake Q&A) for the operator to copy to <DATA_DIR>/dsl-questions.json and replace with real questions.
-
 /jest.config.cjs
 Purpose: Self-contained node jest config; maps types-server to its TS source so tests don't need a prior build.
 

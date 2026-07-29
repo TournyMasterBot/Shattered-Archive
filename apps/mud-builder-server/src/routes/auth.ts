@@ -3,8 +3,11 @@ import fs from 'fs';
 import express, { type Application, type Request, type RequestHandler, type Response } from 'express';
 import { introspect } from '@shatteredarchive/services-server';
 
+import { SERVICE_TIERS, tierRank } from '@shatteredarchive/services-server';
+
 import { AuthError, type AuthStore, type BuilderActor } from '../auth-store.js';
 import type { MudBuilderConfig } from '../config.js';
+import type { RoleStore } from '../role-store.js';
 
 /**
  * AI-ANNOTATION
@@ -36,6 +39,10 @@ const INTROSPECT_SERVICE_NAME = 'mud-builder-server';
 // Bounds the Phase 4 fallback call so a hung/unreachable auth-server 401s instead of hanging
 // the request. Local-store tokens (master/API key) never reach this path at all.
 const INTROSPECT_TIMEOUT_MS = 3_000;
+
+// Phase 15: requireRebuildAllowed's cap on how far in the future an account token's
+// expiresAt may be — a "forever" or long-lived key must not unlock the rebuild trigger.
+const REBUILD_MAX_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 function bearerToken(req: Request): string {
   const header = req.headers.authorization ?? '';
@@ -77,10 +84,27 @@ async function tryIntrospect(
       INTROSPECT_TIMEOUT_MS,
     );
     if (!result.valid) return null;
-    return { kind: 'account', accountId: result.accountId ?? '', label: result.label ?? result.accountId ?? 'account' };
+    return {
+      kind: 'account',
+      accountId: result.accountId ?? '',
+      label: result.label ?? result.accountId ?? 'account',
+      username: result.username,
+      expiresAt: result.expiresAt,
+      globalRole: result.globalRole,
+    };
   } catch {
     return null;
   }
+}
+
+/** Shared by every guard below: local-first (store.verify(), no I/O beyond the already-cached auth file), falling through to the Phase 4 introspect fallback only on a local miss — master-key and local-API-key holders never pay a network round trip or depend on auth-server being reachable. */
+async function resolveActor(
+  store: AuthStore,
+  introspectConfig: Pick<MudBuilderConfig, 'authServerUrl' | 'servicePrivateKeyPath'>,
+  req: Request,
+): Promise<BuilderActor | null> {
+  const token = bearerToken(req);
+  return store.verify(token) ?? (token ? await tryIntrospect(introspectConfig, token) : null);
 }
 
 /**
@@ -88,13 +112,9 @@ async function tryIntrospect(
  * Deliberately method-based with NO path filter — Express route matching is
  * case-insensitive by default, so a path check like startsWith('/api/') can
  * be sidestepped with '/API/…' while the route still matches. Reads (GET/
- * HEAD) and preflight stay open; this server serves nothing else mutable.
- *
- * Local-first: `store.verify()` (sha256/timing-safe, no I/O beyond the
- * already-cached auth file) is tried first and unconditionally — only a LOCAL
- * miss falls through to the Phase 4 introspect fallback, so master-key and
- * local-API-key holders never pay a network round trip or depend on
- * auth-server being reachable.
+ * HEAD) and preflight stay open; this server serves nothing else mutable —
+ * EXCEPT GET /api/rebuild/status (Phase 15), which is operationally sensitive
+ * output and gets its own explicit guard (requireAnyActor) at registration.
  */
 export function authGuard(
   store: AuthStore,
@@ -105,8 +125,28 @@ export function authGuard(
       next();
       return;
     }
-    const token = bearerToken(req);
-    const actor = store.verify(token) ?? (token ? await tryIntrospect(introspectConfig, token) : null);
+    const actor = await resolveActor(store, introspectConfig, req);
+    if (!actor) {
+      res.status(401).json({ error: 'a valid builder token is required (Authorization: Bearer <token>)' });
+      return;
+    }
+    res.locals.builderActor = actor;
+    next();
+  };
+}
+
+/**
+ * Phase 15: any recognized actor (master, local key, or a centrally-verified account —
+ * NOT allowlist-gated) — for routes that are readable-but-sensitive rather than fully
+ * open (GET /api/rebuild/status: operationally sensitive output, not open-GET
+ * game-content territory) but don't need the rebuild trigger's own narrower gate.
+ */
+export function requireAnyActor(
+  store: AuthStore,
+  introspectConfig: Pick<MudBuilderConfig, 'authServerUrl' | 'servicePrivateKeyPath'>,
+): RequestHandler {
+  return async (req, res, next) => {
+    const actor = await resolveActor(store, introspectConfig, req);
     if (!actor) {
       res.status(401).json({ error: 'a valid builder token is required (Authorization: Bearer <token>)' });
       return;
@@ -132,14 +172,81 @@ export function requireMaster(
   introspectConfig: Pick<MudBuilderConfig, 'authServerUrl' | 'servicePrivateKeyPath'>,
 ): RequestHandler {
   return async (req, res, next) => {
-    const token = bearerToken(req);
-    const actor = store.verify(token) ?? (token ? await tryIntrospect(introspectConfig, token) : null);
+    const actor = await resolveActor(store, introspectConfig, req);
     if (!actor) {
       res.status(401).json({ error: 'a valid builder token is required (Authorization: Bearer <token>)' });
       return;
     }
     if (actor.kind !== 'master') {
       res.status(403).json({ error: 'key management requires the master key' });
+      return;
+    }
+    res.locals.builderActor = actor;
+    next();
+  };
+}
+
+export type RebuildEligibility = { allowed: true } | { allowed: false; reason: string };
+
+/**
+ * Phase 15, retargeted Phase G: the actual eligibility rule for the engine-rebuild
+ * trigger, as a pure predicate — shared by requireRebuildAllowed (enforces it on POST
+ * /api/rebuild) and GET /api/rebuild/status (reports it, informationally, as
+ * `canTrigger`, so the client can hide the trigger button entirely rather than show it
+ * and let it 403).
+ *
+ * Passes for kind:'master', or kind:'account' with a local role-store tier of 'admin' or
+ * 'owner' AND an expiresAt present and no more than 7 days out — a "forever" or
+ * long-lived account key must not unlock this action even once the account holds
+ * admin-tier standing (the plan's Constraints scope the short-lived-token requirement to
+ * THIS check only, not a global API-key policy change — unchanged from Phase 15). Any
+ * kind:'key' actor (a local API key, master or not) fails outright — a key's label is
+ * free text typed at mint time, never a valid identity check; only a centrally-verified
+ * accountId is. An already genuinely-expired token can never reach the expiresAt check
+ * below at all: introspect only returns a valid actor for a token auth-server's own
+ * KeyStore.verify() accepted, which already rejects expired keys — so "too far in the
+ * future" is the only expiry failure mode possible here.
+ *
+ * Phase G retired the static MUD_REBUILD_ALLOWED_USERNAMES env-var allowlist this
+ * replaced — granting access no longer needs a redeploy, see routes/roles.ts.
+ */
+export function checkRebuildEligibility(actor: BuilderActor, roleStore: RoleStore): RebuildEligibility {
+  if (actor.kind === 'master') return { allowed: true };
+  if (actor.kind !== 'account') {
+    return { allowed: false, reason: 'this action requires an account with admin tier or above' };
+  }
+  const tier = roleStore.tierFor(actor.accountId);
+  if (tierRank(SERVICE_TIERS, tier) > tierRank(SERVICE_TIERS, 'admin')) {
+    return { allowed: false, reason: 'this action requires admin tier or above (see the Roles tab)' };
+  }
+  if (!actor.expiresAt) {
+    return {
+      allowed: false,
+      reason: 'this action requires a short-lived token (expiring within 7 days) — a forever key is not accepted',
+    };
+  }
+  const expiresAtMs = Date.parse(actor.expiresAt);
+  if (Number.isNaN(expiresAtMs) || expiresAtMs > Date.now() + REBUILD_MAX_TOKEN_TTL_MS) {
+    return { allowed: false, reason: 'this action requires a token expiring within 7 days' };
+  }
+  return { allowed: true };
+}
+
+/** Gates the engine-rebuild trigger itself — enforces checkRebuildEligibility() as a hard 403. */
+export function requireRebuildAllowed(
+  store: AuthStore,
+  introspectConfig: Pick<MudBuilderConfig, 'authServerUrl' | 'servicePrivateKeyPath'>,
+  roleStore: RoleStore,
+): RequestHandler {
+  return async (req, res, next) => {
+    const actor = await resolveActor(store, introspectConfig, req);
+    if (!actor) {
+      res.status(401).json({ error: 'a valid builder token is required (Authorization: Bearer <token>)' });
+      return;
+    }
+    const eligibility = checkRebuildEligibility(actor, roleStore);
+    if (!eligibility.allowed) {
+      res.status(403).json({ error: eligibility.reason });
       return;
     }
     res.locals.builderActor = actor;

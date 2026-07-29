@@ -68,6 +68,14 @@ describe('MapPage (area mode)', () => {
       expect.arrayContaining([expect.stringContaining('/api/map/neighbor.are')]),
     );
   });
+
+  it('initialFocus opens that area (not the default first one) and highlights the room', async () => {
+    render(<MapPage initialFocus={{ file: 'neighbor.are', vnum: 205 }} />);
+    const room = await screen.findByRole('button', { name: 'room #205 Neighbor Landing' });
+    expect(room.getAttribute('class')).toContain('mb-map-room--focused');
+    // the default-first-area fetch never wins the race against the focused one.
+    expect(screen.queryByRole('button', { name: 'room #100 The Test Room' })).toBeNull();
+  });
 });
 
 describe('MapPage exit fidelity (Phase 12b)', () => {
@@ -183,6 +191,72 @@ describe('MapPage spawn overlay (Phase 13)', () => {
     fireEvent.click(toggle);
     expect(container.querySelector('.mb-map-spawn-badge')).toBeNull();
     expect(screen.queryByText(/mobs at boot/)).toBeNull();
+  });
+});
+
+describe('MapPage live spawn toggle (Phase 14c)', () => {
+  const SPAWN_RESULT = {
+    rooms: [{ room: 100, mobs: [{ vnum: 9001, name: 'the town guard', count: 3, equipped: [], carried: [] }], objects: [] }],
+    doors: [],
+    randomizedExits: [],
+    warnings: [],
+  };
+
+  it('a live snapshot in hand grows a Boot/Live sub-toggle; Live swaps the badge count and its color', async () => {
+    (globalThis.fetch as jest.Mock).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      const json = (body: unknown) => ({ ok: true, status: 200, json: async () => body }) as unknown as Response;
+      if (url.endsWith('/api/areas')) return json({ areas: [{ file: 'tiny.are', name: 'Tiny' }] });
+      if (url.endsWith('/api/map/tiny.are')) return json(TINY_MAP);
+      if (url.endsWith('/api/areas/tiny.are/spawn')) return json(SPAWN_RESULT);
+      if (url.endsWith('/api/state/live')) {
+        return json({
+          snapshot: { ts: 500, rooms: [{ vnum: 100, mobs: [[9001, 5]], objs: [], players: 0, doors: [] }] },
+          ageMs: 2000,
+        });
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+
+    const { container } = render(<MapPage />);
+    await screen.findByRole('button', { name: 'room #100 The Test Room' });
+
+    // No toggle before Spawns is even on.
+    expect(screen.queryByRole('radiogroup', { name: 'Spawn data source' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Spawns' }));
+    await screen.findByText('3'); // boot count
+
+    const radiogroup = await screen.findByRole('radiogroup', { name: 'Spawn data source' });
+    expect(within(radiogroup).getByText(/Live/)).toBeTruthy();
+    expect(container.querySelector('.mb-map-spawn-badge--live')).toBeNull();
+
+    fireEvent.click(within(radiogroup).getByRole('radio', { name: /Live/ }));
+
+    await screen.findByText('5'); // live count
+    expect(container.querySelector('.mb-map-spawn-badge--live')).toBeTruthy();
+    expect(screen.getByText(/mobs live now/)).toBeTruthy();
+  });
+
+  it('with no live snapshot yet, the Boot/Live toggle never appears and boot badges render as before', async () => {
+    (globalThis.fetch as jest.Mock).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      const json = (body: unknown) => ({ ok: true, status: 200, json: async () => body }) as unknown as Response;
+      const notFound = () => ({ ok: false, status: 404, json: async () => ({ error: 'no snapshot yet' }) }) as unknown as Response;
+      if (url.endsWith('/api/areas')) return json({ areas: [{ file: 'tiny.are', name: 'Tiny' }] });
+      if (url.endsWith('/api/map/tiny.are')) return json(TINY_MAP);
+      if (url.endsWith('/api/areas/tiny.are/spawn')) return json(SPAWN_RESULT);
+      if (url.endsWith('/api/state/live')) return notFound();
+      throw new Error(`unexpected fetch ${url}`);
+    });
+
+    const { container } = render(<MapPage />);
+    await screen.findByRole('button', { name: 'room #100 The Test Room' });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Spawns' }));
+
+    await screen.findByText('3');
+    expect(screen.queryByRole('radiogroup', { name: 'Spawn data source' })).toBeNull();
+    expect(container.querySelector('.mb-map-spawn-badge--live')).toBeNull();
   });
 });
 

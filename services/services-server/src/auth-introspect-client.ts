@@ -14,6 +14,26 @@ export interface IntrospectResult {
   accountId?: string;
   service?: string;
   label?: string;
+  /** Phase 15: the account's username, when the token resolved to one. */
+  username?: string;
+  /** Phase 15: null = never expires; undefined only on an old auth-server that predates this field. */
+  expiresAt?: string | null;
+  /** Phase 15: 'api' | 'session' | 'sso' | 'obo', mirrors auth-server's KeyKind. */
+  tokenType?: string;
+  /** Phase A: hub-global tier ('user' default); undefined only on an old auth-server that predates it. */
+  globalRole?: string;
+}
+
+/** Successful POST /api/token-exchange response (both grant types). */
+export interface ExchangeResult {
+  token: string;
+  accountId: string;
+  username: string;
+  /** The AUDIENCE — the one service this token is valid at. */
+  service: string;
+  expiresAt: string;
+  tokenType: string;
+  globalRole: string;
 }
 
 interface AssertionPayload {
@@ -67,4 +87,107 @@ export async function introspect(
     throw new Error(`introspect failed: ${res.status} ${body.error ?? res.statusText}`);
   }
   return body;
+}
+
+/**
+ * Audience guard (Phase A service-isolation rule): a token is only acceptable
+ * to THIS service if it's valid AND was minted for this service. Adopt at
+ * every introspect call site — a valid token for someone else is a refusal.
+ */
+export function matchesAudience(result: IntrospectResult, expectedService: string): boolean {
+  return result.valid === true && result.service === expectedService;
+}
+
+/**
+ * Calls auth-server's POST /api/token-exchange with grantType
+ * 'authorization_code' — redeems a one-time SSO code (from /api/sso/approve)
+ * for a bearer token audience-scoped to THIS service. The redirectUri MUST be
+ * byte-identical to the one used at approve time, or the hub burns the code
+ * without minting anything (see sso-code-store.redeem()). Throws on a
+ * non-2xx response (an invalid/expired/already-used code is a 400, not a
+ * `{valid:false}`-style result — unlike introspect, there's no partial-success
+ * shape here).
+ */
+export async function exchangeCode(
+  authServerBaseUrl: string,
+  service: string,
+  privateKeyPem: string,
+  code: string,
+  redirectUri: string,
+): Promise<ExchangeResult> {
+  const assertion = signAssertion(service, privateKeyPem);
+  const res = await fetch(`${authServerBaseUrl.replace(/\/+$/, '')}/api/token-exchange`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Service-Assertion': assertion,
+    },
+    body: JSON.stringify({ grantType: 'authorization_code', code, redirectUri }),
+  });
+  const body = (await res.json().catch(() => ({}))) as ExchangeResult & { error?: string };
+  if (!res.ok) {
+    throw new Error(`token exchange failed: ${res.status} ${body.error ?? res.statusText}`);
+  }
+  return body;
+}
+
+async function postExchange(
+  authServerBaseUrl: string,
+  service: string,
+  privateKeyPem: string,
+  payload: Record<string, unknown>,
+): Promise<ExchangeResult> {
+  const assertion = signAssertion(service, privateKeyPem);
+  const res = await fetch(`${authServerBaseUrl.replace(/\/+$/, '')}/api/token-exchange`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Service-Assertion': assertion,
+    },
+    body: JSON.stringify(payload),
+  });
+  const body = (await res.json().catch(() => ({}))) as ExchangeResult & { error?: string };
+  if (!res.ok) {
+    throw new Error(`token exchange failed: ${res.status} ${body.error ?? res.statusText}`);
+  }
+  return body;
+}
+
+/**
+ * Redeems a one-time SSO code (this service's backend half of the login
+ * hand-off) for a bearer token whose audience is THIS service. The private
+ * key never leaves the backend — there is no client-side exchange path.
+ */
+export function exchangeAuthorizationCode(
+  authServerBaseUrl: string,
+  service: string,
+  privateKeyPem: string,
+  code: string,
+  redirectUri: string,
+): Promise<ExchangeResult> {
+  return postExchange(authServerBaseUrl, service, privateKeyPem, {
+    grantType: 'authorization_code',
+    code,
+    redirectUri,
+  });
+}
+
+/**
+ * Exchanges a token whose audience is THIS service for a short-TTL token
+ * scoped to `targetService`, still bound to the same user — the ONLY sanctioned
+ * way to call another service on a user's behalf (raw forwarding is banned,
+ * and the hub refuses to chain OBO tokens).
+ */
+export function exchangeOnBehalfOf(
+  authServerBaseUrl: string,
+  service: string,
+  privateKeyPem: string,
+  token: string,
+  targetService: string,
+): Promise<ExchangeResult> {
+  return postExchange(authServerBaseUrl, service, privateKeyPem, {
+    grantType: 'on_behalf_of',
+    token,
+    targetService,
+  });
 }

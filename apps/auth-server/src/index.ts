@@ -12,6 +12,9 @@ import { AccountStore } from './account-store.js';
 import { KeyStore } from './key-store.js';
 import { QuestionsStore, ChallengeThrottle } from './questions-store.js';
 import { ServiceKeyStore } from './service-key-store.js';
+import { SsoCodeStore } from './sso-code-store.js';
+import { AuditLog } from './audit-log.js';
+import { LoginLockout } from './login-lockout.js';
 import { createMailer } from './mailer.js';
 import type { AuthServerDeps } from './deps.js';
 
@@ -46,8 +49,11 @@ const deps: AuthServerDeps = {
   keyStore: new KeyStore(config.dataDir, dataKey),
   questionsStore: new QuestionsStore(config.dataDir),
   serviceKeyStore: new ServiceKeyStore(config.dataDir, dataKey),
+  ssoCodeStore: new SsoCodeStore(),
   challengeThrottle: new ChallengeThrottle(),
+  loginLockout: new LoginLockout(),
   mailer: createMailer(config),
+  auditLog: new AuditLog(config.dataDir),
   publicOrigin: config.publicOrigin,
 };
 

@@ -1,0 +1,8 @@
+src/index.ts — Boot: dotenv, logger, RoomStore, Express routes, /ws/scrum gateway, and a flush-on-SIGTERM shutdown.
+src/config.ts — Env-driven knobs (data dir, idle timeout, room TTL, sweep interval, room cap), all with defaults.
+src/room-store.ts — In-memory room registry over a debounced, atomically-written rooms.json; id/secret minting, stored-record narrowing, and the sweep.
+src/room-store.test.ts — Id/token minting, disk round-trip, corrupt-file quarantine, idle and TTL sweeps, stored-record validation.
+src/http/scrum-api-routes.ts — POST /api/scrum/rooms (mint) and GET /api/scrum/rooms/:id (verify a pasted code).
+src/http/scrum-api-routes.test.ts — Create defaults/overrides, deck rejection, room-limit 503, and the info the peek route withholds.
+src/ws/scrum-gateway.ts — The /ws/scrum gateway: frame handling, permissions, per-viewer broadcast, and the idle sweeper.
+src/ws/scrum-gateway.test.ts — Join/reconnect, hidden-until-revealed voting, reset/clear, host-only settings, ping, eviction.

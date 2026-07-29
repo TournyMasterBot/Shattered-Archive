@@ -112,6 +112,44 @@ describe('RoomEditor', () => {
     fireEvent.click(screen.getByText('See what spawns here →'));
     expect(onOpenSpawn).toHaveBeenCalledWith(100);
   });
+
+  it('adds, edits, and removes extra descriptions through onChange (Phase 14c-follow-up)', () => {
+    const onChange = jest.fn();
+    const { rerender } = render(<RoomEditor room={ROOM} onChange={onChange} />);
+
+    fireEvent.click(screen.getByRole('button', { name: '+ Add extra description' }));
+    let updated = onChange.mock.calls.at(-1)![0] as Room;
+    expect(updated.extraDescrs).toEqual([{ keyword: '', description: '' }]);
+
+    rerender(<RoomEditor room={updated} onChange={onChange} />);
+    fireEvent.change(screen.getByLabelText('Extra description 1 keywords'), { target: { value: 'sign' } });
+    updated = onChange.mock.calls.at(-1)![0] as Room;
+    expect(updated.extraDescrs[0]).toEqual({ keyword: 'sign', description: '' });
+
+    rerender(<RoomEditor room={updated} onChange={onChange} />);
+    fireEvent.change(screen.getByLabelText('Extra description 1 text'), {
+      target: { value: 'A weathered wooden sign.' },
+    });
+    updated = onChange.mock.calls.at(-1)![0] as Room;
+    expect(updated.extraDescrs[0]).toEqual({ keyword: 'sign', description: 'A weathered wooden sign.' });
+
+    rerender(<RoomEditor room={updated} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    updated = onChange.mock.calls.at(-1)![0] as Room;
+    expect(updated.extraDescrs).toEqual([]);
+  });
+
+  it('edits an exit\'s look text through onChange, independent of its other fields', () => {
+    const onChange = jest.fn();
+    render(<RoomEditor room={ROOM} onChange={onChange} />);
+
+    fireEvent.change(screen.getByLabelText('Exit 0 description'), {
+      target: { value: 'You see an open door leading south.' },
+    });
+    const updated = onChange.mock.calls.at(-1)![0] as Room;
+    expect(updated.exits[0].description).toBe('You see an open door leading south.');
+    expect(updated.exits[0].toVnum).toBe(ROOM.exits[0].toVnum); // untouched
+  });
 });
 
 describe('AreasPage write gating', () => {
@@ -142,12 +180,13 @@ describe('AreasPage write gating', () => {
     expect((screen.getByRole('button', { name: 'Preview' }) as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it('shows rooms and flags manual edits', async () => {
+  it('rooms are directly editable (expand the accordion, no read-only view) and flags manual edits', async () => {
     render(<AreasPage />);
     fireEvent.click(await screen.findByRole('button', { name: /Tiny/ }));
-    const roomBtn = await screen.findByRole('button', { name: /#100 The Test Room/ });
-    fireEvent.click(roomBtn);
-    expect(screen.getByLabelText('Room description')).toBeTruthy();
+    const summary = await screen.findByText(/#100 The Test Room/);
+    fireEvent.click(summary);
+    const descField = (await screen.findByLabelText('Room description')) as HTMLTextAreaElement;
+    expect(descField.value).toContain('A perfectly ordinary test room.');
 
     // Manual tab: apply a parseable edit and expect the MANUAL EDITS badge.
     fireEvent.click(screen.getByRole('button', { name: /Manual edit/ }));
@@ -155,7 +194,7 @@ describe('AreasPage write gating', () => {
     fireEvent.change(textarea, { target: { value: textarea.value.replace('The Test Room', 'The Manual Room') } });
     fireEvent.click(screen.getByRole('button', { name: /Parse & apply/ }));
     await waitFor(() => expect(screen.getByText('MANUAL EDITS')).toBeTruthy());
-    expect(screen.getByRole('button', { name: /#100 The Manual Room/ })).toBeTruthy();
+    expect(screen.getByText(/#100 The Manual Room/)).toBeTruthy();
   });
 
   it('edits the area header from the form and warns when the range shrinks below a used vnum (Phase 6)', async () => {
@@ -183,6 +222,25 @@ describe('AreasPage write gating', () => {
     render(<AreasPage />);
     const btn = (await screen.findByRole('button', { name: '+ New area' })) as HTMLButtonElement;
     expect(btn.disabled).toBe(true);
+  });
+
+  it('the embedded RoomEditor\'s "See what spawns here" fires onOpenSpawn with the room vnum', async () => {
+    const onOpenSpawn = jest.fn();
+    render(<AreasPage onOpenSpawn={onOpenSpawn} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Tiny/ }));
+    fireEvent.click(await screen.findByText(/#100 The Test Room/));
+
+    fireEvent.click(await screen.findByText('See what spawns here →'));
+    expect(onOpenSpawn).toHaveBeenCalledWith(100);
+  });
+
+  it('room-mutation UI IS offered — Areas is a real editor again, not read-only', async () => {
+    render(<AreasPage />);
+    fireEvent.click(await screen.findByRole('button', { name: /Tiny/ }));
+    expect(await screen.findByRole('button', { name: '+ Add room' })).toBeTruthy();
+
+    fireEvent.click(screen.getByText(/#100 The Test Room/));
+    expect(await screen.findByRole('button', { name: 'Delete room #100' })).toBeTruthy();
   });
 });
 
@@ -214,7 +272,11 @@ describe('AreasPage new-area creation (writes enabled, Phase 5)', () => {
 
   it('creates a new area (appends .are), refreshes the list, and opens it', async () => {
     render(<AreasPage />);
-    fireEvent.click(await screen.findByRole('button', { name: '+ New area' }));
+    const newAreaBtn = await screen.findByRole('button', { name: '+ New area' });
+    // The button exists (but disabled) before /api/capabilities resolves — wait for it to
+    // actually enable, or the click below is a no-op against a still-disabled button.
+    await waitFor(() => expect((newAreaBtn as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(newAreaBtn);
 
     fireEvent.change(screen.getByLabelText('New area file name'), { target: { value: 'myzone' } });
     fireEvent.change(screen.getByLabelText('New area name'), { target: { value: 'My Zone' } });
@@ -224,7 +286,7 @@ describe('AreasPage new-area creation (writes enabled, Phase 5)', () => {
 
     await waitFor(() => expect(screen.getByText(/created myzone.are/)).toBeTruthy());
     expect(screen.getByRole('button', { name: /My Zone/ })).toBeTruthy();
-    // The new (empty) area is open and ready for a first room.
-    expect(screen.getByRole('button', { name: '+ Add room' })).toBeTruthy();
+    // The new (empty) area is open — its room list is empty (room creation happens in the Rooms tab).
+    expect(screen.getByText('Rooms (0)')).toBeTruthy();
   });
 });

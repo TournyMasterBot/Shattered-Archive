@@ -112,6 +112,25 @@ describe('AccountStore', () => {
     await expect(store.resetPassword('not-a-real-token', 'whatever new password')).rejects.toThrow(AuthError);
   });
 
+  it('setGlobalRole stores a tier, and "user" clears back to the absent default', async () => {
+    const account = await store.createAccount('rolanda', 'initial password 123');
+    expect(store.require(account.id).globalRole).toBeUndefined();
+    store.setGlobalRole(account.id, 'admin');
+    expect(store.require(account.id).globalRole).toBe('admin');
+    store.setGlobalRole(account.id, 'user');
+    expect(store.require(account.id).globalRole).toBeUndefined();
+  });
+
+  it('setGlobalRole rejects an unknown tier with a 400', async () => {
+    const account = await store.createAccount('rolf', 'initial password 123');
+    expect(() => store.setGlobalRole(account.id, 'archmage')).toThrow(AuthError);
+    try {
+      store.setGlobalRole(account.id, 'archmage');
+    } catch (e) {
+      expect((e as AuthError).status).toBe(400);
+    }
+  });
+
   it('a corrupt/undecryptable file LOCKS the store rather than silently resetting it', () => {
     const filePath = path.join(dir, 'auth-accounts.json');
     fs.writeFileSync(filePath, JSON.stringify({ iv: 'x', authTag: 'y', ciphertext: 'z' }));

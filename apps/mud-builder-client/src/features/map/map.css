@@ -52,6 +52,21 @@
   cursor: pointer;
 }
 
+.mb-map-spawn-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #9aa3b2;
+  font-size: 0.85rem;
+}
+
+.mb-map-spawn-source label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+}
+
 .mb-map-error {
   color: #e5534b;
 }
@@ -225,12 +240,22 @@
   font-family: inherit;
 }
 
-.mb-legend-swatch--spawn {
+/* Phase 14c live-mode variant — amber instead of green so Boot vs. Live is visible at a glance. */
+.mb-map-spawn-badge--live circle {
+  fill: #d68910;
+}
+
+.mb-legend-swatch--spawn,
+.mb-legend-swatch--spawn-live {
   width: 10px;
   height: 10px;
   border: 0;
   border-radius: 50%;
   background: #3fb950;
+}
+
+.mb-legend-swatch--spawn-live {
+  background: #d68910;
 }
 
 .mb-map-portal rect {
@@ -305,6 +330,13 @@
   stroke: #2f6feb;
   stroke-width: 2.5;
   stroke-dasharray: 4 3;
+}
+
+/* 2026-07-26: a room handed off to Map (e.g. a blocked room-delete's "Go fix it") — the
+   viewport is also centered on it (AreaMapSvg's focus effect), this is the visual cue. */
+.mb-map-room--focused rect {
+  stroke: #e0af68;
+  stroke-width: 3;
 }
 
 .mb-map-edge--ghost {

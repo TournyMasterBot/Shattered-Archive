@@ -18,6 +18,10 @@ mkcert \
   game-client.shatteredarchive.dev \
   web-client.shatteredarchive.dev \
   game-server.shatteredarchive.dev \
-  web-server.shatteredarchive.dev
+  web-server.shatteredarchive.dev \
+  build.shatteredarchive.dev \
+  auth.shatteredarchive.dev \
+  kingdom-tactics.shatteredarchive.dev \
+  scrum-poker.shatteredarchive.dev
 
 echo "mkcert certificates generated."

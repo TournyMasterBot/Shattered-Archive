@@ -7,11 +7,12 @@ import { AuthError } from './errors.js';
 
 /**
  * AI-ANNOTATION
- * @ai-summary Per-service Ed25519 public-key registry for the /api/introspect
- *   server-to-server guard (step 7). Multiple non-revoked keys per service
- *   are expected DURING a rotation window. Encrypted at rest even though
- *   public keys aren't secret — an attacker able to silently insert their OWN
- *   public key here would defeat the whole introspect trust chain.
+ * @ai-summary Per-service Ed25519 public-key registry for the server-to-server
+ *   assertion guard (introspect + Phase A token-exchange), plus each service's
+ *   registered SSO redirect URIs (exact-match only). Multiple non-revoked keys
+ *   per service are expected DURING a rotation window. Encrypted at rest even
+ *   though public keys aren't secret — an attacker able to silently insert
+ *   their OWN public key here would defeat the whole trust chain.
  * @ai-public ServiceKeyStore
  * @ai-notes verifyAssertion() peek-decodes the payload's `service` field
  *   WITHOUT trusting it, purely to select which registered keys to try; the
@@ -30,6 +31,8 @@ interface ServiceKeyRecord {
 interface ServiceEntry {
   serviceName: string;
   keys: ServiceKeyRecord[];
+  /** Phase A: exact-match SSO redirect URIs registered for this service (no wildcards). */
+  redirectUris?: string[];
 }
 
 interface ServiceKeyRegistryData {
@@ -71,6 +74,68 @@ export class ServiceKeyStore extends EncryptedFileStore<ServiceKeyRegistryData> 
     }
     record.revokedAt ??= new Date().toISOString();
     this.write(data);
+  }
+
+  /** A2 delegation surface: every service with its live key count and registered redirect URIs. */
+  listServices(): { serviceName: string; activeKeys: number; redirectUris: string[] }[] {
+    return this.read().services.map((entry) => ({
+      serviceName: entry.serviceName,
+      activeKeys: entry.keys.filter((k) => !k.revokedAt).length,
+      redirectUris: [...(entry.redirectUris ?? [])],
+    }));
+  }
+
+  /** A service counts as registered only while it can still authenticate — at least one non-revoked key. */
+  isRegisteredService(serviceName: string): boolean {
+    const entry = this.read().services.find((s) => s.serviceName === serviceName);
+    return !!entry && entry.keys.some((k) => !k.revokedAt);
+  }
+
+  /** Exact-string registration; the service must already exist (register-service first). Requires http(s), rejects fragments, dedupes. */
+  addRedirectUri(serviceName: string, uri: string): void {
+    let parsed: URL;
+    try {
+      parsed = new URL(uri);
+    } catch {
+      throw new AuthError(`redirect URI is not a valid absolute URL: ${JSON.stringify(uri)}`, 400);
+    }
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      throw new AuthError('redirect URI must be http(s)', 400);
+    }
+    if (parsed.hash) {
+      throw new AuthError('redirect URI must not carry a fragment', 400);
+    }
+    const data = this.read();
+    const entry = data.services.find((s) => s.serviceName === serviceName);
+    if (!entry) {
+      throw new AuthError(`no service registered as ${JSON.stringify(serviceName)} — run register-service first`, 404);
+    }
+    entry.redirectUris ??= [];
+    if (!entry.redirectUris.includes(uri)) {
+      entry.redirectUris.push(uri);
+      this.write(data);
+    }
+  }
+
+  removeRedirectUri(serviceName: string, uri: string): void {
+    const data = this.read();
+    const entry = data.services.find((s) => s.serviceName === serviceName);
+    if (!entry?.redirectUris?.includes(uri)) {
+      throw new AuthError(`that redirect URI is not registered for ${JSON.stringify(serviceName)}`, 404);
+    }
+    entry.redirectUris = entry.redirectUris.filter((u) => u !== uri);
+    this.write(data);
+  }
+
+  listRedirectUris(serviceName: string): string[] {
+    const entry = this.read().services.find((s) => s.serviceName === serviceName);
+    return [...(entry?.redirectUris ?? [])];
+  }
+
+  /** Exact string match — no wildcard/prefix logic, by constraint. */
+  hasRedirectUri(serviceName: string, uri: string): boolean {
+    const entry = this.read().services.find((s) => s.serviceName === serviceName);
+    return !!entry?.redirectUris?.includes(uri);
   }
 
   private sweepExpiredNonces(now: number): void {

@@ -4,7 +4,7 @@ File Index
 Purpose: AreaFile → canonical .are text emitter (letter-form flag vectors, doors 0-9 since Phase 12b, doors-before-extra-descriptions room sub-block order, M/R script entries, LF line endings); EmitError on inexpressible models.
 
 /groups-stock.ts
-Purpose: Generated stock groups.dat table (STOCK_GROUPS) — checked in via pnpm codegen, mirrors const.c group_table.
+Purpose: Generated stock groups.dat table (STOCK_GROUPS) — checked in, mirrors const.c group_table. Regenerate with `pnpm --filter @shatteredarchive/merc-area gen-skills-stock` (scripts/gen-skills-stock.ts, Phase 15) — the file's OWN interface StockGroupRow is the canonical definition (groups.ts imports it FROM here, the reverse of skills-stock.ts's direction).
 
 /groups.test.ts
 Purpose: groups.dat parse/emit/validate tests: stock round trip, prefix member resolution, cycle guard, rating sentinels.
@@ -13,7 +13,13 @@ Purpose: groups.dat parse/emit/validate tests: stock round trip, prefix member r
 Purpose: groups.dat overlay format — parse/emit/validate (prefix member resolution against skills+groups, cycle = error, -1/0/1+ rating sentinels) + stockGroupsFile.
 
 /index.ts
-Purpose: Public package surface — re-exports types, parse/emit, Reader, validation (scripts/refs incl. Phase 11 resolver hook + collectDefinedEntities), skills and groups modules, and (Phase 13) simulateResets + its result/option types.
+Purpose: Public package surface — re-exports types, parse/emit, Reader, validation (scripts/refs incl. Phase 11 resolver hook + collectDefinedEntities), skills and groups modules, (Phase 13) simulateResets + its result/option types, (Phase 14a) spell-spec/spell-codegen, and (Phase 14c) parseLiveSnapshot/diffSpawnState.
+
+/live-state.test.ts
+Purpose: live-state.ts tests: parseLiveSnapshot's tolerant-parse contract (well-formed, non-JSON, torn/truncated, wrong-shape all -> null), diffSpawnState cases (clean world = zero drift, killed mob w/ no live room entry at all, the SimMobGroup per-vnum-sum trap, player-dropped object, door opened, a sim-only door with no live data yet is skipped not a false mismatch).
+
+/live-state.ts
+Purpose: Live world-state snapshot parsing + boot-vs-live drift diff (Phase 14c) — parseLiveSnapshot(text) tolerantly parses state_snapshot.c's vnum/count-only JSON (malformed -> null, never throws); diffSpawnState(sim, live) compares merc-area's own simulateResets() output against a live snapshot over the UNION of rooms either side mentions, summing SimMobGroup.count per vnum before comparing (groups are loadout-grouped), yielding missingMobs/extraObjects/missingObjects/players/doorChanges per drifted room plus a summary. Doors only compare where the sim actually defines one — a live room the builder hasn't hot-reloaded yet is silently skipped, never a false mismatch.
 
 /parse.test.ts
 Purpose: Parser unit tests per section kind plus error-position assertions.
@@ -40,7 +46,7 @@ Purpose: simulateResets tests, each keyed to a specific db.c reset_area branch: 
 Purpose: Reset simulator (Phase 13) — simulateResets(area, {resolveExternal}) computes FIRST-BOOT-ONLY spawn state (per-room mobs w/ equipped+carried, room objects w/ nested P contents, door states, randomized-exit markers, warnings) as a line-faithful mirror of db.c reset_area's M/O/P/G/E/D/R state machine incl. the shared last/LastMob threaded across the whole reset list. Deliberately not modeled (documented in the file header): the P/G/E object-limit's 1-in-5 random bypass (always deterministic-skip instead), shop-keeper unlimited restock, pet-shop/cost/alignment-zap side effects, container lock write-back.
 
 /skills-stock.ts
-Purpose: Generated stock skills tables (STOCK_SKILLS, SKILL_SPELL_FUNS, STOCK_FUN_TARGET_PAIRS) — checked in via pnpm codegen, mirrors const.c skill_table.
+Purpose: Generated stock skills tables (STOCK_SKILLS, SKILL_SPELL_FUNS, STOCK_FUN_TARGET_PAIRS) — mirrors const.c skill_table; regenerate after ANY live redeploy that adds a skill_table row (e.g. an applied codegen spell patch — Phase 14a's own "spark bolt" sat un-synced here for a day, invisible to the Skills page, until 2026-07-25). The original gen-skills-stock.js was never checked in (a Phase 7 scratchpad one-off) and this gap recurred; Phase 15 (2026-07-25) promoted a from-scratch parser into a permanent, checked-in `scripts/gen-skills-stock.ts` (`pnpm --filter @shatteredarchive/merc-area gen-skills-stock`) covering both this file and groups-stock.ts — watch for adjacent C string-literal concatenation (two "..." tokens back to back, no comma) and literal raw control bytes (not \t escapes) inside message strings, both of which a naive single-quoted-string regex will mis-parse; the permanent script handles both.
 
 /skills.test.ts
 Purpose: skills.dat parse/emit/validate tests: stock round trip, (fun,target) stock-pair guard, malformed rows.

@@ -1,10 +1,19 @@
 File Index
 
+/grant-tier.ts
+Purpose: Host-run only (Phase A) — assigns a hub-global tier (owner|admin|moderator|user) to an account by username; the strictly-below HTTP admin surface arrives in A2.
+
 /issue-temp-password.ts
 Purpose: Host-run only (never an HTTP route) — mints a fresh random temp password for an EXISTING account via AccountStore.adminSetTemporaryPassword, prints it to console EXACTLY ONCE, never logged to a file.
+
+/register-redirect-uri.ts
+Purpose: Host-run only (Phase A) — add/remove/list a service's registered SSO redirect URIs (exact-match, http(s) only); the service must already exist via register-service.
 
 /register-service.ts
 Purpose: Host-run only — generates an Ed25519 keypair for a consuming service, registers the PUBLIC half in service-key-store.ts, prints the PRIVATE half to console EXACTLY ONCE with instructions to save it as that service's own shattered-service.key.
 
 /revoke-service-key.ts
 Purpose: Host-run only — second half of a no-downtime service-key rotation (register new -> roll out -> confirm live -> revoke old via this script).
+
+/revoke-tier.ts
+Purpose: Host-run only (Phase A) — clears an account back to the plain 'user' global tier; companion to grant-tier.ts.

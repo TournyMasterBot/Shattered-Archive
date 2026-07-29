@@ -1,4 +1,4 @@
-import type { AreaFile, GroupEntry, SimulateResetsResult, SkillEntry, SpellSpec } from '@shatteredarchive/merc-area';
+import type { AreaFile, GroupEntry, LiveSnapshot, SimulateResetsResult, SkillEntry, SpellSpec } from '@shatteredarchive/merc-area';
 
 /** Thin fetch wrappers for mud-builder-server. All errors surface as thrown Error with the server's message. */
 
@@ -7,6 +7,8 @@ export interface Capabilities {
   /** True when the server requires a bearer token for mutations (Phase 9). */
   tokenRequired?: boolean;
   mercAreaPath: string;
+  /** Phase 15: server-wide "is the engine-rebuild feature on at all" — gates whether the Engine tab appears. Per-caller eligibility comes from rebuildStatus()'s canTrigger instead. */
+  rebuildEnabled?: boolean;
 }
 
 /** Error carrying the HTTP status so the UI can tell 401 (bad token) from 403 (not master). */
@@ -136,6 +138,22 @@ export interface AuditEntry {
   raw?: string;
 }
 
+/** Phase 15 engine-rebuild pipeline status — mirrors rebuild-store.ts's RebuildStatus. */
+export interface RebuildStatus {
+  phase: 'building-mercmud24' | 'recreating-mercmud24' | 'building-builder-images' | 'handing-off-to-helper' | 'complete' | 'failed';
+  actor: string;
+  startedAt: string;
+  updatedAt: string;
+  log: string[];
+  error?: string;
+}
+
+export interface RebuildStatusResponse {
+  status: RebuildStatus | null;
+  /** Whether the CURRENT caller may trigger a rebuild — informational; the actual POST enforces it server-side. */
+  canTrigger: boolean;
+}
+
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const token = getStoredToken();
   const headers: Record<string, string> = {
@@ -248,6 +266,42 @@ export interface WorldMapResponse {
   links: WorldMapLink[];
 }
 
+export interface LiveStateResponse {
+  snapshot: LiveSnapshot;
+  /** Milliseconds since the game wrote this snapshot (mtime-based). */
+  ageMs: number;
+}
+
+/** Phase G: mud-builder's own delegated tier ladder — 'owner' is never HTTP-assignable. */
+export type ServiceTier = 'owner' | 'admin' | 'manager' | 'trusted' | 'user';
+export const SERVICE_TIERS: ServiceTier[] = ['owner', 'admin', 'manager', 'trusted', 'user'];
+
+export interface RoleGrant {
+  accountId: string;
+  username: string;
+  tier: ServiceTier;
+  grantedBy: string;
+  grantedAt: string;
+}
+
+export interface RolesMe {
+  kind: 'master' | 'key' | 'account';
+  localTier: ServiceTier | null;
+  globalRole: string | null;
+}
+
+/** Phase G: a builder's own private Room/Mob/Object/Script template, never touching the live area files. */
+export type SnippetKind = 'room' | 'mob' | 'object' | 'script';
+
+export interface Snippet {
+  id: string;
+  kind: SnippetKind;
+  name: string;
+  data: unknown;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const api = {
   capabilities: () => request<Capabilities>('/api/capabilities'),
   listAreas: () => request<{ areas: AreaListEntry[] }>('/api/areas'),
@@ -344,4 +398,23 @@ export const api = {
       body: JSON.stringify({ file, text, overwrite }),
     }),
   audit: (limit?: number) => request<{ entries: AuditEntry[] }>(`/api/audit${limit ? `?limit=${limit}` : ''}`),
+  rebuildStatus: () => request<RebuildStatusResponse>('/api/rebuild/status'),
+  triggerRebuild: () => request<{ note: string }>('/api/rebuild', { method: 'POST' }),
+  stateRefresh: () => request<{ requested: boolean; note?: string }>('/api/state/refresh', { method: 'POST' }),
+  stateLive: () => request<LiveStateResponse>('/api/state/live'),
+  rolesMe: () => request<RolesMe>('/api/roles/me'),
+  rolesList: () => request<{ grants: RoleGrant[] }>('/api/roles'),
+  setRole: (accountId: string, tier: ServiceTier, username?: string) =>
+    request<{ grant: RoleGrant }>(`/api/roles/${encodeURIComponent(accountId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tier, username }),
+    }),
+  snippets: () => request<{ snippets: Snippet[] }>('/api/snippets'),
+  saveSnippets: (snippets: Snippet[]) =>
+    request<{ snippets: Snippet[] }>('/api/snippets', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ snippets }),
+    }),
 };

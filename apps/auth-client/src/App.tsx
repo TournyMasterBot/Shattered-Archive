@@ -7,10 +7,12 @@ import ForgotPasswordPage from './features/auth/ForgotPasswordPage.js';
 import ForcedChangePage from './features/auth/ForcedChangePage.js';
 import AccountPage from './features/account/AccountPage.js';
 import KeysPage from './features/keys/KeysPage.js';
+import SsoApprovePage, { parseSsoRequest } from './features/sso/SsoApprovePage.js';
+import AdminPage from './features/admin/AdminPage.js';
 import './App.css';
 
 type PublicView = 'login' | 'signup' | 'forgot';
-type LoggedInSection = 'account' | 'keys';
+type LoggedInSection = 'account' | 'keys' | 'admin';
 
 function readTokenFor(pathname: string, expectedPathname: string): string | null {
   if (pathname !== expectedPathname) return null;
@@ -21,7 +23,15 @@ export default function App() {
   const session = useAuthSession();
   const resetToken = useMemo(() => readTokenFor(window.location.pathname, '/reset-password'), []);
   const verifyToken = useMemo(() => readTokenFor(window.location.pathname, '/verify-email'), []);
-  const [publicView, setPublicView] = useState<PublicView>(resetToken ? 'forgot' : 'login');
+  // Same pathname-check pattern as /reset-password — this SPA has no router. isSsoAuthorize
+  // stays true even when the params are malformed so the error card renders instead of the shell.
+  const isSsoAuthorize = window.location.pathname === '/sso/authorize';
+  const ssoRequest = useMemo(() => (isSsoAuthorize ? parseSsoRequest(window.location.search) : null), [isSsoAuthorize]);
+  // /signup is a landing target for consumer sites whose own Register action should
+  // NOT default here to the login form (a real bug: shatteredarchive.com's Register
+  // used to send users to the hub root, which defaults to Login).
+  const isSignupPath = window.location.pathname === '/signup';
+  const [publicView, setPublicView] = useState<PublicView>(resetToken ? 'forgot' : isSignupPath ? 'signup' : 'login');
   const [section, setSection] = useState<LoggedInSection>('account');
 
   if (session.status === 'loading') {
@@ -72,6 +82,21 @@ export default function App() {
   const account = session.account;
   if (!account) return null; // status 'ready' always pairs with an account — defensive only.
 
+  if (isSsoAuthorize) {
+    // Consent screen replaces the account shell for this request; login/forced-change
+    // above still ran first, so approval always happens on a fully-onboarded session.
+    return (
+      <div className="auc-app">
+        <header className="auc-header">
+          <h1>Shattered Archive Account</h1>
+        </header>
+        <main className="auc-main">
+          <SsoApprovePage request={ssoRequest} username={account.username} />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="auc-app">
       <header className="auc-header">
@@ -93,6 +118,16 @@ export default function App() {
           >
             API keys
           </button>
+          {account.globalRole && account.globalRole !== 'user' ? (
+            <button
+              type="button"
+              className={section === 'admin' ? 'auc-nav-item auc-nav-item--active' : 'auc-nav-item'}
+              aria-current={section === 'admin' ? 'page' : undefined}
+              onClick={() => setSection('admin')}
+            >
+              Admin
+            </button>
+          ) : null}
           <button type="button" onClick={() => void session.logout()}>
             Log out
           </button>
@@ -102,6 +137,8 @@ export default function App() {
         <p className="auc-muted">Logged in as {account.username}</p>
         {section === 'account' ? (
           <AccountPage account={account} pendingEmailToken={verifyToken} onAccountChanged={session.refresh} />
+        ) : section === 'admin' ? (
+          <AdminPage />
         ) : (
           <KeysPage />
         )}

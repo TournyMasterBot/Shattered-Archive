@@ -74,6 +74,21 @@ change on next login, exactly like signup does.
 > app's host scripts take flag-shaped arguments, so the separator is never needed here —
 > just pass the positional argument(s) directly, as above.
 
+### Brute-force protection on login (Phase 15)
+
+`POST /api/auth/login` is protected by an in-memory, fail2ban-style escalating soft
+lockout (`src/login-lockout.ts`) — **not the same thing** as the "locked-out account"
+recovery above, which is about a forgotten/expired password. This one is about repeated
+*failed* attempts: the first few failures (default 3) are free, then each further failure
+doubles the lockout duration (default starting at 30s, capped at 24h) before that
+username *or* source IP may try again — a repeat offender waits longer than a first-time
+one. A successful login clears the count. There is no permanent ban and no OS-level
+enforcement (no firewall/iptables involvement) — it's pure in-app request throttling, so
+it resets on a server restart, same tradeoff the existing anti-bot `ChallengeThrottle`
+already makes. A locked-out login attempt gets `429` with a `Retry-After`-style message
+(`"too many failed attempts — try again in Ns"`) even if the password given is correct —
+the lockout check runs before the password is checked at all.
+
 ### Registering a consuming service (Phase 2+)
 
 ```bash
@@ -121,7 +136,7 @@ pnpm --filter @shatteredarchive/auth-server build
 pnpm --filter @shatteredarchive/auth-server test
 ```
 
-94 tests across 9 suites (5 store-level, 4 route-level via a real `app.listen(0)` +
+102 tests across 10 suites (6 store-level, 4 route-level via a real `app.listen(0)` +
 native `fetch`, no `supertest`). Route-level tests spin up a throwaway temp data dir per
 suite and clean it up afterward — nothing touches `apps/auth-server/data`.
 
@@ -166,7 +181,10 @@ scheme on a single host). A password change or an explicit "rotate master" bumps
 account-level epoch counter, instantly invalidating every previously issued API key and
 session with no need to touch each record — the tradeoff is that both of those actions
 must mint a fresh session before responding, or the caller would appear logged out right
-after the action that was supposed to keep them in. `/api/introspect` is server-to-server
+after the action that was supposed to keep them in. `POST /api/auth/login` is additionally
+throttled by an escalating per-username/per-IP soft lockout after repeated failures (see
+"Brute-force protection on login" above) — an in-app, no-OS-dependency mitigation for
+credential-stuffing/brute-force attempts, not a full WAF. `/api/introspect` is server-to-server
 only, gated by a per-service Ed25519 signed assertion (never a session cookie), with
 replay protection and support for multiple concurrently-valid keys per service so
 rotation never causes an outage.

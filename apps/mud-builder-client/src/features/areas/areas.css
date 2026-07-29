@@ -86,6 +86,12 @@
   border-radius: 999px;
 }
 
+.mb-unsaved-indicator {
+  color: #ffe1a8;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
 .mb-editor-split {
   display: flex;
   gap: 1rem;
@@ -140,6 +146,15 @@
   margin: 0 0 0.7rem;
 }
 
+.mb-connections-list {
+  margin: 0.3rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.mb-connections-list li {
+  margin-bottom: 0.15rem;
+}
+
 .mb-fieldset > legend,
 .mb-flag-grid > legend {
   font-size: 0.8rem;
@@ -176,6 +191,55 @@
   justify-content: flex-end;
   margin-bottom: 0.35rem;
   max-width: 64rem;
+}
+
+/* ── Areas dashboard (2026-07-26) — nested room/mob/object/prog accordions ── */
+.mb-dashboard-room {
+  border: 1px solid var(--mb-border, #3a3a4a);
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  margin-bottom: 0.5rem;
+  max-width: 64rem;
+}
+
+.mb-dashboard-room > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.mb-dashboard-room-body {
+  margin-top: 0.5rem;
+}
+
+.mb-dashboard-accordion {
+  border: 1px solid var(--mb-border, #3a3a4a);
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  margin: 0 0 0.5rem;
+}
+
+.mb-dashboard-accordion > summary {
+  cursor: pointer;
+}
+
+.mb-dashboard-accordion--nested {
+  margin-top: 0.4rem;
+  background: rgba(127, 127, 127, 0.06);
+}
+
+.mb-dashboard-subitems {
+  list-style: none;
+  margin: 0.3rem 0;
+  padding: 0;
+}
+
+.mb-dashboard-subitems > li {
+  border-top: 1px solid var(--mb-border, #3a3a4a);
+  padding: 0.3rem 0;
+}
+
+.mb-dashboard-subitems > li:first-child {
+  border-top: none;
 }
 
 .mb-entity-actions button,
@@ -360,6 +424,28 @@
   width: 6rem;
 }
 
+.mb-exit-block {
+  margin-bottom: 0.6rem;
+}
+
+.mb-exit-block .mb-exit-row {
+  margin-bottom: 0.2rem;
+}
+
+.mb-exit-description {
+  margin: 0 0 0.35rem;
+}
+
+.mb-exit-description textarea {
+  font: inherit;
+  width: 100%;
+  padding: 0.2rem 0.35rem;
+  border-radius: 4px;
+  border: 1px solid var(--mb-border, #3a3a4a);
+  background: transparent;
+  color: inherit;
+}
+
 .mb-preview,
 .mb-manual {
   margin-top: 1rem;
@@ -406,6 +492,16 @@
 .mb-toast--err {
   background: #55221e;
   color: #f3c4bf;
+}
+
+.mb-toast--warn {
+  background: #5a4212;
+  color: #ffe1a8;
+}
+
+.mb-toast--info {
+  background: #1c3a5e;
+  color: #bfe0ff;
 }
 
 .mb-muted {
@@ -602,6 +698,31 @@
   gap: 0.5rem;
 }
 
+/* ── Blocked-delete reconciliation panel (2026-07-26) ──────────────────── */
+.mb-delete-blockers {
+  padding: 0.6rem 0.75rem;
+  margin: 0.5rem 0;
+  border: 1px solid #c05621;
+  border-radius: 4px;
+  background: #fffaf0;
+  color: #7a3a0f;
+}
+
+.mb-delete-blockers-group {
+  margin-top: 0.5rem;
+}
+
+.mb-delete-blockers-group h5 {
+  margin: 0 0 0.2rem;
+  font-size: 0.85rem;
+}
+
+.mb-delete-blockers-group ul {
+  margin: 0 0 0.3rem;
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+}
+
 .mb-preview-external {
   margin: 0.5rem 0;
 }
@@ -620,7 +741,8 @@
   color: #1a4d80;
 }
 
-.mb-room-spawn-link {
+.mb-room-spawn-link,
+.mb-room-edit-link {
   margin-left: 0.75rem;
   font-size: 0.75em;
   font-weight: normal;
@@ -659,4 +781,18 @@
   margin: 0.2rem 0;
   padding-left: 1.2rem;
   font-size: 0.9em;
+}
+
+.mb-spawn-drift {
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed rgba(127, 127, 127, 0.35);
+}
+
+.mb-spawn-drift-missing {
+  color: #c0392b;
+}
+
+.mb-spawn-drift-extra {
+  color: #d68910;
 }

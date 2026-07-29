@@ -1,1 +1,4 @@
 File Index
+
+/AccountModal.tsx
+Purpose: Phase D — optional cloud-account panel (mirrors ConnectModal/LibraryModal's {isOpen,onClose,connectionId} shape). Logged-out: a single "Log in" button (gameSso.startLogin, whole-page navigation). Logged-in: save/load this connection's scripts+plugins to/from the cloud (via useAccountModal.ts) and log out. Never gates any existing functionality — logged out remains the default, fully-supported state.

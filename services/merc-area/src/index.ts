@@ -88,3 +88,15 @@ export {
   type GeneratedSpellC,
   type RegistryAnchor,
 } from './spell-codegen.js';
+export {
+  parseLiveSnapshot,
+  diffSpawnState,
+  type LiveSnapshot,
+  type LiveRoomState,
+  type DiffSpawnStateResult,
+  type RoomDrift,
+  type DriftSummary,
+  type DriftMobEntry,
+  type DriftExtraObject,
+  type DriftDoorChange,
+} from './live-state.js';

@@ -1,0 +1,29 @@
+src/main.tsx — React entry; forces a real reload on a bfcache restore so the socket reconnects.
+src/App.tsx — Shell: header, the landing/room route switch, and the single ad placement.
+src/index.css — Light and dark theme tokens keyed off <html data-theme>, plus the base reset.
+src/App.css — All layout and component styling for the app.
+src/storage.ts — The one place localStorage is touched (name, per-room participant secret and host token, theme).
+src/api/client.ts — The two REST calls: create a room, and verify a pasted code.
+src/routing/useRoute.ts — ~40-line pushState/popstate router for the landing and /room/:id paths.
+src/routing/useRoute.test.ts — Path parsing, including legacy numeric ids and the shapes that must fall back to the landing page.
+src/routing/room-id.ts — The one definition of a room-id shape, plus extractRoomId for reading an id out of a pasted invite link.
+src/routing/room-id.test.ts — Bare ids, full invite links, pre-UUID numeric ids, and unusable input.
+src/theme/useTheme.ts — Adopts the pre-paint data-theme decision and persists an explicit toggle.
+src/net/useScrumRoom.ts — The websocket: connection lifecycle, backoff, auto-rejoin, and the action senders.
+src/net/parse-server-message.ts — Narrows incoming frames; a version boundary, so unknown frames are ignored not thrown.
+src/net/parse-server-message.test.ts — Accepts real frames, ignores malformed and unknown ones.
+src/features/landing/LandingPage.tsx — Create a room (storing its host token) or join one by code.
+src/features/room/RoomPage.tsx — A room: peek-then-connect, the join gate, banners, and the estimating surface.
+src/features/room/JoinPanel.tsx — Name gate; nothing connects until it is filled in.
+src/features/room/CardDeck.tsx — The estimate cards; clicking the selected card again clears the vote.
+src/features/room/ParticipantTable.tsx — Roster with the three distinct estimate states (none / hidden / revealed).
+src/features/room/ParticipantTable.test.tsx — Asserts those three states stay distinguishable.
+src/features/room/RoomToolbar.tsx — Show/hide, reset, clear-users (the only confirmed action) and the settings entry.
+src/features/room/RoomSettingsDialog.tsx — Organizer settings; validates the deck with the same rule the server uses.
+src/features/room/RoomSettingsDialog.test.tsx — Patch contents, invalid-deck blocking, and cancel discarding edits.
+src/features/room/ResultsSummary.tsx — Post-reveal average, median, consensus badge and distribution.
+src/features/shared/AdSlot.tsx — The app's ONE ad placement; renders nothing when unconfigured.
+src/features/shared/AdSlot.test.tsx — Chiefly the negative case: unconfigured builds ship no container and no script.
+src/features/shared/ad-config.ts — Reads the Vite `define` ad constants (not import.meta, which Jest can't compile).
+src/features/shared/ThemeToggle.tsx — Light/dark switch, labelled with the state it moves to.
+src/features/shared/CopyButton.tsx — Copies the invite link and reports success or failure inline.

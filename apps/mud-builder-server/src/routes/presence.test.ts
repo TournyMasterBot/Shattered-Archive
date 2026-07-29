@@ -111,6 +111,11 @@ describe('presence routes (full app, auth ON)', () => {
       authDataPath: path.join(dir, 'auth'),
       auditDataPath: path.join(dir, 'backups'),
       authServerUrl: 'http://localhost:62000',
+      rebuildEnabled: false,
+      mercMudRepoPath: dir,
+      mercMudHostPath: 'C:/Projects/merc-mud',
+      shatteredArchiveRepoPath: 'C:/Projects/ShatteredArchive',
+      shatteredArchiveHostPath: 'C:/Projects/ShatteredArchive',
     };
     const app = express();
     registerRoutes(app, config);
@@ -183,6 +188,11 @@ describe('presence routes: Phase 4 account actor names the heartbeat', () => {
       auditDataPath: path.join(dir, 'backups'),
       authServerUrl: fakeUrl,
       servicePrivateKeyPath: keyPath,
+      rebuildEnabled: false,
+      mercMudRepoPath: dir,
+      mercMudHostPath: 'C:/Projects/merc-mud',
+      shatteredArchiveRepoPath: 'C:/Projects/ShatteredArchive',
+      shatteredArchiveHostPath: 'C:/Projects/ShatteredArchive',
     };
     const app = express();
     registerRoutes(app, config);

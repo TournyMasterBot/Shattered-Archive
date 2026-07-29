@@ -1,1 +1,7 @@
 File Index
+
+/nav.tsx
+Purpose: Screen navigation store (context + useReducer, no router). Phase F added `'account'` to the `Screen` union for the new AccountScreen — plain `navigate('account')`, no new NavAction needed.
+
+/saved-armies.ts
+Purpose: Named army rosters in localStorage (`kt.savedArmies`) — listSavedArmies/saveArmy/removeArmy. Phase F added `replaceAllArmies` (wholesale overwrite, not a merge) for the new "load army layouts from the cloud" action — `writeStore` stayed module-private; this is the one new public entry point that needed a real bulk-replace instead of many `saveArmy`/`removeArmy` round trips.

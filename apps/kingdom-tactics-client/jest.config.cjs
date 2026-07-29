@@ -39,6 +39,8 @@ module.exports = {
       '<rootDir>/../../services/kingdom-tactics-engine/src/index.ts',
     // kt-config reads Vite's `import.meta.env`, which jest (CJS) cannot parse — use a static stub.
     '^\\./kt-config$': '<rootDir>/src/features/net/kt-config.stub.ts',
+    // Same problem, Phase F's auth/site-API config.
+    '^\\./kt-auth-config$': '<rootDir>/src/features/auth/kt-auth-config.stub.ts',
     // Stub CSS/asset imports (Vite handles them at build; jsdom cannot parse them).
     '\\.(css|scss|sass)$': '<rootDir>/jest.style-stub.cjs',
     // NodeNext ESM specifiers in engine source use `.js`; strip for ts-jest resolution.

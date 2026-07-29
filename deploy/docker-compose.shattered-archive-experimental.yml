@@ -69,6 +69,8 @@ services:
           - web-server.shatteredarchive.dev
           - build.shatteredarchive.dev
           - auth.shatteredarchive.dev
+          - kingdom-tactics.shatteredarchive.dev
+          - scrum-poker.shatteredarchive.dev
       sa-shared: {}
 
     restart: unless-stopped
@@ -238,6 +240,17 @@ services:
       # run against auth-server's live data dir/key, never regenerate this casually:
       # rotation needs revoke-service-key on the OLD key id after the new one is live.
       - "../apps/mud-builder-server/secrets:/repo/apps/mud-builder-server/secrets:ro"
+      # Phase 15 (Step 5): capabilities for the future rebuild pipeline (Step 7) —
+      # NOTHING in this container's code uses any of these three mounts yet. This is a
+      # deliberate, large increase in blast radius (root-equivalent host access from a
+      # bearer-token-authenticated Express app), accepted knowingly during planning — see
+      # .ai-plans/20260725-1223-mud-builder-phase15-engine-rebuild-auth-hardening.md's
+      # Constraints. The docker socket lets this container drive the SAME docker engine
+      # the host uses; the two read-only repo mounts give it a LIVE view of host source
+      # (distinct from its own baked-in /repo build-time copy) to build/recreate against.
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "C:/Projects/merc-mud:/host-merc-mud:ro"
+      - "C:/Projects/ShatteredArchive:/host-shattered-archive:ro"
     environment:
       NODE_ENV: production
       PORT: "61000"
@@ -258,6 +271,21 @@ services:
       # default) — the alias below matches auth-server's own service block.
       AUTH_SERVER_URL: "http://auth-server.shatteredarchive.dev:62000"
       SERVICE_PRIVATE_KEY_PATH: "/repo/apps/mud-builder-server/secrets/shattered-service.key"
+      # Phase 15: the rebuild pipeline exists behind this flag. Enabled 2026-07-25,
+      # user-authorized, to run the live end-to-end verification test — see the Phase 15
+      # plan's Step 7 sign-off for the full evidence trail once that run completes.
+      # Phase G retired the MUD_REBUILD_ALLOWED_USERNAMES allowlist this used to also need —
+      # eligibility is now the mud-builder-local role store (admin tier+), granted via the
+      # Roles tab / POST /api/roles, not an env var.
+      MUD_REBUILD_ENABLED: "true"
+      # Phase 15 (Step 7): where THIS container reads the full repo trees from — the Step 5
+      # read-only mounts above, NOT MERC_MUD_PATH (that's the narrow area/-only mount).
+      MERC_MUD_REPO_PATH: "/host-merc-mud"
+      SHATTERED_ARCHIVE_REPO_PATH: "/host-shattered-archive"
+      # MERC_MUD_HOST_PATH / SHATTERED_ARCHIVE_HOST_PATH deliberately left at their config.ts
+      # defaults (C:/Projects/merc-mud, C:/Projects/ShatteredArchive) — the real Windows host
+      # paths the DAEMON needs for bind-mount sources never differ from those defaults on
+      # this single-operator host.
     expose:
       - "61000"
     networks:
@@ -288,6 +316,75 @@ services:
       shatteredarchive:
         aliases:
           - mud-builder-client.shatteredarchive.dev
+
+  ############################################################
+  # KINGDOM TACTICS (kingdom-tactics.shatteredarchive.dev) — Phase F,
+  # additive like mud-builder/auth: neither container is in nginx's
+  # depends_on, so the rest of the stack starts fine either way. Single
+  # subdomain for client+server (see edge-subdomains.conf) — kt-client's own
+  # code calls relative /api/kt paths, no separate server subdomain.
+  ############################################################
+  kingdom-tactics-server:
+    build:
+      context: ..
+      dockerfile: deploy/kingdom-tactics-server.Dockerfile
+    image: shatteredarchive-kingdom-tactics-server
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    volumes:
+      # Ed25519 private half for this service's own SSO registration (Step 1) — git-ignored
+      # (see .gitignore's `shattered-service.key` pattern), minted via `pnpm --filter
+      # @shatteredarchive/auth-server register-service kingdom-tactics-server` run against
+      # auth-server's live data dir/key. Rotation needs revoke-service-key on the OLD key id.
+      - "../apps/kingdom-tactics-server/secrets:/repo/apps/kingdom-tactics-server/secrets:ro"
+      # Named volume (not a host bind-mount like auth-server's data/): match-history/army-layout
+      # JSON is pure application data, never hand-edited on the host.
+      - "kingdom-tactics-data:/repo/apps/kingdom-tactics-server/data"
+    environment:
+      NODE_ENV: production
+      PORT: "51000"
+      DATA_DIR: "/repo/apps/kingdom-tactics-server/data"
+      # Server-to-server calls (introspect/exchange) use the internal alias, no TLS — matches
+      # mud-builder-server's own AUTH_SERVER_URL convention. AUTH_SERVER_PUBLIC_URL is what the
+      # BROWSER gets redirected to, so it must stay the real public edge.
+      AUTH_SERVER_URL: "http://auth-server.shatteredarchive.dev:62000"
+      AUTH_SERVER_PUBLIC_URL: "https://auth.shatteredarchive.dev"
+      SERVICE_PRIVATE_KEY_PATH: "/repo/apps/kingdom-tactics-server/secrets/shattered-service.key"
+      # MUST match exactly what's registered via register-redirect-uri for this service, or the
+      # hub's code store burns the code on a mismatch.
+      KT_SERVER_CALLBACK_URL: "https://kingdom-tactics.shatteredarchive.dev/api/kt/auth/callback"
+      KT_CLIENT_ALLOWED_RETURN_ORIGINS: "https://kingdom-tactics.shatteredarchive.dev"
+    expose:
+      - "51000"
+    networks:
+      shatteredarchive:
+        aliases:
+          - kingdom-tactics-server.shatteredarchive.dev
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(51000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  kingdom-tactics-client:
+    build:
+      context: ..
+      dockerfile: deploy/kingdom-tactics-client.Dockerfile
+    image: shatteredarchive-kingdom-tactics-client
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    networks:
+      shatteredarchive:
+        aliases:
+          - kingdom-tactics-client.shatteredarchive.dev
 
   ############################################################
   # AUTH SERVER (auth.shatteredarchive.dev) — additive, like mud-builder:
@@ -354,6 +451,80 @@ services:
         aliases:
           - auth-client.shatteredarchive.dev
 
+  ############################################################
+  # SCRUM POKER (scrum-poker.shatteredarchive.dev) — additive like mud-builder/auth/KT:
+  # neither container is in nginx's depends_on, so the rest of the stack starts fine
+  # either way. Single subdomain for client+server (see edge-subdomains.conf): the client
+  # calls same-origin /api/scrum and /ws/scrum, so there is no separate server subdomain.
+  #
+  # Deliberately NOT wired to auth-server. This is an accounts-free tool by design —
+  # possession of the room id (a UUID) is membership, and the host token minted at room
+  # creation is the only notion of organizer. Nothing here holds a service key.
+  ############################################################
+  scrum-poker-server:
+    build:
+      context: ..
+      dockerfile: deploy/scrum-poker-server.Dockerfile
+    image: shatteredarchive-scrum-poker-server
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    volumes:
+      # Named volume (not a host bind-mount): rooms.json is pure application data, written
+      # by the server on a debounce and never hand-edited on the host. It survives a
+      # container recreate, which is the whole reason a team's room config outlives a deploy.
+      - "scrum-poker-data:/repo/apps/scrum-poker-server/data"
+    environment:
+      NODE_ENV: production
+      PORT: "63000"
+      LOG_LEVEL: "debug"
+      DATA_DIR: "/repo/apps/scrum-poker-server/data"
+      # Same-origin in production (the edge serves the SPA and proxies /api on one host), so
+      # this only matters for a browser pointed straight at the server. Kept explicit rather
+      # than relying on the localhost-only default.
+      CORS_ORIGIN: "https://scrum-poker.shatteredarchive.dev"
+      # Defaults from config.ts, stated here because they are the two knobs anyone will want
+      # to change: an hour of inactivity drops a participant, a month drops the whole room.
+      SCRUM_IDLE_TIMEOUT_MS: "3600000"
+      SCRUM_ROOM_TTL_MS: "2592000000"
+    expose:
+      - "63000"
+    networks:
+      shatteredarchive:
+        aliases:
+          - scrum-poker-server.shatteredarchive.dev
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(63000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  scrum-poker-client:
+    build:
+      context: ..
+      dockerfile: deploy/scrum-poker-client.Dockerfile
+      args:
+        # The app's single ad placement. Leave both empty (the default) and nothing renders —
+        # the page makes no request to any ad network.
+        VITE_AD_CLIENT: ""
+        VITE_AD_SLOT: ""
+    image: shatteredarchive-scrum-poker-client
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    networks:
+      shatteredarchive:
+        aliases:
+          - scrum-poker-client.shatteredarchive.dev
+
 volumes:
   nginx-logrotate-state:
   auth-server-secrets:
+  kingdom-tactics-data:
+  scrum-poker-data:

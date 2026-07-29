@@ -12,7 +12,10 @@
     "start": "node dist/index.js",
     "temp-password": "tsx scripts/issue-temp-password.ts",
     "register-service": "tsx scripts/register-service.ts",
-    "revoke-service-key": "tsx scripts/revoke-service-key.ts"
+    "revoke-service-key": "tsx scripts/revoke-service-key.ts",
+    "grant-tier": "tsx scripts/grant-tier.ts",
+    "revoke-tier": "tsx scripts/revoke-tier.ts",
+    "register-redirect-uri": "tsx scripts/register-redirect-uri.ts"
   },
   "dependencies": {
     "@shatteredarchive/types-server": "workspace:*",

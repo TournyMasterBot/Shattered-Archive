@@ -4,13 +4,15 @@ import { promisify } from 'util';
 
 import { EncryptedFileStore } from './encrypted-file-store.js';
 import { AuthError } from './errors.js';
+import { isGlobalTier, type GlobalTier } from './global-tiers.js';
 
 /**
  * AI-ANNOTATION
  * @ai-summary Username accounts: scrypt password hashing, the epoch counter
  *   that both change-password and rotate-master bump (invalidating every
- *   issued key/session), and the pending email-verify / password-reset token
- *   flows. Persisted via EncryptedFileStore (AES-256-GCM at rest).
+ *   issued key/session), the pending email-verify / password-reset token
+ *   flows, and the Phase A hub-global tier (globalRole, absent = 'user').
+ *   Persisted via EncryptedFileStore (AES-256-GCM at rest).
  * @ai-public AccountStore, AccountRecord, generateOneTimePassword
  * @ai-notes createAccount hashes BEFORE re-checking for a duplicate username,
  *   immediately before the synchronous read-modify-write — scrypt is slow
@@ -35,6 +37,8 @@ export interface AccountRecord {
   epoch: number;
   mustChangePassword: boolean;
   createdAt: string;
+  /** Phase A hub-global tier; absent = plain 'user' (the default for every account). */
+  globalRole?: GlobalTier;
   email?: string;
   emailNormalized?: string;
   emailVerifiedAt?: string;
@@ -110,6 +114,11 @@ export class AccountStore extends EncryptedFileStore<AccountsFileData> {
     return this.list().find((a) => a.id === id);
   }
 
+  /** Every account (full records — routes must map to public fields, never return these raw). */
+  listAll(): AccountRecord[] {
+    return [...this.list()];
+  }
+
   require(id: string): AccountRecord {
     const account = this.findById(id);
     if (!account) throw new AuthError(`no account with id ${JSON.stringify(id)}`, 404);
@@ -179,6 +188,24 @@ export class AccountStore extends EncryptedFileStore<AccountsFileData> {
     account.passwordSalt = salt;
     account.mustChangePassword = true;
     account.epoch += 1;
+    this.persist(this.list());
+  }
+
+  /**
+   * Host-script only in Phase A (grant-tier.ts / revoke-tier.ts) — the
+   * strictly-below-managed HTTP admin surface arrives in Phase A2. Setting
+   * 'user' removes the field (absent = the default tier).
+   */
+  setGlobalRole(accountId: string, tier: string): void {
+    if (!isGlobalTier(tier)) {
+      throw new AuthError(`unknown global tier ${JSON.stringify(tier)}`, 400);
+    }
+    const account = this.require(accountId);
+    if (tier === 'user') {
+      delete account.globalRole;
+    } else {
+      account.globalRole = tier;
+    }
     this.persist(this.list());
   }
 

@@ -3,6 +3,7 @@ import { ITEM_TYPES, itemLookup, objValueKinds } from '@shatteredarchive/merc-ar
 
 import { ATTACK_TYPES, EXTRA_FLAGS, LIQUIDS, WEAPON_TYPES, WEAR_FLAGS } from '../../data/flags.js';
 import { FlagGrid, NumField, TextField, WordInput } from '../areas/workbench.js';
+import SaveAsSnippetButton from '../content/SaveAsSnippetButton.js';
 
 /** Human labels + word suggestions for the five values, per item type. */
 function valueMeta(itemType: string): { labels: [string, string, string, string, string]; words: (string[] | null)[] } {
@@ -73,6 +74,7 @@ export default function ObjectEditor({ obj, onChange }: { obj: MudObject; onChan
     <div className="mb-form mb-obj-editor">
       <h4>
         Object #{obj.vnum} — {obj.shortDescr}
+        <SaveAsSnippetButton kind="object" data={obj} />
       </h4>
 
       <fieldset className="mb-fieldset">

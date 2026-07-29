@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-import { signAssertion, introspect } from './auth-introspect-client.js';
+import { signAssertion, introspect, exchangeCode } from './auth-introspect-client.js';
 
 function generateKeypair(): { publicKeyPem: string; privateKeyPem: string } {
   const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519');
@@ -128,5 +128,75 @@ describe('introspect', () => {
     await expect(introspect('http://localhost:62000', 'mud-builder-server', privateKeyPem, 'x')).rejects.toThrow(
       /ECONNREFUSED/,
     );
+  });
+});
+
+describe('exchangeCode', () => {
+  const { privateKeyPem } = generateKeypair();
+
+  function mockFetch(impl: (url: string, init: RequestInit | undefined) => Response): void {
+    globalThis.fetch = jest.fn(async (input: string | URL, init?: RequestInit) => impl(String(input), init)) as unknown as typeof fetch;
+  }
+
+  function jsonResponse(body: unknown, status = 200): Response {
+    return { ok: status < 400, status, statusText: 'x', json: async () => body } as unknown as Response;
+  }
+
+  it('calls POST /api/token-exchange with grantType authorization_code, the signed assertion header, and returns the parsed result', async () => {
+    let seenUrl = '';
+    let seenMethod = '';
+    let seenHeaders: Record<string, string> = {};
+    let seenBody = '';
+    mockFetch((url, init) => {
+      seenUrl = url;
+      seenMethod = init?.method ?? '';
+      seenHeaders = (init?.headers ?? {}) as Record<string, string>;
+      seenBody = String(init?.body ?? '');
+      return jsonResponse({
+        token: 'minted-token',
+        accountId: 'acc-1',
+        username: 'someone',
+        service: 'kingdom-tactics-server',
+        expiresAt: '2026-08-03T00:00:00.000Z',
+        tokenType: 'sso',
+        globalRole: 'user',
+      });
+    });
+
+    const result = await exchangeCode(
+      'http://localhost:62000',
+      'kingdom-tactics-server',
+      privateKeyPem,
+      'the-code',
+      'http://localhost:51000/api/kt/auth/callback',
+    );
+
+    expect(seenUrl).toBe('http://localhost:62000/api/token-exchange');
+    expect(seenMethod).toBe('POST');
+    expect(seenHeaders['X-Service-Assertion']).toBeTruthy();
+    expect(seenHeaders['X-Service-Assertion'].split('.')).toHaveLength(2);
+    expect(JSON.parse(seenBody)).toEqual({
+      grantType: 'authorization_code',
+      code: 'the-code',
+      redirectUri: 'http://localhost:51000/api/kt/auth/callback',
+    });
+    expect(result.token).toBe('minted-token');
+    expect(result.service).toBe('kingdom-tactics-server');
+  });
+
+  it('throws with a readable message on a non-2xx (e.g. an already-used code)', async () => {
+    mockFetch(() => jsonResponse({ error: 'invalid, expired, or already-used code' }, 400));
+    await expect(
+      exchangeCode('http://localhost:62000', 'kingdom-tactics-server', privateKeyPem, 'x', 'http://x/callback'),
+    ).rejects.toThrow(/400.*already-used code/);
+  });
+
+  it('propagates a network failure rather than swallowing it', async () => {
+    globalThis.fetch = jest.fn(async () => {
+      throw new Error('fetch failed: ECONNREFUSED');
+    }) as unknown as typeof fetch;
+    await expect(
+      exchangeCode('http://localhost:62000', 'kingdom-tactics-server', privateKeyPem, 'x', 'http://x/callback'),
+    ).rejects.toThrow(/ECONNREFUSED/);
   });
 });

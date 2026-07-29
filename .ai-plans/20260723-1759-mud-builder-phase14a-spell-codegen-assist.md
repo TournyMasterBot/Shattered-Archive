@@ -391,3 +391,33 @@ never touched (StartedAt discipline).
   (const.c:1968, magic.c:4383, magic.h:117, skills_data.c:144); README Phase 14a section
   reads accurate; live merc-mud2.4 untouched throughout the review (StartedAt
   2026-07-24T22:28:47Z before and after).
+- 2026-07-25 follow-up gap found + fixed (Claude Sonnet 5), reported by the user while
+  independently reviewing Phase 14b ("spark bolt isn't in the Skills page — I'd expect our
+  newly created spell to appear"). Root cause: `services/merc-area/src/skills-stock.ts`
+  (the Skills page's stock fallback, `SkillsStore.read()` → `stockSkillsFile()`) is a
+  GENERATED snapshot of const.c's `skill_table`, and this plan's own live redeploy (above)
+  added "spark bolt" to the REAL const.c without ever regenerating that snapshot — so the
+  builder's own catalog didn't know its own deployed spell existed. Compounding gap: the
+  `gen-skills-stock.js` the file's header comment names as the regenerator doesn't exist
+  anywhere in the repo (grepped both ShatteredArchive and Shattered-AI) — it was a Phase 7
+  scratchpad one-off, per that plan's own "driver in scratchpad" language, never checked
+  in. Re-authored a parser from scratch (scratchpad `gen-skills-stock.mjs`) against
+  const.c's skill_table (merc.h:1679 struct field order, TAR_*/POS_* macro → int maps).
+  Two real parser bugs caught by requiring a minimal, explained diff before trusting output
+  (not by eyeballing): (1) C adjacent string-literal concatenation — `""`  then
+  `"!cancellation!"` on the next line with no comma, which C concatenates but a
+  single-quoted-string regex silently drops — fixed by capturing repeated adjacent
+  literals per field; (2) "harm"'s msg_off has a literal raw TAB byte typed into const.c
+  (not a `\t` escape) — fixed by decoding C escapes to real characters BEFORE
+  concatenating adjacent literals, then re-encoding as TS string escapes on emit, rather
+  than pasting source text through verbatim. Verified via a full field-by-field diff
+  against the old file (`diff-rows.mjs`) before writing anything: zero changes on all 134
+  existing rows, exactly one addition ("spark bolt" + its `spell_spark_bolt` entries in
+  the two derived lists). Rebuilt + tested clean (merc-area 125/125, mud-builder-server
+  94/94, mud-builder-client 158/158, both tsc clean), rebuilt + recreated both containers,
+  verified live: `GET /api/skills` → `source: "stock"`, 135 skills (was 134), "spark bolt"
+  entry present and matching const.c exactly. merc-mud2.4 StartedAt unchanged throughout
+  (2026-07-25T12:42:19Z before and after — the game was never touched). `.annotated` for
+  `services/merc-area/src/` updated with a standing reminder: regenerate this file after
+  ANY live redeploy that adds a skill_table row, since nothing currently automates that
+  sync.

@@ -4,10 +4,10 @@ File Index
 Purpose: Docker command reference for building, running, and managing project containers.
 
 /docker-compose.shattered-archive-experimental.yml
-Purpose: Experimental Docker Compose stack for Shattered Archive development/testing; also the ONLY place MUD_WRITE_ENABLED=true is set (mud-builder-server service, sharing C:/Projects/merc-mud/2.4/area with the separately-composed game).
+Purpose: Experimental Docker Compose stack for Shattered Archive development/testing; also the ONLY place MUD_WRITE_ENABLED=true is set (mud-builder-server service, sharing C:/Projects/merc-mud/2.4/area with the separately-composed game). Phase 15 (2026-07-25, live-verified): mud-builder-server's service block gained a docker.sock bind mount (RW) plus two READ-ONLY host-repo mounts (/host-merc-mud, /host-shattered-archive — distinct from its own build-time /repo copy) and MUD_REBUILD_ENABLED/MUD_REBUILD_ALLOWED_USERNAMES env vars — this is a deliberate, large blast-radius increase (root-equivalent host access from this one container) accepted knowingly, see the Phase 15 plan's Constraints. Step 7 (same day) added MERC_MUD_REPO_PATH=/host-merc-mud and SHATTERED_ARCHIVE_REPO_PATH=/host-shattered-archive — without these, config.ts's mercMudRepoPath/shatteredArchiveRepoPath fields would default to the narrow MERC_MUD_PATH (/mud, area-only) instead of the full repo mounts, breaking the rebuild pipeline's ability to read docker-compose.yml/Dockerfiles. MUD_REBUILD_ENABLED stays "false" — the rebuild pipeline code is live and deployed but the feature itself is not yet turned on; flipping it on for a real end-to-end run is a separate, deliberately gated action. Phase F (2026-07-28, live-verified): added kingdom-tactics-server (port 51000, secrets/ volume mount for its Ed25519 key, a named `kingdom-tactics-data` volume — deliberately NOT a host bind-mount like auth-server's data/, since match-history/army-layout JSON is pure app data, never hand-edited; AUTH_SERVER_URL set to the internal alias, AUTH_SERVER_PUBLIC_URL to the real public edge — the browser-redirect-vs-server-to-server split mud-builder-server never needed since it has no browser-facing SSO route of its own) and kingdom-tactics-client (plain static nginx serve, no VITE_ build args — same "relative URLs, edge routes them" pattern as mud-builder-client, confirmed as the REAL working convention by checking game-client.Dockerfile: it declares no ARG/ENV for the VITE_GAME_API/VITE_GAME_SECURE build args its OWN compose block passes, so those are silently unused today). Both new services share ONE subdomain (kingdom-tactics.shatteredarchive.dev, added to the edge nginx's alias list) rather than a client/server pair of subdomains. Scrum Poker (2026-07-28): added scrum-poker-server (63000, `scrum-poker-data` named volume for rooms.json, SCRUM_IDLE_TIMEOUT_MS/SCRUM_ROOM_TTL_MS stated explicitly at their config.ts defaults since they are the two knobs anyone will want) and scrum-poker-client (VITE_AD_CLIENT/VITE_AD_SLOT build args, both empty by default = no ad code in the bundle), on the same single-subdomain scrum-poker.shatteredarchive.dev pattern. Unlike every other service here it holds NO service key and never calls auth-server — accounts-free by design. Present in BOTH compose files, unlike mud-builder/kingdom-tactics.
 
 /docker-compose.yml
-Purpose: This file orchestrates a production deployment of a web and game archive platform using Docker containers and nginx reverse proxy.
+Purpose: This file orchestrates a production deployment of a web and game archive platform using Docker containers and nginx reverse proxy. Scrum Poker (2026-07-28): gained scrum-poker-server (63000, `scrum-poker-data` named volume for rooms.json) and scrum-poker-client — additive like auth, NOT in nginx's depends_on, and deliberately unconnected to auth-server (an accounts-free tool: the room id (a UUID) is membership, the create-time host token is organizer). Note this prod file still carries no mud-builder or kingdom-tactics services; those live only in the experimental stack.
 
 /game-client.Dockerfile
 Purpose: This Dockerfile builds and deploys the game client application with Node.js and Nginx.
@@ -18,14 +18,26 @@ Purpose: This Dockerfile builds and runs the game server application in a produc
 /index.html
 Purpose: This HTML file serves as a local development setup guide for the ShatteredArchive project.
 
+/kingdom-tactics-client.Dockerfile
+Purpose: Phase F — digest-pinned multi-stage build of the Kingdom Tactics client (vite build → nginx static), mirrors mud-builder-client.Dockerfile exactly: no VITE_KT_API/VITE_KT_WS build args, the client calls /api/kt and /ws/kt relatively (see features/auth/kt-auth-config.ts) and the edge nginx routes them on the SAME subdomain.
+
+/kingdom-tactics-server.Dockerfile
+Purpose: Phase F — digest-pinned multi-stage build of the Kingdom Tactics server (node alpine, pnpm via strict corepack, port 51000), modeled on game-server.Dockerfile (same bootstrap shape) rather than mud-builder-server.Dockerfile — includes the `COPY deploy/.env /repo/.env` step game-server has and mud-builder-server doesn't; a real deploy crash (missing /repo/.env) caught this omission on the first container start, not review. Also builds @shatteredarchive/kingdom-tactics-engine, which neither game-server nor mud-builder-server need.
+
 /mud-builder-client.Dockerfile
 Purpose: Digest-pinned multi-stage build of the MUD Builder UI (vite build → nginx static, no VITE_ args — the client calls /api relatively and the edge routes it).
 
 /mud-builder-server.Dockerfile
-Purpose: Digest-pinned multi-stage build of the MUD Builder API server (node alpine, pnpm via strict corepack, port 61000); write gate deliberately unset in the image.
+Purpose: Digest-pinned multi-stage build of the MUD Builder API server (node alpine, pnpm via strict corepack, port 61000); write gate deliberately unset in the image. Phase 15: runtime stage installs docker-cli + docker-cli-compose (apk) right after the CVE-patch upgrade line — unused image capability until the compose file's docker.sock mount (see .annotated above) gives it something to talk to.
 
 /nginx.Dockerfile
 Purpose: Nginx Dockerfile configuring SSL, logging, and entrypoint for edge subdomains.
+
+/scrum-poker-client.Dockerfile
+Purpose: Digest-pinned multi-stage build of the Scrum Poker client (vite build → nginx static). Unlike mud-builder-client/kingdom-tactics-client it DOES declare build args — VITE_AD_CLIENT/VITE_AD_SLOT, and they are genuinely wired (ARG + ENV, read via Vite `define`), unlike game-client's declared-nowhere VITE_* args. Both default to empty, and with either empty nothing renders and the page makes no request to any ad network (the unreachable loader code does remain in the bundle — AdSlot's injectable config prop, which exists for testability, stops the minifier proving the branch dead; the guarantee is no ad REQUEST, not no ad code). Everything else (API + websocket) uses same-origin relative URLs the edge routes.
+
+/scrum-poker-server.Dockerfile
+Purpose: Digest-pinned multi-stage build of the Scrum Poker server (node alpine, pnpm via strict corepack, port 63000). Modeled on kingdom-tactics-server.Dockerfile including its `COPY deploy/.env /repo/.env` step; also builds @shatteredarchive/scrum-poker-core, the isomorphic package the client shares. No secrets mount and no service key — this service does not talk to auth-server.
 
 /web-client.Dockerfile
 Purpose: Dockerfile for building and serving the web client application with Node.js and Nginx.

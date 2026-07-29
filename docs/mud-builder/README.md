@@ -1,9 +1,9 @@
 # MUD Builder
 
 A graphical world-building tool for the Merc 2.4 MUD at `C:\Projects\merc-mud`.
-Edit rooms (and soon mobs, objects, scripts, …) in a browser, preview the exact
-area-file text that will be written, and push changes into the **running** game
-without disconnecting anyone.
+Edit rooms, mobs, objects, resets, scripts, and more in a browser, preview the
+exact area-file text that will be written, and push changes into the
+**running** game without disconnecting anyone.
 
 ## The pieces
 
@@ -75,6 +75,157 @@ Then in the UI: pick an area → pick a room → edit → **Preview** → Save �
 
 See [commands.md](./commands.md) for the full command crib sheet.
 
+## Getting started: your account and API key (plain-language walkthrough)
+
+This section is for anyone opening the builder for the first time, written with
+no assumed technical background. It covers four separate pieces of software —
+two you visit in a browser, two that just run quietly in the background — and
+how they connect: you create an account on the **account website**, use it to
+generate an **API key** (a long random password made just for this purpose),
+and paste that key into the **builder website** so it will let you save
+changes.
+
+**You may not need any of this.** A local copy you started yourself is
+read-only (preview and download, no Save) until someone deliberately turns on
+writing — see [The write gate](#the-write-gate). The shared team site at
+`build.shatteredarchive.dev` always has writing turned on, so anyone using it
+needs an account and a key. If you're not sure which situation you're in, try
+opening the builder and clicking the **Access** tab — it will tell you.
+
+### Step 1 — start the four pieces (skip this if you're using the shared team site)
+
+If you're using `build.shatteredarchive.dev` / `auth.shatteredarchive.dev`,
+someone else already has these running — skip to Step 2. If you're setting up
+your own local copy, open a separate terminal window for each command below
+and leave it running (closing the window stops that piece).
+
+```bash
+# 1. The game itself — there has to be a world for the builder to edit.
+#    (run this from C:\Projects\merc-mud)
+docker compose up -d
+```
+What it does: turns on the actual MUD game.
+
+```bash
+# 2. The account service — remembers usernames, passwords, and API keys.
+pnpm --filter @shatteredarchive/auth-server dev
+```
+What it does: runs quietly in the background; nothing to click here.
+
+```bash
+# 3. The account website — where you'll sign up and create your key.
+pnpm --filter @shatteredarchive/auth-client dev
+```
+What it does: gives you a page at `http://localhost:62080`.
+
+```bash
+# 4. The builder's engine — reads and writes the game's world files.
+pnpm --filter @shatteredarchive/mud-builder-server dev
+```
+What it does: runs quietly in the background; nothing to click here either.
+
+```bash
+# 5. The builder website — where you actually edit the world.
+pnpm --filter @shatteredarchive/mud-builder-client dev
+```
+What it does: gives you a page at `http://localhost:60080`.
+
+(Steps 2 and 4 have no webpage of their own — they're the "engines"; steps 3
+and 5 are the two pages you'll actually look at.)
+
+### Step 2 — create your account
+
+Open the account website (`http://localhost:62080` locally, or
+`https://auth.shatteredarchive.dev` on the shared team site).
+
+1. Click **"Need an account? Sign up"**.
+2. Type a username.
+3. Answer the three short questions on screen — this just proves you're a
+   person and not an automated script; it isn't a security question you need
+   to remember.
+4. Click **"Create account"**.
+5. A one-time password appears on screen. **Write it down now** — it is shown
+   exactly once and can't be recovered later.
+6. Click **"Continue to login"** and log in with your username and that
+   password.
+7. The site will immediately ask you to **set a real password** (at least 12
+   characters) to replace the one-time one. This is required before you can do
+   anything else — pick something you'll remember.
+
+You're now logged into the account website, with an "Account" page and an
+"API keys" page in the top navigation.
+
+### Step 3 — create your API key
+
+An API key is just a long random code the builder can use to recognize you
+automatically, so you don't have to type a username and password into it.
+
+1. Click **"API keys"** in the navigation.
+2. Under "Create a new key," choose **`mud-builder-server`** from the Service
+   dropdown — this just labels the key as "for the MUD builder."
+3. Type a short label for yourself, e.g. `my laptop`.
+4. Click **"Create API key"**.
+5. Your new key appears on screen. **Copy it now** (there's a Copy button) —
+   like the password above, it's shown exactly once and the site does not
+   keep a readable copy of it anywhere.
+
+### Step 4 — give that key to the builder
+
+1. Open the builder website (`http://localhost:60080` locally, or
+   `https://build.shatteredarchive.dev` on the shared team site).
+2. Click the **"Access"** tab.
+3. Paste your key into the **"Token"** box.
+4. Click **"Save token"**.
+5. The page should now say your token was accepted. You can now edit rooms
+   and click Save — see [Everyday workflows](#everyday-workflows) above for
+   the actual editing steps.
+
+The key is remembered only in that one browser (nothing is sent anywhere
+except this builder site). If you switch computers or browsers, repeat Step 4
+with the same key — no need to make a new one.
+
+### How it all connects
+
+```mermaid
+sequenceDiagram
+    participant You
+    participant AcctSite as Account website
+    participant AcctService as Account service
+    participant BuilderSite as Builder website
+    participant BuilderEngine as Builder engine
+
+    You->>AcctSite: Sign up (username + 3 quick questions)
+    AcctSite->>AcctService: Create account
+    AcctService-->>AcctSite: One-time password
+    AcctSite-->>You: Shown once - write it down
+
+    You->>AcctSite: Log in, then set a real password
+    AcctSite->>AcctService: Check credentials
+    AcctService-->>AcctSite: Logged in
+
+    You->>AcctSite: Create API key (for "mud-builder-server")
+    AcctSite->>AcctService: Issue a new key
+    AcctService-->>AcctSite: New key, shown once
+    AcctSite-->>You: Copy it now
+
+    You->>BuilderSite: Paste key into Access tab, Save token
+    Note over BuilderSite: Remembered in this browser only
+
+    You->>BuilderSite: Edit a room, click Save
+    BuilderSite->>BuilderEngine: Save request + your key
+    BuilderEngine->>BuilderEngine: Do I recognize this key myself? No.
+    BuilderEngine->>AcctService: Is this key still valid?
+    AcctService-->>BuilderEngine: Yes - valid, belongs to you
+    BuilderEngine-->>BuilderSite: Save allowed
+    BuilderSite-->>You: Change saved!
+```
+
+The last exchange (Builder engine asking the Account service to confirm a key)
+only happens for keys made on the account website. The builder also has its
+own separate keys it can hand out directly, without any of this — see
+[Access guard and audit trail](#access-guard-and-audit-trail-phase-9) for the
+full technical picture, including the master key and key rotation/revocation.
+
 ## Deployed stack (Phase 3): build.shatteredarchive.dev
 
 The builder ships in the **experimental** compose stack
@@ -126,7 +277,7 @@ Two preservation rules keep odd area files safe in both editors:
 
 ## Creating and deleting things (Phase 4)
 
-Every entity tab has **+ Add** (rooms on Areas, mobs, objects). New entities
+Every entity tab has **+ Add** (rooms on the Rooms tab or the Areas dashboard, mobs, objects). New entities
 get the first free vnum in the area's declared min/max range (mob/object/room
 numbers are treated as one namespace to keep things unambiguous) and a
 minimal template that boots as-is — rename and stat it in the form.
@@ -273,6 +424,11 @@ Saves apply at the next **copyover**, same as skills; "Remove overlay" deletes
 
 ## Access guard and audit trail (Phase 9)
 
+For a plain-language, step-by-step version of creating an account and API key
+(no jargon, exact clicks), see
+[Getting started: your account and API key](#getting-started-your-account-and-api-key-plain-language-walkthrough)
+above. This section is the technical reference.
+
 Whenever writes are enabled, every mutating request (`PUT`/`POST`/`DELETE`
 under `/api/*`) requires a bearer token; requests without one get a 401 and
 touch nothing. Reads — the UI, previews, downloads — stay open. There are two
@@ -322,6 +478,10 @@ is generated and all API keys are gone.
 Local development needs none of this: with `MUD_WRITE_ENABLED` unset the guard
 is off (there is nothing to protect), and `MUD_BUILDER_AUTH=off` exists to
 test write flows locally without tokens — never set it in a deployed compose.
+
+Phase 15 adds a THIRD, more narrowly-gated credential requirement on top of
+this — see [Engine rebuild and redeploy](#engine-rebuild-and-redeploy-phase-15)
+below.
 
 ## Importing an existing .are file (Phase 10)
 
@@ -391,8 +551,8 @@ them since Phase 12b — the diagonals own the corner cells and up/down rooms
 are placed in the nearest free cell), so the layout walks the exits
 breadth-first and most areas fall onto a natural grid — no graph library
 involved. Drag to
-pan, wheel to zoom. Clicking a room opens it in the Areas tab (same hand-off
-as World-dashboard links); cross-area exits appear as dashed **portal stubs**
+pan, wheel to zoom. Clicking a room opens it in the Rooms tab (its focused
+editor); cross-area exits appear as dashed **portal stubs**
 labeled with the neighboring file and room name, and clicking one swaps the
 map to that area. Dangling exits (a target no listed area defines) draw
 nothing — the validation warnings are the place to chase those.
@@ -566,6 +726,324 @@ AreaFile the Areas tab already edits.
   edge, and a second PUT reusing the now-stale hash 409'd as expected. The area and its
   `area.lst` registration were removed afterward; the live game was never restarted.
 
+## Live repop drift: Compare live (Phase 14c)
+
+The Simulate pane's boot-state view (Phase 13) answers "what spawns on a fresh
+boot" — it never reflected what's actually happened since (kills, loot,
+players dropping things, doors left open). A **"Compare live"** button closes
+that gap with a second, genuinely live engine feature: a read-only snapshot
+handshake with the running game, diffed against the same boot simulation.
+
+- **Signal-file handshake, not a socket** — the same proven mechanism as hot
+  reload/copyover. The builder writes `state.request` into the shared area
+  dir; the game's `update_handler` pulse (checked once a second, same cost
+  model as `reload.signal`) sees it, walks the live world, and writes
+  `state.snapshot.json` (atomic tmp-then-`rename()`, so a concurrent read can
+  never see a torn file), then deletes the request.
+- **Vnums and counts only — never a name.** The engine-side writer
+  (`state_snapshot.c`) is a strictly read-only traversal: no allocation, no
+  game string ever written. Room/mob/object names are resolved back
+  client-side from the parsed area file the builder already has — the same
+  reason the boot simulator never needed the game running at all.
+- **What gets diffed**: for every room in the CURRENT area either the boot
+  simulation or the live snapshot mentions — mobs missing (killed and not yet
+  re-spawned), objects missing (looted) or present that were never placed
+  (player-dropped), how many players are standing there right now, and any
+  door whose open/closed/locked state has drifted from what a fresh boot
+  would show, in **either** direction. `state.snapshot.json` covers the whole
+  world (the engine has no concept of "area"), so the pane filters it down to
+  this area's own rooms before comparing — otherwise every OTHER area's
+  populated rooms would read as false "extra" drift here.
+- **Map tab gets a Boot/Live sub-toggle**, but only once a live snapshot
+  actually exists — asking the Map tab for live data never itself pokes the
+  game; only the Simulate pane's "Compare live" button does that. Selecting
+  Live swaps the familiar green spawn badges to an amber variant with a live
+  per-room mob count, so which mode you're looking at is obvious at a glance.
+- **Verified end-to-end** (2026-07-26): deployed via the Phase 15 rebuild
+  pipeline (engine + both builder containers rebuilt and recreated for real,
+  `StartedAt` confirmed newer on all three, `Melchaleve` and all 54 area
+  files intact afterward). Live checks against the deployed stack: an
+  unauthenticated refresh 401s and a real one 202s with the snapshot
+  appearing within the poll bound (1767 populated rooms world-wide, 73 in
+  midgaard's own range); `midgaard.are`'s live snapshot, scoped to its own
+  143 rooms and diffed against its boot simulation, showed real organic
+  drift accumulated over the deployment's uptime — three rooms missing an
+  object the boot state expects (picked up and carried off) and one door
+  that boots open now reading `locked` — genuine, unstaged evidence the
+  detection works against real game state, not just synthetic tests. A hot
+  reload of `midgaard.are` afterward applied cleanly (`143 rooms upd/0 new`),
+  proving the new pulse hook doesn't disturb the existing reload path; the
+  audit log's line count was identical before and after every refresh call.
+- **Never hangs.** The pane polls for up to ~10 seconds after asking for a
+  refresh; if the game never answers (engine not yet rebuilt, or the write
+  gate is off), it says so in plain text instead of spinning forever.
+
+```mermaid
+sequenceDiagram
+    participant You as Builder (Simulate pane)
+    participant Server as mud-builder-server
+    participant Game as merc-mud engine
+
+    You->>Server: POST /api/state/refresh
+    Server->>Game: write state.request (shared area dir)
+    Note over Game: next pulse, ≤1s later
+    Game->>Game: walk the live world (vnums + counts only, never a name)
+    Game->>Server: write state.snapshot.json (atomic rename)
+    loop poll up to ~10s
+        You->>Server: GET /api/state/live
+        Server-->>You: {snapshot, ageMs}
+    end
+    You->>You: diff the snapshot against the boot-state simulation
+    You->>You: show missing mobs, dropped/looted objects,<br/>player counts, and door drift — per room
+```
+
+## Engine rebuild and redeploy (Phase 15)
+
+A THIRD action beyond Hot Reload and Copyover, on its own **Engine** tab. Those two apply
+**content** changes (area files, skills.dat/groups.dat overlays) without touching compiled
+code. This one applies **code** changes — a C patch to the engine, or a change to the
+builder apps themselves — by recompiling and redeploying for real. It is the only action
+in the builder that briefly restarts the live game.
+
+### Who can trigger it
+
+Two independent gates, both required:
+
+- **`MUD_REBUILD_ENABLED=true`** — a deployment-wide switch, off by default. If it's off,
+  the Engine tab shows a plain "not enabled" message and `POST /api/rebuild` 501s for
+  everyone, including the master key.
+- **`requireRebuildAllowed`** — passes for the master key, or for a **centrally-issued
+  account** (minted via auth-client, never a local API key — a key's label is free text,
+  never a real identity check) holding **admin tier or above** in this service's own
+  [role store](#delegated-roles-and-per-account-content-phase-g) **and** whose token
+  expires within 7 days. A "forever" account key
+  never qualifies, even for an admin-tier account — this action is deliberately gated
+  behind a short-lived credential, not just an identity check.
+
+`GET /api/rebuild/status` reports both the current pipeline status and a `canTrigger`
+flag for the calling token — the Engine tab uses `canTrigger` to hide the button entirely
+for anyone not eligible, rather than show it and let the click fail.
+
+### What happens when it runs
+
+```mermaid
+flowchart TB
+    Click["Operator clicks 'Rebuild engine'<br/>(confirm dialog warns the builder itself<br/>will disconnect and reconnect)"]
+    Guard{"requireRebuildAllowed:<br/>master, or admin-tier+ account<br/>with a token expiring &le;7 days?"}
+    Click --> Guard
+    Guard -->|no| Denied["401 / 403"]
+    Guard -->|yes| Flag{"MUD_REBUILD_ENABLED?"}
+    Flag -->|false| NotEnabled["501 not enabled"]
+    Flag -->|true| Accepted["202 Accepted<br/>pipeline runs in the background"]
+
+    subgraph Pipeline["RebuildStore.runPipeline() -- runs in mud-builder-server's OWN process"]
+        direction TB
+        P1["1: building-mercmud24<br/>docker compose build mercmud24<br/>(safe -- no running container touched)"]
+        P2["2: recreating-mercmud24<br/>docker compose up --force-recreate<br/>(a DIFFERENT container -- safe to run directly)"]
+        P3["3: building-builder-images<br/>docker compose build the builder pair<br/>(safe -- no running container touched)"]
+        P4["4: handing-off-to-helper<br/>status flushed to disk BEFORE handoff --<br/>this process cannot report what happens next"]
+        P1 --> P2 --> P3 --> P4
+    end
+    Accepted --> P1
+
+    subgraph Helper["Ephemeral docker run --rm -d helper (a separate, unrelated container)"]
+        H1["docker compose up --force-recreate<br/>mud-builder-server + mud-builder-client"]
+    end
+    P4 -.->|spawns, detached| H1
+    H1 --> Torndown["mud-builder-server's OLD process is torn down here"]
+    Torndown --> Boot["NEW mud-builder-server process boots"]
+    Boot --> Resolve["resolveDanglingOnBoot():<br/>a dangling handing-off-to-helper record<br/>is presumed complete"]
+
+    style Denied fill:#5a1a1a,color:#eee
+    style NotEnabled fill:#5a1a1a,color:#eee
+    style Pipeline fill:#16213e,color:#eee,stroke:#555
+    style Helper fill:#2b1a1a,color:#eee,stroke:#a55
+```
+
+Two things drive that shape, both found the hard way and worth understanding before
+touching this code:
+
+- **A container cannot safely recreate itself in-process.** If `mud-builder-server` ran
+  `docker compose up --force-recreate` on ITSELF directly, the daemon's "stop the old
+  container" step kills the very process issuing that command mid-operation — proven
+  live during Step 6's spike (a deliberately-blocking test attempt got SIGKILLed the
+  moment its own container was torn down). The fix is the ephemeral helper: a disposable,
+  unrelated `docker:cli` container (pinned by digest) does the final recreate instead,
+  spawned **detached** (`-d`) so the spawning call returns immediately rather than waiting
+  on a command that's about to kill it.
+- **Bind-mount paths must be absolute, never relative, when the compose command runs
+  from inside a container.** `merc-mud/docker-compose.yml`'s own volumes use relative
+  paths (`./2.4/area`). Step 6 proved that invoking `docker compose up` with a relative
+  volume source, from inside a container talking to the host daemon over the socket,
+  makes the daemon silently create and mount a brand-new **empty** directory instead of
+  the real one — no error, no warning. Every volume the pipeline touches gets a small
+  generated override pointing at the real, absolute host path instead.
+
+### Verified live (2026-07-25) — the full pipeline, start to finish, against the real stack
+
+Not a toy, not mocked, not partial — every phase ran for real and was independently
+confirmed:
+
+- **`mercmud24` rebuilt and recreated**: new container ID, new `StartedAt`, freshly
+  compiled from the live source tree. Confirmed genuinely running (not just "started") by
+  opening a real TCP connection to port 4000 and reading the MOTD banner from the
+  newly-booted process. `area/` and `player/` were verified intact afterward — real area
+  files, real player names present, not the empty phantom directory the Step 6 spike
+  showed a relative-path mistake would silently produce.
+- **The builder images were built, then the pair recreated via the ephemeral helper**:
+  both `mud-builder-server` and `mud-builder-client` show new container IDs and the SAME
+  `StartedAt` second (confirming the helper recreated them together, as one `docker
+  compose up` call), and the OLD `mud-builder-server` process — the one that issued the
+  handoff — did not survive to see any of this, exactly as designed.
+- **The NEW `mud-builder-server` process resolved its own dangling status on boot**:
+  `GET /api/rebuild/status` on the freshly-recreated container reported `phase: "complete"`
+  with a log entry explaining why (`resolveDanglingOnBoot()` — the pre-recreate process
+  could never have observed this outcome itself, by design), and `GET /api/capabilities`
+  /`canTrigger` both confirmed the new process is fully healthy and ready to run again.
+
+One real bug was caught and fixed along the way, exactly what a first live run is for:
+the first attempt failed at the `mercmud24` recreate step because `docker compose` infers
+its project name from the compose file's own directory when no `name:` is set in the
+file — `merc-mud/docker-compose.yml` has none, so the container-side invocation path
+(`/host-merc-mud/...`) derived a DIFFERENT project name than every host-side invocation
+ever had (`host-merc-mud` vs. `merc-mud`). Compose treated it as a brand-new project and
+tried to create a second container sharing the fixed `container_name: merc-mud2.4`,
+failing loudly with a name conflict — a safe, loud failure, not silent damage; the live
+game was completely untouched by the failed attempt (verified: unchanged container ID
+before and after). Fixed by passing an explicit `-p <project>` on every compose
+invocation in the pipeline (`merc-mud` / `shatteredarchive`, matching the real deployed
+project names exactly) rather than relying on directory-basename inference anywhere,
+redeployed, and the retry succeeded completely.
+
+## Delegated roles and per-account content (Phase G)
+
+Two additive features layered on top of the centralized-auth wiring (Phase 2/4), neither
+of which changes anonymous or master-key behavior at all.
+
+### Roles
+
+mud-builder has its own tier ladder, separate from — but bootstrapped by — the hub's
+global one: `owner > admin > manager > trusted > user`. An account with no grant is
+`user` by default, which unlocks nothing extra. The **Roles** tab shows your own standing
+(local tier, plus your hub-global role if you have one) always; a management table for
+granting tiers to other accounts only appears if you're actually allowed to grant
+anything — a hub owner or admin (checked via the same introspect call every other
+centrally-issued token already goes through), an existing local admin or owner, or the
+master key.
+
+**'owner' can never be granted from the Roles tab, by anyone** — the ceiling on every
+granter, including the master key, is `admin`. This mirrors the hub's own rule for its
+global ladder exactly (its 'owner' tier is host-script-only too): getting a local
+'owner' row into `roles.json` is a host-side, hands-on-the-file operation, not an HTTP
+action, closing off privilege-escalation via the API entirely. In practice this doesn't
+matter for what roles actually unlock today — `admin` tier is already everything a
+service admin needs (see below).
+
+This is the mechanism that replaced Phase 15's `MUD_REBUILD_ALLOWED_USERNAMES` env-var
+allowlist for the Engine tab's rebuild trigger: it now checks **admin tier or above** in
+this same role store, so granting someone rebuild access is a Roles-tab action, not an
+env-var edit and redeploy.
+
+### My Content (private snippets)
+
+The **My Content** tab holds a builder's own private Room/Mob/Object/Script templates —
+saved via a "Save as snippet" button on any of those four editors, never touching the
+live area files. "Load into editor" adds a brand-new entity on whichever area you have
+open in the matching tab, seeded from the snippet's saved fields but with a **freshly
+allocated vnum** (the snippet's original vnum is discarded — it's meaningless outside
+whatever area it was first saved from). A script snippet retargets to the current area's
+first mob or room the same way "+ Add script" already does, since its saved `mobVnum`
+is almost certainly from a different area too.
+
+Snippets require a centrally-authenticated account (an accountId to own them under) —
+the master key and local API keys have neither, so the "Save as snippet" button simply
+doesn't appear for those, and `/api/snippets` 403s them outright rather than silently
+returning nothing.
+
+## Rooms tab (focused editor) and the Areas dashboard (see-everything editor)
+
+Rooms started out edited entirely inside the Areas tab, then briefly moved
+to being the *only* place rooms could be edited (with Areas' own room view
+turned read-only) once a dedicated **Rooms tab** was added alongside Mobs,
+Objects, Resets, Scripts, and Socials. That read-only phase was short-lived:
+Areas was redesigned into a genuine **organizational dashboard** for a whole
+area, fully editable again — so today both tabs are real, independent
+editors over the same underlying model, aimed at two different jobs.
+
+**Rooms tab** — pick an area, pick one room from the list, edit it in a
+focused form (same shape as Mobs/Objects: add/delete allocate and remove
+vnums the same way every other entity tab does), with a read-only "Exits &
+connections" panel below it (every exit's direction, the room it leads to —
+resolved to a name when the target is in the same file — and its lock
+state) so a room's place in the area stays visible without leaving the
+editor. This is the tool for "I want to concentrate on exactly this room."
+
+**Areas tab** — the left nav (area list) and header form work as always, but
+the main content is now a filterable, scrollable list of *every* room in the
+area, each a closed-by-default accordion. Opening one reveals:
+
+- The full room form (the same `RoomEditor` the Rooms tab uses) plus the
+  same read-only Exits & connections panel.
+- **Mobs in this room** — one nested accordion per mob placed here (an `M`
+  reset), each embedding the mob's own edit form (editing it here edits the
+  *same shared prototype* the Mobs tab edits — the same vnum, on purpose,
+  labeled as such so it isn't a surprise), plus two further-nested
+  accordions: **Equipment** (this specific placement's `G`/`E` reset rows —
+  scoped to this room, not the mob's other placements elsewhere) and
+  **Scripts** (the mob's `MobScript` rows — area-wide, independent of which
+  room this placement is in; the two accordions are kept visually distinct
+  because their scoping rules genuinely differ).
+- **Objects in this room** — one nested accordion per placed object (an `O`
+  reset), similarly embedding the object's shared prototype form plus a
+  **Contents** accordion for whatever `P` resets fill that specific
+  placement (a container's contents).
+- **Progs** — the room's own `MobScript` rows (`attach: 'room'`).
+
+Deleting a room from either tab now shows a **categorized, actionable
+panel** instead of a flat error when something still references it: grouped
+by what kind of reference it is (a reset, a Map exit, a mob's shop/special,
+a script), each group with a **"Go fix it →"** button that jumps to the
+right tab already focused on the problem — the Map tab centers and
+highlights the referencing room; Resets jumps to the same room-filtered
+Simulate view the "see what spawns here" link uses.
+
+Both tabs also gained a **dirty-state guard**: switching areas while there
+are unsaved edits now asks for confirmation instead of silently discarding
+them (this applies to every tab that shares `useAreaWorkbench`, not just
+Areas — the underlying tracking lives there).
+
+Every cross-tab room link still resolves correctly: a Map click or the
+World dashboard's resolved cross-area links land on the Rooms tab with that
+room selected; the Simulate pane's per-room entries carry a reciprocal
+**"Edit this room →"** link back to the Rooms tab, completing the round trip
+with the existing "See what spawns here →" link the other direction.
+
+## UX conventions: toasts, confirmations, and unsaved changes
+
+A dedicated polish pass (2026-07-26) swept every tab for three things, so they now
+work the same way everywhere instead of varying tab to tab:
+
+- **One toast component, four states.** `ok`/`err`/`warn`/`info` (green/red/amber/blue),
+  click to dismiss. Every tab renders the same shared component now — the several tabs
+  that used to hand-roll their own near-identical copy (Scripts, Map, Engine, Access,
+  Skills and its Groups/codegen sub-views) were migrated onto it, and the migration
+  incidentally fixed a couple of small existing bugs (a success toast that never got its
+  green styling, a failure toast that dropped which action had actually failed).
+- **Destructive actions confirm; fine-grained ones don't, on purpose.** Deleting a room,
+  mob, object, social, or script always asks first. Removing a mob or object's whole
+  placement from a room (in the Areas dashboard) asks too. Removing one equipment row
+  or one reset line does not — those are frequent, low-stakes, trivially-undone edits,
+  and confirming every one of them would make the editor worse to use, not safer.
+- **Blocked deletes are actionable, not just "no."** Trying to delete something still
+  referenced elsewhere shows a categorized panel (which resets, which map exits, which
+  shop/special, which script) with a "Go fix it →" button that jumps to and focuses the
+  right tab, for Rooms/Mobs/Objects alike. Socials never show this — nothing in the data
+  model can reference a social by name, so its delete is correctly always unblocked.
+- **Unsaved changes are visible and protected.** Every area-scoped tab shows a small
+  "● unsaved changes" indicator next to the filename while there's an unsaved edit, asks
+  before switching areas out from under it, and asks again before closing or refreshing
+  the browser tab entirely.
+
 ## Guarantees (and their limits)
 
 - Anything the emitter writes re-parses identically and boots in unmodified
@@ -664,11 +1142,26 @@ warnings for what db.c silently skips — in the Resets tab's Simulate pane,
 linked from each room editor, and as an optional mob-count badge overlay on
 the area map (Phase 13). A brand-new spell can be authored declaratively from
 one of five closed archetypes (damage/buff/debuff/heal/cure) and gets back a
-reviewable four-section C patch, though applying it, compiling, and
-redeploying the engine stays a human action — the builder never writes,
-compiles, or deploys engine code itself (Phase 14a). The Map tab's Area mode
+reviewable four-section C patch — applying the patch to the engine source is
+still a human/host action (the builder never writes engine C code itself),
+but as of Phase 15 the compile-and-redeploy step that used to follow it can
+be triggered from the UI (Phase 14a). The Map tab's Area mode
 has an opt-in exit editor: drag a room onto another to stage a connecting
 exit (direction inferred, two-way by default), click an existing edge to
 change its lock/key or delete it, undo any staged change individually, and
 save through the same preview-first + baseHash pipeline as everything else
-(Phase 14b).
+(Phase 14b). The **Engine** tab can rebuild and redeploy the live game engine
+plus the builder apps themselves in one action — narrowly gated (admin tier
+or above in the delegated role store, a token expiring within 7 days, a
+deployment-wide feature flag), self-recreating via an ephemeral helper
+container since a container can't safely recreate itself, and live-verified
+end to end against the real deployed stack (Phase 15; see
+[Engine rebuild and redeploy](#engine-rebuild-and-redeploy-phase-15) above).
+mud-builder now also has its own delegated role ladder
+(`owner`/`admin`/`manager`/`trusted`/`user`, bootstrapped by a hub owner or
+admin, administered from its own **Roles** tab — this is what replaced the
+Phase 15 username allowlist above) and a **My Content** tab for private
+Room/Mob/Object/Script snippets, saved and reloaded without ever touching the
+live area files (Phase G; see
+[Delegated roles and per-account content](#delegated-roles-and-per-account-content-phase-g)
+above).

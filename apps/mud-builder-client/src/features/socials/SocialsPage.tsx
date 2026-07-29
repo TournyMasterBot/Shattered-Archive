@@ -49,6 +49,7 @@ export default function SocialsPage() {
     }
     wb.setAreaModel(upsertSocial(wb.area, newSocialTemplate(name)));
     setSocialKey(name);
+    wb.ok(`added social '${name}'`);
   };
 
   const deleteSocial = () => {
@@ -56,6 +57,7 @@ export default function SocialsPage() {
     if (!window.confirm(`Delete social '${social.name}'? The live social persists until the next copyover.`)) return;
     wb.setAreaModel(removeSocial(wb.area, social.name));
     setSocialKey(null);
+    wb.ok(`removed social '${social.name}'`);
   };
 
   const setField = (i: number, text: string) => {
@@ -72,7 +74,7 @@ export default function SocialsPage() {
   return (
     <div className="mb-areas">
       <WorkbenchToast wb={wb} />
-      <AreaSidebar wb={wb} />
+      <AreaSidebar wb={wb} onBeforeOpen={() => wb.confirmDiscard('switch areas')} />
 
       <main className="mb-area-main">
         {!wb.area && <p className="mb-muted">Select an area to edit its socials (stock: social.are).</p>}

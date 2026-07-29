@@ -107,4 +107,45 @@ describe('ServiceKeyStore', () => {
   it('revokeKey throws for an unknown key id', () => {
     expect(() => store.revokeKey('svc-i', 'no-such-key')).toThrow();
   });
+
+  it('addRedirectUri requires an already-registered service', () => {
+    expect(() => store.addRedirectUri('never-registered', 'https://a.example/cb')).toThrow();
+  });
+
+  it('redirect URIs are exact-match only — no prefix/superstring acceptance', () => {
+    const { publicKeyPem } = generateServiceKeypair();
+    store.registerKey('svc-r', publicKeyPem);
+    store.addRedirectUri('svc-r', 'https://a.example/cb');
+    expect(store.hasRedirectUri('svc-r', 'https://a.example/cb')).toBe(true);
+    expect(store.hasRedirectUri('svc-r', 'https://a.example/cb/extra')).toBe(false);
+    expect(store.hasRedirectUri('svc-r', 'https://a.example/c')).toBe(false);
+    expect(store.hasRedirectUri('other-svc', 'https://a.example/cb')).toBe(false);
+  });
+
+  it('rejects malformed, non-http(s), and fragment-bearing redirect URIs', () => {
+    const { publicKeyPem } = generateServiceKeypair();
+    store.registerKey('svc-u', publicKeyPem);
+    expect(() => store.addRedirectUri('svc-u', 'not a url')).toThrow();
+    expect(() => store.addRedirectUri('svc-u', 'ftp://a.example/cb')).toThrow();
+    expect(() => store.addRedirectUri('svc-u', 'https://a.example/cb#frag')).toThrow();
+  });
+
+  it('removeRedirectUri removes exactly that URI; removing an unregistered one throws', () => {
+    const { publicKeyPem } = generateServiceKeypair();
+    store.registerKey('svc-w', publicKeyPem);
+    store.addRedirectUri('svc-w', 'https://a.example/cb');
+    store.addRedirectUri('svc-w', 'https://b.example/cb');
+    store.removeRedirectUri('svc-w', 'https://a.example/cb');
+    expect(store.listRedirectUris('svc-w')).toEqual(['https://b.example/cb']);
+    expect(() => store.removeRedirectUri('svc-w', 'https://a.example/cb')).toThrow();
+  });
+
+  it('isRegisteredService requires at least one non-revoked key', () => {
+    expect(store.isRegisteredService('nobody')).toBe(false);
+    const { publicKeyPem } = generateServiceKeypair();
+    const { keyId } = store.registerKey('svc-alive', publicKeyPem);
+    expect(store.isRegisteredService('svc-alive')).toBe(true);
+    store.revokeKey('svc-alive', keyId);
+    expect(store.isRegisteredService('svc-alive')).toBe(false);
+  });
 });

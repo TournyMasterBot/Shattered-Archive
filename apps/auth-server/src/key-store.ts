@@ -6,9 +6,10 @@ import { AuthError } from './errors.js';
 
 /**
  * AI-ANNOTATION
- * @ai-summary API keys AND browser sessions as ONE record type/store — a
- *   session is just a kind:'session' key record with a short TTL. One
- *   verify() path for both. Neither mintApiKey/mintSession nor verify()
+ * @ai-summary API keys, browser sessions, AND Phase A exchange tokens
+ *   ('sso'/'obo', minted by mintExchangeToken with service = the token's
+ *   AUDIENCE) as ONE record type/store — a session is just a kind:'session'
+ *   key record with a short TTL. One verify() path for all kinds. Nothing here
  *   reaches into account-store directly — the caller supplies the account's
  *   CURRENT epoch, keeping this store decoupled and independently testable.
  * @ai-public KeyStore, KeyRecord, ApiKeyInfo, VerifiedKey
@@ -16,7 +17,7 @@ import { AuthError } from './errors.js';
  *   stores don't contend on the same file lock.
  */
 
-export type KeyKind = 'api' | 'session';
+export type KeyKind = 'api' | 'session' | 'sso' | 'obo';
 
 export interface KeyRecord {
   id: string;
@@ -50,6 +51,8 @@ export interface VerifiedKey {
   service: string;
   label: string;
   kind: KeyKind;
+  /** null/undefined = never expires (mirrors KeyRecord.expiresAt). */
+  expiresAt?: string | null;
 }
 
 interface KeysFileData {
@@ -58,6 +61,9 @@ interface KeysFileData {
 
 const SESSION_SERVICE = 'auth-web';
 const DEFAULT_SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+// Exchange-minted records ('sso'/'obo') always expire; once well past expiry they are
+// dead weight in the file, so mintExchangeToken() purges them after this grace period.
+const EXCHANGE_PURGE_GRACE_MS = 24 * 60 * 60 * 1000; // 24h past expiry
 
 function sha256Hex(value: string): string {
   return crypto.createHash('sha256').update(value).digest('hex');
@@ -111,6 +117,49 @@ export class KeyStore extends EncryptedFileStore<KeysFileData> {
     return { id: record.id, token };
   }
 
+  /**
+   * Mints a token issued by /api/token-exchange: kind 'sso' (consumer login,
+   * days-scale TTL) or 'obo' (on-behalf-of, minutes-scale TTL). `service` is
+   * the token's AUDIENCE — the one service this token is valid at. TTL policy
+   * lives in the route; this store just records what it's told. Also purges
+   * exchange records long past expiry (they always expire, unlike API keys,
+   * so they'd otherwise accumulate forever).
+   */
+  mintExchangeToken(
+    accountId: string,
+    service: string,
+    kind: 'sso' | 'obo',
+    label: string,
+    ttlMs: number,
+    currentEpoch: number,
+  ): { id: string; token: string; expiresAt: string } {
+    const token = newToken();
+    const expiresAt = new Date(Date.now() + ttlMs).toISOString();
+    const record: KeyRecord = {
+      id: crypto.randomBytes(8).toString('hex'),
+      accountId,
+      service,
+      kind,
+      label,
+      sha256: sha256Hex(token),
+      mintedAtEpoch: currentEpoch,
+      createdAt: new Date().toISOString(),
+      expiresAt,
+    };
+    const purgeBefore = Date.now() - EXCHANGE_PURGE_GRACE_MS;
+    const keys = this.list().filter(
+      (k) =>
+        !(
+          (k.kind === 'sso' || k.kind === 'obo') &&
+          k.expiresAt &&
+          Date.parse(k.expiresAt) < purgeBefore
+        ),
+    );
+    keys.push(record);
+    this.persist(keys);
+    return { id: record.id, token, expiresAt };
+  }
+
   mintSession(accountId: string, currentEpoch: number, ttlMs = DEFAULT_SESSION_TTL_MS): { id: string; token: string } {
     const token = newToken();
     const record: KeyRecord = {
@@ -149,7 +198,14 @@ export class KeyStore extends EncryptedFileStore<KeysFileData> {
       if (isExpired(record)) return null;
       const epoch = currentEpoch(record.accountId);
       if (epoch === undefined || record.mintedAtEpoch !== epoch) return null;
-      return { accountId: record.accountId, keyId: record.id, service: record.service, label: record.label, kind: record.kind };
+      return {
+        accountId: record.accountId,
+        keyId: record.id,
+        service: record.service,
+        label: record.label,
+        kind: record.kind,
+        expiresAt: record.expiresAt,
+      };
     }
     return null;
   }
@@ -166,6 +222,21 @@ export class KeyStore extends EncryptedFileStore<KeysFileData> {
         expiresAt: k.expiresAt,
         ...(k.revokedAt ? { revokedAt: k.revokedAt } : {}),
       }));
+  }
+
+  /** Record count for one kind — purge visibility now, A2's admin key/session counts later. */
+  countKind(kind: KeyKind): number {
+    return this.list().filter((k) => k.kind === kind).length;
+  }
+
+  /** LIVE (non-revoked, non-expired) credential counts per kind for one account — the A2 admin list. */
+  countForAccount(accountId: string): Record<KeyKind, number> {
+    const counts: Record<KeyKind, number> = { api: 0, session: 0, sso: 0, obo: 0 };
+    for (const record of this.list()) {
+      if (record.accountId !== accountId || record.revokedAt || isExpired(record)) continue;
+      counts[record.kind] += 1;
+    }
+    return counts;
   }
 
   private requireOwned(id: string, accountId: string): KeyRecord {

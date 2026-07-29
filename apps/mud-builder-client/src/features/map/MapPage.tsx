@@ -9,6 +9,7 @@ import { LOCK_STATES } from '../../data/flags.js';
 import { applyOps, areaToMapRooms, describeOp, inferDirection, type ExitOp } from './exit-edit.js';
 import { DOOR_NAMES, layoutArea, type AreaLayout, type LayoutEdge, type PlacedRoom } from './layout.js';
 import WorldMap from './WorldMap.js';
+import { Toast, type ToastState } from '../shared/Toast.js';
 import './map.css';
 
 /**
@@ -21,7 +22,11 @@ import './map.css';
  *   top-left badge) from the read-only /spawn aggregate. Phase 14b: an opt-in
  *   "Edit exits" mode turns the same canvas into an exit editor — drag room to
  *   room to connect, click an edge to change/delete it, staged-changes tray,
- *   save through the existing preview/baseHash pipeline (see @ai-notes).
+ *   save through the existing preview/baseHash pipeline (see @ai-notes). Phase 14c: once
+ *   a live snapshot exists (GET /api/state/live — populated by the Simulate pane's
+ *   "Compare live"), the Spawns overlay gains a Boot/Live sub-toggle; Live swaps the same
+ *   badge to live per-room mob totals, rendered in an amber variant so the mode reads at
+ *   a glance. This tab only ever READS the snapshot — it never requests a refresh itself.
  * @ai-public MapPage (default)
  * @ai-notes View mode (default) is strictly read-only, driven by /api/map +
  *   /api/areas/:file/spawn. Phase 14b adds an opt-in "Edit exits" mode: fetches
@@ -42,7 +47,6 @@ const PORTAL_W = 140;
 const PORTAL_H = 44;
 const PAD = 40;
 
-type Toast = { kind: 'ok' | 'err'; text: string } | null;
 
 interface ViewBox {
   x: number;
@@ -64,7 +68,9 @@ function AreaMapSvg({
   file,
   layout,
   spawnCounts,
+  spawnLive = false,
   editMode = false,
+  focusVnum = null,
   onOpenRoom,
   onOpenPortal,
   onCreateExit,
@@ -75,8 +81,12 @@ function AreaMapSvg({
   file: string;
   layout: AreaLayout;
   spawnCounts?: Map<number, number>;
+  /** Phase 14c: true when spawnCounts holds LIVE per-room totals rather than boot-state ones — swaps the badge to its amber variant. */
+  spawnLive?: boolean;
   /** Phase 14b: enables drag-to-connect + keyboard connect; room click/onOpenRoom is suppressed while on. */
   editMode?: boolean;
+  /** 2026-07-26: a room to center the viewport on and highlight, e.g. from a blocked room-delete's "Go fix it on the Map" hand-off. */
+  focusVnum?: number | null;
   onOpenRoom?: (ref: ExternalRef) => void;
   onOpenPortal: (file: string) => void;
   onCreateExit?: (from: number, door: number, to: number, twoWay: boolean, locks: number, key: number) => void;
@@ -127,6 +137,19 @@ function AreaMapSvg({
   useEffect(() => {
     setView({ x: 0, y: 0, w: fullW, h: fullH });
   }, [file, fullW, fullH]);
+
+  // Center the viewport on the focused room, once, whenever it (or the area) changes.
+  // Runs AFTER the reset-view effect above (declaration order) so it isn't clobbered
+  // by that effect running on the same mount/file-change render.
+  useEffect(() => {
+    if (focusVnum == null) return;
+    const room = layout.rooms.find((r) => r.vnum === focusVnum);
+    if (!room) return;
+    const cx = PAD + room.x * CELL_W + NODE_W / 2;
+    const cy = PAD + room.y * CELL_H + NODE_H / 2;
+    setView((v) => ({ x: cx - v.w / 2, y: cy - v.h / 2, w: v.w, h: v.h }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusVnum, file]);
 
   // Escape cancels whichever exit-connect step is in progress.
   useEffect(() => {
@@ -451,10 +474,14 @@ function AreaMapSvg({
         const py = PAD + room.y * CELL_H;
         const spawnCount = spawnCounts?.get(room.vnum) ?? 0;
         const armed = editMode && armedFrom === room.vnum;
+        const focused = focusVnum != null && room.vnum === focusVnum;
+        const roomClass = ['mb-map-room', armed ? 'mb-map-room--armed' : '', focused ? 'mb-map-room--focused' : '']
+          .filter(Boolean)
+          .join(' ');
         return (
           <g
             key={room.vnum}
-            className={armed ? 'mb-map-room mb-map-room--armed' : 'mb-map-room'}
+            className={roomClass}
             role="button"
             tabIndex={0}
             aria-label={`room #${room.vnum} ${room.name}`}
@@ -480,8 +507,12 @@ function AreaMapSvg({
             </text>
             {/* Spawn badge sits top-LEFT — the 12b self-loop ring owns the top-right corner. */}
             {spawnCount > 0 && (
-              <g className="mb-map-spawn-badge">
-                <title>{`${spawnCount} mob${spawnCount === 1 ? '' : 's'} spawn${spawnCount === 1 ? 's' : ''} here at boot — see Resets ▸ Simulate`}</title>
+              <g className={spawnLive ? 'mb-map-spawn-badge mb-map-spawn-badge--live' : 'mb-map-spawn-badge'}>
+                <title>
+                  {spawnLive
+                    ? `${spawnCount} mob${spawnCount === 1 ? '' : 's'} here right now (live) — see Resets ▸ Simulate`
+                    : `${spawnCount} mob${spawnCount === 1 ? '' : 's'} spawn${spawnCount === 1 ? 's' : ''} here at boot — see Resets ▸ Simulate`}
+                </title>
                 <circle cx={px + 4} cy={py + 4} r={9} />
                 <text x={px + 4} y={py + 7.5}>
                   {spawnCount}
@@ -659,7 +690,14 @@ function AreaMapSvg({
   );
 }
 
-export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef) => void } = {}) {
+export default function MapPage({
+  onOpenRoom,
+  initialFocus,
+}: {
+  onOpenRoom?: (ref: ExternalRef) => void;
+  /** 2026-07-26: opens this area and centers/highlights this room — e.g. a blocked room-delete's "Go fix it on the Map" hand-off. */
+  initialFocus?: { file: string; vnum: number } | null;
+} = {}) {
   const [areas, setAreas] = useState<AreaListEntry[]>([]);
   const [mode, setMode] = useState<'area' | 'world'>('area');
   const [file, setFile] = useState<string | null>(null);
@@ -670,6 +708,12 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
   const [showSpawns, setShowSpawns] = useState(false);
   const [spawnCounts, setSpawnCounts] = useState<Map<number, number> | null>(null);
   const [spawnError, setSpawnError] = useState<string | null>(null);
+  // Boot/Live sub-toggle (Phase 14c). The Live radio only appears once a live snapshot is
+  // actually available — this tab never triggers a refresh itself (that's the Simulate
+  // pane's job); it just shows whatever GET /api/state/live already has, if anything.
+  const [spawnSource, setSpawnSource] = useState<'boot' | 'live'>('boot');
+  const [liveSpawnCounts, setLiveSpawnCounts] = useState<Map<number, number> | null>(null);
+  const [liveSpawnAgeMs, setLiveSpawnAgeMs] = useState<number | null>(null);
 
   // Edit mode (Phase 14b).
   const [editMode, setEditMode] = useState(false);
@@ -680,11 +724,18 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
   const [preview, setPreview] = useState<PreviewResult | null>(null);
   const [conflict, setConflict] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState<Toast>(null);
+  const [toast, setToast] = useState<ToastState>(null);
   const spawnsActive = showSpawns && !editMode;
 
   const ok = (text: string) => setToast({ kind: 'ok', text });
   const err = (text: string) => setToast({ kind: 'err', text });
+
+  useEffect(() => {
+    if (!initialFocus) return;
+    setMode('area');
+    setFile(initialFocus.file);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFocus]);
 
   useEffect(() => {
     let live = true;
@@ -744,6 +795,47 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
       live = false;
     };
   }, [file, mode, spawnsActive]);
+
+  // Live spawn overlay (Phase 14c): reads whatever GET /api/state/live already has, if
+  // anything — this tab never itself requests a refresh (Simulate's "Compare live" does
+  // that). A 404 ("no snapshot yet") just means the Boot/Live sub-toggle stays hidden;
+  // any other failure degrades the same way, since Boot mode still works fine either way.
+  useEffect(() => {
+    if (!file || mode !== 'area' || !spawnsActive) {
+      setLiveSpawnCounts(null);
+      setLiveSpawnAgeMs(null);
+      return;
+    }
+    let live = true;
+    api
+      .stateLive()
+      .then((res) => {
+        if (!live) return;
+        const counts = new Map<number, number>();
+        for (const room of res.snapshot.rooms) {
+          const total = room.mobs.reduce((sum, [, count]) => sum + count, 0);
+          if (total > 0) counts.set(room.vnum, total);
+        }
+        setLiveSpawnCounts(counts);
+        setLiveSpawnAgeMs(res.ageMs);
+      })
+      .catch(() => {
+        if (!live) return;
+        setLiveSpawnCounts(null);
+        setLiveSpawnAgeMs(null);
+      });
+    return () => {
+      live = false;
+    };
+  }, [file, mode, spawnsActive]);
+
+  // A live snapshot from a previous area shouldn't linger, mislabeled, under a new one.
+  useEffect(() => {
+    setSpawnSource('boot');
+  }, [file]);
+
+  const spawnSourceActive = spawnSource === 'live' && liveSpawnCounts !== null;
+  const effectiveSpawnCounts = spawnSourceActive ? liveSpawnCounts : spawnCounts;
 
   // Fetches the FULL AreaFile (never the /api/map projection — it lacks non-exit
   // room fields and would destroy data if saved) whenever edit mode turns on or
@@ -978,6 +1070,18 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
             Spawns
           </label>
         ) : null}
+        {mode === 'area' && spawnsActive && liveSpawnCounts ? (
+          <span className="mb-map-spawn-source" role="radiogroup" aria-label="Spawn data source">
+            <label>
+              <input type="radio" name="mb-spawn-source" checked={spawnSource === 'boot'} onChange={() => setSpawnSource('boot')} />
+              Boot
+            </label>
+            <label>
+              <input type="radio" name="mb-spawn-source" checked={spawnSource === 'live'} onChange={() => setSpawnSource('live')} />
+              Live{liveSpawnAgeMs !== null ? ` (${Math.max(0, Math.round(liveSpawnAgeMs / 1000))}s ago)` : ''}
+            </label>
+          </span>
+        ) : null}
         {editMode && opWarnings.length > 0 ? (
           <span className="mb-map-edit-warning" role="status">
             {opWarnings.length} warning{opWarnings.length === 1 ? '' : 's'}
@@ -1022,7 +1126,11 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
           <span>
             <i className="mb-legend-swatch mb-legend-swatch--external" /> cross-area
           </span>
-          {showSpawns ? (
+          {showSpawns && spawnSourceActive ? (
+            <span>
+              <i className="mb-legend-swatch mb-legend-swatch--spawn-live" /> mobs live now (count)
+            </span>
+          ) : showSpawns ? (
             <span>
               <i className="mb-legend-swatch mb-legend-swatch--spawn" /> mobs at boot (count)
             </span>
@@ -1060,11 +1168,7 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
         </div>
       ) : null}
 
-      {toast && (
-        <div className={`mb-toast mb-toast--${toast.kind}`} role="status" onClick={() => setToast(null)}>
-          {toast.text}
-        </div>
-      )}
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
 
       {editMode && conflict && file ? (
         <ConflictPanel file={file} onReload={() => void conflictReload()} onSaveAnyway={() => void conflictSaveAnyway()} />
@@ -1103,8 +1207,10 @@ export default function MapPage({ onOpenRoom }: { onOpenRoom?: (ref: ExternalRef
           <AreaMapSvg
             file={file}
             layout={activeLayout}
-            spawnCounts={spawnsActive ? spawnCounts ?? undefined : undefined}
+            spawnCounts={spawnsActive ? effectiveSpawnCounts ?? undefined : undefined}
+            spawnLive={spawnsActive && spawnSourceActive}
             editMode={editMode}
+            focusVnum={initialFocus && initialFocus.file === file ? initialFocus.vnum : null}
             onOpenRoom={onOpenRoom}
             onOpenPortal={openPortal}
             onCreateExit={onCreateExit}

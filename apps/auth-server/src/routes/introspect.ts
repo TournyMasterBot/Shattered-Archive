@@ -38,7 +38,18 @@ export function registerIntrospectRoutes(app: Application, deps: AuthServerDeps)
         res.json({ valid: false });
         return;
       }
-      res.json({ valid: true, accountId: verified.accountId, service: verified.service, label: verified.label });
+      const account = deps.accountStore.findById(verified.accountId);
+      res.json({
+        valid: true,
+        accountId: verified.accountId,
+        service: verified.service,
+        label: verified.label,
+        username: account?.username,
+        expiresAt: verified.expiresAt ?? null,
+        tokenType: verified.kind,
+        // Phase A, additive like the Phase 15 fields: hub-global tier, 'user' default.
+        globalRole: account?.globalRole ?? 'user',
+      });
     }),
   );
 }

@@ -8,9 +8,12 @@
     "build": "tsc -p tsconfig.json",
     "test": "jest --config ./jest.config.cjs --runInBand --passWithNoTests",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\"",
-    "dev": "tsx src/index.ts",
-    "start": "node dist/index.js",
-    "introspect-check": "tsx scripts/introspect-check.ts"
+    "dev": "cross-env NODE_OPTIONS=--use-system-ca tsx src/index.ts",
+    "start": "cross-env NODE_OPTIONS=--use-system-ca node dist/index.js",
+    "introspect-check": "cross-env NODE_OPTIONS=--use-system-ca tsx scripts/introspect-check.ts"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0"
   },
   "dependencies": {
     "@shatteredarchive/kingdom-tactics-engine": "workspace:*",
