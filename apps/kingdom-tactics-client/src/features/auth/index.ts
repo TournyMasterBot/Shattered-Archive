@@ -4,3 +4,10 @@ export { AccountScreen } from './AccountScreen';
 export { useAuthCallback } from './useAuthCallback';
 export { startLogin, parseAuthFragment, type ParsedAuthFragment } from './ktSso';
 export { getToken, setToken, clearToken, isExpired, type StoredAuthToken } from './authTokenStore';
+export {
+  ensureDeviceCredentials,
+  isDeviceEnrolled,
+  forgetDevice,
+  deviceUnavailableReason,
+  type DeviceUnavailableReason,
+} from './deviceCredentials';

@@ -1,11 +1,26 @@
 /**
- * Phase F: cloud-account bearer token storage. Matches this codebase's existing per-feature
- * idiom (own STORAGE_KEY, inline try/catch, no shared wrapper — see `state/saved-armies.ts`
- * for the same shape), and the `kt.` key-prefix convention already used there and in
- * `state/last-match.ts`.
+ * Phase F: cloud-account bearer token storage.
+ *
+ * 2026-07-30 (device-bound credentials): this is now IN MEMORY ONLY. It previously persisted
+ * the SSO token to localStorage under 'kt.auth.token', where any script on the page could read
+ * it and replay it from anywhere until it expired. Durable sign-in is now carried by an
+ * enrolled device key (see deviceCredentials.ts) whose private half the browser will never
+ * reveal, so this holds only the SSO hand-off token for the current page — enough to work
+ * immediately after login, and worth nothing to an attacker after a reload.
+ *
+ * The exported API is unchanged on purpose, so cloudSync.ts / useAccountScreen.ts /
+ * useAuthCallback.ts keep working as written. What changed is only WHERE the value lives.
+ *
+ * A previous version of this note said storage failure meant "login just won't persist"; that
+ * is now the normal, intended behaviour rather than a degraded mode.
  */
 
-const STORAGE_KEY = 'kt.auth.token';
+let current: StoredAuthTokenInternal | null = null;
+
+interface StoredAuthTokenInternal {
+  readonly token: string;
+  readonly expiresAt: string;
+}
 
 export interface StoredAuthToken {
   readonly token: string;
@@ -13,31 +28,15 @@ export interface StoredAuthToken {
 }
 
 export function getToken(): StoredAuthToken | null {
-  try {
-    const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as StoredAuthToken;
-    if (!parsed?.token || !parsed?.expiresAt) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
+  return current;
 }
 
 export function setToken(token: string, expiresAt: string): void {
-  try {
-    globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify({ token, expiresAt } satisfies StoredAuthToken));
-  } catch {
-    /* storage unavailable/full — login just won't persist; not fatal */
-  }
+  current = { token, expiresAt };
 }
 
 export function clearToken(): void {
-  try {
-    globalThis.localStorage?.removeItem(STORAGE_KEY);
-  } catch {
-    /* ignore */
-  }
+  current = null;
 }
 
 export function isExpired(stored: StoredAuthToken): boolean {

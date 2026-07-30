@@ -10,11 +10,14 @@ import express from 'express';
 import { registerRoutes } from '../app.js';
 import { AccountStore } from '../account-store.js';
 import { KeyStore } from '../key-store.js';
+import { DeviceStore } from '../device-store.js';
+import { DeviceNonceStore } from '../device-nonce-store.js';
 import { QuestionsStore, ChallengeThrottle } from '../questions-store.js';
 import { ServiceKeyStore } from '../service-key-store.js';
 import { SsoCodeStore } from '../sso-code-store.js';
 import { AuditLog } from '../audit-log.js';
 import { LoginLockout } from '../login-lockout.js';
+import { RateLimiter } from '../rate-limit.js';
 import type { Mailer } from '../mailer.js';
 import type { AuthServerDeps } from '../deps.js';
 
@@ -45,6 +48,12 @@ export interface TestHarness {
 
 const POOL_ANSWERS: Record<string, string> = { q1: 'A1', q2: 'A2', q3: 'A3' };
 
+/** Module-level so `deviceAllowedOrigins` can be derived from its keys, as config.ts does. */
+const DEVICE_ORIGIN_SERVICES = new Map<string, string[]>([
+  ['http://localhost:60080', ['mud-builder-server']],
+  ['http://localhost:50080', ['kingdom-tactics-server']],
+]);
+
 export function startTestApp(): Promise<TestHarness> {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'auth-server-route-test-'));
   const key = crypto.randomBytes(32);
@@ -52,6 +61,8 @@ export function startTestApp(): Promise<TestHarness> {
   const deps: AuthServerDeps = {
     accountStore: new AccountStore(dir, key),
     keyStore: new KeyStore(dir, key),
+    deviceStore: new DeviceStore(dir, key),
+    deviceNonceStore: new DeviceNonceStore(),
     questionsStore: new QuestionsStore(dir),
     serviceKeyStore: new ServiceKeyStore(dir, key),
     ssoCodeStore: new SsoCodeStore(),
@@ -60,6 +71,20 @@ export function startTestApp(): Promise<TestHarness> {
     mailer,
     auditLog: new AuditLog(dir),
     publicOrigin: 'http://localhost:62080',
+    // DERIVED from the map below, exactly as config.ts does it — so the harness cannot drift
+    // into allowing an origin that has no audience (a state production cannot reach).
+    deviceAllowedOrigins: [...DEVICE_ORIGIN_SERVICES.keys()],
+    // Two origins mapped to DIFFERENT services, so the audience binding is exercised by the
+    // shared harness rather than only by a bespoke setup: a device enrolled from the builder
+    // origin must be refused a kingdom-tactics token.
+    deviceOriginServices: DEVICE_ORIGIN_SERVICES,
+    deviceGrantRequiredServices: [],
+    // Effectively unthrottled for tests — the limiter has its own dedicated suite, and a
+    // shared limit here would make unrelated route tests fail as a suite grew.
+    deviceRateLimiter: {
+      perIp: new RateLimiter({ ratePerMinute: 600_000, burst: 100_000 }),
+      perDevice: new RateLimiter({ ratePerMinute: 600_000, burst: 100_000 }),
+    },
   };
 
   fs.writeFileSync(

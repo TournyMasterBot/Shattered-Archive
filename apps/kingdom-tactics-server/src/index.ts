@@ -139,7 +139,16 @@ const service = createExpressService(config, (app) => {
     const health: ServerHealth = { status: 'ok', uptimeSeconds: process.uptime() };
     res.json(health);
   });
-  registerKtApiRoutes(app, { matchHistory, armyLayouts, resolveAccountId, linkOutUrl: allowedReturnOrigins[0] });
+  registerKtApiRoutes(app, {
+    matchHistory,
+    armyLayouts,
+    resolveAccountId,
+    linkOutUrl: allowedReturnOrigins[0],
+    // Read straight from the env, NOT from credentials.publicAuthServerUrl: that one falls back
+    // to authServerUrl, which in docker is an internal alias the browser cannot resolve. Only an
+    // explicitly-configured public origin is safe to hand to a browser.
+    authPublicUrl: process.env.AUTH_SERVER_PUBLIC_URL?.replace(/\/+$/, '') || undefined,
+  });
 
   // Phase F Step 3: kt-client's login hand-off. Only registered when this service is actually
   // configured for it — an unconfigured install simply doesn't expose these routes (a clear

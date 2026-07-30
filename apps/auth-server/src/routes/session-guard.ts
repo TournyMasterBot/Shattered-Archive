@@ -33,13 +33,28 @@ function readSessionCookie(req: Request): string {
   return '';
 }
 
+/**
+ * httpOnly, SameSite=Lax, Secure — Constraints: sessions are key records delivered via a
+ * cookie, no express-session/JWT library.
+ *
+ * `Secure` matters even though every host here is https: without it, a single request that
+ * ever leaves over http (a typo'd scheme, a stray redirect, a plain-http dev shortcut) sends
+ * the session token in clear text, and one exposure is enough. It costs nothing given the
+ * stack is https everywhere, dev included.
+ *
+ * SameSite=Lax rather than None is what lets the .dev subdomains enroll device keys
+ * cross-ORIGIN: they are same-SITE (one registrable domain), so the cookie still rides along.
+ * A .com app is cross-SITE and will NOT send this cookie at all — that is a real limit of the
+ * cookie, not of CORS, and such an app must use the SSO code flow instead.
+ */
 export function sessionCookieHeader(token: string): string {
-  // httpOnly, SameSite=Lax — Constraints: sessions are key records delivered via a cookie, no express-session/JWT library.
-  return `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax`;
+  return `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Secure`;
 }
 
 export function clearSessionCookieHeader(): string {
-  return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+  // Attributes must match the set cookie or a browser will not consider it the same cookie
+  // and the clear silently does nothing.
+  return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=0`;
 }
 
 export function sessionGuard(accountStore: AccountStore, keyStore: KeyStore): RequestHandler {

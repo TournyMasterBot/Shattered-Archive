@@ -61,7 +61,12 @@ export function registerStateRoutes(app: Application, config: Pick<MudBuilderCon
         res.status(404).json({ error: 'no snapshot yet' });
         return;
       }
-      res.json({ snapshot, ageMs: Date.now() - stat.mtimeMs });
+      // Clamped at 0: a file's mtime can read marginally AHEAD of Date.now() (filesystem
+      // timestamp granularity and clock rounding — observed on Windows), which produced a
+      // small NEGATIVE age. That is nonsense for a freshness value the client renders, and it
+      // was the cause of an intermittent failure in state.test.ts's "returns the snapshot and
+      // its age" case (~1 run in 6).
+      res.json({ snapshot, ageMs: Math.max(0, Date.now() - stat.mtimeMs) });
     } catch (e) {
       res.status(500).json({ error: `internal error: ${(e as Error).message}` });
     }

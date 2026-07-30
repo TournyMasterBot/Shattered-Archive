@@ -1,4 +1,5 @@
 import type { AreaFile, GroupEntry, LiveSnapshot, SimulateResetsResult, SkillEntry, SpellSpec } from '@shatteredarchive/merc-area';
+import { DeviceCredentials, NeedsEnrollmentError } from '@shatteredarchive/sdk-client';
 
 /** Thin fetch wrappers for mud-builder-server. All errors surface as thrown Error with the server's message. */
 
@@ -9,6 +10,13 @@ export interface Capabilities {
   mercAreaPath: string;
   /** Phase 15: server-wide "is the engine-rebuild feature on at all" — gates whether the Engine tab appears. Per-caller eligibility comes from rebuildStatus()'s canTrigger instead. */
   rebuildEnabled?: boolean;
+  /**
+   * BROWSER-facing auth-server origin for device enrollment. Absent = this deployment does
+   * not offer device credentials, so the UI stays on manual token entry. Comes from the
+   * server because the bundle ships no VITE_ build args (the edge routes relative URLs), so
+   * only the server knows the deployment's public auth origin.
+   */
+  authPublicUrl?: string;
 }
 
 /** Error carrying the HTTP status so the UI can tell 401 (bad token) from 403 (not master). */
@@ -22,26 +30,187 @@ export class ApiError extends Error {
   }
 }
 
-const TOKEN_KEY = 'mb-token';
-let tokenFallback = '';
+/**
+ * Credentials, in two tiers.
+ *
+ * TIER 1 — device credentials (the everyday path). A non-extractable keypair in IndexedDB
+ * signs a challenge for short-lived tokens; see @shatteredarchive/sdk-client. Nothing
+ * replayable is stored, and no secret is ever displayed — which is also why enrolling is
+ * safe to do while screen-sharing.
+ *
+ * TIER 2 — a manually pasted token (the service MASTER key, a local API key, or a
+ * centrally-minted account key). Still necessary: it is the first-run bootstrap, the CI
+ * path, and the way in when auth-server is unreachable. Held in MEMORY ONLY — deliberately
+ * NOT localStorage, which is what previously made this app's credential readable by any
+ * script on the page. Break-glass use is occasional and explicit, so re-entry after a
+ * reload is the right trade for having no secret at rest.
+ */
+let manualToken = '';
 
-/** The builder token, kept in localStorage so it survives reloads. */
+/** The manually entered break-glass token. Memory-only; empty after any reload. */
 export function getStoredToken(): string {
-  try {
-    return localStorage.getItem(TOKEN_KEY) ?? tokenFallback;
-  } catch {
-    return tokenFallback;
-  }
+  return manualToken;
 }
 
 export function setStoredToken(token: string): void {
-  tokenFallback = token;
-  try {
-    if (token) localStorage.setItem(TOKEN_KEY, token);
-    else localStorage.removeItem(TOKEN_KEY);
-  } catch {
-    // storage unavailable — the in-memory fallback covers this page's lifetime
+  manualToken = token;
+}
+
+/** This service's audience name — device tokens are scoped to exactly one service. */
+const DEVICE_SERVICE = 'mud-builder-server';
+
+let device: DeviceCredentials | null = null;
+
+/**
+ * Built lazily from /api/capabilities' authPublicUrl, because the browser-facing auth origin
+ * is a deployment fact the server knows and the bundle does not (this app ships no VITE_
+ * build args — the edge routes its relative URLs). A deployment that doesn't set it simply
+ * never gets a DeviceCredentials, and the app stays on manual token entry.
+ */
+/**
+ * Why device credentials aren't on offer. Carried as a REASON rather than a bare boolean
+ * because the two "unsupported" cases are both fixable by the person looking at the screen,
+ * and a silently-missing panel gives them nothing to act on.
+ */
+export type DeviceUnavailableReason =
+  /** The deployment doesn't advertise an auth origin — nothing the user can do. */
+  | 'not-offered'
+  /** Page isn't a secure context, so WebCrypto is absent. Fixable: use https. */
+  | 'insecure-context'
+  /** No IndexedDB (private mode / blocked storage), so a key could not persist. */
+  | 'no-storage'
+  /** Available. */
+  | null;
+
+let deviceUnavailable: DeviceUnavailableReason = 'not-offered';
+
+/** The hub origin, kept so a sign-in hand-off URL can be built without re-probing. */
+let authOrigin: string | null = null;
+
+/**
+ * Where to send someone who needs a hub session, with a `returnTo` so they land back here.
+ *
+ * This is the whole of the "seamless" path: the user manages ONE login (auth.*), and the
+ * builder never asks for a pasted secret — it enrolls a device key off the session that login
+ * created. Null when the deployment advertises no auth origin.
+ */
+export function authSignInUrl(): string | null {
+  if (!authOrigin) return null;
+  return `${authOrigin}/?returnTo=${encodeURIComponent(window.location.href)}`;
+}
+
+export function configureDeviceCredentials(authPublicUrl: string | undefined): void {
+  device = null;
+  authOrigin = authPublicUrl ? authPublicUrl.replace(/\/+$/, '') : null;
+
+  if (!authPublicUrl) {
+    deviceUnavailable = 'not-offered';
+    return;
   }
+
+  /**
+   * WebCrypto is exposed only in a SECURE CONTEXT, and a browser decides that from the
+   * origin's SCHEME AND HOSTNAME — never from what the name resolves to. So `http://localhost`
+   * is trusted while `http://build.shatteredarchive.dev` would NOT be, even with a hosts entry
+   * pointing it at 127.0.0.1.
+   *
+   * This is NOT the normal path here: every service in this stack is reached by hostname
+   * through the nginx router over https (dev included — tls-dev.conf, with an mkcert cert
+   * covering *.shatteredarchive.dev), so device credentials work in dev exactly as in prod.
+   * The guard exists for the off-path case of someone reaching a service over plain http,
+   * where the useful thing is to say WHY rather than silently omit the panel.
+   */
+  if (typeof isSecureContext !== 'undefined' && !isSecureContext) {
+    deviceUnavailable = 'insecure-context';
+    return;
+  }
+
+  // No IndexedDB means the key cannot PERSIST, and a credential that evaporates on every
+  // reload is worse than none — the user would be re-prompted to enrol forever.
+  if (typeof indexedDB === 'undefined') {
+    deviceUnavailable = 'no-storage';
+    return;
+  }
+
+  try {
+    device = new DeviceCredentials({ authBaseUrl: authPublicUrl });
+    deviceUnavailable = null;
+  } catch {
+    // Belt-and-braces: a runtime that reports a secure context but still lacks crypto.subtle.
+    deviceUnavailable = 'insecure-context';
+  }
+}
+
+export function deviceUnavailableReason(): DeviceUnavailableReason {
+  return deviceUnavailable;
+}
+
+export function deviceCredentialsAvailable(): boolean {
+  return device !== null;
+}
+
+/**
+ * Never throws. A storage read can fail for reasons that have nothing to do with the user's
+ * access (blocked storage in private mode, a quota error), and letting that propagate would
+ * abort the caller's whole access probe and leave the page stuck. "Can't tell" is treated as
+ * "not enrolled", which degrades to manual token entry.
+ */
+export async function isDeviceEnrolled(): Promise<boolean> {
+  if (!device) return false;
+  try {
+    return await device.isEnrolled();
+  } catch {
+    return false;
+  }
+}
+
+/** Enroll this browser. Requires a live auth-server session cookie; returns the device id. */
+export async function enrollDevice(label: string): Promise<string> {
+  if (!device) throw new ApiError('this deployment does not offer device credentials', 400);
+  return device.enroll(label);
+}
+
+/**
+ * Enroll WITHOUT asking, for the case that should need no interaction at all: the user
+ * already has a hub session, so the browser can bind itself silently and the page simply
+ * works. Returns false when there is no session yet (or enrollment is refused), which is the
+ * signal to offer the sign-in link rather than an error.
+ *
+ * Never throws. This runs inside the access probe, where an exception would abort the whole
+ * check and leave the page stuck — the failure mode that made an earlier version report a
+ * misleading "server unreachable".
+ */
+export async function tryEnrollDeviceSilently(label: string): Promise<boolean> {
+  if (!device) return false;
+  try {
+    await device.enroll(label);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function forgetDevice(): Promise<void> {
+  await device?.reset();
+}
+
+/**
+ * Device token when this browser is enrolled, else the manual break-glass token.
+ *
+ * A NeedsEnrollmentError is swallowed to '' on purpose: it means the enrollment is gone
+ * (revoked, or invalidated by a password change, or the browser evicted the key), and the
+ * right outcome is an ordinary 401 from the server that the UI already knows how to render
+ * as "your access needs re-establishing" — not an unhandled rejection inside every caller.
+ */
+async function authToken(): Promise<string> {
+  if (await isDeviceEnrolled()) {
+    try {
+      return await device!.getAccessToken(DEVICE_SERVICE);
+    } catch (e) {
+      if (!(e instanceof NeedsEnrollmentError)) throw e;
+    }
+  }
+  return manualToken;
 }
 
 export interface ApiKeyInfo {
@@ -155,7 +324,7 @@ export interface RebuildStatusResponse {
 }
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  const token = getStoredToken();
+  const token = await authToken();
   const headers: Record<string, string> = {
     ...((init?.headers as Record<string, string> | undefined) ?? {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -171,7 +340,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 
 /** Like request(), but for the one endpoint that answers text/plain (a generated C patch), not JSON. */
 async function requestText(url: string, init?: RequestInit): Promise<string> {
-  const token = getStoredToken();
+  const token = await authToken();
   const headers: Record<string, string> = {
     ...((init?.headers as Record<string, string> | undefined) ?? {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

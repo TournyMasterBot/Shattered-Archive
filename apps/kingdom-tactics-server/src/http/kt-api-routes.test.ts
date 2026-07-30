@@ -102,3 +102,48 @@ describe('GET /api/user-content/summary (Phase H)', () => {
     }
   });
 });
+
+describe('GET /api/kt/config', () => {
+  let dataDir: string;
+
+  beforeEach(() => {
+    dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kt-config-'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  });
+
+  /**
+   * Unauthenticated on purpose: the client needs the browser-facing auth origin BEFORE it holds
+   * any credential, in order to enrol a device key. Nothing here is sensitive.
+   */
+  it('serves authPublicUrl without a token', async () => {
+    const { base, close } = await startApp({ authPublicUrl: 'https://auth.example.test' }, dataDir);
+    try {
+      const res = await fetch(`${base}/api/kt/config`);
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ authPublicUrl: 'https://auth.example.test' });
+    } finally {
+      await close();
+    }
+  });
+
+  /**
+   * The important negative: unset must stay ABSENT, never fall back to the server-to-server
+   * authServerUrl. In docker that is an internal alias the browser cannot resolve, so guessing
+   * would produce a silent failure instead of a clean fallback to SSO-only login.
+   */
+  it('omits authPublicUrl entirely when it is not configured', async () => {
+    const { base, close } = await startApp({}, dataDir);
+    try {
+      const res = await fetch(`${base}/api/kt/config`);
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as Record<string, unknown>;
+      expect(body.authPublicUrl).toBeUndefined();
+      expect(Object.keys(body)).toEqual([]);
+    } finally {
+      await close();
+    }
+  });
+});

@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useAuthSession } from './auth/useAuthSession.js';
+import { useReturnTo } from './auth/useReturnTo.js';
 import LoginPage from './features/auth/LoginPage.js';
 import SignupPage from './features/auth/SignupPage.js';
 import ForgotPasswordPage from './features/auth/ForgotPasswordPage.js';
@@ -21,6 +22,7 @@ function readTokenFor(pathname: string, expectedPathname: string): string | null
 
 export default function App() {
   const session = useAuthSession();
+  const returnTo = useReturnTo();
   const resetToken = useMemo(() => readTokenFor(window.location.pathname, '/reset-password'), []);
   const verifyToken = useMemo(() => readTokenFor(window.location.pathname, '/verify-email'), []);
   // Same pathname-check pattern as /reset-password — this SPA has no router. isSsoAuthorize
@@ -33,6 +35,19 @@ export default function App() {
   const isSignupPath = window.location.pathname === '/signup';
   const [publicView, setPublicView] = useState<PublicView>(resetToken ? 'forgot' : isSignupPath ? 'signup' : 'login');
   const [section, setSection] = useState<LoggedInSection>('account');
+
+  /**
+   * `?returnTo=` hand-back. Only from a FULLY onboarded session ('ready' excludes
+   * mustChangePassword), so a forced password change can never be skipped by arriving with a
+   * returnTo. The SSO consent flow does its own redirect and must not be pre-empted here.
+   */
+  const shouldReturn =
+    session.status === 'ready' && !isSsoAuthorize && !returnTo.loading && returnTo.url !== null;
+  useEffect(() => {
+    // replace(), not assign(): the login URL must not sit in history, or Back lands the user
+    // on a stale login page mid-redirect.
+    if (shouldReturn && returnTo.url) window.location.replace(returnTo.url);
+  }, [shouldReturn, returnTo.url]);
 
   if (session.status === 'loading') {
     return (
@@ -81,6 +96,18 @@ export default function App() {
 
   const account = session.account;
   if (!account) return null; // status 'ready' always pairs with an account — defensive only.
+
+  if (shouldReturn) {
+    // The redirect is already scheduled by the effect above; rendering the account shell here
+    // would flash it for a frame on every hand-back.
+    return (
+      <div className="auc-app">
+        <main className="auc-main">
+          <p className="auc-muted">Signed in — returning you to where you started…</p>
+        </main>
+      </div>
+    );
+  }
 
   if (isSsoAuthorize) {
     // Consent screen replaces the account shell for this request; login/forced-change

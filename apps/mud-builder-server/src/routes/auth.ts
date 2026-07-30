@@ -1,7 +1,7 @@
 import fs from 'fs';
 
 import express, { type Application, type Request, type RequestHandler, type Response } from 'express';
-import { introspect } from '@shatteredarchive/services-server';
+import { introspect, matchesAudience } from '@shatteredarchive/services-server';
 
 import { SERVICE_TIERS, tierRank } from '@shatteredarchive/services-server';
 
@@ -84,6 +84,12 @@ async function tryIntrospect(
       INTROSPECT_TIMEOUT_MS,
     );
     if (!result.valid) return null;
+    // Phase A service-isolation rule. A token that is VALID is not thereby a token for THIS
+    // service: without this check any token auth-server would vouch for — one minted for
+    // another service, or even an auth-web browser session — is a full builder write
+    // credential. The audience is the whole point of scoping a token, so a consumer that
+    // skips it opts out of the isolation the hub provides.
+    if (!matchesAudience(result, INTROSPECT_SERVICE_NAME)) return null;
     return {
       kind: 'account',
       accountId: result.accountId ?? '',
@@ -358,7 +364,15 @@ export function registerAuthRoutes(
       }
       try {
         const result = await introspect(introspectConfig.authServerUrl, INTROSPECT_SERVICE_NAME, privateKeyPem, token);
-        res.json(result);
+        // `valid` alone would be misleading here: a token minted for ANOTHER service is
+        // genuinely valid and this endpoint would report it as such, while the guards above
+        // (correctly) refuse it. Report the audience verdict alongside so a diagnostic and a
+        // real request can never disagree.
+        res.json({
+          ...result,
+          expectedService: INTROSPECT_SERVICE_NAME,
+          audienceMatches: matchesAudience(result, INTROSPECT_SERVICE_NAME),
+        });
       } catch (e) {
         // A wrong/unregistered key surfaces here as auth-server's 401 wrapped in introspect()'s Error — never a crash.
         throw new AuthError(`introspect call failed: ${(e as Error).message}`, 502);

@@ -11,7 +11,7 @@ export function safe(handler: Handler): Handler {
       await handler(req, res);
     } catch (e) {
       if (e instanceof AuthError) {
-        res.status(e.status).json({ error: e.message });
+        res.status(e.status).json({ error: e.message, ...(e.code ? { code: e.code } : {}) });
       } else {
         res.status(500).json({ error: `internal error: ${(e as Error).message}` });
       }

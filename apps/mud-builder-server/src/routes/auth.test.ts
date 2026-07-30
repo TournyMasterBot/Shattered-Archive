@@ -125,6 +125,18 @@ describe('builder auth guard + key lifecycle (writes ON, auth ON)', () => {
     expect(groups.status).toBe(200);
   });
 
+  /**
+   * authPublicUrl is what tells the client whether to offer device enrolment. It must be
+   * ABSENT unless configured — never defaulted from authServerUrl, which is an internal
+   * docker alias in every deployed environment and would hand the browser an origin it
+   * cannot reach, producing a silent failure instead of a clean fallback.
+   */
+  it('omits authPublicUrl from /api/capabilities when it is not configured', async () => {
+    const caps = (await (await fetch(`${base}/api/capabilities`)).json()) as Record<string, unknown>;
+    expect(caps.authPublicUrl).toBeUndefined();
+    expect(caps.authServerUrl).toBeUndefined(); // the internal alias must never be exposed
+  });
+
   it('401s a mutation without a token (and with a bad one) touching nothing', async () => {
     expect((await putGroups(base)).status).toBe(401);
     expect((await putGroups(base, 'not-a-real-token')).status).toBe(401);
@@ -416,6 +428,56 @@ describe('Phase 4: centralized-auth introspect fallback', () => {
       expect(fake.hits()).toBe(1);
       const audit = fs.readFileSync(path.join(dir, 'backups', 'audit.log'), 'utf8');
       expect(audit).toContain('account:acct1 (alice)');
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  /**
+   * The Phase A service-isolation rule. auth-server vouching for a token says only that it is
+   * real — not that it was minted for THIS service. Without the audience check, a token for
+   * kingdom-tactics-server (or an auth-web browser session) would be a full builder write
+   * credential, which is exactly what audience-scoping exists to prevent.
+   */
+  it('refuses a token that is valid but was minted for ANOTHER service', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-auth-audience-'));
+    const fake = await startFakeIntrospect(() => ({
+      valid: true,
+      accountId: 'acct1',
+      service: 'kingdom-tactics-server',
+      label: 'alice',
+    }));
+    const { server, base } = await startApp(
+      makeConfig(dir, { authServerUrl: fake.url, servicePrivateKeyPath: makeServiceKeyFile() }),
+    );
+    try {
+      expect((await putGroups(base, 'a-token-for-another-service')).status).toBe(401);
+      // It was genuinely asked about — this is a refusal on the ANSWER, not a short circuit.
+      expect(fake.hits()).toBe(1);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  /** auth-server's own browser session is `service: 'auth-web'` — not a builder credential. */
+  it('refuses an auth-web browser session token', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-auth-session-'));
+    const fake = await startFakeIntrospect(() => ({
+      valid: true,
+      accountId: 'acct1',
+      service: 'auth-web',
+      label: 'browser session',
+      tokenType: 'session',
+    }));
+    const { server, base } = await startApp(
+      makeConfig(dir, { authServerUrl: fake.url, servicePrivateKeyPath: makeServiceKeyFile() }),
+    );
+    try {
+      expect((await putGroups(base, 'a-browser-session-token')).status).toBe(401);
     } finally {
       await new Promise((r) => server.close(r));
       await new Promise((r) => fake.server.close(r));

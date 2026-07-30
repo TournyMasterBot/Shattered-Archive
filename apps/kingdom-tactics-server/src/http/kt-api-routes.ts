@@ -15,6 +15,13 @@ export interface KtApiRoutesDeps {
   /** kt-client's own origin, for the Phase H dashboard summary's link-out — omitted from the
    * response entirely when unset rather than guessed. */
   readonly linkOutUrl?: string;
+  /**
+   * BROWSER-facing auth-server origin, served by GET /api/kt/config so the client can enrol a
+   * device key. Must be the explicitly-set AUTH_SERVER_PUBLIC_URL only — never index.ts's
+   * `publicAuthServerUrl`, which falls back to the internal docker alias. Unset = the client
+   * never offers device enrolment and stays on SSO-only login.
+   */
+  readonly authPublicUrl?: string;
 }
 
 function isSavedArmy(x: unknown): x is SavedArmy {
@@ -39,6 +46,21 @@ export function registerKtApiRoutes(app: Application, deps: KtApiRoutesDeps): vo
   const guard = requireAccount(deps.resolveAccountId);
 
   app.use('/api/kt', express.json({ limit: '256kb' }));
+
+  /**
+   * Deliberately UNGUARDED and deliberately empty-by-default: the client needs the
+   * BROWSER-facing auth origin before it holds any credential, in order to enrol a device
+   * key. Nothing here is sensitive — it is a public origin the user is about to be sent to.
+   *
+   * `authPublicUrl` is only ever the explicitly-configured AUTH_SERVER_PUBLIC_URL. It must NOT
+   * reuse index.ts's `publicAuthServerUrl`, which falls back to `authServerUrl` — in docker
+   * that is the internal alias (auth-server.shatteredarchive.dev:62000), and handing a browser
+   * an origin it cannot resolve would fail silently instead of cleanly falling back to the
+   * existing SSO-only login. Absent = no device enrolment offered.
+   */
+  app.get('/api/kt/config', (_req, res) => {
+    res.json({ authPublicUrl: deps.authPublicUrl });
+  });
 
   app.get('/api/kt/match-history', guard, (_req, res) => {
     const accountId = res.locals.accountId as string;

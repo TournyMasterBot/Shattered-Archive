@@ -796,3 +796,37 @@
 .mb-spawn-drift-extra {
   color: #d68910;
 }
+
+/* Small explanatory line under a field — used by the Access tab's token/device copy and by
+   MaskedSecret's state hint. Muted so it reads as guidance, not as a validation error. */
+.mb-hint {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 0.85em;
+  opacity: 0.75;
+}
+
+/* Show-once secret box (MaskedSecret): input + Reveal/Copy on one row, hint beneath. */
+.mb-masked-secret {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mb-masked-secret input {
+  flex: 1 1 22ch;
+  /* Monospace so a revealed value is transcribable without ambiguous glyphs. */
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.mb-masked-secret .mb-hint {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+/* The Access tab's sign-in hand-off link. Styled as the primary action of that panel because
+   it is the one step that makes everything else automatic — a plain inline link read as
+   incidental next to the Enrol button beside it. */
+.mb-primary-link {
+  font-weight: 600;
+}

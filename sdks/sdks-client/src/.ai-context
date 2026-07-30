@@ -1,1 +1,5 @@
-The src folder contains the main source code files for the project's core functionality. In this case, index.ts fetches and parses JSON data from a URL, serving as the primary data retrieval module. This folder houses the essential logic that drives the application's main features.
+Shared browser-side SDK consumed by every client app in the monorepo. Two things live here: the original fetchJsonClient helper, and (since 2026-07-30) device-credentials.ts — the browser half of the device-bound credential scheme that replaced storing a replayable bearer token in localStorage.
+
+The one idea to hold onto before reading the code: the durable credential is a keypair whose PRIVATE half the browser will use but will never reveal, not a secret string. Access tokens are short-lived, per-service, and kept only in memory. So there is deliberately nothing here that persists a secret, and the tests enforce that.
+
+Because browser APIs are injected rather than imported (WebCrypto, IndexedDB, fetch), this code also runs under a plain Node test environment and is portable to React Native. The server counterpart is apps/auth-server/src/routes/device.ts; the signed-payload format is duplicated in both and MUST stay byte-identical. User-facing explanation and flow diagrams: docs/auth-server.md.

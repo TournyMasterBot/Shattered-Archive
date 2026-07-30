@@ -89,6 +89,34 @@ already makes. A locked-out login attempt gets `429` with a `Retry-After`-style 
 (`"too many failed attempts — try again in Ns"`) even if the password given is correct —
 the lockout check runs before the password is checked at all.
 
+### Device-bound credentials
+
+Browsers no longer keep a replayable token. They enroll a **non-extractable ECDSA P-256
+keypair** (private half unreadable even by the page that made it) and sign a one-time
+challenge to mint short-lived, audience-scoped access tokens. User-facing explanation and
+flow diagrams live in [docs/auth-server.md](../../docs/auth-server.md#device-bound-credentials);
+the operator-relevant bits:
+
+- **Files:** `src/device-store.ts` (encrypted registry, `auth-devices.json`),
+  `src/device-nonce-store.ts` (in-memory single-use nonces), `src/routes/device.ts`.
+- **Nothing at rest is a secret.** `auth-devices.json` holds only public keys and device
+  IDs. It is still encrypted like every other store, but a leak of it is not a credential
+  leak — unlike `auth-keys.json`.
+- **Nonces are memory-only** and vanish on restart, exactly like `LoginLockout` and
+  `ChallengeThrottle`. That's harmless: a client whose nonce disappeared just requests
+  another one, and the user sees nothing.
+- **Invalidation is automatic, not wired per route.** Each enrollment records the account
+  epoch it was created at, and every lookup compares it against the current epoch — so
+  password change / reset / admin temp-password kill enrollments with no route needing to
+  remember to do anything. `revoke-all` exists separately as a user-facing panic button.
+- **Token churn is expected.** Device tokens default to a 10-minute TTL, so an open tab
+  re-mints roughly every 10 minutes. `mintDeviceToken` purges device records past a 30-minute
+  grace on every mint; without that the encrypted key file would grow without bound, since
+  each mint rewrites the whole file.
+- **Signature encoding gotcha.** WebCrypto emits raw `r||s` (IEEE P1363); Node defaults to
+  DER. Verification passes `dsaEncoding: 'ieee-p1363'` explicitly. Get this wrong and every
+  real browser signature fails to verify while a Node-signed test still passes.
+
 ### Registering a consuming service (Phase 2+)
 
 ```bash
@@ -170,6 +198,8 @@ Deployed at `https://auth.shatteredarchive.dev` in both compose files, `expose`-
 | `DATA_ENCRYPTION_KEY_FILE` | one of this or above | Deploy path — self-generated on first boot if the file is absent but its directory exists |
 | `SMTP_HOST` / `_PORT` / `_USER` / `_PASS` | no | Blank = console mail transport (prints the link instead of sending) |
 | `PUBLIC_ORIGIN` | no (default `http://localhost:62080`) | Used to build recovery-link URLs in emails |
+| `DEVICE_ORIGIN_SERVICES` | only for device credentials | `origin=service` pairs, comma-separated — mirrors nginx's origin → upstream routing, e.g. `https://build.shatteredarchive.dev=mud-builder-server,https://kingdom-tactics.shatteredarchive.dev=kingdom-tactics-server`. Use `origin=svc1\|svc2` for an origin needing several. Determines both which origins may call `/api/device` with credentials **and** which audiences a device enrolled there may mint for — the CORS allowlist is derived from the keys, so the two cannot drift. **Empty = deny all** (fail-closed on purpose). No wildcards — invalid with credentials, and reflecting arbitrary origins would let any page enroll itself against a signed-in account |
+| `DEVICE_GRANT_REQUIRED_SERVICES` | no (default empty) | Services where a device key alone is not enough: the account must also hold an active API key for that service. Makes the API key the entitlement record — granted/revoked in auth-client, never pasted into an app. Turning a service on here immediately refuses every account without a key for it |
 
 ## Security model, in one paragraph
 

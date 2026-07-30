@@ -55,6 +55,10 @@ export function registerRoutes(app: Application, config: MudBuilderConfig = getM
       // the Engine tab in the nav. Per-caller eligibility (can THIS token trigger one) is
       // separate and comes from GET /api/rebuild/status's canTrigger field instead.
       rebuildEnabled: config.rebuildEnabled,
+      // Browser-facing auth origin for device enrollment. Empty/absent = this deployment
+      // does not offer device credentials, and the client stays on manual token entry.
+      // Never authServerUrl, which is an internal alias no browser can resolve.
+      authPublicUrl: config.authServerPublicUrl,
     });
   });
 

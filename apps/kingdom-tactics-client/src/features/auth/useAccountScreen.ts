@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { MatchState } from '@shatteredarchive/kingdom-tactics-engine';
 import { getToken, clearToken, isExpired } from './authTokenStore';
+import { ensureDeviceCredentials, forgetDevice, isDeviceEnrolled } from './deviceCredentials';
 import { startLogin } from './ktSso';
 import * as cloudSync from './cloudSync';
 import type { MatchHistorySummary } from './cloudSync';
@@ -11,6 +12,20 @@ type Status = { readonly kind: 'ok' | 'err'; readonly text: string } | null;
 /** Everything Account/replay-viewer needs — mirrors game-client's useAccountModal (Phase D) split. */
 export function useAccountScreen() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  /**
+   * Set once anything has AUTHORITATIVELY decided the user is signed out — a 401 from a real
+   * request, or an explicit logout. The mount probe became asynchronous when device-enrolment
+   * checking was added, so without this it can resolve LATE and flip a user who was just
+   * logged out by a 401 back to "signed in". That is a real race, not just a test artifact.
+   */
+  const signedOutAuthoritatively = useRef(false);
+
+  /** Sign-out that outranks the in-flight mount probe. */
+  function markSignedOut(): void {
+    signedOutAuthoritatively.current = true;
+    setIsLoggedIn(false);
+  }
+
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<Status>(null);
   const [history, setHistory] = useState<MatchHistorySummary[]>([]);
@@ -18,10 +33,21 @@ export function useAccountScreen() {
   const [replayStep, setReplayStep] = useState(0);
 
   useEffect(() => {
-    const stored = getToken();
-    const loggedIn = !!stored && !isExpired(stored);
-    setIsLoggedIn(loggedIn);
-    if (loggedIn) void refreshHistory();
+    /**
+     * Two ways to be signed in, and the device one must be checked FIRST: a returning user has
+     * no in-memory SSO token at all (it dies with the page) but is still signed in via their
+     * enrolled device key. Checking only the token would have shown them as logged out on every
+     * visit — the regression that would have made this whole change look broken.
+     */
+    void (async () => {
+      await ensureDeviceCredentials();
+      const stored = getToken();
+      const loggedIn = (await isDeviceEnrolled()) || (!!stored && !isExpired(stored));
+      // Never overrule a decision made while this probe was in flight.
+      if (signedOutAuthoritatively.current) return;
+      setIsLoggedIn(loggedIn);
+      if (loggedIn) void refreshHistory();
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -30,7 +56,7 @@ export function useAccountScreen() {
     if (res.kind === 'ok') {
       setHistory(res.data);
     } else if (res.kind === 'unauthenticated') {
-      setIsLoggedIn(false);
+      markSignedOut();
     }
   }
 
@@ -40,7 +66,12 @@ export function useAccountScreen() {
 
   function handleLogout(): void {
     clearToken();
-    setIsLoggedIn(false);
+    // Must also drop the device key, or "log out" would leave the browser silently able to
+    // mint fresh tokens and the user would appear signed in again on the next visit. Local
+    // only, like the original logout — the server-side enrolment is revoked from the account
+    // service's own device list.
+    void forgetDevice();
+    markSignedOut();
     setHistory([]);
     setReplaySnapshots(null);
     setStatus({ kind: 'ok', text: 'Logged out.' });
@@ -63,7 +94,7 @@ export function useAccountScreen() {
       setReplaySnapshots(res.data.snapshots);
       setReplayStep(0);
     } else if (res.kind === 'unauthenticated') {
-      setIsLoggedIn(false);
+      markSignedOut();
       setStatus({ kind: 'err', text: 'Your session expired — please log in again.' });
     } else {
       setStatus({ kind: 'err', text: `Replay failed: ${res.message}` });
@@ -92,7 +123,7 @@ export function useAccountScreen() {
     if (res.kind === 'ok') {
       setStatus({ kind: 'ok', text: `Saved ${res.data.count} army layout(s) to the cloud.` });
     } else if (res.kind === 'unauthenticated') {
-      setIsLoggedIn(false);
+      markSignedOut();
       setStatus({ kind: 'err', text: 'Your session expired — please log in again.' });
     } else {
       setStatus({ kind: 'err', text: `Save failed: ${res.message}` });
@@ -113,7 +144,7 @@ export function useAccountScreen() {
       replaceAllArmies(res.data);
       setStatus({ kind: 'ok', text: `Loaded ${res.data.length} army layout(s) from the cloud.` });
     } else if (res.kind === 'unauthenticated') {
-      setIsLoggedIn(false);
+      markSignedOut();
       setStatus({ kind: 'err', text: 'Your session expired — please log in again.' });
     } else {
       setStatus({ kind: 'err', text: `Load failed: ${res.message}` });

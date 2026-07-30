@@ -17,7 +17,7 @@ import { AuthError } from './errors.js';
  *   stores don't contend on the same file lock.
  */
 
-export type KeyKind = 'api' | 'session' | 'sso' | 'obo';
+export type KeyKind = 'api' | 'session' | 'sso' | 'obo' | 'device';
 
 export interface KeyRecord {
   id: string;
@@ -64,6 +64,13 @@ const DEFAULT_SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 // Exchange-minted records ('sso'/'obo') always expire; once well past expiry they are
 // dead weight in the file, so mintExchangeToken() purges them after this grace period.
 const EXCHANGE_PURGE_GRACE_MS = 24 * 60 * 60 * 1000; // 24h past expiry
+// Device access tokens: deliberately minutes, not hours. This is the whole point of the
+// device-key scheme — the durable credential is the non-extractable key, so a stolen token
+// buys an attacker only this window and cannot be renewed without the key.
+const DEFAULT_DEVICE_TOKEN_TTL_MS = 10 * 60 * 1000; // 10 min
+// Much shorter grace than exchange tokens': device records churn constantly, so they must
+// not linger. Long enough to still be inspectable right after expiry.
+const DEVICE_TOKEN_PURGE_GRACE_MS = 30 * 60 * 1000; // 30 min past expiry
 
 function sha256Hex(value: string): string {
   return crypto.createHash('sha256').update(value).digest('hex');
@@ -160,6 +167,49 @@ export class KeyStore extends EncryptedFileStore<KeysFileData> {
     return { id: record.id, token, expiresAt };
   }
 
+  /**
+   * Mints the short-lived access token a device-bound browser gets in exchange for a
+   * valid signature (routes/device.ts). `service` is the AUDIENCE — the Phase A
+   * service-isolation rule (`matchesAudience` in services-server) means a token is only
+   * acceptable at the one service it was minted for, so a device asks for one token per
+   * service it talks to rather than one token valid everywhere.
+   *
+   * Purges expired device records on every mint, and this is load-bearing rather than
+   * tidiness: unlike an API key (minted once, lives for months) a device token is re-minted
+   * continuously — a 10-minute TTL is ~144 records per day per open tab — and persist()
+   * rewrites and re-encrypts the ENTIRE file each time. Without the purge the store grows
+   * without bound and every subsequent mint gets slower. Same grace-period shape as
+   * mintExchangeToken's purge, kept briefly past expiry so a just-expired token is still
+   * visible when debugging.
+   */
+  mintDeviceToken(
+    accountId: string,
+    service: string,
+    currentEpoch: number,
+    ttlMs = DEFAULT_DEVICE_TOKEN_TTL_MS,
+  ): { id: string; token: string; expiresAt: string } {
+    const token = newToken();
+    const expiresAt = new Date(Date.now() + ttlMs).toISOString();
+    const record: KeyRecord = {
+      id: crypto.randomBytes(8).toString('hex'),
+      accountId,
+      service,
+      kind: 'device',
+      label: 'device',
+      sha256: sha256Hex(token),
+      mintedAtEpoch: currentEpoch,
+      createdAt: new Date().toISOString(),
+      expiresAt,
+    };
+    const purgeBefore = Date.now() - DEVICE_TOKEN_PURGE_GRACE_MS;
+    const keys = this.list().filter(
+      (k) => !(k.kind === 'device' && k.expiresAt && Date.parse(k.expiresAt) < purgeBefore),
+    );
+    keys.push(record);
+    this.persist(keys);
+    return { id: record.id, token, expiresAt };
+  }
+
   mintSession(accountId: string, currentEpoch: number, ttlMs = DEFAULT_SESSION_TTL_MS): { id: string; token: string } {
     const token = newToken();
     const record: KeyRecord = {
@@ -224,6 +274,25 @@ export class KeyStore extends EncryptedFileStore<KeysFileData> {
       }));
   }
 
+  /**
+   * Does this account hold a usable API key for `service`? The entitlement check behind
+   * config's `deviceGrantRequiredServices`.
+   *
+   * Deliberately scoped to kind 'api' — the operator-provisioned grant. Counting a 'device'
+   * record would be circular (a device token would authorize minting more device tokens), and
+   * counting 'sso'/'obo' would let a transient login hand-off stand in for a durable grant.
+   */
+  hasActiveKeyForService(accountId: string, service: string): boolean {
+    return this.list().some(
+      (k) =>
+        k.accountId === accountId &&
+        k.kind === 'api' &&
+        k.service === service &&
+        !k.revokedAt &&
+        !isExpired(k),
+    );
+  }
+
   /** Record count for one kind — purge visibility now, A2's admin key/session counts later. */
   countKind(kind: KeyKind): number {
     return this.list().filter((k) => k.kind === kind).length;
@@ -231,7 +300,7 @@ export class KeyStore extends EncryptedFileStore<KeysFileData> {
 
   /** LIVE (non-revoked, non-expired) credential counts per kind for one account — the A2 admin list. */
   countForAccount(accountId: string): Record<KeyKind, number> {
-    const counts: Record<KeyKind, number> = { api: 0, session: 0, sso: 0, obo: 0 };
+    const counts: Record<KeyKind, number> = { api: 0, session: 0, sso: 0, obo: 0, device: 0 };
     for (const record of this.list()) {
       if (record.accountId !== accountId || record.revokedAt || isExpired(record)) continue;
       counts[record.kind] += 1;

@@ -59,6 +59,10 @@ For local setup instructions, see [`../apps/auth-server/README.md`](../apps/auth
 - **Server-to-server introspection.** `/api/introspect` is gated by a per-service Ed25519
   signed assertion (`X-Service-Assertion` header), never a session cookie. Multiple
   concurrently-valid keys per service are supported so rotation never causes an outage.
+- **Device-bound credentials.** A signed-in browser enrolls a keypair whose private half it
+  can never read or export, then *signs* a challenge to obtain short-lived access tokens.
+  Nothing replayable is stored on either side. See
+  [Device-bound credentials](#device-bound-credentials) below.
 
 ---
 
@@ -341,6 +345,378 @@ in its own UI; auth-client renders link-outs, never a remote role editor.
 
 `GET /api/auth/me` also gained an additive `globalRole` so clients can decide whether
 to show admin affordances.
+
+## Device-bound credentials
+
+### What this is, and why it exists
+
+Before this, staying signed in meant a browser kept a **copy of a secret** — a token in
+`localStorage`. Anything that could run JavaScript on the page could read that token, copy
+it, and reuse it later from anywhere.
+
+A device-bound credential removes the copy. The browser generates a **keypair** and marks
+the private half *non-extractable*: the browser will use it to sign things, but there is no
+API — not for our code, and not for an attacker's — that can read the key's bytes back out.
+To prove who it is, the browser signs a one-time challenge instead of presenting a secret.
+
+The practical consequences, and it's worth being precise about each:
+
+| | Before (stored token) | Now (device key) |
+|---|---|---|
+| What's kept on the device | A reusable secret | A key that cannot be read or copied |
+| What a page-level attacker can take | The token — usable later, anywhere | At most one access token, expiring in ~10 minutes |
+| Can they stay in after you notice? | Yes, until you revoke the token | No — they cannot enroll without a fresh sign-in |
+| Shown on screen at any point | Yes, the token | **Nothing** |
+
+That last row matters if you ever share your screen or stream: **the normal sign-in flow no
+longer displays a secret at any point.**
+
+This does *not* make a compromised page harmless. While malicious code is running on the
+page it can still ask for a token and act as you. What it can no longer do is walk away
+with something that keeps working afterwards.
+
+### Enrolling a device (one time, per browser)
+
+```mermaid
+sequenceDiagram
+    participant You
+    participant Browser as Your browser
+    participant Auth as Account service
+
+    You->>Browser: Sign in with your password
+    Browser->>Auth: POST /api/auth/login
+    Auth-->>Browser: Session cookie
+    Note over Browser: Creates a keypair.<br/>The private half can never<br/>be read, even by this page.
+    Browser->>Auth: POST /api/device/enroll (public half only)
+    Auth-->>Browser: Device ID (not a secret)
+    Note over You,Auth: Nothing secret was displayed or copied.
+```
+
+Enrollment **always requires a real sign-in**. That is deliberate: if a device could be
+enrolled using only a token, an attacker who stole a token could enroll their own key and
+keep access permanently — exactly the problem this design exists to remove.
+
+Kingdom Tactics does this **automatically** as part of its normal SSO login, so there is no
+separate step for the user there:
+
+```mermaid
+sequenceDiagram
+    participant You
+    participant KT as Kingdom Tactics
+    participant Auth as Account service
+
+    You->>KT: Log in
+    KT->>Auth: SSO hand-off
+    You->>Auth: Sign in
+    Auth-->>KT: Back with a one-time code
+    Note over KT: Session with the account service exists<br/>right now - so enrol immediately
+    KT->>Auth: POST /api/device/enroll
+    Auth-->>KT: Device ID
+    Note over You,Auth: If this fails, the login still worked -<br/>you just sign in again next visit.
+```
+
+The MUD Builder reaches the same end state without a login of its own. It enrols from its
+access probe, so a user who already has a hub session never sees a prompt at all — and a user
+who doesn't gets one link, not a credential to copy:
+
+```mermaid
+sequenceDiagram
+    participant You
+    participant Builder as MUD Builder
+    participant Auth as Account service
+
+    You->>Builder: Open the Builder
+    Builder->>Auth: POST /api/device/enroll (with your session cookie)
+
+    alt You already have a hub session
+        Auth-->>Builder: Device ID
+        Note over You,Builder: Nothing was asked of you.<br/>No key pasted, no prompt shown.
+    else No session yet
+        Auth-->>Builder: 401
+        Builder-->>You: "Sign in to the account service"
+        You->>Auth: Sign in (?returnTo=the Builder)
+        Auth-->>Builder: Back where you started
+        Builder->>Auth: Enrol, now that a session exists
+        Auth-->>Builder: Device ID
+    end
+```
+
+The audience a device may later ask for is decided **here**, at enrollment, from the origin it
+enrolled at — never from the later request:
+
+```mermaid
+flowchart TD
+    A["Enrol from<br/>build.shatteredarchive.dev"] --> B{"Origin in<br/>DEVICE_ORIGIN_SERVICES?"}
+    B -->|No, or no Origin header| C["403 - refused.<br/>No derivable audience"]
+    B -->|Yes| D["Freeze allowedServices<br/>onto the device record"]
+    D --> E["Later: device asks for<br/>a token for a service"]
+    E --> F{"Is it in the device's<br/>frozen list?"}
+    F -->|No| G["403 - a Builder device<br/>cannot mint a game token"]
+    F -->|Yes| H{"Service needs an<br/>API-key grant?"}
+    H -->|Yes, and none held| I["403 - not entitled"]
+    H -->|No, or grant held| J["Short-lived token,<br/>scoped to that one service"]
+```
+
+### Everyday use — silent, no prompts
+
+```mermaid
+sequenceDiagram
+    participant Browser as Your browser
+    participant Auth as Account service
+    participant Service as Builder / Kingdom Tactics / etc.
+
+    Note over Browser: Access token expired (they last ~10 min)
+    Browser->>Auth: POST /api/device/challenge
+    Auth-->>Browser: One-time nonce
+    Note over Browser: Signs the nonce with the key it cannot read
+    Browser->>Auth: POST /api/device/assert (signature + which service)
+    Auth-->>Browser: Short-lived access token
+    Browser->>Service: Request with the token
+    Service->>Auth: POST /api/introspect (is this token good?)
+    Auth-->>Service: Yes - account, role, audience
+    Service-->>Browser: Your data
+```
+
+You see none of this. The token is held in memory only, never written to disk, and is
+re-minted silently whenever it expires.
+
+**One token per service.** The signature names which service the token is for, and the
+resulting token works *only* there. A token for the Builder is refused by Kingdom Tactics.
+This is the same service-isolation rule the rest of the hub follows.
+
+### When a device stops working
+
+Three situations end an enrollment, and all of them are recoverable by signing in again:
+
+```mermaid
+sequenceDiagram
+    participant Browser as Your browser
+    participant Auth as Account service
+    participant You
+
+    Browser->>Auth: POST /api/device/assert
+    Auth-->>Browser: 401 DEVICE_REENROLL_REQUIRED
+    Browser->>You: "Please sign in again"
+    You->>Browser: Signs in
+    Note over Browser: Enrolls a fresh keypair automatically
+    Browser->>Auth: POST /api/device/enroll
+    Auth-->>Browser: Back to normal
+```
+
+1. **You changed your password** (or reset it, or an admin issued a temp password). Every
+   enrollment for the account stops working immediately. This is intentional — if you
+   changed your password *because it leaked*, any device the attacker enrolled must die
+   with it.
+2. **You revoked the device** from your device list, or used "sign out everywhere".
+3. **The browser discarded the key.** Safari deletes this kind of storage after **7 days
+   with no interaction** with the site (a click, tap or keypress — scrolling doesn't
+   count). Installing the site to your home screen exempts it from that.
+
+There is also one case where device sign-in is never offered at all: the page must be loaded
+over **https**. Browsers only expose the cryptography this depends on in a "secure context",
+and they decide that from the address's scheme and hostname — *not* from what the name resolves
+to. So `http://localhost` counts, but `http://some.hostname` does not, even when a hosts entry
+points that name at 127.0.0.1. Every service in this stack is reached by hostname over https
+(dev included — the local stack serves TLS with a certificate covering `*.shatteredarchive.dev`),
+so this is satisfied in normal use; if someone does reach a service over plain http, the Access
+tab now says so explicitly rather than quietly hiding the option.
+
+For admins fielding questions: *"it asked me to sign in again after two weeks off"* is
+expected Safari behaviour, not a fault. Point the user at **Add to Home Screen** if it
+becomes a recurring annoyance for them.
+
+### Endpoints
+
+#### `POST /api/device/enroll`
+
+Session-guarded, and blocked during a forced password change. Body:
+`{ publicKeyJwk, label }`. The JWK must be an EC **public** key on P-256 — a JWK containing
+a `d` field is rejected outright rather than trimmed, because its presence means the client
+exported private key material that was supposed to be unexportable.
+
+Returns `201 { deviceId, label }`. **No secret is ever returned.**
+
+#### `POST /api/device/challenge`
+
+Public. Body `{ deviceId }` → `{ nonce, expiresAt }`. A nonce is single-use, expires in 2
+minutes, and is bound to the device it was issued to.
+
+Deliberately returns a nonce even for a device ID that doesn't exist. Otherwise this
+endpoint would be an oracle for discovering valid device IDs; the failure surfaces at
+`assert` instead.
+
+#### `POST /api/device/assert`
+
+Public — the signature *is* the authentication. Body
+`{ deviceId, nonce, signature, service }` → `{ token, expiresAt, service }`.
+
+The signed bytes cover the device ID, the nonce, **and the service**, so a signature
+captured for one service cannot be replayed to mint a token for another. The nonce is
+consumed *before* the signature is checked, so a wrong signature still burns it and the
+challenge cannot be used as a grinding target.
+
+Failure returns `401`. When the device needs re-enrollment (unknown, revoked, or invalidated
+by a password change) the body carries `code: "DEVICE_REENROLL_REQUIRED"` so the client can
+start a sign-in rather than showing a dead end. The three underlying reasons are
+deliberately indistinguishable to the caller.
+
+#### Cross-origin access (operators: read this before deploying)
+
+Each site enrolls its **own** device key, because browser key storage is scoped per origin —
+a key created on `auth.shatteredarchive.dev` simply does not exist for
+`build.shatteredarchive.dev`. Enrollment therefore happens from each site directly, as a
+cross-origin call carrying your session cookie.
+
+That works without weakening the cookie, because the hub's sites all sit under one domain
+(`shatteredarchive.dev`) and so count as *same-site* — but each origin must be named
+explicitly in **`DEVICE_ORIGIN_SERVICES`** on auth-server, paired with the service it is
+allowed to reach:
+
+```
+DEVICE_ORIGIN_SERVICES=https://build.shatteredarchive.dev=mud-builder-server,https://kingdom-tactics.shatteredarchive.dev=kingdom-tactics-server
+```
+
+**This mapping is the security boundary, not just an allowlist.** A device asks for a token by
+naming a service, so if the browser's choice were honoured, a script running on *any* enrolled
+site could mint a token for a *different, more privileged* one — an XSS on the game would
+become Builder write access. Instead the audience is decided by **where the device enrolled**,
+resolved through this map and frozen onto the device record. The service named in a later
+request is only ever checked against it. This map is deliberately a copy of the routing nginx
+already performs (`deploy/nginx/edge-subdomains.conf`): an origin may reach exactly the
+upstream the edge routes it to, and nothing else — so keep the two in step.
+
+Use `origin=svc1|svc2` when one origin genuinely talks to several backends.
+
+If an origin is missing from that list, its enrollment is refused and users there stay on the
+old sign-in path. **The default is empty, i.e. deny everything** — that is deliberate, so a
+forgotten config fails closed rather than silently allowing any site to drive an enrollment
+with a user's cookie. Wildcards are not supported and never will be: a wildcard is invalid for
+credentialed requests, and reflecting arbitrary origins would hand any hostile page the ability
+to enroll itself against a signed-in account.
+
+The origin check is enforced **server-side**, not left to CORS. CORS is advisory — a browser
+refuses to expose a disallowed *response*, but the request still arrives, and a non-browser
+client sends whatever `Origin` it likes or none at all. An enrollment with no recognised origin
+has no derivable audience, so it is refused rather than defaulted.
+
+Each entry is an **origin** — scheme, host, and port only, matched as an exact string against
+the browser's `Origin` header. Surrounding whitespace and a trailing slash are tolerated;
+nothing else is. The verified behaviour:
+
+| Value | Result | |
+|---|---|---|
+| `https://build.shatteredarchive.dev` | allow | the correct form |
+| `https://build.shatteredarchive.dev/` | allow | trailing slash is trimmed |
+| `https://build.shatteredarchive.dev:443` | **deny** | browsers omit default ports — never write `:443` or `:80` |
+| `http://build.shatteredarchive.dev` | **deny** | scheme is part of the origin |
+| `https://BUILD.shatteredarchive.dev` | **deny** | matching is case-sensitive; use lowercase |
+| `build.shatteredarchive.dev` | **deny** | a bare hostname is not an origin |
+
+Two that catch people out: `localhost` and `127.0.0.1` are **different origins** to a browser,
+so a dev who browses via one needs that exact form listed. And a *port* difference makes a
+different origin even though cookies ignore ports entirely — which is precisely why local dev
+works at all: `localhost:60080` calling `localhost:62000` is cross-origin (so it needs an
+allowlist entry) yet same-host for cookies (so the session cookie is still sent).
+
+Current values: the experimental stack maps the Builder and Kingdom Tactics origins to their
+own services; the production stack is **deliberately empty**, because neither of those clients
+is deployed there yet. Local dev values live in `apps/auth-server/.env`.
+
+> **`.com` apps cannot use this path.** `shatteredarchive.com` is a different registrable
+> domain from `shatteredarchive.dev`, so a `.com` origin calling the `.dev` hub is
+> cross-**site**, and a `SameSite=Lax` cookie is not sent at all. Enrollment there would have
+> no session to authenticate. This is a limit of the *cookie*, not of CORS, so no allowlist
+> entry can fix it — a `.com` app must use the SSO code flow instead. Listing a `.com` origin
+> here would appear to work right up until the first enrollment silently 401s.
+
+#### Entitlement: making the API key the grant
+
+By default, any signed-in account may enrol a device for any service its origin maps to. For a
+privileged service that is too generous — authoring access should be something an operator
+*grants*, not something every account has. `DEVICE_GRANT_REQUIRED_SERVICES` adds that check:
+
+```
+DEVICE_GRANT_REQUIRED_SERVICES=mud-builder-server
+```
+
+For a listed service, a device may only mint a token if the account **also holds an active API
+key for that service**. The API key stops being something a user pastes into an app and becomes
+the entitlement record: granted and revoked in auth-client's API keys tab, while the device key
+remains the thing that actually authenticates. Revoking the key withdraws that service from
+every one of the account's devices at once.
+
+The check runs at **mint** time (every ~10 minutes), not at enrollment, so a revocation takes
+hold on the next renewal rather than only on the next enrollment — which for a working device
+would be never.
+
+**Empty by default, and switching a service on is not a no-op:** it immediately refuses every
+account that has no key for that service. Kingdom Tactics should stay open — anyone signed in
+may play. The Builder is the natural candidate to turn on.
+
+#### Which apps use this
+
+| App | How it enrols |
+|---|---|
+| MUD Builder | **Automatically** on page load when you already have a hub session. Otherwise it offers a sign-in link that brings you straight back, and a manual "Enrol this device" fallback |
+| Kingdom Tactics | **Automatically**, right after the normal SSO login — no extra step for the user |
+| auth-client | Not applicable — it is same-origin with this service and uses the session cookie directly |
+
+Kingdom Tactics enrols during the login hand-off because that is the one moment a session with
+this service is guaranteed to exist. If it fails, the login still succeeds — the user just gets
+asked to sign in again next visit, exactly as before device credentials existed.
+
+The Builder instead enrols from its access probe: if the browser is not yet bound but the user
+already has a hub session, it binds silently and the page simply works. **Nothing is pasted and
+nothing is prompted.** If there is no session yet, it links to the hub's login with a
+`returnTo`, and the user lands back on the Builder already set up.
+
+Each app needs two matching settings: its own origin mapped in this service's
+`DEVICE_ORIGIN_SERVICES`, and `AUTH_SERVER_PUBLIC_URL` set on *its* server so it can tell its
+browser where this service lives. Miss either and that app quietly keeps its old login.
+
+#### Signing in from another app (`?returnTo=`)
+
+The hub's login accepts a `returnTo` query parameter, so an app that needs a session can send
+the user here and get them back:
+
+```
+https://auth.shatteredarchive.dev/?returnTo=https%3A%2F%2Fbuild.shatteredarchive.dev%2F
+```
+
+The destination is validated against the **same configured origins** as device enrollment
+(exposed for that purpose by the public `GET /api/device/origins`). An unvalidated `returnTo`
+is a classic open redirect: the victim sees a genuine, trusted login URL and is handed to an
+attacker's page afterwards. Matching is on the exact **origin** — scheme, host and port — so a
+lookalike host like `build.shatteredarchive.dev.attacker.test` is refused, as is the right host
+on the wrong scheme or port. A relative path, a `javascript:` URL, or an unparseable value are
+all refused, and the user simply lands on their account page.
+
+The hand-back only happens from a **fully onboarded** session, so arriving with a `returnTo`
+can never skip a forced password change.
+
+#### `GET /api/device` · `POST /api/device/:id/revoke` · `POST /api/device/revoke-all`
+
+Session-guarded device management. The list never includes key material. Revocation is
+scoped to the signed-in account, is a tombstone rather than a delete (so it stays
+auditable), and enrollment/revocation both append to `audit.log`.
+
+### When a secret must still be shown
+
+Device enrolment displays nothing secret, but a few paths genuinely must reveal a value once —
+an issued API key, a rotated master key, a one-time password. Those are exactly the moments
+someone is likely to be on a call with an operator, so they use a masked box rather than plain
+text:
+
+- **Hidden by default.** Revealing is always a deliberate click.
+- **Copy works without revealing**, so the ordinary path never puts the value on screen.
+- **Auto re-hides** after a few seconds.
+- **Hides instantly if you switch away** (tab change, or focus leaving the window). This is the
+  one that matters in practice: revealing a key, alt-tabbing to paste it, and leaving it visible
+  on a screen you are no longer watching.
+
+To be straight about the limit: this cannot stop a screenshot taken while the value is
+revealed. It shrinks the exposure window from "until someone dismisses it" to a few seconds of
+deliberate action — it is not a reason to relax about showing secrets.
 
 ## Health
 

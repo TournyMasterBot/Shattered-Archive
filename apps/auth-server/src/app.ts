@@ -9,6 +9,7 @@ import { registerIntrospectRoutes } from './routes/introspect.js';
 import { registerSsoRoutes } from './routes/sso.js';
 import { registerTokenExchangeRoutes } from './routes/token-exchange.js';
 import { registerAdminRoutes } from './routes/admin.js';
+import { registerDeviceRoutes } from './routes/device.js';
 
 /**
  * Registers all HTTP routes on the given Express app.
@@ -37,4 +38,5 @@ export function registerRoutes(app: Application, deps: AuthServerDeps): void {
   registerSsoRoutes(app, deps);
   registerTokenExchangeRoutes(app, deps);
   registerAdminRoutes(app, deps);
+  registerDeviceRoutes(app, deps);
 }

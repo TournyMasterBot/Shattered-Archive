@@ -7,6 +7,7 @@
 import type { MatchState } from '@shatteredarchive/kingdom-tactics-engine';
 import { siteApiBase } from './kt-auth-config';
 import { getToken, clearToken } from './authTokenStore';
+import { ensureDeviceCredentials, getDeviceToken } from './deviceCredentials';
 import type { SavedArmy } from '../../state/saved-armies';
 
 export interface MatchHistorySummary {
@@ -28,14 +29,17 @@ export type CloudSyncResult<T> =
   | { readonly kind: 'error'; readonly message: string };
 
 async function authedRequest<T>(path: string, init?: RequestInit): Promise<CloudSyncResult<T>> {
-  const stored = getToken();
-  if (!stored) return { kind: 'unauthenticated' };
+  // Device token first (durable, renews itself silently), falling back to the in-memory SSO
+  // hand-off token which only exists for the page that just logged in.
+  await ensureDeviceCredentials();
+  const token = (await getDeviceToken()) ?? getToken()?.token;
+  if (!token) return { kind: 'unauthenticated' };
 
   let res: Response;
   try {
     res = await fetch(`${siteApiBase()}${path}`, {
       ...init,
-      headers: { ...(init?.headers ?? {}), Authorization: `Bearer ${stored.token}` },
+      headers: { ...(init?.headers ?? {}), Authorization: `Bearer ${token}` },
     });
   } catch (err) {
     return { kind: 'error', message: err instanceof Error ? err.message : 'network error' };

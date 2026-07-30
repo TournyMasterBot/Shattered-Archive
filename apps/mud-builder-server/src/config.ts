@@ -34,6 +34,18 @@ export interface MudBuilderConfig {
   auditDataPath: string;
   /** Base URL of the centralized auth-server, for GET /api/auth/introspect-check (Phase 2). */
   authServerUrl: string;
+  /**
+   * BROWSER-facing auth-server origin, handed to the client via /api/capabilities so it can
+   * enroll a device key. Distinct from authServerUrl, which is an internal docker alias the
+   * browser cannot resolve — same split kingdom-tactics-server already makes
+   * (AUTH_SERVER_URL vs AUTH_SERVER_PUBLIC_URL). Absent = device credentials unadvertised, so
+   * the client stays on manual token entry.
+   *
+   * OPTIONAL on purpose, unlike authServerUrl: that one has a sane localhost default, whereas
+   * this has no safe default at all (guessing would hand the browser an unreachable internal
+   * alias), so "not configured" must be representable.
+   */
+  authServerPublicUrl?: string;
   /** Path to this service's registered introspect private key (`register-service` output). Unset = introspect-check is unconfigured. */
   servicePrivateKeyPath?: string;
   /**
@@ -82,6 +94,10 @@ export function getMudBuilderConfig(env: NodeJS.ProcessEnv = process.env): MudBu
     authDataPath: path.join(areaPath, 'auth'),
     auditDataPath: path.join(areaPath, 'backups'),
     authServerUrl: env.AUTH_SERVER_URL ?? 'http://localhost:62000',
+    // No fallback to authServerUrl: that value is an internal alias in every deployed
+    // environment, and handing it to a browser would produce a silent, confusing failure.
+    // Unset means "don't offer device enrollment", which is honest and safe.
+    authServerPublicUrl: env.AUTH_SERVER_PUBLIC_URL?.replace(/\/+$/, '') || undefined,
     servicePrivateKeyPath: env.SERVICE_PRIVATE_KEY_PATH || undefined,
     rebuildEnabled: env.MUD_REBUILD_ENABLED === 'true',
     mercMudRepoPath: env.MERC_MUD_REPO_PATH ?? mercMudPath,

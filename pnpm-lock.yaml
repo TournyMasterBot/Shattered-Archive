@@ -225,6 +225,9 @@ importers:
       '@shatteredarchive/kingdom-tactics-engine':
         specifier: workspace:*
         version: link:../../services/kingdom-tactics-engine
+      '@shatteredarchive/sdk-client':
+        specifier: workspace:*
+        version: link:../../sdks/sdks-client
       react:
         specifier: ^19.2.7
         version: 19.2.7
@@ -293,6 +296,9 @@ importers:
       '@shatteredarchive/merc-area':
         specifier: workspace:*
         version: link:../../services/merc-area
+      '@shatteredarchive/sdk-client':
+        specifier: workspace:*
+        version: link:../../sdks/sdks-client
       react:
         specifier: ^19.2.7
         version: 19.2.7

@@ -147,4 +147,74 @@ describe('KeyStore', () => {
     expect(store.countKind('sso')).toBe(1); // stale purged, fresh remains
     expect(store.countKind('api')).toBe(1); // api records untouched
   });
+
+  it('mints a device token that verifies as kind "device", audience-scoped and short-lived', () => {
+    const { token, expiresAt } = store.mintDeviceToken(ACCOUNT_ID, 'mud-builder-server', 0);
+    const verified = store.verify(token, epochLookup(0));
+    expect(verified).toEqual({
+      accountId: ACCOUNT_ID,
+      keyId: expect.any(String),
+      // The audience is what enforces the Phase A service-isolation rule downstream.
+      service: 'mud-builder-server',
+      label: 'device',
+      kind: 'device',
+      expiresAt,
+    });
+    // Default TTL is minutes, not hours — the point of the scheme.
+    expect(Date.parse(expiresAt) - Date.now()).toBeLessThanOrEqual(10 * 60 * 1000);
+    expect(Date.parse(expiresAt)).toBeGreaterThan(Date.now());
+  });
+
+  it('mints separate device tokens per audience, and neither carries the other\'s service', () => {
+    const builder = store.mintDeviceToken(ACCOUNT_ID, 'mud-builder-server', 0);
+    const kt = store.mintDeviceToken(ACCOUNT_ID, 'kingdom-tactics-server', 0);
+    expect(builder.token).not.toBe(kt.token);
+    expect(store.verify(builder.token, epochLookup(0))?.service).toBe('mud-builder-server');
+    expect(store.verify(kt.token, epochLookup(0))?.service).toBe('kingdom-tactics-server');
+  });
+
+  it('an expired device token stops verifying, and an epoch bump invalidates a live one', () => {
+    const { token: expired } = store.mintDeviceToken(ACCOUNT_ID, 'svc', 0, -1000);
+    expect(store.verify(expired, epochLookup(0))).toBeNull();
+
+    const { token: live } = store.mintDeviceToken(ACCOUNT_ID, 'svc', 0);
+    expect(store.verify(live, epochLookup(0))).not.toBeNull();
+    // Password change / rotate-master bumps the epoch — outstanding device tokens die with it.
+    expect(store.verify(live, epochLookup(1))).toBeNull();
+  });
+
+  it('device tokens never appear in listKeys', () => {
+    store.mintDeviceToken(ACCOUNT_ID, 'svc', 0);
+    expect(store.listKeys(ACCOUNT_ID)).toEqual([]);
+  });
+
+  /**
+   * Load-bearing, not tidiness: a 10-minute token re-minted per tab is ~144 records/day/tab
+   * and persist() rewrites the whole encrypted file each time, so without this the store
+   * grows without bound and every mint gets slower.
+   */
+  it('minting a device token purges device records past the grace, leaving other kinds alone', () => {
+    // Expired 31 min ago — past the 30 min device grace.
+    store.mintDeviceToken(ACCOUNT_ID, 'svc-old', 0, -31 * 60 * 1000);
+    store.mintApiKey(ACCOUNT_ID, 'svc-api', 'api key stays', new Date(Date.now() - 60_000).toISOString(), 0);
+    store.mintExchangeToken(ACCOUNT_ID, 'svc-sso', 'sso', 'sso stays', 60_000, 0);
+    expect(store.countKind('device')).toBe(1);
+
+    store.mintDeviceToken(ACCOUNT_ID, 'svc-new', 0);
+    expect(store.countKind('device')).toBe(1); // stale purged, fresh remains
+    expect(store.countKind('api')).toBe(1);
+    expect(store.countKind('sso')).toBe(1);
+  });
+
+  it('keeps a device token that expired only moments ago (inside the debug grace)', () => {
+    store.mintDeviceToken(ACCOUNT_ID, 'svc-recent', 0, -1000);
+    store.mintDeviceToken(ACCOUNT_ID, 'svc-new', 0);
+    expect(store.countKind('device')).toBe(2);
+  });
+
+  it('counts live device tokens per account', () => {
+    store.mintDeviceToken(ACCOUNT_ID, 'svc-a', 0);
+    store.mintDeviceToken(ACCOUNT_ID, 'svc-b', 0);
+    expect(store.countForAccount(ACCOUNT_ID).device).toBe(2);
+  });
 });
