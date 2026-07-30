@@ -6,9 +6,19 @@ import { GameRemoteServerGmcp } from '../../types/event-types/game-remote-server
  * Raw GMCP wire format (confirmed against merc-mud's gmcp_send(), 2026-07-23):
  * "<package> <json>", e.g. `char_data {"hp":100,...}`. Same convention
  * DslScripts/src/dsl/processors/gmcp-processor.ts already parses against
- * real gameplay -- this module is the game-client equivalent, redispatching
- * to the typed `game:*` events the existing hooks (useCharData, useRoomHeader,
- * useAffectsBlock, tickStore) already consume but nothing was ever producing.
+ * real gameplay.
+ *
+ * NOT ATTACHED -- do not call attachGmcpRouter() from runtimeSingleton.
+ * The original premise here ("nothing was ever producing the typed game:*
+ * events") was wrong: UserScriptRuntime.processGmcpEvent() has always produced
+ * them off the `shatteredarchive:gmcp-data` redispatch, and it additionally
+ * records window.__SA_EVENT_SNAPSHOTS__ for late subscribers and handles
+ * login_data. Running both produced every typed GMCP event twice. This module
+ * is kept as a standalone/tested parser only; if it ever becomes the canonical
+ * producer, strip the duplicate branches out of processGmcpEvent, move the
+ * snapshot writes here, and emit add_affect BARE -- some consumers
+ * (autoleveling-engine, useSanctuaryActive) only read payload.n and never
+ * unwrap `{ affect: ... }`.
  */
 const PACKAGE_EVENT: Record<string, string> = {
   char_data: 'game:char-data',

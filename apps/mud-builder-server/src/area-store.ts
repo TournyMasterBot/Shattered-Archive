@@ -98,9 +98,23 @@ export class AreaStore {
     private readonly writeEnabled: boolean,
   ) {}
 
+  /**
+   * Single chokepoint for every user-supplied area filename touching the
+   * filesystem. `assertValidAreaFileName`'s anchored allowlist regex already
+   * rules out path separators, but a resolved-path containment check is added
+   * as an independent second barrier (defense in depth against a future regex
+   * loosening, and the pattern static analysis recognizes as a real sanitizer
+   * for path-injection sinks) — any callers that build their own path.join
+   * from a raw `file` must route through this method instead.
+   */
   private areaFilePath(file: string): string {
     assertValidAreaFileName(file);
-    return path.join(this.areaPath, file);
+    const joined = path.join(this.areaPath, file);
+    const base = path.resolve(this.areaPath) + path.sep;
+    if (!path.resolve(joined).startsWith(base)) {
+      throw new AreaStoreError(`invalid area file name: ${JSON.stringify(file)}`, 400);
+    }
+    return joined;
   }
 
   /** Registered area file names from area.lst (the `$` terminator dropped). */
@@ -254,7 +268,7 @@ export class AreaStore {
       }
     }
 
-    const backupPath = fs.existsSync(target) ? this.backupExistingFile(file) : null;
+    const backupPath = fs.existsSync(target) ? this.backupExistingFile(target, file) : null;
 
     const tmp = `${target}.tmp-${process.pid}`;
     fs.writeFileSync(tmp, text, 'utf8');
@@ -262,13 +276,18 @@ export class AreaStore {
     return { backupPath, hash: AreaStore.hashText(text) };
   }
 
-  /** Timestamped copy of an existing area file into backups/. Caller checks existence. */
-  private backupExistingFile(file: string): string {
+  /**
+   * Timestamped copy of an existing area file into backups/. Caller checks
+   * existence AND passes the already-validated source path (from
+   * `areaFilePath`) — this never re-derives a path from a raw filename, so
+   * there is exactly one place `file` is turned into a filesystem path.
+   */
+  private backupExistingFile(source: string, file: string): string {
     const backupDir = path.join(this.areaPath, 'backups');
     fs.mkdirSync(backupDir, { recursive: true });
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupPath = path.join(backupDir, `${file}.${stamp}.bak`);
-    fs.copyFileSync(path.join(this.areaPath, file), backupPath);
+    fs.copyFileSync(source, backupPath);
     return backupPath;
   }
 
@@ -448,7 +467,7 @@ export class AreaStore {
       throw new AreaStoreError('import text contains binary/non-UTF8 content — .are files are plain text', 400);
     }
 
-    const exists = fs.existsSync(path.join(this.areaPath, file));
+    const exists = fs.existsSync(this.areaFilePath(file));
     const listed = this.listAreas();
     const registered = listed.some((a) => a.file.toLowerCase() === file.toLowerCase());
 
@@ -585,7 +604,7 @@ export class AreaStore {
     }
 
     const target = this.areaFilePath(file);
-    const backupPath = report.exists ? this.backupExistingFile(file) : null;
+    const backupPath = report.exists ? this.backupExistingFile(target, file) : null;
     const tmp = `${target}.tmp-${process.pid}`;
     fs.writeFileSync(tmp, report.normalizedText as string, 'utf8');
     fs.renameSync(tmp, target);
