@@ -113,6 +113,9 @@ the operator-relevant bits:
   re-mints roughly every 10 minutes. `mintDeviceToken` purges device records past a 30-minute
   grace on every mint; without that the encrypted key file would grow without bound, since
   each mint rewrites the whole file.
+- **Users manage their own enrollments** in auth-client's *Keys & devices* tab (list, revoke
+  one, revoke all). There is deliberately no admin-side device view: the list is per-account
+  and the operator lever is the account epoch (temp-password), which drops every enrollment.
 - **Signature encoding gotcha.** WebCrypto emits raw `r||s` (IEEE P1363); Node defaults to
   DER. Verification passes `dsaEncoding: 'ieee-p1363'` explicitly. Get this wrong and every
   real browser signature fails to verify while a Node-signed test still passes.

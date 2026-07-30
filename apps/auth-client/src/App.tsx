@@ -143,7 +143,7 @@ export default function App() {
             aria-current={section === 'keys' ? 'page' : undefined}
             onClick={() => setSection('keys')}
           >
-            API keys
+            Keys &amp; devices
           </button>
           {account.globalRole && account.globalRole !== 'user' ? (
             <button

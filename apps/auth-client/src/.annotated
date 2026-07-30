@@ -1,58 +1,16 @@
 File Index
 
-/main.tsx
-Purpose: Standard createRoot/StrictMode bootstrap.
-
-/App.tsx
-Purpose: The whole app's routing — switches on useAuthSession()'s status between the public flows (login/signup/forgot-password), ForcedChangePage, and the logged-in shell (account/keys nav); also parses /reset-password?token=... and /verify-email?token=... off window.location once on mount to hand the right page its landing token. Phase A: /sso/authorize renders SsoApprovePage INSTEAD of the shell once the session is ready — login/forced-change still run first, so consent always happens on a fully-onboarded session; malformed params keep the branch active so the error card renders rather than the account shell. A2: an Admin tab appears only when me().globalRole isn't 'user' (server enforces regardless). Phase B: /signup is a landing pathname that defaults publicView to the signup form instead of login — added so a consumer's own Register action (DSL's shatteredarchive.com) can send new visitors somewhere that isn't a sign-IN screen (a real bug caught live 2026-07-27: redirecting to the hub root landed everyone on Login).
-
 /App.css
 Purpose: Every auc-* class — rebuilt in A2 on index.css's C#-derived design tokens: panel cards, pill nav with the blue→orange header underline, striped rounded admin table, chip buttons with warm hover. Class names unchanged from Phase 1 (pages/tests depend on them); :has(.auc-page--wide) widens the shell for the admin tables.
 
 /App.test.tsx
 Purpose: A2 Admin-tab visibility off me().globalRole — hidden for 'user', shown for an elevated tier (the API enforces regardless). Phase B: /signup pathname lands on the signup form; any other pathname still defaults to login.
 
+/App.tsx
+Purpose: The whole app's routing — switches on useAuthSession()'s status between the public flows (login/signup/forgot-password), ForcedChangePage, and the logged-in shell (account / "Keys & devices" / admin nav — devices live INSIDE the keys section, see features/devices/.annotated for why); also parses /reset-password?token=... and /verify-email?token=... off window.location once on mount to hand the right page its landing token. Phase A: /sso/authorize renders SsoApprovePage INSTEAD of the shell once the session is ready — login/forced-change still run first, so consent always happens on a fully-onboarded session; malformed params keep the branch active so the error card renders rather than the account shell. A2: an Admin tab appears only when me().globalRole isn't 'user' (server enforces regardless). Phase B: /signup is a landing pathname that defaults publicView to the signup form instead of login — added so a consumer's own Register action (DSL's shatteredarchive.com) can send new visitors somewhere that isn't a sign-IN screen (a real bug caught live 2026-07-27: redirecting to the hub root landed everyone on Login).
+
 /index.css
 Purpose: A2 design-token home — CSS custom properties extracted (grep-verified) from the C# site's site.css: dark neutrals, #6f93ff/#f19a47 accents, #1D94E4 link hover, radii/shadows/mono stack. The constellation's reference identity style; App.css consumes these.
 
-/api/client.ts
-Purpose: Typed fetch wrapper (ApiError, request<T>) covering every Phase 1 auth-server endpoint plus Phase A's ssoApprove and A2's admin wrappers (adminListUsers/adminSetRole/adminTempPassword/adminServices; AccountSummary gained optional globalRole); always credentials:'include'; response shapes cross-checked against routes/account.ts and key-store.ts directly (e.g. rotateKey's response omits service/label, unlike mintApiKey's — IssuedKey's fields are optional to match).
-
-/auth/useAuthSession.ts
-Purpose: loading|loggedOut|mustChangePassword|ready state machine off GET /api/auth/me; a 401 (or any other fetch failure) resolves to loggedOut with the message in `error` — 'loading' has no rendered error slot in App.tsx, so nothing may stay stuck there.
-
-/auth/useAuthSession.test.ts
-Purpose: Status transitions from a mocked /api/auth/me (401/must-change/ready), login()/logout() update account+status, non-401 failures land on loggedOut with a visible error instead of hanging on loading.
-
-/features/auth/SignupPage.tsx
-Purpose: GET /api/auth/challenge -> 3-question form -> POST /api/auth/signup -> show the one-time password exactly once; a failed challenge (400, never says which answer was wrong) discards the challenge and fetches a fresh one rather than retrying the stale one.
-
-/features/auth/LoginPage.tsx
-Purpose: Username/password form calling the onLogin callback (useAuthSession.login).
-
-/features/auth/ForgotPasswordPage.tsx
-Purpose: Two sub-flows in one component — request a reset email (no token yet) vs. set a new password (token from landing on /reset-password?token=...).
-
-/features/auth/ForcedChangePage.tsx
-Purpose: Blocks everything but itself/logout while mustChangePassword is set — UX-only; auth-server's own allowlist (session-guard.ts) is what actually enforces this.
-
-/features/account/AccountPage.tsx
-Purpose: Change-password, add/verify email (auto-verifies once on mount via a pendingEmailToken prop when landing on /verify-email?token=..., then drops the token from the URL so a refresh can't re-verify an already-consumed one), rotate-master behind a window.confirm.
-
-/features/sso/SsoApprovePage.tsx
-Purpose: Phase A SSO consent card + parseSsoRequest (/sso/authorize?service&redirect_uri&state; redirect_uri must parse absolute) — approve calls api.ssoApprove then navigates to redirect_uri?code&state (pre-existing query params preserved, state passed through untouched); deny navigates with error=access_denied&state without touching the API; a malformed request is an error card that NEVER redirects; navigate is injectable for tests.
-
-/features/sso/SsoApprovePage.test.tsx
-Purpose: parseSsoRequest valid/missing/relative-URI cases; approve redirect shape (code+state+preserved params) + API payload; deny without an API call; API-failure shows the error and does not redirect.
-
-/features/admin/AdminPage.tsx
-Purpose: A2 hub admin — searchable/paged user table (live credential counts; role select only on manageable rows, options limited to the server's assignableTiers; temp-password behind a confirm with a show-once box) + the delegation panel (registered services with SERVICE_ADMIN_LINKS link-outs; unknown services render link-less). UI hides what the actor can't do; the API is the enforcement.
-
-/features/admin/AdminPage.test.tsx
-Purpose: Rows + no-controls-on-unmanageable, role-select option ceiling, confirm→post→reload on role change, temp-password show-once + dismiss, query search, delegation link-outs only for known services — mocked fetch.
-
-/features/keys/KeysPage.tsx
-Purpose: List/create/rotate/revoke API keys with the show-once token box — structurally mirrors mud-builder-client's AccessPage key panel almost directly (same ApiKeyInfo/IssuedKey shapes). The "Service" field is a `<select>` restricted to KNOWN_SERVICES (currently just mud-builder-server, the one real registered consumer) rather than free text — the tag is purely a label (auth-server's /api/introspect never filters on it), but a typo/inconsistent free-text value was confusing across a user's own key list.
-
-/features/keys/KeysPage.test.tsx
-Purpose: List/create-shows-token-once/rotate-revoke-behind-confirm/confirm-dismissed-is-a-noop, mocked fetch — mirrors AccessPage.test.tsx's coverage depth; plus a case proving the Service select only offers KNOWN_SERVICES and the create button stays disabled until one is chosen.
+/main.tsx
+Purpose: Standard createRoot/StrictMode bootstrap.

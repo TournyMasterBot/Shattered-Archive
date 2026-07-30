@@ -538,3 +538,14 @@ Plan stays COMPLETE — this section records the follow-up work, all of it lande
   surface, so a user cannot see or revoke their own enrolled devices; the only lever is a
   password change, which bumps the epoch and drops all of them. With the grant tier above,
   revoking the service's API key is now a second lever (per-service, all devices).
+- 2026-07-30T19:35Z CLOSED — device-management UI shipped. New
+  `auth-client/src/features/devices/DevicesPanel.tsx` (list with label/audience/enrolled/last-used,
+  per-device Revoke, Revoke-all, revoked tombstones collapsed behind a toggle), rendered INSIDE
+  KeysPage rather than as its own nav section — keys and devices are different axes of one
+  question (key = per-service across devices; device = per-browser across services) and a user
+  choosing between them needs both on screen. Nav item renamed "API keys" → "Keys & devices";
+  `api.listDevices/revokeDevice/revokeAllDevices` added; 7 new tests (auth-client 39 → 46).
+  Two deliberate non-features, both explained in the UI text: no "this device" badge (the key
+  lives in the ENROLLING origin's IndexedDB, which the hub cannot read, so it would be a guess),
+  and a lost-laptop caveat pointing at the password change — a thief holds the browser's live
+  hub session too and silent enrolment would just re-bind moments after a revoke.

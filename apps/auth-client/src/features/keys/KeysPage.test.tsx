@@ -18,6 +18,11 @@ describe('KeysPage', () => {
       if (url.endsWith('/api/keys') && (!init?.method || init.method === 'GET')) {
         return json({ keys });
       }
+      // KeysPage renders DevicesPanel too; empty is enough here — device behaviour has its
+      // own suite, and this stub only exists so the panel's load doesn't error into a toast.
+      if (url.endsWith('/api/device/') && (!init?.method || init.method === 'GET')) {
+        return json({ devices: [] });
+      }
       if (url.endsWith('/api/keys') && init?.method === 'POST') {
         const { service, label } = JSON.parse(String(init.body)) as { service: string; label: string };
         keys = [...keys, { id: 'k2', service, label, createdAt: '2026-07-16T12:00:00Z', expiresAt: null }];

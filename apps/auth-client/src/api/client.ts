@@ -76,6 +76,21 @@ export interface ApiKeyInfo {
   revokedAt?: string;
 }
 
+/**
+ * A browser bound to this account by a device key. Nothing here is a secret: the private
+ * half is non-extractable and never left the enrolling browser, so this is public metadata
+ * about which browsers are bound — there is no token to show and nothing to keep safe.
+ */
+export interface DeviceInfo {
+  id: string;
+  label: string;
+  /** The audience frozen at enrollment — the services this device may mint tokens for. */
+  allowedServices: string[];
+  createdAt: string;
+  lastSeenAt: string;
+  revokedAt?: string;
+}
+
 /** create/rotate responses — the only place a plaintext token ever appears. rotate omits service/label. */
 export interface IssuedKey {
   id: string;
@@ -135,4 +150,19 @@ export const api = {
   rotateKey: (id: string) => request<IssuedKey>(`/api/keys/${encodeURIComponent(id)}/rotate`, { method: 'POST' }),
   revokeKey: (id: string) =>
     request<ApiKeyInfo & { revoked: boolean }>(`/api/keys/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+
+  /**
+   * Device management. Same-origin here, so the /api/device CORS allowlist (which lists the
+   * CONSUMER origins that may enroll) is not involved — the hub never enrolls a device of its
+   * own, it only shows and revokes the ones consumer apps bound.
+   */
+  // Trailing slash is deliberate, do not "tidy" it away: nginx's `location /api/device/` is a
+  // prefix ending in `/` fronting a proxy_pass, so nginx answers the slashless form with a 301
+  // to this one (documented behaviour, confirmed live). Requesting it directly saves a round
+  // trip per load and keeps the call in the device_auth rate-limit zone rather than falling
+  // through to the general /api/ one. Express matches it either way (strict routing is off).
+  listDevices: () => request<{ devices: DeviceInfo[] }>('/api/device/'),
+  revokeDevice: (id: string) =>
+    postJson<{ deviceId: string; revoked: boolean }>(`/api/device/${encodeURIComponent(id)}/revoke`),
+  revokeAllDevices: () => postJson<{ revoked: number }>('/api/device/revoke-all'),
 };

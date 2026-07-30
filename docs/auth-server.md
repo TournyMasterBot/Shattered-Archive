@@ -659,7 +659,7 @@ may play. The Builder is the natural candidate to turn on.
 |---|---|
 | MUD Builder | **Automatically** on page load when you already have a hub session. Otherwise it offers a sign-in link that brings you straight back, and a manual "Enrol this device" fallback |
 | Kingdom Tactics | **Automatically**, right after the normal SSO login — no extra step for the user |
-| auth-client | Not applicable — it is same-origin with this service and uses the session cookie directly |
+| auth-client | Does not enrol — it is same-origin with this service and uses the session cookie directly. It is where you *manage* the devices the other apps enrolled (see "Managing your devices") |
 
 Kingdom Tactics enrols during the login hand-off because that is the one moment a session with
 this service is guaranteed to exist. If it fails, the login still succeeds — the user just gets
@@ -699,6 +699,36 @@ can never skip a forced password change.
 Session-guarded device management. The list never includes key material. Revocation is
 scoped to the signed-in account, is a tombstone rather than a delete (so it stays
 auditable), and enrollment/revocation both append to `audit.log`.
+
+### Managing your devices
+
+The **Keys & devices** tab in auth-client lists every browser bound to your account — its
+label, the services it may reach, when it enrolled and when it was last used — with a
+per-device Revoke and a Revoke-all. Revoked entries stay (they are permanent tombstones
+server-side) but collapse behind a *Show revoked* toggle.
+
+Keys and devices share one tab because they are **different axes of the same question**, and
+picking the wrong one is the common mistake:
+
+| | Scope | Revoking it… |
+|---|---|---|
+| **API key** | one service, all your devices | cuts that service off everywhere you are signed in |
+| **Device** | one browser, all services | kills the stolen laptop; your desktop keeps working |
+
+Neither substitutes for the other, which is why device revocation is not just "rotate the key
+again".
+
+Two things the UI says out loud, because both surprise people:
+
+- **There is no "this device" marker.** The device key lives in the IndexedDB of the origin
+  that enrolled it (`build.shatteredarchive.dev`), and the hub is a different origin — it
+  genuinely cannot tell which row is the browser you are reading in. Consumer apps default the
+  label to something like `Chrome on Windows` at enrolment so the list stays readable.
+- **Revoking is not enough for a lost laptop.** Whoever holds the device holds its cookies
+  too, including a possibly still-live hub session — which can silently enrol a *new* device
+  moments later, since enrolment is automatic. Changing your password bumps the account epoch
+  and invalidates every session and every enrolment at once. That, not the revoke button, is
+  what ends the access.
 
 ### When a secret must still be shown
 

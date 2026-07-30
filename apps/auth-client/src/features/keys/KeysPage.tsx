@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { api, ApiError, type ApiKeyInfo } from '../../api/client.js';
+import DevicesPanel from '../devices/DevicesPanel.js';
 
 /**
  * `service` is purely a label on the issued key (auth-server's /api/introspect never
@@ -12,7 +13,14 @@ import { api, ApiError, type ApiKeyInfo } from '../../api/client.js';
  */
 const KNOWN_SERVICES = ['mud-builder-server'] as const;
 
-/** List/create/rotate/revoke API keys — structurally mirrors mud-builder-client's AccessPage key panel. */
+/**
+ * List/create/rotate/revoke API keys — structurally mirrors mud-builder-client's AccessPage
+ * key panel — plus the enrolled-device list below it.
+ *
+ * The two share a page on purpose: they are different axes of the same access question (a key
+ * is per-service across all devices, a device is per-browser across all services), and a user
+ * asking "how do I cut off the laptop I lost" needs to see both to pick the right one.
+ */
 export default function KeysPage() {
   const [keys, setKeys] = useState<ApiKeyInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,7 +85,7 @@ export default function KeysPage() {
 
   return (
     <div className="auc-page">
-      <h2>API keys</h2>
+      <h2>Keys &amp; devices</h2>
       {toast ? (
         <p className={toast.kind === 'ok' ? 'auc-toast auc-toast--ok' : 'auc-toast auc-toast--err'}>{toast.text}</p>
       ) : null}
@@ -152,6 +160,8 @@ export default function KeysPage() {
           Create API key
         </button>
       </fieldset>
+
+      <DevicesPanel />
     </div>
   );
 }
