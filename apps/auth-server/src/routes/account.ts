@@ -6,7 +6,31 @@ import { safe } from './safe.js';
 import { sessionGuard, mustChangePasswordGuard, sessionCookieHeader, type SessionContext } from './session-guard.js';
 import { requireString, requireNewPassword } from './validation.js';
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_MAX_LENGTH = 254; // RFC 5321 forward-path limit
+
+/**
+ * Index scanning, deliberately NOT a regex. The obvious pattern for this
+ * (/^[^\s@]+@[^\s@]+\.[^\s@]+$/) backtracks QUADRATICALLY on a failing input:
+ * the literal `\.` is also matched by `[^\s@]`, so the engine has to retry every
+ * dot position as the split point before it can give up. Against this route's
+ * 32kb JSON cap that is a meaningful amount of CPU burned per request. Scanning
+ * by index has no such failure mode — it is linear on every input.
+ *
+ * Same shape rules as the pattern it replaces (exactly one `@`, a non-empty local
+ * part, a dot inside the domain that is neither leading nor trailing, no
+ * whitespace), plus a length ceiling. Still deliberately a SHAPE check and not
+ * RFC 5322 validation — the only real proof an address works is the verification
+ * mail sent to it immediately below.
+ */
+function looksLikeEmail(value: string): boolean {
+  if (value.length === 0 || value.length > EMAIL_MAX_LENGTH) return false;
+  const at = value.indexOf('@');
+  if (at < 1 || at !== value.lastIndexOf('@')) return false;
+  const domain = value.slice(at + 1);
+  const dot = domain.lastIndexOf('.');
+  if (dot < 1 || dot === domain.length - 1) return false;
+  return !/\s/.test(value);
+}
 
 /**
  * AI-ANNOTATION
@@ -50,7 +74,7 @@ export function registerAccountRoutes(app: Application, deps: AuthServerDeps): v
     safe(async (req, res) => {
       const session = res.locals.session as SessionContext;
       const email = requireString(req.body, 'email');
-      if (!EMAIL_PATTERN.test(email)) throw new AuthError('email does not look valid', 400);
+      if (!looksLikeEmail(email)) throw new AuthError('email does not look valid', 400);
 
       const { token } = deps.accountStore.requestEmail(session.accountId, email);
       const link = `${deps.publicOrigin}/verify-email?token=${encodeURIComponent(token)}`;
