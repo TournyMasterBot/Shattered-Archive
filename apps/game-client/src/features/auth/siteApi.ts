@@ -5,7 +5,20 @@
 // Absolute origin, for the login-start NAVIGATION — a top-level page redirect
 // isn't subject to CORS, so there's no benefit to routing it through the dev
 // proxy below; it always targets the real origin directly.
-export const SITE_ORIGIN = import.meta.env.DEV ? (import.meta.env.VITE_SITE_API ?? 'http://localhost:5000') : 'https://shatteredarchive.com';
+//
+// VITE_SITE_API wins in BOTH modes, not just dev: the local dev machine runs a
+// container stack that mirrors production (so the client is a prod build), but
+// its C# service is reachable at localhost:5000 rather than behind the real
+// site domain. Both compose files pass this build arg explicitly.
+//
+// `||`, not `??`: the Dockerfile's `ENV VITE_SITE_API=$VITE_SITE_API` resolves
+// to an empty string when the arg is not passed, and an empty string is not
+// nullish — it would otherwise silently become the origin. It also beats the
+// checked-in apps/game-client/.env (real process env wins over .env files in
+// vite), which is why an unpassed arg must fall through to the default here
+// rather than to that file's dev value.
+const configuredSiteApi = String(import.meta.env.VITE_SITE_API ?? '').trim();
+export const SITE_ORIGIN = configuredSiteApi || (import.meta.env.DEV ? 'http://localhost:5000' : 'https://shatteredarchive.com');
 
 // Base for fetch() calls (cloud sync). In dev, the vite proxy (`/api/site/*` ->
 // VITE_SITE_API) keeps these same-origin, dodging CORS entirely. In prod this is

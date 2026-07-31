@@ -42,6 +42,9 @@ Purpose: Automatically recasts spells when they drop based on user-defined mappi
 /roller.plugin.ts
 Purpose: Automatically accepts or rejects stat rolls based on configurable thresholds and prompts.
 
+/speech-text.ts
+Purpose: Sanitizes text bound for a speech engine — strips the full escape-sequence set (any CSI final byte, private-mode toggles, OSC strings, a sequence cut off by a chunk boundary, stray control bytes), not just the SGR colors the other stripAnsi helpers remove, so the synthesizer never reads codes aloud.
+
 /standup.plugin.ts
 Purpose: Enables automatic standing up in game when specific knockdown phrases are detected.
 

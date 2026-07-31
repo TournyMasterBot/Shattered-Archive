@@ -10,7 +10,7 @@ interface AccountModalProps {
 }
 
 export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, connectionId }) => {
-  const { isLoggedIn, busy, status, handleLogin, handleLogout, handleSaveToCloud, handleLoadFromCloud } =
+  const { isLoggedIn, busy, loginPending, status, handleLogin, handleLogout, handleSaveToCloud, handleLoadFromCloud } =
     useAccountModal({ isOpen, connectionId, onClose });
 
   if (!isOpen) return null;
@@ -30,13 +30,25 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, con
             <>
               <div className={styles.blurb}>
                 Log in with your Shattered Archive account to save and load this connection's scripts and plugin
-                configs from the cloud. This is optional — everything keeps working locally without it.
+                configs from the cloud. This is optional — everything keeps working locally without it. Signing in
+                opens a separate window, so your connection to the game stays up the whole time.
               </div>
               <div className={styles.actionsColumn}>
-                <button type="button" className={styles.primaryButton} onClick={handleLogin} disabled={busy}>
-                  Log in with Shattered Archive account
+                <button
+                  type="button"
+                  className={styles.primaryButton}
+                  onClick={handleLogin}
+                  disabled={busy || loginPending}
+                >
+                  {loginPending ? 'Waiting for the sign-in window…' : 'Log in with Shattered Archive account'}
                 </button>
               </div>
+              {loginPending && (
+                <div className={styles.blurb}>
+                  Finish signing in in the window that just opened. This panel updates by itself when you're done —
+                  you can keep playing in the meantime.
+                </div>
+              )}
             </>
           )}
 
@@ -63,6 +75,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, con
 
           {status?.kind === 'ok' && <div className={styles.statusOk}>{status.text}</div>}
           {status?.kind === 'err' && <div className={styles.statusErr}>{status.text}</div>}
+          {status?.kind === 'info' && <div className={styles.statusInfo}>{status.text}</div>}
         </div>
 
         <div className={styles.footer}>

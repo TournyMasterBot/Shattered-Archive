@@ -1,6 +1,6 @@
 // apps/game-client/src/hooks/useAccountModal.ts
 import { useEffect, useState } from 'react';
-import { getToken, clearToken, isExpired } from '../features/auth/authTokenStore';
+import { getToken, clearToken, isExpired, subscribeToToken } from '../features/auth/authTokenStore';
 import { startLogin } from '../features/auth/gameSso';
 import * as cloudSync from '../features/auth/cloudSync';
 import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
@@ -12,7 +12,7 @@ interface UseAccountModalOptions {
   onClose: () => void;
 }
 
-type Status = { kind: 'ok' | 'err'; text: string } | null;
+type Status = { kind: 'ok' | 'err' | 'info'; text: string } | null;
 
 function loadPluginsFromStorage(): InstalledPluginRecord[] {
   try {
@@ -28,6 +28,7 @@ function loadPluginsFromStorage(): InstalledPluginRecord[] {
 export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [loginPending, setLoginPending] = useState(false);
   const [status, setStatus] = useState<Status>(null);
 
   useEffect(() => {
@@ -37,8 +38,37 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
     setStatus(null);
   }, [isOpen]);
 
-  const handleLogin = () => {
-    startLogin();
+  // The login popup writes the token from ANOTHER window, so nothing in this one
+  // re-runs on its own — this subscription is what flips the panel over to the
+  // logged-in view the moment the sign-in lands, without a reload or a reopen.
+  useEffect(() => subscribeToToken((stored) => setIsLoggedIn(!!stored && !isExpired(stored))), []);
+
+  const handleLogin = async () => {
+    setLoginPending(true);
+    setStatus({ kind: 'info', text: 'Waiting for the sign-in window…' });
+    try {
+      const outcome = await startLogin();
+      switch (outcome.kind) {
+        case 'success':
+          setIsLoggedIn(true);
+          setStatus({ kind: 'ok', text: 'Signed in.' });
+          break;
+        case 'blocked':
+          setStatus({
+            kind: 'err',
+            text: 'Your browser blocked the sign-in window. Allow pop-ups for this site and try again — your game connection is still open.',
+          });
+          break;
+        case 'cancelled':
+          setStatus({ kind: 'err', text: 'Sign-in was cancelled. Your game connection is unaffected.' });
+          break;
+        case 'timeout':
+          setStatus({ kind: 'err', text: 'Sign-in timed out. Your game connection is unaffected — try again when ready.' });
+          break;
+      }
+    } finally {
+      setLoginPending(false);
+    }
   };
 
   const handleLogout = () => {
@@ -121,6 +151,7 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
   return {
     isLoggedIn,
     busy,
+    loginPending,
     status,
     handleLogin,
     handleLogout,

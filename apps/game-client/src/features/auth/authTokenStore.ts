@@ -47,3 +47,24 @@ export function isExpired(stored: StoredAuthToken): boolean {
   if (Number.isNaN(expiresAtMs)) return true;
   return Date.now() >= expiresAtMs;
 }
+
+/**
+ * Calls back whenever this key changes in ANOTHER same-origin window, and returns
+ * an unsubscribe. This is how the app tab learns that the login popup signed in:
+ * the popup lands on auth-callback.html, writes the token here, and the browser
+ * raises `storage` in every other window sharing the origin.
+ *
+ * The `storage` event deliberately does NOT fire in the window that did the
+ * writing, so this never observes the app's own setToken/clearToken — callers
+ * that change the token themselves already know, and update their state directly.
+ */
+export function subscribeToToken(onChange: (stored: StoredAuthToken | null) => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const handler = (event: StorageEvent) => {
+    // A null key means localStorage.clear() — that wipes ours too, so it counts.
+    if (event.key !== null && event.key !== STORAGE_KEY) return;
+    onChange(getToken());
+  };
+  window.addEventListener('storage', handler);
+  return () => window.removeEventListener('storage', handler);
+}

@@ -78,6 +78,12 @@
   color: #9fe0a0;
 }
 
+/* In-progress, not an outcome — reads as neutral against the ok/err pair. */
+.statusInfo {
+  font-size: 0.74rem;
+  color: #a0d5ff;
+}
+
 .statusErr {
   font-size: 0.74rem;
   color: #ff9f9f;

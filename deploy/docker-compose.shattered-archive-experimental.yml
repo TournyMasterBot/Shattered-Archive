@@ -46,6 +46,15 @@ services:
     
     environment:
       NGINX_TLS_INCLUDE_FILE: "tls-dev.conf"
+      # Dev variant: connect-src allows this host's C# service on :5000 instead of the real
+      # site domain. Required — an unset value leaves the literal ${...} in the rendered
+      # config and nginx refuses to start.
+      NGINX_CSP_SCRIPTING_FILE: "${NGINX_CSP_SCRIPTING_FILE:-security-headers-scripting-dev.conf}"
+      # Required by edge-subdomains.conf (set_real_ip_from) — nginx will not start if it is
+      # unset, because envsubst leaves the ${...} in place. Inert on this stack: nothing
+      # reaches it via the front proxy, so no request ever arrives from that address and the
+      # rewrite never fires. Kept in step with the prod file so the two render identically.
+      FRONT_PROXY_CIDR: "${FRONT_PROXY_CIDR:-144.217.6.225/32}"
 
     volumes:
       # keep your template-based config flow
@@ -94,6 +103,11 @@ services:
         VITE_WEB_API: "https://web-server.shatteredarchive.dev"
         VITE_WEB_WS: "wss://web-server.shatteredarchive.dev"
         VITE_WEB_SECURE: "true"
+        # This stack mirrors production, but the C# site service is published on
+        # the host at :5000 here instead of sitting behind the real site domain.
+        # Cross-origin from this client, so DSL/Server/docker-compose.yml
+        # allowlists http://game-client.shatteredarchive.dev to match.
+        VITE_SITE_API: "http://localhost:5000"
         VITE_ENV: "development"
     image: shatteredarchive-game-client
     stdin_open: true
@@ -270,6 +284,13 @@ services:
       # must resolve on the docker network, NOT localhost (this container's
       # default) — the alias below matches auth-server's own service block.
       AUTH_SERVER_URL: "http://auth-server.shatteredarchive.dev:62000"
+      # The BROWSER-facing counterpart, handed to the client via /api/capabilities so it can
+      # enrol a device key. Must be the real public edge, never the internal alias above —
+      # a browser cannot resolve that, and handing it over would fail silently. Absent here
+      # means the client never offers device enrolment and stays on manual token entry, so
+      # this is the switch that turns the feature on for the Builder. Its counterpart is
+      # auth-server's DEVICE_ORIGIN_SERVICES, which must map this client's origin to this service.
+      AUTH_SERVER_PUBLIC_URL: "https://auth.shatteredarchive.dev"
       SERVICE_PRIVATE_KEY_PATH: "/repo/apps/mud-builder-server/secrets/shattered-service.key"
       # Phase 15: the rebuild pipeline exists behind this flag. Enabled 2026-07-25,
       # user-authorized, to run the live end-to-end verification test — see the Phase 15
@@ -347,7 +368,10 @@ services:
       DATA_DIR: "/repo/apps/kingdom-tactics-server/data"
       # Server-to-server calls (introspect/exchange) use the internal alias, no TLS — matches
       # mud-builder-server's own AUTH_SERVER_URL convention. AUTH_SERVER_PUBLIC_URL is what the
-      # BROWSER gets redirected to, so it must stay the real public edge.
+      # BROWSER gets redirected to, so it must stay the real public edge. Since 2026-07-30 it
+      # has a SECOND consumer: GET /api/kt/config serves it to kt-client so the browser can
+      # enrol a device key. Its counterpart is auth-server's DEVICE_ORIGIN_SERVICES, which must
+      # list kingdom-tactics.shatteredarchive.dev (it does).
       AUTH_SERVER_URL: "http://auth-server.shatteredarchive.dev:62000"
       AUTH_SERVER_PUBLIC_URL: "https://auth.shatteredarchive.dev"
       SERVICE_PRIVATE_KEY_PATH: "/repo/apps/kingdom-tactics-server/secrets/shattered-service.key"
@@ -416,6 +440,46 @@ services:
       # persists across recreation. See crypto-primitives.ts's loadDataKey() precedence.
       DATA_ENCRYPTION_KEY_FILE: "/repo/apps/auth-server/secrets/encryption.key"
       PUBLIC_ORIGIN: "https://auth.shatteredarchive.dev"
+      # origin=service — which services a device enrolled at each origin may mint tokens for.
+      # THIS FILE'S COPY OF NGINX'S ROUTING TABLE: an origin may reach exactly the upstream
+      # the edge routes it to, and nothing else. Keep the two in step (edge-subdomains.conf).
+      #
+      # It is one variable, not an origins list plus an audience map, because the CORS
+      # allowlist is DERIVED from these keys — so an origin that may enroll always has a
+      # defined audience and the two cannot drift.
+      #
+      # Why this is load-bearing: a device names the service it wants a token for, and without
+      # this map any enrolled browser could name ANY service. An XSS on the game could then
+      # mint a Builder token. Binding the audience to the enrolling origin is what stops that.
+      #
+      # Needed at all because browser key storage is ORIGIN-scoped: a device key enrolled on
+      # auth.* is invisible to build.*, so every client site enrolls its own key, which makes
+      # enrollment an inherently cross-origin credentialed call. No cookie loosening is
+      # required — these are all one registrable domain, so same-SITE, so the existing
+      # SameSite=Lax session cookie is still sent — but each origin must be named here.
+      # (A .com origin would be cross-SITE and gets NO cookie, so it cannot enroll this way at
+      # all; such an app needs the SSO code flow instead.)
+      #
+      # Exact string match against the browser's Origin header: lowercase, no path, and NO
+      # default port (a browser sends https://x.dev, never https://x.dev:443). Wildcards are
+      # not supported — invalid with credentials, and reflecting arbitrary origins would let
+      # any hostile page enroll itself against a signed-in account. Unset = deny all, which
+      # is the deliberate fail-closed default. Use `a=svc1|svc2` for an origin needing several.
+      #
+      # auth-client is absent on purpose: it is same-origin with auth-server here (nginx
+      # routes /api/ on auth.shatteredarchive.dev to this service), so CORS never applies.
+      DEVICE_ORIGIN_SERVICES: "https://build.shatteredarchive.dev=mud-builder-server,https://kingdom-tactics.shatteredarchive.dev=kingdom-tactics-server"
+      # Services where holding a device key is NOT sufficient: the account must also hold an
+      # active API key for that service, minted in auth-client's API keys tab. That makes the
+      # API key the ENTITLEMENT record — granted and revoked in one place, never pasted into
+      # an app — while the device key remains the thing that authenticates.
+      #
+      # Empty by DEFAULT and deliberately so: switching a service on here immediately refuses
+      # every account that has no key for it. kingdom-tactics-server must stay open (anyone
+      # signed in may play); mud-builder-server is the candidate to turn on, since authoring
+      # access should be explicitly granted. Enable with:
+      #   DEVICE_GRANT_REQUIRED_SERVICES: "mud-builder-server"
+      DEVICE_GRANT_REQUIRED_SERVICES: ""
     expose:
       - "62000"
     networks:

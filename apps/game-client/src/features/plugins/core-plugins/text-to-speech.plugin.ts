@@ -62,7 +62,7 @@
 //     see handleArenaLine's own doc comment below for the full pipeline.
 
 import type { IPluginModule, PluginEvent, PluginRuntimeApi } from '@shatteredarchive/types-client';
-import { stripAnsi } from '../../autoleveling/autoleveling-text';
+import { stripAnsiForSpeech } from './speech-text';
 import { shouldOmitLine } from '../../userScripts/triggerOmitStore';
 import { OPPONENT_BUCKETS } from '../../combat/opponent-buckets';
 import { SELF_CONDITION_BUCKETS } from '../../combat/self-condition-buckets';
@@ -468,8 +468,19 @@ export function createTextToSpeechPlugin(): IPluginModule {
   };
 
   const enqueue = (api: PluginRuntimeApi, text: string) => {
+    // Sanitized here, at the one funnel every speech path goes through, rather
+    // than at each caller — a GMCP-derived alert, the read-selection button or
+    // a line another plugin echoed back into the stream can all carry escape
+    // sequences, and the synthesizer reads them out loud ("one semicolon
+    // thirty-seven em") instead of ignoring them.
+    const speakable = stripAnsiForSpeech(text).trim();
+    // A line that was nothing but escape codes has nothing to say, and an
+    // empty utterance is not worth a queue slot (some engines never fire
+    // onend for one, which would stall the pump).
+    if (!speakable) return;
+
     const maxLen = Math.max(1, Number(api.getConfig().maxQueueLength ?? 3));
-    queue.push(text);
+    queue.push(speakable);
     while (queue.length > maxLen) queue.shift();
     pump(api);
   };
@@ -1125,7 +1136,10 @@ export function createTextToSpeechPlugin(): IPluginModule {
       const excludePatterns = parsePatterns(cfg.excludePatterns);
       const debug = cfg.debug === true;
 
-      const plain = stripAnsi(rawText).replace(/\r/g, '');
+      // Full sanitize, not just the SGR colors: a non-color sequence left in
+      // place also breaks the pattern/squelch matching below (an anchored
+      // exclude pattern stops matching a line that ends in ESC [ K).
+      const plain = stripAnsiForSpeech(rawText).replace(/\r/g, '');
 
       if (cfg.arenaObserverMode === true) {
         handleArenaLine(api, plain, debug);

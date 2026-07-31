@@ -3,6 +3,9 @@ File Index
 /App.tsx
 Purpose: App component renders the main application container.
 
+/auth-callback.ts
+Purpose: Entry script for auth-callback.html — the login popup's landing page, and a SECOND vite entry (see vite.config.ts rollupOptions.input; without it the page 404s in the built image and login hangs to its timeout). Deliberately outside features/: it is a page entry like main.tsx, not part of the app bundle — no React, no game connection, so the tab actually playing is never touched. Parses the #auth_token fragment, strips it from the URL before anything else can read it, writes the token via authTokenStore (same origin ⇒ same localStorage the opener reads), then closes itself. Only self-closes when window.opener exists — a directly-navigated window would just look broken.
+
 /env.d.ts
 Purpose: Defines TypeScript types for Vite environment variables and imports.
 

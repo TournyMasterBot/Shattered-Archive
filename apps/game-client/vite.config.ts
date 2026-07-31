@@ -108,6 +108,11 @@ export default defineConfig(({ mode }) => {
         input: {
           main: path.resolve(__dirname, 'index.html'),
           status: path.resolve(__dirname, 'status.html'),
+          // The login popup's landing page. A real entry, not an asset: without
+          // it the page 404s in the built image (dev serves root .html files
+          // implicitly, so this only ever breaks in prod), and logging in hangs
+          // until it times out. nginx try_files serves it as a plain file.
+          authCallback: path.resolve(__dirname, 'auth-callback.html'),
         },
       },
     },
