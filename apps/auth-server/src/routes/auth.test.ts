@@ -113,6 +113,43 @@ describe('auth routes', () => {
     expect(afterExpiry.status).toBe(200);
   });
 
+  it('a forged X-Forwarded-For cannot escape the per-IP lockout', async () => {
+    // Regression guard for `app.set('trust proxy', 1)` in app.ts. Under the previous
+    // `true`, req.ip became the LEFTMOST X-Forwarded-For entry — i.e. whatever the client
+    // sent — so an attacker could rotate one header and get unlimited password attempts.
+    //
+    // The header below is shaped exactly as the deployed chain produces it: each nginx hop
+    // APPENDS, so the client's forged value leads and the edge's own $remote_addr (the real
+    // client, resolved via set_real_ip_from) trails. Only the leading value is rotated here,
+    // which is the whole of what an attacker controls.
+    // Each attempt uses a DIFFERENT username on purpose. LoginLockout keys on username and
+    // IP independently, so same-username attempts would trip the username axis and prove
+    // nothing about the IP one — and the IP axis ("spray many accounts from one source") is
+    // precisely what a forged header defeated.
+    harness.deps.loginLockout = new LoginLockout(1, 5_000, 5_000); // 1 free attempt, then locked
+
+    const attemptWrong = (forged: string, realClient: string, username: string) =>
+      fetch(`${harness.base}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Forwarded-For': `${forged}, ${realClient}`,
+        },
+        body: JSON.stringify({ username, password: 'wrong' }),
+      });
+
+    expect((await attemptWrong('9.9.9.1', '203.0.113.7', 'alpha')).status).toBe(401);
+    expect((await attemptWrong('9.9.9.2', '203.0.113.7', 'beta')).status).toBe(401);
+
+    // Third strike from the same REAL client. A fresh forged address must not buy a fresh
+    // allowance — under `trust proxy: true` this returned 401 and the spray continued.
+    expect((await attemptWrong('9.9.9.3', '203.0.113.7', 'gamma')).status).toBe(429);
+
+    // ...while a genuinely different real client is unaffected, so the fix does not collapse
+    // every caller into one shared bucket.
+    expect((await attemptWrong('9.9.9.1', '198.51.100.4', 'gamma')).status).toBe(401);
+  });
+
   it('GET /api/auth/me requires a session', async () => {
     const res = await fetch(`${harness.base}/api/auth/me`);
     expect(res.status).toBe(401);

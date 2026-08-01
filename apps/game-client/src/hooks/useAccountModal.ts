@@ -4,7 +4,8 @@ import { getToken, clearToken, isExpired, subscribeToToken } from '../features/a
 import { startLogin } from '../features/auth/gameSso';
 import * as cloudSync from '../features/auth/cloudSync';
 import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
-import { PLUGINS_STORAGE_KEY, type InstalledPluginRecord } from './usePlugins';
+import { getAllGlobalScriptBuckets, replaceGlobalScriptBuckets } from '../features/userScripts/globalScriptsStore';
+import { PLUGINS_STORAGE_KEY, writeInstalledPlugins, type InstalledPluginRecord } from './usePlugins';
 
 interface UseAccountModalOptions {
   isOpen: boolean;
@@ -83,13 +84,21 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
     try {
       const scripts = RuntimeSingleton.Runtime.loadScriptsFromStorage(connectionId);
       const plugins = loadPluginsFromStorage();
+      // Every connection's globals, not just this one — see
+      // getAllGlobalScriptBuckets on why a partial save would drop the rest.
+      const globals = getAllGlobalScriptBuckets();
 
-      const [scriptsResult, pluginsResult] = await Promise.all([
+      const [scriptsResult, pluginsResult, globalsResult] = await Promise.all([
         cloudSync.saveScripts(scripts),
         cloudSync.savePluginConfigs(plugins),
+        cloudSync.saveGlobalScripts(globals),
       ]);
 
-      if (scriptsResult.kind === 'unauthenticated' || pluginsResult.kind === 'unauthenticated') {
+      if (
+        scriptsResult.kind === 'unauthenticated' ||
+        pluginsResult.kind === 'unauthenticated' ||
+        globalsResult.kind === 'unauthenticated'
+      ) {
         setIsLoggedIn(false);
         setStatus({ kind: 'err', text: 'Your session expired — please log in again.' });
         return;
@@ -102,10 +111,16 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
         setStatus({ kind: 'err', text: `Save failed (plugin configs): ${pluginsResult.message}` });
         return;
       }
+      if (globalsResult.kind === 'error') {
+        setStatus({ kind: 'err', text: `Save failed (global scripts): ${globalsResult.message}` });
+        return;
+      }
 
       setStatus({
         kind: 'ok',
-        text: `Saved ${scriptsResult.data.count} script(s) and ${pluginsResult.data.count} plugin config(s) to the cloud.`,
+        text:
+          `Saved ${scriptsResult.data.count} script(s), ${pluginsResult.data.count} plugin config(s) ` +
+          `and ${globalsResult.data.count} global-script set(s) to the cloud.`,
       });
     } finally {
       setBusy(false);
@@ -122,9 +137,17 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
     setBusy(true);
     setStatus(null);
     try {
-      const [scriptsResult, pluginsResult] = await Promise.all([cloudSync.loadScripts(), cloudSync.loadPluginConfigs()]);
+      const [scriptsResult, pluginsResult, globalsResult] = await Promise.all([
+        cloudSync.loadScripts(),
+        cloudSync.loadPluginConfigs(),
+        cloudSync.loadGlobalScripts(),
+      ]);
 
-      if (scriptsResult.kind === 'unauthenticated' || pluginsResult.kind === 'unauthenticated') {
+      if (
+        scriptsResult.kind === 'unauthenticated' ||
+        pluginsResult.kind === 'unauthenticated' ||
+        globalsResult.kind === 'unauthenticated'
+      ) {
         setIsLoggedIn(false);
         setStatus({ kind: 'err', text: 'Your session expired — please log in again.' });
         return;
@@ -137,10 +160,19 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
         setStatus({ kind: 'err', text: `Load failed (plugin configs): ${pluginsResult.message}` });
         return;
       }
+      if (globalsResult.kind === 'error') {
+        setStatus({ kind: 'err', text: `Load failed (global scripts): ${globalsResult.message}` });
+        return;
+      }
 
       const scriptsKey = RuntimeSingleton.Runtime.getStorageKey(connectionId);
       window.localStorage.setItem(scriptsKey, JSON.stringify(scriptsResult.data));
-      window.localStorage.setItem(PLUGINS_STORAGE_KEY, JSON.stringify(pluginsResult.data));
+      // Notifies mounted usePlugins() instances. The reload below still happens
+      // anyway — the SCRIPTS write above has no such notification path, since
+      // UserScriptRuntime.saveScriptsToStorage (which does dispatch one) is
+      // private — so this is for correctness rather than to avoid the reload.
+      writeInstalledPlugins(pluginsResult.data);
+      replaceGlobalScriptBuckets(Array.isArray(globalsResult.data) ? globalsResult.data : []);
 
       window.location.reload();
     } finally {

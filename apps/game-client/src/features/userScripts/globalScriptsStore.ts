@@ -171,6 +171,72 @@ export function getGlobalScriptSource(connectionId: string | null | undefined, l
   return snap?.[language] ?? '';
 }
 
+/* ------------------------------ sync ------------------------------ */
+
+/**
+ * One connection's global sources, in the shape the cloud stores
+ * (api/user-content/global-scripts). Kept here rather than in cloudSync.ts so
+ * the wire shape and the storage shape stay defined side by side.
+ */
+export type GlobalScriptBucket = {
+  connectionId: string;
+  sources: Record<GlobalScriptLanguage, string>;
+};
+
+/**
+ * Every connection's globals, for upload.
+ *
+ * Reads localStorage directly rather than the cache: a bucket belonging to a
+ * connection this session never opened has never been cached, and skipping it
+ * would silently drop that connection's globals on the next save.
+ */
+export function getAllGlobalScriptBuckets(): GlobalScriptBucket[] {
+  if (typeof window === 'undefined') return [];
+
+  const buckets: GlobalScriptBucket[] = [];
+  try {
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (!key?.startsWith(GLOBAL_SCRIPTS_KEY_PREFIX)) continue;
+
+      const connectionId = key.slice(GLOBAL_SCRIPTS_KEY_PREFIX.length);
+      if (!connectionId) continue;
+
+      buckets.push({ connectionId, sources: coerceSources(readJson(key)).sources });
+    }
+  } catch {
+    // localStorage unavailable — nothing to sync rather than a crash.
+  }
+  return buckets;
+}
+
+/**
+ * Replaces the stored globals with a downloaded set.
+ *
+ * Only buckets present in `buckets` are touched; a connection that exists
+ * locally but not in the cloud keeps its globals rather than being wiped, which
+ * matches how a "load" behaves for every other synced collection.
+ */
+export function replaceGlobalScriptBuckets(buckets: GlobalScriptBucket[]): void {
+  for (const bucket of buckets) {
+    if (!bucket?.connectionId) continue;
+
+    const payload = coerceSources({
+      schema: 'shatteredArchive.globalScripts.v1',
+      sources: bucket.sources,
+    });
+
+    const key = getGlobalScriptsStorageKey(bucket.connectionId);
+    scriptCache.set(key, payload);
+    try {
+      writeJson(key, payload);
+      DispatchEvent('shatteredarchive:globalScripts-updated', { connectionId: bucket.connectionId });
+    } catch {
+      // ignore
+    }
+  }
+}
+
 /* ------------------------------ vars ------------------------------ */
 
 /**

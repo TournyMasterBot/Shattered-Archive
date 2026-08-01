@@ -120,6 +120,7 @@ The `apps/web-server` in this repo is a Node.js caching proxy deployed at `https
 | [features/contribute.md](./features/contribute.md) | Identify + Creature Lore submission feature |
 | [features/user-library.md](./features/user-library.md) | Library/spell browsing feature |
 | [features/user-account.md](./features/user-account.md) | Optional hub login + cloud save/load of scripts & plugin configs |
+| [features/scripting-and-sharing.md](./features/scripting-and-sharing.md) | USER guide: the five script languages, global scripts/runGlobal, plugin config, and moving all three between web/mobile/devices by cloud or file |
 | [features/kingdom-tactics-account.md](./features/kingdom-tactics-account.md) | Kingdom Tactics (separate app): optional hub login, match history + replay, army-layout cloud sync |
 | [scripting/javascript.md](./scripting/javascript.md) | JS script API reference |
 | [scripting/typescript.md](./scripting/typescript.md) | TS script API reference |

@@ -897,3 +897,316 @@ is about consumers.
   TypeScript both end in dynamic code, exactly like the JS path that already
   ships — so if `new Function` were blocked on device, existing JS scripts
   would already be broken, making this no worse than today's status quo.
+- 2026-08-01T00:00-05:00 **Phase E follow-on 2: global script store + shared-
+  interface alignment** (user-directed, all three repos per an explicit scope
+  decision). Global scripts — the per-language shared source files that
+  triggers/aliases/timers call via `runGlobal("global.<lang>.<thing>")` — now
+  exist on mobile AND sync, which required new backend surface because the
+  cloud had NO globals endpoint and the web client never synced them either.
+  * **DSL (C#)**: `TABLE_GLOBAL_SCRIPTS` + `GlobalScriptsModel` + GET/PUT/DELETE
+    `/api/user-content/global-scripts`, validated per bucket (connectionId,
+    sources restricted to the four EXECUTABLE languages — 'text' has no global
+    form — 256KB/language, 50 buckets, duplicate connectionId rejected rather
+    than letting client iteration order decide the winner). Builds clean.
+  * **game-client**: globalScriptsStore gains the cloud shape
+    (GlobalScriptBucket + getAllGlobalScriptBuckets/replaceGlobalScriptBuckets)
+    and Account save/load carries globals. getAllGlobalScriptBuckets reads
+    localStorage DIRECTLY, not the cache: a connection this session never
+    opened was never cached, and a cache-only read would silently drop its
+    globals on save.
+  * **mobile**: global-scripts-storage.ts (device-wide, syncing as the
+    "default" bucket per the scoping decision) + global-runtime.ts with real
+    persistent per-language state + the globals editor (Scripts → Globals).
+    Its save is a read-modify-write that preserves every OTHER bucket —
+    a blind PUT of just the phone's bucket would wipe the web's connections.
+  * **the shared interface**: mobile's `ScriptSandboxApi` was a SUBSET of the
+    web's — missing `runGlobal` and `httpGetJson`. Both added and bound across
+    every runtime (JS/TS/text via script-runtime, plus the Lua and Python
+    bridges), so all five languages now bridge from ONE interface definition
+    rather than each hand-rolling its surface. Text scripts also gained the
+    bare-global-identifier line form. The type now carries a comment saying to
+    keep it in step with the web's copy, which is the actual invariant.
+  **Two more real bugs found in the WEB client while porting** (both mean its
+  Python globals cannot work today, and neither is fixed there yet):
+  (1) `importMainWithBody(name, ...)` registers the module as `__main__`
+  regardless of `name`, so globalRuntime's throwaway caller doing
+  `import <name> as g` can never resolve; mobile keeps the returned module
+  OBJECT and reads attributes off it directly (which also stops interpolating a
+  caller-supplied function name into Python source). (2) the earlier `read()`
+  finding still stands. **Parity rule held**: JS/TS globals use the web's
+  CommonJS `exports.foo = ...` wrapper and a bare `function foo(){}` is
+  deliberately NOT collected, because it is not collected on the web either —
+  supporting it would produce globals that work on the phone and silently do
+  nothing in the browser. The UI hints teach the correct convention.
+  Verified: mobile 252/252 (13 new global-runtime tests driving the real
+  interpreters, incl. persistence-across-calls and reload-on-edit), game-client
+  50/50, both typecheck clean (mobile at its 7-error baseline), C# builds,
+  eslint clean apart from pre-existing warnings. Still device-unverified, and
+  the globals round trip is now also **live-unverified** — the new C# endpoint
+  has never been exercised against a running service.
+- 2026-08-01T00:00-05:00 **Script PORTABILITY (export/import), and a correction
+  to the previous entry's Python claim.** User pushed back on "web Python is
+  broken"; reproduced both claims against the web's exact code path and the
+  earlier entry was too broad. Corrected: web per-script Python WORKS for the
+  bridge API (sendCommand/log/loops all fine) — its throwing `read()` only
+  breaks `print()` and `import <anything>`. The GLOBAL-python bug is real and
+  confirmed: `importMainWithBody(name,...)` registers the module as `__main__`
+  regardless of `name`, so globalRuntime's `import <name> as g` fails with "No
+  module named sa_globals" and web global-python functions cannot be called.
+  **The user then reframed the actual goal: export/import portability**
+  (web→mobile, mobile→web, web→web, mobile→mobile incl. iOS+Android), NOT cloud
+  sync. Auditing that found the languages were never the real blocker — the
+  ENVELOPE was:
+  * web wrote `{schema, items:[{key, value}]}`; mobile's import accepted only a
+    bare array or `{scripts:[]}` ⇒ **web→mobile broken**
+  * mobile wrote a bare array ⇒ **mobile→web broken**
+  * web's import filtered `it.key === targetKey` (the CURRENT connection's
+    storage key) ⇒ **web→web broken across two different connections** — a file
+    only ever imported back into the connection it was exported from
+  * neither export carried global scripts ⇒ any imported script calling
+    runGlobal silently did nothing
+  Fixed with ONE envelope both clients read and write (new mobile
+  `features/scripts/script-export.ts`; web's tryParseExportFile/buildExport/
+  handleImportApply relaxed and extended): `key` and `storage` are now
+  INFORMATIONAL on import, globals ride along as a `kind: 'globalScripts'` item,
+  and both sides still read the legacy bare-array / `{scripts:[]}` files. A
+  legacy file yields globals=null rather than empty sources, so importing an old
+  export cannot wipe the importing device's globals. isValidUserScript is
+  structural only, so a script with fields from a newer client survives.
+  Verified: 10 new round-trip tests asserting each of the four goals against the
+  REAL parsers (incl. a synthesized web-format file with a foreign key/storage),
+  mobile 262/262, game-client 50/50, both typecheck clean, 0 lint errors.
+  iOS/Android need no divergence — one code path, and the format is plain JSON.
+  Still unverified: a real device run and a real file handed between two actual
+  installs; the C# global-scripts endpoint remains live-untested.
+- 2026-08-01T00:00-05:00 **Web client's Python defects FIXED** (user-directed;
+  closes the follow-up left open by the previous two entries). Both fixes went
+  into `apps/game-client/src/features/userScripts/pythonRuntime.ts` and needed
+  NO change to globalRuntime.ts — the signatures were kept, only the internals
+  replaced:
+  (1) `read()` no longer throws; it serves Skulpt's bundled stdlib
+  (`Sk.builtinFiles.files`), which restores every `import` AND `print()`. The
+  print() breakage is the non-obvious half: Skulpt reaches for `sys` to get at
+  stdout, so a throwing read() killed print even with no user import in sight.
+  Nothing reachable this way touches a real filesystem or the network.
+  (2) global modules are now held as Skulpt module OBJECTS in a Map keyed by
+  module name, and `callPythonModuleFunction` reads the attribute off that
+  object via tp$getattr + callsimOrSuspendArray. The old path loaded under
+  `moduleName` then ran a throwaway module doing `import <moduleName> as g`,
+  which could never resolve because importMainWithBody registers as `__main__`
+  regardless of the name. Side benefit: no more interpolating a caller-supplied
+  function name into generated Python source.
+  Both now behave identically to mobile's implementation, which is the actual
+  requirement — a Python script has to be portable between the two clients.
+  **Why this survived so long**: the bridge API (sendCommand/log/loops) worked
+  throughout, so Python "worked" for anyone not using print, import, or globals.
+  That is exactly the trap that made the earlier progress-log entry overstate
+  the bug, and the user was right to push back on it.
+  Verified with a NEW `pythonRuntime.test.ts` running the REAL Skulpt engine in
+  game-client's own jest project (9 tests: bridge/loops regression, print(),
+  stdlib import, syntax-error routing, global call, None args, module-level
+  state across calls, missing function, never-loaded module). Client suite
+  50 → 59, all passing; tsc clean. Mobile suite still green after refreshing the
+  now-stale "the web client is broken" comments in its own runtime and tests.
+  Not verified: a browser run against a live game session.
+- 2026-08-01T00:00-05:00 **auth.shatteredarchive.dev wired for PRODUCTION**
+  (user-directed). Three files, one per hop of the real chain — a topology the
+  user corrected mid-task and worth recording plainly:
+  `internet -> DSL/nginx/shattered_archive.site (FRONT proxy, TLS terminates
+  here) -> docker host 51.222.137.28 -> ShatteredArchive/deploy/nginx/
+  edge-subdomains.conf (container edge, runs tls-off.conf) -> app containers`.
+  * FRONT proxy (DSL/nginx/shattered_archive.site): auth. was a 503 "coming
+    soon" STUB — the actual reason the hub was unreachable publicly. Replaced
+    with a real proxy block to the docker host, modelled on the scrum-poker
+    block per that file's own go-live instructions, minus the websocket carve-
+    out (the hub has none — the docker edge splits /api/* and /health to
+    auth-server:62000 and / to auth-client:80 itself). HTTP->HTTPS needed NO
+    change: the port-80 block already covers *.shatteredarchive.dev and ends in
+    an unconditional 301. build./kingdom-tactics. stay stubs.
+  * SA prod compose (deploy/docker-compose.yml): auth-server now ALSO joins
+    sa-shared under the SAME alias it has internally. This was the real cross-
+    project gap — the C# site is a DIFFERENT compose project and could not
+    resolve the hub on any network they shared, so it had no internal route at
+    all and would have had to hairpin out through the public front proxy.
+  * C# prod compose (DSL/Server/docker-compose-prod.yml): replaced the
+    unverified guess AuthHub__BaseUrl=https://auth.shatteredarchive.dev with the
+    pair Phase B's live bug proved necessary — BaseUrl=
+    http://auth-server.shatteredarchive.dev:62000 (server-to-server, internal
+    alias, plain HTTP, direct to the port so service traffic is not charged
+    against the edge's browser-sized limit_req zones) and AuthorizeBaseUrl=
+    https://auth.shatteredarchive.dev (browser-facing consent redirect).
+    AuthorizeBaseUrl falling back to BaseUrl when unset is EXACTLY the Phase B
+    failure — an internal alias handed to real browsers — so set both, always.
+    Also added GameSso__AllowedReturnOrigins__1=dslclient://auth-callback
+    explicitly rather than relying on appsettings.json supplying index 1 while
+    the compose supplies index 0 (that merge works, but makes the allowlist
+    depend on two files agreeing about array indices). Recorded the ordering
+    constraint: sa-shared is owned by the SA prod stack, so it must come up
+    first or `docker compose up` here fails outright.
+  Verified mechanically: `docker compose config` clean on both compose files,
+  the rendered auth-server really does carry the alias on BOTH networks,
+  AuthHub:AuthorizeBaseUrl confirmed present in AuthHubOptions.cs (with
+  NormalizedAuthorizeBaseUrl doing the fallback), and the edited front-proxy
+  config passes a real `nginx -t` (nginx:alpine container, cert-stubbed copy,
+  since the letsencrypt paths do not exist on this machine).
+  NOT verified and cannot be from here: this is the local dev-replica machine;
+  the real production host is a separate box this repo does not deploy to.
+  Live checklist for whoever does: shared multi-SAN cert must already include
+  auth. (it does per ssl-cert.md) and be installed BEFORE this config; SA prod
+  stack up before the C# stack; then confirm a browser login round trip AND a
+  server-to-server token exchange.
+- 2026-08-01T00:00-05:00 **Device build FIXED: fengari's Node-core imports broke
+  the Metro bundle** (user hit it on a real Pixel 8 dev-client run). First
+  genuine on-device finding of this whole mobile arc, and it invalidates the
+  earlier assumption that jest passing meant the language runtimes would load.
+  Root cause: fengari targets Node AND the browser and picks between them with
+  `typeof process === "undefined"`. React Native DEFINES `process`, so fengari
+  took the NODE branch and required os / fs / path / child_process / tmp /
+  readline-sync. Metro resolves requires STATICALLY, so this failed the whole
+  BUNDLE, not just an unreachable call — the build died on luaconf.js importing
+  "os". (`fengari-web` is NOT the fix: same VM plus DOM glue, and it would take
+  the same Node branch here because the deciding factor is `process`, not the
+  package.)
+  Fixed with six shims in `dsl-client/shims/`, wired via metro.config.js's
+  `resolver.resolveRequest` and SCOPED to requests whose originModulePath is
+  inside fengari. The scoping is the load-bearing part: the global alternative
+  (`resolver.extraNodeModules`) would hand a deliberately-crippled `fs` to any
+  other dependency that legitimately wanted one, converting a loud bundling
+  error into a silent runtime failure somewhere unrelated.
+  Most shims THROW rather than emulate, which is enforcement rather than an
+  unfinished polyfill: they back Lua's io.*, os.remove/rename, os.execute,
+  os.tmpname and debug.debug — none of which a user script should reach on a
+  phone, given scripts arrive from a synced cloud account and from files people
+  hand around. The web client cannot do any of it either, so nothing portable is
+  lost. Each message names the Lua feature and points at the script API.
+  readline-sync is stubbed as a WHOLE PACKAGE rather than through its own Node
+  imports, so it does not drag fs/child_process/path into the bundle for a
+  feature that can never run.
+  Verified: `npx expo export` now succeeds for BOTH platforms (android 7.58MB,
+  ios 7.59MB Hermes bytecode), suite still 262/262, eslint clean on the shims
+  and metro config.
+  Two things this run did NOT settle, worth stating plainly: the bundle building
+  does not prove `new Function` WORKS at runtime under Hermes (it is a runtime
+  capability, and JS/TS/Python all depend on it — Lua does not, being an
+  interpreter), and `android/gradle.properties` still carries the contradictory
+  `hermesEnabled=true` + `expo.jsEngine=jsc` noted earlier, while the export
+  emits .hbc bytecode. Both want a real on-device script run to confirm.
+- 2026-08-01T00:00-05:00 **JS-engine discrepancy RESOLVED — it was dead config,
+  not a conflict.** The `hermesEnabled=true` + `expo.jsEngine=jsc` pair in
+  android/gradle.properties (flagged twice in earlier entries as a risk) turned
+  out to have no behavioural effect at all, and the earlier entries overstated
+  it. Traced mechanically:
+  * ANDROID engine is chosen SOLELY by `hermesEnabled`, consumed directly in
+    android/app/build.gradle:186 —
+    `if (hermesEnabled.toBoolean()) { implementation("com.facebook.react:hermes-android") }`
+  * `expo.jsEngine` is an iOS-ONLY property. The only readers in node_modules are
+    @expo/config-plugins' ios/BuildProperties.js and the iOS branches of
+    @expo/cli's exportHermes.js. No .gradle file reads it. iOS sets it correctly
+    in ios/Podfile.properties.json ("hermes"), which its Podfile consumes for
+    :hermes_enabled.
+  * expo export's own consistency check (exportHermes.js isEnableHermesManaged)
+    reads the APP CONFIG (app.json has no jsEngine -> defaults to Hermes) and
+    cross-checks gradle.properties' `hermesEnabled` — both said Hermes, which is
+    why the export never raised its "engine configuration is inconsistent" error.
+  So the app has been running Hermes on BOTH platforms all along. Resolution was
+  to DELETE the misleading line (with a comment explaining why not to re-add it)
+  rather than change engines. Proof it was inert: the Android bundle hash after
+  removal is byte-identical to before (entry-b5991906f65d445019276b0cf831d38b.hbc).
+  **Justification for staying on Hermes**, recorded because the scripting feature
+  makes this a real decision rather than a default: Hermes gates eval()/
+  new Function() behind a build-time flag (`-enable-eval`, visible in hermesc's
+  --help), and script-runtime.ts compiles every JS and TS user script with
+  `new Function` — Python too, since Skulpt compiles Python to JS. Only Lua is
+  immune (fengari is a true interpreter, generating no code). The decisive
+  evidence is that this already works: JS user scripts predate all of this work
+  and run on device under Hermes. Switching to JSC would therefore not be a fix
+  but an unverified change, and on iOS would additionally require pod install
+  plus rebuilding the committed native project on the free-team-signing branch.
+  A `hermesEnabled` comment now states this so nobody flips it casually.
+  Could NOT be proven locally: hermesc is compile-only ("hermesc does not support
+  -exec"), so Hermes' runtime eval behaviour cannot be exercised on this Windows
+  host — it needs one JS user script run on the device.
+  **SECOND, UNRELATED discrepancy found and deliberately NOT changed**: the new
+  architecture flag disagrees across platforms — android/gradle.properties says
+  `newArchEnabled=false` while app.json says `true` and ios/Podfile.properties
+  .json says `"true"`. So Android builds old-arch and iOS new-arch today. Unlike
+  the engine line this one IS behavioural, but flipping it can break native
+  modules (this app ships several: tcp-socket, foreground-service, speech
+  recognition) and belongs with a real device test rather than a config cleanup.
+  Flagged for the user, left alone.
+
+## OPEN ITEM (needs evaluation, not yet actioned)
+
+**Mobile new-architecture flag disagrees across platforms** — raised 2026-08-01,
+deliberately left unchanged pending a real device evaluation.
+
+| file | value |
+|------|-------|
+| `dsl-client/android/gradle.properties` | `newArchEnabled=false` |
+| `dsl-client/app.json` | `"newArchEnabled": true` |
+| `dsl-client/ios/Podfile.properties.json` | `"newArchEnabled": "true"` |
+
+So **Android builds old-arch and iOS builds new-arch today**. Unlike the
+`expo.jsEngine` line resolved the same day, this one IS behavioural — it is not
+dead config.
+
+Why it was not simply "fixed": flipping Android to the new architecture can break
+native modules, and this app ships several that matter to its core loop —
+`react-native-tcp-socket` (the game connection itself), `@supersami/rn-foreground-service`
+(background keepalive, see memory `mobile-connection-persistence`), and
+`expo-speech-recognition`. A config-only change with no device run would be
+exactly the kind of unverified edit that the JS-engine investigation showed is
+easy to talk yourself into.
+
+Evaluation should answer, on a real device per platform:
+1. Does Android still build and run with `newArchEnabled=true`?
+2. Do tcp-socket, the foreground service, and speech recognition still work?
+3. Does the background connection still survive backgrounding (the regression
+   this repo cares most about)?
+4. If new-arch is not viable on Android yet, is the correct resolution instead to
+   set app.json + iOS back to `false` so all three agree the other way?
+
+Note that app.json's value is what `expo prebuild` would WRITE into
+gradle.properties, so a future prebuild flips Android to new-arch silently. That
+makes this worth resolving rather than leaving indefinitely.
+- 2026-08-01T00:00-05:00 **Plugin interoperability: configuration now travels by
+  FILE as well as by cloud** (user-directed). Cloud sync already carried plugin
+  configs; export/import did not, so a configured plugin could not be handed to
+  another device or the other client without an account.
+  **Premise checked first, and it holds**: all 18 plugin ids are IDENTICAL
+  between the two clients (affect-echo, brew, colorkit, combat-compression,
+  disarm, enchant, gourd, highlighter, people, questbot, respell, roller,
+  standup, stun-highlight, text-to-speech, voice-dictation, warlock-alphabet,
+  weapon-flag-squelch). That id overlap is the whole reason sharing config is
+  meaningful rather than theoretical; an id the importing client lacks is
+  skipped and reported, never an error.
+  * Extracted the local<->portable plugin mapping out of features/auth/
+    cloud-sync.ts into `features/scripts/plugin-records.ts`, so cloud sync and
+    file export use ONE implementation. It belongs with scripts; auth was only
+    ever one consumer.
+  * Envelope gained a `kind: 'pluginConfigs'` item on BOTH clients, carrying the
+    same InstalledPluginRecord shape the cloud endpoint uses — one shape, two
+    transports. Mobile applies it LIVE through the engine (onEnable runs, a
+    reconfigured plugin is cycled). Web merges by id into its installed list and
+    skips unknown ids rather than adding phantom Plugins-page rows.
+  * Kept the null-vs-empty distinction that already guarded globals: a null
+    plugin item means "leave local config alone" (what every pre-existing export
+    file yields), while [] means "a file that genuinely carries none". Collapsing
+    them would let an old export silently wipe plugin configuration.
+  **Real bug caught by the test suite, worth remembering**: importing the record
+  type/validator from plugin-records.ts made script-export.ts pull in
+  plugin-registry -> all 18 plugin modules -> expo-speech-recognition, a NATIVE
+  module, and the format module stopped loading under Jest entirely ("Cannot find
+  native module 'ExpoSpeechRecognition'"). Note the failure mode: 252 tests still
+  "passed" while the suite itself failed to run, which is easy to skim past. Fixed
+  by giving script-export.ts ownership of InstalledPluginRecord and
+  isValidPluginRecord and pointing the dependency plugin-records -> script-export,
+  never back — the format module must stay free of runtime imports so parsing a
+  file never drags in the plugin host.
+  Verified: mobile 266/266 (14 export tests, incl. config VALUES surviving the
+  round trip, a web-format file with a plugin item, and the null-vs-[] case),
+  game-client 59/59, both typecheck clean (mobile at its 7-error baseline), 0
+  lint errors, and `expo export` still bundles Android.
+  Web caveat, unchanged from before: usePlugins has no cross-component live-sync
+  event, so imported plugin config on the WEB needs a page reload to show up in
+  an already-mounted Plugins page. Mobile applies immediately.

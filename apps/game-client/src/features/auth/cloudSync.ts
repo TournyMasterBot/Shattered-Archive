@@ -8,6 +8,7 @@
 import { siteApiBase } from './siteApi';
 import { getToken, clearToken } from './authTokenStore';
 import type { AnyUserScript } from '../userScripts/types';
+import type { GlobalScriptBucket } from '../userScripts/globalScriptsStore';
 import type { InstalledPluginRecord } from '../../hooks/usePlugins';
 
 export type CloudSyncResult<T> =
@@ -60,6 +61,18 @@ export function saveScripts(scripts: AnyUserScript[]): Promise<CloudSyncResult<{
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(scripts),
+  });
+}
+
+export function loadGlobalScripts(): Promise<CloudSyncResult<GlobalScriptBucket[]>> {
+  return authedRequest('/api/user-content/global-scripts');
+}
+
+export function saveGlobalScripts(buckets: GlobalScriptBucket[]): Promise<CloudSyncResult<{ count: number }>> {
+  return authedRequest('/api/user-content/global-scripts', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(buckets),
   });
 }
 

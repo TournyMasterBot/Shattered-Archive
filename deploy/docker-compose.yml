@@ -246,6 +246,22 @@ services:
       shatteredarchive-prod:
         aliases:
           - auth-server.shatteredarchive.dev
+      # ALSO on sa-shared, under the SAME alias. The C# site (DSL repo,
+      # docker-compose-prod.yml — its own compose project) reaches the hub for
+      # server-to-server calls (token exchange, introspect) and can only resolve
+      # a name that exists on the network the two projects share. Without this
+      # it has no internal route to the hub at all and would have to hairpin out
+      # through the public front proxy and back.
+      #
+      # Direct to :62000, deliberately NOT through the edge: service-to-service
+      # traffic must not be charged against the browser-sized per-IP limit_req
+      # zones (auth_login/auth_api), which would otherwise see every container's
+      # calls as one client. See deploy/nginx/edge-subdomains.conf's note above
+      # those zones. This mirrors mud-builder-server's AUTH_SERVER_URL in the
+      # experimental compose, which is the proven form of this wiring.
+      sa-shared:
+        aliases:
+          - auth-server.shatteredarchive.dev
 
     healthcheck:
       test:
