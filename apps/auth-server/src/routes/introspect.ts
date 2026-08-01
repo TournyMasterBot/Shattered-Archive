@@ -3,6 +3,7 @@ import express, { type Application } from 'express';
 import type { AuthServerDeps } from '../deps.js';
 import { AuthError } from '../errors.js';
 import { safe } from './safe.js';
+import { chargeService, serviceRateLimit } from './service-rate-limit.js';
 import { requireString } from './validation.js';
 
 const ASSERTION_HEADER = 'x-service-assertion';
@@ -18,6 +19,10 @@ const ASSERTION_HEADER = 'x-service-assertion';
  * @ai-public registerIntrospectRoutes
  */
 export function registerIntrospectRoutes(app: Application, deps: AuthServerDeps): void {
+  // Before the parser: a flood should not buy a JSON parse. No edge zone covers this route —
+  // callers reach it at the internal alias — so this tier is the only one. See
+  // service-rate-limit.ts.
+  app.use('/api/introspect', serviceRateLimit(deps));
   app.use('/api/introspect', express.json({ limit: '8kb' }));
 
   app.post(
@@ -31,6 +36,8 @@ export function registerIntrospectRoutes(app: Application, deps: AuthServerDeps)
       if (!verifiedService) {
         throw new AuthError('service assertion is invalid, unknown, or expired', 401);
       }
+      // Charged against the PROVEN identity, before any store read.
+      chargeService(deps, verifiedService.service);
 
       const token = requireString(req.body, 'token');
       const verified = deps.keyStore.verify(token, (accountId) => deps.accountStore.findById(accountId)?.epoch);

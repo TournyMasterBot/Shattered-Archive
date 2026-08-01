@@ -109,10 +109,23 @@ export class AreaStore {
    */
   private areaFilePath(file: string): string {
     assertValidAreaFileName(file);
-    const joined = path.join(this.areaPath, file);
-    const base = path.resolve(this.areaPath) + path.sep;
+    return AreaStore.resolveWithin(this.areaPath, file, file);
+  }
+
+  /**
+   * Joins `name` under `dir` and re-checks that the RESOLVED result is still inside `dir`.
+   * Extracted so the containment barrier is one implementation rather than a pattern each
+   * caller is trusted to repeat — `backupExistingFile` builds a second path from the same
+   * user-supplied filename and needs the identical guarantee.
+   *
+   * `original` is only for the error message, so a rejected backup name still reports the
+   * area file the caller actually asked for rather than the decorated `.bak` spelling.
+   */
+  private static resolveWithin(dir: string, name: string, original: string): string {
+    const joined = path.join(dir, name);
+    const base = path.resolve(dir) + path.sep;
     if (!path.resolve(joined).startsWith(base)) {
-      throw new AreaStoreError(`invalid area file name: ${JSON.stringify(file)}`, 400);
+      throw new AreaStoreError(`invalid area file name: ${JSON.stringify(original)}`, 400);
     }
     return joined;
   }
@@ -277,16 +290,21 @@ export class AreaStore {
   }
 
   /**
-   * Timestamped copy of an existing area file into backups/. Caller checks
-   * existence AND passes the already-validated source path (from
-   * `areaFilePath`) — this never re-derives a path from a raw filename, so
-   * there is exactly one place `file` is turned into a filesystem path.
+   * Timestamped copy of an existing area file into backups/. The caller checks existence and
+   * passes the already-validated `source` (from `areaFilePath`), but `file` arrives RAW and a
+   * second path — the destination — is derived from it here.
+   *
+   * That destination therefore gets the full treatment independently, rather than inheriting
+   * trust from the source having been checked: the name allowlist, then containment under
+   * backups/. An earlier revision of this comment claimed no path was re-derived from a raw
+   * filename, which was simply untrue of the line below it.
    */
   private backupExistingFile(source: string, file: string): string {
+    assertValidAreaFileName(file);
     const backupDir = path.join(this.areaPath, 'backups');
     fs.mkdirSync(backupDir, { recursive: true });
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupPath = path.join(backupDir, `${file}.${stamp}.bak`);
+    const backupPath = AreaStore.resolveWithin(backupDir, `${file}.${stamp}.bak`, file);
     fs.copyFileSync(source, backupPath);
     return backupPath;
   }

@@ -78,6 +78,19 @@ function verifyDeviceSignature(
 }
 
 /**
+ * Strips trailing slashes, hand-rolled rather than the obvious `raw.replace(/\/+$/, '')`.
+ *
+ * `\/+$` is quadratic on a hostile Origin made of many slashes ("//////…x"): the anchor fails,
+ * and the engine retries the run from every start position. Origin is attacker-controlled on
+ * every request, so that is a free CPU-burn primitive. One backward scan is linear.
+ */
+function normalizeOrigin(raw: string): string {
+  let end = raw.length;
+  while (end > 0 && raw[end - 1] === '/') end -= 1;
+  return raw.slice(0, end);
+}
+
+/**
  * CORS for the device endpoints ONLY — hand-rolled, matching this app's standing "no new
  * dependency" constraint (same tradeoff as the hand-parsed session cookie in session-guard.ts).
  *
@@ -85,21 +98,28 @@ function verifyDeviceSignature(
  * the browser-reachable surface of the rest of auth-server is impossible by accident.
  *
  * Rules that matter, none of which are optional:
- *  - Exact allowlist match, echoed back. `*` is INVALID with credentials, and reflecting any
- *    Origin would let a hostile page drive an authenticated enrollment using the user's cookie.
+ *  - Exact allowlist match, and the echoed value is the one held in the ALLOWLIST, never the
+ *    caller's bytes. `*` is INVALID with credentials, and reflecting any Origin would let a
+ *    hostile page drive an authenticated enrollment using the user's cookie.
  *  - `Vary: Origin` always, even on a rejected origin, or a shared cache can serve one
  *    origin's allow-header to another.
  *  - An unlisted origin gets NO CORS headers and the browser blocks it. Requests with no
  *    Origin at all (server-to-server, curl) are untouched — CORS is a browser mechanism.
  */
 function deviceCors(allowedOrigins: string[]): RequestHandler {
-  const allowed = new Set(allowedOrigins);
+  // normalized → itself, so a hit hands back a config-derived string to echo. Previously the
+  // lookup normalized the Origin but the header echoed the RAW one, so a configured origin
+  // reached with trailing slashes would have been answered with an allow-header the browser
+  // could not match. Echoing the stored value also keeps caller-controlled bytes out of
+  // Access-Control-Allow-Origin entirely, which is the property that makes this safe.
+  const allowed = new Map(allowedOrigins.map((o) => [normalizeOrigin(o), normalizeOrigin(o)]));
   return (req, res, next) => {
     const origin = req.headers.origin;
     res.setHeader('Vary', 'Origin');
 
-    if (typeof origin === 'string' && allowed.has(origin.replace(/\/+$/, ''))) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
+    const echo = typeof origin === 'string' ? allowed.get(normalizeOrigin(origin)) : undefined;
+    if (echo !== undefined) {
+      res.setHeader('Access-Control-Allow-Origin', echo);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -129,7 +149,7 @@ function resolveEnrollmentAudience(req: Request, originServices: Map<string, str
   if (typeof raw !== 'string' || raw.length === 0) {
     throw new AuthError('an Origin header is required to enroll a device', 403, 'DEVICE_ORIGIN_REQUIRED');
   }
-  const origin = raw.replace(/\/+$/, '');
+  const origin = normalizeOrigin(raw);
   const services = originServices.get(origin);
   if (!services || services.length === 0) {
     // Names the origin back: this is an operator misconfiguration (a missing map entry), and

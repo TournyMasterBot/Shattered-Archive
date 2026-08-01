@@ -85,6 +85,11 @@ export function startTestApp(): Promise<TestHarness> {
       perIp: new RateLimiter({ ratePerMinute: 600_000, burst: 100_000 }),
       perDevice: new RateLimiter({ ratePerMinute: 600_000, burst: 100_000 }),
     },
+    // Effectively unthrottled for the same reason as the device limiters above.
+    serviceRateLimiter: {
+      perIp: new RateLimiter({ ratePerMinute: 600_000, burst: 100_000 }),
+      perService: new RateLimiter({ ratePerMinute: 600_000, burst: 100_000 }),
+    },
   };
 
   fs.writeFileSync(

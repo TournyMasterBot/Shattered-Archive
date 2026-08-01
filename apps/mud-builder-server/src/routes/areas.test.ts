@@ -490,7 +490,10 @@ S
 `;
     fs.writeFileSync(path.join(t.dir, 'neighbor.are'), NEIGHBOR);
     const lst = fs.readFileSync(path.join(t.dir, 'area.lst'), 'utf8');
-    fs.writeFileSync(path.join(t.dir, 'area.lst'), lst.replace('$', 'neighbor.are\n$'));
+    // Anchored to the terminator LINE. A bare .replace('$', …) hits the first '$' anywhere in
+    // the file, which happens to be the terminator today but would silently corrupt the
+    // fixture the moment a filename above it contained one.
+    fs.writeFileSync(path.join(t.dir, 'area.lst'), lst.replace(/^\$$/m, 'neighbor.are\n$'));
 
     const { area } = (await (await fetch(`${t.base}/api/areas/tiny.are`)).json()) as { area: any };
     const rooms = area.sections.find((s: any) => s.kind === 'rooms');

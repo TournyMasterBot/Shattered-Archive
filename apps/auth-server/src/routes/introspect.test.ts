@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 
 import { generateServiceKeypair, signAssertion } from '../crypto-primitives.js';
+import { RateLimiter } from '../rate-limit.js';
 import { startTestApp, fullyOnboardedSession, type TestHarness } from './test-helpers.js';
 
 function assertionFor(service: string, privateKeyPem: string, overrides: Partial<{ iat: number; exp: number; nonce: string }> = {}): string {
@@ -241,5 +242,65 @@ describe('introspect route', () => {
       body: JSON.stringify({ token: 'whatever' }),
     });
     expect(replay.status).toBe(401);
+  });
+});
+
+/**
+ * This route has no edge tier: consumers reach it at the internal service alias, so nginx's
+ * zones never see the traffic and the in-app limiter is the ONLY one. Both keyings are pinned
+ * here because they fail differently — per-IP sheds before the assertion is even verified,
+ * per-service only after, on the identity the signature proved.
+ */
+describe('introspect rate limiting', () => {
+  let harness: TestHarness;
+
+  beforeEach(async () => {
+    harness = await startTestApp();
+  });
+
+  afterEach(async () => {
+    await harness.close();
+  });
+
+  const introspect = (assertion?: string) =>
+    fetch(`${harness.base}/api/introspect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(assertion ? { 'X-Service-Assertion': assertion } : {}) },
+      body: JSON.stringify({ token: 'whatever' }),
+    });
+
+  it('429s an unauthenticated flood on the per-IP bucket, without verifying a signature', async () => {
+    harness.deps.serviceRateLimiter.perIp = new RateLimiter({ ratePerMinute: 60, burst: 2 });
+
+    // No assertion at all: these would each be a 401 if the limiter were not in front.
+    expect((await introspect()).status).toBe(401);
+    expect((await introspect()).status).toBe(401);
+    expect((await introspect()).status).toBe(429);
+  });
+
+  it('429s a single service credential once its own bucket empties', async () => {
+    const { publicKeyPem, privateKeyPem } = generateServiceKeypair();
+    harness.deps.serviceKeyStore.registerKey('consumer-service', publicKeyPem);
+    harness.deps.serviceRateLimiter.perService = new RateLimiter({ ratePerMinute: 60, burst: 2 });
+
+    // A fresh assertion each time — the nonce is single-use, so this is a genuine request
+    // sequence and not a replay being caught by a different check.
+    const call = () => introspect(assertionFor('consumer-service', privateKeyPem));
+    expect((await call()).status).toBe(200);
+    expect((await call()).status).toBe(200);
+    expect((await call()).status).toBe(429);
+  });
+
+  it('keys the per-service bucket on the PROVEN identity, so one caller cannot exhaust another', async () => {
+    const alpha = generateServiceKeypair();
+    const beta = generateServiceKeypair();
+    harness.deps.serviceKeyStore.registerKey('service-alpha', alpha.publicKeyPem);
+    harness.deps.serviceKeyStore.registerKey('service-beta', beta.publicKeyPem);
+    harness.deps.serviceRateLimiter.perService = new RateLimiter({ ratePerMinute: 60, burst: 1 });
+
+    expect((await introspect(assertionFor('service-alpha', alpha.privateKeyPem))).status).toBe(200);
+    expect((await introspect(assertionFor('service-alpha', alpha.privateKeyPem))).status).toBe(429);
+    // beta's bucket is untouched by alpha having exhausted its own.
+    expect((await introspect(assertionFor('service-beta', beta.privateKeyPem))).status).toBe(200);
   });
 });

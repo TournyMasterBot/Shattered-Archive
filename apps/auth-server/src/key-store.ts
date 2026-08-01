@@ -72,6 +72,16 @@ const DEFAULT_DEVICE_TOKEN_TTL_MS = 10 * 60 * 1000; // 10 min
 // not linger. Long enough to still be inspectable right after expiry.
 const DEVICE_TOKEN_PURGE_GRACE_MS = 30 * 60 * 1000; // 30 min past expiry
 
+/**
+ * For BEARER TOKENS ONLY. Input is always `newToken()` — 32 CSPRNG bytes — so a plain digest
+ * is the right construction: a 256-bit uniform preimage cannot be dictionary-attacked, and a
+ * key-stretching KDF here would only add latency to a call made on every authenticated
+ * request. This exists so the file holds a verifier rather than the live token.
+ *
+ * No account password ever reaches this module; those are scrypt-hashed in account-store.ts.
+ * (CodeQL reports this line as `js/insufficient-password-hash` — its taint source is the
+ * minted token, which it heuristically treats as password-like. Dismissed as a false positive.)
+ */
 function sha256Hex(value: string): string {
   return crypto.createHash('sha256').update(value).digest('hex');
 }

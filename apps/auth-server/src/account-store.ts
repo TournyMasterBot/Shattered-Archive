@@ -54,6 +54,17 @@ function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
 
+/**
+ * For TOKENS ONLY — never a user-chosen secret. Every value reaching this is `newToken()`
+ * output: 24 bytes straight from the CSPRNG. A plain digest is the correct construction there,
+ * because a 192-bit uniformly random preimage has no dictionary to grind and no salt to add;
+ * the store only needs to avoid holding the live token, which this does.
+ *
+ * PASSWORDS take an entirely different path — `hashPassword`/`verifyPasswordHash` below, which
+ * are scrypt with a per-account 16-byte salt. Do not route one through the other.
+ * (CodeQL reports this line as `js/insufficient-password-hash`; its taint source is the token,
+ * which it heuristically treats as password-like. Dismissed as a false positive.)
+ */
 function sha256Hex(value: string): string {
   return crypto.createHash('sha256').update(value).digest('hex');
 }

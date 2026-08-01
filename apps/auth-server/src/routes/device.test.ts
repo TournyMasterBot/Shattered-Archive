@@ -580,6 +580,21 @@ describe('device CORS', () => {
     expect(res.headers.get('access-control-allow-origin')).not.toBe('*');
   });
 
+  /**
+   * The echoed value must come from the ALLOWLIST, not from the request. Previously the match
+   * normalized away trailing slashes but the header echoed the raw Origin back, so this case
+   * answered "http://localhost:60080//" — a value no browser can match against its own origin,
+   * silently failing the credentialed request the allowlist had just approved.
+   */
+  it('echoes the allowlisted origin, never the caller-supplied spelling', async () => {
+    const res = await fetch(`${harness.base}/api/device/challenge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: `${ALLOWED}//` },
+      body: JSON.stringify({ deviceId: 'x' }),
+    });
+    expect(res.headers.get('access-control-allow-origin')).toBe(ALLOWED);
+  });
+
   it('sends NO allow-origin for an unlisted origin', async () => {
     const res = await fetch(`${harness.base}/api/device/challenge`, {
       method: 'POST',

@@ -35,6 +35,11 @@ export interface AuthServerDeps {
   deviceGrantRequiredServices: string[];
   /** Backs up nginx's device_auth zone; also carries the per-device limit nginx cannot express. */
   deviceRateLimiter: DeviceRateLimiters;
+  /**
+   * The ONLY limiter on /api/introspect and /api/token-exchange. Those are called at the
+   * internal service alias, so unlike every other route group they never pass an edge zone.
+   */
+  serviceRateLimiter: ServiceRateLimiters;
 }
 
 /**
@@ -45,4 +50,15 @@ export interface AuthServerDeps {
 export interface DeviceRateLimiters {
   perIp: RateLimiter;
   perDevice: RateLimiter;
+}
+
+/**
+ * Per-IP is charged before the Ed25519 assertion is verified (so an unauthenticated flood is
+ * cheap to refuse); per-service after, keyed on the proven identity — which survives the
+ * caller being rescheduled onto a new address or scaled to several replicas, and is the only
+ * key that bounds one compromised service key. See routes/service-rate-limit.ts.
+ */
+export interface ServiceRateLimiters {
+  perIp: RateLimiter;
+  perService: RateLimiter;
 }

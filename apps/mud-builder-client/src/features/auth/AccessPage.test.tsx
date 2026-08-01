@@ -240,7 +240,9 @@ describe('AccessPage device enrolment', () => {
     render(<AccessPage />);
     const link = (await screen.findByRole('link', { name: /Sign in to the account service/ })) as HTMLAnchorElement;
     expect(link.href).toContain(encodeURIComponent(window.location.href));
-    expect(link.href.startsWith(AUTH)).toBe(true);
+    // Compare the parsed ORIGIN, not a string prefix: `startsWith(AUTH)` also passes for
+    // https://auth.example.test.evil.test, which is the exact shape of a mis-targeted hand-off.
+    expect(new URL(link.href).origin).toBe(new URL(AUTH).origin);
   });
 
   it('suggests a recognisable default device name rather than making one up', async () => {

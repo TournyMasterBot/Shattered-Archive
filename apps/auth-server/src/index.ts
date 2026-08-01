@@ -69,6 +69,14 @@ const deps: AuthServerDeps = {
     perIp: new RateLimiter({ ratePerMinute: 120, burst: 40 }),
     perDevice: new RateLimiter({ ratePerMinute: 60, burst: 20 }),
   },
+  // No edge zone backs these: consumer services call introspect/token-exchange at the internal
+  // alias, so nginx never sees them. Sized as a runaway ceiling rather than traffic shaping —
+  // introspect runs on the hot path of every authenticated request to every consumer service,
+  // so tripping this in normal operation would mean something is wrong, not merely busy.
+  serviceRateLimiter: {
+    perIp: new RateLimiter({ ratePerMinute: 12_000, burst: 2_000 }),
+    perService: new RateLimiter({ ratePerMinute: 6_000, burst: 1_000 }),
+  },
 };
 
 // A misconfigured origin map fails closed (that origin cannot enroll), so it must be visible

@@ -4,6 +4,7 @@ import type { AccountRecord } from '../account-store.js';
 import type { AuthServerDeps } from '../deps.js';
 import { AuthError } from '../errors.js';
 import { safe } from './safe.js';
+import { chargeService, serviceRateLimit } from './service-rate-limit.js';
 import { requireString } from './validation.js';
 
 const ASSERTION_HEADER = 'x-service-assertion';
@@ -28,6 +29,9 @@ const OBO_TOKEN_TTL_MS = 2 * 60 * 1000;
  *   trust path stay generic — no oracle for which check failed.
  */
 export function registerTokenExchangeRoutes(app: Application, deps: AuthServerDeps): void {
+  // Only limiter on this route: like introspect, it is reached at the internal alias and never
+  // crosses an nginx edge zone. See service-rate-limit.ts.
+  app.use('/api/token-exchange', serviceRateLimit(deps));
   app.use('/api/token-exchange', express.json({ limit: '8kb' }));
 
   app.post(
@@ -42,6 +46,8 @@ export function registerTokenExchangeRoutes(app: Application, deps: AuthServerDe
         throw new AuthError('service assertion is invalid, unknown, or expired', 401);
       }
       const caller = verifiedService.service;
+      // Charged against the PROVEN caller, before any code redemption or minting.
+      chargeService(deps, caller);
 
       const grantType = requireString(req.body, 'grantType');
       if (grantType === 'authorization_code') {
