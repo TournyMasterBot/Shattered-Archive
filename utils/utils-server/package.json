@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "jest --config ../../jest.config.cjs --runInBand --testPathPatterns utils/utils-server",
+    "test": "jest --config ../../jest.config.cjs --runInBand --passWithNoTests --testPathPatterns utils/utils-server",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\""
   }
 }

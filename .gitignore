@@ -109,3 +109,16 @@ desktop.ini
 # ============================================================
 .security-updates/*
 !.security-updates/.gitkeep
+
+# ============================================================
+# Foreign lockfiles
+# ============================================================
+# This workspace is pnpm-only, via Corepack and the packageManager pin in
+# package.json. A stray npm/yarn lockfile is never installed from (CI runs
+# `pnpm install --frozen-lockfile`), but Dependabot still scans it and opens
+# alerts against a dependency graph that does not exist here — which is exactly
+# what happened with the root package-lock.json removed on 2026-07-31.
+package-lock.json
+**/package-lock.json
+yarn.lock
+**/yarn.lock

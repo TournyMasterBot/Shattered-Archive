@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 vite build",
     "preview": "vite preview",
-    "test": "jest --config ./jest.config.cjs --runInBand --passWithNoTests --coverage --coverageDirectory=coverage --coverageReporters=json-summary --coverageReporters=json --coverageReporters=lcov --coverageReporters=text",
+    "test": "jest --config ../../jest.config.cjs --runInBand --passWithNoTests --testPathPatterns apps/game-client",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,scss,html}\""
   },
   "dependencies": {

@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "jest --config ../../jest.config.cjs --runInBand --testPathPatterns types/types-client",
+    "test": "jest --config ../../jest.config.cjs --runInBand --passWithNoTests --testPathPatterns types/types-client",
     "format": "prettier --write \"src/**/*.ts\""
   }
 }

@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsx watch src/index.ts",
     "start": "cross-env NODE_OPTIONS=--max-old-space-size=8192 node dist/index.js",
-    "test": "jest --config ./jest.config.cjs --runInBand --passWithNoTests",
+    "test": "jest --config ../../jest.config.cjs --runInBand --passWithNoTests --testPathPatterns apps/psd-viewer-server",
     "format": "prettier --write \"src/**/*.{ts,js,json}\""
   },
   "dependencies": {

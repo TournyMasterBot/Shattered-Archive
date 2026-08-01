@@ -414,7 +414,7 @@ is about consumers.
   required (link-out only, per the cross-cutting rule) → reload game-client sees it; logged
   OUT game-client behaves exactly as today (regression).
 
-### [ ] E. (CLAUDE) Mobile wiring (shatteredarchive-mobile repo) — DEFERRED, see progress log
+### [ ] E. (CLAUDE) Mobile wiring (shatteredarchive-mobile repo) — CODE COMPLETE, device verification pending
 - Do: same Phase C APIs from the Expo app: SSO via AuthSession/deep-link return, token in
   secure storage (public client like game-client — exchange via the C# backend, never an
   embedded service key), scripts/books/plugin-config sync sharing the exact same shapes as
@@ -817,3 +817,83 @@ is about consumers.
   the master key. Umbrella now 7/10. Next: **H** (Site dashboards for Mapper
   + LogViewer, then central roll-up) — or resume **E** (Mobile) if that iOS
   branch has landed by then.
+- 2026-08-01T00:00-05:00 **Phase E code complete** (user-directed resume, ahead
+  of H). Deferral condition re-checked first as the plan required: the iOS
+  branch has NOT landed (`feature/ios-device-builds` is 7 commits ahead of
+  `origin/main`, nothing merged back). Resumed anyway because the user asked
+  and because building ON that branch — which is checked out and clean — is
+  precisely what avoids the "auth wiring done twice" the deferral was guarding
+  against. New `dsl-client/features/auth/` (auth-fragment, auth-token-storage,
+  site-api, game-sso, cloud-sync, use-account) + `components/AccountSection.tsx`
+  in a new Settings "Account" section. Same public-client posture as
+  game-client: no service key ships, the C# site brokers the exchange.
+  Divergences from the web client, all forced and all deliberate:
+  (1) the popup becomes `WebBrowser.openAuthSessionAsync` — the browser layers
+  OVER the app rather than replacing it, so the connection-manager singleton
+  and its FGS keepalive are untouched, satisfying the no-regression constraint
+  by construction rather than by test; (2) token lives in Keychain/Keystore via
+  a NEW `expo-secure-store` dep (user chose this over the zero-native-cost
+  AsyncStorage option), key `auth.token` since SecureStore rejects the ':' the
+  other stores use; (3) return URL is a hardcoded `dslclient://auth-callback`,
+  not `Linking.createURL()`, which returns a per-machine `exp://<lan-ip>:8081`
+  URL under Expo Go that no server-side allowlist can match. That exact string
+  was added to `GameSso:AllowedReturnOrigins` in BOTH DSL appsettings files —
+  legal because `IsAllowedReturnOrigin` (UserController.cs:254) compares
+  `scheme://authority`, so a custom scheme validates fine. Both committed
+  native projects already register the scheme, so no prebuild is needed.
+  **Two real shape gaps found and handled in cloud-sync.ts** (the "exact same
+  shapes" premise in this step's Do was only half true): plugin state is
+  per-plugin locally but one array of full records in the cloud, so there is an
+  explicit mapping layer that applies through the engine (so `onEnable` runs)
+  and cycles an enabled plugin whose config changed; and the cloud carries
+  scripts in 'lua'/'python'/'typescript', which this app has no runtime for —
+  they are stored verbatim rather than dropped (a round trip through a phone
+  must not destroy web-authored work) and the count is surfaced in the UI.
+  Books sync stays out of scope, consistent with Phase D's correction. Also
+  fixed a pre-existing blocker: `dsl-client/pnpm-workspace.yaml` had a
+  duplicated `nodeLinker` key that made EVERY `pnpm add` in that repo fail.
+  Verified mechanically: full suite 225/225 green (17 suites, incl. 6 new
+  fragment-parser tests), `tsc --noEmit` at the documented 7-error baseline
+  with none in new code, eslint clean on every new/edited file.
+  **NOT verified, and why**: this step's Verify clause (web↔mobile round trip,
+  auth surviving background/restart) needs a real device — and iOS needs
+  `pod install` for the new native module, which cannot run from this Windows
+  host. Step stays `[ ]` until that happens. Umbrella still 7/10.
+- 2026-08-01T00:00-05:00 **Phase E follow-on: mobile script-language parity**
+  (user-directed, closing the gap the previous entry flagged). The mobile app
+  now RUNS all five of the web client's script languages instead of carrying
+  three of them as inert data: `features/scripts/lua-runtime.ts` (fengari — the
+  plain package, not the web's `fengari-web`, whose browser glue is meaningless
+  on RN; identical lua/lauxlib/lualib/to_luastring surface),
+  `python-runtime.ts` (Skulpt, same engine as web), `ts-transpile.ts` (sucrase
+  ~1.6MB instead of the web's full `typescript` ~8MB — same type-erasure job at
+  a size that belongs in a phone bundle). Bundle cost ~2.5MB, all lazily
+  required so a player who writes none of these never initialises them.
+  `UserScriptLanguage` widened to match web exactly; ScriptEditorModal offers
+  all five (LANGUAGE_* tables replacing the two-language ternaries);
+  cloud-sync's "unrunnable scripts" warning deleted as obsolete.
+  **Deliberate design rule, worth keeping**: the Lua/Python bindings mirror the
+  web client's EXACTLY — no supersets — because scripts sync between the two
+  clients through one account, so a binding present on only one side yields
+  scripts that silently do nothing after a round trip. Where mobile's sandbox
+  API has no equivalent (httpGetJson, runGlobal — there is no global-script
+  store here) the binding is simply absent, which is what web's own `if (api.x)`
+  guards would do anyway.
+  **Real finding about the WEB client**: its Python `read()`
+  (pythonRuntime.ts:192) throws unconditionally, so `import math` — any stdlib
+  import — fails there. Mobile's serves Skulpt's bundled stdlib instead (still
+  no filesystem reach). This is the one intentional behavioural divergence, and
+  it is strictly a superset, so no script that works on web breaks here.
+  Verified by 14 new tests that drive the REAL interpreters (not mocks) through
+  the actual sandbox API — loops, api-table vs bare-global spellings, global/
+  named var round trips, stdlib import, and syntax/runtime errors landing on
+  api.error instead of throwing at the per-line trigger loop. Suite 239/239,
+  tsc at the 7-error baseline, eslint clean (the 5 warnings in touched files
+  are all pre-existing, confirmed against HEAD).
+  **Still device-unverified, and now with a sharper risk**: iOS runs Hermes
+  (`ios/Podfile.properties.json`), while `android/gradle.properties` carries a
+  contradictory `hermesEnabled=true` alongside `expo.jsEngine=jsc` — worth
+  resolving. Lua is immune (an interpreter needs no eval), but Python and
+  TypeScript both end in dynamic code, exactly like the JS path that already
+  ships — so if `new Function` were blocked on device, existing JS scripts
+  would already be broken, making this no worse than today's status quo.

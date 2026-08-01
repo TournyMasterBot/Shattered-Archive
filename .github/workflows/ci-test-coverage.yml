@@ -53,6 +53,12 @@ jobs:
       - name: Run Jest (root) with coverage
         env:
           CI: "true"
+          # The whole workspace runs in ONE --runInBand process, and its cumulative heap
+          # already reached node's ~4GB default locally (see the root test scripts, which
+          # carry the same bump via cross-env). This step invokes jest directly rather than
+          # through those scripts, so without this it inherits the default ceiling — while
+          # ALSO paying for --coverage instrumentation, which the local run does not.
+          NODE_OPTIONS: --max-old-space-size=8192
         run: pnpm exec jest --config ./jest.config.cjs --runInBand --coverage --coverageReporters=json --coverageReporters=json-summary
 
       - name: Split coverage-final.json into per-workspace summaries
