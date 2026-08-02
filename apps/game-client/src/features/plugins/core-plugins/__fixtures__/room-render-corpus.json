@@ -1,0 +1,293 @@
+{
+  "_comment": "Real room_data windows extracted verbatim from the docker game-server jsonl corpus (C:\\Projects\\DSL\\GameLogs\\ShatteredArchive\\Docker\\game-server). Each case is the text emitted since the previous prompt, plus the room name the trailing room_data carried. renderStart is the index where the room render begins, or -1 when the window holds no render. Cases with renderStart > 0 are the regression this fixture exists for: a render preceded by other output (portal echoes, wake-up, escape flavor, interleaved chat), which is 15.7% of all real renders and which a first-line anchor silently missed.",
+  "cases": [
+    {
+      "command": "l",
+      "room": "The Library of Storm Keep",
+      "lines": [
+        "The Library of Storm Keep",
+        "Past two tall doors of rich dark wood is a room of great proportions.",
+        "Each of its four expansive walls, made of black marble, are lined with",
+        "polished wooden shelves that hold countless tomes, books, and scrolls,",
+        "extending far up along the wall.  Several ladders lean against these",
+        "shelves, providing aid in retrieving items from normally inaccessible",
+        "heights.  An oval table made of some dark material occupies the center of",
+        "the room, with a number high-backed chairs surrounding it.  On this table",
+        "are several books, some open, some stacked one on top another, as well as a",
+        "candle in which to read by.  Another source of illumination comes from a",
+        "simple iron chandelier, set with eight tapered candles, hanging a few feet",
+        "above the table from a chain lost in the shadows of the black ceiling above.",
+        "A carpet of rich crimson covers the entire floor, muffling footsteps and",
+        "echoes, contributing to the quiet and relaxed atmosphere of the room.  The",
+        "office of the Chamber of Mysticism lies to the southwest, the office of the",
+        "Chamber of Theology to the southeast.",
+        "[Exits: south  ]",
+        "Wooden bookshelves filled with tomes line the walls of the room.",
+        "A wide circular table heaped with books fills the center of the room"
+      ],
+      "renderStart": 0,
+      "source": "01/server.log-2026-01-01.jsonl"
+    },
+    {
+      "command": "n",
+      "room": "A Darkened Hallway",
+      "lines": [
+        "A Darkened Hallway",
+        "The black, marble corridor you follow leads deeper into the bowels of",
+        "Storm Keep.  There exists no source of terrestrial illumination, for no",
+        "windows are present to betray the darkness.  Instead, a row of flickering",
+        "torches lines either side of the hall, causing the shadows around you to",
+        "come to life.",
+        "[Exits: north east south west  ]"
+      ],
+      "renderStart": 0,
+      "source": "01/server.log-2026-01-01.jsonl"
+    },
+    {
+      "command": "w",
+      "room": "Chamber of Rest",
+      "lines": [
+        "Chamber of Rest",
+        "This dome-shaped room is immense, the ceiling rising high up into the",
+        "air, surpassing any other point of Storm Keep.  Constructed of a highly",
+        "polished black marble, it is lit by numerous crystal chandeliers that hang",
+        "from chains constructed of interwoven strands of gold and silver.  They are",
+        "the only source of light in this room; like the rest of the keep, there are",
+        "no windows present.  Numerous blankets are spread out across the marble",
+        "floor in a systematic and orderly fashion of linear ranks and files.  They",
+        "are well padded, and each has a soft, down pillow placed at its head.  Along",
+        "the eastern wall, numerous shelves stretch across the expanse of the",
+        "chamber, filled with trophies, armors, and weapons claimed in honorable",
+        "combat from fallen foes.  A narrow spiral staircase leads to a dark chamber",
+        "below.",
+        "Framing the entrance, a beautiful arbor stands in magnificence, a",
+        "complimenting display of dark green against the dark marbled stone.  Within",
+        "the leafy recess, deep purple roses bloom, their swirling centers almost as",
+        "black as the wickedly sharp thorns that circle in protection of each one.",
+        "A single, long-stemmed rose has been carefully placed on each padded bed,",
+        "with a small black tag attached.",
+        "[Exits: south west down  ]",
+        "(Glowing) A glowing orb is suspended here, the occasional spark shooting out from the sphere.",
+        "Numerous blankets line the marble floor, inviting you to rest for as long as necessary.",
+        "A black marble fountain trickles quietly with water here.",
+        "(White Aura) Storm's healing priest sits upon a gray blanket near the rooms center, in quiet contemplation."
+      ],
+      "renderStart": 0,
+      "source": "01/server.log-2026-01-01.jsonl"
+    },
+    {
+      "command": "w",
+      "room": "The Treasury of Storm Keep",
+      "lines": [
+        "The Treasury of Storm Keep",
+        "Granting entrance into this chamber at the heart of the Keep, two",
+        "enormous, iron-bound doors are swung wide and chained open, their prodigious",
+        "weight proof that they are very rarely closed.  Along the southern wall is",
+        "an enormous rack of arms, swords, axes, maces, and then more elaborate",
+        "weapons progressing from left to right.  The northern wall is similar, lined",
+        "with suits of armor, from plate and chain to the right towards robes and",
+        "capes and clothing to the far corner.  More suits of armor with shield and",
+        "weapons are scattered on racks throughout the room.  Each suit is menacing",
+        "and befitting a Shadow Knight, and it is these suits which give rise to the",
+        "total lack of security for they are widely bruited to animate themselves and",
+        "attack any who would claim items he did not personally deposit.",
+        "Aisles of tables hold coffers and cabinets of Storm Keep's possessions.",
+        "Each Knight appears to have a carefully labelled section, some locked and",
+        "some not.  Some of the coffers and armors themselves emit light whether from",
+        "innate enchantment or various security measures, one can only guess.  The",
+        "final noticable feature of the room is the enormous vault door in the wall",
+        "immediately across from the entrance.  It is here that monies and treasures",
+        "of the greatest value are deposited.  Immediately aside the door, a small",
+        "golden plaque can be seen set into the stone.",
+        "[Exits: north east  ]",
+        "A long black duster made with many pockets is here.",
+        "( 5) An iron-cast cannonball is rolling around here.",
+        "The door of the mystic vault is here in the wall."
+      ],
+      "renderStart": 0,
+      "source": "01/server.log-2026-01-01.jsonl"
+    },
+    {
+      "command": "enter g",
+      "room": "Common Room of Eclipse Tower",
+      "lines": [
+        "You enter a dark glowing orb.",
+        "Common Room of Eclipse Tower",
+        "The ancient stone staircase leads into the extensive common room.  The",
+        "grand stature of the architecture is breathtaking an idyllic blending of",
+        "archaic granite stone and modern crafted furniture.  Blackened iron sconces",
+        "adorn the outskirts, radiating crimson light to the vaulted spire of the",
+        "Tower.  The flames illuminate several prominent, cascading banners, the",
+        "blackened flag of Storm Keep and the blood red, time-worn banner of Eclipse,",
+        "hanging from the ceiling.  Along the far wall a row of simple cots invite",
+        "the weary knight to take some respite.  Beside the cots stands a wooden",
+        "bookshelf brimming with countless tomes, both old and new.  A circular table",
+        "sits in the center of the room, with several dusty tomes still laying open",
+        "upon it.  Embrasures are carved into the granite at various strategic",
+        "points, allowing for defensive cannons and archers.  The sheer height of the",
+        "tower offers excellent views of Verminasia, the Ebony Spire, and the Altar",
+        "of Darkness.",
+        "[Exits: down  ]",
+        "(Glowing) A voidiron mirror embedded in the tower's wall crackles with distortions of umbra.",
+        "(Glowing) A dark orb hovers in the air, shadows swirling about the sphere.",
+        "A black demonic skull trickles quietly with water here.",
+        "A row of simple cots awaiting occupants.",
+        "A wide circular table sits in the center of the room.",
+        "(White Aura) A Nightwarden of Drakkara tends to the Eclipse Tower, chanting softly."
+      ],
+      "renderStart": 1,
+      "source": "01/server.log-2026-01-01.jsonl"
+    },
+    {
+      "command": "e",
+      "room": "At the Base of a Black, Marble Staircase",
+      "lines": [
+        "You enter a portal to Shadow Clan Hall.",
+        "At the Base of a Black, Marble Staircase",
+        "The staircase ends at a rectangular shaped room constructed of the same",
+        "black marble as the rest of the keep.  The walls, however, are inscribed",
+        "with numerous sigils and runes, surrounded on all sides by phrases and",
+        "dialects of an unknown nature.  They run laterally and vertically across the",
+        "stone and pulse with a dim glow.  The room itself is filled with a soft",
+        "humming sound that echoes off the stone and sweeps over you like an ocean",
+        "breeze.  At the far end of the room, the wall shimmers with a transparent",
+        "light through which you are able to make out shapes and shadows.  Through",
+        "closer inspection, you might discover what lies on the other side.",
+        "A small bronze plaque is mounted to the eastern wall.",
+        "[Exits: up  ]",
+        "(Glowing) (Humming) A portal glows brightly here."
+      ],
+      "renderStart": 1,
+      "source": "01/server.log-2026-01-01.jsonl"
+    },
+    {
+      "command": "c gate street cleaner",
+      "room": "Guillotine Road",
+      "lines": [
+        "You step through a gate and vanish.",
+        "Guillotine Road",
+        "You are on the west end of Guillotine Road. To the west is the tower city",
+        "gates. Eastward Guillotine Road continues. A small shop to the north has",
+        "no name and looks oddly different from the busy stores on the rest of the",
+        "street. To the south is a potion and herbal shop. Looking farther east, you",
+        "see a large Guillotine overshadowing a town square.",
+        "[Exits: north east south west  ]",
+        "(Red Aura) A street cleaner is busy picking up trash."
+      ],
+      "renderStart": 1,
+      "source": "01/server.log-2026-01-01.jsonl"
+    },
+    {
+      "command": "enter g",
+      "room": "Darkmoor Ascent",
+      "lines": [
+        "You enter an umbral corridor.",
+        "Darkmoor Ascent",
+        "An oval of dusklight refracts like fractured glass beyond the darkmoor,",
+        "and vague impressionist shapes drift in transit between the Eclipsian Tower",
+        "and the destination beyond.  Shadowed limbs and trunk-like figures coalesce",
+        "and fade, the ground beneath both firm and yielding, lending an impression",
+        "of travel along a rutted road through a timeless forest.  A cascade of umbra",
+        "flows above and around the aperture of the passage as it narrows,",
+        "silhouettes of humanoid shades, phantasmic beasts, and shapeless planeforms",
+        "probing at the bounds of the tunnel's weave.  The vastness of the umbra",
+        "stretches away in all directions and a black arch in the shape of a lunar",
+        "crescent marks the mooring's exit.",
+        "[Exits: up  ]",
+        "(Red Aura) (Glowing) An oval of fractured dusklight hovers before the darkmoor's passage."
+      ],
+      "renderStart": 1,
+      "source": "02/server.log-2026-01-02.jsonl"
+    },
+    {
+      "command": "enter g",
+      "room": "Common Room of Eclipse Tower",
+      "lines": [
+        "You enter the darkmoor passage.",
+        "Common Room of Eclipse Tower",
+        "The ancient stone staircase leads into the extensive common room.  The",
+        "grand stature of the architecture is breathtaking an idyllic blending of",
+        "archaic granite stone and modern crafted furniture.  Blackened iron sconces",
+        "adorn the outskirts, radiating crimson light to the vaulted spire of the",
+        "Tower.  The flames illuminate several prominent, cascading banners, the",
+        "blackened flag of Storm Keep and the blood red, time-worn banner of Eclipse,",
+        "hanging from the ceiling.  Along the far wall a row of simple cots invite",
+        "the weary knight to take some respite.  Beside the cots stands a wooden",
+        "bookshelf brimming with countless tomes, both old and new.  A circular table",
+        "sits in the center of the room, with several dusty tomes still laying open",
+        "upon it.  Embrasures are carved into the granite at various strategic",
+        "points, allowing for defensive cannons and archers.  The sheer height of the",
+        "tower offers excellent views of Verminasia, the Ebony Spire, and the Altar",
+        "of Darkness.",
+        "[Exits: down  ]",
+        "(Red Aura) (Glowing) A voidiron mirror embedded in the tower's wall crackles with distortions of umbra.",
+        "(Glowing) A dark orb hovers in the air, shadows swirling about the sphere.",
+        "A black demonic skull trickles quietly with water here.",
+        "A row of simple cots awaiting occupants.",
+        "A wide circular table sits in the center of the room.",
+        "(Translucent) (Red Aura) Ezrianne is sitting here.",
+        "(Red Aura) (White Aura) A Nightwarden of Drakkara tends to the Eclipse Tower, chanting softly."
+      ],
+      "renderStart": 1,
+      "source": "02/server.log-2026-01-02.jsonl"
+    },
+    {
+      "command": "",
+      "room": "The Library of Storm Keep",
+      "lines": [
+        "You feel a burst of energy."
+      ],
+      "renderStart": -1,
+      "source": "01/server.log-2026-01-01.jsonl"
+    },
+    {
+      "command": "",
+      "room": "The Library of Storm Keep",
+      "lines": [
+        "Shesha auctions: 'Looking for enchanted staffs, whips, daggers, maces.'"
+      ],
+      "renderStart": -1,
+      "source": "01/server.log-2026-01-01.jsonl"
+    },
+    {
+      "command": "",
+      "room": "Limbo",
+      "lines": [
+        "You have become better at pugil!",
+        "You disappear into the void."
+      ],
+      "renderStart": -1,
+      "source": "01/server.log-2026-01-01.jsonl"
+    },
+    {
+      "command": "wield ho",
+      "room": "The Library of Storm Keep",
+      "lines": [
+        "You stop using the staff of the Blind Prince.",
+        "You wield a grand arcanium hoopak.",
+        "A grand arcanium hoopak feels like a part of you!"
+      ],
+      "renderStart": -1,
+      "source": "01/server.log-2026-01-01.jsonl"
+    },
+    {
+      "command": "",
+      "room": "The Library of Storm Keep",
+      "lines": [
+        "You are thirsty.",
+        "You are hungry."
+      ],
+      "renderStart": -1,
+      "source": "01/server.log-2026-01-01.jsonl"
+    },
+    {
+      "command": "drink dec",
+      "room": "The Library of Storm Keep",
+      "lines": [
+        "You drink water from a decanter of endless water."
+      ],
+      "renderStart": -1,
+      "source": "01/server.log-2026-01-01.jsonl"
+    }
+  ]
+}

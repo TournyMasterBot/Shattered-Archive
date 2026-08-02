@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { api, ApiError } from '../../api/client.js';
 
@@ -46,14 +46,59 @@ interface SsoApprovePageProps {
 export default function SsoApprovePage({ request, username, navigate = (url) => window.location.assign(url) }: SsoApprovePageProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * Server verdict on whether this hand-off is sanctioned.
+   *
+   * The page starts in 'checking' and shows NOTHING actionable until the server says the
+   * (service, redirectUri) pair is registered. Anything else renders the same dead-end
+   * card as a malformed link, with no button that can navigate.
+   *
+   * This is a security control, not a nicety. Both Continue AND Cancel navigate to
+   * redirectUri, and Cancel does so without asking the server anything — so rendering
+   * before validation made this origin an open redirect for any URL an attacker put in
+   * the query string, on the domain users are told to trust with their password. It also
+   * stopped "Continue to <attacker text>?" from being displayed here at all.
+   */
+  const [status, setStatus] = useState<'checking' | 'ok' | 'rejected'>('checking');
 
-  if (!request) {
+  const service = request?.service ?? null;
+  const redirectUri = request?.redirectUri ?? null;
+
+  useEffect(() => {
+    if (!service || !redirectUri) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        await api.ssoValidate(service, redirectUri);
+        if (!cancelled) setStatus('ok');
+      } catch {
+        // Any failure — unregistered, unknown service, network — is treated as NOT
+        // sanctioned. Failing closed is the only safe default for a redirect target.
+        if (!cancelled) setStatus('rejected');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [service, redirectUri]);
+
+  if (!request || status === 'rejected') {
     return (
       <div className="auc-page">
         <h2>Invalid sign-in link</h2>
         <p className="auc-muted">
-          This sign-in request is missing or malformed. Close this page and start again from the app that sent you here.
+          This sign-in request is missing, malformed, or is not for a registered application. Close this page and start
+          again from the app that sent you here.
         </p>
+      </div>
+    );
+  }
+
+  if (status === 'checking') {
+    return (
+      <div className="auc-page">
+        <h2>Checking sign-in request…</h2>
+        <p className="auc-muted">One moment.</p>
       </div>
     );
   }

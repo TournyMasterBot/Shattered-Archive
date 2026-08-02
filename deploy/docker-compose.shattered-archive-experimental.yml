@@ -431,9 +431,26 @@ services:
       # volume: the encryption key must NOT be casually host-editable/visible.
       - ../apps/auth-server/data:/repo/apps/auth-server/data
       - auth-server-secrets:/repo/apps/auth-server/secrets
+      # Public keys published by consuming services, READ-ONLY here — see the prod compose.
+      - sa-service-pubkeys:/repo/apps/auth-server/service-public-keys:ro
     environment:
       NODE_ENV: production
       PORT: "62000"
+      # Declarative service registry — mirrors deploy/docker-compose.yml, with this
+      # machine's LOCALHOST callbacks instead of the public ones. See the long note there;
+      # the short version is that this list is exhaustive and prunes what it omits, and
+      # the URIs must byte-match what the C# site sends (AuthHub__RedirectUri and
+      # GameSso__CallbackRedirectUri in DSL/Server/docker-compose.yml).
+      SERVICE_REGISTRY: >-
+        {
+          "shattered-web": {
+            "redirectUris": [
+              "http://localhost:5000/user/sso/callback",
+              "http://localhost:5000/user/game-sso/callback"
+            ]
+          }
+        }
+      SERVICE_PUBLIC_KEY_DIR: "/repo/apps/auth-server/service-public-keys"
       LOG_LEVEL: "debug"
       DATA_DIR: "/repo/apps/auth-server/data"
       # Mounted-file secret (auth-server-secrets, above) — self-generated on first boot,
@@ -590,5 +607,11 @@ services:
 volumes:
   nginx-logrotate-state:
   auth-server-secrets:
+  # Public keys published by consuming services for auto-registration. Fixed name (not
+  # project-scoped) because the C# site is a SEPARATE compose project declaring it
+  # external — without a fixed name each project makes its own and neither sees the
+  # other's files. See deploy/docker-compose.yml for the full rationale.
+  sa-service-pubkeys:
+    name: sa-service-pubkeys
   kingdom-tactics-data:
   scrum-poker-data:

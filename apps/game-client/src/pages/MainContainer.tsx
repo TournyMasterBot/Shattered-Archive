@@ -33,7 +33,8 @@ import { useAutoLeveling } from '../hooks/useAutoLeveling';
 import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
 import { useTerminal } from '../hooks/useTerminal';
 import { ShatteredArchiveTerminal } from '../features/terminal/shatteredArchiveTerminal';
-import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
+import { DispatchEvent, ListenEvent } from '../features/event-emitter/event-dispatcher';
+import { PLUGIN_CONFIG_PERSIST_EVENT, type PluginConfigPersistPayload } from '../features/plugins/pluginConfigPersist';
 import FocusBarVitals from '../components/FocusBarVitals';
 import ContributeIdentifyModal from '../components/ContributeIdentifyModal';
 import ContributeCreatureLoreModal from '../components/ContributeCreatureLoreModal';
@@ -121,6 +122,15 @@ export const MainContainer: React.FC = () => {
 
   const auto = useAutoLeveling(connectionId, gameConn.isConnected);
 
+  /**
+   * Plugin lifetime is scoped to the CONNECTION, and to nothing else.
+   *
+   * This deliberately does not depend on `plugins.installed`. It used to, and the
+   * cleanup below is a full `pluginHost.shutdown()` — so every change to the
+   * installed list (a config edit, a cloud sync, the boot storage migration,
+   * toggling any other plugin) destroyed and re-`create()`d EVERY plugin closure.
+   * See pluginHost.syncInstalled for why that broke text-to-speech outright.
+   */
   React.useEffect(() => {
     pluginHost.setConnection(connectionId);
 
@@ -128,18 +138,38 @@ export const MainContainer: React.FC = () => {
       pluginHost.registerModule(p.create());
     }
 
-    for (const rec of plugins.installed) {
-      if (rec.enabled) {
-        pluginHost.enable(rec.id, rec.userConfig);
-      } else {
-        pluginHost.disable(rec.id);
-      }
-    }
-
     return () => {
       pluginHost.shutdown();
     };
+  }, [connectionId]);
+
+  /**
+   * Which of the registered plugins are running. Diffed, never rebuilt — a plugin
+   * that is already enabled and still enabled keeps the exact instance (and so its
+   * queues, timers and subscriptions) across every one of these passes.
+   *
+   * Depends on `connectionId` as well so it re-applies after the effect above has
+   * rebuilt the host for a new connection; effects run in declaration order, so
+   * registration has already happened by the time this runs.
+   */
+  React.useEffect(() => {
+    pluginHost.syncInstalled(plugins.installed);
   }, [connectionId, plugins.installed]);
+
+  /**
+   * A plugin changing its OWN config (e.g. text-to-speech's floating mode bubble)
+   * has to land in the same store the config modal writes, or the effect above
+   * reverts it on the next installed-list change. The plugin only sends a patch;
+   * the merge onto the saved record happens here, where that record lives.
+   */
+  React.useEffect(() => {
+    return ListenEvent<PluginConfigPersistPayload>(PLUGIN_CONFIG_PERSIST_EVENT, ({ pluginId, patch }) => {
+      if (!pluginId || !patch) return;
+      const record = plugins.getInstallRecord(pluginId as never);
+      if (!record) return;
+      plugins.updatePluginConfig(pluginId as never, { ...(record.userConfig ?? {}), ...patch });
+    });
+  }, [plugins]);
 
   return (
     <div className={styles.root}>

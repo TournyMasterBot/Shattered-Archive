@@ -70,6 +70,25 @@ export interface AuthServerConfig {
    * cannot enroll), so the safe outcome is automatic and the warning explains why.
    */
   deviceConfigWarnings: string[];
+  /**
+   * Raw SERVICE_REGISTRY JSON — the declarative source of truth for which services exist
+   * and which SSO redirect URIs each may use. Reconciled into the ServiceKeyStore at boot
+   * (service-registry-reconciler.ts), which is what removes the manual register-service /
+   * register-redirect-uri steps from a deployment.
+   *
+   * Kept RAW here rather than pre-parsed because parsing is all-or-nothing and its failure
+   * must be reported by the reconciler (which knows to skip the pass), not swallowed at
+   * config load where the only options would be crash or silently drop entries.
+   */
+  serviceRegistry: string | undefined;
+  /**
+   * Directory consuming services publish their PUBLIC keys into as `<service>.pub`.
+   *
+   * Mounted read-only here and read-write by the consumer, so private key material never
+   * crosses a boundary: each service generates its own keypair, keeps the private half on
+   * its own host, and publishes only the public half for this server to register.
+   */
+  servicePublicKeyDir: string;
 }
 
 export function getAuthServerConfig(env: NodeJS.ProcessEnv = process.env): AuthServerConfig {
@@ -90,6 +109,8 @@ export function getAuthServerConfig(env: NodeJS.ProcessEnv = process.env): AuthS
     deviceAllowedOrigins: [...deviceOriginServices.keys()],
     deviceGrantRequiredServices: parseList(env.DEVICE_GRANT_REQUIRED_SERVICES),
     deviceConfigWarnings: warnings,
+    serviceRegistry: env.SERVICE_REGISTRY,
+    servicePublicKeyDir: path.resolve(env.SERVICE_PUBLIC_KEY_DIR ?? './service-public-keys'),
   };
 }
 

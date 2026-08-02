@@ -19,6 +19,7 @@ import { AuditLog } from './audit-log.js';
 import { LoginLockout } from './login-lockout.js';
 import { createMailer } from './mailer.js';
 import { RateLimiter } from './rate-limit.js';
+import { reconcileServiceRegistry } from './service-registry-reconciler.js';
 import type { AuthServerDeps } from './deps.js';
 
 const baseEnvFile = path.resolve(process.cwd(), '.env');
@@ -84,6 +85,59 @@ const deps: AuthServerDeps = {
 for (const warning of config.deviceConfigWarnings) {
   logger.warn(`[auth-server] ${warning}`);
 }
+
+/**
+ * Declarative service provisioning — replaces the manual register-service /
+ * register-redirect-uri ceremony a deployment used to require.
+ *
+ * Runs at boot AND on a timer. The timer is what makes container start order
+ * irrelevant: a consuming service that boots after this one publishes its public key
+ * a few seconds later, and the next pass registers it with no human involved. Polling
+ * rather than fs.watch on purpose — the directory is a shared docker volume, and
+ * inotify across those is not dependable enough to be the only trigger.
+ *
+ * Cheap enough to poll: it reads a small directory and the store's own cached data,
+ * and reconcile() writes ONLY when something actually changed, so a converged system
+ * does no I/O beyond the directory listing and logs nothing.
+ */
+const RECONCILE_INTERVAL_MS = 30_000;
+
+function runServiceRegistryReconcile(firstRun: boolean): void {
+  let result;
+  try {
+    result = reconcileServiceRegistry({
+      registryRaw: config.serviceRegistry,
+      publicKeyDir: config.servicePublicKeyDir,
+      store: deps.serviceKeyStore,
+    });
+  } catch (e) {
+    // Never fatal: an unreconciled registry degrades to "SSO for a new service is not
+    // set up yet", whereas exiting here would take down login for everyone already working.
+    logger.error(`[auth-server] Service registry reconcile threw`, { error: (e as Error).message });
+    return;
+  }
+
+  if (!result.ran) {
+    // Only on the first pass — otherwise a deliberately-unset registry logs forever.
+    if (firstRun) logger.warn(`[auth-server] Service registry not reconciled: ${result.skippedReason}`);
+    return;
+  }
+
+  for (const warning of result.warnings) {
+    if (firstRun) logger.warn(`[auth-server] ${warning}`);
+  }
+  for (const action of result.actions) {
+    // Every action is a credential change, so each one is logged individually rather
+    // than summarised — this is the audit trail for "why did that service stop working".
+    logger.info(`[auth-server] Service registry: ${action.kind} for ${JSON.stringify(action.serviceName)} (${action.detail})`);
+  }
+  if (firstRun && result.actions.length === 0) {
+    logger.info(`[auth-server] Service registry already converged; nothing to change`);
+  }
+}
+
+runServiceRegistryReconcile(true);
+setInterval(() => runServiceRegistryReconcile(false), RECONCILE_INTERVAL_MS).unref();
 
 const app = express();
 registerRoutes(app, deps);

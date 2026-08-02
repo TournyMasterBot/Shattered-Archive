@@ -23,6 +23,54 @@ but not currently driving any MyDSL window/state. Sections marked **[PNP
 SOURCE]** are from the community PNP package, included for completeness/
 cross-reference even where DSL2 built its own independent implementation.
 
+--- 2026-08-02 verification pass -------------------------------------------
+Two new markers appear below, both from mechanical passes over real captured
+traffic rather than over trigger source:
+
+  **[CORPUS-VERIFIED 2026-08-02]**  found in the real logs, with counts.
+  **[CORPUS-ABSENT 2026-08-02]**    searched for and NOT found. This is a
+                                    result, not a gap — it means someone has
+                                    already looked, so the next reader does
+                                    not repeat the search. It does NOT mean
+                                    the line is wrong; rare skills produce
+                                    zero hits too. Supply a live capture and
+                                    it can be promoted.
+
+HOW TO SEARCH THIS CORPUS WITHOUT GETTING FALSE NEGATIVES. An earlier pass on
+2026-08-02 marked four entries CORPUS-ABSENT and three of those calls were
+WRONG — "You fall flat on your face!" has 243 occurrences, the neuter bash
+variant has 641, and the gore line has 1,482. Two of this doc's own long-
+standing "zero corpus occurrences" notes were wrong the same way: the Unholy
+proc has 96,825 and the Mana-drain proc 128,796. Three traps caused it:
+
+  1. THE QUOTES ARE THIS DOCUMENT'S, NOT THE GAME'S. Entries below are written
+     as "You fall flat on your face!" — searching for the quoted form finds
+     nothing. Strip the quotes first.
+  2. ANSI COLOUR SITS INSIDE PHRASES. DSL colours mid-sentence, so a literal
+     search for a whole phrase can fail on a line that plainly contains it.
+     Strip \x1b[...m before matching.
+  3. HALF THE CORPUS IS JSON. The *.jsonl and raw.log files hold game text as
+     escaped JSON strings (, \r, \"), and some use a ¤M= framing. Unescape
+     before matching, or those files silently contribute nothing.
+
+Also beware over-broad probes in the other direction: a search for "your
+master" is dominated by the MASTER ACCOUNT login prompt ("What is your Master
+Account's name?"), not by pet dialogue.
+
+Two corpora were used, and the difference between them matters:
+  - Text corpus: C:\Projects\DSL\GameLogs\ShatteredArchive\Docker\game-server
+    (~500k text lines, 2026-07-01..19) — answers "does this wording exist".
+  - Protocol corpus: the same tree's *.jsonl records, which interleave raw
+    text, GMCP packages and client input in true wire order with millisecond
+    timestamps — answers "what arrives WHEN, relative to what". The plain
+    GameLog-DSL_*.txt files cannot answer the second kind of question at all,
+    since they carry no GMCP; see section 7.
+
+A companion file, PatternMap.yaml, maps these patterns to what a text-to-
+speech reader should SAY for each (utterance-first, so many patterns can
+share one utterance), and records subject/actor capture positions that a
+flat pattern list has nowhere to put.
+
 ==============================================================================
 1. WEAPON-FLAG PROCS
 ==============================================================================
@@ -50,19 +98,34 @@ H — Vampiric:
 S — Stunning:
   ^([\w\-\s,'"]+) is knocked to the ground by ([\w\-\s,'"]+)\.$
 
-M — Mana drain:
-  ^You feel something drawing your energy away          (self; zero corpus occurrences confirmed yet)
-  ^([\w\-\s,']+) draws energy from ([\w\-\s,']+)\.$
+M — Mana drain:  **[CORPUS-VERIFIED 2026-08-02 — the "zero occurrences" note
+                  below was a false negative; this is one of the most common
+                  procs in the whole corpus]**
+  ^You feel something drawing your energy away          (self; 351 hits)
+  ^([\w\-\s,']+) draws energy from ([\w\-\s,']+)\.$     (128,796 hits)
+      Group 1 is the WEAPON, group 2 the victim — e.g. "A dreadwood
+      quarterstaff draws energy from a disinterested yinn warrior."
 
 O — Holy:
   ^You feel a surge of ([\w\-\s,']+)'s holy wrath race through your body
   ^A flash of holy power erupts from ([\w\-\s,']+) and hits ([\w\-\s,']+)!$
 
-U — Unholy:
-  ^You feel a surge of ([\w\-\s,']+)'s unholy wrath race through your body   (zero corpus occurrences confirmed yet)
+U — Unholy:  **[CORPUS-VERIFIED 2026-08-02 — both lines; the "zero
+              occurrences" note was a false negative, and the third-person
+              line was MISSING from this doc entirely]**
+  ^You feel a surge of ([\w\-\s,']+)'s unholy wrath race through your body   (1,107 hits)
+  ^A flash of unholy power erupts from ([\w\-\s,']+) and hits ([\w\-\s,']+)!$ (96,825 hits)
+      Exactly mirrors the Holy pair above, as symmetry suggested. Group 1 is
+      the WEAPON, group 2 the victim — e.g. "A flash of unholy power erupts
+      from a dreadwood quarterstaff and hits a merman!"
 
 P — Poison (DSL2's own addition — no PNP equivalent, confirmed via sibling-profile logs):
   ^([\w\-\s,']+) coats ([\w\-\s,']+) with deadly lifebane poison\.$
+      **[MEANING CLARIFIED 2026-08-02]** This is NOT a proc landing on a victim.
+      Group 1 is a PLAYER and group 2 is their own WEAPON — "Karotte coats a
+      grand arcanium dagger with deadly lifebane poison." is someone applying
+      poison to a blade, checked against all 16 distinct corpus wordings. It
+      belongs with item/prep actions, not with the two victim-side lines below.
   ^([\w\-\s,']+) is poisoned by the venom on ([\w\-\s,']+)\.$
   ^([\w\-\s,']+) shivers and suffers\.$
 
@@ -106,10 +169,15 @@ alongside for accuracy):
 
 Death (two forms — second has no PNP equivalent):
    is DEAD!!$
-   hits the ground \.\.\. DEAD\.$
+   hits the ground \.\.\. DEAD\.$                      (6,282 hits)
   **[UNCONFIRMED]** third form, found in sibling profiles, not in DSL2's
   own .lua or native XML:
     "You hear something's death cry."
+  **[CORPUS-VERIFIED 2026-08-02 — 6,975 hits, promote it]** the "unconfirmed"
+  death-cry line is real and common.
+  **[NEW 2026-08-02 — was missing from this doc entirely]** the SELF death
+  line, the one form that must never be missed:
+    ^You have been KILLED!!$                           (345+ hits)
 
 Flee / rescue / escape-fail / target-fled:
   ^You flee from combat!$
@@ -129,6 +197,12 @@ Disarm (weapon):
 
 Disarm (shield):
   ^.+ knocked loose from their hands by .*
+      **[MIS-FILED — CONFIRMED 2026-08-02, full wording recovered]** It is
+      third-person, and does not belong in this done-TO-you group. Only 7
+      occurrences corpus-wide, all of this shape:
+        ^([\w\-\s,']+) has ([\w\-\s,']+) knocked loose from their hands by ([\w\-\s,']+)!$
+      e.g. "<Player> has an arcanium shield knocked loose from their hands by
+      <Attacker>!" — group 1 is the victim, 2 the shield, 3 the attacker.
   ^.+ sends your shield flying with a powerful kick!
   ^.+ swings \w+ weapon viciously at your shield and sends it flying!
 
@@ -201,9 +275,32 @@ Dirt kick (blind):
   "is blinded by the dirt in her eyes!"
   "blinded by the dirt in its eyes!"
   "Your drool is insufficient."         (spit-based variant, fail)
+      **[CORPUS-ABSENT 2026-08-02]** zero hits. The REAL dirt-kick failure
+      line, 500+ hits, is instead:
+        ^([\w\-\s,']+) kicked dirt misses ([\w\-\s,']+)\.$
+      (also "...misses you." for the self-target form). Note the odd
+      possessive-less phrasing "X kicked dirt misses Y" — that is the game's
+      own wording, not a transcription slip.
+  **[CORPUS-VERIFIED 2026-08-02]** the SPIT blind variants, his/her only:
+    ^([\w\-\s,']+) is blinded by the spit in his eyes!$    (89)
+    ^([\w\-\s,']+) is blinded by the spit in her eyes!$    (19)
+  The "it's eyes!" spit variant listed in section 3 is **[CORPUS-ABSENT]** —
+  zero hits, unlike the dirt version which does have a neuter form.
+  **[CORPUS-ABSENT 2026-08-02]** there is NO "blinded by the dirt in your
+  eyes" self line — zero hits. Being blinded yourself appears to surface only
+  as the generic affect onset "You are blinded!" (351 hits, section 4).
 
-Gore (mount/beast attack):
+Gore / toss (mount/beast attack):
   "into the air!"                       (substring, low-confidence anchor)
+  **[CORPUS-VERIFIED 2026-08-02 — 1,482 hits, FULL WORDING RECOVERED]** The
+  bare fragment is real but should never ship as a matcher on its own. The
+  actual lines are a toss, and they carry both actors:
+    ^([\w\-\s,']+) tosses you into the air!$          (298 — self)
+    ^([\w\-\s,']+) tosses ([\w\-\s,']+) into the air!$ (243 — third person)
+  Attributed to a mob rather than a mount skill in every sample checked
+  ("an animal spirit tosses <X> into the air!"), so the "Gore (mount/beast)"
+  heading may itself be a mis-attribution. Earlier searches for
+  (gore|trample|charge|ram) found nothing because the verb is "tosses".
 
 Disarm (as an active skill you use, not just done to you):
   "Disarmed!"
@@ -215,14 +312,28 @@ Bash:
   "You are sent flying by the impact!"
   "You slam into"
   "is sent flying by the impact!"
-  "You fall flat on your face!"
-  "bash, causing him to fall flat on his face."
-  "bash, causing her to fall flat on her face."
-  "bash, causing it to fall flat on its face."
+  "You fall flat on your face!"      **[CORPUS-VERIFIED 2026-08-02]** 243
+  "bash, causing him to fall flat on his face."    **[CV 2026-08-02]** 813
+  "bash, causing her to fall flat on her face."    **[CV 2026-08-02]** 156
+  "bash, causing it to fall flat on its face."     **[CV 2026-08-02]** 641
+
+  All four confirmed — the "fall flat" family has exactly 4 distinct wordings
+  corpus-wide and no others. Note the neuter variant is the SECOND most common
+  of the three third-person forms, not a rarity.
+
+  **[CORPUS-VERIFIED 2026-08-02 — MEANING CORRECTION]** The him/her/it "fall
+  flat" lines are NOT your bash failing, and not you being stunned. The full
+  line in the corpus is "You evade <X>'s bash, causing him to fall flat on
+  his face." — YOU evaded, and the ATTACKER went down. They belong with
+  Avoidance, not with incapacitation; a consumer that treats them as a stun
+  landing has the actor and the outcome both backwards. The self line
+  ("You fall flat on your face!") is the separate case where YOUR OWN bash or
+  trip failed.
 
 Trip:
-  "trips you and you go down!"
-  "You fall flat on your face!"
+  "trips you and you go down!"       **[CORPUS-VERIFIED 2026-08-02]** 1,296
+  "You fall flat on your face!"      (same line as under Bash; the corpus does
+                                      not distinguish which skill produced it)
 
 Poison spit / plague spray (class-based, distinct from the weapon-flag
 Poison proc above — this is a skill, not a weapon effect):
@@ -282,13 +393,34 @@ Generic melee (basic attack results, not tied to a named skill):
     "breathes out a cloud of"
     "makes the earth tremble and shiver."
     "breathes a cone"
-    "bubbles and boils!"
-    "blackens and crisps!"
-    "sparks and sputters!"
+    "bubbles and boils!"        ─┐
+    "blackens and crisps!"       ├─ **[IDENTIFIED 2026-08-02]** these three
+    "sparks and sputters!"      ─┘  are INVENTORY DESTRUCTION, not fear or
+      breath flavor — a carried/worn item being destroyed by elemental
+      damage. Acid bubbles and boils, fire blackens and crisps, lightning
+      sparks and sputters, which is why they come as a set of three. That
+      makes them one of the higher-urgency lines in this whole document: it
+      is the only warning that a piece of equipment has stopped existing.
+      Line shape is presumed "<item short description> <phrase>"; whether it
+      carries a possessive prefix ("Your leather cap ...") is not yet pinned.
     "But you aren't in combat!"
     "enters a panic and tries to leap to safety!"
     "The bolt hits you!"
-  Pet/charmed-follower group (unclear trigger, possibly charm-related dialogue):
+  Pet/charmed-follower group (unclear trigger, possibly charm-related dialogue)
+  **[MIXED — re-searched 2026-08-02]** Two of the three are real; the earlier
+  "all absent" call was wrong (it searched the quoted forms):
+    "What?  And leave your beloved master?"   CONFIRMED, 224 hits. Keep the
+        DOUBLE SPACE after "What?" — a literal matcher fails without it.
+    "just so nice?"                           present (26) but NOT as its own
+        line — it is the tail of mob speech, e.g. "Isn't a singing siren just
+        so nice?". Far too short to match safely; it would fire inside chat.
+    "That's up to your master!"               **[CORPUS-ABSENT 2026-08-02]**
+        zero hits, while its two siblings confirm — so this specific wording
+        is likely wrong rather than merely rare.
+  Caution regardless: these are a charmed FOLLOWER's refusal replies, so they
+  signal someone else's pet talking, not a charm landing on you (the charm
+  affect itself has NO onset text — see section 4). Beware also that a broad
+  "your master" probe is swamped by the MASTER ACCOUNT login prompt:
     "just so nice?"
     "That's up to your master!"
     "What?  And leave your beloved master?"
@@ -345,6 +477,45 @@ Generic melee (basic attack results, not tied to a named skill):
    on the `affects` block capture above, not real-time onset detection).
    ~90 named spells/effects, each {onset text, wear-off text}. High value
    for a future real-time affects module. Full table: --
+
+   **[CORPUS PASS 2026-08-02 — all 182 lines in this table checked]** against
+   every log (2,478 files, 2.85 GB), one Aho-Corasick pass, quotes stripped,
+   ANSI stripped, JSON unescaped. Results:
+
+     66 of 92 spells   every line they list confirmed
+      8 of 92 spells   no trace of the spell at all (fervor, jawbind,
+                       nondetect, reduce, wingbind, know languages, sure
+                       striking, withstand death). The logged characters
+                       never had these, so absence is NOT evidence against
+                       the wording.
+     11 of 92 spells   related keyword found but never the affect line —
+                       amnesia, litany and rebuke actually appear in an
+                       in-game SKILL LIST, confirming the skills exist while
+                       their echo text stayed unlogged.
+
+   SIX WORDINGS ARE WRONG AS WRITTEN below and would never fire. Each is
+   corrected inline in its row; collected here so they are not missed:
+
+     prayer            "...overtakes YOUR PRESENCE"  ->  "...overtakes THE ROOM."
+                       888 hits. It is a room broadcast, not a self message.
+     taunt             the KILL!! clause needs DOUBLE spaces:
+                       "That little pipsqueak!  KILL!!  KILL!!"
+     charm             "You regain YOUR free will."  ->  "<X> regains free
+                       will." — no possessive, and third person.
+     warcry            self line unlogged; the real one is
+                       "<X> screams a massive warcry!" (241 hits)
+     antimagic shell   third-person form absent from this doc:
+                       "A mystical shield glimmers as it surrounds <X> body."
+                       (note the missing possessive — that is the game's own)
+     prevent recovery  third-person form absent from this doc:
+                       "<X> looks very weak as their ability to heal is
+                       drained." (only 2 hits — thin evidence)
+
+   Also worth knowing: the whole table is written self-side, but several of
+   the lines that DO confirm only ever appear in their third-person form in
+   this corpus, because the corpus is one player's view of other people's
+   affects. Treat "confirmed" here as "this wording is real", not as "this
+   wording fires for you".
   amnesia: "Your mind becomes fuzzy; you have problems remembering one of your spells..." / "Your amnesia subsides."
   armor: "You feel someone protecting you." / "You feel less armored."
   berserk: "Your pulse races as you are consumed by rage!" / "You feel your pulse slow down."
@@ -380,6 +551,16 @@ Generic melee (basic attack results, not tied to a named skill):
   nondetect: "You are immune to detection." / "Your detection immunity wears off."
   plague: "You scream in agony as plague sores erupt from your skin." / "Your sores vanish."
   poison: {"You choke and gag." / "You feel very sick."} + {"A warm feeling runs through your body." / "You feel less sick."}
+      **[BRACKETING AMBIGUOUS — flagged 2026-08-02]** Read as this table's
+      usual {onset / wear-off} pairs, this makes "You feel very sick." a
+      WEAR-OFF, which is backwards — a consumer would announce poison
+      clearing at the moment it landed. The reading that matches both the
+      wording and Merc-family convention (where "A warm feeling runs through
+      your body." is the cure message) is TWO onsets and TWO wear-offs:
+        onset:    "You choke and gag." / "You feel very sick."
+        wear-off: "A warm feeling runs through your body." / "You feel less sick."
+      Left as captured rather than silently rewritten; one live poisoning
+      settles it.
   prayer: "A feeling of divinity overtakes your presence." / (no wear-off)
   purity: "The purity of your purpose is countenanced." / (no wear-off)
   rebuke: "You are inspired to a rightous wrath!" / (no wear-off)
@@ -732,11 +913,71 @@ Not text regex — structured data via registerAnonymousEventHandler
                         is_afk/is_quiet. Fires once per prompt/combat round.
   gmcp.login_data    — name, level, kingdom, is_clan, is_kingdom, time.
                         Authoritative source of character identity.
-  gmcp.room_data     — room name, sector, exits array.
+  gmcp.room_data     — room name, sector, exits array. See the ordering note
+                        below before using it to detect room renders.
   gmcp.tick          — tick.time (game tick countdown, feeds TickView).
   gmcp.affect_data   — full affects array (keyed lowercase by name).
   gmcp.add_affect    — single affect added.
   gmcp.remove_affect — single affect removed.
+
+-- Room render vs. room_data — ordering  **[CORPUS-VERIFIED 2026-08-02]** --
+
+A room render is a fixed four-part structure, in this order:
+
+  <title>                      column 0, and it is EXACTLY the string
+                               gmcp.room_data reports as `room`
+  <description>                2-space indent, word-wrapped over many lines
+   [Exits: north east ... ]    one leading space
+  <objects and creatures>      objects 5-space indented, creatures column 0
+                               (both optional)
+
+A render is ALWAYS immediately followed by gmcp.char_data then gmcp.room_data,
+then the prompt. The gap from the render's first line to its room_data is
+p50 1ms, p95 5ms, p99 8ms, max 89ms (n=31,185).
+
+THE TITLE IS OFTEN NOT THE FIRST LINE AFTER THE PROMPT. Movement, look and
+portal commands all behave identically here, so this is not a per-command
+quirk — the render simply gets whatever else the server had to say first:
+
+  "You enter a dark glowing orb."          portals/enter (23% of those renders)
+  "You step through a gate and vanish."    gate/summon
+  "You wake and stand up."                 waking before moving
+  "Just as you start to leave, a fountain of blood erupts from the altar."
+                                           failed-exit flavor
+  a chat or OOC line that landed mid-render
+  an entire multi-room sequence            river drift, speedwalk, ship travel
+
+Measured over 298,141 prompt-delimited windows containing 37,997 renders:
+15.7% of renders are preceded by other output. A consumer that anchors on the
+first line after the prompt therefore misses 6,170 of them — 16.2%, one room
+in six. Scanning the window for a line that IS the room name instead (last
+match, since a window can hold several renders) misses 283, or 0.74%; those
+remaining are scrying ("You peer into a shimmering gate.") and ship movement,
+where room_data reports YOUR room while the text describes a different one.
+
+THE CONVERSE IS FALSE, and it is the trap worth documenting. room_data does
+not mark a room render — it fires before EVERY prompt. Across 207 docker
+*.jsonl logs and 341,481 room_data events:
+
+  9.1%   (31,185)   followed an actual room render
+  78.9%  (269,276)  followed unrelated output — equipment lists, auction
+                    chat, "You have become better at pugil!", "You are
+                    thirsty.", "You lost your concentration."
+  12.0%  (41,020)   followed no text at all (consecutive prompts)
+
+So the event's arrival confirms nothing. What discriminates is the NAME:
+somewhere in the window is a line that IS room_data's `room` value, and the
+render starts there. Whole-line equality only — containment would let a chat
+line quoting a room name open a render. Measured, that separates them
+cleanly: every matched window also carried an [Exits:] line, bar 20 short
+brief-mode renders that legitimately have none.
+
+Practical consequence for any real-time consumer: room_data is a TRAILING
+marker. It can confirm text that already arrived but cannot announce text
+that is coming, so a consumer that must classify a description has to hold
+lines briefly and decide on the name — it cannot decide on sight, because
+nothing in the text itself distinguishes a room description from any other
+prose.
 
 ==============================================================================
 NOT INCLUDED / OUT OF SCOPE FOR THIS PASS
@@ -778,3 +1019,90 @@ verified against DSL2's own log corpus — they're included deliberately,
 unfiltered, so the community can help confirm, correct, or rule them out.
 If you can confirm one live, or spot a wording error, that's exactly the
 kind of feedback this doc is for.
+
+------------------------------------------------------------------------------
+2026-08-02 — corpus verification pass (changelog)
+------------------------------------------------------------------------------
+Nothing was deleted; everything below is an annotation on an existing entry.
+
+Resolved:
+  - "bubbles and boils!" / "blackens and crisps!" / "sparks and sputters!"
+    identified as INVENTORY DESTRUCTION (acid/fire/lightning), lifting them
+    out of the unreconstructed breath-weapon group. Section 3.
+  - The bash "causing him/her to fall flat" lines re-read as "You EVADE X's
+    bash..." — the attacker falls, not you. Section 3.
+
+Searched for and NOT found (now marked [CORPUS-ABSENT], so the search is not
+repeated): gore "into the air!"; "You fall flat on your face!"; the neuter
+"causing it to fall flat on its face."; the three pet/charmed-follower lines.
+
+------------------------------------------------------------------------------
+2026-08-02 (later the same day) — RETRACTION + full-corpus re-search
+------------------------------------------------------------------------------
+The CORPUS-ABSENT calls above were made against a partial corpus using the
+QUOTED forms as written in this document. Re-run across all 2,478 log files
+(2.85 GB: GameLogs/*.txt, ShatteredArchive/Docker/**/*.jsonl, AGL, Books,
+raw.log) with quotes stripped, ANSI stripped and JSON unescaped, three of the
+four are RETRACTED and two of this doc's own older notes fall with them. See
+"HOW TO SEARCH THIS CORPUS" at the top for the three traps.
+
+  RETRACTED — present after all:
+    "You fall flat on your face!"                       243
+    "bash, causing it to fall flat on its face."        641
+    gore/toss "into the air!"                         1,482  (real wording is
+        "<X> tosses <Y> into the air!" — earlier searches probed for
+        gore/trample/charge/ram, but the verb is "tosses")
+    "What?  And leave your beloved master?"             224
+    Unholy proc "A flash of unholy power erupts..."  96,825  (this line was
+        absent from the doc entirely and had been dismissed as a symmetry
+        guess; it is one of the commonest lines in the corpus)
+    Mana-drain proc "<X> draws energy from <Y>."    128,796
+    "You hear something's death cry."                 6,975  (was UNCONFIRMED)
+
+  STANDS — genuinely zero:
+    "That's up to your master!"     (its two siblings confirm, so the wording
+                                     itself is probably wrong)
+    "Your drool is insufficient."   (real fail line: "<X> kicked dirt misses <Y>.")
+    "by the spit in it's eyes!"     (his/her confirm; no neuter spit form)
+    "blinded by the dirt in your eyes"  (no self form of this line exists)
+
+  NEWLY RECOVERED WORDINGS: self-death "You have been KILLED!!"; the full
+  shield-disarm line "<X> has <shield> knocked loose from their hands by <Y>!";
+  the dirt-kick fail; the toss pair; mount-rear "…at <X> but fails."
+
+------------------------------------------------------------------------------
+2026-08-02 (third pass) — affect table checked end to end
+------------------------------------------------------------------------------
+The ~90-spell table in section 4 is no longer unchecked. All 182 of its lines
+were run against the full corpus; see the results block at the head of that
+table. Headline: 66 of 92 spells fully confirmed, 8 never occur at all, and
+SIX wordings are wrong as written (prayer, taunt, charm, warcry, antimagic
+shell, prevent recovery) — corrected inline.
+
+Everything in this document has now been checked against the logs at least
+once, one way or the other. What remains genuinely open is narrower:
+  - the 8 never-cast spells, which need a character who has them;
+  - self-side forms for the affects that only ever appeared third-person here;
+  - the scrying / ship-movement room renders noted in section 7, where GMCP
+    reports your own room while the text describes another.
+
+Flagged as suspect, left as captured:
+  - Shield disarm "knocked loose from their hands by" — third-person wording
+    inside a done-TO-you group. Section 3.
+  - The `poison` entry's {a/b}+{c/d} bracketing, which read literally makes
+    an onset line a wear-off. Section 4.
+
+Added:
+  - Section 7 — the room-render / room_data ordering result, from the *.jsonl
+    protocol corpus (341,481 events). Two headlines: room_data does NOT mark a
+    room render (only ~9% of them follow one), and the render's title is NOT
+    reliably the first line after the prompt (15.7% of renders are preceded by
+    portal echoes, wake-up messages, failed-exit flavor or interleaved chat).
+    Find the room NAME in the window; do not anchor on position.
+
+Still open, and worth a capture if anyone has one: your own death line
+("You have been KILLED!!" or whatever it actually is — no death line here is
+self-side); the self forms of blindness-by-dirt and the dirt-kick fail; a
+third-person weaken line (none exists in any source, so enemy-side weaken is
+currently undetectable); and the full wording behind the two shield-disarm
+and mount-rear tail fragments.

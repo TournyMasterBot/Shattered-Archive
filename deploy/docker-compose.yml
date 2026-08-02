@@ -204,8 +204,22 @@ services:
       # deliberately-plain, operator-hand-edited file (see questions-store.ts) — it needs
       # a real host path to edit with a text editor. auth-server-secrets stays a named
       # volume: the encryption key must NOT be casually host-editable/visible.
+      # HAZARD on a machine that also runs the experimental stack: this bind mount is the
+      # SAME host directory that compose file uses, while the encryption key below comes
+      # from a PROJECT-SCOPED volume (shatteredarchive-prod_auth-server-secrets vs
+      # shatteredarchive_auth-server-secrets). Run both stacks on one host and whichever
+      # starts second reads data encrypted under the other's key, fails the AES-GCM auth
+      # tag and LOCKS the store ("unable to authenticate data ... store LOCKED"). Nothing
+      # is lost — read() locks and throws, write() refuses while locked, so the files are
+      # never rewritten — but login stays down until the intruding stack is stopped.
+      # Cannot happen on a real production host, where only this stack exists.
+      # deploy/scripts/deploy-auth-stack.sh refuses --prod when it detects the collision.
       - ../apps/auth-server/data:/repo/apps/auth-server/data
       - auth-server-secrets:/repo/apps/auth-server/secrets
+      # Public keys published by consuming services, mounted READ-ONLY: this server only
+      # ever reads them, and the consumer that owns a key is the only thing that should
+      # write it. Scanned on boot and every 30s, so container start order does not matter.
+      - sa-service-pubkeys:/repo/apps/auth-server/service-public-keys:ro
     environment:
       NODE_ENV: production
       PORT: "62000"
@@ -240,6 +254,39 @@ services:
       # Services that additionally require an active API key on the account before a device may
       # mint for them. Empty = no service requires one. See the experimental compose.
       DEVICE_GRANT_REQUIRED_SERVICES: ""
+      # ------------------------------------------------------------------
+      # Declarative service registry (2026-08-01) — the source of truth for which
+      # services may use SSO and which redirect URIs each may return to. Reconciled into
+      # the encrypted service-key store at boot and every 30s, which is what replaced the
+      # manual `register-service` + `register-redirect-uri` deployment ceremony.
+      #
+      # Keys are NOT listed here: each service generates its own keypair and publishes the
+      # public half into sa-service-pubkeys, which this server registers automatically.
+      # Nothing secret belongs in this file.
+      #
+      # THIS IS A FULL RECONCILE — it PRUNES. A service or redirect URI removed from here
+      # is deregistered on the next pass, so the list must be EXHAUSTIVE: every service
+      # that uses this hub needs an entry, or it loses access. Three refusals bound the
+      # damage (see service-registry-reconciler.ts): unparseable JSON skips the whole
+      # pass, an unset/empty value skips the whole pass, and a service that has published
+      # no public key yet keeps its existing keys untouched rather than being revoked
+      # while it boots.
+      #
+      # Redirect URIs are matched BYTE-FOR-BYTE by /api/sso/approve — no trailing slash,
+      # no case-insensitivity, no path normalisation. They must equal exactly what the
+      # consuming service sends (for shattered-web: AuthHub__RedirectUri and
+      # GameSso__CallbackRedirectUri in DSL/Server/docker-compose-prod.yml).
+      # ------------------------------------------------------------------
+      SERVICE_REGISTRY: >-
+        {
+          "shattered-web": {
+            "redirectUris": [
+              "https://shatteredarchive.com/user/sso/callback",
+              "https://shatteredarchive.com/user/game-sso/callback"
+            ]
+          }
+        }
+      SERVICE_PUBLIC_KEY_DIR: "/repo/apps/auth-server/service-public-keys"
     expose:
       - "62000"
     networks:
@@ -356,3 +403,10 @@ services:
 volumes:
   auth-server-secrets:
   scrum-poker-data:
+  # Public keys published by consuming services for auto-registration. Named explicitly
+  # (not project-scoped) because the C# site is a SEPARATE compose project that declares
+  # it `external` — without a fixed name each project would create its own, and the two
+  # would never see each other's files. Same ownership split as the sa-shared network:
+  # this stack creates it, the other consumes it, so bring this one up first.
+  sa-service-pubkeys:
+    name: sa-service-pubkeys

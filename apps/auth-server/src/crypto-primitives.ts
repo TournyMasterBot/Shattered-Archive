@@ -112,6 +112,40 @@ export function generateServiceKeypair(): { publicKeyPem: string; privateKeyPem:
   };
 }
 
+/**
+ * Re-exports an Ed25519 public key PEM in this process's own canonical SPKI form,
+ * or returns null if it is not a usable Ed25519 public key.
+ *
+ * Exists for the service-registry reconciler, which compares a PEM written by a
+ * DIFFERENT runtime (the C# service's BouncyCastle writer, via the shared public-key
+ * directory) against one already stored here. Those two agree on the DER but not
+ * necessarily on the text around it — line width, CRLF vs LF, a trailing newline. A
+ * raw string compare would therefore see every boot as "a new key", re-registering
+ * forever and never converging, which is exactly what an idempotent reconciler must
+ * not do. Comparing canonical forms compares the KEY, not its formatting.
+ *
+ * Doubles as validation: anything that is not an Ed25519 public key (a truncated
+ * file caught mid-write, a private key published by mistake, junk) returns null
+ * rather than throwing, so one bad file cannot take down the reconcile pass.
+ */
+export function canonicalizePublicKeyPem(pem: string): string | null {
+  // Rejected BEFORE parsing, because crypto.createPublicKey() accepts a PRIVATE key PEM
+  // and silently DERIVES the public half from it. That would make a private key
+  // mistakenly published into the shared public-key directory look perfectly valid —
+  // registering fine while secret material sits readable in a volume that is only ever
+  // supposed to carry public keys. The one thing this directory must never accept is the
+  // thing it would otherwise accept quietly.
+  if (/-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/.test(pem)) return null;
+  if (!/-----BEGIN PUBLIC KEY-----/.test(pem)) return null;
+  try {
+    const key = crypto.createPublicKey(pem);
+    if (key.asymmetricKeyType !== 'ed25519') return null;
+    return key.export({ type: 'spki', format: 'pem' }).toString();
+  } catch {
+    return null;
+  }
+}
+
 /** Compact base64url(payloadJson) + '.' + base64url(signature) — JWT-shaped, hand-rolled, no JWT library. */
 export function signAssertion(payload: object, privateKeyPem: string): string {
   const payloadJson = Buffer.from(JSON.stringify(payload), 'utf8');

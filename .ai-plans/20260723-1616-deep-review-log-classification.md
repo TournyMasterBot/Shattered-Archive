@@ -143,3 +143,21 @@ with coverage -- there is no hard 100% target, this is an exploratory capability
   User confirmation: "This is a fine stopping point for now" -- plan left ACTIVE with
   steps 5-6 unchecked for a future session to pick up, not meant to be worked
   immediately.
+- 2026-08-02 step 5 NOT checked off, but a large part of its input is now settled.
+  Working from the text-to-speech side, the whole of `CapturedPatterns_Reference.txt`
+  was verified against the full corpus (2,478 files / 2.85 GB: GameLogs/*.txt,
+  ShatteredArchive/Docker/**/*.jsonl, AGL, Books, raw.log). Two of the exact buckets
+  step 5 targets are resolved: the breath-weapon leftover group is INVENTORY
+  DESTRUCTION (bubbles and boils / blackens and crisps / sparks and sputters, 1,140
+  hits), and the pet/charmed-follower dialogue is 1-of-3 real ("What?  And leave your
+  beloved master?", 224). Also settled: the affect table end to end (66/92 spells
+  confirmed, 8 never occur, SIX wordings wrong as written), plus retractions of four
+  earlier corpus-absent calls -- the Unholy proc alone has 96,825 hits.
+  METHOD NOTE FOR WHOEVER RESUMES THIS: naive literal search of these logs yields
+  FALSE NEGATIVES three ways -- the reference doc's quotes are its own not the game's,
+  ANSI colour sits INSIDE phrases, and half the corpus stores text as escaped JSON.
+  See the "HOW TO SEARCH THIS CORPUS" block now at the top of the reference doc.
+  Step 5's own deliverable (`scripts/rules.json` + a `classify-logs.js` run measured
+  against the 31.0% Unclassified baseline) was NOT touched, hence still unchecked --
+  but the pattern research it depends on is done and the corrected wordings are
+  ready to fold into rules.json.

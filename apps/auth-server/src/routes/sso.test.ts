@@ -82,3 +82,68 @@ describe('POST /api/sso/approve', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('GET /api/sso/validate', () => {
+  let harness: TestHarness;
+
+  beforeEach(async () => {
+    harness = await startTestApp();
+  });
+
+  afterEach(async () => {
+    await harness.close();
+  });
+
+  function registerConsumer(service = 'consumer-service'): void {
+    const { publicKeyPem } = generateServiceKeypair();
+    harness.deps.serviceKeyStore.registerKey(service, publicKeyPem);
+    harness.deps.serviceKeyStore.addRedirectUri(service, REDIRECT_URI);
+  }
+
+  async function validate(cookie: string | null, service: string, redirectUri: string): Promise<Response> {
+    const qs = `service=${encodeURIComponent(service)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    return fetch(`${harness.base}/api/sso/validate?${qs}`, { headers: cookie ? { Cookie: cookie } : {} });
+  }
+
+  // The consent page navigates to redirect_uri on Cancel as well as Continue, and Cancel
+  // asked the server nothing — so without this check the hub was an open redirect to any
+  // URL placed in the query string, on the domain users trust with their password.
+  it('accepts a registered service + redirect URI pair', async () => {
+    registerConsumer();
+    const cookie = await fullyOnboardedSession(harness.base, 'alice');
+    const res = await validate(cookie, 'consumer-service', REDIRECT_URI);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+  });
+
+  it('refuses an unregistered redirect URI for a real service', async () => {
+    registerConsumer();
+    const cookie = await fullyOnboardedSession(harness.base, 'alice');
+    const res = await validate(cookie, 'consumer-service', 'https://evil.example/steal');
+    expect(res.status).toBe(400);
+  });
+
+  it('refuses an unknown service with the SAME message — registration state is not an oracle', async () => {
+    registerConsumer();
+    const cookie = await fullyOnboardedSession(harness.base, 'alice');
+    const unknownService = await validate(cookie, 'no-such-service', REDIRECT_URI);
+    const unknownUri = await validate(cookie, 'consumer-service', 'https://evil.example/steal');
+    expect(unknownService.status).toBe(400);
+    expect(((await unknownService.json()) as { error: string }).error).toBe(
+      ((await unknownUri.json()) as { error: string }).error,
+    );
+  });
+
+  it('refuses missing parameters', async () => {
+    registerConsumer();
+    const cookie = await fullyOnboardedSession(harness.base, 'alice');
+    expect((await validate(cookie, '', REDIRECT_URI)).status).toBe(400);
+    expect((await validate(cookie, 'consumer-service', '')).status).toBe(400);
+  });
+
+  it('requires a session — an anonymous visitor cannot probe the registry with it', async () => {
+    registerConsumer();
+    const res = await validate(null, 'consumer-service', REDIRECT_URI);
+    expect(res.status).toBe(401);
+  });
+});

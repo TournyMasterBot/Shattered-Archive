@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import path from 'path';
 
 import { EncryptedFileStore } from './encrypted-file-store.js';
-import { verifyAssertion as verifyEd25519Assertion } from './crypto-primitives.js';
+import { verifyAssertion as verifyEd25519Assertion, canonicalizePublicKeyPem } from './crypto-primitives.js';
 import { AuthError } from './errors.js';
 
 /**
@@ -37,6 +37,30 @@ interface ServiceEntry {
 
 interface ServiceKeyRegistryData {
   services: ServiceEntry[];
+}
+
+/** One service's desired end state, as handed to reconcile(). */
+export interface DesiredServiceState {
+  serviceName: string;
+  /**
+   * Canonical SPKI PEMs (see canonicalizePublicKeyPem) that should be live for this service,
+   * or `null` to leave its keys ALONE.
+   *
+   * null is not the same as `[]`. It means "the desired key set is unknown right now" —
+   * the caller found no published key files, which happens transiently whenever the
+   * consuming service has not booted yet or its volume is not mounted. Treating that as
+   * an empty desired set would revoke live credentials every time a consumer restarts
+   * slowly. `[]` genuinely means "this service should have no live keys".
+   */
+  publicKeyPems: string[] | null;
+  /** The exact set of redirect URIs this service should have — anything else is removed. */
+  redirectUris: string[];
+}
+
+export interface ReconcileAction {
+  serviceName: string;
+  kind: 'key-registered' | 'key-revoked' | 'redirect-added' | 'redirect-removed' | 'service-deregistered';
+  detail: string;
 }
 
 // Assertions must be short-lived: exp - iat bounded, exp not in the past, iat not (meaningfully) future.
@@ -136,6 +160,100 @@ export class ServiceKeyStore extends EncryptedFileStore<ServiceKeyRegistryData> 
   hasRedirectUri(serviceName: string, uri: string): boolean {
     const entry = this.read().services.find((s) => s.serviceName === serviceName);
     return !!entry?.redirectUris?.includes(uri);
+  }
+
+  /**
+   * Drives the registry to exactly `desired` in ONE read/write pass, returning what
+   * it changed (empty array = already converged).
+   *
+   * This is a FULL reconcile: keys and redirect URIs not present in `desired` are
+   * revoked/removed, and a service absent from `desired` entirely is deregistered by
+   * revoking all of its keys. Callers own the decision of what "desired" means — in
+   * particular, an empty desired set must NOT reach here as "prune everything" (see
+   * reconcileServiceRegistry, which refuses to run on empty config).
+   *
+   * Deregistration REVOKES rather than deletes: revokedAt is the audit trail for why
+   * a service stopped authenticating, and deleting the entry would erase it. Since
+   * isRegisteredService() requires a non-revoked key, the effect is the same.
+   *
+   * Writes only when something changed. That keeps the file mtime stable across
+   * no-op passes, which matters because EncryptedFileStore uses mtime to decide
+   * whether to re-read — a write on every pass would invalidate every reader's cache
+   * for no reason, and would hide genuine convergence failures.
+   */
+  reconcile(desired: DesiredServiceState[]): ReconcileAction[] {
+    const data = this.read();
+    const actions: ReconcileAction[] = [];
+    const now = new Date().toISOString();
+    const desiredNames = new Set(desired.map((d) => d.serviceName));
+
+    for (const want of desired) {
+      let entry = data.services.find((s) => s.serviceName === want.serviceName);
+      if (!entry) {
+        entry = { serviceName: want.serviceName, keys: [] };
+        data.services.push(entry);
+      }
+
+      // --- keys: compare by CANONICAL form, never raw text (see canonicalizePublicKeyPem) ---
+      // null = desired set unknown this pass; leave the service's keys exactly as they are.
+      if (want.publicKeyPems === null) {
+        this.reconcileRedirectUris(entry, want, actions);
+        continue;
+      }
+      const wanted = new Set(want.publicKeyPems);
+      for (const pem of want.publicKeyPems) {
+        const already = entry.keys.some((k) => !k.revokedAt && canonicalizePublicKeyPem(k.publicKeyPem) === pem);
+        if (already) continue;
+        const keyId = crypto.randomBytes(6).toString('hex');
+        entry.keys.push({ keyId, publicKeyPem: pem, createdAt: now });
+        actions.push({ serviceName: want.serviceName, kind: 'key-registered', detail: keyId });
+      }
+      for (const key of entry.keys) {
+        if (key.revokedAt) continue;
+        const canonical = canonicalizePublicKeyPem(key.publicKeyPem);
+        // A key whose stored PEM no longer parses cannot verify anything anyway, so
+        // it is revoked rather than left as a permanently-failing live key.
+        if (canonical !== null && wanted.has(canonical)) continue;
+        key.revokedAt = now;
+        actions.push({
+          serviceName: want.serviceName,
+          kind: 'key-revoked',
+          detail: canonical === null ? `${key.keyId} (unparseable)` : key.keyId,
+        });
+      }
+
+      this.reconcileRedirectUris(entry, want, actions);
+    }
+
+    // --- services the config no longer declares ---
+    for (const entry of data.services) {
+      if (desiredNames.has(entry.serviceName)) continue;
+      const live = entry.keys.filter((k) => !k.revokedAt);
+      const hadUris = (entry.redirectUris ?? []).length > 0;
+      if (live.length === 0 && !hadUris) continue;
+      for (const key of live) key.revokedAt = now;
+      entry.redirectUris = [];
+      actions.push({
+        serviceName: entry.serviceName,
+        kind: 'service-deregistered',
+        detail: `${live.length} key(s) revoked — not declared in SERVICE_REGISTRY`,
+      });
+    }
+
+    if (actions.length > 0) this.write(data);
+    return actions;
+  }
+
+  /** Redirect URIs are always driven from config, so they reconcile even when the key set is unknown. */
+  private reconcileRedirectUris(entry: ServiceEntry, want: DesiredServiceState, actions: ReconcileAction[]): void {
+    const current = entry.redirectUris ?? [];
+    for (const uri of want.redirectUris) {
+      if (!current.includes(uri)) actions.push({ serviceName: want.serviceName, kind: 'redirect-added', detail: uri });
+    }
+    for (const uri of current) {
+      if (!want.redirectUris.includes(uri)) actions.push({ serviceName: want.serviceName, kind: 'redirect-removed', detail: uri });
+    }
+    entry.redirectUris = [...want.redirectUris];
   }
 
   private sweepExpiredNonces(now: number): void {

@@ -132,6 +132,14 @@ export const api = {
     postJson<{ message: string }>('/api/account/change-password', { currentPassword, newPassword }),
   requestEmail: (email: string) => postJson<{ message: string }>('/api/account/email', { email }),
   verifyEmail: (token: string) => postJson<{ message: string }>('/api/account/email/verify', { token }),
+  /**
+   * Is this hand-off sanctioned? Must succeed BEFORE the consent screen renders — the
+   * page navigates to redirectUri on Cancel as well as Continue, so an unvalidated
+   * request would make this origin an open redirect. Rejects with the same generic
+   * error as ssoApprove.
+   */
+  ssoValidate: (service: string, redirectUri: string) =>
+    request<{ ok: true }>(`/api/sso/validate?service=${encodeURIComponent(service)}&redirect_uri=${encodeURIComponent(redirectUri)}`),
   /** SSO consent (Phase A): mints the one-time code the consumer's backend exchanges. */
   ssoApprove: (service: string, redirectUri: string) => postJson<{ code: string }>('/api/sso/approve', { service, redirectUri }),
 
