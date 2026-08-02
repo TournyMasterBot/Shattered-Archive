@@ -150,7 +150,7 @@ jobs:
 
       - name: Comment coverage on PR (overall + per project)
         if: github.event_name == 'pull_request'
-        uses: MishaKav/jest-coverage-comment@v1
+        uses: MishaKav/jest-coverage-comment@v1.0.34
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           unique-id-for-comment: ci-test-coverage
