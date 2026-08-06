@@ -539,13 +539,15 @@
   gap: 6px;
 }
 
+/*
+ * Sizing (width/max-width/min-height) is set INLINE in AdSlot.tsx, not here — a stylesheet
+ * `<link>` is not guaranteed to have applied by the time a deferred module script runs, and
+ * AdSense measures this element the moment it mounts. Only cosmetic properties belong in this
+ * class; see the note above AD_INNER_STYLE in AdSlot.tsx for what actually went wrong without it.
+ */
 .sp-ad-inner {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  /* The rectangle family's widest member; Google measures this element to choose a size. */
-  width: 100%;
-  max-width: 336px;
-  min-height: 250px;
   display: flex;
   align-items: center;
   justify-content: center;

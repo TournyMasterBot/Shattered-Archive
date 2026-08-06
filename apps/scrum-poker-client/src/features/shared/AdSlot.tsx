@@ -41,7 +41,21 @@ import { readAdConfig, type AdConfig } from './ad-config.js';
  * statically-known constant and the minifier can't drop it. Testability is worth more than
  * deleting one unreachable URL string — but don't mistake "no ad code in the bundle" for what
  * this guarantees, which is "no ad request at runtime".
+ *
+ * `.sp-ad-inner`'s width/height are set INLINE below, not just via the `.sp-ad-inner` CSS
+ * class (2026-08-06 fix). `<script type="module">` runs as soon as the document finishes
+ * parsing and does NOT wait for `<link rel="stylesheet">` to finish loading/applying — on a
+ * live incident this raced, AdSense measured an unstyled, near-zero-width container ("No slot
+ * size for availableWidth=90" in the console) and fell back to legacy `document.write()`
+ * rendering, which — called after the page has already loaded — WIPES AND RE-EXECUTES THE
+ * ENTIRE DOCUMENT. That is a plausible single root cause for everything reported alongside it:
+ * a blocked inline-script CSP violation (document.write's injected markup), and duplicate room
+ * joins (the app's whole module graph re-running mid-session opens a second websocket before
+ * the first ever persisted its participant secret, so neither join can see the other's row).
+ * Inline sizing guarantees the correct dimensions from the very first paint, CSS or no CSS,
+ * which removes the race outright rather than narrowing its window.
  */
+const AD_INNER_STYLE = { width: '100%', maxWidth: 336, minHeight: 250 } as const;
 
 interface AdSlotProps {
   /** Injected in tests; production reads the build-time env. */
@@ -92,7 +106,7 @@ export default function AdSlot({ config }: AdSlotProps) {
     return (
       <aside className="sp-ad" aria-hidden="true">
         <span className="sp-ad-label">Ads by Google</span>
-        <div className="sp-ad-inner">
+        <div className="sp-ad-inner" style={AD_INNER_STYLE}>
           <span className="sp-ad-placeholder">Ad slot (set VITE_AD_CLIENT and VITE_AD_SLOT to enable)</span>
         </div>
       </aside>
@@ -102,7 +116,7 @@ export default function AdSlot({ config }: AdSlotProps) {
   return (
     <aside className="sp-ad">
       <span className="sp-ad-label">Ads by Google</span>
-      <div className="sp-ad-inner">
+      <div className="sp-ad-inner" style={AD_INNER_STYLE}>
         <ins
           className="adsbygoogle"
           style={{ display: 'block', width: '100%' }}

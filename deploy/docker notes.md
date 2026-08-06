@@ -1,3 +1,8 @@
+docker compose -f deploy/docker-compose.yml build --no-cache
+docker compose -f deploy/docker-compose.yml up -d
+docker compose -f deploy/docker-compose.yml up -d --force-recreate nginx
+
+
 # ── DslLogViewer ────────────────────────────────────────────
 # Run from C:\Projects\DslLogViewer (or wherever the files are copied on server)
 
