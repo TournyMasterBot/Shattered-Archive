@@ -29,10 +29,15 @@ import { storage } from '../storage.js';
  *    would carry the cookie along, so opening it before the mint's `Set-Cookie` has landed in
  *    the jar means a first-time participant's secret never reaches this browser, and a
  *    refresh a moment later starts a second, unlinked participant instead of reattaching.
- *    Once a socket is already open, re-running the HTTP step is still done (a room-cleared
- *    roster mints a fresh secret that a future reconnect needs) but is not itself blocking —
- *    the live connection's identity for THIS session doesn't depend on the cookie landing in
- *    time, only a later reconnect does.
+ *
+ *    This step is ONLY for a brand-new socket, though (2026-08-06 correction) — an
+ *    ALREADY-OPEN socket's `join` is WS-only, no HTTP mint. The gateway captures its cookie
+ *    header once, at connection time, and never refreshes it; an HTTP mint's `Set-Cookie` on
+ *    a live connection is invisible to that frozen snapshot, so the WS join would still read
+ *    the stale cookie and mint a SECOND, separate participant — every time, not just under a
+ *    race. A live "Clear all users" incident cloned the clicker this exact way before the fix.
+ *    The cost of skipping it is mild: that rejoin's fresh secret does not reach a cookie until
+ *    a genuine future reconnect (a new socket) runs its own mint-before-connect sequence.
  */
 
 export type ConnectionStatus = 'idle' | 'connecting' | 'open' | 'reconnecting' | 'closed';
@@ -133,22 +138,6 @@ export function useScrumRoom(roomId: string | null): ScrumRoomApi {
   );
 
   /**
-   * Mints/reattaches over HTTP, then sends the websocket `join` frame on an ALREADY-OPEN
-   * socket. Used for every join that doesn't require standing up a new connection (auto-rejoin
-   * after the room clears, the eviction banner's "Rejoin" button, a `join()` call while already
-   * connected) — unlike the initial connect below, the current connection's identity doesn't
-   * depend on the mint's timing, so the websocket send does not wait on it.
-   */
-  const mintThenSendJoin = useCallback(
-    (targetRoomId: string) => {
-      const name = nameRef.current;
-      if (!name) return;
-      void mintParticipant(targetRoomId, name).finally(() => sendJoin(targetRoomId));
-    },
-    [mintParticipant, sendJoin],
-  );
-
-  /**
    * Opens the socket and wires its lifecycle. Safe to call repeatedly; it no-ops when live.
    *
    * The retry recurses into the inner `open` rather than into `connect` itself: a
@@ -203,21 +192,28 @@ export function useScrumRoom(roomId: string | null): ScrumRoomApi {
               setRoom(msg.room);
               // Missing from the roster without an eviction notice means the organizer cleared
               // the room (or the server restarted): step straight back in. See note 2 above.
-              // Goes through the HTTP mint again too — a cleared roster means this browser's
-              // OLD secret cookie no longer matches any row, so the reattach below mints a
-              // fresh one, and that fresh secret only reaches a future reconnect if it lands
-              // in a cookie now.
               //
-              // rejoinInFlight gates this to ONE outstanding attempt: a clear broadcasts once
-              // per participant as each one rejoins in turn, and every one of those broadcasts
-              // still shows "my id missing" until THIS connection's own `joined` reply lands —
-              // without the guard, each intervening broadcast fires its own rejoin, and every
-              // one mints a genuinely separate participant since none of them has the others'
-              // fresh secret yet to reattach to. See the ref's own comment for the full case.
+              // Deliberately WS-only — no HTTP mint here (2026-08-06 fix; a live "Clear all
+              // users" incident cloned the clicker every time, not just under a race). The
+              // gateway's `conn.cookieHeader` is a snapshot taken once at connection time and
+              // never refreshed; an HTTP mint's `Set-Cookie` on an ALREADY-OPEN socket is
+              // invisible to that snapshot, so the WS join below would still read the OLD
+              // (now-unmatched, post-clear) cookie and mint a SECOND, separate participant —
+              // deterministically, every time, regardless of any timing guard. Skipping the
+              // HTTP step means exactly one mint happens (via this WS join), at the cost that
+              // its fresh secret does not reach a cookie until a genuine future reconnect
+              // (new socket) runs its OWN mint-before-connect sequence — a rare "looks like a
+              // new join" on a refresh right after a clear, not a guaranteed duplicate.
+              //
+              // rejoinInFlight still gates this to ONE outstanding attempt: a clear broadcasts
+              // once per participant as each one rejoins in turn, and every one of those
+              // broadcasts still shows "my id missing" until THIS connection's own `joined`
+              // reply lands. Without the guard, each intervening broadcast would fire its own
+              // `join` frame before the first one's reply updates `participantRef.current`.
               const me = participantRef.current;
               if (me && !evictedRef.current && !rejoinInFlight.current && !msg.room.participants.some((p) => p.id === me)) {
                 rejoinInFlight.current = true;
-                mintThenSendJoin(msg.room.id);
+                sendJoin(msg.room.id);
               }
               return;
             }
@@ -299,10 +295,14 @@ export function useScrumRoom(roomId: string | null): ScrumRoomApi {
       setEvicted(false);
       setFatalError(null);
 
-      if (socketRef.current?.readyState === WebSocket.OPEN) mintThenSendJoin(roomId);
+      // Already-open socket (e.g. the eviction banner's "Rejoin" button) — WS-only, same
+      // reasoning as the auto-rejoin in the 'state' handler above: an HTTP mint here would be
+      // invisible to this connection's already-captured cookie snapshot and would mint a
+      // second, separate participant every time, not just under a race.
+      if (socketRef.current?.readyState === WebSocket.OPEN) sendJoin(roomId);
       else connect(roomId);
     },
-    [roomId, connect, mintThenSendJoin],
+    [roomId, connect, sendJoin],
   );
 
   const vote = useCallback((card: string | null) => send({ type: 'vote', card }), [send]);

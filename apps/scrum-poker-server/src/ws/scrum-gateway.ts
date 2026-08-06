@@ -57,6 +57,16 @@ export interface ScrumConn {
    * never from the message itself — since roomId (and so which cookie name to look for) isn't
    * known until the first `join` frame arrives. Undefined for a connection with no cookies at
    * all (cookies disabled, or a genuinely first-ever visit with no prior HTTP mint).
+   *
+   * FROZEN for the life of the connection — there is no way to update it mid-socket, since a
+   * WebSocket carries no further Cookie header after the upgrade handshake. This is exactly
+   * why the client (useScrumRoom.ts) never re-mints over HTTP for an already-open socket: an
+   * HTTP mint's `Set-Cookie` on a live connection is invisible to THIS field, so a `join` frame
+   * on that socket would still read the stale value here, find no match, and mint a second,
+   * separate participant — deterministically, not just under a race. A live "Clear all users"
+   * incident cloned the clicker this exact way (2026-08-06) before the client-side fix landed.
+   * If a future change reintroduces an HTTP mint ahead of an already-open socket's `join`, it
+   * will reopen this bug — the fix belongs on the client, not here.
    */
   cookieHeader?: string;
   send(msg: ScrumServerMessage): void;
