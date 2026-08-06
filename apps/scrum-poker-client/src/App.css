@@ -510,21 +510,42 @@
 /* ── Ad slot ────────────────────────────────────────────────────────────── */
 
 /*
- * The single ad placement in the app. Bounded height and a muted label so it reads as a
- * footer, not a takeover — the whole point of stripping the reference site's eight slots.
+ * The single ad placement in the app — the whole point of stripping the reference site's
+ * eight slots down to this.
+ *
+ * SEPARATION IS THE DESIGN. The unit is centred in its own bordered surface below the
+ * estimating content, explicitly labelled "Ads by Google" rather than a vague
+ * "Advertisement", and separated from the app above it by a rule. It must never read as part
+ * of the estimating UI: an ad a user could mistake for a control is both worse UX and an
+ * AdSense placement-policy problem.
+ *
+ * SHAPE comes from the FORMAT REQUEST in AdSlot.tsx (`data-ad-format="rectangle"` with
+ * `data-full-width-responsive="false"`) plus the 336px cap below — that is the square/
+ * rectangle family's widest member, and the container width is what Google measures to pick a
+ * creative. It is NOT enforced by clipping: the AdSense program policies prohibit obscuring
+ * any part of an ad, so a `max-height` plus `overflow: hidden` here would be a policy
+ * violation dressed up as tidy layout. An earlier version of this rule had exactly that;
+ * `min-height` alone now reserves the space so the footer does not jump when the creative
+ * lands.
  */
 .sp-ad {
   max-width: var(--max-width);
   margin: 0 auto 24px;
-  padding: 0 20px;
+  padding: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
 
 .sp-ad-inner {
-  border: 1px dashed var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  min-height: 90px;
-  max-height: 120px;
-  overflow: hidden;
+  /* The rectangle family's widest member; Google measures this element to choose a size. */
+  width: 100%;
+  max-width: 336px;
+  min-height: 250px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -533,11 +554,10 @@
 
 .sp-ad-label {
   display: block;
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   color: var(--text-muted);
-  margin-bottom: 4px;
 }
 
 .sp-ad-placeholder {

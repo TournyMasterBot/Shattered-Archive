@@ -7,6 +7,7 @@ import type { AddressInfo } from 'node:net';
 
 import type { ScrumPokerConfig } from '../config.js';
 import { RoomStore } from '../room-store.js';
+import { hostCookieName, secretCookieName } from './cookies.js';
 import { registerScrumApiRoutes } from './scrum-api-routes.js';
 
 const T0 = 1_700_000_000_000;
@@ -24,13 +25,21 @@ function tempConfig(overrides: Partial<ScrumPokerConfig> = {}): ScrumPokerConfig
   };
 }
 
-async function startServer(store: RoomStore): Promise<{ server: http.Server; url: string }> {
+async function startServer(store: RoomStore, roomTtlMs = 30 * 24 * HOUR): Promise<{ server: http.Server; url: string }> {
   const app = express();
   app.use(express.json());
-  registerScrumApiRoutes(app, { store, now: () => T0 });
+  registerScrumApiRoutes(app, { store, now: () => T0, roomTtlMs });
   const server = http.createServer(app);
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   return { server, url: `http://127.0.0.1:${(server.address() as AddressInfo).port}` };
+}
+
+/** Pulls one cookie's `name=value` (attributes stripped) out of a fetch Response's Set-Cookie. */
+function cookieValue(res: Response, name: string): string | undefined {
+  const header = res.headers.get('set-cookie') ?? '';
+  const match = header.split(';')[0];
+  if (!match || !match.startsWith(`${name}=`)) return undefined;
+  return decodeURIComponent(match.slice(name.length + 1));
 }
 
 describe('POST /api/scrum/rooms', () => {
@@ -47,14 +56,23 @@ describe('POST /api/scrum/rooms', () => {
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
 
-  it('creates a room with defaults and returns the host token once', async () => {
+  it('creates a room with defaults and mints the host token straight into an HttpOnly cookie', async () => {
     const res = await fetch(`${url}/api/scrum/rooms`, { method: 'POST' });
     expect(res.status).toBe(201);
 
-    const body = (await res.json()) as { roomId: string; hostToken: string; settings: { deck: string[] } };
+    const body = (await res.json()) as { roomId: string; settings: { deck: string[] } };
     expect(body.roomId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
-    expect(body.hostToken).toBeTruthy();
     expect(body.settings.deck).toContain('13');
+    // Never in the body: a script that could read it there would defeat the whole point of
+    // moving it to an HttpOnly cookie.
+    expect(JSON.stringify(body)).not.toContain('hostToken');
+
+    const setCookie = res.headers.get('set-cookie') ?? '';
+    expect(setCookie).toContain(hostCookieName(body.roomId));
+    expect(setCookie).toContain('HttpOnly');
+    expect(setCookie).toContain('Secure');
+    expect(setCookie).toContain('Path=/');
+    expect(cookieValue(res, hostCookieName(body.roomId))).toBeTruthy();
   });
 
   it('accepts a friendly name and a comma-separated deck', async () => {
@@ -119,5 +137,93 @@ describe('GET /api/scrum/rooms/:id', () => {
 
     expect(JSON.parse(text)).toEqual({ id: room.id, friendlyName: 'Platform Team', participantCount: 0 });
     expect(text).not.toContain(hostToken);
+  });
+});
+
+describe('POST /api/scrum/rooms/:id/join', () => {
+  let server: http.Server;
+  let url: string;
+  let store: RoomStore;
+
+  beforeEach(async () => {
+    store = new RoomStore(tempConfig());
+    ({ server, url } = await startServer(store));
+  });
+
+  afterEach(async () => {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  });
+
+  it('404s for an unknown room rather than minting anything', async () => {
+    const res = await fetch(`${url}/api/scrum/rooms/00000001/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Ada' }),
+    });
+    expect(res.status).toBe(404);
+    expect(res.headers.get('set-cookie')).toBeNull();
+  });
+
+  it('mints a participant and sets its secret straight into an HttpOnly cookie, never the body', async () => {
+    const { room } = store.create(T0);
+    const res = await fetch(`${url}/api/scrum/rooms/${room.id}/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Ada' }),
+    });
+    expect(res.status).toBe(200);
+
+    const body = (await res.json()) as { participantId: string; isHost: boolean };
+    expect(body.participantId).toBeTruthy();
+    expect(body.isHost).toBe(false);
+    expect(JSON.stringify(body)).not.toContain('secret');
+
+    const setCookie = res.headers.get('set-cookie') ?? '';
+    expect(setCookie).toContain(secretCookieName(room.id));
+    expect(setCookie).toContain('HttpOnly');
+    const secret = cookieValue(res, secretCookieName(room.id));
+    expect(secret).toBeTruthy();
+    expect(store.get(room.id)?.participants).toEqual([
+      expect.objectContaining({ id: body.participantId, secret, name: 'Ada' }),
+    ]);
+  });
+
+  it('reattaches to the same participant when the secret cookie is replayed', async () => {
+    const { room } = store.create(T0);
+    const first = await fetch(`${url}/api/scrum/rooms/${room.id}/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Ada' }),
+    });
+    const firstBody = (await first.json()) as { participantId: string };
+    const secret = cookieValue(first, secretCookieName(room.id));
+
+    const second = await fetch(`${url}/api/scrum/rooms/${room.id}/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: `${secretCookieName(room.id)}=${secret}` },
+      body: JSON.stringify({ name: 'Ada' }),
+    });
+    const secondBody = (await second.json()) as { participantId: string };
+
+    expect(secondBody.participantId).toBe(firstBody.participantId);
+    expect(store.get(room.id)?.participants).toHaveLength(1);
+  });
+
+  it('reports isHost only when the host cookie matches this room’s token', async () => {
+    const { room, hostToken } = store.create(T0);
+
+    const withToken = await fetch(`${url}/api/scrum/rooms/${room.id}/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: `${hostCookieName(room.id)}=${hostToken}` },
+      body: JSON.stringify({ name: 'Ada' }),
+    });
+    expect(((await withToken.json()) as { isHost: boolean }).isHost).toBe(true);
+
+    const withWrongToken = await fetch(`${url}/api/scrum/rooms/${room.id}/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: `${hostCookieName(room.id)}=wrong` },
+      body: JSON.stringify({ name: 'Grace' }),
+    });
+    expect(((await withWrongToken.json()) as { isHost: boolean }).isHost).toBe(false);
   });
 });

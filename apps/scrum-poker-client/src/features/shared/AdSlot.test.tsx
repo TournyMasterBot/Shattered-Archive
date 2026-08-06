@@ -33,4 +33,14 @@ describe('AdSlot', () => {
     const script = document.getElementById('sp-ad-loader') as HTMLScriptElement | null;
     expect(script?.src).toContain('ca-pub-test');
   });
+
+  it('shows only the placeholder in dev even when real credentials are configured', () => {
+    // The dev/experimental compose's own comment allows setting real ad ids to test the wiring
+    // locally — this is the backstop that keeps that from ever shipping a live ad request.
+    const { container } = render(<AdSlot config={{ client: 'ca-pub-test', slot: '123', isDev: true }} />);
+
+    expect(container.querySelectorAll('ins.adsbygoogle')).toHaveLength(0);
+    expect(screen.getByText(/Ad slot/i)).toBeDefined();
+    expect(document.getElementById('sp-ad-loader')).toBeNull();
+  });
 });

@@ -4,14 +4,14 @@ import { DEFAULT_DECK, formatDeck, parseDeck, validateDeck } from '@shatteredarc
 
 import { api, ApiError } from '../../api/client.js';
 import { extractRoomId } from '../../routing/room-id.js';
-import { storage } from '../../storage.js';
 
 /**
  * Create a room, or join one by code.
  *
- * Creating stores the returned host token under the new room's id — that token, and only
- * that token, is what makes this browser the organizer later. It is issued exactly once, so
- * if it is lost the room simply has no organizer; nothing can re-mint it.
+ * Creating lands this browser's host token straight into an HttpOnly cookie (the create
+ * response never carries it) — that cookie, and only that cookie, is what makes this browser
+ * the organizer later. It is minted exactly once, so if it is lost the room simply has no
+ * organizer; nothing can re-mint it.
  */
 export default function LandingPage({ onEnterRoom }: { onEnterRoom: (roomId: string) => void }) {
   const [friendlyName, setFriendlyName] = useState('');
@@ -30,7 +30,6 @@ export default function LandingPage({ onEnterRoom }: { onEnterRoom: (roomId: str
     setCreateError(null);
     try {
       const created = await api.createRoom({ friendlyName, deck: deckText });
-      storage.setHostToken(created.roomId, created.hostToken);
       onEnterRoom(created.roomId);
     } catch (err) {
       setCreateError(err instanceof ApiError ? err.message : 'Could not create a room. Try again.');

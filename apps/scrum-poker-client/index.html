@@ -5,22 +5,14 @@
     <title>Scrum Poker – Shattered Archive</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Lightweight planning poker for small teams. Create a room, share the code, estimate together." />
-    <script>
-      // Applied before first paint so a dark-mode user never gets a white flash. The app
-      // re-reads the same key on mount; this inline copy only wins the race, it is not the
-      // source of truth. Kept dependency-free and inline on purpose — a deferred module
-      // would run after the first frame, which is exactly what we are avoiding.
-      (function () {
-        try {
-          var stored = localStorage.getItem('scrum-poker:theme');
-          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-          var theme = stored === 'light' || stored === 'dark' ? stored : prefersDark ? 'dark' : 'light';
-          document.documentElement.setAttribute('data-theme', theme);
-        } catch (e) {
-          document.documentElement.setAttribute('data-theme', 'light');
-        }
-      })();
-    </script>
+    <!--
+      Theme applied before first paint. EXTERNAL, not inline, and no defer/async — see
+      public/theme-init.js for why (short version: it was inline, every CSP profile this app runs
+      under refuses inline script, so it silently never worked; the fix is an external file from
+      the same origin, never 'unsafe-inline' in the policy). Parsing must block here or the flash
+      this prevents comes back.
+    -->
+    <script src="/theme-init.js"></script>
   </head>
 
   <body>

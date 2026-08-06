@@ -20,7 +20,13 @@ export interface AdConfig {
   readonly client?: string;
   /** Ad unit id for this placement. */
   readonly slot?: string;
-  /** True under `vite dev`, where an unconfigured slot shows a placeholder so it stays visible. */
+  /**
+   * True under `vite dev` OR the dev/experimental Docker build (`VITE_SP_DEV=true`, set by
+   * docker-compose.shattered-archive-experimental.yml). OVERRIDES configuration rather than
+   * merely filling a gap: AdSlot shows the placeholder whenever this is true, even if a real
+   * client/slot happen to be set — a dev deployment must never be able to ship live ad code,
+   * see AdSlot.tsx.
+   */
   readonly isDev: boolean;
 }
 

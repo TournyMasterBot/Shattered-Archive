@@ -1,11 +1,22 @@
 # Privacy Policy
 
+_Last updated: 5 August 2026._
+
 ## Overview
 
 ShatteredArchive is an independent fan project that provides tooling and
 research utilities for MUD players and enthusiasts. This document explains
 how data is handled when using the ShatteredArchive Software and related
 services.
+
+## Scope
+
+This document covers the ShatteredArchive Software you self-host and
+`shatteredarchive.com` with its subdomains.
+
+The public demo instances on `shatteredarchive.dev` are governed by a separate
+notice at <https://shatteredarchive.dev/privacy>, because their data handling
+differs. Nothing in that notice applies here.
 
 ---
 
@@ -42,13 +53,58 @@ under their own privacy policies.
 
 ---
 
+## Accounts and Sign-In
+
+Some services authenticate against a central sign-in hub at
+`auth.shatteredarchive.dev`. If you create an account there:
+
+- An email address and a **hashed** password are stored. The password itself is
+  never stored or logged.
+- Any API keys or device-bound credentials you register are stored alongside it.
+  Account records are encrypted at rest.
+- Failed sign-in attempts are counted per username and IP address in order to
+  lock out password guessing.
+
+The hub sets one cookie, `__Host-sa_session`, which keeps you signed in. It is
+strictly necessary, and it is deliberately constrained:
+
+- `HttpOnly` — page scripts cannot read it.
+- `Secure` — it is never sent over plain HTTP.
+- `SameSite=Lax`.
+- **Scoped to `auth.shatteredarchive.dev` alone.** It carries no `Domain`
+  attribute, so it is not transmitted to any sibling subdomain and no other
+  service can read it.
+- The `__Host-` name prefix is enforced by your browser, which will refuse the
+  cookie outright if any of the above is ever violated. It also means no other
+  subdomain can create a cookie of this name that the hub would accept.
+
+A `.com` site is cross-site relative to the hub and therefore never receives
+this cookie at all; where such a site needs sign-in, it uses a redirect-based
+single sign-on flow, and only the account identifier and email are shared with
+it — never the password, and never any other service's data.
+
+Account data is not shared with advertisers or analytics providers. No page
+that handles a password carries advertising or analytics.
+
+To delete an account, use the hub's account controls or write to the contact
+address below.
+
+---
+
 ## Cookies and Tracking
 
 The ShatteredArchive Software does not include built-in tracking, analytics,
-or advertising components.
+or advertising components. A self-hosted deployment sends nothing to
+ShatteredArchive or to any third party.
 
-Public websites operated by ShatteredArchive may use minimal cookies or logs
-necessary for basic operation.
+**`shatteredarchive.com` and its subdomains carry no advertising and no
+analytics**, and there is no plan to add either. They use only cookies
+necessary for operation, plus ordinary server access logs — IP address,
+timestamp, requested path, response status and user agent — used to operate the
+service, apply per-IP rate limits, and investigate abuse and faults.
+
+The sign-in hub sets one cookie, described under _Accounts and Sign-In_ above.
+It is strictly necessary and is not used for tracking.
 
 ---
 

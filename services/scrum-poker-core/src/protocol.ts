@@ -8,15 +8,25 @@ import type { RoomSettings, RoomSettingsPatch, RoomView } from './types.js';
  * primitive types for every field and returns `undefined` rather than throwing.
  */
 
-export const SCRUM_PROTOCOL_VERSION = 1;
+/**
+ * Bumped to 2 on 2026-08-05: `join` and `joined` no longer carry `participantSecret`/
+ * `hostToken` over the wire at all. Both credentials moved to HttpOnly cookies (minted by
+ * `POST /api/scrum/rooms/:id/join` and `POST /api/scrum/rooms`, read by the gateway off the
+ * WebSocket upgrade request) so neither is ever readable from page JS — see
+ * apps/scrum-poker-server/src/http/cookies.ts. Nothing currently branches on this number; it
+ * exists so a future incompatible wire change has somewhere to signal that from.
+ */
+export const SCRUM_PROTOCOL_VERSION = 2;
 
 export type ScrumClientMessage =
   /**
-   * First frame on every connection. `participantSecret`/`hostToken` are replayed from
-   * localStorage on a reconnect — both are credentials, which is why the participant's public
-   * id (broadcast to the whole room) is deliberately NOT what re-attaches you to your row.
+   * First frame on every connection. Carries no credential: the participant secret and host
+   * token are cookies attached automatically by the browser on the WebSocket upgrade request
+   * that precedes this frame, never a message field a script could read or replay by hand.
+   * The participant's public id (broadcast to the whole room) was never usable here either —
+   * that would let any member rejoin as any other.
    */
-  | { type: 'join'; roomId: string; name: string; participantSecret?: string; hostToken?: string }
+  | { type: 'join'; roomId: string; name: string }
   | { type: 'rename'; name: string }
   | { type: 'vote'; card: string | null }
   | { type: 'reveal' }
@@ -47,14 +57,13 @@ export type ScrumErrorCode =
 export type ScrumServerMessage =
   /**
    * Acknowledges a join and tells the client which row/host status the server settled on.
-   * `participantSecret` is the only time that credential crosses the wire outbound; the client
-   * stores it and replays it to re-attach. It goes to this ONE connection, never in a broadcast.
+   * Carries no secret — the credential that reattaches this browser to this row already lives
+   * in an HttpOnly cookie the browser itself is holding, never in a payload page JS can reach.
    */
   | {
       type: 'joined';
       roomId: string;
       participantId: string;
-      participantSecret: string;
       isHost: boolean;
       protocolVersion: number;
     }
@@ -115,15 +124,10 @@ export function parseScrumClientMessage(raw: string): ScrumClientMessage | undef
   if (!isRecord(parsed) || typeof parsed.type !== 'string') return undefined;
 
   switch (parsed.type) {
-    case 'join': {
-      if (typeof parsed.roomId !== 'string' || typeof parsed.name !== 'string') return undefined;
-      if ('participantSecret' in parsed && typeof parsed.participantSecret !== 'string') return undefined;
-      if ('hostToken' in parsed && typeof parsed.hostToken !== 'string') return undefined;
-      const msg: ScrumClientMessage = { type: 'join', roomId: parsed.roomId, name: parsed.name };
-      if (typeof parsed.participantSecret === 'string') msg.participantSecret = parsed.participantSecret;
-      if (typeof parsed.hostToken === 'string') msg.hostToken = parsed.hostToken;
-      return msg;
-    }
+    case 'join':
+      return typeof parsed.roomId === 'string' && typeof parsed.name === 'string'
+        ? { type: 'join', roomId: parsed.roomId, name: parsed.name }
+        : undefined;
     case 'rename':
       return typeof parsed.name === 'string' ? { type: 'rename', name: parsed.name } : undefined;
     case 'vote':

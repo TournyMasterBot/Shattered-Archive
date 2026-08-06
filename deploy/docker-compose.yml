@@ -40,6 +40,17 @@ services:
       # whatever the VISITOR is running on their own machine. Required — an unset value
       # leaves the literal ${...} in the rendered config and nginx refuses to start.
       NGINX_CSP_SCRIPTING_FILE: "${NGINX_CSP_SCRIPTING_FILE:-security-headers-scripting.conf}"
+      # CSP profile for scrum-poker.shatteredarchive.dev — the ONLY app permitted to carry an
+      # ad unit and an analytics tag. Set to the ad-permitting profile here because this stack
+      # is the one that actually serves them (see the scrum-poker-client build args below); it
+      # must stay in step with those, since a mismatch fails silently in one direction or the
+      # other — strict profile + populated args renders a permanently blank unit with a console
+      # CSP violation, and the ad profile + empty args pays 'unsafe-inline' for nothing.
+      #
+      # The experimental/local compose deliberately keeps the STRICT profile: ads and analytics
+      # are off there. Read security-headers-ads.conf before pointing any other block at it —
+      # never auth, never game-client.
+      NGINX_CSP_SCRUM_FILE: "${NGINX_CSP_SCRUM_FILE:-security-headers-ads.conf}"
       # The FRONT proxy (DSL/nginx/shattered_archive.site) that terminates TLS and forwards
       # here. Consumed by edge-subdomains.conf's set_real_ip_from, which is what keeps the
       # per-IP limit_req/limit_conn zones keyed on the real client instead of collapsing
@@ -390,8 +401,31 @@ services:
       args:
         # The app's single ad placement. Leave both empty and nothing renders — the page
         # makes no request to any ad network.
-        VITE_AD_CLIENT: ""
-        VITE_AD_SLOT: ""
+        #
+        # Enabling this takes THREE things, not one, and a partial job fails silently:
+        #   1. both values below non-empty (either one empty = AdSlot renders nothing),
+        #   2. NGINX_CSP_SCRUM_FILE=security-headers-ads.conf on the nginx service above,
+        #      or the strict CSP blocks the loader and the unit stays blank,
+        #   3. the publisher id present in the ads.txt served at the registrable-domain root
+        #      (already there — see the `location = /ads.txt` block in the front proxy's
+        #      shattered_archive.site, which covers *.shatteredarchive.dev too).
+        #
+        # VITE_AD_CLIENT is the publisher id in `ca-pub-…` form (note the `ca-` prefix, which
+        # ads.txt does NOT carry). VITE_AD_SLOT is the ad UNIT id — a ~10-digit number from
+        # the AdSense console, per placement, NOT the publisher id again.
+        #
+        # Neither value is a secret: the publisher id is already public in the ads.txt served
+        # at the domain root, and both are readable in any visitor's page source. They are
+        # env-overridable anyway so a fork or a second deployment can point at its own account.
+        VITE_AD_CLIENT: "${SCRUM_AD_CLIENT:-ca-pub-1852178360854840}"
+        VITE_AD_SLOT: "${SCRUM_AD_SLOT:-2791506790}"
+        # GA4 measurement id. Scoped host-only at runtime rather than to the registrable domain
+        # — see apps/scrum-poker-client/src/features/shared/analytics.ts for why that matters
+        # with auth.shatteredarchive.dev as a sibling.
+        VITE_GA_ID: "${SCRUM_GA_ID:-G-7BKPVVZ1BS}"
+        # VITE_SP_DEV deliberately absent: it forces the dev/experimental compose's placeholder
+        # box regardless of the credentials above, and this stack is where a configured slot is
+        # actually meant to serve. See deploy/scrum-poker-client.Dockerfile and AdSlot.tsx.
     image: shatteredarchive-prod-scrum-poker-client
     container_name: shatteredarchive-prod-scrum-poker-client
     restart: unless-stopped

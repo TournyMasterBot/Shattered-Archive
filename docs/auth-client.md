@@ -26,7 +26,7 @@ For local setup, see [`../apps/auth-client`](../apps/auth-client) (run alongside
 # Concepts
 
 - **Sessions are the browser's problem, not this app's.** Every request uses
-  `fetch(..., {credentials:'include'})`; the httpOnly `sa_session` cookie `auth-server`
+  `fetch(..., {credentials:'include'})`; the httpOnly `__Host-sa_session` cookie `auth-server`
   sets is never read or stored by this app. The one exception: API-key tokens from
   `POST /api/keys` ARE shown to the user (show-once, per `auth-server`'s design) — those
   are for the user to copy elsewhere, not for this app's own auth.

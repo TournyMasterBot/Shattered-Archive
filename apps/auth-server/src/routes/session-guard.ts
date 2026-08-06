@@ -15,7 +15,36 @@ import type { KeyStore } from '../key-store.js';
  *   cookie this server reads is hand-parsed from the raw header.
  */
 
-export const SESSION_COOKIE = 'sa_session';
+/**
+ * The `__Host-` prefix is load-bearing security, not naming style.
+ *
+ * A browser REFUSES to store a `__Host-`prefixed cookie unless it is `Secure`, has `Path=/`,
+ * and carries NO `Domain` attribute. That last condition is the whole point: it makes the
+ * cookie un-forgeable by a sibling subdomain.
+ *
+ * Without the prefix, script running on ANY `*.shatteredarchive.dev` origin — the apex landing
+ * page, scrum-poker, a future subdomain, anything — can set `sa_session=<attacker value>;
+ * Domain=.shatteredarchive.dev`. The browser then sends BOTH that domain cookie and this host's
+ * real host-only cookie on every request here, in an order the spec does not define, and
+ * `readSessionCookie` below returns the FIRST match it encounters. So a subdomain could shadow
+ * a real session with a value of its choosing: session fixation, or at minimum a login that
+ * cannot be recovered from without clearing site data. CSP cannot express "may not set a domain
+ * cookie", so this prefix is the only mechanism that closes it.
+ *
+ * That matters more since the apex and scrum-poker began carrying third-party ad and analytics
+ * script (2026-08-05). Those tags run first-party on their own origins; the prefix is what stops
+ * a compromise there from reaching sessions here.
+ *
+ * RENAMING THIS IS A BREAKING CHANGE: every existing `sa_session` cookie stops being recognised,
+ * so all signed-in users are logged out once on deploy and must sign in again. That is the
+ * entire migration — no data changes, no store rewrite, nothing to roll forward. There is
+ * deliberately NO fallback read of the old name: accepting both would preserve exactly the
+ * shadowing vector this closes.
+ *
+ * Requires https. `Secure` was already unconditional here, so nothing changes for the
+ * deployment — but note a plain-http origin other than localhost cannot hold this cookie at all.
+ */
+export const SESSION_COOKIE = '__Host-sa_session';
 
 export interface SessionContext {
   accountId: string;

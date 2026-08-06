@@ -50,6 +50,11 @@ services:
       # site domain. Required — an unset value leaves the literal ${...} in the rendered
       # config and nginx refuses to start.
       NGINX_CSP_SCRIPTING_FILE: "${NGINX_CSP_SCRIPTING_FILE:-security-headers-scripting-dev.conf}"
+      # CSP profile for scrum-poker.shatteredarchive.dev — see the prod compose for the full
+      # reasoning. Also required (unset = literal ${...} = nginx refuses to start). Defaults
+      # to the strict profile; flip to security-headers-ads.conf only together with the
+      # client's VITE_AD_CLIENT/VITE_AD_SLOT build args below.
+      NGINX_CSP_SCRUM_FILE: "${NGINX_CSP_SCRUM_FILE:-security-headers.conf}"
       # Required by edge-subdomains.conf (set_real_ip_from) — nginx will not start if it is
       # unset, because envsubst leaves the ${...} in place. Inert on this stack: nothing
       # reaches it via the front proxy, so no request ever arrives from that address and the
@@ -591,10 +596,26 @@ services:
       context: ..
       dockerfile: deploy/scrum-poker-client.Dockerfile
       args:
-        # The app's single ad placement. Leave both empty (the default) and nothing renders —
-        # the page makes no request to any ad network.
-        VITE_AD_CLIENT: ""
-        VITE_AD_SLOT: ""
+        # Ads and analytics stay OFF on this stack, and that is a policy requirement rather
+        # than a preference: this is the local dev replica, and serving live ad units from a
+        # development machine generates exactly the self-clicking / non-public-site traffic the
+        # AdSense program policies treat as invalid, which risks the account rather than the
+        # page. Analytics is off for the mirror-image reason — dev traffic in the property
+        # makes the real numbers useless.
+        #
+        # All three empty means the built bundle contains no publisher id, requests nothing from
+        # any ad network or from Google Analytics, and sets no third-party cookie. The nginx
+        # service above correspondingly keeps NGINX_CSP_SCRUM_FILE on the strict profile.
+        #
+        # To exercise the ad/analytics wiring locally, override via the environment rather than
+        # editing these lines, and use a TEST property — never the live ids in the prod compose.
+        # VITE_SP_DEV below still forces the placeholder box even if you do this: it is the
+        # backstop for exactly that scenario, so overriding these three for local testing can
+        # never accidentally ship a live ad request from this stack (2026-08-06).
+        VITE_AD_CLIENT: "${SCRUM_AD_CLIENT:-}"
+        VITE_AD_SLOT: "${SCRUM_AD_SLOT:-}"
+        VITE_GA_ID: "${SCRUM_GA_ID:-}"
+        VITE_SP_DEV: "true"
     image: shatteredarchive-scrum-poker-client
     stdin_open: true
     tty: true

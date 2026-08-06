@@ -15,6 +15,7 @@ import { DeviceNonceStore } from '../device-nonce-store.js';
 import { QuestionsStore, ChallengeThrottle } from '../questions-store.js';
 import { ServiceKeyStore } from '../service-key-store.js';
 import { SsoCodeStore } from '../sso-code-store.js';
+import { SESSION_COOKIE } from './session-guard.js';
 import { AuditLog } from '../audit-log.js';
 import { LoginLockout } from '../login-lockout.js';
 import { RateLimiter } from '../rate-limit.js';
@@ -144,11 +145,18 @@ export async function signupViaHttp(base: string, username: string): Promise<{ u
   return { username: body.username, password: body.password };
 }
 
-/** Extracts the sa_session cookie (name=value only) from a fetch Response's Set-Cookie header. */
+/**
+ * Extracts the session cookie (name=value only) from a fetch Response's Set-Cookie header.
+ *
+ * Built from SESSION_COOKIE rather than a literal so the name lives in exactly one place — the
+ * `__Host-` prefix was added there and a hardcoded `sa_session` here would have kept matching
+ * the prefixed cookie by substring while returning a cookie header with the WRONG name, so
+ * every authenticated test would have failed with a confusing 401 instead of a name mismatch.
+ */
 export function extractCookie(res: Response): string {
   const raw = res.headers.get('set-cookie') ?? '';
-  const match = raw.match(/sa_session=([^;]+)/);
-  return match ? `sa_session=${match[1]}` : '';
+  const match = raw.match(new RegExp(`${SESSION_COOKIE}=([^;]+)`));
+  return match ? `${SESSION_COOKIE}=${match[1]}` : '';
 }
 
 /** signup -> login, returns a ready-to-use session Cookie header plus the one-time password used. */

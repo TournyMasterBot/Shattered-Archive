@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { parseScrumServerMessage } from './parse-server-message.js';
 import type { RoomSettingsPatch, RoomView, ScrumClientMessage } from '@shatteredarchive/scrum-poker-core';
+import { api } from '../api/client.js';
 import { storage } from '../storage.js';
 
 /**
@@ -20,6 +21,18 @@ import { storage } from '../storage.js';
  * 3. An idle eviction is the one absence that does NOT auto-rejoin, because auto-rejoining
  *    would defeat the sweep it came from. The UI asks instead. This is why the server sends a
  *    machine-readable `code` and this hook never matches on message text.
+ * 4. Every `join` is now a TWO-STEP handshake (2026-08-05): `api.joinRoom` (HTTP) mints or
+ *    reattaches the participant and lets its secret land in an HttpOnly cookie via
+ *    `Set-Cookie`, THEN the `join` websocket frame — carrying no secret at all — attaches
+ *    THIS connection to that row and triggers the roster broadcast. The HTTP step MUST be
+ *    awaited before a brand-new socket is opened: the socket's own upgrade handshake is what
+ *    would carry the cookie along, so opening it before the mint's `Set-Cookie` has landed in
+ *    the jar means a first-time participant's secret never reaches this browser, and a
+ *    refresh a moment later starts a second, unlinked participant instead of reattaching.
+ *    Once a socket is already open, re-running the HTTP step is still done (a room-cleared
+ *    roster mints a fresh secret that a future reconnect needs) but is not itself blocking —
+ *    the live connection's identity for THIS session doesn't depend on the cookie landing in
+ *    time, only a later reconnect does.
  */
 
 export type ConnectionStatus = 'idle' | 'connecting' | 'open' | 'reconnecting' | 'closed';
@@ -74,7 +87,6 @@ export function useScrumRoom(roomId: string | null): ScrumRoomApi {
   const nameRef = useRef<string | null>(null);
   const evictedRef = useRef(false);
   const participantRef = useRef<string | null>(null);
-  const secretRef = useRef<string | null>(null);
   const closedByUs = useRef(false);
 
   const send = useCallback((msg: ScrumClientMessage) => {
@@ -82,19 +94,44 @@ export function useScrumRoom(roomId: string | null): ScrumRoomApi {
     if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(msg));
   }, []);
 
+  /**
+   * The HTTP half of the handshake — mints or reattaches the participant and lets its secret
+   * land in a cookie. Never throws: a failed mint still falls through to the websocket `join`,
+   * which degrades gracefully (see note 4 above) rather than blocking the room outright on a
+   * transient network blip.
+   */
+  const mintParticipant = useCallback(async (targetRoomId: string, name: string): Promise<void> => {
+    try {
+      await api.joinRoom(targetRoomId, name);
+    } catch {
+      /* best-effort — the websocket join below still runs either way */
+    }
+  }, []);
+
+  /** Sends the (secret-free) websocket `join` frame. Assumes the socket is already open. */
   const sendJoin = useCallback(
     (targetRoomId: string) => {
       const name = nameRef.current;
       if (!name) return;
-      const msg: ScrumClientMessage = { type: 'join', roomId: targetRoomId, name };
-      // The SECRET is what re-attaches us, never the public participant id — see storage.ts.
-      const storedSecret = secretRef.current ?? storage.getParticipantSecret(targetRoomId);
-      if (storedSecret) msg.participantSecret = storedSecret;
-      const hostToken = storage.getHostToken(targetRoomId);
-      if (hostToken) msg.hostToken = hostToken;
-      send(msg);
+      send({ type: 'join', roomId: targetRoomId, name });
     },
     [send],
+  );
+
+  /**
+   * Mints/reattaches over HTTP, then sends the websocket `join` frame on an ALREADY-OPEN
+   * socket. Used for every join that doesn't require standing up a new connection (auto-rejoin
+   * after the room clears, the eviction banner's "Rejoin" button, a `join()` call while already
+   * connected) — unlike the initial connect below, the current connection's identity doesn't
+   * depend on the mint's timing, so the websocket send does not wait on it.
+   */
+  const mintThenSendJoin = useCallback(
+    (targetRoomId: string) => {
+      const name = nameRef.current;
+      if (!name) return;
+      void mintParticipant(targetRoomId, name).finally(() => sendJoin(targetRoomId));
+    },
+    [mintParticipant, sendJoin],
   );
 
   /**
@@ -107,19 +144,30 @@ export function useScrumRoom(roomId: string | null): ScrumRoomApi {
    */
   const connect = useCallback(
     (targetRoomId: string) => {
-      function open(): void {
+      async function open(): Promise<void> {
         if (socketRef.current && socketRef.current.readyState <= WebSocket.OPEN) return;
+        const name = nameRef.current;
+        if (!name) return;
 
         setStatus(attempts.current === 0 ? 'connecting' : 'reconnecting');
+
+        // MUST complete — and its Set-Cookie MUST land in the jar — before the socket below is
+        // constructed: the socket's own upgrade handshake is the request that carries the
+        // cookie along, and by the time `onopen` fires that handshake has already gone out.
+        // Not while evicted: a dropped connection is not activity, so silently re-joining on
+        // reconnect would put an idled-out person straight back on the roster the sweep just
+        // cleared them from. They stay connected, see the banner, and rejoin deliberately.
+        if (!evictedRef.current) await mintParticipant(targetRoomId, name);
+        // A concurrent open() (a reconnect timer firing mid-await) may have already won while
+        // we were waiting on the mint — never open a second socket on top of it.
+        if (socketRef.current) return;
+
         const socket = new WebSocket(socketUrl());
         socketRef.current = socket;
 
         socket.onopen = () => {
           attempts.current = 0;
           setStatus('open');
-          // Not while evicted: a dropped connection is not activity, so silently re-joining on
-          // reconnect would put an idled-out person straight back on the roster the sweep just
-          // cleared them from. They stay connected, see the banner, and rejoin deliberately.
           if (!evictedRef.current) sendJoin(targetRoomId);
         };
 
@@ -130,10 +178,8 @@ export function useScrumRoom(roomId: string | null): ScrumRoomApi {
           switch (msg.type) {
             case 'joined':
               participantRef.current = msg.participantId;
-              secretRef.current = msg.participantSecret;
               setParticipantId(msg.participantId);
               setIsHost(msg.isHost);
-              storage.setParticipantSecret(msg.roomId, msg.participantSecret);
               evictedRef.current = false;
               setEvicted(false);
               return;
@@ -142,9 +188,13 @@ export function useScrumRoom(roomId: string | null): ScrumRoomApi {
               setRoom(msg.room);
               // Missing from the roster without an eviction notice means the organizer cleared
               // the room (or the server restarted): step straight back in. See note 2 above.
+              // Goes through the HTTP mint again too — a cleared roster means this browser's
+              // OLD secret cookie no longer matches any row, so the reattach below mints a
+              // fresh one, and that fresh secret only reaches a future reconnect if it lands
+              // in a cookie now.
               const me = participantRef.current;
               if (me && !evictedRef.current && !msg.room.participants.some((p) => p.id === me)) {
-                sendJoin(msg.room.id);
+                mintThenSendJoin(msg.room.id);
               }
               return;
             }
@@ -184,7 +234,7 @@ export function useScrumRoom(roomId: string | null): ScrumRoomApi {
           const delay = Math.min(RECONNECT_BASE_MS * 2 ** attempts.current, RECONNECT_MAX_MS);
           attempts.current += 1;
           setStatus('reconnecting');
-          reconnectTimer.current = setTimeout(open, delay);
+          reconnectTimer.current = setTimeout(() => void open(), delay);
         };
 
         socket.onerror = () => {
@@ -194,9 +244,9 @@ export function useScrumRoom(roomId: string | null): ScrumRoomApi {
         heartbeat.current = setInterval(() => send({ type: 'ping' }), HEARTBEAT_MS);
       }
 
-      open();
+      void open();
     },
-    [send, sendJoin],
+    [mintParticipant, send, sendJoin],
   );
 
   // Tear everything down on unmount or a room change; never leave a socket or timer behind.
@@ -223,10 +273,10 @@ export function useScrumRoom(roomId: string | null): ScrumRoomApi {
       setEvicted(false);
       setFatalError(null);
 
-      if (socketRef.current?.readyState === WebSocket.OPEN) sendJoin(roomId);
+      if (socketRef.current?.readyState === WebSocket.OPEN) mintThenSendJoin(roomId);
       else connect(roomId);
     },
-    [roomId, connect, sendJoin],
+    [roomId, connect, mintThenSendJoin],
   );
 
   const vote = useCallback((card: string | null) => send({ type: 'vote', card }), [send]);

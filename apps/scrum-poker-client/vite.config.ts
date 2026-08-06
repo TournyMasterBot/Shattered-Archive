@@ -25,7 +25,15 @@ export default defineConfig(({ mode, command }) => {
     define: {
       __SP_AD_CLIENT__: JSON.stringify(env.VITE_AD_CLIENT ?? ''),
       __SP_AD_SLOT__: JSON.stringify(env.VITE_AD_SLOT ?? ''),
-      __SP_DEV__: JSON.stringify(command === 'serve'),
+      // Empty = no gtag script, no cookie, no request. See features/shared/analytics.ts.
+      __SP_GA_ID__: JSON.stringify(env.VITE_GA_ID ?? ''),
+      // `command === 'serve'` covers `pnpm dev`; VITE_SP_DEV covers a `vite build` run through
+      // Docker (every deployment goes through `vite build`, so `command` alone is always
+      // 'build' there — see deploy/scrum-poker-client.Dockerfile and the experimental compose,
+      // which sets VITE_SP_DEV=true specifically so its build never ships real ad code even if
+      // real credentials are set for local testing). See ad-config.ts's `isDev` for what this
+      // actually controls: it OVERRIDES ad configuration, not just fills a gap.
+      __SP_DEV__: JSON.stringify(command === 'serve' || env.VITE_SP_DEV === 'true'),
     },
     resolve: {
       alias: {

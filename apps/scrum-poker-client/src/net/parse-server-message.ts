@@ -20,10 +20,10 @@ export function parseScrumServerMessage(raw: string): ScrumServerMessage | undef
   const msg = parsed as Record<string, unknown>;
   switch (msg.type) {
     case 'joined':
-      return typeof msg.roomId === 'string' &&
-        typeof msg.participantId === 'string' &&
-        typeof msg.participantSecret === 'string' &&
-        typeof msg.isHost === 'boolean'
+      // No secret field to validate here (protocol v2, 2026-08-05) — the credential that
+      // reattaches this browser to its row is an HttpOnly cookie the server set separately,
+      // never a payload this parser would see.
+      return typeof msg.roomId === 'string' && typeof msg.participantId === 'string' && typeof msg.isHost === 'boolean'
         ? (msg as unknown as ScrumServerMessage)
         : undefined;
     case 'state':

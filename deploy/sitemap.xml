@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sitemap for the shatteredarchive.dev constellation.
+
+  Deployed to /var/www/shatteredarchive-dev alongside index.html, privacy.html and site.js, and
+  served at https://shatteredarchive.dev/sitemap.xml through an exact-match location in the
+  front proxy (DSL/nginx/shattered_archive.site) that 404s when the file is absent rather than
+  letting `try_files ... /index.html` hand a crawler HTML labelled as XML.
+
+  ===========================================================================================
+  WHY THIS LISTS THREE URLS AND NOT ONE PER SERVICE.
+
+  A sitemap may only contain URLs a crawler is actually ALLOWED to fetch. Every other host in
+  the constellation deliberately serves `Disallow: /` (see
+  ShatteredArchive/deploy/nginx/includes/robots-disallow-all.conf), so listing them here would
+  not surface them — it would produce a "Submitted URL blocked by robots.txt" error per URL in
+  Search Console and index nothing. The two rules have to agree, and robots.txt is the one that
+  decides.
+
+  That is not a gap in coverage. The apex page below IS the constellation's index: it names and
+  describes every service in crawlable HTML and links to each one, so a search for any of them
+  finds the hub. Indexing the demo SPAs themselves would add little — they are thin,
+  JS-rendered application shells — and would need their assets un-blocked before Google could
+  render them at all, at which point the SPA `try_files` fallback makes every invented path a
+  200 HTML page. That trade is written up as a decision point in
+  .ai-plans/20260805-1500-sitemaps-and-seo.md rather than settled here.
+
+  Excluded on purpose, each for its own reason:
+    auth.shatteredarchive.dev            login/signup/reset — must never be indexed
+    build. / kingdom-tactics.            still 503 stubs on the front proxy; not live
+    game-client. / web-client.           application shells, Disallow: /
+    game-server. / web-server.           JSON APIs, no documents
+    dsl-log-viewer.…com                  tool, not content
+    scrum-poker /room/*                  a room UUID IS the membership credential
+
+  CROSS-HOST ENTRY. The scrum-poker URL below is on a different host to this sitemap, which is
+  allowed because scrum-poker's own robots.txt names THIS sitemap in its `Sitemap:` directive —
+  that is the sanctioned cross-host ownership signal. A DNS-verified Search Console *domain*
+  property for shatteredarchive.dev (which covers every subdomain) is the belt-and-braces
+  version and is worth having anyway. If you ever see "Sitemap contains urls which are not
+  allowed" for that entry, the robots directive is what to check first.
+
+  MAINTAINED BY HAND, deliberately: it is three URLs on a static docroot with no build step, so
+  a generator would be more machinery than content. The .com sitemap is the opposite case —
+  hundreds of data-driven pages — and is generated from the C# app instead.
+  ===========================================================================================
+-->
+<!-- Namespace is sitemapS.org (plural). A wrong namespace URI is not a typo a parser
+     tolerates — the whole file is rejected as an unrecognised format. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://shatteredarchive.dev/</loc>
+    <lastmod>2026-08-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://shatteredarchive.dev/privacy</loc>
+    <lastmod>2026-08-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <!-- The one demo that is genuinely public content rather than an application shell, and the
+       only other ad-bearing page. Its own robots.txt allows everything except /room/. -->
+  <url>
+    <loc>https://scrum-poker.shatteredarchive.dev/</loc>
+    <lastmod>2026-08-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>

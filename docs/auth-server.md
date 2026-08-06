@@ -41,7 +41,9 @@ For local setup instructions, see [`../apps/auth-server/README.md`](../apps/auth
 # Concepts
 
 - **Sessions ARE key records.** A login mints a short-TTL (24h) key record with
-  `kind:'session'`, delivered via an httpOnly `SameSite=Lax` cookie (`sa_session`). One
+  `kind:'session'`, delivered via an httpOnly `SameSite=Lax` cookie
+  (`__Host-sa_session` — the prefix is enforced by the browser and is what stops a sibling
+  subdomain forging or shadowing the cookie; see `SESSION_COOKIE` in `session-guard.ts`). One
   verification path (`key-store.ts`'s `verify()`) covers both browser sessions and
   service API keys.
 - **Epoch-based invalidation.** Every account has an integer `epoch`; every key/session
@@ -97,7 +99,7 @@ On success, `201` with the one-time password **shown exactly once**:
 { "username": "alice", "password": "..." }
 ```
 
-Sets the `sa_session` cookie. Returns:
+Sets the `__Host-sa_session` cookie. Returns:
 
 ```json
 { "id": "...", "username": "alice", "mustChangePassword": true, "emailOnFile": false, "emailVerified": false }
@@ -140,8 +142,8 @@ All routes below are session-guarded and blocked while `mustChangePassword` is s
 { "currentPassword": "...", "newPassword": "..." }
 ```
 
-Verifies the current password, bumps epoch, mints a fresh session (new `sa_session`
-cookie in the response).
+Verifies the current password, bumps epoch, mints a fresh session (new
+`__Host-sa_session` cookie in the response).
 
 ### `POST /api/account/email`
 

@@ -5,6 +5,7 @@ import path from 'node:path';
 import type { ScrumServerMessage } from '@shatteredarchive/scrum-poker-core';
 
 import type { ScrumPokerConfig } from '../config.js';
+import { hostCookieName, secretCookieName } from '../http/cookies.js';
 import { RoomStore } from '../room-store.js';
 import { createGatewayContext, handleClientMessage, runSweep, type GatewayContext, type ScrumConn } from './scrum-gateway.js';
 
@@ -60,15 +61,30 @@ function harness(config = tempConfig()): Harness {
   return { ctx, store, roomId: room.id, hostToken, clock };
 }
 
+/**
+ * `hostToken`/`participantSecret` are no longer `join` message fields — they are cookies the
+ * gateway reads off `conn.cookieHeader` (see scrum-gateway.ts). This helper keeps every
+ * existing call site below unchanged by translating the same `opts` shape into a fake
+ * `Cookie:` header on `conn` before sending the frame, exactly as a real browser's cookie jar
+ * would present it on a WebSocket upgrade request.
+ */
 function join(h: Harness, conn: ScrumConn, name: string, opts: { hostToken?: string; participantSecret?: string } = {}) {
-  handleClientMessage(h.ctx, conn, { type: 'join', roomId: h.roomId, name, ...opts });
+  const cookies: string[] = [];
+  if (opts.hostToken !== undefined) cookies.push(`${hostCookieName(h.roomId)}=${opts.hostToken}`);
+  if (opts.participantSecret !== undefined) cookies.push(`${secretCookieName(h.roomId)}=${opts.participantSecret}`);
+  if (cookies.length > 0) conn.cookieHeader = cookies.join('; ');
+  handleClientMessage(h.ctx, conn, { type: 'join', roomId: h.roomId, name });
 }
 
-/** The secret the server handed this connection — what a real client stores and replays. */
-function secretOf(conn: { sent: ScrumServerMessage[] }): string {
-  const joined = conn.sent.find((m): m is Extract<ScrumServerMessage, { type: 'joined' }> => m.type === 'joined');
-  if (!joined) throw new Error('never joined');
-  return joined.participantSecret;
+/**
+ * The secret the server settled this connection on. No longer readable off the wire (the
+ * `joined` frame deliberately carries none — see protocol.ts) so this reads the ground truth
+ * straight out of the store, keyed by the public participant id the frame DOES carry.
+ */
+function secretOf(h: Harness, conn: { participantId?: string }): string {
+  const participant = h.store.get(h.roomId)?.participants.find((p) => p.id === conn.participantId);
+  if (!participant) throw new Error('never joined');
+  return participant.secret;
 }
 
 describe('join', () => {
@@ -108,7 +124,7 @@ describe('join', () => {
     handleClientMessage(h.ctx, first, { type: 'vote', card: '5' });
 
     const reconnected = fakeConn('second');
-    join(h, reconnected, 'Ada', { participantSecret: secretOf(first) });
+    join(h, reconnected, 'Ada', { participantSecret: secretOf(h, first) });
 
     expect(h.store.get(h.roomId)?.participants).toHaveLength(1);
     expect(lastState(reconnected)?.participants[0]).toMatchObject({ name: 'Ada', vote: '5' });
@@ -125,7 +141,7 @@ describe('join', () => {
     // What Mallory can actually see of Ada: an id, and that she has voted — not the card.
     const adaRow = lastState(mallory)?.participants.find((p) => p.name === 'Ada');
     expect(adaRow).toMatchObject({ hasVoted: true, vote: null });
-    expect(JSON.stringify(lastState(mallory))).not.toContain(secretOf(ada));
+    expect(JSON.stringify(lastState(mallory))).not.toContain(secretOf(h, ada));
 
     // Replaying Ada's id as if it were her secret must land Mallory on her own row.
     const impostor = fakeConn('impostor');

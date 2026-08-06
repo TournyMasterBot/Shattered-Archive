@@ -64,7 +64,17 @@ describe('auth routes', () => {
     expect(body.mustChangePassword).toBe(true);
     expect(body).not.toHaveProperty('passwordHash');
     expect(body).not.toHaveProperty('passwordSalt');
-    expect(res.headers.get('set-cookie')).toMatch(/sa_session=/);
+    // Asserts the `__Host-` prefix AND the three attributes a browser requires before it will
+    // store such a cookie at all. Checking the name alone would pass while a stray `Domain=`
+    // or a dropped `Secure` made the cookie silently unstorable — the failure mode would be
+    // "login appears to succeed but no session sticks", which is miserable to debug from the
+    // client side. A `Domain` attribute in particular would reopen the subdomain-shadowing
+    // vector the prefix exists to close; see SESSION_COOKIE in session-guard.ts.
+    const setCookie = res.headers.get('set-cookie') ?? '';
+    expect(setCookie).toMatch(/__Host-sa_session=/);
+    expect(setCookie).toMatch(/;\s*Secure/i);
+    expect(setCookie).toMatch(/;\s*Path=\//i);
+    expect(setCookie).not.toMatch(/;\s*Domain=/i);
   });
 
   it('login fails with a wrong password', async () => {

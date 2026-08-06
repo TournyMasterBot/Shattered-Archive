@@ -56,9 +56,27 @@ export default function App() {
         )}
       </main>
 
-      <AdSlot />
+      {/*
+        Landing-only (2026-08-06): a room page is where people are mid-task with a shared,
+        low-distraction surface — the ad belongs on the entry page, not the working one. This
+        also means the ad crawler no longer needs access to /room/* to serve a contextual
+        creative there; see the robots-scrum-poker.conf comment this changed.
+      */}
+      {route.name === 'landing' && <AdSlot />}
 
-      <footer className="sp-footer">Shattered Archive · rooms and names are transient and expire on their own</footer>
+      {/*
+        The privacy link is not decoration: this page carries a Google ad unit and a GA4 tag,
+        and a reachable notice disclosing them is both an AdSense requirement and the thing
+        that makes the cookie/local-storage table discoverable. It points at the .dev landing
+        host because that is where the notice for this constellation lives (deploy/privacy.html)
+        — this app serves no static pages of its own.
+      */}
+      <footer className="sp-footer">
+        Shattered Archive · rooms and names are transient and expire on their own ·{' '}
+        <a href="https://shatteredarchive.dev/privacy" target="_blank" rel="noopener noreferrer">
+          Privacy
+        </a>
+      </footer>
     </div>
   );
 }

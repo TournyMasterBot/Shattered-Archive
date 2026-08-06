@@ -9,15 +9,18 @@ describe('parseScrumClientMessage', () => {
     });
   });
 
-  it('carries participantSecret and hostToken through a reconnect join', () => {
+  it('ignores a legacy participantSecret/hostToken field rather than rejecting the frame', () => {
+    // Protocol v1 clients (pre-2026-08-05, before both moved to HttpOnly cookies) still send
+    // these during a rolling deploy. Silently dropping them — not erroring the frame — is what
+    // keeps an old tab usable against a new server for the length of that deploy.
     expect(
       parseScrumClientMessage('{"type":"join","roomId":"1","name":"Ada","participantSecret":"s0","hostToken":"h"}'),
-    ).toEqual({ type: 'join', roomId: '1', name: 'Ada', participantSecret: 's0', hostToken: 'h' });
+    ).toEqual({ type: 'join', roomId: '1', name: 'Ada' });
   });
 
   it('rejects a join with a non-string field', () => {
     expect(parseScrumClientMessage('{"type":"join","roomId":1,"name":"Ada"}')).toBeUndefined();
-    expect(parseScrumClientMessage('{"type":"join","roomId":"1","name":"Ada","participantSecret":7}')).toBeUndefined();
+    expect(parseScrumClientMessage('{"type":"join","roomId":"1","name":7}')).toBeUndefined();
   });
 
   it('accepts a null vote but not a numeric one', () => {

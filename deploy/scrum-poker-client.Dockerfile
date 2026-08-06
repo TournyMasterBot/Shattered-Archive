@@ -26,6 +26,24 @@ ARG VITE_AD_SLOT=""
 ENV VITE_AD_CLIENT=${VITE_AD_CLIENT}
 ENV VITE_AD_SLOT=${VITE_AD_SLOT}
 
+# Forces the placeholder box regardless of the two args above (see AdSlot.tsx) — set "true" by
+# the dev/experimental compose so that stack can never ship real ad code, even if the two args
+# above are overridden with real credentials to test the wiring locally. Left empty (falsy) by
+# the prod compose, where a configured slot is meant to actually serve.
+ARG VITE_SP_DEV=""
+ENV VITE_SP_DEV=${VITE_SP_DEV}
+
+# Google Analytics 4 measurement id. Same all-or-nothing contract as the ad args above: empty
+# (the default) means no gtag script is injected, no cookie is set and no request is made to
+# Google. See apps/scrum-poker-client/src/features/shared/analytics.ts — in particular why it
+# pins cookie_domain to the exact hostname rather than letting GA4 scope `_ga` to the whole
+# registrable domain, which would send it to auth.shatteredarchive.dev too.
+#
+# Enabling this ALSO needs NGINX_CSP_SCRUM_FILE=security-headers-ads.conf on the edge, which
+# is what allowlists googletagmanager.com; the strict profile blocks the loader outright.
+ARG VITE_GA_ID=""
+ENV VITE_GA_ID=${VITE_GA_ID}
+
 RUN pnpm --filter @shatteredarchive/scrum-poker-client... build
 
 # nginx 1.31.2-alpine3.23

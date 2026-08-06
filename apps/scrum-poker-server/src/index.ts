@@ -59,7 +59,7 @@ const service = createExpressService(config, (app) => {
     const health: ServerHealth = { status: 'ok', uptimeSeconds: process.uptime() };
     res.json(health);
   });
-  registerScrumApiRoutes(app, { store, now });
+  registerScrumApiRoutes(app, { store, now, roomTtlMs: scrumConfig.roomTtlMs });
 });
 
 service

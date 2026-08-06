@@ -17,6 +17,7 @@ import {
 import type { Room, ScrumClientMessage, ScrumServerMessage } from '@shatteredarchive/scrum-poker-core';
 
 import type { ScrumPokerConfig } from '../config.js';
+import { hostCookieName, readCookieValue, secretCookieName } from '../http/cookies.js';
 import { RoomStore } from '../room-store.js';
 
 /**
@@ -50,6 +51,14 @@ export interface ScrumConn {
   isHost: boolean;
   /** Set when the idle sweeper removed this person while their socket stayed open. */
   evicted: boolean;
+  /**
+   * The raw `Cookie:` header from the WebSocket upgrade request, captured once at connection
+   * time. `join` reads `__Host-sp_secret_<roomId>`/`__Host-sp_host_<roomId>` out of this —
+   * never from the message itself — since roomId (and so which cookie name to look for) isn't
+   * known until the first `join` frame arrives. Undefined for a connection with no cookies at
+   * all (cookies disabled, or a genuinely first-ever visit with no prior HTTP mint).
+   */
+  cookieHeader?: string;
   send(msg: ScrumServerMessage): void;
 }
 
@@ -135,14 +144,21 @@ export function handleClientMessage(ctx: GatewayContext, conn: ScrumConn, msg: S
       return;
     }
 
-    // A replayed SECRET from localStorage re-attaches to the existing row (keeping that
-    // person's vote through a refresh); anything else becomes a new participant on the freshly
-    // minted id+secret below. The public participant id is never accepted as identity: it is
-    // in every roster broadcast, so honouring it would let any member rejoin as any other.
+    // A replayed SECRET — read from the `__Host-sp_secret_<roomId>` cookie the browser
+    // attached automatically on this connection's upgrade request, never from the message
+    // itself — re-attaches to the existing row (keeping that person's vote through a refresh);
+    // anything else becomes a new participant on the freshly minted id+secret below. The
+    // typical case already minted this same secret moments earlier via
+    // `POST /api/scrum/rooms/:id/join`, which is what got it into the cookie the browser is
+    // now replaying; the fresh mint here is the fallback for a connection with no such cookie
+    // (cookies disabled), which degrades to "no reconnect convenience", never a broken join.
+    // The public participant id is never accepted as identity either: it is in every roster
+    // broadcast, so honouring it would let any member rejoin as any other.
+    const replayedSecret = readCookieValue(conn.cookieHeader, secretCookieName(msg.roomId));
     const result = joinRoom(room, {
       participantId: RoomStore.newParticipantId(),
       participantSecret: RoomStore.newParticipantSecret(),
-      replayedSecret: msg.participantSecret,
+      replayedSecret,
       name: msg.name,
       now,
     });
@@ -150,22 +166,23 @@ export function handleClientMessage(ctx: GatewayContext, conn: ScrumConn, msg: S
       conn.send({ type: 'error', code: result.error === 'This room is full.' ? 'room-full' : 'invalid', message: result.error });
       return;
     }
-    const { id: participantId, secret: participantSecret } = result.participant;
+    const { id: participantId } = result.participant;
 
     if (conn.roomId && conn.roomId !== msg.roomId) unsubscribe(ctx, conn.roomId, conn);
     conn.roomId = msg.roomId;
     conn.participantId = participantId;
-    conn.isHost = msg.hostToken !== undefined && msg.hostToken === room.hostToken;
+    const hostToken = readCookieValue(conn.cookieHeader, hostCookieName(msg.roomId));
+    conn.isHost = hostToken !== undefined && hostToken === room.hostToken;
     conn.evicted = false;
     subscribe(ctx, msg.roomId, conn);
 
     ctx.store.save(result.room);
-    // `send` targets THIS connection only — the secret must never reach a broadcast.
+    // No secret in this ack: the credential that reattaches this browser to this row is
+    // already sitting in its cookie jar, never in a payload page JS could read.
     conn.send({
       type: 'joined',
       roomId: msg.roomId,
       participantId,
-      participantSecret,
       isHost: conn.isHost,
       protocolVersion: SCRUM_PROTOCOL_VERSION,
     });
@@ -322,11 +339,14 @@ export function setupScrumWebSocketGateway(
   const wss = new WebSocketServer({ server, path: '/ws/scrum', maxPayload: MAX_FRAME_BYTES });
   let nextClientId = 1;
 
-  wss.on('connection', (ws: WebSocket) => {
+  wss.on('connection', (ws: WebSocket, request: http.IncomingMessage) => {
     const conn: ScrumConn = {
       clientId: `c${nextClientId++}`,
       isHost: false,
       evicted: false,
+      // Captured once, here: by the time a `join` frame arrives and we know which room's
+      // cookie to look for, the upgrade request itself is long gone.
+      cookieHeader: request.headers.cookie,
       send: (msg) => {
         if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
       },

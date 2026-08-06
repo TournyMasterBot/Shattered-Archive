@@ -4,10 +4,8 @@ describe('parseScrumServerMessage', () => {
   it('accepts the frames the server actually sends', () => {
     expect(parseScrumServerMessage('{"type":"pong"}')).toEqual({ type: 'pong' });
     expect(
-      parseScrumServerMessage(
-        '{"type":"joined","roomId":"1","participantId":"p0","participantSecret":"s0","isHost":true,"protocolVersion":1}',
-      ),
-    ).toMatchObject({ type: 'joined', participantId: 'p0', participantSecret: 's0', isHost: true });
+      parseScrumServerMessage('{"type":"joined","roomId":"1","participantId":"p0","isHost":true,"protocolVersion":2}'),
+    ).toMatchObject({ type: 'joined', participantId: 'p0', isHost: true });
     expect(parseScrumServerMessage('{"type":"state","room":{"id":"1","participants":[]}}')).toMatchObject({
       type: 'state',
     });
