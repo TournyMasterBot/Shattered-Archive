@@ -88,6 +88,20 @@ export function useScrumRoom(roomId: string | null): ScrumRoomApi {
   const evictedRef = useRef(false);
   const participantRef = useRef<string | null>(null);
   const closedByUs = useRef(false);
+  /**
+   * Guards the auto-rejoin below against a re-entrant burst, not just a single re-fire.
+   *
+   * `clearUsers` empties the roster and broadcasts once — but EVERY participant's own
+   * subsequent auto-rejoin ALSO broadcasts on success, so an N-person room produces roughly N
+   * state frames in quick succession. `participantRef.current` only updates once THIS
+   * connection's own `joined` reply comes back; every frame that arrives before that reply
+   * lands still finds "my id missing" and, without this guard, would fire a SEPARATE rejoin —
+   * each one landing before any of the others' secrets exist yet to reattach to, so the
+   * reducer mints a genuinely new participant for every single one. That is the mechanism
+   * behind "Clear all users clones me": not one extra join, but as many as there are
+   * intervening broadcasts before the first one resolves.
+   */
+  const rejoinInFlight = useRef(false);
 
   const send = useCallback((msg: ScrumClientMessage) => {
     const socket = socketRef.current;
@@ -177,6 +191,7 @@ export function useScrumRoom(roomId: string | null): ScrumRoomApi {
 
           switch (msg.type) {
             case 'joined':
+              rejoinInFlight.current = false;
               participantRef.current = msg.participantId;
               setParticipantId(msg.participantId);
               setIsHost(msg.isHost);
@@ -192,8 +207,16 @@ export function useScrumRoom(roomId: string | null): ScrumRoomApi {
               // OLD secret cookie no longer matches any row, so the reattach below mints a
               // fresh one, and that fresh secret only reaches a future reconnect if it lands
               // in a cookie now.
+              //
+              // rejoinInFlight gates this to ONE outstanding attempt: a clear broadcasts once
+              // per participant as each one rejoins in turn, and every one of those broadcasts
+              // still shows "my id missing" until THIS connection's own `joined` reply lands —
+              // without the guard, each intervening broadcast fires its own rejoin, and every
+              // one mints a genuinely separate participant since none of them has the others'
+              // fresh secret yet to reattach to. See the ref's own comment for the full case.
               const me = participantRef.current;
-              if (me && !evictedRef.current && !msg.room.participants.some((p) => p.id === me)) {
+              if (me && !evictedRef.current && !rejoinInFlight.current && !msg.room.participants.some((p) => p.id === me)) {
+                rejoinInFlight.current = true;
                 mintThenSendJoin(msg.room.id);
               }
               return;
@@ -203,6 +226,9 @@ export function useScrumRoom(roomId: string | null): ScrumRoomApi {
               return;
 
             case 'error':
+              // Whatever this attempt's outcome, it is no longer IN FLIGHT — including the
+              // 'evicted'/fatal branches below, which return early themselves.
+              rejoinInFlight.current = false;
               if (msg.code === 'evicted') {
                 evictedRef.current = true;
                 setEvicted(true);
