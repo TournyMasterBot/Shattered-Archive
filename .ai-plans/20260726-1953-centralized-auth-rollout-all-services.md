@@ -1259,3 +1259,48 @@ makes this worth resolving rather than leaving indefinitely.
   real device — exactly what this fix targets and only the user's Pixel can
   confirm. Step E's checkbox stays unchecked until that live retest (plus the
   still-open web↔mobile round-trip and background/restart checks) passes.
+- 2026-08-06T00:00-05:00 **Phase E: second, independent Android bug found via
+  live device debugging with the user** (real Pixel, `adb logcat` + a live VPS
+  server-log tail during an actual sign-in attempt — this is the first time
+  this step has been debugged against the REAL production host rather than
+  the local dev-replica, and it surfaced things neither environment alone
+  would have). Two real findings, in the order they were isolated:
+  1. **Server side was never the problem.** Live-tailed `shatteredarchive-csharp`
+     during a fresh attempt: `/user/game-sso/start` → hub consent →
+     `/user/game-sso/callback` → `POST auth-server.../api/token-exchange`
+     returned 201 in 6ms. `sa-shared` network membership, the
+     `AuthHub__BaseUrl` internal-alias fix, and the token exchange itself are
+     ALL confirmed live and correct — closes out the "never verified against
+     real prod" caveat two entries above for this specific path. The earlier
+     "game-sso hand-off is missing a valid return target" error the user hit
+     was exactly what the code predicts for a REPLAYED callback (the state
+     cookie is deleted unconditionally on the first hit,
+     `UserController.cs:228`, before any validation) — a self-inflicted
+     artifact of retrying after a manual "open in browser" detour, not a bug.
+  2. **The real remaining break was two-layered on the CLIENT, found by
+     `adb logcat` across two consecutive live attempts.** First attempt
+     (Edge as the resolved Custom Tabs provider): the app-launched intent
+     opened fine, but nothing ever came back — Edge appears not to hand a
+     REDIRECT-triggered (not directly-tapped) navigation to an unknown scheme
+     off to Android at all, unlike Chrome. Second attempt (Chrome): the deep
+     link DID return and DID open the app — landing on Expo Router's
+     `+not-found` screen. Root cause: Expo Router treats a custom scheme's
+     authority as a route PATH, and there was no screen registered for
+     `auth-callback`, so the callback always dead-ended there regardless of
+     whether the previous entry's bridge had already captured the token.
+     Fixed with a real route, `app/auth-callback.tsx`: reads the raw URL via
+     `useLinkingURL()` (route params only cover the query string, and the
+     token rides in a `#fragment` by design), writes it through the same
+     `parseAuthFragment`/`setAuthToken` used everywhere else, then
+     `router.replace('/(tabs)/settings')` so the user lands somewhere real
+     instead of a dead screen. `android-auth-redirect-bridge.ts` (previous
+     entry) stays alongside it, not superseded — it still independently wins
+     the separate race for `startLogin()`'s own `openAuthSessionAsync`
+     promise; the two writes are idempotent against each other.
+     The Edge-vs-Chrome asymmetry is a browser-choice finding, not something
+     fixable in this app's code — flagged for the user, not acted on.
+  Verified mechanically: `tsc --noEmit` still at the 7-error baseline (none in
+  the new file), `eslint` clean on `app/auth-callback.tsx`, full mobile suite
+  278/278. **Still not independently verified**: a live retest with Chrome as
+  the resolved browser, past this exact fix — that's the next thing for the
+  user to try. Step E's checkbox stays unchecked until that passes.
