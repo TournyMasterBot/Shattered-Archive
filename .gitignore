@@ -27,6 +27,17 @@ coverage/*
 *.js
 !jest.config.js
 !meta-scripts/**/*.js
+# Hand-written source, not build output — the .dev landing page's own script, externalized
+# specifically so its CSP could drop 'unsafe-inline' (see deploy/index.html). The blanket *.js
+# rule above silently excluded it from git entirely, which is why it never reached the deploy
+# docroot despite deploying everything else alongside it (2026-08-06).
+!deploy/site.js
+# Same class of bug, same day: scrum-poker-client's pre-paint theme guard, externalized for the
+# same CSP reason (see apps/scrum-poker-client/public/theme-init.js and AdSlot.tsx's neighbour
+# analytics.ts). Vite's public/ dir copies verbatim into dist/ at build time, so this was ALWAYS
+# present in a build run against the local working tree — it only went missing wherever the
+# build source came from a git checkout instead, which is exactly where prod redeploys did.
+!apps/scrum-poker-client/public/theme-init.js
 jwt-secret.dat
 
 # auth-server: per-app encrypted JSON stores, and the private key files that

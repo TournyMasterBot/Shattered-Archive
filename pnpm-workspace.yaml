@@ -24,3 +24,11 @@ onlyBuiltDependencies:
 
 overrides:
   esbuild: '0.28.1'
+  # GHSA-724g-mxrg-4qvm / CVE-2026-59870 — quadratic CPU in !!omap resolution.
+  # Two ranges kept separate because consumers split across js-yaml 3.x (jest
+  # toolchain) and 4.x (eslint toolchain); forcing one version would cross a major.
+  js-yaml@^3.0.0: '3.15.1'
+  js-yaml@^4.0.0: '4.3.1'
+  # GHSA-6g55-p6wh-862q (High) + its incomplete-fix follow-up — path traversal via
+  # sourceMappingURL auto-loading. 8.5.25 closes both.
+  postcss: '8.5.25'

@@ -1210,3 +1210,52 @@ makes this worth resolving rather than leaving indefinitely.
   Web caveat, unchanged from before: usePlugins has no cross-component live-sync
   event, so imported plugin config on the WEB needs a page reload to show up in
   an already-mounted Plugins page. Mobile applies immediately.
+- 2026-08-06T00:00-05:00 **Phase E: Android deep-link redirect FIXED — root cause
+  traced from the user's own on-device report** (real Pixel run: mobile sync
+  button works, but the authorization deep link never visibly returned control
+  to the app, so the token never lands and sync can't complete). Checked the
+  obvious suspects first and both were already correct: AndroidManifest's
+  intent-filter (`dslclient` scheme, singleTask, `ReactActivityDelegateWrapper`
+  in `MainActivity.kt`). The real break is inside `expo-web-browser@14`'s OWN
+  Android implementation of `openAuthSessionAsync`
+  (`_authSessionIsNativelySupported()` returns `Platform.OS !== 'android'`, so
+  Android never gets iOS's native ASWebAuthenticationSession path) — its polyfill
+  waits on `Linking.addEventListener('url', ...)` imported from `'react-native'`
+  core, whose Android `NativeEventEmitter` is constructed with `undefined`
+  (`NativeLinkingManager` is iOS-only; RN core's `IntentModule.java` never emits
+  any device event on Android at all — read directly, not assumed).
+  `expo-linking`'s own `addEventListener('url', ...)` is no better: its
+  `RNLinking.ts` is a literal `export default Linking from 'react-native'`, the
+  exact same dead path. The ONE working native bridge in this dependency set is
+  `expo-linking`'s `useLinkingURL()` hook, backed by a DIFFERENT mechanism
+  (`LinkingReactActivityLifecycleListener.onNewIntent` → `ExpoLinkingModule`'s
+  own `onURLReceived` event) that `Linking` from `'react-native'` never sees.
+  Net effect: the deep link WAS opening the app correctly the whole time —
+  `openAuthSessionAsync`'s Android promise just always settled via its
+  AppState-based "browser dismissed" fallback, because its success path
+  structurally never fires. This exactly matches a comment already sitting
+  dead in `game-sso.ts` ("on Android the session can report dismissal even
+  though the deep link did land") — that fallback existed but nothing ever
+  populated a token for it to find.
+  Fixed with a new `features/auth/android-auth-redirect-bridge.ts`, mounted
+  once at the app root (`app/_layout.tsx`, alongside the existing
+  `registerConnectionService()`/`connectionManager.init()` singletons): it uses
+  the working `useLinkingURL()` to catch the `dslclient://auth-callback`
+  redirect directly and writes the token via the EXISTING `setAuthToken()` +
+  `parseAuthFragment()` — no new parsing or storage path. This makes
+  `startLogin()`'s pre-existing "an already-valid token wins over a reported
+  dismissal" fallback the actual completion mechanism, instead of depending on
+  winning a race against `openAuthSessionAsync`'s internal AppState listener.
+  `openAuthSessionAsync` itself and the iOS path are untouched — iOS was never
+  broken.
+  Verified mechanically: `tsc --noEmit` unchanged from the documented 7-error
+  baseline (none in the new file or the edited layout), `eslint` 0 errors on
+  both touched files (only pre-existing warnings, same shape as before the
+  edit), existing auth-fragment suite still 6/6 green. Pure JS/TS change, no
+  new native dependency — **no native rebuild needed**, just fresh JS on the
+  device (dev-client reload, or a new EAS/OTA build for whichever install the
+  user is testing).
+  **NOT verified and cannot be from here**: the actual end-to-end redirect on a
+  real device — exactly what this fix targets and only the user's Pixel can
+  confirm. Step E's checkbox stays unchecked until that live retest (plus the
+  still-open web↔mobile round-trip and background/restart checks) passes.
