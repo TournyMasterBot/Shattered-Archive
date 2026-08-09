@@ -297,6 +297,14 @@
   z-index: 1;
 }
 
+/* Tag sub-groups nested within a spool group (Notes tab) */
+.treeSubGroupHeader {
+  padding: 4px 10px 4px 18px;
+  font-size: 0.68rem;
+  color: #7a7a8a;
+  letter-spacing: 0.04em;
+}
+
 .listItem {
   width: 100%;
   text-align: left;
@@ -337,6 +345,37 @@
   gap: 10px;
   align-items: center;
   min-width: 0;
+}
+
+.tagRow {
+  margin-top: 8px;
+}
+
+.tagInput {
+  width: 260px;
+  max-width: 100%;
+  min-width: 0;
+
+  background: #0e1016;
+  color: #d4d4d4;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 0.8rem;
+}
+
+.bodyStats {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: #808080;
+}
+
+.bodyStatsWarn {
+  color: #c9a227;
+}
+
+.bodyStatsOver {
+  color: #c74a4a;
 }
 
 .titleInput {
@@ -711,4 +750,68 @@
   .scratchGrid {
     grid-template-columns: 1fr;
   }
+}
+
+/* -------------------------------------------------- */
+/* Organizations tab (Phase 2 Step 5)                  */
+/* -------------------------------------------------- */
+
+.orgTopBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #1f1f1f;
+}
+
+.orgRoleBadge {
+  font-size: 0.68rem;
+  color: #889;
+  border: 1px solid #334;
+  border-radius: 3px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  align-self: center;
+}
+
+.orgContentTypeTabs {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+/* Category folder headers, one per depth (0..MAX_CATEGORY_DEPTH-1) — indent is
+   computed inline (paddingLeft) rather than a fixed per-depth class, since 5
+   near-duplicate classes would just be treeSubGroupHeader copy-pasted 5 times. */
+.orgTreeGroupHeader {
+  padding: 5px 10px;
+  font-size: 0.7rem;
+  color: #7a7a8a;
+  letter-spacing: 0.04em;
+  cursor: default;
+}
+
+.orgTreeGroupHeaderTop {
+  color: #a0a0a0;
+  text-transform: uppercase;
+  border-bottom: 1px solid #1f1f1f;
+  background: #0f0f0f;
+}
+
+.orgEmptyState {
+  padding: 16px 12px;
+  font-size: 0.82rem;
+  color: #7a7a8a;
+}
+
+.orgStatus {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: #4ec9b0;
+  min-height: 1em;
+}
+
+.orgStatusErr {
+  color: #c74a4a;
 }

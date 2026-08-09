@@ -10,6 +10,7 @@ import { getToken, clearToken } from './authTokenStore';
 import type { AnyUserScript } from '../userScripts/types';
 import type { GlobalScriptBucket } from '../userScripts/globalScriptsStore';
 import type { InstalledPluginRecord } from '../../hooks/usePlugins';
+import type { LibraryNote, UserNote, LibraryBook } from '../library/library-types';
 
 export type CloudSyncResult<T> =
   | { kind: 'ok'; data: T }
@@ -86,4 +87,65 @@ export function savePluginConfigs(configs: InstalledPluginRecord[]): Promise<Clo
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(configs),
   });
+}
+
+// Phase E: item-level Library-content sync (parchment/notes/books) against
+// LibraryController's `library/my-writings/*` endpoints — a DIFFERENT base path than
+// the api/user-content/* calls above (both go through the same siteApiBase()/proxy, no
+// special handling needed). Unlike scripts/plugin-configs this is per-item PUT/DELETE,
+// not a whole-collection PUT — see librarySync.ts for the diff/upsert orchestration and
+// the connectionId-scoping rule that makes per-item deletes safe. Cloud rows may have no
+// connectionId (mobile- or My-Writings-web-page-created); the local types require one
+// (each connection keeps its own IndexedDB slice), so the wire shape here is the local
+// type with connectionId loosened to optional, not the local type itself.
+export type CloudLibraryNote = Omit<LibraryNote, 'connectionId'> & { connectionId?: string };
+export type CloudUserNote = Omit<UserNote, 'connectionId'> & { connectionId?: string };
+export type CloudLibraryBook = Omit<LibraryBook, 'connectionId'> & { connectionId?: string };
+
+export function loadParchmentCloud(): Promise<CloudSyncResult<CloudLibraryNote[]>> {
+  return authedRequest('/library/my-writings/parchment');
+}
+
+export function upsertParchmentCloud(item: LibraryNote): Promise<CloudSyncResult<{ id: string }>> {
+  return authedRequest(`/library/my-writings/parchment/${encodeURIComponent(item.id)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(item),
+  });
+}
+
+export function deleteParchmentCloud(id: string): Promise<CloudSyncResult<void>> {
+  return authedRequest(`/library/my-writings/parchment/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export function loadUserNotesCloud(): Promise<CloudSyncResult<CloudUserNote[]>> {
+  return authedRequest('/library/my-writings/notes');
+}
+
+export function upsertUserNoteCloud(item: UserNote): Promise<CloudSyncResult<{ id: string }>> {
+  return authedRequest(`/library/my-writings/notes/${encodeURIComponent(item.id)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(item),
+  });
+}
+
+export function deleteUserNoteCloud(id: string): Promise<CloudSyncResult<void>> {
+  return authedRequest(`/library/my-writings/notes/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export function loadLibraryBooksCloud(): Promise<CloudSyncResult<CloudLibraryBook[]>> {
+  return authedRequest('/library/my-writings/books');
+}
+
+export function upsertLibraryBookCloud(item: LibraryBook): Promise<CloudSyncResult<{ id: string }>> {
+  return authedRequest(`/library/my-writings/books/${encodeURIComponent(item.id)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(item),
+  });
+}
+
+export function deleteLibraryBookCloud(id: string): Promise<CloudSyncResult<void>> {
+  return authedRequest(`/library/my-writings/books/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }

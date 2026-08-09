@@ -6,6 +6,7 @@ import * as cloudSync from '../features/auth/cloudSync';
 import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
 import { getAllGlobalScriptBuckets, replaceGlobalScriptBuckets } from '../features/userScripts/globalScriptsStore';
 import { PLUGINS_STORAGE_KEY, writeInstalledPlugins, type InstalledPluginRecord } from './usePlugins';
+import { saveLibraryToCloud, loadLibraryFromCloud } from '../features/library/librarySync';
 
 interface UseAccountModalOptions {
   isOpen: boolean;
@@ -88,16 +89,18 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
       // getAllGlobalScriptBuckets on why a partial save would drop the rest.
       const globals = getAllGlobalScriptBuckets();
 
-      const [scriptsResult, pluginsResult, globalsResult] = await Promise.all([
+      const [scriptsResult, pluginsResult, globalsResult, libraryResult] = await Promise.all([
         cloudSync.saveScripts(scripts),
         cloudSync.savePluginConfigs(plugins),
         cloudSync.saveGlobalScripts(globals),
+        saveLibraryToCloud(connectionId),
       ]);
 
       if (
         scriptsResult.kind === 'unauthenticated' ||
         pluginsResult.kind === 'unauthenticated' ||
-        globalsResult.kind === 'unauthenticated'
+        globalsResult.kind === 'unauthenticated' ||
+        libraryResult.kind === 'unauthenticated'
       ) {
         setIsLoggedIn(false);
         setStatus({ kind: 'err', text: 'Your session expired — please log in again.' });
@@ -115,12 +118,18 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
         setStatus({ kind: 'err', text: `Save failed (global scripts): ${globalsResult.message}` });
         return;
       }
+      if (libraryResult.kind === 'error') {
+        setStatus({ kind: 'err', text: `Save failed (library): ${libraryResult.message}` });
+        return;
+      }
 
+      const lib = libraryResult.data;
       setStatus({
         kind: 'ok',
         text:
-          `Saved ${scriptsResult.data.count} script(s), ${pluginsResult.data.count} plugin config(s) ` +
-          `and ${globalsResult.data.count} global-script set(s) to the cloud.`,
+          `Saved ${scriptsResult.data.count} script(s), ${pluginsResult.data.count} plugin config(s), ` +
+          `${globalsResult.data.count} global-script set(s), and ${lib.parchment} parchment / ${lib.notes} note(s) / ` +
+          `${lib.books} book(s) to the cloud.`,
       });
     } finally {
       setBusy(false);
@@ -130,23 +139,26 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
   const handleLoadFromCloud = async () => {
     const confirmed = window.confirm(
       "Load from the cloud into this connection? This replaces this connection's local scripts and " +
-        'plugin configs with whatever was last saved to the cloud, and reloads the page.',
+        'plugin configs with whatever was last saved to the cloud, merges in any parchment/notes/books ' +
+        'saved from the cloud (nothing local is deleted), and reloads the page.',
     );
     if (!confirmed) return;
 
     setBusy(true);
     setStatus(null);
     try {
-      const [scriptsResult, pluginsResult, globalsResult] = await Promise.all([
+      const [scriptsResult, pluginsResult, globalsResult, libraryResult] = await Promise.all([
         cloudSync.loadScripts(),
         cloudSync.loadPluginConfigs(),
         cloudSync.loadGlobalScripts(),
+        loadLibraryFromCloud(connectionId),
       ]);
 
       if (
         scriptsResult.kind === 'unauthenticated' ||
         pluginsResult.kind === 'unauthenticated' ||
-        globalsResult.kind === 'unauthenticated'
+        globalsResult.kind === 'unauthenticated' ||
+        libraryResult.kind === 'unauthenticated'
       ) {
         setIsLoggedIn(false);
         setStatus({ kind: 'err', text: 'Your session expired — please log in again.' });
@@ -164,6 +176,10 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
         setStatus({ kind: 'err', text: `Load failed (global scripts): ${globalsResult.message}` });
         return;
       }
+      if (libraryResult.kind === 'error') {
+        setStatus({ kind: 'err', text: `Load failed (library): ${libraryResult.message}` });
+        return;
+      }
 
       const scriptsKey = RuntimeSingleton.Runtime.getStorageKey(connectionId);
       window.localStorage.setItem(scriptsKey, JSON.stringify(scriptsResult.data));
@@ -173,6 +189,9 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
       // private — so this is for correctness rather than to avoid the reload.
       writeInstalledPlugins(pluginsResult.data);
       replaceGlobalScriptBuckets(Array.isArray(globalsResult.data) ? globalsResult.data : []);
+      // Library content is already written to IndexedDB by loadLibraryFromCloud itself
+      // (item-level upserts, not a localStorage blob) — nothing further to apply here;
+      // the reload below picks it up the same way useLibrary() picks up any other change.
 
       window.location.reload();
     } finally {

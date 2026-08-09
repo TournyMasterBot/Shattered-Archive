@@ -29,9 +29,10 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, con
           {!isLoggedIn && (
             <>
               <div className={styles.blurb}>
-                Log in with your Shattered Archive account to save and load this connection's scripts and plugin
-                configs from the cloud. This is optional — everything keeps working locally without it. Signing in
-                opens a separate window, so your connection to the game stays up the whole time.
+                Log in with your Shattered Archive account to save and load this connection's scripts, plugin
+                configs, and library writings (parchment/notes/books) from the cloud. This is optional — everything
+                keeps working locally without it. Signing in opens a separate window, so your connection to the game
+                stays up the whole time.
               </div>
               <div className={styles.actionsColumn}>
                 <button
@@ -56,8 +57,9 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, con
             <>
               <div className={styles.connectionLine}>Connection: {connectionId}</div>
               <div className={styles.blurb}>
-                Save pushes this connection's local scripts and plugin configs to the cloud. Load replaces them with
-                whatever was last saved there.
+                Save pushes this connection's local scripts, plugin configs, and library writings to the cloud. Load
+                replaces the scripts/plugin configs with whatever was last saved there, and merges in any library
+                writings saved from the cloud (your local writings are never deleted by Load).
               </div>
               <div className={styles.actionsColumn}>
                 <button type="button" className={styles.secondaryButton} onClick={handleSaveToCloud} disabled={busy}>

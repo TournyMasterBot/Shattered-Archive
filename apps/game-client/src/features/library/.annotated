@@ -4,7 +4,16 @@ File Index
 Purpose: Manages IndexedDB storage for library notes, books, and user notes with synchronization and migration support.
 
 /library-types.ts
-Purpose: Defines shared TypeScript types for library data structures across client and server.
+Purpose: Defines shared TypeScript types for library data structures across client and server. Phase E added tag?/recipients? to LibraryNote/UserNote/LibraryBook and their export-bundle counterparts (now byte-compatible with mobile's LibraryBundle again), plus a verbatim port of LineStats/LineWarnings/soft-hard line+char limit constants/getLineStats/getWarnings from mobile's book-types.ts (no shared package exists to import from instead).
 
 /renderDslColorPreviewHtml.ts
 Purpose: Converts DSL color codes into HTML for library previews.
+
+/librarySync.ts
+Purpose: Phase E — saveLibraryToCloud/loadLibraryFromCloud, item-level Save/Load for parchment/notes/books against cloudSync.ts's library/my-writings/* wrappers (unlike scripts/plugin-configs, item-per-row server-side, not a whole-collection PUT). Save upserts every local item then deletes only cloud rows matching THIS connectionId that are no longer local — narrower than the scripts sync's whole-blob clobber. Load applies every cloud item with no connectionId or a matching one, upsert-only (nothing local is deleted). A connection-less (mobile/My-Writings-web) item loaded here "claims" this connectionId on its next Save — an accepted simplification, not a full CRDT merge.
+
+/org-content-types.ts
+Purpose: Organizations Phase 2 Step 5 — types for the game-client Organizations tab, verified directly against DSL/Server's actual C# rather than assumed (org content items have NO server-guaranteed createdAt/updatedAt, title is optional). Also the recursive category-folder tree: CategoryTreeNode + buildCategoryTree/sortedChildren/sortedItems, built from items' flat categoryPath arrays (up to MAX_CATEGORY_DEPTH=5) — LibraryModal.tsx's groupByTag is only ever a single flat level, so this is new, not a reuse.
+
+/org-content.ts
+Purpose: Organizations Phase 2 Step 5 — Bearer-token API client for org data (listMyOrganizations/getOrganization/listOrgContent/saveOrgContent/deleteOrgContent), structurally mirroring auth/cloudSync.ts's authedRequest pattern rather than librarySync.ts's diff/push orchestration — org content has no local IndexedDB mirror to reconcile (multi-writer shared data, rotating per-org key), so every read is a live fetch. Deliberately no listCharacters/createCharacter — see org-content-types.ts's sibling OrganizationsPane.tsx entry in components/.annotated for why.
