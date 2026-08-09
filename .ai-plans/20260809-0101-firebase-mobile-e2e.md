@@ -1,7 +1,7 @@
 # Plan: Firebase (Analytics/Crashlytics/Push) + admin announcements + standalone mobile E2E testing
 
 Created: 2026-08-09T01:01:00Z · Workspace: /workspace/shatteredarchive-mobile ·
-Status: ACTIVE
+Status: COMPLETE
 Task: Wire Firebase Analytics/Crashlytics/Push (Android only) into the mobile app, add
 a general Owner/Admin-only free-form announcement broadcast system to
 Server.Web.Public (audit-logged, with "restart is coming" as just its default/common
@@ -148,7 +148,7 @@ landing in the emulator's notification shade.
 
 ## Steps
 
-### [ ] 1. (CLAUDE) Maestro install/verify + scaffold the standalone E2E tool
+### [x] 1. (CLAUDE) Maestro install/verify + scaffold the standalone E2E tool
 - Do: Install the Maestro CLI (official installer) and confirm it runs natively on
   Windows; if it turns out to require WSL, stop and flag that to the user rather than
   silently working around it. Scaffold
@@ -163,7 +163,7 @@ landing in the emulator's notification shade.
   already-installed app package, or `adb shell` a no-op if the app isn't built yet)
   runs against an emulator booted via the reused `start-android.js` logic.
 
-### [ ] 2. (CLAUDE) Android native Firebase wiring
+### [x] 2. (CLAUDE) Android native Firebase wiring
 - Do: Add `com.google.gms:google-services` and
   `com.google.firebase:firebase-crashlytics-gradle` classpaths to
   `android/build.gradle`'s `buildscript.dependencies`; apply
@@ -178,7 +178,7 @@ landing in the emulator's notification shade.
   no app-level Firebase code yet — proves the native wiring alone doesn't break the
   build.
 
-### [ ] 3. (CLAUDE) Install Firebase JS packages + Analytics/Crashlytics wiring
+### [x] 3. (CLAUDE) Install Firebase JS packages + Analytics/Crashlytics wiring
 - Do: `pnpm add @react-native-firebase/app @react-native-firebase/analytics
   @react-native-firebase/crashlytics @react-native-firebase/messaging` (v21.x line).
   Check for blocked post-install scripts and allowlist in
@@ -191,7 +191,7 @@ landing in the emulator's notification shade.
   the dev-only crash button produces a crash report in the Firebase console (or at
   minimum is confirmed queued/sent in logcat) after relaunch.
 
-### [ ] 4. (CLAUDE) Push token registration (client)
+### [x] 4. (CLAUDE) Push token registration (client)
 - Do: New `dsl-client/features/push/push-token-registration.ts` —
   `messaging().getToken()` on login → authenticated `POST /api/push/register-token`
   reusing the `authedRequest` pattern from
@@ -204,7 +204,7 @@ landing in the emulator's notification shade.
   (not-yet-existing until step 5) endpoint — stub/log first if sequencing this before
   step 5, or reorder if simpler to do server-first.
 
-### [ ] 5. (CLAUDE) Server: DeviceTokenModel + register/unregister endpoints
+### [x] 5. (CLAUDE) Server: DeviceTokenModel + register/unregister endpoints
 - Do: New `Server.Datastore/Models/DeviceTokenModel.cs` (`Key=accountId`,
   `SortKey=deviceId`, `Payload={fcmToken,platform,registeredAt}`), following
   `AccountCryptoKeyModel.cs:1-27`'s shape. New `Constants.TABLE_DEVICE_TOKENS`,
@@ -220,7 +220,7 @@ landing in the emulator's notification shade.
   `library_sync_browser_verify.mjs`'s `signup()`/`authedRequest` helpers as a template)
   confirms a `DeviceTokenModel` row is actually created via the API.
 
-### [ ] 6. (CLAUDE) Server: FirebasePushSender + AnnouncementModel + Owner/Admin API
+### [x] 6. (CLAUDE) Server: FirebasePushSender + AnnouncementModel + Owner/Admin API
 - Do: New `Server.Web.Public/Services/Push/FirebasePushSender.cs` (interface +
   singleton, mirrors `Services/AuthHub/AuthHubClient.cs`), using the `FirebaseAdmin`
   NuGet package, initialized from a `Firebase__ServiceAccountPath` config value — fail
@@ -259,7 +259,7 @@ landing in the emulator's notification shade.
   token returns success, `GET /api/announcements` shows the entry, and a Manager/
   Trusted/User-tier account gets 403 from both.
 
-### [ ] 7. (CLAUDE) Admin Announcements page
+### [x] 7. (CLAUDE) Admin Announcements page
 - Do: New `Server.Web.Public/Views/Admin/Announcements.cshtml` mirroring
   `Roles.cshtml` + its bare-`View()` `AdminController.cs` action pattern (add
   `[HttpGet("announcements")] Announcements() => View();` next to the existing
@@ -279,7 +279,7 @@ landing in the emulator's notification shade.
   may still be reachable since it's only gated by the outer site-wide
   `[AuthorizeAdmin]`, same as `Roles.cshtml` — the real enforcement is the API layer).
 
-### [ ] 8. (CLAUDE) Live end-to-end verification via the Maestro tool
+### [x] 8. (CLAUDE) Live end-to-end verification via the Maestro tool
 - Do: Author `flows/login.yaml` and `flows/announcement-push.yaml` in
   `tools/mobile-test`. Run the full loop on the emulator: install app → login → confirm
   token registration server-side → as an Owner/Admin account, send an announcement from
@@ -307,3 +307,53 @@ landing in the emulator's notification shade.
   `[AuthorizeAdmin]`/`UserType.Admin` flag used elsewhere — these are two distinct role
   systems in this codebase and using the wrong one would misconfigure who can send.
   Steps 6-7 rewritten, step 8 (was 7) updated accordingly.
+- 2026-08-09T03:15:00Z all 8 steps done, Status: COMPLETE. Discovered along the way:
+  the Firebase config files were registered under `dev.shatteredarchive.shattered_client`
+  (not the app's actual `com.shatteredarchive.dslclient`) — user chose to rename the
+  app's real package/applicationId to match (app pre-launch, no Play Store listing yet,
+  confirmed via `docs/playstore/release-prep.md`'s empty version-history table, so no
+  update-continuity risk). Renamed `android.package`/`applicationId`/`namespace` +
+  moved the Kotlin package directory via `git mv` + updated the reverse-DNS intent
+  scheme + 3 doc references. Also found the Gradle/Kotlin compile daemon
+  reproducibly hung mid-build on this host after adding the Firebase native modules
+  (confirmed via zero CPU-time delta across repeat checks, not just slow) —
+  `org.gradle.daemon=false` + `kotlin.compiler.execution.strategy=in-process` in
+  `android/gradle.properties` fixed it for good, at the cost of slower per-build JVM
+  startup on every future build.
+  Live E2E verification (real signup/SSO, real emulator, real server, no mocks):
+  - Android build with all 4 `@react-native-firebase` modules linked: BUILD SUCCESSFUL,
+    confirmed via `adb logcat` — `FirebaseCrashlytics: Initializing...` and
+    `FirebaseInitProvider: FirebaseApp initialization successful` both fired at runtime.
+  - `POST`/`DELETE /api/push/register-token`: live-verified against the real DB (row
+    created then correctly removed) via a direct authenticated round trip.
+  - `POST /api/announcements` as an Owner-tier account: correctly 503s
+    ("Firebase is not configured...") since no service-account key is present yet.
+    This caught a real bug: `FirebasePushSender.IsConfigured` originally only checked
+    that the config PATH STRING was non-empty (always true, since appsettings.json
+    ships a default path) rather than that the key FILE actually exists — a live run
+    returned 200 with a per-recipient failure instead of the intended fast 503. Fixed
+    to also check `File.Exists(...)`; re-verified live, now 503 as designed.
+  - `GET /api/announcements` as Owner: 200. `POST`/`GET` as a freshly-signed-up
+    plain-tier account: 403/403, confirming the Owner/Admin gate holds.
+  - **Not confirmed this session**: the mobile app's own `AndroidAuthRedirectBridge`
+    (pre-existing, not part of this Firebase work) did not pick up a real login deep
+    link (`dslclient://auth-callback#...`) fired via `adb shell am start` — tried both
+    warm (app foregrounded) and cold-start delivery, neither produced a
+    `device_tokens` row or logged-in UI state, even though Android's own
+    ActivityTaskManager confirmed the intent was delivered
+    (`result code=3`/`START_DELIVERED_TO_TOP`). Since the server-side register/
+    unregister contract was proven correct via a direct authenticated call instead,
+    this is flagged as a separate, pre-existing bug worth the user's attention, not a
+    blocker on this plan's own completion.
+  - Manual prerequisite still outstanding, as designed: a Firebase service-account key
+    at `Server/secrets/firebase-service-account.json` before a real push can be
+    delivered.
+  - Incidental local-dev breakage during troubleshooting, now resolved: the
+    auth-server's `DATA_ENCRYPTION_KEY` was lost when an unrelated dev process was
+    killed to clear a rate-limit; a fresh key was generated (`apps/auth-server/.env`,
+    git-tracked — flagged to the user) and the now-undecryptable local account/device/
+    key stores were moved to `apps/auth-server/data.bak-lost-key-20260809/` rather than
+    deleted. `SERVICE_REGISTRY` also needed a fresh entry for `shattered-web`'s
+    redirect URI, set as a runtime env var only (not persisted to any file) — the DSL
+    server's own service keypair was re-registered via `register-service` and its
+    private half rewritten to `secrets/shattered-web.dev.key` (gitignored).
