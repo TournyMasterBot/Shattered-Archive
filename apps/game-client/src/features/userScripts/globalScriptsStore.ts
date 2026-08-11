@@ -35,6 +35,29 @@ const scriptCache = new Map<string, GlobalScriptsPayloadV1>();
 const varsCache = new Map<string, GlobalVarsPayloadV1>();
 const varsRawCache = new Map<string, string>();
 
+// Debounced disk write, keyed per connection. A trigger script that calls
+// setGlobalVar per matched line (e.g. a combat-log counter) would otherwise
+// synchronously re-serialize + localStorage.setItem on every line — and
+// localStorage.setItem is itself a blocking call, so that's a direct main-
+// thread stall on every match, not just a stringify cost. varsCache/
+// varsRawCache are still updated synchronously in set/deleteGlobalVar, so
+// reads always see the latest value; only the disk write is delayed.
+const pendingVarsWrite = new Map<string, ReturnType<typeof setTimeout>>();
+const VARS_PERSIST_DELAY_MS = 400;
+
+function schedulePersistVars(key: string): void {
+  const existing = pendingVarsWrite.get(key);
+  if (existing !== undefined) clearTimeout(existing);
+  pendingVarsWrite.set(
+    key,
+    setTimeout(() => {
+      pendingVarsWrite.delete(key);
+      const raw = varsRawCache.get(key);
+      if (raw !== undefined) writeRaw(key, raw);
+    }, VARS_PERSIST_DELAY_MS),
+  );
+}
+
 function defaultScriptsPayload(): GlobalScriptsPayloadV1 {
   return {
     schema: 'shatteredArchive.globalScripts.v1',
@@ -248,10 +271,19 @@ export function replaceGlobalScriptBuckets(buckets: GlobalScriptBucket[]): void 
  */
 export function getGlobalVarsSnapshot(connectionId?: string | null): Record<string, unknown> {
   const key = getGlobalVarsStorageKey(connectionId);
+  const cached = varsCache.get(key);
+
+  // A debounced write is still pending for this key: memory is deliberately
+  // ahead of disk (that's the point of the debounce), so the raw-bytes
+  // comparison below would see a mismatch and wrongly reload the stale
+  // on-disk value, discarding the just-set var until the flush lands. Trust
+  // memory instead — we are the most recent writer.
+  if (cached && pendingVarsWrite.has(key)) {
+    return cached.vars;
+  }
 
   const raw = readRaw(key);
   const lastRaw = varsRawCache.get(key);
-  const cached = varsCache.get(key);
 
   // If cache exists and localStorage raw hasn't changed, return cached.
   if (cached && lastRaw === raw) {
@@ -307,11 +339,11 @@ export function setGlobalVar(connectionId: string | null | undefined, keyName: s
   // update caches first
   varsCache.set(key, currentPayload);
 
-  // write through immediately
+  // debounce the disk write; caches above are already current
   try {
     const raw = JSON.stringify(currentPayload);
-    writeRaw(key, raw);
     varsRawCache.set(key, raw);
+    schedulePersistVars(key);
 
     DispatchEvent('shatteredarchive:globalVars-updated', { key });
   } catch {
@@ -334,11 +366,11 @@ export function deleteGlobalVar(connectionId: string | null | undefined, keyName
   // update caches first
   varsCache.set(key, currentPayload);
 
-  // write through immediately
+  // debounce the disk write; caches above are already current
   try {
     const raw = JSON.stringify(currentPayload);
-    writeRaw(key, raw);
     varsRawCache.set(key, raw);
+    schedulePersistVars(key);
 
     DispatchEvent('shatteredarchive:globalVars-updated', { key });
   } catch {

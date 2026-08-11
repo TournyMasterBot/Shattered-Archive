@@ -28,7 +28,7 @@ Purpose: Highlights player names in chat logs by organization color based on con
 Purpose: Parses player data from game commands into a shared database for tracking and annotation.
 
 /peopleDb.ts
-Purpose: Manages persistent storage and retrieval of character data for the game client.
+Purpose: Manages persistent storage and retrieval of character data for the game client. Capped at MAX_PEOPLE=3000 (evicts oldest lastSeen down to TRIM_TO=2500) and persist is debounced (400ms trailing-edge) — without both, a `who`/`cinfo`/craft-hall burst calls the synchronous, blocking window.localStorage.setItem once per matched line, re-serializing the entire ever-growing map each time.
 
 /questbot-stats-idb.ts
 Purpose: IndexedDB storage for QuestBot statistics with running aggregates and session management.

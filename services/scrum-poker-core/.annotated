@@ -1,8 +1,1 @@
-src/index.ts — Barrel re-exporting the domain types, deck helpers, room reducers and wire protocol.
-src/types.ts — Room/Participant/RoomSettings domain shapes plus the wire-only RoomView projection; Participant splits public id from private secret.
-src/deck.ts — Estimate-deck parsing, validation, and the numeric-card rule that keeps ?/☕ out of averages.
-src/room.ts — Every room state transition as a pure (room, …, now) -> room function; joinRoom re-attaches on the secret, toRoomView enforces vote hiding.
-src/protocol.ts — /ws/scrum client/server message types and the hostile-input parser for client frames.
-src/deck.test.ts — Deck parse/format round-trip, validation limits, and numeric-card classification.
-src/room.test.ts — Join/re-attach, voting rules, hiding, stats, reset/clear, idle sweep, settings validation.
-src/protocol.test.ts — Frame parsing: valid shapes, wrong types, unknown keys, and malformed input.
+File Index

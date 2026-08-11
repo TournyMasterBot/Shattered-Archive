@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="How the shatteredarchive.dev demo services handle data: cookies, local storage, Google AdSense, Google Analytics, server logs and retention."
+      content="How the shatteredarchive.dev demo services and mobile app handle data: cookies, local storage, Google AdSense, Google Analytics, Firebase Analytics/Crashlytics, push notifications, Google AdMob, server logs and retention."
     />
 
     <!--
@@ -27,7 +27,7 @@
     <meta property="og:title" content="Privacy &amp; Cookies — ShatteredArchive" />
     <meta
       property="og:description"
-      content="Exactly what the shatteredarchive.dev demo services store, by whom, and for how long."
+      content="Exactly what the shatteredarchive.dev demo services and mobile app store, by whom, and for how long."
     />
 
     <!--
@@ -268,13 +268,15 @@
 
     <main class="wrap">
       <h1>Privacy &amp; Cookies</h1>
-      <p class="updated">Applies to <code>shatteredarchive.dev</code> and its subdomains. Last updated 5 August 2026.</p>
+      <p class="updated">Applies to <code>shatteredarchive.dev</code> and its subdomains, and to the Shattered Archive mobile app for Android. Last updated 9 August 2026.</p>
 
       <p class="lede">
         ShatteredArchive is an independent fan project. The services on
         <code>shatteredarchive.dev</code> are public demonstrations of a stack you are meant to run
         yourself — they exist to show what the software does, not to build an audience or a profile of
-        you. This page describes exactly what is stored, by whom, and for how long.
+        you. The Shattered Archive mobile app is a <code>shatteredarchive.dev</code> product in the same
+        sense — see <a href="#mobile-app">The Shattered Archive mobile app</a> below for what it
+        specifically collects. This page describes exactly what is stored, by whom, and for how long.
       </p>
 
       <div class="callout">
@@ -344,6 +346,12 @@
           </tbody>
         </table>
       </div>
+
+      <p>
+        This table covers the web pages above only. The mobile app has its own SDKs — Firebase Analytics,
+        Firebase Crashlytics, push notifications, and (once enabled) Google AdMob — covered separately
+        under <a href="#mobile-app">The Shattered Archive mobile app</a> below.
+      </p>
 
       <p>
         The sign-in hub at <code>auth.shatteredarchive.dev</code> carries no advertising or analytics of
@@ -425,6 +433,103 @@
         service will continue to work normally. Nothing on any of these sites is gated behind allowing
         them.
       </p>
+
+      <h2 id="mobile-app">The Shattered Archive mobile app</h2>
+
+      <p>
+        The Shattered Archive app for Android is a <code>shatteredarchive.dev</code> product, distributed
+        separately from the <code>shatteredarchive.dev</code> web pages above. It signs you in through the
+        same sign-in hub used everywhere else (<code>auth.shatteredarchive.dev</code>), and — once
+        signed in — talks to <code>shatteredarchive.com</code>'s API for the same account and library data
+        the website itself stores, exactly as described in <code>shatteredarchive.com</code>'s own privacy
+        notice for that data. That reuse is a backend implementation detail; it does not put analytics,
+        ads, or the app itself onto <code>shatteredarchive.com</code>. What is specific to the app is the
+        set of SDKs it carries: Firebase Analytics, Firebase Crashlytics, push notifications, and — once
+        enabled — Google AdMob.
+      </p>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>SDK</th>
+              <th>What it collects</th>
+              <th>Purpose</th>
+              <th>Retention</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Firebase Analytics</td>
+              <td>
+                Screens viewed, app opens, coarse device and OS info, and an anonymous per-install
+                identifier. No account identifier is included in analytics events.
+              </td>
+              <td>Understand which parts of the app are actually used.</td>
+              <td>
+                Per Firebase's own analytics data-retention setting (not customised by us) — see
+                <a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer nofollow">
+                  Firebase's privacy and security page</a> for specifics.
+              </td>
+            </tr>
+            <tr>
+              <td>Firebase Crashlytics</td>
+              <td>
+                Crash and error reports: stack trace, app version, device model, OS version, and free
+                memory/disk at the time of the crash.
+              </td>
+              <td>Diagnose and fix bugs.</td>
+              <td>Per Firebase's own crash-report retention — see the link above.</td>
+            </tr>
+            <tr>
+              <td>Push notifications (Firebase Cloud Messaging)</td>
+              <td>
+                A device-specific push token, associated with your account while you are signed in to
+                the app.
+              </td>
+              <td>
+                Deliver announcements sent by ShatteredArchive administrators — for example, advance
+                notice of planned maintenance. Every announcement sent is itself logged (who sent it,
+                when, to how many devices) for accountability; that log is visible only to
+                administrators. Push is never used for advertising.
+              </td>
+              <td>Removed when you sign out of the app or revoke its notification permission.</td>
+            </tr>
+            <tr>
+              <td>Google AdMob <em>(planned — not yet enabled in the current release)</em></td>
+              <td>
+                Once live: an advertising identifier, coarse device info, and ad interaction data, used
+                by Google and its partners to select and measure ads — the same categories of data any
+                AdMob-integrated app collects.
+              </td>
+              <td>Ad serving and measurement, same rationale as the AdSense units above.</td>
+              <td>Governed by Google's own AdMob data policy. This notice will be updated with specifics before ads go live.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        We do not receive raw analytics or crash data ourselves — Google/Firebase processes it and
+        surfaces aggregated dashboards to us. We never supply Google with your name, email address, or
+        account credentials from the app.
+      </p>
+
+      <h3>Your choices, in the app</h3>
+      <ul>
+        <li>
+          Revoke the notification permission (Android Settings → Apps → Shattered Archive →
+          Notifications) to stop receiving push announcements — this also stops the app registering a
+          push token for your device.
+        </li>
+        <li>Uninstalling the app stops all further collection from that device.</li>
+        <li>
+          Once AdMob is enabled, reset or opt out of your Android advertising ID under Settings → Google
+          → Ads, and review Google's
+          <a href="https://myadcenter.google.com/" rel="noopener noreferrer nofollow">Ad Settings</a>.
+        </li>
+        <li>Delete your account (as described above) to remove the server-side push-token record tied to it.</li>
+      </ul>
 
       <h2>Cookies and local storage</h2>
 
@@ -533,6 +638,16 @@
         <li>Do not put confidential ticket details into a shared demo room.</li>
       </ul>
 
+      <h3>Mobile app push registrations</h3>
+      <ul>
+        <li>
+          If you sign in to the app and it registers for push notifications, your device's push token is
+          stored alongside your account, so an administrator-sent announcement can reach it. See
+          <a href="#mobile-app">The Shattered Archive mobile app</a> above for the full detail.
+        </li>
+        <li>Removed when you sign out of the app, revoke its notification permission, or delete your account.</li>
+      </ul>
+
       <h3>Game and Web clients</h3>
       <ul>
         <li>
@@ -555,9 +670,10 @@
       <h2>What is never done</h2>
       <ul>
         <li>No selling or renting of personal data.</li>
-        <li>No sharing of account data with advertisers or analytics providers.</li>
+        <li>No sharing of account data with advertisers or analytics providers — including from the mobile app.</li>
         <li>No advertising or analytics on the sign-in hub, or on any page that handles a password.</li>
-        <li>No advertising or analytics anywhere on <code>shatteredarchive.com</code>.</li>
+        <li>No advertising or analytics anywhere on <code>shatteredarchive.com</code>, and no mobile app associated with that domain.</li>
+        <li>No push notifications used for advertising.</li>
         <li>No tracking of any kind in the software you self-host.</li>
       </ul>
 
@@ -571,6 +687,7 @@
           opt out of Analytics with
           <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener noreferrer nofollow">Google's add-on</a>.
         </li>
+        <li>In the app: revoke notification permission, or uninstall it — see <a href="#mobile-app">the mobile app section</a> above for details.</li>
         <li>Ask for an account or room to be deleted using the contact address below.</li>
         <li>Self-host the stack, in which case none of this applies at all.</li>
       </ul>

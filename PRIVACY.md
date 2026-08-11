@@ -1,6 +1,6 @@
 # Privacy Policy
 
-_Last updated: 5 August 2026._
+_Last updated: 9 August 2026._
 
 ## Overview
 
@@ -14,9 +14,10 @@ services.
 This document covers the ShatteredArchive Software you self-host and
 `shatteredarchive.com` with its subdomains.
 
-The public demo instances on `shatteredarchive.dev` are governed by a separate
-notice at <https://shatteredarchive.dev/privacy>, because their data handling
-differs. Nothing in that notice applies here.
+The public demo instances on `shatteredarchive.dev` — including the Shattered
+Archive mobile app for Android, which is a `shatteredarchive.dev` product — are
+governed by a separate notice at <https://shatteredarchive.dev/privacy>, because
+their data handling differs. Nothing in that notice applies here.
 
 ---
 
@@ -98,10 +99,11 @@ or advertising components. A self-hosted deployment sends nothing to
 ShatteredArchive or to any third party.
 
 **`shatteredarchive.com` and its subdomains carry no advertising and no
-analytics**, and there is no plan to add either. They use only cookies
-necessary for operation, plus ordinary server access logs — IP address,
-timestamp, requested path, response status and user agent — used to operate the
-service, apply per-IP rate limits, and investigate abuse and faults.
+analytics, and there is no mobile app associated with this domain** — no plan
+to add any of the three. They use only cookies necessary for operation, plus
+ordinary server access logs — IP address, timestamp, requested path, response
+status and user agent — used to operate the service, apply per-IP rate limits,
+and investigate abuse and faults.
 
 The sign-in hub sets one cookie, described under _Accounts and Sign-In_ above.
 It is strictly necessary and is not used for tracking.

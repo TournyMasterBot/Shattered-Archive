@@ -51,6 +51,12 @@ services:
       # are off there. Read security-headers-ads.conf before pointing any other block at it —
       # never auth, never game-client.
       NGINX_CSP_SCRUM_FILE: "${NGINX_CSP_SCRUM_FILE:-security-headers-ads.conf}"
+      # CSP profile for the shatteredarchive.dev landing page + /privacy — same mechanism and
+      # same rationale as NGINX_CSP_SCRUM_FILE just above. This stack is the one that actually
+      # serves the ad unit + GA4 tag (see deploy/index.html), so it defaults to the ad-permitting
+      # profile here; the experimental/local compose keeps the strict one. See
+      # includes/landing-page.conf and includes/security-headers-ads.conf before touching this.
+      NGINX_CSP_LANDING_FILE: "${NGINX_CSP_LANDING_FILE:-security-headers-ads.conf}"
       # The FRONT proxy (DSL/nginx/shattered_archive.site) that terminates TLS and forwards
       # here. Consumed by edge-subdomains.conf's set_real_ip_from, which is what keeps the
       # per-IP limit_req/limit_conn zones keyed on the real client instead of collapsing
@@ -61,6 +67,14 @@ services:
       - ./nginx/edge-subdomains.conf:/etc/nginx/templates/default.conf.template:ro
       - ./nginx/includes:/etc/nginx/includes:ro
       - ./nginx/certs:/etc/nginx/certs:ro
+
+      # shatteredarchive.dev landing page + /privacy — see includes/landing-page.conf. Mounted
+      # individually (not the whole deploy/ folder as root) so nginx configs and this compose
+      # file itself are never exposed over HTTP.
+      - ./index.html:/var/www/shatteredarchive-dev/index.html:ro
+      - ./privacy.html:/var/www/shatteredarchive-dev/privacy.html:ro
+      - ./site.js:/var/www/shatteredarchive-dev/site.js:ro
+      - ./sitemap.xml:/var/www/shatteredarchive-dev/sitemap.xml:ro
 
     networks:
       shatteredarchive-prod:

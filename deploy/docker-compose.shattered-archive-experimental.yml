@@ -55,6 +55,12 @@ services:
       # to the strict profile; flip to security-headers-ads.conf only together with the
       # client's VITE_AD_CLIENT/VITE_AD_SLOT build args below.
       NGINX_CSP_SCRUM_FILE: "${NGINX_CSP_SCRUM_FILE:-security-headers.conf}"
+      # CSP profile for the shatteredarchive.dev landing page + /privacy — see the prod compose
+      # for the full reasoning. Also required. Defaults to the strict profile, same as
+      # NGINX_CSP_SCRUM_FILE above; flip to security-headers-ads.conf to exercise the ad wiring
+      # locally over plain HTTP (the HTTPS mirror in includes/tls-dev.conf is hardcoded strict
+      # regardless — see the comment there).
+      NGINX_CSP_LANDING_FILE: "${NGINX_CSP_LANDING_FILE:-security-headers.conf}"
       # Required by edge-subdomains.conf (set_real_ip_from) — nginx will not start if it is
       # unset, because envsubst leaves the ${...} in place. Inert on this stack: nothing
       # reaches it via the front proxy, so no request ever arrives from that address and the
@@ -67,6 +73,14 @@ services:
       - ./nginx/includes:/etc/nginx/includes:ro
       # DO NOT CHANGE CERTS (as requested)
       - ./nginx/certs:/etc/nginx/certs:ro
+
+      # shatteredarchive.dev landing page + /privacy — see includes/landing-page.conf. Mounted
+      # individually (not the whole deploy/ folder as root) so nginx configs and this compose
+      # file itself are never exposed over HTTP.
+      - ./index.html:/var/www/shatteredarchive-dev/index.html:ro
+      - ./privacy.html:/var/www/shatteredarchive-dev/privacy.html:ro
+      - ./site.js:/var/www/shatteredarchive-dev/site.js:ro
+      - ./sitemap.xml:/var/www/shatteredarchive-dev/sitemap.xml:ro
 
       # nginx logs to host
       - "C:/Projects/DSL/GameLogs/ShatteredArchive/Docker/nginx:/var/log/nginx"
