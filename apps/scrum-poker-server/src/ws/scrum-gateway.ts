@@ -59,14 +59,19 @@ export interface ScrumConn {
    * all (cookies disabled, or a genuinely first-ever visit with no prior HTTP mint).
    *
    * FROZEN for the life of the connection — there is no way to update it mid-socket, since a
-   * WebSocket carries no further Cookie header after the upgrade handshake. This is exactly
-   * why the client (useScrumRoom.ts) never re-mints over HTTP for an already-open socket: an
-   * HTTP mint's `Set-Cookie` on a live connection is invisible to THIS field, so a `join` frame
-   * on that socket would still read the stale value here, find no match, and mint a second,
-   * separate participant — deterministically, not just under a race. A live "Clear all users"
-   * incident cloned the clicker this exact way (2026-08-06) before the client-side fix landed.
-   * If a future change reintroduces an HTTP mint ahead of an already-open socket's `join`, it
-   * will reopen this bug — the fix belongs on the client, not here.
+   * WebSocket carries no further Cookie header after the upgrade handshake. A `join` frame sent
+   * on an already-open socket therefore ALWAYS reads whatever cookie was present at connect
+   * time, however stale — which is exactly why the client (useScrumRoom.ts) never sends a bare
+   * `join` frame on an open socket to request a fresh mint (post-clear auto-rejoin,
+   * post-eviction "Rejoin"): doing so mints a real participant here, but that row's secret can
+   * never reach this field, so it is invisible to every future reattach until the socket itself
+   * cycles. Two client-side incidents came out of this constraint (2026-08-06: an HTTP mint
+   * ahead of an already-open socket's `join` raced this frozen field and cloned the clicker
+   * every time; 2026-08-12: the WS-only fallback that replaced it left a fresh mint's secret
+   * permanently unreachable, orphaning a ghost row on every clear/eviction cycle). The fix for
+   * both lives entirely on the client (`forceFreshRejoin` in useScrumRoom.ts, which closes and
+   * reopens the socket so the mint-before-connect handshake runs against a fresh connection) —
+   * this field's freeze is a hard constraint of the WebSocket protocol, not a bug to fix here.
    */
   cookieHeader?: string;
   send(msg: ScrumServerMessage): void;
