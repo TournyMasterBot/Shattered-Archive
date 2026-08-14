@@ -77,6 +77,7 @@ services:
       # shatteredarchive.dev landing page + /privacy — see includes/landing-page.conf. Mounted
       # individually (not the whole deploy/ folder as root) so nginx configs and this compose
       # file itself are never exposed over HTTP.
+      - ./favicon.ico:/var/www/shatteredarchive-dev/favicon.ico:ro
       - ./index.html:/var/www/shatteredarchive-dev/index.html:ro
       - ./privacy.html:/var/www/shatteredarchive-dev/privacy.html:ro
       - ./site.js:/var/www/shatteredarchive-dev/site.js:ro
