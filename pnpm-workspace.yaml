@@ -32,3 +32,18 @@ overrides:
   # GHSA-6g55-p6wh-862q (High) + its incomplete-fix follow-up — path traversal via
   # sourceMappingURL auto-loading. 8.5.25 closes both.
   postcss: '8.5.25'
+  # GHSA-2v37-7h3g-55p8 (High) — custom generators can loop indefinitely when
+  # size is zero. Satisfies postcss's own ^3.3.16 range; dev-only (vite toolchain).
+  nanoid: '3.3.18'
+  # GHSA-r292-9mhp-454m (Moderate) — uncontrolled recursion in mapHas/filesFilter,
+  # stack-overflow DoS via crafted long-path tar. Pulled in transitively by
+  # onnxruntime-node (optional Node-side dep of @huggingface/transformers; unused
+  # here — game-client only uses the browser/WASM path).
+  tar: '7.5.22'
+  # GHSA-f88m-g3jw-g9cj (High) — inherited libvips CVEs (CVE-2026-33327/28,
+  # CVE-2026-35590/91). Fix is 0.35.0+, which crosses @huggingface/transformers'
+  # declared range (^0.34.5, still true as of its latest 4.2.0 — no in-range patch
+  # exists). Forced anyway: sharp's build script is disabled here (see allowBuilds
+  # above) since game-client only uses transformers' browser/WASM path, not the
+  # Node/sharp path, so this is untested-by-upstream but effectively dormant.
+  sharp: '0.35.3'

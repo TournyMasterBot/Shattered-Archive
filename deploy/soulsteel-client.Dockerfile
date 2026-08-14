@@ -16,9 +16,21 @@ COPY sdks ./sdks
 
 RUN pnpm install --frozen-lockfile
 
-# Unlike scrum-poker-client, this app has no ad unit, no analytics, and no build-time
-# configuration at all — the API is always same-origin relative paths that the edge nginx
-# routes (see vite.config.ts).
+# Unlike scrum-poker-client, this app has no ad unit and no build-time configuration for the
+# API — that is always same-origin relative paths that the edge nginx routes (see
+# vite.config.ts). It does carry Google Analytics 4, on the same all-or-nothing contract as
+# scrum-poker's VITE_GA_ID: empty (the default) means no gtag script is injected, no cookie is
+# set and no request is made to Google. See src/features/shared/analytics.ts — in particular
+# why it pins cookie_domain to the exact hostname rather than letting GA4 scope `_ga` to the
+# whole registrable domain, which would send it to auth.shatteredarchive.dev too.
+#
+# Enabling this ALSO needs NGINX_CSP_SOULSTEEL_FILE=security-headers-analytics.conf on the
+# edge, which is what allowlists googletagmanager.com; the strict profile blocks the loader
+# outright. Unlike scrum-poker, there is no ad-permitting profile to reach for here — this app
+# carries no ad unit, ever — so the CSP swap only ever grants analytics, never ads.
+ARG VITE_GA_ID=""
+ENV VITE_GA_ID=${VITE_GA_ID}
+
 RUN pnpm --filter @shatteredarchive/soulsteel-client... build
 
 # nginx 1.31.2-alpine3.23
