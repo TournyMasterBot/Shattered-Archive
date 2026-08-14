@@ -639,6 +639,66 @@ services:
         aliases:
           - scrum-poker-client.shatteredarchive.dev
 
+  ############################################################
+  # SOULSTEEL (soulsteel.shatteredarchive.dev) — additive like scrum-poker/mud-builder/auth:
+  # neither container is in nginx's depends_on, so the rest of the stack starts fine either
+  # way. Single subdomain for client+server (see edge-subdomains.conf): the client calls
+  # same-origin /api/soulsteel and /health, so there is no separate server subdomain.
+  #
+  # Phase 1 (see .ai-plans/20260813-1911-soulsteel-herald-tool-mvp.md): the server is a
+  # health-check-only skeleton — no data dir, no volume, not wired to auth-server. Game state
+  # lives entirely in the browser's IndexedDB. The follow-on plan
+  # (.ai-plans/20260813-1912-soulsteel-auth-archive-dashboard.md) is what adds persistence,
+  # an auth wiring block matching kingdom-tactics-server's, and a named volume — do not add
+  # those here speculatively ahead of that plan landing.
+  ############################################################
+  soulsteel-server:
+    build:
+      context: ..
+      dockerfile: deploy/soulsteel-server.Dockerfile
+    image: shatteredarchive-soulsteel-server
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "64000"
+      LOG_LEVEL: "debug"
+      # Same-origin in production (the edge serves the SPA and proxies /api on one host), so
+      # this only matters for a browser pointed straight at the server. Kept explicit rather
+      # than relying on the localhost-only default.
+      CORS_ORIGIN: "https://soulsteel.shatteredarchive.dev"
+    expose:
+      - "64000"
+    networks:
+      shatteredarchive:
+        aliases:
+          - soulsteel-server.shatteredarchive.dev
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(64000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  soulsteel-client:
+    build:
+      context: ..
+      dockerfile: deploy/soulsteel-client.Dockerfile
+    image: shatteredarchive-soulsteel-client
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    networks:
+      shatteredarchive:
+        aliases:
+          - soulsteel-client.shatteredarchive.dev
+
 volumes:
   nginx-logrotate-state:
   auth-server-secrets:

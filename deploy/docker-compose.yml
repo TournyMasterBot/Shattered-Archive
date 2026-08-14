@@ -448,6 +448,59 @@ services:
         aliases:
           - scrum-poker-client.shatteredarchive.dev
 
+  ############################################################
+  # SOULSTEEL (soulsteel.shatteredarchive.dev) — additive, like scrum-poker: not in nginx's
+  # depends_on, so it can never block the rest of the stack from starting. Single subdomain
+  # for client+server; the client calls same-origin /api/soulsteel and /health.
+  #
+  # Phase 1 (see .ai-plans/20260813-1911-soulsteel-herald-tool-mvp.md): the server is a
+  # health-check-only skeleton — no data dir, no volume, not wired to auth-server. Game state
+  # lives entirely in the browser's IndexedDB. The follow-on plan
+  # (.ai-plans/20260813-1912-soulsteel-auth-archive-dashboard.md) is what adds persistence,
+  # auth wiring, and a named volume — do not add those here speculatively ahead of that plan.
+  ############################################################
+  soulsteel-server:
+    build:
+      context: ..
+      dockerfile: deploy/soulsteel-server.Dockerfile
+    image: shatteredarchive-prod-soulsteel-server
+    container_name: shatteredarchive-prod-soulsteel-server
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "64000"
+      LOG_LEVEL: "info"
+      CORS_ORIGIN: "https://soulsteel.shatteredarchive.dev"
+    expose:
+      - "64000"
+    networks:
+      shatteredarchive-prod:
+        aliases:
+          - soulsteel-server.shatteredarchive.dev
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(64000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  soulsteel-client:
+    build:
+      context: ..
+      dockerfile: deploy/soulsteel-client.Dockerfile
+    image: shatteredarchive-prod-soulsteel-client
+    container_name: shatteredarchive-prod-soulsteel-client
+    restart: unless-stopped
+    networks:
+      shatteredarchive-prod:
+        aliases:
+          - soulsteel-client.shatteredarchive.dev
+
 volumes:
   auth-server-secrets:
   scrum-poker-data:
