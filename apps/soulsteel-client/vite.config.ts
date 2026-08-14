@@ -18,6 +18,13 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    // Substituted as a plain literal at build time, not `import.meta.env` — this repo's Jest
+    // client setup cannot compile `import.meta` anywhere in a module graph, which would make
+    // analytics.ts and its importers untestable. See src/features/shared/analytics.ts.
+    define: {
+      // Empty = no gtag script, no cookie, no request. See features/shared/analytics.ts.
+      __SS_GA_ID__: JSON.stringify(env.VITE_GA_ID ?? ''),
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),

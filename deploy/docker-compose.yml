@@ -57,6 +57,14 @@ services:
       # profile here; the experimental/local compose keeps the strict one. See
       # includes/landing-page.conf and includes/security-headers-ads.conf before touching this.
       NGINX_CSP_LANDING_FILE: "${NGINX_CSP_LANDING_FILE:-security-headers-ads.conf}"
+      # CSP profile for soulsteel.shatteredarchive.dev — analytics only, never ads (see
+      # deploy/nginx/includes/security-headers-analytics.conf). Set to the analytics-permitting
+      # profile here because this stack is the one that actually serves the GA4 tag (see the
+      # soulsteel-client build args below); it must stay in step with those, same
+      # fails-silently-in-one-direction risk as NGINX_CSP_SCRUM_FILE above.
+      #
+      # The experimental/local compose keeps the STRICT profile — analytics is off there.
+      NGINX_CSP_SOULSTEEL_FILE: "${NGINX_CSP_SOULSTEEL_FILE:-security-headers-analytics.conf}"
       # The FRONT proxy (DSL/nginx/shattered_archive.site) that terminates TLS and forwards
       # here. Consumed by edge-subdomains.conf's set_real_ip_from, which is what keeps the
       # per-IP limit_req/limit_conn zones keyed on the real client instead of collapsing
@@ -494,6 +502,13 @@ services:
     build:
       context: ..
       dockerfile: deploy/soulsteel-client.Dockerfile
+      args:
+        # GA4 measurement id, no ad unit (this app carries none — see the Dockerfile). Scoped
+        # host-only at runtime rather than to the registrable domain — see
+        # apps/soulsteel-client/src/features/shared/analytics.ts for why that matters with
+        # auth.shatteredarchive.dev as a sibling. Same GA4 property as scrum-poker/landing;
+        # the per-hostname cookie_domain pin is what keeps the three from sharing an identity.
+        VITE_GA_ID: "${SOULSTEEL_GA_ID:-G-7BKPVVZ1BS}"
     image: shatteredarchive-prod-soulsteel-client
     container_name: shatteredarchive-prod-soulsteel-client
     restart: unless-stopped

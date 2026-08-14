@@ -269,7 +269,7 @@
 
     <main class="wrap">
       <h1>Privacy &amp; Cookies</h1>
-      <p class="updated">Applies to <code>shatteredarchive.dev</code> and its subdomains, and to the Shattered Archive mobile app for Android. Last updated 9 August 2026.</p>
+      <p class="updated">Applies to <code>shatteredarchive.dev</code> and its subdomains, and to the Shattered Archive mobile app for Android. Last updated 14 August 2026.</p>
 
       <p class="lede">
         ShatteredArchive is an independent fan project. The services on
@@ -291,7 +291,8 @@
       <h2>Advertising and analytics: where they are, and where they are not</h2>
 
       <p>
-        Third-party advertising and analytics are limited to two pages, deliberately and specifically:
+        Third-party advertising is limited to two pages, and analytics to three, deliberately and
+        specifically:
       </p>
 
       <div class="table-scroll">
@@ -312,6 +313,11 @@
             <tr>
               <td><code>scrum-poker.shatteredarchive.dev</code></td>
               <td>Yes — one unit, landing page only (not room pages)</td>
+              <td>Yes</td>
+            </tr>
+            <tr>
+              <td><code>soulsteel.shatteredarchive.dev</code></td>
+              <td>No</td>
               <td>Yes</td>
             </tr>
             <tr>
@@ -418,8 +424,8 @@
         Analytics is used to count visits and see which demos people actually open. It sets a first-party
         <code>_ga</code> cookie holding a randomly generated identifier. That cookie is scoped to the
         exact hostname that set it, rather than to <code>shatteredarchive.dev</code> as a whole — so the
-        identifier is not shared between the landing page, Scrum Poker, or any other subdomain, and it is
-        never transmitted to the sign-in hub.
+        identifier is not shared between the landing page, Scrum Poker, Soulsteel, or any other subdomain,
+        and it is never transmitted to the sign-in hub.
       </p>
       <p>
         You can opt out across all sites with Google's
@@ -563,7 +569,7 @@
             </tr>
             <tr>
               <td><code>_ga</code>, <code>_ga_*</code></td>
-              <td>Cookie, landing page and Scrum Poker</td>
+              <td>Cookie, landing page, Scrum Poker and Soulsteel</td>
               <td>Google Analytics visit measurement. Not necessary; blockable.</td>
               <td>Up to 2 years</td>
             </tr>
@@ -637,6 +643,18 @@
           it was last used.
         </li>
         <li>Do not put confidential ticket details into a shared demo room.</li>
+      </ul>
+
+      <h3>Soulsteel (<code>soulsteel.shatteredarchive.dev</code>)</h3>
+      <ul>
+        <li>
+          No accounts and no server-side game storage. A game's full state — players, roles, timeline —
+          lives only in your browser's IndexedDB; <code>soulsteel-server</code> never sees it.
+        </li>
+        <li>
+          The only thing this page sends to a third party is the Google Analytics visit measurement
+          described above.
+        </li>
       </ul>
 
       <h3>Mobile app push registrations</h3>

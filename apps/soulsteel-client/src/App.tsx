@@ -33,7 +33,19 @@ export default function App() {
         )}
       </main>
 
-      <footer className="ss-footer">Every game lives only in this browser — no accounts, no server round-trip.</footer>
+      {/*
+        The privacy link is not decoration: this page carries a GA4 tag (see
+        src/features/shared/analytics.ts), and a reachable notice disclosing it is what makes
+        the cookie table discoverable. It points at the .dev landing host because that is where
+        the notice for this constellation lives (deploy/privacy.html) — this app serves no
+        static pages of its own. Mirrors scrum-poker-client's App.tsx footer.
+      */}
+      <footer className="ss-footer">
+        Every game lives only in this browser — no accounts, no server round-trip ·{' '}
+        <a href="https://shatteredarchive.dev/privacy" target="_blank" rel="noopener noreferrer">
+          Privacy
+        </a>
+      </footer>
     </div>
   );
 }
