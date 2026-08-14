@@ -16,6 +16,8 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { escapeStringLiteral } from './escape-string-literal.js';
+
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectsRoot = resolve(scriptDir, '../../../../..'); // -> C:\Projects
 const constantsPath =
@@ -200,7 +202,7 @@ function header(source: string): string {
 // ── END AI-METHOD ──
 function lit(v: unknown): string {
   if (Array.isArray(v)) return `[${v.map(lit).join(', ')}]`;
-  if (typeof v === 'string') return `'${v.replace(/'/g, "\\'")}'`;
+  if (typeof v === 'string') return escapeStringLiteral(v);
   return String(v);
 }
 

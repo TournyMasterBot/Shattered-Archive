@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Privacy &amp; Cookies — ShatteredArchive</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <meta
+      name="description"
+      content="How the shatteredarchive.dev demo services and mobile app handle data: cookies, local storage, Google AdSense, Google Analytics, Firebase Analytics/Crashlytics, push notifications, Google AdMob, server logs and retention."
+    />
+
+    <!--
+      Canonical points at the EXTENSIONLESS /privacy, not /privacy.html, even though the file
+      is privacy.html and both URLs resolve. That is deliberate: /privacy is the URL used in
+      every link, in the AdSense console and in PRIVACY.md, so it is the one that should
+      accumulate ranking signals. Declaring it also collapses the two-URL duplicate that the
+      front proxy's exact-match location otherwise creates.
+
+      Left INDEXABLE on purpose — no `noindex`. A privacy notice that search engines cannot
+      find is a poor one, and AdSense expects a discoverable policy.
+    -->
+    <link rel="canonical" href="https://shatteredarchive.dev/privacy" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ShatteredArchive" />
+    <meta property="og:url" content="https://shatteredarchive.dev/privacy" />
+    <meta property="og:title" content="Privacy &amp; Cookies — ShatteredArchive" />
+    <meta
+      property="og:description"
+      content="Exactly what the shatteredarchive.dev demo services and mobile app store, by whom, and for how long."
+    />
+
+    <!--
+      This page carries NO ads and NO analytics, which is deliberate: a privacy notice that is
+      itself instrumented is a poor look, and it costs nothing here.
+
+      That also means it needs no third-party origins and no inline script, so unlike
+      index.html its policy is genuinely strict — `script-src 'none'` and no ad/analytics
+      allowlist at all. Do not copy index.html's looser policy onto this page; if you ever add
+      script here, add a real reason first.
+
+      `frame-ancestors` is still unavailable in a meta policy (see index.html's note). Served
+      as a static file from /var/www/shatteredarchive-dev alongside index.html.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; base-uri 'self'; form-action 'none'; object-src 'none'"
+    />
+
+    <style>
+      :root {
+        color-scheme: dark;
+
+        --bg: #0f1115;
+        --surface: #151821;
+        --border: #2a2f45;
+        --border-soft: #21263a;
+        --text: #e6e6e6;
+        --text-muted: #9aa0b4;
+        --accent: #9ecbff;
+
+        --max-width: 780px;
+        --radius-sm: 6px;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Roboto,
+          Ubuntu,
+          'Helvetica Neue',
+          Arial,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        margin: 0;
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      code {
+        background: #0b0d13;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 0.1rem 0.35rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.86em;
+        color: #dcdcdc;
+      }
+
+      .sa-nav {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        padding: 0.6rem 1.25rem;
+        background: rgba(15, 17, 21, 0.92);
+        border-bottom: 1px solid var(--border-soft);
+      }
+
+      .sa-nav-brand {
+        font-weight: 650;
+        letter-spacing: -0.01em;
+        color: var(--text);
+        margin-right: auto;
+        font-size: 0.98rem;
+      }
+
+      .sa-nav-brand:hover {
+        text-decoration: none;
+      }
+
+      .sa-nav-brand span {
+        color: var(--accent);
+      }
+
+      .sa-nav-links {
+        display: flex;
+        gap: 1.1rem;
+        font-size: 0.88rem;
+      }
+
+      .sa-nav-links a {
+        color: var(--text-muted);
+      }
+
+      .sa-nav-links a:hover {
+        color: var(--text);
+        text-decoration: none;
+      }
+
+      .wrap {
+        max-width: var(--max-width);
+        margin: 0 auto;
+        padding: 0 1.25rem;
+      }
+
+      h1 {
+        margin: 2.5rem 0 0.4rem;
+        font-size: clamp(1.6rem, 4vw, 2.1rem);
+        letter-spacing: -0.02em;
+      }
+
+      .updated {
+        margin: 0 0 2rem;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+      }
+
+      h2 {
+        margin: 2.25rem 0 0.6rem;
+        font-size: 1.15rem;
+        letter-spacing: -0.01em;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--border-soft);
+      }
+
+      h3 {
+        margin: 1.5rem 0 0.4rem;
+        font-size: 0.95rem;
+      }
+
+      p,
+      li {
+        font-size: 0.94rem;
+      }
+
+      p {
+        margin: 0 0 0.85rem;
+      }
+
+      ul {
+        margin: 0 0 0.85rem;
+        padding-left: 1.2rem;
+      }
+
+      li {
+        margin: 0.3rem 0;
+      }
+
+      .lede {
+        color: var(--text-muted);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0.5rem 0 1.25rem;
+        font-size: 0.86rem;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 0.5rem 0.65rem;
+        border: 1px solid var(--border);
+        vertical-align: top;
+      }
+
+      th {
+        background: var(--surface);
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      td {
+        color: var(--text-muted);
+      }
+
+      .table-scroll {
+        overflow-x: auto;
+      }
+
+      .callout {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent);
+        border-radius: var(--radius-sm);
+        padding: 0.85rem 1rem;
+        margin: 1.25rem 0;
+        font-size: 0.9rem;
+      }
+
+      .callout p:last-child {
+        margin-bottom: 0;
+      }
+
+      footer {
+        border-top: 1px solid var(--border-soft);
+        margin-top: 2.5rem;
+        padding: 1.75rem 0 2.5rem;
+        font-size: 0.82rem;
+        color: var(--text-muted);
+      }
+
+      footer p {
+        margin: 0 0 0.4rem;
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav class="sa-nav" aria-label="Primary">
+      <a class="sa-nav-brand" href="/">Shattered<span>Archive</span></a>
+      <div class="sa-nav-links">
+        <a href="/#demos">Demos</a>
+        <a href="/#self-host">Self-host</a>
+        <a href="/privacy">Privacy</a>
+      </div>
+    </nav>
+
+    <main class="wrap">
+      <h1>Privacy &amp; Cookies</h1>
+      <p class="updated">Applies to <code>shatteredarchive.dev</code> and its subdomains, and to the Shattered Archive mobile app for Android. Last updated 9 August 2026.</p>
+
+      <p class="lede">
+        ShatteredArchive is an independent fan project. The services on
+        <code>shatteredarchive.dev</code> are public demonstrations of a stack you are meant to run
+        yourself — they exist to show what the software does, not to build an audience or a profile of
+        you. The Shattered Archive mobile app is a <code>shatteredarchive.dev</code> product in the same
+        sense — see <a href="#mobile-app">The Shattered Archive mobile app</a> below for what it
+        specifically collects. This page describes exactly what is stored, by whom, and for how long.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>Demo data is disposable.</strong> These instances are shared and are reset without
+          notice. Do not put anything into them that you would mind losing or that you would mind
+          another visitor seeing.
+        </p>
+      </div>
+
+      <h2>Advertising and analytics: where they are, and where they are not</h2>
+
+      <p>
+        Third-party advertising and analytics are limited to two pages, deliberately and specifically:
+      </p>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Site</th>
+              <th>Google&nbsp;AdSense</th>
+              <th>Google&nbsp;Analytics</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>shatteredarchive.dev</code> (this landing page)</td>
+              <td>Yes — one unit</td>
+              <td>Yes</td>
+            </tr>
+            <tr>
+              <td><code>scrum-poker.shatteredarchive.dev</code></td>
+              <td>Yes — one unit, landing page only (not room pages)</td>
+              <td>Yes</td>
+            </tr>
+            <tr>
+              <td><code>auth.shatteredarchive.dev</code></td>
+              <td>No</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td><code>game-client.shatteredarchive.dev</code></td>
+              <td>No</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td><code>web-client.shatteredarchive.dev</code></td>
+              <td>No</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td><code>build.shatteredarchive.dev</code>, <code>kingdom-tactics.shatteredarchive.dev</code></td>
+              <td>No</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td><code>shatteredarchive.com</code> and its subdomains</td>
+              <td>No</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>The ShatteredArchive software you self-host</td>
+              <td>No</td>
+              <td>No</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        This table covers the web pages above only. The mobile app has its own SDKs — Firebase Analytics,
+        Firebase Crashlytics, push notifications, and (once enabled) Google AdMob — covered separately
+        under <a href="#mobile-app">The Shattered Archive mobile app</a> below.
+      </p>
+
+      <p>
+        The sign-in hub at <code>auth.shatteredarchive.dev</code> carries no advertising or analytics of
+        any kind, and this is a design decision rather than an oversight: no third-party script runs on
+        the page where you type a password.
+      </p>
+
+      <p>
+        The software in the repository ships with no advertising, analytics or telemetry components. A
+        self-hosted deployment sends nothing to us or to Google. The advertising code in the Scrum Poker
+        source is inert unless a publisher id and ad unit id are supplied at build time, which a default
+        build does not do.
+      </p>
+
+      <h3>Google AdSense</h3>
+      <p>
+        The two pages above each show a single ad unit. Google and its partners may set and read cookies
+        or similar identifiers in order to serve and measure ads, and may use your IP address, the page
+        you are on, and prior browsing to select them. We do not receive this data; we see only aggregate
+        earnings and impression counts. We do not supply Google with your name, email address, or any
+        account information, and we never will — the pages carrying ads have no account data to supply.
+      </p>
+      <p>
+        You can control or disable personalised advertising at
+        <a href="https://myadcenter.google.com/" rel="noopener noreferrer nofollow">Google My Ad Center</a>, and
+        review how Google uses data from sites that use its services at
+        <a href="https://policies.google.com/technologies/partner-sites" rel="noopener noreferrer nofollow">
+          policies.google.com/technologies/partner-sites</a>.
+      </p>
+
+      <h3>What the ad unit is not allowed to do</h3>
+      <p>
+        The ad is constrained by the site rather than trusted to behave. Both ad-bearing pages send a
+        policy that:
+      </p>
+      <ul>
+        <li>
+          <strong>Disables the Privacy Sandbox advertising APIs</strong> — Topics, Protected Audience
+          (interest-group bidding and ad auctions) and Attribution Reporting are all switched off, so the
+          ad frame cannot read from or contribute to a cross-site interest profile for you. This reduces
+          what the ad can earn; it is a deliberate choice.
+        </li>
+        <li>
+          Denies the ad frame access to camera, microphone, geolocation and device sensors.
+        </li>
+        <li>
+          Restricts where any script on the page may send data, so an ad cannot beacon information to an
+          arbitrary destination.
+        </li>
+        <li>
+          Restricts what the page may embed, so an ad cannot inject a frame pointing at a site of its
+          choosing.
+        </li>
+        <li>Blocks plugin content outright, and prevents these pages being embedded in other sites.</li>
+      </ul>
+      <p>
+        The creative itself is rendered by Google inside a sandboxed cross-origin frame, which cannot read
+        this page's content, cookies or local storage regardless of the above.
+      </p>
+
+      <h3>Google Analytics</h3>
+      <p>
+        Analytics is used to count visits and see which demos people actually open. It sets a first-party
+        <code>_ga</code> cookie holding a randomly generated identifier. That cookie is scoped to the
+        exact hostname that set it, rather than to <code>shatteredarchive.dev</code> as a whole — so the
+        identifier is not shared between the landing page, Scrum Poker, or any other subdomain, and it is
+        never transmitted to the sign-in hub.
+      </p>
+      <p>
+        You can opt out across all sites with Google's
+        <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener noreferrer nofollow">
+          Analytics opt-out browser add-on</a>.
+      </p>
+
+      <h3>Blocking either one</h3>
+      <p>
+        Both are loaded from third-party origins and both are wrapped so that a failure is silent. A
+        content blocker, a privacy-focused browser, or disabling JavaScript will remove them, and every
+        service will continue to work normally. Nothing on any of these sites is gated behind allowing
+        them.
+      </p>
+
+      <h2 id="mobile-app">The Shattered Archive mobile app</h2>
+
+      <p>
+        The Shattered Archive app for Android is a <code>shatteredarchive.dev</code> product, distributed
+        separately from the <code>shatteredarchive.dev</code> web pages above. It signs you in through the
+        same sign-in hub used everywhere else (<code>auth.shatteredarchive.dev</code>), and — once
+        signed in — talks to <code>shatteredarchive.com</code>'s API for the same account and library data
+        the website itself stores, exactly as described in <code>shatteredarchive.com</code>'s own privacy
+        notice for that data. That reuse is a backend implementation detail; it does not put analytics,
+        ads, or the app itself onto <code>shatteredarchive.com</code>. What is specific to the app is the
+        set of SDKs it carries: Firebase Analytics, Firebase Crashlytics, push notifications, and — once
+        enabled — Google AdMob.
+      </p>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>SDK</th>
+              <th>What it collects</th>
+              <th>Purpose</th>
+              <th>Retention</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Firebase Analytics</td>
+              <td>
+                Screens viewed, app opens, coarse device and OS info, and an anonymous per-install
+                identifier. No account identifier is included in analytics events.
+              </td>
+              <td>Understand which parts of the app are actually used.</td>
+              <td>
+                Per Firebase's own analytics data-retention setting (not customised by us) — see
+                <a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer nofollow">
+                  Firebase's privacy and security page</a> for specifics.
+              </td>
+            </tr>
+            <tr>
+              <td>Firebase Crashlytics</td>
+              <td>
+                Crash and error reports: stack trace, app version, device model, OS version, and free
+                memory/disk at the time of the crash.
+              </td>
+              <td>Diagnose and fix bugs.</td>
+              <td>Per Firebase's own crash-report retention — see the link above.</td>
+            </tr>
+            <tr>
+              <td>Push notifications (Firebase Cloud Messaging)</td>
+              <td>
+                A device-specific push token, associated with your account while you are signed in to
+                the app.
+              </td>
+              <td>
+                Deliver announcements sent by ShatteredArchive administrators — for example, advance
+                notice of planned maintenance. Every announcement sent is itself logged (who sent it,
+                when, to how many devices) for accountability; that log is visible only to
+                administrators. Push is never used for advertising.
+              </td>
+              <td>Removed when you sign out of the app or revoke its notification permission.</td>
+            </tr>
+            <tr>
+              <td>Google AdMob <em>(planned — not yet enabled in the current release)</em></td>
+              <td>
+                Once live: an advertising identifier, coarse device info, and ad interaction data, used
+                by Google and its partners to select and measure ads — the same categories of data any
+                AdMob-integrated app collects.
+              </td>
+              <td>Ad serving and measurement, same rationale as the AdSense units above.</td>
+              <td>Governed by Google's own AdMob data policy. This notice will be updated with specifics before ads go live.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        We do not receive raw analytics or crash data ourselves — Google/Firebase processes it and
+        surfaces aggregated dashboards to us. We never supply Google with your name, email address, or
+        account credentials from the app.
+      </p>
+
+      <h3>Your choices, in the app</h3>
+      <ul>
+        <li>
+          Revoke the notification permission (Android Settings → Apps → Shattered Archive →
+          Notifications) to stop receiving push announcements — this also stops the app registering a
+          push token for your device.
+        </li>
+        <li>Uninstalling the app stops all further collection from that device.</li>
+        <li>
+          Once AdMob is enabled, reset or opt out of your Android advertising ID under Settings → Google
+          → Ads, and review Google's
+          <a href="https://myadcenter.google.com/" rel="noopener noreferrer nofollow">Ad Settings</a>.
+        </li>
+        <li>Delete your account (as described above) to remove the server-side push-token record tied to it.</li>
+      </ul>
+
+      <h2>Cookies and local storage</h2>
+
+      <p>
+        Everything the sites store in your browser, and why. There is nothing else.
+      </p>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Where</th>
+              <th>Purpose</th>
+              <th>Lifetime</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>__Host-sa_session</code></td>
+              <td>Cookie, <code>auth.shatteredarchive.dev</code> only</td>
+              <td>
+                Keeps you signed in to the hub. Strictly necessary. Marked <code>HttpOnly</code>,
+                <code>Secure</code> and <code>SameSite=Lax</code>, and scoped to that single hostname —
+                it is not readable by page scripts and is not sent to any other subdomain. The
+                <code>__Host-</code> prefix makes your browser enforce that scoping, so no other
+                subdomain can forge a cookie of this name.
+              </td>
+              <td>Until sign-out</td>
+            </tr>
+            <tr>
+              <td><code>_ga</code>, <code>_ga_*</code></td>
+              <td>Cookie, landing page and Scrum Poker</td>
+              <td>Google Analytics visit measurement. Not necessary; blockable.</td>
+              <td>Up to 2 years</td>
+            </tr>
+            <tr>
+              <td>Google advertising cookies</td>
+              <td>Set by Google on the two ad-bearing pages</td>
+              <td>Ad serving, frequency capping and fraud prevention. Governed by Google's policies.</td>
+              <td>Varies — see Google</td>
+            </tr>
+            <tr>
+              <td><code>scrum-poker:name</code></td>
+              <td>Local storage, Scrum Poker</td>
+              <td>Remembers the display name you type so you do not retype it per room.</td>
+              <td>Until cleared</td>
+            </tr>
+            <tr>
+              <td><code>scrum-poker:theme</code></td>
+              <td>Local storage, Scrum Poker</td>
+              <td>Light or dark preference.</td>
+              <td>Until cleared</td>
+            </tr>
+            <tr>
+              <td>
+                <code>__Host-sp_secret_&lt;room id&gt;</code>,
+                <code>__Host-sp_host_&lt;room id&gt;</code>
+              </td>
+              <td>Cookie, one pair per room you join, Scrum Poker only</td>
+              <td>
+                Per-room tokens that let a refresh re-attach you to your own row and keep your vote, and
+                that mark you as the room's organizer. Strictly necessary for the room to work. Marked
+                <code>HttpOnly</code>, <code>Secure</code> and <code>SameSite=Lax</code> — not readable by
+                page scripts at all, unlike the local-storage values these replaced. The
+                <code>__Host-</code> prefix makes your browser enforce that scoping, so no other subdomain
+                can forge a cookie of this name.
+              </td>
+              <td>30 days, or when the room expires — whichever is first</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Clearing site data for a Scrum Poker room removes your ability to re-attach to your existing row
+        and, if you created the room, your organizer controls. Both are stored only in your browser —
+        there is no account to recover them from.
+      </p>
+
+      <h2>What each service stores on the server</h2>
+
+      <h3>Sign-in hub (<code>auth.shatteredarchive.dev</code>)</h3>
+      <ul>
+        <li>
+          If you create an account: an email address, a hashed password (never the password itself), and
+          any API keys or device credentials you register. Account records are encrypted at rest.
+        </li>
+        <li>
+          Failed sign-in attempts are counted per username and IP address in order to lock out password
+          guessing.
+        </li>
+        <li>Delete the account to remove the record, or write to the contact address below.</li>
+      </ul>
+
+      <h3>Scrum Poker (<code>scrum-poker.shatteredarchive.dev</code>)</h3>
+      <ul>
+        <li>
+          No accounts exist. A room holds the display names people typed, their estimates, and the room's
+          own settings. Anyone with the room link can see them — the link <em>is</em> the membership.
+        </li>
+        <li>
+          A participant is dropped after an hour of inactivity, and a whole room is deleted 30 days after
+          it was last used.
+        </li>
+        <li>Do not put confidential ticket details into a shared demo room.</li>
+      </ul>
+
+      <h3>Mobile app push registrations</h3>
+      <ul>
+        <li>
+          If you sign in to the app and it registers for push notifications, your device's push token is
+          stored alongside your account, so an administrator-sent announcement can reach it. See
+          <a href="#mobile-app">The Shattered Archive mobile app</a> above for the full detail.
+        </li>
+        <li>Removed when you sign out of the app, revoke its notification permission, or delete your account.</li>
+      </ul>
+
+      <h3>Game and Web clients</h3>
+      <ul>
+        <li>
+          Gameplay logs and connection details are processed to provide the client's own features. In the
+          hosted demo these are handled by the demo server; in a self-hosted deployment they never leave
+          your machine.
+        </li>
+        <li>Character names and in-game identifiers may appear in those logs, as user-provided input.</li>
+      </ul>
+
+      <h3>All services — server logs</h3>
+      <ul>
+        <li>
+          The web server records ordinary access logs: IP address, timestamp, requested path, response
+          status and user agent. These are used to operate the service, to apply per-IP rate limits, and
+          to investigate abuse and faults. They are not combined with advertising or analytics data.
+        </li>
+      </ul>
+
+      <h2>What is never done</h2>
+      <ul>
+        <li>No selling or renting of personal data.</li>
+        <li>No sharing of account data with advertisers or analytics providers — including from the mobile app.</li>
+        <li>No advertising or analytics on the sign-in hub, or on any page that handles a password.</li>
+        <li>No advertising or analytics anywhere on <code>shatteredarchive.com</code>, and no mobile app associated with that domain.</li>
+        <li>No push notifications used for advertising.</li>
+        <li>No tracking of any kind in the software you self-host.</li>
+      </ul>
+
+      <h2>Your choices</h2>
+      <ul>
+        <li>Use a content blocker, or disable JavaScript — every service still works.</li>
+        <li>Clear cookies and site data from your browser at any time.</li>
+        <li>
+          Turn off personalised ads at
+          <a href="https://myadcenter.google.com/" rel="noopener noreferrer nofollow">Google My Ad Center</a>, and
+          opt out of Analytics with
+          <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener noreferrer nofollow">Google's add-on</a>.
+        </li>
+        <li>In the app: revoke notification permission, or uninstall it — see <a href="#mobile-app">the mobile app section</a> above for details.</li>
+        <li>Ask for an account or room to be deleted using the contact address below.</li>
+        <li>Self-host the stack, in which case none of this applies at all.</li>
+      </ul>
+
+      <h2>Children</h2>
+      <p>
+        These services are not directed at children and no account is knowingly created for anyone under
+        the age at which consent is required in their country.
+      </p>
+
+      <h2>Changes</h2>
+      <p>
+        This notice may change as the project evolves. The date at the top reflects the latest revision,
+        and the history is public in the
+        <a href="https://github.com/TournyMasterBot/Shattered-Archive" rel="noopener noreferrer">repository</a>.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions, corrections, or deletion requests:
+        <a href="mailto:privacy@shatteredarchive.com">privacy@shatteredarchive.com</a>.
+      </p>
+
+      <footer>
+        <p>
+          ShatteredArchive is an independent fan project and is not affiliated with Dark and Shattered
+          Lands or DikuMUD.
+        </p>
+        <p><a href="/">Back to shatteredarchive.dev</a></p>
+      </footer>
+    </main>
+  </body>
+</html>

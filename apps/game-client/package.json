@@ -6,10 +6,11 @@
     "dev": "vite",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 vite build",
     "preview": "vite preview",
-    "test": "jest --config ./jest.config.cjs --runInBand --passWithNoTests --coverage --coverageDirectory=coverage --coverageReporters=json-summary --coverageReporters=json --coverageReporters=lcov --coverageReporters=text",
+    "test": "jest --config ../../jest.config.cjs --runInBand --passWithNoTests --testPathPatterns apps/game-client",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,scss,html}\""
   },
   "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
     "@types/react-dom": "^19.2.3",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",

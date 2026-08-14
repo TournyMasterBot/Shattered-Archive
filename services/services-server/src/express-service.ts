@@ -156,10 +156,18 @@ export function createExpressService(config: ExpressServiceConfig, registerRoute
   );
 
   // CORS
+  const corsOrigin = config.corsOrigin ?? /^https?:\/\/localhost(:\d+)?$/;
   app.use(
     cors({
-      origin: config.corsOrigin ?? /^https?:\/\/localhost(:\d+)?$/,
-      credentials: true,
+      origin: corsOrigin,
+      // Never combine a wildcard/reflect-all origin with credentialed requests
+      // (CWE-942) — that would let ANY site make authenticated cross-origin
+      // calls on a visiting user's behalf. Bounded origins (an explicit
+      // allowlist, or the localhost dev default) stay credentialed; an
+      // operator-chosen CORS_ORIGIN=* never is. No current consumer of this
+      // helper relies on cookie-based cross-origin auth (all use a bearer
+      // Authorization header instead), so this never disables anything in use.
+      credentials: corsOrigin !== true,
     }),
   );
 

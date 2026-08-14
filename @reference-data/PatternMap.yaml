@@ -1,0 +1,1902 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Game line  →  spoken utterance map
+#
+# WHY NOT A MARKDOWN TABLE
+# GitHub-flavored markdown requires `|` to be escaped as `\|` inside a table
+# cell EVEN within backticks, and regex alternation is full of them. Every
+# pattern with `(You|...)` splits its row, which is what truncated "Danger Sense"
+# to "Danger " and ate the whole utterance column off the condition-tier line.
+#
+# WHY YAML BLOCK SCALARS (`|-`)
+# Everything after `|-` is literal text until the indent drops. No escaping at
+# all: no `\|`, no doubled backslashes, no quote juggling — the pattern is byte
+# for byte what the regex engine sees, which matters when a stray escape silently
+# changes what matches. (Single-quoted YAML would work too, but these patterns are
+# full of apostrophes and each one would need doubling.)
+#
+# WHY UTTERANCE-FIRST
+# The relationship is many-to-one: several game lines collapse into one thing
+# said. A pattern-per-row table forces you to repeat the utterance (your Flag rows
+# repeat it twice each) and gives no home for per-utterance facts like which
+# capture holds the subject. Grouping by what gets SAID puts each decision in one
+# place and makes "these four lines all mean poisoned" visible at a glance.
+#
+# THE PAYOFF
+# This is a shape a script can read, so the plugin's matcher table can be
+# GENERATED from this file rather than hand-transcribed from it. Right now the
+# patterns live in three places (this doc, combat-compression.plugin.ts,
+# weapon-flag-squelch.plugin.ts) and drift is a matter of time. Codegen needs a
+# YAML parser as a devDependency — if you would rather not add one, the same
+# schema works as a .ts file with real regex literals, which also needs no
+# escaping and is typechecked, just less document-like to review.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# SCHEMA
+#   id        stable key, kebab-case. Never reused for a different meaning.
+#   category  debuff | stun | buff | proc | avoidance | condition | exploration
+#             | death | flee | disarm | blind
+#   say       what is spoken. `{subject}` and `{actor}` interpolate captures.
+#   subject   1-based capture group holding WHO it happened to.
+#             `self` = it happened to you (no capture needed). null = no subject.
+#   actor     1-based capture group holding who did it. Usually null (unspoken).
+#   speak     announce  rephrase to `say` and speak it
+#             raw       speak the game's own line, unchanged
+#             suppress  classify it, stay silent (noise we still want named)
+#   repeat    once  fires when the effect LANDS — say it each time (default)
+#             tick  re-fires every round while the effect holds — hard debounce
+#                   or it becomes the only thing you hear
+#   status    verified    confirmed in the real DSL log corpus
+#             unverified  real game text per the reference (native XML / sibling
+#                         profile), but not yet found in the DSL corpus
+#             absent      searched across the FULL corpus (2,478 files, 2.85 GB)
+#                         including a broadened keyword probe, and neither the
+#                         line nor any related wording occurs. For a spell this
+#                         usually means the logged characters never had it — it
+#                         is NOT evidence the reference wording is wrong.
+#             speculative extrapolated, or SEARCHED FOR AND NOT FOUND — see notes
+#
+# CORPUS PASS 2026-08-02 (affect table)
+# All 182 affect literals were checked in one Aho-Corasick pass over every log.
+# 66 of 92 spells confirmed every line they list; 8 have no trace at all; the
+# rest are partial. SIX of the reference's wordings turned out to be WRONG, not
+# merely unlogged — prayer ("...overtakes the room", not "your presence"), taunt
+# (DOUBLE spaces before each KILL!!), charm ("<X> regains free will", no
+# possessive), warcry, antimagic shell and prevent recovery (third-person forms
+# the doc never carried). Those six would never have fired as written.
+#   source    where the pattern came from, for auditing later
+#   patterns  one or more matchers, all meaning the same utterance
+#
+# ANCHORING CAVEAT
+# The shipping plugins match most of these UNANCHORED at the head (`is DEAD!!$`,
+# not `^X is DEAD!!$`) because they only need to know the line's class. An
+# utterance map needs the NAME, so entries below add `^([\w\-\s,']+) `. That head
+# is an extrapolation on every pattern the reference supplied as a bare tail
+# fragment — the tail is corpus-proven, the capture is not. Where that matters the
+# entry says so in its notes.
+# ─────────────────────────────────────────────────────────────────────────────
+
+- id: poisoned
+  category: debuff
+  say: "{subject} is poisoned."
+  subject: 1
+  actor: null
+  speak: announce
+  status: verified
+  repeat: once
+  source: weapon-flag Poison (P) — DSL2 addition, confirmed via sibling-profile logs
+  notes: >-
+    The LANDING only. "shivers and suffers" used to sit here as well; it is the
+    recurring tick and now lives in poison-tick, because the two want opposite
+    handling — announce the landing every time, damp the tick hard.
+  patterns:
+    - |-
+      ^([\w\-\s,']+) is poisoned by the venom on ([\w\-\s,']+)\.$
+
+- id: lifebane-applied
+  category: proc
+  say: null
+  subject: null
+  actor: 1
+  speak: suppress
+  status: verified
+  source: weapon-flag Poison (P); MEANING CORRECTED 2026-08-02
+  notes: >-
+    NOT AN AFFLICTION, and the previous reading here was backwards. This entry said
+    "<weapon> coats <victim>", making group 2 the poisoned target. Real traffic —
+    all 16 distinct corpus wordings — is "<player> coats <weapon> with deadly
+    lifebane poison.", i.e. someone applying poison to their OWN BLADE before or
+    during a fight. Group 2 is the weapon; there is no victim in the line at all.
+    Recategorised from debuff to proc and switched to suppress: announcing "a grand
+    arcanium dagger is poisoned." is true and useless. The actual landing on a
+    target is the separate `poisoned` entry ("X is poisoned by the venom on Y").
+    Dropped from the text-to-speech battle callouts for the same reason.
+  patterns:
+    - |-
+      ^([\w\-\s,']+) coats ([\w\-\s,']+) with deadly lifebane poison\.$
+
+- id: stunned
+  category: stun
+  say: "{subject} is stunned."
+  subject: 1
+  actor: 2
+  speak: announce
+  status: verified
+  source: weapon-flag Stunning (S)
+  patterns:
+    - |-
+      ^([\w\-\s,'"]+) is knocked to the ground by ([\w\-\s,'"]+)\.$
+
+- id: proc-frost
+  category: proc
+  say: null
+  subject: 2
+  actor: 1
+  speak: suppress
+  status: verified
+  source: weapon-flag Frost (C)
+  patterns:
+    - |-
+      ^([\w\-\s,'"]+) freezes ([\w\-\s,'"]+)\.$
+    - |-
+      ^The cold touch of ([\w\-\s,']+) surrounds you with ice
+
+- id: proc-flaming
+  category: proc
+  say: null
+  subject: 1
+  actor: 2
+  speak: suppress
+  status: verified
+  source: weapon-flag Flaming (F)
+  patterns:
+    - |-
+      ^([\w\-\s,']+) is burned by ([\w\-\s,']+)\.$
+    - |-
+      ^([\w\-\s,']+) sears your flesh
+
+- id: proc-shocking
+  category: proc
+  say: null
+  subject: 1
+  actor: 2
+  speak: suppress
+  status: verified
+  source: weapon-flag Shocking (L)
+  patterns:
+    - |-
+      ^([\w\-\s,']+) is struck by lightning from ([\w\-\s,']+)\.$
+    - |-
+      ^([\w\-\s,']+) is shocked by a
+    - |-
+      ^You are shocked by
+
+- id: proc-vampiric
+  category: proc
+  say: null
+  subject: 2
+  actor: 1
+  speak: suppress
+  status: verified
+  source: weapon-flag Vampiric (H)
+  patterns:
+    - |-
+      ^([\w\-\s,'"]+) draws life from ([\w\-\s,'"]+)\.$
+    - |-
+      ^You feel ([\w\-\s,']+) drawing your life away
+
+- id: proc-mana-drain
+  category: proc
+  say: null
+  subject: 2
+  actor: 1
+  speak: suppress
+  status: verified
+  source: weapon-flag Mana drain (M)
+  notes: >-
+    CORPUS-VERIFIED 2026-08-02 across all 2,478 logs: the third-person line has
+    128,796 hits and the self line 351. The reference's "zero corpus occurrences"
+    note was a false negative from searching the quoted form. You have this as
+    "Leech Flag"; the reference calls it Mana drain.
+  patterns:
+    - |-
+      ^You feel something drawing your energy away
+    - |-
+      ^([\w\-\s,']+) draws energy from ([\w\-\s,']+)\.$
+
+- id: proc-holy
+  category: proc
+  say: null
+  subject: 2
+  actor: 1
+  speak: suppress
+  status: verified
+  source: weapon-flag Holy (O)
+  patterns:
+    - |-
+      ^You feel a surge of ([\w\-\s,']+)'s holy wrath race through your body
+    - |-
+      ^A flash of holy power erupts from ([\w\-\s,']+) and hits ([\w\-\s,']+)!$
+
+- id: proc-unholy
+  category: proc
+  say: null
+  subject: 2
+  actor: 1
+  speak: suppress
+  status: verified
+  source: weapon-flag Unholy (U)
+  notes: >-
+    CORPUS-VERIFIED 2026-08-02. You added the third-person line by symmetry with
+    the Holy pair and you were RIGHT — it has 96,825 hits, one of the commonest
+    lines in the corpus, and was missing from the reference doc entirely. I had
+    marked it speculative on the strength of that absence; that call was wrong.
+    Self line: 1,107 hits.
+  patterns:
+    - |-
+      ^You feel a surge of ([\w\-\s,']+)'s unholy wrath race through your body
+    - |-
+      ^A flash of unholy power erupts from ([\w\-\s,']+) and hits ([\w\-\s,']+)!$
+
+- id: dodge
+  category: avoidance
+  say: null
+  subject: 1
+  actor: 3
+  speak: suppress
+  status: verified
+  source: PNP DSL_PNP_Battle.lua
+  patterns:
+    - |-
+      (You|[\w\-\,\s']+) (dodge)s? (your|[\w\-\,\s']+) attack\.$
+
+- id: parry
+  category: avoidance
+  say: null
+  subject: 1
+  actor: 3
+  speak: suppress
+  status: verified
+  source: PNP DSL_PNP_Battle.lua
+  patterns:
+    - |-
+      (You|[\w\-\,\s']+) (parry|parries) (your|[\w\-\,\s']+) attack\.$
+
+- id: shield-block
+  category: avoidance
+  say: null
+  subject: 1
+  actor: 3
+  speak: suppress
+  status: verified
+  source: PNP DSL_PNP_Battle.lua
+  patterns:
+    - |-
+      (You|[\w\-\,\s']+) (block)[s]? (your|[\w\-\,\s']+) attack .*\.$
+
+- id: danger-sense
+  category: avoidance
+  say: null
+  subject: 1
+  actor: null
+  speak: suppress
+  status: verified
+  corpus: >-
+    CORPUS-CONFIRMED 2026-08-02: 851 hits for the first pattern, 907 for the
+    second. The reference marked the wording unconfirmed; both forms are real
+    and common.
+  source: bard-only; reference marks the exact wording unconfirmed
+  notes: >-
+    This is the entry the table truncated to "Danger " — the second pattern's
+    apostrophe alternation split the row.
+  patterns:
+    - |-
+      ^[\w\-\s,']+ senses they.?re about to be hit and deflects the blow\.
+    - |-
+      ^[\w\-\s,']+ senses [\w\-\s,']+'s attack coming and avoids its blow\.
+
+# Condition tiers were one giant alternation with no utterance at all, because the
+# pipes consumed the column. Split per tier: each one says something different, and
+# a single entry cannot carry seven different utterances. `say` is null because the
+# plugin speaks these through its own deduped health-tier buckets rather than as
+# per-line callouts — kept here so the mapping is documented in one place.
+- id: condition-tiers
+  category: condition
+  say: null
+  subject: null
+  actor: null
+  speak: suppress
+  status: verified
+  source: DSL2 native XML Health/Mana trigger group
+  notes: >-
+    Seven HP tiers, excellent → awful, plus a distinct mana tier. Self and
+    third-person forms merged. Handled by SELF_CONDITION_BUCKETS /
+    OPPONENT_BUCKETS, not by this map.
+  patterns:
+    - |-
+      (?:is in excellent condition|are in excellent condition)
+    - |-
+      (?:has a few scratches|have a few scratches)
+    - |-
+      (?:has some small wounds|have some small wounds)
+    - |-
+      (?:has quite a few wounds|have quite a few wounds)
+    - |-
+      (?:has some big nasty wounds|have some big nasty wounds)
+    - |-
+      (?:looks pretty hurt|look pretty hurt)
+    - |-
+      (?:is in awful condition|are in awful condition)
+    - |-
+      full magical ability
+
+# ═════════════════════════════════════════════════════════════════════════════
+# DEATH
+# ═════════════════════════════════════════════════════════════════════════════
+
+- id: death-in-room
+  category: death
+  say: "{subject} is dead."
+  subject: 1
+  actor: null
+  speak: announce
+  repeat: once
+  status: verified
+  source: CapturedPatterns 107-109; combat-compression squelchDeathBang / squelchDeathGround
+  notes: >-
+    Two wordings, one event — the reference notes the second has no PNP equivalent.
+    Third-person only; the self form is death-self below.
+  patterns:
+    - |-
+      ^([\w\-\s,']+) is DEAD!!$
+    - |-
+      ^([\w\-\s,']+) hits the ground \.\.\. DEAD\.$
+
+- id: death-self
+  category: death
+  say: "You have been killed."
+  subject: self
+  actor: null
+  speak: announce
+  repeat: once
+  status: verified
+  source: recovered from the log corpus 2026-08-02
+  notes: >-
+    THE GAP FOUND AND FILLED. I flagged this as missing from every source and worth
+    capturing; it was in the corpus all along at 345+ hits, exactly "You have been
+    KILLED!!". Neither the reference doc nor any plugin carried it. It is the one
+    death line that must never be missed, so unlike the third-person forms it should
+    stay audible whatever else is switched off.
+  patterns:
+    - |-
+      ^You have been KILLED!!$
+
+- id: death-nearby
+  category: death
+  say: "Something died nearby."
+  subject: null
+  actor: null
+  speak: announce
+  repeat: once
+  status: verified
+  corpus: >-
+    CORPUS-CONFIRMED 2026-08-02: 6,975 hits. The reference flagged this
+    UNCONFIRMED because it was absent from DSL2's own .lua and native XML — it
+    is nonetheless real and frequent.
+  source: CapturedPatterns 110-112 — explicitly flagged UNCONFIRMED
+  notes: >-
+    Found in sibling profiles, absent from DSL2's own .lua and native XML. Adjacent
+    room, so it carries no name and never will. Low value in Battle Focus (it is not
+    your fight); real value in Arena, where it is the only signal a bout ended out
+    of sight.
+  patterns:
+    - |-
+      ^You hear something's death cry\.$
+
+# ═════════════════════════════════════════════════════════════════════════════
+# FLEE / RESCUE
+# ═════════════════════════════════════════════════════════════════════════════
+
+- id: flee-self-success
+  category: flee
+  say: "You fled."
+  subject: self
+  actor: null
+  speak: announce
+  repeat: once
+  status: verified
+  source: CapturedPatterns 115; combat-compression squelchFleeCombat
+  patterns:
+    - |-
+      ^You flee from combat!$
+
+- id: flee-self-fail
+  category: flee
+  say: "You cannot escape."
+  subject: self
+  actor: null
+  speak: announce
+  repeat: once
+  status: verified
+  source: CapturedPatterns 116; combat-compression squelchFleeEscapeFail
+  patterns:
+    - |-
+      ^You cannot escape from combat!!!$
+
+- id: flee-panic
+  category: flee
+  say: null
+  subject: self
+  actor: null
+  speak: suppress
+  repeat: tick
+  status: verified
+  source: combat-compression squelchFleePanic — 267 occurrences in the Bloodbath mining pass
+  notes: >-
+    NOT on your list, but it is the same event as flee-self-fail and it is the one
+    that actually floods. It fires on every failed escape attempt, so at 267 hits in
+    a single corpus pass it would dominate the audio channel. Kept separate from
+    flee-self-fail precisely so it can stay silent while that one speaks —
+    combat-compression already defaults this one squelched and that one not.
+  patterns:
+    - |-
+      ^PANIC! You couldn't escape!$
+
+- id: rescued-self
+  category: flee
+  say: "{actor} rescued you."
+  subject: self
+  actor: 1
+  speak: announce
+  repeat: once
+  status: verified
+  source: CapturedPatterns 117; combat-compression squelchFleeRescues
+  patterns:
+    - |-
+      ^([\w\-\s,']+) rescues you!$
+
+- id: rescue-other
+  category: flee
+  say: "{actor} rescued {subject}."
+  subject: 2
+  actor: 1
+  speak: announce
+  repeat: once
+  status: verified
+  source: combat-compression squelchFleeRescues (broadened form)
+  notes: >-
+    The reference's `rescues you!$` misses most real occurrences — the corpus shows
+    third-party rescues use an identical tail ("X rescues Vsevolod!"). Split from
+    rescued-self because the two deserve different priority: being rescued is urgent,
+    watching someone else get rescued is Arena colour. The `(?!you!$)` lookahead is
+    what keeps that split real — without it this also matches "X rescues you!" and
+    which entry wins comes down to table order.
+  patterns:
+    - |-
+      ^([\w\-\s,']+) rescues (?!you!$)([\w\-\s,']+)!$
+
+- id: fled-other
+  category: flee
+  say: "{subject} fled."
+  subject: 1
+  actor: null
+  speak: announce
+  repeat: once
+  status: verified
+  source: CapturedPatterns 118; combat-compression squelchFleeHasFled
+  patterns:
+    - |-
+      ^([\w\-\s,']+) has fled!$
+
+# ═════════════════════════════════════════════════════════════════════════════
+# DISARM
+# ═════════════════════════════════════════════════════════════════════════════
+
+- id: disarm-self-weapon
+  category: disarm
+  say: "You are disarmed."
+  subject: self
+  actor: 1
+  speak: announce
+  repeat: once
+  status: verified
+  source: CapturedPatterns 125-128; combat-compression squelchDisarmWeapon
+  notes: >-
+    Three wordings, one event. The optional comma in patterns 2 and 3 is deliberate —
+    the reference notes PNP's source has a literal comma that looks like a typo, and
+    DSL2 tolerates both. Highest-urgency line in this whole file: you are now
+    swinging bare-handed and the disarm plugin's re-wield may or may not fire.
+  patterns:
+    - |-
+      ^([\w\-\s,']+) DISARMS you and sends your weapon flying!$
+    - |-
+      ^([\w\-\s,']+) grabs your weapon,? and sends it flying!$
+    - |-
+      ^([\w\-\s,']+) controls your weapon,? and sends it flying!$
+
+- id: disarm-self-shield
+  category: disarm
+  say: "Your shield is knocked away."
+  subject: self
+  actor: 1
+  speak: announce
+  repeat: once
+  status: verified
+  source: CapturedPatterns 132-133; combat-compression squelchDisarmShield
+  patterns:
+    - |-
+      ^([\w\-\s,']+) sends your shield flying with a powerful kick!$
+    - |-
+      ^([\w\-\s,']+) swings \w+ weapon viciously at your shield and sends it flying!$
+
+- id: disarm-shield-third-person
+  category: disarm
+  say: "{subject} loses their shield."
+  subject: 1
+  actor: 3
+  speak: announce
+  repeat: once
+  status: verified
+  source: CapturedPatterns 131; full wording recovered 2026-08-02
+  notes: >-
+    The mis-file call was RIGHT and the full line is now pinned — it is third
+    person and does not belong with the done-to-you shield lines. Genuinely rare:
+    7 occurrences across the whole 2.85 GB corpus, every one of this shape.
+    Note the shape is "<victim> HAS <shield> knocked loose ... by <attacker>",
+    which puts the item in group 2 and the attacker in group 3 — not the
+    two-capture guess this entry previously carried.
+  patterns:
+    - |-
+      ^([\w\-\s,']+) has ([\w\-\s,']+) knocked loose from their hands by ([\w\-\s,']+)!$
+
+- id: disarm-fail
+  category: disarm
+  say: null
+  subject: null
+  actor: null
+  speak: suppress
+  repeat: once
+  status: verified
+  source: CapturedPatterns 210-211; combat-compression squelchDisarmFail (defaults squelched)
+  notes: >-
+    Nothing happened — same no-info rationale as Avoidance, which is why
+    combat-compression defaults this one ON (squelched) while the successes default
+    off. Your list gives the broader `tries to disarm you,` tail; the corpus-proven
+    form ends in "but fails." The broad form would additionally catch any other
+    continuation, if one exists — no evidence yet that it does.
+  patterns:
+    - |-
+      tries to disarm (?:you|[\w\-\s,']+), but fails\.$
+
+- id: disarm-other
+  category: disarm
+  say: "{actor} disarms {subject}."
+  subject: 2
+  actor: 1
+  speak: announce
+  repeat: once
+  status: verified
+  source: combat-compression squelchDisarmOther
+  notes: Third-person success line. Arena-relevant; noise in Battle Focus.
+  patterns:
+    - |-
+      ^([\w\-\s,']+) disarms ([\w\-\s,']+)!$
+
+# ═════════════════════════════════════════════════════════════════════════════
+# STUN / KNOCKDOWN — SELF
+# ═════════════════════════════════════════════════════════════════════════════
+
+- id: self-stunned-knockdown
+  category: stun
+  say: "You are stunned."
+  subject: self
+  actor: null
+  speak: announce
+  repeat: once
+  status: verified
+  source: CapturedPatterns 141-142; standup.plugin DEFAULT_STANDUP_PATTERNS
+  notes: >-
+    Actor deliberately NOT captured. The reference's `^.+ knocking you senseless.$`
+    has a whole clause in front of it ("X bashes you, knocking you senseless."), not
+    a bare name — a `([\w\-\s,']+)` capture there would happily grab "X bashes you,"
+    and announce that as the attacker. Naming who did it needs a real capture of the
+    full line first. Note standup.plugin also carries "You lose your balance and
+    fall", which is a THIRD wording, distinct from the reference's "bumps into you"
+    line below.
+  patterns:
+    - |-
+      knocking you senseless\.$
+    - |-
+      bumps into you causing you to lose your balance\.$
+
+- id: self-bashed
+  category: stun
+  say: "You are bashed."
+  subject: self
+  actor: null
+  speak: announce
+  repeat: once
+  status: verified
+  source: CapturedPatterns 215; stun-highlight highlightBashSelfSentFlying (red tier)
+  notes: Already wired as a SELF_STUN_MATCHER in text-to-speech.
+  patterns:
+    - |-
+      ^You are sent flying by the impact!$
+
+- id: self-tripped
+  category: stun
+  say: "You are tripped."
+  subject: self
+  actor: 1
+  speak: announce
+  repeat: once
+  status: verified
+  source: CapturedPatterns 224; stun-highlight highlightTripTripsYou (red tier)
+  notes: Already wired as a SELF_STUN_MATCHER in text-to-speech.
+  patterns:
+    - |-
+      ^([\w\-\s,']+) trips you and you go down!$
+
+# ═════════════════════════════════════════════════════════════════════════════
+# STUN / KNOCKDOWN — OTHER
+# ═════════════════════════════════════════════════════════════════════════════
+
+- id: bashed-other
+  category: stun
+  say: "{subject} is bashed."
+  subject: 1
+  actor: null
+  speak: announce
+  repeat: once
+  status: verified
+  source: CapturedPatterns 217; combat-compression + stun-highlight; live in classifyEnemyAffliction
+  patterns:
+    - |-
+      ^([\w\-\s,']+) is sent flying by the impact!$
+
+- id: slammed-other
+  category: stun
+  say: "{subject} is stunned."
+  subject: 1
+  actor: null
+  speak: announce
+  repeat: once
+  status: verified
+  source: combat-compression squelchIncapSlammedFace; live in classifyEnemyAffliction
+  patterns:
+    - |-
+      ^([\w\-\s,']+) is slammed directly in the face!$
+
+- id: tossed
+  category: stun
+  say: "{subject} is thrown into the air."
+  subject: 2
+  actor: 1
+  speak: announce
+  repeat: once
+  status: verified
+  source: CapturedPatterns 205-206; full wording recovered 2026-08-02
+  notes: >-
+    RETRACTION. I marked this speculative because a search found nothing — but the
+    search probed for (gore|trample|charge|ram) and the verb is "tosses". Full
+    corpus: 1,482 hits, 298 of them the self form. The bare fragment the reference
+    carries should still never ship as a matcher; these full lines should.
+    Attributed to a mob in every sample checked ("an animal spirit tosses X into
+    the air!"), so the reference's "Gore (mount/beast attack)" heading may itself
+    be a mis-attribution.
+  patterns:
+    - |-
+      ^([\w\-\s,']+) tosses ([\w\-\s,']+) into the air!$
+    - |-
+      ^([\w\-\s,']+) tosses you into the air!$
+
+- id: bash-evaded
+  category: avoidance
+  say: "{actor} misses their bash."
+  subject: self
+  actor: 1
+  speak: suppress
+  repeat: once
+  status: verified
+  source: CapturedPatterns 219-221; stun-highlight highlightBashEvadeCausingHim/Her (yellow tier)
+  notes: >-
+    MEANING CORRECTION — you filed these under "Combat stuns (failed)", which reads
+    as your own bash failing. The corpus shows the full line is "You evade X's bash,
+    causing him to fall flat on his face.": YOU evaded, and the ATTACKER went down.
+    That is avoidance, not a failed stun, and stun-highlight already colours it
+    yellow (comedic) rather than red for exactly that reason. Suppressed by default
+    on the Avoidance rationale — nothing landed. The it-gendered variant you listed
+    ("causing it to fall flat on its face.") got ZERO corpus hits where him/her both
+    confirmed, so it is listed separately below rather than merged in here.
+  patterns:
+    - |-
+      bash, causing him to fall flat on his face\.$
+    - |-
+      bash, causing her to fall flat on her face\.$
+
+- id: bash-evaded-neuter
+  category: avoidance
+  say: null
+  subject: self
+  actor: null
+  speak: suppress
+  repeat: once
+  status: verified
+  source: CapturedPatterns 221; corpus-confirmed 2026-08-02
+  notes: >-
+    RETRACTION — 641 hits, which makes it the SECOND most common of the three
+    third-person forms (his 813, its 641, her 156), not the rarity I called it.
+    Kept as its own entry only because bash-evaded's note references it; it is the
+    same event and could be merged into that entry's pattern list.
+  patterns:
+    - |-
+      bash, causing it to fall flat on its face\.$
+
+- id: bash-self-fail
+  category: stun
+  say: null
+  subject: self
+  actor: null
+  speak: suppress
+  repeat: once
+  status: verified
+  source: CapturedPatterns 218 and 225 (listed under both Bash and Trip)
+  notes: >-
+    RETRACTION — 243 hits. The corpus holds exactly four "fall flat" wordings and
+    this is one of them; the earlier zero came from searching the quoted form. It
+    means YOUR OWN bash or trip failed. The corpus cannot say which skill produced
+    it, since the line is identical for both.
+  patterns:
+    - |-
+      ^You fall flat on your face!$
+
+# ═════════════════════════════════════════════════════════════════════════════
+# BLIND
+# ═════════════════════════════════════════════════════════════════════════════
+
+- id: blinded-dirt
+  category: blind
+  say: "{subject} is blinded."
+  subject: 1
+  actor: null
+  speak: announce
+  repeat: once
+  status: verified
+  source: CapturedPatterns 200-202; combat-compression squelchIncapDirtBlind; live in classifyEnemyAffliction
+  notes: >-
+    The self form ("You are blinded by the dirt in your eyes!") is in neither the
+    reference nor any plugin — worth capturing, since being blinded yourself is far
+    more urgent than blinding someone else.
+  patterns:
+    - |-
+      ^([\w\-\s,']+) is blinded by the dirt in (?:his|her|its) eyes!$
+
+- id: blinded-spit
+  category: blind
+  say: "{subject} is blinded."
+  subject: 1
+  actor: null
+  speak: announce
+  repeat: once
+  status: verified
+  source: CapturedPatterns 230; corpus-confirmed 2026-08-02
+  notes: >-
+    Head confirmed — the assumed `^X is blinded ` prefix is right (89 hits his,
+    19 her). The `it's` variant is NOT: zero hits, so it has been dropped from the
+    alternation. That asymmetry is real rather than sampling noise, since the DIRT
+    version does have a working neuter form.
+  patterns:
+    - |-
+      ^([\w\-\s,']+) is blinded by the spit in (?:his|her) eyes!$
+
+- id: blind-throw-windup
+  category: blind
+  say: null
+  subject: null
+  actor: null
+  speak: suppress
+  repeat: once
+  status: unverified
+  corpus: >-
+    PARTIAL 2026-08-02: "The thrown dirt" and "Your spit" both occur; "You grab
+    some dirt out of your pouch and throw it towards" has ZERO hits and is
+    likely wrong wording.
+  source: CapturedPatterns 198-199, 229
+  notes: >-
+    Your own wind-up and the projectile's flavour line, not the outcome. Suppressed:
+    the landing lines above are the event, and speaking all three turns one dirt kick
+    into three utterances. "The thrown dirt" / "Your spit" are bare fragments in the
+    reference with no full line quoted.
+  patterns:
+    - |-
+      ^You grab some dirt out of your pouch and throw it towards
+    - |-
+      ^The thrown dirt
+    - |-
+      ^Your spit
+
+- id: blind-fail
+  category: blind
+  say: null
+  subject: self
+  actor: null
+  speak: suppress
+  repeat: once
+  status: verified
+  source: CapturedPatterns 203; real wording recovered 2026-08-02
+  notes: >-
+    The reference's "Your drool is insufficient." has ZERO corpus hits and looks
+    simply wrong. The actual dirt-kick failure line, 500+ hits, is the one below —
+    note the possessive-less phrasing "X kicked dirt misses Y", which is the game's
+    own wording and not a transcription slip. Subject is the TARGET (group 2); the
+    self form ends "misses you." Still suppressed: nothing happened.
+  patterns:
+    - |-
+      ^([\w\-\s,']+) kicked dirt misses ([\w\-\s,']+)\.$
+
+# ═════════════════════════════════════════════════════════════════════════════
+# DISEASE — LANDING vs. TICK
+#
+# The reason `repeat` exists. A landing fires once and is news; a tick re-fires
+# every round the affect holds and is not. Same affect, opposite handling.
+# ═════════════════════════════════════════════════════════════════════════════
+
+- id: plagued
+  category: debuff
+  say: "{subject} is plagued."
+  subject: 1
+  actor: null
+  speak: announce
+  repeat: once
+  status: verified
+  corpus: >-
+    CORPUS-CONFIRMED 2026-08-02: "looks very ill" has 1,772 hits. Often appears
+    combined as "<X> shivers and looks very ill.", so a line-anchored pattern
+    would miss it — matched unanchored on purpose.
+  source: CapturedPatterns 233-235 and 381
+  notes: >-
+    The reference calls "looks very ill" real native text and says it CONFIRMS a
+    candidate that DSL2's own TODO.md had flagged unconfirmed — but it is native-XML
+    confirmed, not DSL-corpus confirmed, hence unverified here. It sits in the
+    reference's combined "Poison spit / plague spray" group; the wording matches the
+    Merc-family plague landing rather than poison, which is why this says "plagued"
+    — that attribution is inference from wording, not from a capture. THIRD PERSON
+    ONLY: the self form ("You scream in agony as plague sores erupt from your skin.")
+    now lives in the self-affect table below, under `plague`, so each side of the
+    fence owns its own line and they cannot drift apart.
+  patterns:
+    - |-
+      ^([\w\-\s,']+) looks very ill\.?$
+
+- id: plague-tick
+  category: debuff
+  say: "{subject} is suffering."
+  subject: 1
+  actor: null
+  speak: announce
+  repeat: tick
+  status: verified
+  corpus: >-
+    CORPUS-CONFIRMED 2026-08-02: self tick 77 hits, third-person 844.
+  source: CapturedPatterns 231-232
+  notes: >-
+    Re-fires every round while plague holds. Announce at most once per debounce
+    window or it becomes the only thing you hear during a long fight — this is the
+    case that motivated AFFLICTION_REPEAT_MS being a CLOCK debounce rather than an
+    adjacency check, since ordinary combat lines interleave between ticks.
+  patterns:
+    - |-
+      ^You writhe in agony from the plague\.$
+    - |-
+      ^([\w\-\s,']+) writhes in agony as plague sores erupt from its skin\.$
+
+- id: poison-tick
+  category: debuff
+  say: "{subject} is suffering."
+  subject: 1
+  actor: null
+  speak: announce
+  repeat: tick
+  status: verified
+  source: CapturedPatterns 236 — cross-validates DSL2's own procPoisonTick pattern
+  notes: >-
+    MOVED here out of `poisoned`, where it was sitting next to the venom landing line
+    as if the two were interchangeable. They are not: the landing is news once, this
+    repeats every round. Same debounce requirement as plague-tick. The self form
+    ("You shiver and suffer."?) is not in the reference and has not been captured.
+  patterns:
+    - |-
+      ^([\w\-\s,']+) shivers and suffers\.$
+
+# ═════════════════════════════════════════════════════════════════════════════
+# MOUNTED COMBAT — "Crusader stuff" (paladin / anti-paladin)
+#
+# CapturedPatterns 249-265 calls this an entirely new category with zero PNP and
+# zero DSL2 .lua coverage, so nothing here is corpus-proven — `unverified` across
+# the board, and the leading captures are extrapolated from tail fragments.
+# ═════════════════════════════════════════════════════════════════════════════
+
+- id: mount-rear-stagger
+  category: stun
+  say: "Your mount staggers your target."
+  subject: null
+  actor: null
+  speak: announce
+  repeat: once
+  status: verified
+  corpus: >-
+    CORPUS-CONFIRMED 2026-08-02: 285 hits. A further failure variant not in the
+    reference also exists — "You cause your mount to rear at <X> but fails."
+    (107 hits) — which is a MISS rather than the syntax error mount-rear-fail
+    covers.
+  source: CapturedPatterns 252-254
+  notes: >-
+    Three gender variants, one event. NO SUBJECT IS AVAILABLE — the line is written
+    from your own point of view and refers to the target only as him/her/it, so this
+    cannot name who staggered. That is a property of the game text, not a gap in the
+    pattern: naming the target would need correlating against your current opponent,
+    which nothing in this pipeline tracks. Note "with HIS front hooves" is fixed in
+    all three variants (the mount's gender, not the target's) — only the two outer
+    pronouns vary.
+  patterns:
+    - |-
+      ^You cause your mount to rear and attack (?:him|her|it) with his front hooves causing (?:him|her|it) to stagger!$
+
+- id: mount-rear-stagger-observed
+  category: stun
+  say: "{subject} is staggered."
+  subject: 1
+  actor: null
+  speak: announce
+  repeat: once
+  status: verified
+  corpus: >-
+    CORPUS-CONFIRMED 2026-08-02: 811 hits, so the assumed head is safe to build
+    on.
+  source: CapturedPatterns 255
+  notes: >-
+    The observer/victim-side form of mount-rear-stagger, and the one that CAN name a
+    subject — which makes it the more useful of the pair for Arena. The reference
+    gives only the tail fragment, so the whole head ("X sends Y staggering with ...")
+    is assumed; the capture is the unverified part, the tail is not.
+  patterns:
+    - |-
+      staggering with an incredible blow from his front hooves!$
+
+- id: mount-rear-fail
+  category: stun
+  say: null
+  subject: self
+  actor: null
+  speak: suppress
+  repeat: once
+  status: verified
+  corpus: >-
+    CORPUS-CONFIRMED 2026-08-02: 136 hits.
+  source: CapturedPatterns 256
+  notes: >-
+    Nothing happened — suppressed on the same no-info rationale as Avoidance and
+    disarm-fail. The two "not riding a mount" errors at CapturedPatterns 260/262 are
+    command-syntax failures rather than combat events and are deliberately not
+    mapped here at all.
+  patterns:
+    - |-
+      ^You try to get your mount to rear but fail\.$
+
+# ═════════════════════════════════════════════════════════════════════════════
+# CHARM / PET DIALOGUE
+# ═════════════════════════════════════════════════════════════════════════════
+
+- id: charmed-dialogue
+  category: debuff
+  say: null
+  subject: null
+  actor: null
+  speak: suppress
+  repeat: once
+  status: verified
+  source: CapturedPatterns 291-294; re-searched 2026-08-02
+  notes: >-
+    PARTIAL RETRACTION — the "all three absent" call was wrong, because the earlier
+    sweep searched the quoted forms. "What?  And leave your beloved master?" has 224
+    hits and is kept below. The DOUBLE SPACE after "What?" is real; a literal matcher
+    fails without it.
+    Two of the original trio are dropped from the pattern list rather than retained:
+    "That's up to your master!" has zero hits while both siblings confirm, so the
+    wording itself is probably wrong; and "just so nice?" does occur (26) but only as
+    the tail of mob speech ("Isn't a singing siren just so nice?"), far too short a
+    fragment to match without firing inside ordinary chat.
+    Beware when re-checking: a broad "your master" probe is swamped by the MASTER
+    ACCOUNT login prompt, which is what made the earlier sweep look empty.
+    Still suppressed regardless — these are a charmed FOLLOWER's refusal replies, so
+    they report someone else's pet talking, not a charm landing on you (that affect
+    is `charm` in the self-affect table, and it has no onset text at all).
+  patterns:
+    - |-
+      ^What\?  And leave your beloved master\?$
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ITEM DESTRUCTION (breath weapons)
+# ═════════════════════════════════════════════════════════════════════════════
+
+- id: item-destroyed
+  category: death
+  say: "{subject} is destroyed."
+  subject: 1
+  actor: null
+  speak: announce
+  repeat: once
+  status: verified
+  corpus: >-
+    CORPUS-CONFIRMED 2026-08-02: bubbles/boils 600, blackens/crisps 471,
+    sparks/sputters 69. Subject shape confirmed as the item short description at
+    line start with NO possessive prefix — "A potion of divine protection
+    bubbles and boils!", "A pork tenderloin blackens and crisps!", "A pink wand
+    sparks and sputters!" — which settles the open question in the note above.
+  source: CapturedPatterns 285-287
+  notes: >-
+    YOUR CLASSIFICATION RESOLVES AN OPEN QUESTION. The reference files these under
+    "[UNCONFIRMED — low-confidence] Breath-weapon / fear group" and says outright it
+    could not reconstruct the context. Reading them as inventory destruction fits: in
+    the Merc family, acid/fire/lightning breath damage gear with exactly this
+    shape — acid bubbles and boils, fire blackens and crisps, lightning sparks and
+    sputters. That also means "sparks and sputters!" (CapturedPatterns 287) belongs
+    with the two you listed; it is the third of a set, added here.
+    High urgency regardless of source, since it is the only warning that a piece of
+    equipment just stopped existing. The leading capture assumes the item's short
+    description leads the line; whether it is prefixed ("Your leather cap ...") is
+    not established.
+  patterns:
+    - |-
+      ^([\w\-\s,']+) bubbles and boils!$
+    - |-
+      ^([\w\-\s,']+) blackens and crisps!$
+    - |-
+      ^([\w\-\s,']+) sparks and sputters!$
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════════════════════════════════════
+# SELF-AFFECT TABLE — onset / wear-off, ~100 spells and skills
+#
+# DIFFERENT SHAPE ON PURPOSE. Everything above is third-person combat text where
+# the work is extracting WHO. Everything below is self-side, spell-keyed, and
+# already knows who: you. What it does not know is WHAT — which is exactly the
+# gap you asked to close.
+#
+# THE UTTERANCE IS THE SPELL NAME, NOT THE ECHO.
+#   "Your eyes tingle."  ->  "Detect magic."
+#   "The detect magic wears off."  ->  "Detect magic fades."
+# Default rule: onset says "<Spell>.", wear-off says "<Spell> fades." Optional
+# `say` / `sayOff` override it where the bare name would mislead; none are needed
+# yet. This is why the section is keyed on `spell` rather than `id` — the key IS
+# the utterance, so a spell can never drift out of sync with what gets said.
+#
+# MATCHING IS LITERAL SUBSTRING, NOT REGEX — the same call stun-highlight makes,
+# for the same reason: every line here is a fixed literal with nothing to capture.
+# No escaping, no anchor gotchas. The four `<target>` entries are the exception
+# and are marked `match: regex`.
+#
+# FIELDS
+#   spell    the name, and the utterance
+#   kind     buff     good, on you
+#            debuff   bad, on you
+#            utility  informational/neutral, on you (detects, size, languages)
+#            offense  NOT a self affect — a line describing what YOU did to
+#                     someone else. Present because the source table mixes them in.
+#   onset    lines meaning it landed          (NOT `on:` — YAML 1.1 parsers read
+#   wearoff  lines meaning it dropped          a bare `on`/`off` key as a boolean)
+#   status / notes as above
+#
+# PROVENANCE FOR THE WHOLE SECTION
+# CapturedPatterns 343-347: [PNP SOURCE] (DSL_PNP_Affects.echoes.lua), "NOT
+# currently in DSL2's own capture layer at all". So this is real game text with no
+# DSL-corpus confirmation behind it — `unverified` across the board except where a
+# note says otherwise. It is also the table whose victim-side wording makes it
+# useless for detecting anything landing on an ENEMY; that job stays with the
+# third-person entries above.
+# ═════════════════════════════════════════════════════════════════════════════
+
+- spell: amnesia
+  kind: debuff
+  onset: ["Your mind becomes fuzzy; you have problems remembering one of your spells..."]
+  wearoff: ["Your amnesia subsides."]
+  status: unverified
+  notes: >-
+    NAMED BUT NEVER CAST. Neither line occurs, but "amnesia" appears in an
+    in-game SKILL LIST, so the spell exists and the logged characters simply
+    never had it. Absence here is not evidence the wording is wrong.
+
+- spell: armor
+  kind: buff
+  onset: ["You feel someone protecting you."]
+  wearoff: ["You feel less armored."]
+  status: verified
+
+- spell: berserk
+  kind: buff
+  onset: ["Your pulse races as you are consumed by rage!"]
+  wearoff: ["You feel your pulse slow down."]
+  status: verified
+
+- spell: bleeding
+  kind: debuff
+  onset: ["slashes at your body, opening up a nasty wound!"]
+  wearoff: []
+  status: verified
+  notes: >-
+    No wear-off text, so nothing can ever clear it — a stateful affect tracker would
+    show you bleeding forever. Treat as a one-shot announcement, not a tracked state.
+    Leading actor deliberately unmatched; the utterance does not need it.
+
+- spell: bless
+  kind: buff
+  onset: ["You feel righteous."]
+  wearoff: ["You feel less righteous."]
+  status: verified
+
+- spell: blindness
+  kind: debuff
+  onset: ["You are blinded!"]
+  wearoff: ["You can see again."]
+  status: verified
+  notes: >-
+    THE self-side line missing from blinded-dirt above — being blinded yourself is
+    the urgent half of that pair. Distinct from flash bomb's "You've been blinded!!"
+    and from dirt kicking, which have their own entries.
+
+- spell: blur
+  kind: buff
+  onset: ["The outline of your form becomes blurred, shifting and wavering."]
+  wearoff: ["Your body image clears up."]
+  status: verified
+
+- spell: caltraps
+  kind: debuff
+  onset: ["Small spikes fall to the ground, painfully digging into your feet."]
+  wearoff: ["You painfully pluck the last caltrap."]
+  status: verified
+
+- spell: charm
+  kind: debuff
+  onset: []
+  wearoff: ["You feel more self-confident.", "regains free will."]
+  status: verified
+  notes: >-
+    No onset text at all — you cannot detect being charmed, only being released, so
+    the release line is the only handle on this affect at all. This is the real
+    charm affect, as opposed to charmed-dialogue above, which is a follower's
+    refusal reply.
+    THIRD-PERSON WORDING RECOVERED 2026-08-02 — "<X> regains free will." (100+ hits,
+    mostly elementals and charmed animals). Note there is NO possessive: the
+    reference's "You regain YOUR free will." has zero hits, so either the self form
+    differs or it does not exist.
+
+- spell: courage
+  kind: buff
+  onset: ["You feel more courageous."]
+  wearoff: ["Your command of your skills returns."]
+  status: unverified
+  notes: >-
+    Onset "You feel more courageous." has zero hits (the only "courageous"
+    traffic is prose/chat), so it stays unverified. Its odd wear-off remains
+    suspect for the reason above. Wear-off reads like a debuff lifting ("command
+    of your skills RETURNS"), which does not match a courage buff expiring.
+    Either the pairing is wrong in the PNP source or courage suppresses
+    something while active. Worth a live check before trusting it.
+
+- spell: curse
+  kind: debuff
+  onset: ["You feel unclean."]
+  wearoff: ["The curse wears off."]
+  status: verified
+
+- spell: disembowl
+  kind: offense
+  match: regex
+  onset: ["^You swing your weapon powerfully into ([\\w\\-\\s,']+)'s stomach!$"]
+  wearoff: []
+  status: unverified
+  notes: >-
+    Not a self affect — this is your own attack landing, mixed into the source table.
+    `<target>` is a placeholder, so this one is regex with a capture, not a literal.
+
+- spell: disorientation
+  kind: debuff
+  onset: ["you feel the movement disorient you!"]
+  wearoff: []
+  status: verified
+  notes: Lower-case leading "you" is deliberate — mid-sentence fragment, not a line start.
+
+- spell: distortion
+  kind: debuff
+  onset: ["You begin to feel very distorted as your vision becomes blurry."]
+  wearoff: ["Your mind is no longer distorted."]
+  status: verified
+
+- spell: endurance
+  kind: buff
+  onset: ["You feel a holy endurance run through your veins."]
+  wearoff: ["You feel the divine strength leave your body."]
+  status: verified
+
+- spell: enlarge
+  kind: utility
+  onset: ["Your body trembles and shivers in pain as you grow larger!"]
+  wearoff: ["You feel smaller!"]
+  status: unverified
+  notes: >-
+    Not found. Both lines are absent; the "feel smaller"/"grow larger" matches
+    in the corpus are room descriptions and lore prose, not this spell.
+
+- spell: entwine
+  kind: offense
+  match: regex
+  onset: ["^You swing your flails entwining ([\\w\\-\\s,']+)!$"]
+  wearoff: []
+  status: unverified
+  notes: Your own attack, not a self affect. `<target>` placeholder — regex, not literal.
+
+- spell: fervor
+  kind: buff
+  onset: ["You are filled with righteous fervor."]
+  wearoff: []
+  status: absent
+  notes: >-
+    ABSENT — status "absent" means searched and not found across all 2,478 logs
+    (2.85 GB), including a broadened keyword probe that found no related wording
+    either. The logged characters evidently never had this spell, so this is not
+    evidence the reference wording is wrong — only that this corpus cannot
+    confirm it.
+
+- spell: flurry
+  kind: offense
+  match: regex
+  onset: ["^You spin your swords in a flurry on ([\\w\\-\\s,']+)!$"]
+  wearoff: []
+  status: unverified
+  notes: Your own attack, not a self affect. `<target>` placeholder — regex, not literal.
+
+- spell: fly
+  kind: buff
+  onset: ["Your feet rise off the ground."]
+  wearoff: ["You float gently to the ground.", "You slowly float to the ground."]
+  status: verified
+
+- spell: forget
+  kind: debuff
+  onset: ["Your skills feel clumsy and unpracticed."]
+  wearoff: []
+  status: verified
+
+- spell: frenzy
+  kind: buff
+  onset: ["You are filled with holy wrath!"]
+  wearoff: ["Your rage ebbs."]
+  status: verified
+
+- spell: furnace
+  kind: buff
+  onset: ["You are protected from fire."]
+  wearoff: ["Your rune of furnace protection has expired."]
+  status: unverified
+  notes: >-
+    Not found. The "protected from fire" matches are all player chat about gear,
+    never the affect line.
+
+- spell: fury
+  kind: buff
+  onset: ["An inner anger takes over your emotions!"]
+  wearoff: ["The fury within you wears off."]
+  status: verified
+
+- spell: haste
+  kind: buff
+  onset: ["You feel yourself moving more quickly."]
+  wearoff: ["You feel yourself slow down.", "You feel yourself slowing down."]
+  status: verified
+  notes: >-
+    COLLISION RISK with `slow`, whose onset is "You feel yourself slowing d o w n..."
+    Under substring matching the three are distinguishable only by exact spacing and
+    the trailing punctuation, and announcing "Haste fades" when you were just slowed
+    is a meaningful error mid-fight. Match these longest-first and anchor them.
+
+- spell: haze
+  kind: debuff
+  onset: ["Your mind becomes hazy as your thoughts begin to race."]
+  wearoff: ["Your struggle to break from the haze succeeds."]
+  status: verified
+
+- spell: infravision
+  kind: utility
+  onset: ["Your eyes glow red."]
+  wearoff: ["You no longer see in the dark."]
+  status: verified
+
+- spell: inspire
+  kind: buff
+  onset: ["The zeal of the crusader infects his allies."]
+  wearoff: ["The zeal of the crusader wears off."]
+  status: verified
+
+- spell: invisibility
+  kind: buff
+  onset: ["You fade out of existence."]
+  wearoff: ["You are no longer invisible."]
+  status: verified
+
+- spell: jawbind
+  kind: debuff
+  onset: ["net closes over your jaws holding them closed!"]
+  wearoff: ["The snare around your jaw breaks free."]
+  status: absent
+  notes: >-
+    ABSENT — status "absent" means searched and not found across all 2,478 logs
+    (2.85 GB), including a broadened keyword probe that found no related wording
+    either. The logged characters evidently never had this spell, so this is not
+    evidence the reference wording is wrong — only that this corpus cannot
+    confirm it.
+
+- spell: leprosy
+  kind: debuff
+  onset: ["You scream in agony as your skin begins to rot."]
+  wearoff: ["Your skin ceases to decay."]
+  status: verified
+  notes: >-
+    Same "You scream in agony as ..." opening as plague. Distinguishable only past
+    the eighth word, so match full-length, never on the shared prefix.
+
+- spell: litany
+  kind: buff
+  onset: ["Your litany inspires you, infusing you with"]
+  wearoff: []
+  status: unverified
+  notes: >-
+    NAMED BUT NEVER CAST — "litany" appears in an in-game skill list alongside
+    rebuke/shadowwhisper/shadowcloak, but the onset text never fires. Truncated
+    in the source — the line continues past "infusing you with".
+
+- spell: nondetect
+  kind: buff
+  onset: ["You are immune to detection."]
+  wearoff: ["Your detection immunity wears off."]
+  status: absent
+  notes: >-
+    ABSENT — status "absent" means searched and not found across all 2,478 logs
+    (2.85 GB), including a broadened keyword probe that found no related wording
+    either. The logged characters evidently never had this spell, so this is not
+    evidence the reference wording is wrong — only that this corpus cannot
+    confirm it.
+
+- spell: plague
+  kind: debuff
+  onset: ["You scream in agony as plague sores erupt from your skin."]
+  wearoff: ["Your sores vanish."]
+  status: verified
+  notes: >-
+    Owns the SELF side of plague; the third-person landing is `plagued` above and the
+    recurring tick is `plague-tick`. Three entries, one disease, because they need
+    three different repeat behaviours.
+
+- spell: poison
+  kind: debuff
+  onset: ["You choke and gag.", "You feel very sick."]
+  wearoff: ["A warm feeling runs through your body.", "You feel less sick."]
+  status: verified
+  notes: >-
+    AMBIGUOUS IN THE SOURCE, resolved by meaning. CapturedPatterns 382 brackets this
+    as two onset/wear-off PAIRS — {"You choke and gag." / "You feel very sick."} +
+    {"A warm feeling runs through your body." / "You feel less sick."} — which read
+    literally makes "You feel very sick." a WEAR-OFF. That is backwards, and acting on
+    it would announce "poison fades" at the moment you were poisoned. Encoded here as
+    two onset lines and two wear-off lines, which matches both the wording and the
+    Merc-family convention where "A warm feeling runs through your body." is the cure.
+    Flagged rather than silently reinterpreted — check one live poisoning to settle it.
+
+- spell: prayer
+  kind: buff
+  onset: ["A feeling of divinity overtakes the room."]
+  wearoff: []
+  status: verified
+  notes: >-
+    WORDING CORRECTED 2026-08-02. The reference says "...overtakes your presence."
+    — zero hits. The real line, 888 hits, ends "overtakes THE ROOM." It is a room
+    broadcast, not a self message, which also means it fires for other people's
+    prayers and cannot tell you whose it was.
+
+- spell: purity
+  kind: buff
+  onset: ["The purity of your purpose is countenanced."]
+  wearoff: []
+  status: unverified
+  notes: >-
+    Not found. The only "countenanced" hits are the bare word in wordlist-like
+    context, never the full line.
+
+- spell: rebuke
+  kind: buff
+  onset: ["You are inspired to a rightous wrath!"]
+  wearoff: []
+  status: unverified
+  notes: >-
+    NAMED BUT NEVER CAST — appears in the same in-game skill list as litany. The
+    corpus's "righteous wrath" matches are chat and prose, not this affect.
+    "rightous" is the game''s own misspelling — do not correct it or the match
+    breaks.
+
+- spell: reduce
+  kind: utility
+  onset: ["Your body twists and shivers as you shrink to a smaller size!"]
+  wearoff: ["You feel larger!"]
+  status: absent
+  notes: >-
+    ABSENT — status "absent" means searched and not found across all 2,478 logs
+    (2.85 GB), including a broadened keyword probe that found no related wording
+    either. The logged characters evidently never had this spell, so this is not
+    evidence the reference wording is wrong — only that this corpus cannot
+    confirm it.
+
+- spell: riot
+  kind: buff
+  onset: ["You are filled with a terrible fury!"]
+  wearoff: ["You no longer feel so angry."]
+  status: verified
+
+- spell: sanctuary
+  kind: buff
+  onset: ["You are surrounded by a white aura."]
+  wearoff: ["The white aura around your body fades."]
+  status: verified
+
+- spell: shadowform
+  kind: buff
+  onset: ["You fade into the darkened form of a shadow."]
+  wearoff: ["You return to your material form."]
+  status: unverified
+  notes: >-
+    Onset confirmed. Wear-off "You return to your material form." has zero hits
+    — the "material form" matches in the corpus are a wraith's ROOM DESCRIPTION,
+    not this affect. Unverified.
+
+- spell: shield
+  kind: buff
+  onset: ["You are surrounded by a force shield."]
+  wearoff: ["Your force shield shimmers then fades away."]
+  status: verified
+
+- spell: sleep
+  kind: debuff
+  onset: ["You feel very sleepy ..... zzzzzz."]
+  wearoff: []
+  status: verified
+
+- spell: slow
+  kind: debuff
+  onset: ["You feel yourself slowing d o w n..."]
+  wearoff: ["You feel yourself speed up."]
+  status: verified
+  notes: >-
+    The spaced-out "d o w n" is real game text. See the collision note on `haste`.
+    Third-person equivalent ("X starts to move in slow motion.") is already live in
+    classifyEnemyAffliction.
+
+- spell: sneak
+  kind: buff
+  onset: []
+  wearoff: ["You no longer feel stealthy."]
+  status: verified
+  notes: Cross-confirmed in DSL2's own native XML "Skills" group, per CapturedPatterns 393.
+
+- spell: soulsight
+  kind: utility
+  onset: ["You can now see souls."]
+  wearoff: ["You no longer see soul auras"]
+  status: verified
+  notes: Wear-off has no trailing period in the source — preserved as-is.
+
+- spell: taunt
+  kind: debuff
+  onset: ["little pipsqueak!  KILL!!  KILL!!"]
+  wearoff: ["You begin to relax."]
+  status: verified
+  notes: >-
+    SPACING CORRECTED 2026-08-02. The reference writes single spaces; the real line
+    has DOUBLE spaces before each "KILL!!". Matched literally, the reference's
+    version never fires — the corpus has 7 hits of the true form and 0 of it. The
+    leading "<X> shouts a harsh string of insults at you!" clause is dropped here
+    because only the tail was confirmed.
+
+- spell: warcry
+  kind: buff
+  onset: ["You yell out a loud warcry!", "screams a massive warcry!"]
+  wearoff: ["Your warcry wears off."]
+  status: verified
+  notes: >-
+    THIRD-PERSON WORDING RECOVERED 2026-08-02. The reference's self line has zero
+    hits; what the corpus actually carries, 241+ times, is "<X> screams a massive
+    warcry!". The self form may still be right and simply never logged (the logged
+    characters had no warcry), so it is kept rather than dropped.
+
+- spell: weaken
+  kind: debuff
+  onset: ["You feel your strength slip away."]
+  wearoff: ["You feel stronger."]
+  status: verified
+  notes: >-
+    Self side only. You wanted enemy-side weaken callouts; no source carries a
+    third-person weaken line, so that remains uncapturable until someone logs one.
+    Wear-off "You feel stronger." also collides in meaning with giant strength's
+    "Your muscles surge with heightened power!" — different text, same news.
+
+- spell: wingbind
+  kind: debuff
+  onset: ["Your wings are tangled in a rope."]
+  wearoff: ["The rope entangling your wings breaks free."]
+  status: absent
+  notes: >-
+    ABSENT — status "absent" means searched and not found across all 2,478 logs
+    (2.85 GB), including a broadened keyword probe that found no related wording
+    either. The logged characters evidently never had this spell, so this is not
+    evidence the reference wording is wrong — only that this corpus cannot
+    confirm it.
+
+- spell: yank
+  kind: offense
+  match: regex
+  onset: ["^You head out of the room, dragging ([\\w\\-\\s,']+)\\.$"]
+  wearoff: []
+  status: unverified
+  notes: Your own action, not a self affect. `<target>` placeholder — regex, not literal.
+
+- spell: abandon hope
+  kind: debuff
+  onset: ["You feel a wave of depression surround you as you abandon all hope."]
+  wearoff: ["You regain your hope in life."]
+  status: verified
+
+- spell: antimagic shell
+  kind: buff
+  onset: ["You feel safe as a mystical shield surrounds your body.", "A mystical shield glimmers as it surrounds"]
+  wearoff: ["You no longer feel safe as the mystical shield fades away."]
+  status: verified
+  notes: >-
+    THIRD-PERSON WORDING RECOVERED 2026-08-02, 200+ hits: "A mystical shield
+    glimmers as it surrounds <X> body." Note the missing possessive — the game
+    really does emit "surrounds a disinterested yinn warrior body", so do not
+    "correct" it to "'s body" when writing a full pattern. Self lines unconfirmed.
+
+- spell: bark skin
+  kind: buff
+  onset: ["Your skin is protected by bark."]
+  wearoff: ["The bark protecting your skin vanishes."]
+  status: verified
+
+- spell: bind soul
+  kind: debuff
+  onset: ["You feel a mystical force bind your movement!"]
+  wearoff: ["You feel the binding force fade away."]
+  status: verified
+
+- spell: bone blight
+  kind: debuff
+  onset: ["You feel a terrible pain in your limbs."]
+  wearoff: ["Your limbs feel strong once more."]
+  status: verified
+
+- spell: bugbear bite
+  kind: debuff
+  onset: []
+  wearoff: []
+  status: speculative
+  notes: >-
+    Listed in the source with no onset and no wear-off text at all. Kept as a record
+    that the affect exists and is undetectable, so nobody re-searches for it.
+
+- spell: change sex
+  kind: utility
+  onset: ["You feel different."]
+  wearoff: ["Your body feels familiar again."]
+  status: verified
+  notes: '"You feel different." is short and generic — high false-positive risk. Anchor it.'
+
+- spell: cut eyes
+  kind: debuff
+  onset: ["slashes at your face, opening up a cut above your eyes!"]
+  wearoff: ["You wipe the blood out of your eyes."]
+  status: verified
+
+- spell: dark essence
+  kind: buff
+  onset: ["You are surrounded by a blackened essence."]
+  wearoff: ["The dark essence subsides from your soul."]
+  status: verified
+
+- spell: detect evil
+  kind: utility
+  onset: []
+  wearoff: ["The red in your vision disappears."]
+  status: verified
+
+- spell: detect good
+  kind: utility
+  onset: []
+  wearoff: ["The gold in your vision disappears."]
+  status: verified
+
+- spell: detect hidden
+  kind: utility
+  onset: ["Your awareness improves."]
+  wearoff: ["You feel less aware of your surroundings."]
+  status: verified
+
+- spell: detect invis
+  kind: utility
+  onset: []
+  wearoff: ["You no longer see invisible objects."]
+  status: verified
+
+- spell: detect magic
+  kind: utility
+  onset: ["Your eyes tingle."]
+  wearoff: ["The detect magic wears off."]
+  status: verified
+  notes: >-
+    THE ONLY ENTRY IN THIS TABLE WITH DSL-CORPUS EVIDENCE. PNP lists no onset for
+    detect magic; the reference adds "Your eyes tingle." because a DSL2 log-corpus
+    grep shows it consistently right after casting it. Marked [UNCONFIRMED but
+    high-confidence] there, `verified` here on the strength of that grep.
+    You raised this line as the ambiguity example — worth knowing it is NOT actually
+    ambiguous in this table: the other four detects have no onset text whatsoever
+    (detect evil/good/invis) or a completely different one (detect hidden, "Your
+    awareness improves."). "Your eyes tingle." belongs to detect magic alone.
+
+- spell: dirt kicking
+  kind: debuff
+  onset: ["kicks dirt in your eyes!"]
+  wearoff: ["You rub the dirt out of your eyes."]
+  status: verified
+  notes: >-
+    Self side of blinded-dirt above, and a different wording again from that entry's
+    third-person "is blinded by the dirt in his eyes!" — both are real, they are just
+    the two halves of one skill.
+
+- spell: divine protection
+  kind: buff
+  onset: ["You are granted divine protection."]
+  wearoff: ["Your divine protection wears off."]
+  status: verified
+
+- spell: enchanting touch
+  kind: buff
+  onset: ["You glow with a blue aura.", "You glow with a bright blue aura.", "You glow with a brilliant white aura.", "You glow with a gleaming white aura.", "You glow with a brilliant golden aura."]
+  wearoff: ["Your enchantment fades."]
+  status: verified
+  notes: >-
+    Five onset variants, presumably enchantment tiers — so the utterance could say
+    WHICH tier rather than just "Enchanting touch." Left flat for now; if the tier
+    ordering is confirmed, split into five entries or add a per-pattern label.
+    Substring matching is safe here only because no variant is a substring of
+    another; check that again if a sixth is ever added.
+
+- spell: enhanced recovery
+  kind: buff
+  onset: ["You feel blessed with a vitalizing aura."]
+  wearoff: ["You feel the divine vitalization leave your body."]
+  status: verified
+
+- spell: faerie fire
+  kind: debuff
+  onset: ["You are surrounded by a pink outline."]
+  wearoff: ["The pink aura around you fades away."]
+  status: verified
+  notes: >-
+    Self side. The third-person form is already live in classifyEnemyAffliction as
+    "outlined in faerie fire" — one of the effects you flagged for expansion.
+
+- spell: fake illness
+  kind: utility
+  onset: ["Your tongue turns black."]
+  wearoff: ["Your illness subsides."]
+  status: verified
+
+- spell: favor of the gods
+  kind: buff
+  onset: []
+  wearoff: ["The feeling of righteousness fades."]
+  status: verified
+  notes: >-
+    Wear-off is near-identical in meaning to bless's "You feel less righteous." —
+    different text, so matching is safe, but the two utterances will sound alike.
+
+- spell: find familiar
+  kind: buff
+  onset: ["A black cat slinks into the light and rubs against your leg.", "A black raven flutters down from above and lands on your shoulder."]
+  wearoff: ["A black cat stops following you.", "A raven stops following you."]
+  status: unverified
+  notes: >-
+    The RAVEN pair is confirmed; the two CAT lines are not. Every "black cat"
+    hit is an ordinary mob ("A black cat is snooping for something to eat."),
+    never the summon or its dismissal. Note the asymmetry in the source: onset
+    says "black raven", wear-off says just "raven".
+
+- spell: flash bomb
+  kind: debuff
+  onset: ["You've been blinded!!"]
+  wearoff: ["You rub your eyes. Hey!! All the little flashing spots are gone!"]
+  status: verified
+
+- spell: focus aggression
+  kind: buff
+  onset: ["Your thoughts become concise and focused on killing!"]
+  wearoff: ["You are no longer focused on your aggression."]
+  status: verified
+
+- spell: giant strength
+  kind: buff
+  onset: ["Your muscles surge with heightened power!"]
+  wearoff: ["You feel weaker."]
+  status: verified
+
+- spell: holy flame
+  kind: buff
+  onset: ["Holy flames errupt all about you!"]
+  wearoff: ["The holy flames about your body subside."]
+  status: verified
+  notes: '"errupt" is the game''s own misspelling — do not correct it.'
+
+- spell: holy presence
+  kind: buff
+  onset: ["You feel a holy presence protecting you."]
+  wearoff: ["You feel the holy presence leave your body."]
+  status: verified
+
+- spell: influence confidence
+  kind: buff
+  onset: ["Your confidence in yourself grows stronger."]
+  wearoff: ["You are no longer confident in your hitting ability."]
+  status: verified
+
+- spell: killing rage
+  kind: buff
+  onset: ["Screaming a battle cry, you fly into a rage!"]
+  wearoff: ["You calm down as the battlerage leaves you."]
+  status: unverified
+  notes: >-
+    Not found. The "battlerage" matches are a food item ("the battlerager's cut
+    of beef").
+
+- spell: know languages
+  kind: utility
+  onset: ["You broaden your language horizons."]
+  wearoff: ["Your ability to understand all words fades."]
+  status: absent
+  notes: >-
+    ABSENT — status "absent" means searched and not found across all 2,478 logs
+    (2.85 GB), including a broadened keyword probe that found no related wording
+    either. The logged characters evidently never had this spell, so this is not
+    evidence the reference wording is wrong — only that this corpus cannot
+    confirm it.
+
+- spell: nature growth
+  kind: buff
+  onset: ["The forces of nature grow inside of you!"]
+  wearoff: ["The forces of nature leave your body."]
+  status: verified
+
+- spell: pass door
+  kind: buff
+  onset: ["You turn translucent."]
+  wearoff: ["You feel solid again."]
+  status: verified
+
+- spell: prevent recovery
+  kind: debuff
+  onset: ["Your body feels very weak as your ability to heal is drained.", "looks very weak as their ability to heal is drained."]
+  wearoff: ["You feel the strain on your health lifted."]
+  status: verified
+  notes: >-
+    THIRD-PERSON WORDING RECOVERED 2026-08-02 — "<X> looks very weak as their
+    ability to heal is drained." Only 2 occurrences, so treat the exact wording as
+    thin evidence. Self lines unconfirmed.
+
+- spell: protection evil
+  kind: buff
+  onset: ["You feel holy and pure."]
+  wearoff: ["You feel less protected."]
+  status: verified
+  notes: >-
+    THREE-WAY WEAR-OFF COLLISION — protection evil, protection good and protection
+    neutral all share the exact string "You feel less protected." The onsets are
+    distinct, the wear-offs are not distinguishable at all. Announce the wear-off as
+    a generic "Protection fades." rather than guessing which of the three; guessing
+    is wrong two times in three. This is the one place in the table where the
+    spell-name-as-utterance rule genuinely cannot be honoured.
+
+- spell: protection good
+  kind: buff
+  onset: ["You feel aligned with darkness."]
+  wearoff: ["You feel less protected."]
+  status: verified
+  notes: See the collision note on `protection evil`.
+
+- spell: protection neutral
+  kind: buff
+  onset: ["You are protected from neutral people."]
+  wearoff: ["You feel less protected."]
+  status: verified
+  notes: See the collision note on `protection evil`.
+
+- spell: self projection
+  kind: utility
+  onset: ["Your image projects out slightly in front of you."]
+  wearoff: ["Your projected image suddenly disappears."]
+  status: verified
+
+- spell: shield of words
+  kind: buff
+  onset: ["You feel protected."]
+  wearoff: ["Your protection fades away."]
+  status: verified
+  notes: >-
+    "You feel protected." is a SUBSTRING-SAFE but semantically confusable neighbour of
+    the protection trio's "You feel less protected." — a naive substring match of the
+    former will not fire on the latter (different words), but any fuzzy or
+    prefix-based matching would conflate them.
+
+- spell: song of war
+  kind: buff
+  onset: ["The melody of the Song of War fills your mind."]
+  wearoff: ["You no longer hear the melody of the Song of War in your mind."]
+  status: verified
+
+- spell: stone skin
+  kind: buff
+  onset: ["Your skin turns to stone."]
+  wearoff: ["Your skin feels soft again."]
+  status: verified
+  notes: >-
+    Self side. The third-person form is deliberately NOT announced by
+    classifyEnemyAffliction — buffs landing on others are not afflictions and would
+    dilute the signal.
+
+- spell: sure striking
+  kind: buff
+  onset: ["You strike more surely."]
+  wearoff: ["Your ever sure strikes faulter."]
+  status: absent
+  notes: >-
+    ABSENT — status "absent" means searched and not found across all 2,478 logs
+    (2.85 GB), including a broadened keyword probe that found no related wording
+    either. The logged characters evidently never had this spell, so this is not
+    evidence the reference wording is wrong — only that this corpus cannot
+    confirm it. "faulter" is the game''s own misspelling — do not correct it.
+
+- spell: water breathing
+  kind: utility
+  onset: ["You feel strange as you start having trouble breathing air."]
+  wearoff: ["You start gasping for air as you can breath normally again!"]
+  status: verified
+  notes: >-
+    Reads inverted but is consistent: the onset is trouble breathing AIR because you
+    now breathe water. "breath" for "breathe" in the wear-off is the game's own typo.
+
+- spell: we come, we come
+  kind: buff
+  onset: ["The song enrages your groupmates and demoralizes your enemies.", "Your song enrages your groupmates and demoralized your enemies."]
+  wearoff: ["The bard's ally song leaves your mind"]
+  status: unverified
+  notes: >-
+    The first onset variant is confirmed; the second ("Your song enrages ...
+    demoralized ...") has zero hits, so the caster-side form is unverified. Two
+    onset variants — the second is the caster's own view and carries the game's
+    tense slip ("demoralized"). Wear-off has no trailing period in the source.
+
+- spell: withstand death
+  kind: buff
+  onset: ["Death has no power over you."]
+  wearoff: ["You shiver as you become susceptible to death again."]
+  status: absent
+  notes: >-
+    ABSENT — status "absent" means searched and not found across all 2,478 logs
+    (2.85 GB), including a broadened keyword probe that found no related wording
+    either. The logged characters evidently never had this spell, so this is not
+    evidence the reference wording is wrong — only that this corpus cannot
+    confirm it.

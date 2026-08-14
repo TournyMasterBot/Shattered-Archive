@@ -32,9 +32,14 @@ module.exports = {
     ],
   },
 
+  // Polyfills a jsdom gap (WebCrypto) that device credentials need — see the file for why
+  // this is a test-env shim and not a claim about real browsers.
+  setupFiles: ['<rootDir>/jest.setup.cjs'],
+
   moduleNameMapper: {
     // Resolve workspace deps to their TS sources so tests don't require a prior build.
     '^@shatteredarchive/merc-area$': '<rootDir>/../../services/merc-area/src/index.ts',
+    '^@shatteredarchive/sdk-client$': '<rootDir>/../../sdks/sdks-client/src/index.ts',
     // Stub CSS/asset imports (Vite handles them at build; jsdom cannot parse them).
     '\\.(css|scss|sass)$': '<rootDir>/jest.style-stub.cjs',
     // NodeNext ESM specifiers use `.js`; strip for ts-jest resolution.

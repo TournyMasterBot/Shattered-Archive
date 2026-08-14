@@ -1,1 +1,13 @@
 File Index
+
+/ObjectEditor.test.tsx
+Purpose: Per-item-type value editing, extra-description add/remove, and model→file emit round-trip tests.
+
+/ObjectEditor.tsx
+Purpose: #OBJECTS form editor in grouped fieldsets (Descriptions/Basics/Values/flags/extra descriptions); the five values are re-labelled + re-typed per item type via objValueKinds. Phase G: header gained a SaveAsSnippetButton (features/content), same shared component every entity editor embeds.
+
+/ObjectsPage.test.tsx
+Purpose: (2026-07-26 UX polish pass, new file — ObjectsPage previously had ZERO tests of any kind) list; blocked delete via a referencing reset shows the Resets category + working Go-fix-it; blocked delete via a room exit's key field shows the Map category + working Go-fix-it (confirms objects, unlike mobs, CAN be map-referenced — via exit keys, not exits themselves); unblocked delete succeeds after confirm; switching objects clears a stale panel.
+
+/ObjectsPage.tsx
+Purpose: Objects tab — area sidebar + object list + ObjectEditor over the shared useAreaWorkbench (preview-first, gated writes). 2026-07-26 (UX polish pass): delete refactored onto the shared useDeleteWithBlockers hook — same categorized panel as Rooms/Mobs instead of a flat wb.err() listing. New onGoToResets/onGoToMap props (both plain tab switches — an object has no "its own" room to focus the Map on, unlike a room delete) — deliberately NO onGoToMobs/onGoToScripts (structurally impossible: collectRefs never produces a 'mobs' or 'scripts' category blocker for an object — only resets and exit-key references ever point at one). addObj fires a success toast; delete's success toast is centralized inside useDeleteWithBlockers. AreaSidebar now gets onBeforeOpen={() => wb.confirmDiscard('switch areas')} (Step 5 dirty-guard rollout). Phase G: new `pendingSnippet` prop — a useEffect mirrors addObj's own vnum-allocation flow but seeds the new object from the snippet's saved data (discarding its stored vnum).

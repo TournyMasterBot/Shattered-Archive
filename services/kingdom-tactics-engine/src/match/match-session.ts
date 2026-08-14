@@ -57,21 +57,41 @@ const MAX_ACTIONS_PER_TURN = 500;
 
 export class MatchSession {
   readonly matchId: string;
+  private readonly initialState: MatchState;
   private state: MatchState;
   private readonly providers: EngineProviders;
   private readonly rng: ISeededRng;
+  private readonly seed: number;
   private readonly aiPolicies: Readonly<Record<number, IAiPolicy>>;
   private readonly maxTurns: number;
   /** side index → clientId that holds the (human) seat. */
   private readonly seats = new Map<Side, string>();
+  /**
+   * side index → accountId, when the claiming client presented a valid hub
+   * token (Phase F). Purely additive metadata for history/persistence — never
+   * consulted by seat-ownership authorization, which stays clientId-only.
+   */
+  private readonly seatAccounts = new Map<Side, string>();
   /** Per-match secret salt for the combat RNG — never serialized. */
   private readonly combatSalt: number;
   /** Monotonic step counter mixed with the salt so each combat action draws a fresh, replayable stream. */
   private combatStep = 0;
+  /**
+   * Every action applied so far, in the order applied (human AND AI-driven —
+   * see `runAiUntilHuman`). A persistence layer can serialize this alongside
+   * `replaySeed()` to deterministically reconstruct the match later via
+   * `replayMatch` — this is what makes a replay reproduce the exact recorded
+   * outcome rather than a fresh (possibly different) AI-driven playthrough.
+   */
+  private readonly actionLog: Action[] = [];
+  /** Backing flag for `tryClaimForRecording` — see its doc for why this exists. */
+  private recordingClaimed = false;
 
   constructor(opts: MatchSessionOptions) {
     this.matchId = opts.matchId;
+    this.initialState = opts.initial;
     this.state = opts.initial;
+    this.seed = opts.seed;
     this.rng = createRng(opts.seed);
     this.aiPolicies = opts.aiPolicies ?? {};
     this.maxTurns = opts.maxTurns ?? 200;
@@ -94,6 +114,25 @@ export class MatchSession {
     return this.state;
   }
 
+  /** The state the match started from — needed alongside `getActionLog()`/`replaySeed()` to reconstruct it later via `replayMatch`. */
+  initial(): MatchState {
+    return this.initialState;
+  }
+
+  /**
+   * Claims a just-decided match for finalization (e.g. persistence) exactly once: `true` the
+   * FIRST time it's called after the match is over, `false` on every call after that — even
+   * across unrelated code paths that happen to re-check `isOver()` (e.g. a client re-joining an
+   * already-decided match). Purely a bookkeeping flag; does no I/O itself, keeping this class
+   * transport/persistence-agnostic. A caller with no persistence concern can ignore this
+   * entirely — it has no effect on match state or seat behavior.
+   */
+  tryClaimForRecording(): boolean {
+    if (!this.isOver() || this.recordingClaimed) return false;
+    this.recordingClaimed = true;
+    return true;
+  }
+
   /** True once the engine has flagged the match `decided`. */
   isOver(): boolean {
     return this.state.status === 'decided';
@@ -106,20 +145,30 @@ export class MatchSession {
 
   /**
    * Claim a human seat on `side`. First-come: a side backed by an AI policy, or already held
-   * by a different client, is rejected. Re-claiming your own seat is idempotent.
+   * by a different client, is rejected. Re-claiming your own seat is idempotent. `accountId`
+   * (Phase F) is optional, introspected-token metadata — it never affects the claim decision.
    */
-  claimSeat(side: Side, clientId: string): SeatClaim {
+  claimSeat(side: Side, clientId: string, accountId?: string): SeatClaim {
     if (this.aiPolicies[side]) return { ok: false, reason: 'seat is AI-controlled' };
     const held = this.seats.get(side);
     if (held !== undefined && held !== clientId) return { ok: false, reason: 'seat already taken' };
     this.seats.set(side, clientId);
+    if (accountId) this.seatAccounts.set(side, accountId);
     return { ok: true };
+  }
+
+  /** The accountId attached to `side`'s seat, if the claiming client presented a valid token. */
+  accountIdForSeat(side: Side): string | undefined {
+    return this.seatAccounts.get(side);
   }
 
   /** Release any seat(s) held by `clientId` (on leave / socket close). */
   releaseSeat(clientId: string): void {
     for (const [side, holder] of this.seats) {
-      if (holder === clientId) this.seats.delete(side);
+      if (holder === clientId) {
+        this.seats.delete(side);
+        this.seatAccounts.delete(side);
+      }
     }
   }
 
@@ -138,7 +187,42 @@ export class MatchSession {
     if (next === this.state) return { error: 'illegal action' };
 
     this.state = next;
+    this.actionLog.push(action);
     return { state: next, lastAction: action };
+  }
+
+  /**
+   * Apply an action WITHOUT seat-authorization — for deterministically REPLAYING an
+   * already-recorded, trusted action log (see {@link replayMatch}), never for live client
+   * input (use {@link applyClientAction} for that, which enforces seat ownership).
+   */
+  replayAction(action: Action): ApplyResult {
+    if (this.isOver()) return { error: 'match is already decided' };
+    const next = applyAction(this.state, action, this.rng, this.providers);
+    if (next === this.state) return { error: 'illegal action' };
+    this.state = next;
+    return { state: next, lastAction: action };
+  }
+
+  /** Every action applied so far (human + AI-driven), in order — see `replayMatch`. */
+  getActionLog(): readonly Action[] {
+    return this.actionLog;
+  }
+
+  /**
+   * Everything needed to deterministically reconstruct this match from scratch (a fresh
+   * `MatchSession` + replaying `getActionLog()` in order via `replayAction`). SERVER-SIDE USE
+   * ONLY — `combatSalt` is the secret that keeps combat-reaction rolls unguessable across the
+   * network; a persistence layer may store this alongside the action log, but it must never be
+   * sent to any client (matches the constructor option's own contract).
+   */
+  replaySeed(): { seed: number; combatSalt: number } {
+    return { seed: this.seed, combatSalt: this.combatSalt };
+  }
+
+  /** Every claimed (human) seat and its accountId, if any (Phase F) — e.g. for building a completed match's history-entry participant list. AI-controlled sides are never claimed, so they never appear here. */
+  claimedSeats(): { readonly side: Side; readonly accountId: string | null }[] {
+    return [...this.seats.keys()].map((side) => ({ side, accountId: this.seatAccounts.get(side) ?? null }));
   }
 
   /**
@@ -175,14 +259,17 @@ export class MatchSession {
         // No-op (illegal, or a rejected end-turn): force an end-turn to guarantee progress;
         // if even that is a no-op, bail to avoid an infinite loop.
         if (action.type === 'end-turn') break;
-        const ended = applyAction(this.state, { type: 'end-turn', side }, this.rng, this.providers);
+        const endAction: Action = { type: 'end-turn', side };
+        const ended = applyAction(this.state, endAction, this.rng, this.providers);
         if (ended === this.state) break;
         this.state = ended;
+        this.actionLog.push(endAction);
         snapshots.push(this.state);
         continue;
       }
 
       this.state = next;
+      this.actionLog.push(action);
       snapshots.push(this.state);
       actionsThisTurn++;
     }

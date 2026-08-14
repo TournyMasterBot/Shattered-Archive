@@ -1,0 +1,53 @@
+/* Design tokens extracted from the C# site's design language
+   (DSL Server.Web.Public/wwwroot/css/site.css) — the constellation's reference
+   identity style per the Phase A2 plan. Values verified against that file:
+   tile #242934/#ecf0f6/#a9b2c0, rows #1e1e1e/#252525, borders #444 +
+   rgba(255,255,255,.06), accents #6f93ff/#f19a47, link hover #1D94E4, hover
+   warmth #ffd08a, 8px table radius + soft shadows, pill chips. */
+:root {
+  color-scheme: dark;
+
+  --bg: #16181d;
+  --panel: #242934;
+  --panel-border: rgba(255, 255, 255, 0.06);
+  --row-even: #1e1e1e;
+  --row-odd: #252525;
+  --chip: #1f1f1f;
+  --border: #444;
+
+  --text: #d4d4d4;
+  --title: #ecf0f6;
+  --sub: #a9b2c0;
+
+  --accent: #6f93ff;
+  --accent-strong: #1d94e4;
+  --accent-warm: #f19a47;
+  --hover-warm: #ffd08a;
+
+  --ok-bg: #1f4d2a;
+  --ok-fg: #c9efce;
+  --err-bg: #55221e;
+  --err-fg: #f3c4bf;
+
+  --radius: 8px;
+  --radius-sm: 6px;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
+
+  --font-mono: 'Bitstream Vera Sans Mono', Monaco, monospace;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, 'Segoe UI', sans-serif;
+}
+
+a {
+  color: var(--accent);
+}
+
+a:hover {
+  color: var(--accent-strong);
+  text-decoration: none;
+}

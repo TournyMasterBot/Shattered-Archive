@@ -57,6 +57,13 @@ service
     if (!builderConfig.writeEnabled) {
       log.info('[mud-builder-server] Disk writes are GATED OFF (preview/download only). Set MUD_WRITE_ENABLED=true deliberately to enable.');
     }
+    if (builderConfig.authEnabled) {
+      log.info('[mud-builder-server] Builder auth is ON — mutations require a bearer token', {
+        authFile: `${builderConfig.authDataPath}/builder-auth.json`,
+      });
+    } else if (builderConfig.writeEnabled) {
+      log.warn('[mud-builder-server] Builder auth is OFF while writes are ENABLED (MUD_BUILDER_AUTH=off) — local testing only, never deploy like this.');
+    }
   })
   .catch((err) => {
     log.error('[mud-builder-server] Failed to start', { err });

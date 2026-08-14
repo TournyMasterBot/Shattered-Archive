@@ -1,0 +1,7 @@
+File Index
+
+/Toast.test.tsx
+Purpose: (2026-07-26) Renders nothing when toast is null; each of the 4 kinds (ok/err/warn/info) gets its exact mb-toast--{kind} class + text; click fires onDismiss.
+
+/Toast.tsx
+Purpose: (2026-07-26 UX polish pass) The one toast rendering (mb-toast mb-toast--{kind}, click-to-dismiss) every tab shares — extracted from workbench.tsx's WorkbenchToast so pages that don't use useAreaWorkbench (Scripts, Map, Engine, Access, Skills) can stop hand-rolling an identical copy instead of migrating onto this. Presentation only — callers own their own toast state (useState<ToastState>). Four kinds now (ok/err/warn/info), up from the original two.

@@ -1,1 +1,4 @@
 File Index
+
+/MainMenu.tsx
+Purpose: Landing screen — Quick/Hot-seat/Play-last match buttons + nav to Army Builder/Scenario/Simulator/Online Match. Phase F added an "Account" button (`navigate('account')`) for the new optional cloud-account screen.

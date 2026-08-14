@@ -1,1 +1,49 @@
 File Index
+
+/app.test.ts
+Purpose: registerRoutes smoke tests: health, capabilities gating flags.
+
+/app.ts
+Purpose: Registers all routes on an Express app; Phase 9 ordering contract lives here (authGuard → auditMiddleware → routes) plus the Phase 10 rule that the scoped 2mb import parser registers before the app-wide 1mb one; passes config through to authGuard (Phase 4 introspect fallback) and registerAuthRoutes (Phase 2 introspect-check route); registers registerSpawnRoutes (Phase 13) alongside registerMapRoutes and registerStateRoutes (Phase 14c); registerCodegenRoutes (Phase 14a) shares the hoisted skillsStore instance so spec validation sees live overlay names. Phase 15: registers registerRebuildRoutes alongside the other auth-gated route groups (requires authStore to exist — requireRebuildAllowed needs a real one) and calls rebuildStore.resolveDanglingOnBoot() BEFORE registering — a dangling "handed off" status from a prior process must resolve before any new request can observe it. Phase G: registers registerRoleRoutes (a RoleStore rooted at authDataPath, alongside builder-auth.json) and registerSnippetRoutes (a SnippetStore rooted at areaPath — content, not credentials, kept out of auth/); the RoleStore is threaded into registerRebuildRoutes too, replacing Phase 15's static username allowlist.
+
+/area-store.ts
+Purpose: Disk access for the MUD area dir: strict file-name validation, emit-validated-before-anything, atomic writes + timestamped backups, area.lst registration with overlap guards, header-range change guard, the Phase 10 quarantine import (importArea report / importAreaCommit gated write), and Phase 11 areaHash/conditional writeArea (baseHash → AreaConflictError 409) + worldVnumIndex/resolveRefs (mtime-cached cross-area vnum resolution). 2026-07-31 (CodeQL path-injection): the containment check moved out of areaFilePath into a shared resolveWithin(dir, name) so it is one implementation rather than a pattern each caller repeats — backupExistingFile derives a SECOND path from the same raw filename and was silently outside the chokepoint, despite a doc comment then claiming no path was re-derived from a raw name. It now re-runs the name allowlist and containment against backups/ on its own account rather than inheriting trust from its already-resolved source argument.
+
+/audit.ts
+Purpose: Append-only audit trail (Phase 9): auditMiddleware records every accepted non-GET /api/* mutation (previews, /api/presence, and /api/state excluded — all read triggers, not authoring) as a JSON line in backups/audit.log; appendAudit never throws. describeActor() (Phase 4) renders all three BuilderActor kinds — master, local key, and centrally-authenticated account; Phase 15 appends `[username]` to the account line when introspection resolved one, alongside the pre-existing key label (label = the KEY's name, username = the actual human — both worth having).
+
+/auth-store.ts
+Purpose: Phase 9 credential store: first-run master key generation into auth/builder-auth.json (Phase 12b: legacy backups/ copy migrated by atomic rename; file re-read on mtime change so generate-master-key.sh rotations apply without restart), sha256-hashed API keys (create/rotate/revoke), timing-safe verify, corrupt-file lockdown (never overwrites). BuilderActor gained a third `account` variant (Phase 4) for centrally-authenticated tokens — this store's own verify() stays local-only; account actors are assembled by routes/auth.ts's authGuard. Phase 15: the `account` variant gained optional username/expiresAt, threaded through from auth-server's enriched introspect response. Phase G: the `account` variant also gained optional globalRole (hub-global tier from introspect) — threaded through the same way, consumed by routes/roles.ts's Decision 4 bootstrap check.
+
+/codegen-store.ts
+Purpose: Spell-spec codegen store (Phase 14a): `<area>/codegen/spells.json` CRUD — readSpecs (missing file = []), hash (sha256, null = no file), conditional write (baseHash mismatch → AreaConflictError, atomic tmp+rename, dir created on demand); no backups since specs are regenerable builder metadata (every write is still audited).
+
+/config.ts
+Purpose: Env-derived server config: MERC_MUD_PATH/area path, writeEnabled (MUD_WRITE_ENABLED), authEnabled (writes on and MUD_BUILDER_AUTH not "off"), authDataPath (area auth dir, Phase 12b) + auditDataPath (area backups dir, audit.log stays put); Phase 2 (centralized auth) authServerUrl + optional servicePrivateKeyPath for the introspect-check route. Phase 15: rebuildEnabled (MUD_REBUILD_ENABLED, default off) — consumed by routes/auth.ts's requireRebuildAllowed. Phase G RETIRED rebuildAllowedUsernames/MUD_REBUILD_ALLOWED_USERNAMES entirely (clean cut, no fallback) — rebuild eligibility is now a RoleStore lookup (role-store.ts), not a static env-var allowlist. Also adds two READ-path/HOST-path pairs (mercMudRepoPath/mercMudHostPath, shatteredArchiveRepoPath/shatteredArchiveHostPath) for rebuild-store.ts — the READ path is where THIS PROCESS can read a repo tree (container mount point in prod, e.g. /host-merc-mud), the HOST path is the string the DOCKER DAEMON needs for bind-mount sources (always the real Windows path); kept as separate fields because they diverge inside the deployed container but not in local dev.
+
+/diff.ts
+Purpose: Minimal line-diff (first differing window) used by area previews.
+
+/groups-store.ts
+Purpose: groups.dat overlay store (Phase 8): stock fallback, validation (prefix member resolution, cycle guard), gated atomic writes; Phase 12 hash() (null=stock) + conditional write (baseHash mismatch → 409 before backup, success returns new hash).
+
+/index.ts
+Purpose: HTTP listener; boot log announces write gate and auth state (auth file path or writes-without-auth warning).
+
+/presence.ts
+Purpose: Advisory in-memory presence registry (Phase 11): heartbeat/list with a 60s TTL, injectable clock, lazy expiry (no timers); never a lock, never touches disk.
+
+/rebuild-store.test.ts
+Purpose: RebuildStore tests via an injectable mock CommandRunner (no real docker calls): status persistence tolerant of missing/corrupt files, full happy-path phase sequencing with exact argv assertions, proof the mercmud24/builder-pair overrides are absolute-path-only (never the relative base-file form — Step 6 regression guard), status flushed BEFORE each step runs, failure marks "failed" with the error and re-throws, concurrent-rebuild refusal, resolveDanglingOnBoot() only resolves the exact "handing-off-to-helper" phase.
+
+/rebuild-store.ts
+Purpose: Phase 15 engine-rebuild orchestration (RebuildStore) — builds+recreates mercmud24 directly (separate container, no self-termination risk), builds the builder-pair images directly, then hands off their own recreate to an ephemeral `docker run --rm -d` helper pinned by digest (HELPER_IMAGE, docker:27-cli — this repo's Dockerfile digest-pinning convention extended to a runtime-pulled, privileged/full-docker.sock image). Status persisted to <areaPath>/rebuild/status.json (atomic tmp+rename, mirrors codegen-store.ts) BEFORE each riskier step — the calling process cannot reliably observe or report anything after handoff (Step 6 proved a blocking self-recreate gets SIGKILLed mid-operation). Every docker-facing path is built via string concatenation, NEVER path.join/path.resolve (those use the OS-native separator — backslashes on win32 — inconsistent with Docker Desktop's own forward-slash path convention). Compose-file relative volume paths get an absolute-path override per service (Step 6 finding: relative bind-mount sources silently resolve to an empty phantom directory when invoked from inside a container) — confirmed via `docker compose config` merge-by-target against both real compose files before this was written, so only the specific relative entries need overriding, not the full volumes list. Every compose invocation ALSO passes an explicit `-p <project>` (MERC_MUD_PROJECT/SHATTERED_ARCHIVE_PROJECT constants) — found live 2026-07-25: merc-mud/docker-compose.yml has no `name:` field, so compose infers the project from the compose file's own directory basename, which differs between a host invocation and the container-side `/host-merc-mud` mount and made the first live rebuild attempt try to create a SECOND container sharing the fixed container_name, failing with a real (loud, safe) name conflict against the live game.
+
+/role-store.ts
+Purpose: Phase G delegated-role store (Decision 4) — `<authDataPath>/roles.json`, a flat array of {accountId, tier} grants; same atomic-write/mtime-reload/corrupt-locks idiom as auth-store.ts, but an ABSENT file is a valid, common empty state (not a first-run event) — no row for an account means SERVICE_TIERS floor tier 'user'. No unit test of its own; covered via routes/roles.test.ts (this app's established convention — no store here has a standalone test file, only rebuild-store.ts is the one exception, justified by its orchestration complexity).
+
+/skills-store.ts
+Purpose: skills.dat overlay store (Phase 7): stock fallback, (fun,target) stock-pair validation, gated atomic writes; Phase 12 hash() (null=stock) + conditional write (baseHash mismatch → 409 before backup, success returns new hash).
+
+/snippet-store.ts
+Purpose: Phase G per-account private-content store — `<areaPath>/snippets/<accountId>.json`, whole-collection read/replace (200-item cap). Single non-generic class (not a generic JsonAccountStore<T> like kingdom-tactics-server's precedent) since this app has only the one per-account data type. Covered via routes/snippets.test.ts, same no-standalone-store-test convention as role-store.ts.

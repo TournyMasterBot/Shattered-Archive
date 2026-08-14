@@ -6,6 +6,9 @@ import { createRespellPlugin } from './core-plugins/respell.plugin';
 import { createBrewPlugin } from './core-plugins/brew.plugin';
 import { createDisarmPlugin } from './core-plugins/disarm.plugin';
 import { createColorKitPlugin } from './core-plugins/colorkit.plugin';
+import { createWeaponFlagSquelchPlugin } from './core-plugins/weapon-flag-squelch.plugin';
+import { createCombatCompressionPlugin } from './core-plugins/combat-compression.plugin';
+import { createStunHighlightPlugin } from './core-plugins/stun-highlight.plugin';
 import { createEnchantPlugin } from './core-plugins/enchant.plugin';
 import { createGourdPlugin } from './core-plugins/gourd.plugin';
 import { createPeoplePlugin } from './core-plugins/people.plugin';
@@ -13,6 +16,8 @@ import { createHighlighterPlugin } from './core-plugins/highlighter.plugin';
 import { createAffectEchoPlugin } from './core-plugins/affect-echo.plugin';
 import { createWarlockAlphabetPlugin } from './core-plugins/warlock-alphabet.plugin';
 import { createQuestBotPlugin } from './core-plugins/questbot.plugin';
+import { createVoiceDictationPlugin } from './core-plugins/voice-dictation.plugin';
+import { createTextToSpeechPlugin } from './core-plugins/text-to-speech.plugin';
 
 export interface CorePluginDefinition {
   id: PluginId;
@@ -52,6 +57,21 @@ export const CORE_PLUGINS: CorePluginDefinition[] = [
     create: createColorKitPlugin,
   },
   {
+    id: 'weapon-flag-squelch',
+    manifest: createWeaponFlagSquelchPlugin().manifest,
+    create: createWeaponFlagSquelchPlugin,
+  },
+  {
+    id: 'combat-compression',
+    manifest: createCombatCompressionPlugin().manifest,
+    create: createCombatCompressionPlugin,
+  },
+  {
+    id: 'stun-highlight',
+    manifest: createStunHighlightPlugin().manifest,
+    create: createStunHighlightPlugin,
+  },
+  {
     id: 'enchant',
     manifest: createEnchantPlugin().manifest,
     create: createEnchantPlugin,
@@ -85,6 +105,16 @@ export const CORE_PLUGINS: CorePluginDefinition[] = [
     id: 'questbot',
     manifest: createQuestBotPlugin().manifest,
     create: createQuestBotPlugin,
+  },
+  {
+    id: 'voice-dictation',
+    manifest: createVoiceDictationPlugin().manifest,
+    create: createVoiceDictationPlugin,
+  },
+  {
+    id: 'text-to-speech',
+    manifest: createTextToSpeechPlugin().manifest,
+    create: createTextToSpeechPlugin,
   },
 ];
 

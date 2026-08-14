@@ -1,0 +1,22 @@
+File Index
+
+/index.html
+Purpose: Vite entry HTML, title "Account – Shattered Archive".
+
+/jest.config.cjs
+Purpose: Self-contained jsdom jest config (root aggregator can't reach a co-located test when --rootDir . IS the -client dir, same reason mud-builder-client needs one).
+
+/jest.style-stub.cjs
+Purpose: CSS/asset import stub for jsdom (Vite handles real CSS at build time; jsdom cannot parse it).
+
+/package.json
+Purpose: React 19 + Vite client package (dev port 62080); scripts are dev/build/preview/test/format — no lint script (repo-wide eslint runs directly against the app).
+
+/tsconfig.jest.json
+Purpose: ts-jest-specific tsconfig for the local jest config below.
+
+/tsconfig.json
+Purpose: App tsconfig mirroring mud-builder-client's.
+
+/vite.config.ts
+Purpose: Dev port 62080 (VITE_PORT override), proxies /api and /health to VITE_AUTH_API (default http://localhost:62000) same-origin so a dev-mode fetch sees auth-server's Set-Cookie as same-origin, matching how the deployed nginx split behaves.

@@ -1,0 +1,444 @@
+.mb-map-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
+}
+
+.mb-map-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.mb-map-mode {
+  display: inline-flex;
+  border: 1px solid #3a3f4b;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.mb-map-mode-btn {
+  border: none;
+  background: transparent;
+  color: inherit;
+  padding: 0.3rem 0.9rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.mb-map-mode-btn--active {
+  background: #2f6feb;
+  color: #fff;
+}
+
+.mb-map-picker select {
+  font: inherit;
+  padding: 0.25rem 0.4rem;
+}
+
+.mb-map-meta {
+  color: #9aa3b2;
+  font-size: 0.85rem;
+}
+
+.mb-map-spawn-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #9aa3b2;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.mb-map-spawn-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #9aa3b2;
+  font-size: 0.85rem;
+}
+
+.mb-map-spawn-source label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+}
+
+.mb-map-error {
+  color: #e5534b;
+}
+
+.mb-map-loading,
+.mb-map-empty {
+  color: #9aa3b2;
+}
+
+.mb-map-svg {
+  flex: 1;
+  min-height: 480px;
+  width: 100%;
+  border: 1px solid #2b2f3a;
+  border-radius: 8px;
+  background: #14161c;
+  cursor: grab;
+  touch-action: none;
+}
+
+.mb-map-svg:active {
+  cursor: grabbing;
+}
+
+.mb-map-edge {
+  stroke: #4a5162;
+  stroke-width: 2;
+}
+
+.mb-map-edge--external {
+  stroke: #b8862f;
+  stroke-dasharray: 6 4;
+}
+
+/* Phase 12b exit classifications */
+.mb-map-edge--oneway {
+  stroke: #6f7a92;
+}
+
+.mb-map-edge--nonreturning {
+  stroke: #c25e5e;
+  stroke-dasharray: 3 4;
+}
+
+.mb-map-edge--warp {
+  stroke: #9b6fd4;
+  stroke-dasharray: 2 5;
+}
+
+.mb-map-edge--loop {
+  fill: none;
+  stroke: #6f7a92;
+  stroke-width: 2;
+  stroke-dasharray: 3 3;
+}
+
+.mb-map-arrowhead {
+  fill: #6f7a92;
+}
+
+.mb-map-arrowhead--warp {
+  fill: #9b6fd4;
+}
+
+.mb-map-door {
+  fill: #d0a83c;
+  stroke: #14161c;
+  stroke-width: 1.5;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: rotate(45deg);
+}
+
+.mb-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #9aa3b5;
+}
+
+.mb-map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mb-legend-swatch {
+  display: inline-block;
+  width: 18px;
+  height: 0;
+  border-top: 2px solid #4a5162;
+}
+
+.mb-legend-swatch--oneway {
+  border-top-color: #6f7a92;
+}
+
+.mb-legend-swatch--nonreturning {
+  border-top-style: dashed;
+  border-top-color: #c25e5e;
+}
+
+.mb-legend-swatch--loop {
+  width: 10px;
+  height: 10px;
+  border: 2px dashed #6f7a92;
+  border-radius: 50%;
+}
+
+.mb-legend-swatch--door {
+  width: 9px;
+  height: 9px;
+  border: 0;
+  background: #d0a83c;
+  transform: rotate(45deg);
+}
+
+.mb-legend-swatch--warp {
+  border-top-style: dotted;
+  border-top-color: #9b6fd4;
+}
+
+.mb-legend-swatch--external {
+  border-top-style: dashed;
+  border-top-color: #b8862f;
+}
+
+.mb-map-room rect {
+  fill: #1f2430;
+  stroke: #3d444f;
+  stroke-width: 1.5;
+}
+
+.mb-map-room {
+  cursor: pointer;
+}
+
+.mb-map-room:hover rect,
+.mb-map-room:focus rect {
+  stroke: #2f6feb;
+}
+
+.mb-map-room-vnum {
+  fill: #8ab4ff;
+  font-size: 13px;
+  text-anchor: middle;
+  font-family: inherit;
+}
+
+.mb-map-room-name {
+  fill: #d7dce5;
+  font-size: 12px;
+  text-anchor: middle;
+  font-family: inherit;
+}
+
+/* Phase 13 spawn overlay badge — top-left corner (the self-loop ring owns top-right) */
+.mb-map-spawn-badge circle {
+  fill: #3fb950;
+  stroke: #14161c;
+  stroke-width: 1.5;
+}
+
+.mb-map-spawn-badge text {
+  fill: #0e1116;
+  font-size: 10px;
+  font-weight: 700;
+  text-anchor: middle;
+  font-family: inherit;
+}
+
+/* Phase 14c live-mode variant — amber instead of green so Boot vs. Live is visible at a glance. */
+.mb-map-spawn-badge--live circle {
+  fill: #d68910;
+}
+
+.mb-legend-swatch--spawn,
+.mb-legend-swatch--spawn-live {
+  width: 10px;
+  height: 10px;
+  border: 0;
+  border-radius: 50%;
+  background: #3fb950;
+}
+
+.mb-legend-swatch--spawn-live {
+  background: #d68910;
+}
+
+.mb-map-portal rect {
+  fill: #241f14;
+  stroke: #b8862f;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 3;
+}
+
+.mb-map-portal {
+  cursor: pointer;
+}
+
+.mb-map-portal:hover rect,
+.mb-map-portal:focus rect {
+  stroke: #e8b04a;
+}
+
+.mb-map-portal-file {
+  fill: #e8b04a;
+  font-size: 11px;
+  text-anchor: middle;
+  font-family: inherit;
+}
+
+.mb-map-portal-name {
+  fill: #bfa571;
+  font-size: 11px;
+  text-anchor: middle;
+  font-family: inherit;
+}
+
+.mb-map-worldlink {
+  stroke: #4a5162;
+  opacity: 0.8;
+}
+
+.mb-map-worldnode circle {
+  fill: #1f2430;
+  stroke: #3d444f;
+  stroke-width: 2;
+}
+
+.mb-map-worldnode {
+  cursor: pointer;
+}
+
+.mb-map-worldnode:hover circle,
+.mb-map-worldnode:focus circle {
+  stroke: #2f6feb;
+}
+
+.mb-map-worldnode--broken circle {
+  stroke: #e5534b;
+  stroke-dasharray: 4 3;
+}
+
+.mb-map-worldnode-label {
+  fill: #d7dce5;
+  font-size: 12px;
+  text-anchor: middle;
+  font-family: inherit;
+}
+
+/* Phase 14b exit editor */
+.mb-map-edit-warning {
+  color: #e5534b;
+  font-size: 0.85rem;
+}
+
+.mb-map-room--armed rect {
+  stroke: #2f6feb;
+  stroke-width: 2.5;
+  stroke-dasharray: 4 3;
+}
+
+/* 2026-07-26: a room handed off to Map (e.g. a blocked room-delete's "Go fix it") — the
+   viewport is also centered on it (AreaMapSvg's focus effect), this is the visual cue. */
+.mb-map-room--focused rect {
+  stroke: #e0af68;
+  stroke-width: 3;
+}
+
+.mb-map-edge--ghost {
+  stroke: #2f6feb;
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+  pointer-events: none;
+}
+
+.mb-map-canvas {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.mb-map-canvas .mb-map-svg {
+  flex: 1;
+}
+
+.mb-map-create-popover,
+.mb-map-edge-popover {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #3a3f4b;
+  border-radius: 6px;
+  background: #1f2430;
+  color: #e6e9ef;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  min-width: 200px;
+}
+
+.mb-map-popover-header {
+  font-weight: 600;
+  color: #8ab4ff;
+}
+
+.mb-map-popover-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.mb-map-popover-divider {
+  width: 100%;
+  border: none;
+  border-top: 1px solid #3a3f4b;
+  margin: 0.2rem 0;
+}
+
+.mb-map-room[role='button'] {
+  cursor: pointer;
+}
+
+.mb-map-tray {
+  border: 1px solid #2b2f3a;
+  border-radius: 6px;
+  background: #14161c;
+  padding: 0.5rem 0.75rem;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.mb-map-tray-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: #9aa3b2;
+}
+
+.mb-map-tray-save {
+  margin-left: auto;
+}
+
+.mb-map-tray-list {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mb-map-tray-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #d7dce5;
+}
+
+.mb-map-save-confirm {
+  border: 1px solid #2b2f3a;
+  border-radius: 6px;
+  background: #14161c;
+  padding: 0.75rem;
+  max-height: 320px;
+  overflow-y: auto;
+}

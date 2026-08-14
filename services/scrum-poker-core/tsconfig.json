@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    "lib": ["ES2023"],
+
+    // Pure/isomorphic: NO ambient node/DOM types in shipped code (same guard as
+    // merc-area / kingdom-tactics-engine). Every reducer takes `now` as an argument
+    // rather than reading a clock, and id generation is injected by the caller — so
+    // the browser client and the Node server run byte-identical logic.
+    "types": [],
+
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "dist", "node_modules"]
+}

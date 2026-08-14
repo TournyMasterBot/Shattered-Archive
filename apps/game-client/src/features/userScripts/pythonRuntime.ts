@@ -9,8 +9,12 @@ import Sk from 'skulpt';
 type SkulptFacade = {
   configure: (opts: { output: (text: string) => void; read: (filename: string) => string }) => void;
 
+  /** Skulpt's bundled standard library, loaded by the package's dist/skulpt-stdlib.js. */
+  builtinFiles?: { files: Record<string, string> };
+
   ffi: {
     remapToJs: (value: unknown) => unknown;
+    remapToPy: (value: unknown) => unknown;
   };
 
   builtins: Record<string, unknown>;
@@ -21,7 +25,9 @@ type SkulptFacade = {
   };
 
   misceval: {
-    asyncToPromise: (thunk: () => unknown) => Promise<unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncToPromise: (thunk: () => unknown) => Promise<any>;
+    callsimOrSuspendArray: (fn: unknown, args: unknown[]) => unknown;
   };
 
   importMainWithBody: (name: string, dump: boolean, body: string, canSuspend: boolean) => unknown;
@@ -184,14 +190,34 @@ function registerBuiltins(api: ScriptSandboxApi) {
   }
 }
 
+/**
+ * Serves Skulpt's bundled standard library.
+ *
+ * This used to throw unconditionally, which made `import <anything>` fail — and
+ * `print()` too, since Skulpt reaches for `sys` to reach stdout. Bridge calls
+ * (sendCommand/log/…) were unaffected, which is why Python scripts otherwise
+ * worked. Nothing here can reach the network or a real filesystem: the only
+ * readable names are the ones baked into the Skulpt package's stdlib bundle.
+ */
+function builtinRead(filename: string): string {
+  const files = getSk().builtinFiles?.files;
+  // hasOwnProperty, not a bare lookup: `files` is a plain object, so a module
+  // name like 'constructor' or '__proto__' would otherwise resolve up the
+  // prototype chain and hand Skulpt a native function where source is expected.
+  if (!files || !Object.prototype.hasOwnProperty.call(files, filename)) {
+    throw new Error(`File not found: '${filename}'`);
+  }
+  const file = files[filename];
+  if (typeof file !== 'string') throw new Error(`File not found: '${filename}'`);
+  return file;
+}
+
 export function configurePythonForApi(api: ScriptSandboxApi) {
   const sk = getSk();
 
   sk.configure({
     output: makePythonOutput(api),
-    read: function (_filename: string) {
-      throw new Error('Skulpt read() not implemented');
-    },
+    read: builtinRead,
   });
 
   registerBuiltins(api);
@@ -225,6 +251,18 @@ export async function runPythonSourceInBrowser(source: string, api: ScriptSandbo
   }
 }
 
+// Loaded global modules, held as Skulpt module OBJECTS keyed by the name the
+// caller used.
+//
+// Holding the object is what makes global Python work at all. importMainWithBody
+// registers the module as `__main__` regardless of the name passed — the name is
+// only the filename — so the previous approach of loading under `moduleName` and
+// then calling in from a throwaway module that did `import <moduleName> as g`
+// always failed with "No module named <moduleName>", and no global Python
+// function could be invoked.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const loadedModules = new Map<string, any>();
+
 /**
  * Load a module body into a stable module name (for persistent globals).
  */
@@ -234,9 +272,10 @@ export async function loadPythonModuleBody(moduleName: string, source: string, a
   try {
     configurePythonForApi(api);
 
-    await sk.misceval.asyncToPromise(() => {
+    const mod = await sk.misceval.asyncToPromise(() => {
       return sk.importMainWithBody(moduleName, false, source, true);
     });
+    loadedModules.set(moduleName, mod);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : typeof err === 'string' ? err : String(err ?? 'Unknown error');
     api.error?.(`[UserScript:Python] load module error (${moduleName}): ${msg}`);
@@ -258,32 +297,27 @@ export async function callPythonModuleFunction(
 ): Promise<void> {
   const sk = getSk();
 
-  // Make args available as JSON text to avoid tricky quoting
-  const argsJson = args === undefined ? '' : JSON.stringify(args);
-
-  // NOTE: Use a throwaway "caller" module so we don't overwrite the global module.
-  const callerName = `${moduleName}__call__`;
-
-  const body = `
-import ${moduleName} as g
-fn = getattr(g, "${funcName}", None)
-if fn is None:
-  raise Exception("global python function not found: ${funcName}")
-args_json = r'''${argsJson}'''
-try:
-  import json
-  parsed = json.loads(args_json) if args_json else None
-except Exception:
-  parsed = args_json
-fn(parsed)
-`;
+  const mod = loadedModules.get(moduleName);
+  if (!mod) {
+    // No global python source was loaded for this connection.
+    api.error?.(`[UserScript:Python] global module not loaded: ${moduleName}`);
+    return;
+  }
 
   try {
     configurePythonForApi(api);
 
-    await sk.misceval.asyncToPromise(() => {
-      return sk.importMainWithBody(callerName, false, body, true);
-    });
+    // Read the attribute straight off the module object. Besides being the only
+    // thing that actually works, this stops interpolating a caller-supplied
+    // function name into generated Python source.
+    const fn = mod.tp$getattr(sk.ffi.remapToPy(funcName));
+    if (!fn) {
+      api.error?.(`[UserScript:Python] global python function not found: ${funcName}`);
+      return;
+    }
+
+    const pyArgs = args === undefined ? pyNone() : sk.ffi.remapToPy(args);
+    await sk.misceval.asyncToPromise(() => sk.misceval.callsimOrSuspendArray(fn, [pyArgs]));
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : typeof err === 'string' ? err : String(err ?? 'Unknown error');
     api.error?.(`[UserScript:Python] call module function error (${moduleName}.${funcName}): ${msg}`);

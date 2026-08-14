@@ -1,0 +1,1108 @@
+==============================================================================
+DSL2 CAPTURED GAME-ECHO PATTERNS — full community reference
+==============================================================================
+Generated 2026-07-15 for Dark and Shattered Lands (DSL), a MUD running on
+Mudlet 4.20.1. Compiled by scanning:
+  (1) DSL2's own .lua files (the active, in-use trigger set),
+  (2) DSL2's own native Mudlet XML trigger tree (current/*.xml — objects
+      built in the Trigger Editor, separate from the .lua layer),
+  (3) the vendored PNP package source ("PNP files/", 46 files — DSL's
+      long-standing community client, the origin of most of DSL2's own
+      patterns),
+  (4) sibling Mudlet profiles on the same machine (other DSL clients/
+      characters) for anything not already covered above.
+
+Patterns are Mudlet's PCRE regex dialect unless marked "(literal/substring)"
+— those match as plain text, not regex, in the native Trigger Editor.
+
+Sections marked **[ACTIVE — DSL2]** are live in DSL2 today (source: its own
+.lua files). Sections marked **[NATIVE ONLY]** exist as native Mudlet
+Trigger Editor objects in this profile (or a sibling) but have NOT been
+ported into DSL2's own MyDSL_*.lua capture layer — real, confirmed DSL text,
+but not currently driving any MyDSL window/state. Sections marked **[PNP
+SOURCE]** are from the community PNP package, included for completeness/
+cross-reference even where DSL2 built its own independent implementation.
+
+--- 2026-08-02 verification pass -------------------------------------------
+Two new markers appear below, both from mechanical passes over real captured
+traffic rather than over trigger source:
+
+  **[CORPUS-VERIFIED 2026-08-02]**  found in the real logs, with counts.
+  **[CORPUS-ABSENT 2026-08-02]**    searched for and NOT found. This is a
+                                    result, not a gap — it means someone has
+                                    already looked, so the next reader does
+                                    not repeat the search. It does NOT mean
+                                    the line is wrong; rare skills produce
+                                    zero hits too. Supply a live capture and
+                                    it can be promoted.
+
+HOW TO SEARCH THIS CORPUS WITHOUT GETTING FALSE NEGATIVES. An earlier pass on
+2026-08-02 marked four entries CORPUS-ABSENT and three of those calls were
+WRONG — "You fall flat on your face!" has 243 occurrences, the neuter bash
+variant has 641, and the gore line has 1,482. Two of this doc's own long-
+standing "zero corpus occurrences" notes were wrong the same way: the Unholy
+proc has 96,825 and the Mana-drain proc 128,796. Three traps caused it:
+
+  1. THE QUOTES ARE THIS DOCUMENT'S, NOT THE GAME'S. Entries below are written
+     as "You fall flat on your face!" — searching for the quoted form finds
+     nothing. Strip the quotes first.
+  2. ANSI COLOUR SITS INSIDE PHRASES. DSL colours mid-sentence, so a literal
+     search for a whole phrase can fail on a line that plainly contains it.
+     Strip \x1b[...m before matching.
+  3. HALF THE CORPUS IS JSON. The *.jsonl and raw.log files hold game text as
+     escaped JSON strings (, \r, \"), and some use a ¤M= framing. Unescape
+     before matching, or those files silently contribute nothing.
+
+Also beware over-broad probes in the other direction: a search for "your
+master" is dominated by the MASTER ACCOUNT login prompt ("What is your Master
+Account's name?"), not by pet dialogue.
+
+Two corpora were used, and the difference between them matters:
+  - Text corpus: C:\Projects\DSL\GameLogs\ShatteredArchive\Docker\game-server
+    (~500k text lines, 2026-07-01..19) — answers "does this wording exist".
+  - Protocol corpus: the same tree's *.jsonl records, which interleave raw
+    text, GMCP packages and client input in true wire order with millisecond
+    timestamps — answers "what arrives WHEN, relative to what". The plain
+    GameLog-DSL_*.txt files cannot answer the second kind of question at all,
+    since they carry no GMCP; see section 7.
+
+A companion file, PatternMap.yaml, maps these patterns to what a text-to-
+speech reader should SAY for each (utterance-first, so many patterns can
+share one utterance), and records subject/actor capture positions that a
+flat pattern list has nowhere to put.
+
+==============================================================================
+1. WEAPON-FLAG PROCS
+==============================================================================
+One-letter flag codes attribute a proc to the most recent attacker/target/
+weapon-noun. **[ACTIVE — DSL2]** (MyDSL_DataLayer.lua ~3349-3439), ported
+from and confirmed identical to **[PNP SOURCE]** (DSL_PNP_Battle.lua's
+make_triggers(), Flag Trigger table) except where noted.
+
+C — Frost:
+  ^([\w\-\s,'"]+) freezes ([\w\-\s,'"]+)\.$
+  ^The cold touch of ([\w\-\s,']+) surrounds you with ice
+
+F — Flaming:
+  ^([\w\-\s,']+) is burned by ([\w\-\s,']+)\.$
+  ^([\w\-\s,']+) sears your flesh
+
+L — Shocking:
+  ^([\w\-\s,']+) is struck by lightning from ([\w\-\s,']+)\.$
+  ^([\w\-\s,']+) is shocked by a
+
+H — Vampiric:
+  ^([\w\-\s,'"]+) draws life from ([\w\-\s,'"]+)\.$
+  ^You feel ([\w\-\s,']+) drawing your life away
+
+S — Stunning:
+  ^([\w\-\s,'"]+) is knocked to the ground by ([\w\-\s,'"]+)\.$
+
+M — Mana drain:  **[CORPUS-VERIFIED 2026-08-02 — the "zero occurrences" note
+                  below was a false negative; this is one of the most common
+                  procs in the whole corpus]**
+  ^You feel something drawing your energy away          (self; 351 hits)
+  ^([\w\-\s,']+) draws energy from ([\w\-\s,']+)\.$     (128,796 hits)
+      Group 1 is the WEAPON, group 2 the victim — e.g. "A dreadwood
+      quarterstaff draws energy from a disinterested yinn warrior."
+
+O — Holy:
+  ^You feel a surge of ([\w\-\s,']+)'s holy wrath race through your body
+  ^A flash of holy power erupts from ([\w\-\s,']+) and hits ([\w\-\s,']+)!$
+
+U — Unholy:  **[CORPUS-VERIFIED 2026-08-02 — both lines; the "zero
+              occurrences" note was a false negative, and the third-person
+              line was MISSING from this doc entirely]**
+  ^You feel a surge of ([\w\-\s,']+)'s unholy wrath race through your body   (1,107 hits)
+  ^A flash of unholy power erupts from ([\w\-\s,']+) and hits ([\w\-\s,']+)!$ (96,825 hits)
+      Exactly mirrors the Holy pair above, as symmetry suggested. Group 1 is
+      the WEAPON, group 2 the victim — e.g. "A flash of unholy power erupts
+      from a dreadwood quarterstaff and hits a merman!"
+
+P — Poison (DSL2's own addition — no PNP equivalent, confirmed via sibling-profile logs):
+  ^([\w\-\s,']+) coats ([\w\-\s,']+) with deadly lifebane poison\.$
+      **[MEANING CLARIFIED 2026-08-02]** This is NOT a proc landing on a victim.
+      Group 1 is a PLAYER and group 2 is their own WEAPON — "Karotte coats a
+      grand arcanium dagger with deadly lifebane poison." is someone applying
+      poison to a blade, checked against all 16 distinct corpus wordings. It
+      belongs with item/prep actions, not with the two victim-side lines below.
+  ^([\w\-\s,']+) is poisoned by the venom on ([\w\-\s,']+)\.$
+  ^([\w\-\s,']+) shivers and suffers\.$
+
+Confirmed non-functional / no echo at all:
+  Sharp   — adds bonus damage silently, never echoes anything
+  Vorpal  — confirmed non-functional, produces no echo
+
+==============================================================================
+2. COMBAT — CORE  **[ACTIVE — DSL2]**
+==============================================================================
+Damage (unified, one trigger for every damage verb):
+  ^(You|[\w\-\s,']+?)(?:(?<=You)r|'s)?(?:\s?((?<=Your )[\w\s]+?|(?<='s )[\w\s]+?|))(?: do[es]*| [\>\<\=\*]+|) (miss|scratch|graze|hit|injure|wound|maul|decimate|devastate|maim|MUTILATE|DISEMBOWEL|DISMEMBER|MASSACRE|MANGLE|DEMOLISH|DEVASTATE|OBLITERATE|ANNIHILATE|ERADICATE|GHASTLY|HORRID|DREADFUL|HIDEOUS|INDESCRIBABLE|UNSPEAKABLE)[esES]*(?: things to| [\>\<\=\*]+|) ([\w\-\s,']+)([\.\.!]+)$
+  Strictly anchored to the attacker name — deliberately excludes Coliseum
+  broadcast-prefixed lines (own future AGL/Coliseum module territory).
+
+Avoidance (direct port of PNP's DSL_PNP_Battle.lua):
+  (You|[\w\-\,\s']+) (dodge)s? (your|[\w\-\,\s']+) attack\.$
+  (You|[\w\-\,\s']+) (parry|parries) (your|[\w\-\,\s']+) attack\.$
+  (You|[\w\-\,\s']+) (block)[s]? (your|[\w\-\,\s']+) attack .*\.$
+  ^[\w\-\s,']+ senses they.?re about to be hit and deflects the blow\.        (bard-only, exact wording unconfirmed live yet)
+  ^[\w\-\s,']+ senses [\w\-\s,']+'s attack coming and avoids its blow\.       (same caveat)
+
+Condition (8 tiers total — 7 HP tiers + a distinct mana tier, confirmed via
+DSL2's own native XML "Health/Mana" trigger group; DSL2's active .lua
+pattern uses shorter substrings than PNP's full sentences, which still
+match fine since the pattern isn't end-anchored — full PNP wording shown
+alongside for accuracy):
+  Active pattern (self+third-person forms merged):
+    (?:is in excellent condition|are in excellent condition|has a few scratches|have a few scratches|has some small wounds|have some small wounds|has some big nasty wounds|have some big nasty wounds|has quite a few wounds|have quite a few wounds|looks pretty hurt|look pretty hurt|is in awful condition|are in awful condition)
+  Full literal PNP/native wording (excellent → awful):
+    "is in excellent condition."
+    "has a few scratches."
+    "has some small wounds and bruises."      <- DSL2's active pattern omits "and bruises"
+    "has quite a few wounds."
+    "has some big nasty wounds and scratches." <- DSL2's active pattern omits "and scratches"
+    "looks pretty hurt."
+    "is in awful condition."
+  Mana condition tier **[NATIVE ONLY]** — not yet captured by DSL2's own
+  condition parser at all:
+    "full magical ability."
+
+Death (two forms — second has no PNP equivalent):
+   is DEAD!!$
+   hits the ground \.\.\. DEAD\.$                      (6,282 hits)
+  **[UNCONFIRMED]** third form, found in sibling profiles, not in DSL2's
+  own .lua or native XML:
+    "You hear something's death cry."
+  **[CORPUS-VERIFIED 2026-08-02 — 6,975 hits, promote it]** the "unconfirmed"
+  death-cry line is real and common.
+  **[NEW 2026-08-02 — was missing from this doc entirely]** the SELF death
+  line, the one form that must never be missed:
+    ^You have been KILLED!!$                           (345+ hits)
+
+Flee / rescue / escape-fail / target-fled:
+  ^You flee from combat!$
+  ^You cannot escape from combat!!!$
+  rescues you!$
+  ^[\w\-\s,']+ has fled!$
+
+==============================================================================
+3. SKILLS
+==============================================================================
+-- Passive (done TO you) — **[ACTIVE — DSL2]** (MyDSL_CharacterAssist.lua) --
+
+Disarm (weapon):
+  ^.+ DISARMS you and sends your weapon flying!
+  ^.+ grabs your weapon,? and sends it flying!               (comma made optional — PNP's own source has a literal comma, likely a source typo; DSL2 tolerates both)
+  ^.+ controls your weapon,? and sends it flying!
+
+Disarm (shield):
+  ^.+ knocked loose from their hands by .*
+      **[MIS-FILED — CONFIRMED 2026-08-02, full wording recovered]** It is
+      third-person, and does not belong in this done-TO-you group. Only 7
+      occurrences corpus-wide, all of this shape:
+        ^([\w\-\s,']+) has ([\w\-\s,']+) knocked loose from their hands by ([\w\-\s,']+)!$
+      e.g. "<Player> has an arcanium shield knocked loose from their hands by
+      <Attacker>!" — group 1 is the victim, 2 the shield, 3 the attacker.
+  ^.+ sends your shield flying with a powerful kick!
+  ^.+ swings \w+ weapon viciously at your shield and sends it flying!
+
+Light tracking:
+  ^You light (.*) and hold it.$
+  ^[\w\s]+ flickers and goes out.$
+
+Standup (knockdown recovery — two forms; only the first is in PNP source,
+the second was found live by DSL2 with no PNP precedent):
+  ^.+ knocking you senseless.$
+  ^.+ bumps into you causing you to lose your balance.$
+
+Improve / practice (skill%/spell% progress):
+  ^Your knowledge of .+ improves to \d+%\.?$
+  ^You feel yourself getting better at .+\. \(\d+%\)$
+  ^You are currently improving .+ \(\d+%\)\. \(\d+ online minutes to improvement\)\.?$
+  Additional forms confirmed via native XML **[NATIVE ONLY]** (older/
+  alternate wording, cross-confirmed across DSL2's own native XML AND the
+  PNP-family sibling profiles, not yet cross-checked against current
+  DSL2 log corpus):
+    ^You have become better at (.+)!$
+    "You focus your training on"
+
+Consider (target difficulty — 6-tier ladder confirmed identical across
+DSL2's own native XML AND all PNP-family sibling profiles. DSL2's own .lua
+only captures the first 2; the rest are real DSL text, **[NATIVE ONLY]**,
+not yet wired into TargetView):
+  **[ACTIVE — DSL2]**:
+    ^[A-Z][\w' -]*? looks like an easy kill\.$
+    ^[A-Z][\w' -]*? is no match for you\.$
+  **[NATIVE ONLY]** (literal text, harder→ tiers, exact ladder order not
+  independently reconfirmed — captured as-is from the native trigger group;
+  note the PNP-family trigger NAME for tier 3 says "Perfect Match!" but the
+  actual matched STRING is "The perfect match!" — trust the string):
+    "The perfect match!"
+    "'Do you feel lucky, punk?'."
+    "laughs at you mercilessly."
+    "Death will thank you for your gift."
+
+Roller (character-creation stat roll):
+  \[?Str:\s*(\d+)\s+Int:\s*(\d+)\s+Wis:\s*(\d+)\s+Dex:\s*(\d+)\s+Con:\s*(\d+)\]?
+
+-- Active (things YOU do) — **[NATIVE ONLY]**, found in DSL2's own native
+   Trigger Editor "Combat Sounds" group (sound/flavor triggers, not wired
+   into any MyDSL parser). Real DSL skill-use echoes, high value for a
+   future skills-tracking module: --
+
+Backstab:
+  "Your backstab"                       (success, first-person)
+  "'s backstab"                         (third-person)
+  "Your enemy isn't leaving an opening."  (fail)
+  "You are untrained in that skill."      (fail, generic — reused by many skills)
+
+Waylay (berserker-style opener):
+  "You fail your waylay..."
+  "You unleash a frenzied attack"
+
+Riot (berserker rage skill):
+  "You are suddenly filled with a sense of anger!"
+  "You yell and enrage those around you!"
+  "gets a terrible look of anger in his eyes."
+  "gets a terrible look of anger in her eyes."
+  "gets a terrible look of anger in it's eyes."
+  "You no longer feel so angry."        (wears off)
+
+Dirt kick (blind):
+  "You grab some dirt out of your pouch and throw it towards"
+  "The thrown dirt"
+  "is blinded by the dirt in his eyes!"
+  "is blinded by the dirt in her eyes!"
+  "blinded by the dirt in its eyes!"
+  "Your drool is insufficient."         (spit-based variant, fail)
+      **[CORPUS-ABSENT 2026-08-02]** zero hits. The REAL dirt-kick failure
+      line, 500+ hits, is instead:
+        ^([\w\-\s,']+) kicked dirt misses ([\w\-\s,']+)\.$
+      (also "...misses you." for the self-target form). Note the odd
+      possessive-less phrasing "X kicked dirt misses Y" — that is the game's
+      own wording, not a transcription slip.
+  **[CORPUS-VERIFIED 2026-08-02]** the SPIT blind variants, his/her only:
+    ^([\w\-\s,']+) is blinded by the spit in his eyes!$    (89)
+    ^([\w\-\s,']+) is blinded by the spit in her eyes!$    (19)
+  The "it's eyes!" spit variant listed in section 3 is **[CORPUS-ABSENT]** —
+  zero hits, unlike the dirt version which does have a neuter form.
+  **[CORPUS-ABSENT 2026-08-02]** there is NO "blinded by the dirt in your
+  eyes" self line — zero hits. Being blinded yourself appears to surface only
+  as the generic affect onset "You are blinded!" (351 hits, section 4).
+
+Gore / toss (mount/beast attack):
+  "into the air!"                       (substring, low-confidence anchor)
+  **[CORPUS-VERIFIED 2026-08-02 — 1,482 hits, FULL WORDING RECOVERED]** The
+  bare fragment is real but should never ship as a matcher on its own. The
+  actual lines are a toss, and they carry both actors:
+    ^([\w\-\s,']+) tosses you into the air!$          (298 — self)
+    ^([\w\-\s,']+) tosses ([\w\-\s,']+) into the air!$ (243 — third person)
+  Attributed to a mob rather than a mount skill in every sample checked
+  ("an animal spirit tosses <X> into the air!"), so the "Gore (mount/beast)"
+  heading may itself be a mis-attribution. Earlier searches for
+  (gore|trample|charge|ram) found nothing because the verb is "tosses".
+
+Disarm (as an active skill you use, not just done to you):
+  "Disarmed!"
+  "tries to disarm you, but fails."
+  "tries to disarm you,"
+
+Bash:
+  "slams into your body!"
+  "You are sent flying by the impact!"
+  "You slam into"
+  "is sent flying by the impact!"
+  "You fall flat on your face!"      **[CORPUS-VERIFIED 2026-08-02]** 243
+  "bash, causing him to fall flat on his face."    **[CV 2026-08-02]** 813
+  "bash, causing her to fall flat on her face."    **[CV 2026-08-02]** 156
+  "bash, causing it to fall flat on its face."     **[CV 2026-08-02]** 641
+
+  All four confirmed — the "fall flat" family has exactly 4 distinct wordings
+  corpus-wide and no others. Note the neuter variant is the SECOND most common
+  of the three third-person forms, not a rarity.
+
+  **[CORPUS-VERIFIED 2026-08-02 — MEANING CORRECTION]** The him/her/it "fall
+  flat" lines are NOT your bash failing, and not you being stunned. The full
+  line in the corpus is "You evade <X>'s bash, causing him to fall flat on
+  his face." — YOU evaded, and the ATTACKER went down. They belong with
+  Avoidance, not with incapacitation; a consumer that treats them as a stun
+  landing has the actor and the outcome both backwards. The self line
+  ("You fall flat on your face!") is the separate case where YOUR OWN bash or
+  trip failed.
+
+Trip:
+  "trips you and you go down!"       **[CORPUS-VERIFIED 2026-08-02]** 1,296
+  "You fall flat on your face!"      (same line as under Bash; the corpus does
+                                      not distinguish which skill produced it)
+
+Poison spit / plague spray (class-based, distinct from the weapon-flag
+Poison proc above — this is a skill, not a weapon effect):
+  "Your spit"
+  "by the spit in his eyes!" / "by the spit in her eyes!" / "by the spit in it's eyes!"
+  "writhes in agony as plague sores erupt from its skin."
+  "You writhe in agony from the plague."
+  "looks very ill"                      -- CONFIRMS the previously-unconfirmed
+                                            candidate poison-onset line flagged
+                                            in DSL2's own TODO.md; real native text.
+  "shivers and suffers."                (matches DSL2's own procPoisonTick pattern — good cross-validation)
+
+Kick / bludgeon (general melee skills):
+  "You bludgeon"
+  "Your kicked dirt"
+  "Your kick"
+
+Ranged (archery):
+  "You loose your arrow and hit"
+
+Rescue (as an active skill):
+  "rescues"                             (broader substring than DSL2's own combat-end "rescues you!$" — this fires on any rescue, not just of you)
+
+Mounted combat — "Crusader stuff" (paladin/anti-paladin class skills,
+entirely new category, zero PNP or DSL2 .lua coverage):
+  Rear:
+    "You cause your mount to rear and attack him with his front hooves causing him to stagger!"
+    "You cause your mount to rear and attack her with his front hooves causing her to stagger!"
+    "You cause your mount to rear and attack it with his front hooves causing it to stagger!"
+    "staggering with an incredible blow from his front hooves!"
+    "You try to get your mount to rear but fail."
+  Charge:
+    "You miss your charge at"
+    "Your charge"
+    "You can only charge when riding a mount."
+  Fail (shared):
+    "You can only cause your mount to rear when riding a mount."
+    "You lose your balance and fall off the back of your mount... Ouch!"
+  Summon (paladin mount-summon flavor):
+    "There is a flash of light and standing before you is a beautiful white charger."
+
+Generic melee (basic attack results, not tied to a named skill):
+  "Your punch" / "punches" / "punch"
+  "Your thrust"
+  "You dodge" / "dodges your attack."
+  "misses you." / "misses"
+  "You parry" / "parries your attack."
+  "You block"
+
+-- **[UNCONFIRMED — low-confidence, included deliberately so the community
+   can help identify/fix]** — remaining loose entries from the same native
+   "Combat Sounds" group, either bare literal substrings with no obvious
+   anchor, or context not fully reconstructed in this pass: --
+  "There are too many people in the way for you to engage."   (engage-fail, likely mass-combat related)
+  Breath-weapon / fear group ("Need to SEE!" / "Need to see 2" — likely a
+  blindness/vision-check-gated set, gas-breath related):
+    "breathes out a cloud of"
+    "makes the earth tremble and shiver."
+    "breathes a cone"
+    "bubbles and boils!"        ─┐
+    "blackens and crisps!"       ├─ **[IDENTIFIED 2026-08-02]** these three
+    "sparks and sputters!"      ─┘  are INVENTORY DESTRUCTION, not fear or
+      breath flavor — a carried/worn item being destroyed by elemental
+      damage. Acid bubbles and boils, fire blackens and crisps, lightning
+      sparks and sputters, which is why they come as a set of three. That
+      makes them one of the higher-urgency lines in this whole document: it
+      is the only warning that a piece of equipment has stopped existing.
+      Line shape is presumed "<item short description> <phrase>"; whether it
+      carries a possessive prefix ("Your leather cap ...") is not yet pinned.
+    "But you aren't in combat!"
+    "enters a panic and tries to leap to safety!"
+    "The bolt hits you!"
+  Pet/charmed-follower group (unclear trigger, possibly charm-related dialogue)
+  **[MIXED — re-searched 2026-08-02]** Two of the three are real; the earlier
+  "all absent" call was wrong (it searched the quoted forms):
+    "What?  And leave your beloved master?"   CONFIRMED, 224 hits. Keep the
+        DOUBLE SPACE after "What?" — a literal matcher fails without it.
+    "just so nice?"                           present (26) but NOT as its own
+        line — it is the tail of mob speech, e.g. "Isn't a singing siren just
+        so nice?". Far too short to match safely; it would fire inside chat.
+    "That's up to your master!"               **[CORPUS-ABSENT 2026-08-02]**
+        zero hits, while its two siblings confirm — so this specific wording
+        is likely wrong rather than merely rare.
+  Caution regardless: these are a charmed FOLLOWER's refusal replies, so they
+  signal someone else's pet talking, not a charm landing on you (the charm
+  affect itself has NO onset text — see section 4). Beware also that a broad
+  "your master" probe is swamped by the MASTER ACCOUNT login prompt:
+    "just so nice?"
+    "That's up to your master!"
+    "What?  And leave your beloved master?"
+    "You now follow "
+  "No way!  You are still fighting!"                (likely a command-blocked-during-combat message)
+  "glows brightly as they swing mightly at"          (weapon-glow flavor text, sic "mightly")
+
+-- **[UNCONFIRMED — Weapon Nouns]** — native "Weapon Nouns" group, literal
+   damage-noun-to-damage-type taxonomy (used for per-type coloring/sound,
+   not state capture). Genuinely useful reference for classifying
+   combatDamage's own noun capture group, which DSL2 currently leaves
+   unclassified: --
+  Slash:   slice, slash, whip, claw, grep, chop, cleave                     ("Your X" / "'s X" both forms)
+  Pierce:  stab, bite, pierce, scratch, peck, sting, chump, thrust
+  Bashing: blast, pound, crush, suction, beating, charge, slap, punch, peckbash, smash, thwack
+  Energy:  wrath, magic
+  Fire:    flaming bite, flame
+  Negative: "draws life from", life drain
+  Holy:    divine power
+
+==============================================================================
+4. SPELLS
+==============================================================================
+-- Block capture (`affects` command output) — **[ACTIVE — DSL2]**
+   (MyDSL_AffectsView.lua) --
+  ^You are affected by the following spells:$                                          (start capture)
+  ^You are not affected by any spells\.$                                               (empty case)
+  ^Spell:\s+(.+?)\s+:\s+modifies\s+(.+?)\s+by\s+(-?\d+)\s+for\s+(-?\d+)\s+cycles.*$     (per-spell line)
+  ^Song\s*:\s+(.+?)\s+:\s+modifies\s+(.+?)\s+by\s+(-?\d+)\s+for\s+(-?\d+)\s+cycles.*$   (per-song line — not yet corpus-confirmed for DSL2 specifically)
+  ^\s*$                                                                                 (blank line ends capture)
+
+-- Spellup automation outcomes — **[ACTIVE — DSL2]** (MyDSL_CharacterAssist.lua) --
+  Success:
+    (.*) glows with a holy aura\.$
+    .* is too powerful for you to overcome\.$
+    You protect .* from fire\.$
+    .* is already protected from burning\.$
+    .* is already blessed\.$
+    You cover .* with mud\.$
+    .* is already protected\.$
+    You are not carrying that\.$
+    You don't see that here\.$
+  Fail (triggers a repeat):
+    You lost your concentration\.$
+    Your efforts with .* produce only smoke and sparks\.$
+    The mud is too wet and runs off\.$
+  Misc (stop/re-equip conditions):
+    You hold nothing in your hand.$
+    You can zap only with a wand.$
+    Your .* explodes into fragments.$
+
+-- Per-spell onset/wear-off echoes — **[PNP SOURCE]** (DSL_PNP_Affects.echoes.lua)
+   — NOT currently in DSL2's own capture layer at all (DSL2 relies entirely
+   on the `affects` block capture above, not real-time onset detection).
+   ~90 named spells/effects, each {onset text, wear-off text}. High value
+   for a future real-time affects module. Full table: --
+
+   **[CORPUS PASS 2026-08-02 — all 182 lines in this table checked]** against
+   every log (2,478 files, 2.85 GB), one Aho-Corasick pass, quotes stripped,
+   ANSI stripped, JSON unescaped. Results:
+
+     66 of 92 spells   every line they list confirmed
+      8 of 92 spells   no trace of the spell at all (fervor, jawbind,
+                       nondetect, reduce, wingbind, know languages, sure
+                       striking, withstand death). The logged characters
+                       never had these, so absence is NOT evidence against
+                       the wording.
+     11 of 92 spells   related keyword found but never the affect line —
+                       amnesia, litany and rebuke actually appear in an
+                       in-game SKILL LIST, confirming the skills exist while
+                       their echo text stayed unlogged.
+
+   SIX WORDINGS ARE WRONG AS WRITTEN below and would never fire. Each is
+   corrected inline in its row; collected here so they are not missed:
+
+     prayer            "...overtakes YOUR PRESENCE"  ->  "...overtakes THE ROOM."
+                       888 hits. It is a room broadcast, not a self message.
+     taunt             the KILL!! clause needs DOUBLE spaces:
+                       "That little pipsqueak!  KILL!!  KILL!!"
+     charm             "You regain YOUR free will."  ->  "<X> regains free
+                       will." — no possessive, and third person.
+     warcry            self line unlogged; the real one is
+                       "<X> screams a massive warcry!" (241 hits)
+     antimagic shell   third-person form absent from this doc:
+                       "A mystical shield glimmers as it surrounds <X> body."
+                       (note the missing possessive — that is the game's own)
+     prevent recovery  third-person form absent from this doc:
+                       "<X> looks very weak as their ability to heal is
+                       drained." (only 2 hits — thin evidence)
+
+   Also worth knowing: the whole table is written self-side, but several of
+   the lines that DO confirm only ever appear in their third-person form in
+   this corpus, because the corpus is one player's view of other people's
+   affects. Treat "confirmed" here as "this wording is real", not as "this
+   wording fires for you".
+  amnesia: "Your mind becomes fuzzy; you have problems remembering one of your spells..." / "Your amnesia subsides."
+  armor: "You feel someone protecting you." / "You feel less armored."
+  berserk: "Your pulse races as you are consumed by rage!" / "You feel your pulse slow down."
+  bleeding: "slashes at your body, opening up a nasty wound!" / (no wear-off text)
+  bless: "You feel righteous." / "You feel less righteous."
+  blindness: "You are blinded!" / "You can see again."
+  blur: "The outline of your form becomes blurred, shifting and wavering." / "Your body image clears up."
+  caltraps: "Small spikes fall to the ground, painfully digging into your feet." / "You painfully pluck the last caltrap."
+  charm: (no onset) / "You feel more self-confident." + "You regain your free will."
+  courage: "You feel more courageous." / "Your command of your skills returns."
+  curse: "You feel unclean." / "The curse wears off."
+  disembowl: "You swing your weapon powerfully into <target>'s stomach!" / (no wear-off)
+  disorientation: "you feel the movement disorient you!" / (no wear-off)
+  distortion: "You begin to feel very distorted as your vision becomes blurry." / "Your mind is no longer distorted."
+  endurance: "You feel a holy endurance run through your veins." / "You feel the divine strength leave your body."
+  enlarge: "Your body trembles and shivers in pain as you grow larger!" / "You feel smaller!"
+  entwine: "You swing your flails entwining <target>!" / (no wear-off)
+  fervor: "You are filled with righteous fervor." / (no wear-off)
+  flurry: "You spin your swords in a flurry on <target>!" / (no wear-off)
+  fly: "Your feet rise off the ground." / "You float gently to the ground." + "You slowly float to the ground."
+  forget: "Your skills feel clumsy and unpracticed." / (no wear-off)
+  frenzy: "You are filled with holy wrath!" / "Your rage ebbs."
+  furnace: "You are protected from fire." / "Your rune of furnace protection has expired."
+  fury: "An inner anger takes over your emotions!" / "The fury within you wears off."
+  haste: "You feel yourself moving more quickly." / "You feel yourself slow down." + "You feel yourself slowing down."
+  haze: "Your mind becomes hazy as your thoughts begin to race." / "Your struggle to break from the haze succeeds."
+  infravision: "Your eyes glow red." / "You no longer see in the dark."
+  inspire: "The zeal of the crusader infects his allies." / "The zeal of the crusader wears off."
+  invisibility: "You fade out of existence." / "You are no longer invisible."
+  jawbind: "net closes over your jaws holding them closed!" / "The snare around your jaw breaks free."
+  leprosy: "You scream in agony as your skin begins to rot." / "Your skin ceases to decay."
+  litany: "Your litany inspires you, infusing you with" / (no wear-off)
+  nondetect: "You are immune to detection." / "Your detection immunity wears off."
+  plague: "You scream in agony as plague sores erupt from your skin." / "Your sores vanish."
+  poison: {"You choke and gag." / "You feel very sick."} + {"A warm feeling runs through your body." / "You feel less sick."}
+      **[BRACKETING AMBIGUOUS — flagged 2026-08-02]** Read as this table's
+      usual {onset / wear-off} pairs, this makes "You feel very sick." a
+      WEAR-OFF, which is backwards — a consumer would announce poison
+      clearing at the moment it landed. The reading that matches both the
+      wording and Merc-family convention (where "A warm feeling runs through
+      your body." is the cure message) is TWO onsets and TWO wear-offs:
+        onset:    "You choke and gag." / "You feel very sick."
+        wear-off: "A warm feeling runs through your body." / "You feel less sick."
+      Left as captured rather than silently rewritten; one live poisoning
+      settles it.
+  prayer: "A feeling of divinity overtakes your presence." / (no wear-off)
+  purity: "The purity of your purpose is countenanced." / (no wear-off)
+  rebuke: "You are inspired to a rightous wrath!" / (no wear-off)
+  reduce: "Your body twists and shivers as you shrink to a smaller size!" / "You feel larger!"
+  riot: "You are filled with a terrible fury!" / "You no longer feel so angry."
+  sanctuary: "You are surrounded by a white aura." / "The white aura around your body fades."
+  shadowform: "You fade into the darkened form of a shadow." / "You return to your material form."
+  shield: "You are surrounded by a force shield." / "Your force shield shimmers then fades away."
+  sleep: "You feel very sleepy ..... zzzzzz." / (no wear-off)
+  slow: "You feel yourself slowing d o w n..." / "You feel yourself speed up."
+  sneak: (no onset) / "You no longer feel stealthy."           (cross-confirmed in DSL2's own native XML "Skills" group)
+  soulsight: "You can now see souls." / "You no longer see soul auras"
+  taunt: "shouts a harsh string of insults at you! That little pipsqueak! KILL!! KILL!!" / "You begin to relax."
+  warcry: "You yell out a loud warcry!" / "Your warcry wears off."
+  weaken: "You feel your strength slip away." / "You feel stronger."
+  wingbind: "Your wings are tangled in a rope." / "The rope entangling your wings breaks free."
+  yank: "You head out of the room, dragging <target>." / (no wear-off)
+  abandon hope: "You feel a wave of depression surround you as you abandon all hope." / "You regain your hope in life."
+  antimagic shell: "You feel safe as a mystical shield surrounds your body." / "You no longer feel safe as the mystical shield fades away."
+  bark skin: "Your skin is protected by bark." / "The bark protecting your skin vanishes."
+  bind soul: "You feel a mystical force bind your movement!" / "You feel the binding force fade away."
+  bone blight: "You feel a terrible pain in your limbs." / "Your limbs feel strong once more."
+  bugbear bite: (no onset/wear-off text)
+  change sex: "You feel different." / "Your body feels familiar again."
+  cut eyes: "slashes at your face, opening up a cut above your eyes!" / "You wipe the blood out of your eyes."
+  dark essence: "You are surrounded by a blackened essence." / "The dark essence subsides from your soul."
+  detect evil: (no onset) / "The red in your vision disappears."
+  detect good: (no onset) / "The gold in your vision disappears."
+  detect hidden: "Your awareness improves." / "You feel less aware of your surroundings."
+  detect invis: (no onset) / "You no longer see invisible objects."
+  detect magic: "Your eyes tingle." (**[UNCONFIRMED but high-confidence]** — PNP's own table lists no onset text for this spell, but a DSL2 log-corpus grep shows this line consistently appears immediately after casting `detect magic`; likely the real onset text PNP's table simply never captured) / "The detect magic wears off."
+  dirt kicking: "kicks dirt in your eyes!" / "You rub the dirt out of your eyes."
+  divine protection: "You are granted divine protection." / "Your divine protection wears off."
+  enchanting touch: {"You glow with a blue aura." / "You glow with a bright blue aura." / "You glow with a brilliant white aura." / "You glow with a gleaming white aura." / "You glow with a brilliant golden aura."} / "Your enchantment fades."
+  enhanced recovery: "You feel blessed with a vitalizing aura." / "You feel the divine vitalization leave your body."
+  faerie fire: "You are surrounded by a pink outline." / "The pink aura around you fades away."
+  fake illness: "Your tongue turns black." / "Your illness subsides."
+  favor of the gods: (no onset) / "The feeling of righteousness fades."
+  find familiar: {"A black cat slinks into the light and rubs against your leg." / "A black raven flutters down from above and lands on your shoulder."} / {"A black cat stops following you." / "A raven stops following you."}
+  flash bomb: "You've been blinded!!" / "You rub your eyes. Hey!! All the little flashing spots are gone!"
+  focus aggression: "Your thoughts become concise and focused on killing!" / "You are no longer focused on your aggression."
+  giant strength: "Your muscles surge with heightened power!" / "You feel weaker."
+  holy flame: "Holy flames errupt all about you!" / "The holy flames about your body subside."
+  holy presence: "You feel a holy presence protecting you." / "You feel the holy presence leave your body."
+  influence confidence: "Your confidence in yourself grows stronger." / "You are no longer confident in your hitting ability."
+  killing rage: "Screaming a battle cry, you fly into a rage!" / "You calm down as the battlerage leaves you."
+  know languages: "You broaden your language horizons." / "Your ability to understand all words fades."
+  nature growth: "The forces of nature grow inside of you!" / "The forces of nature leave your body."
+  pass door: "You turn translucent." / "You feel solid again."
+  prevent recovery: "Your body feels very weak as your ability to heal is drained." / "You feel the strain on your health lifted."
+  protection evil: "You feel holy and pure." / "You feel less protected."
+  protection good: "You feel aligned with darkness." / "You feel less protected."
+  protection neutral: "You are protected from neutral people." / "You feel less protected."
+  self projection: "Your image projects out slightly in front of you." / "Your projected image suddenly disappears."
+  shield of words: "You feel protected." / "Your protection fades away."
+  song of war: "The melody of the Song of War fills your mind." / "You no longer hear the melody of the Song of War in your mind."
+  stone skin: "Your skin turns to stone." / "Your skin feels soft again."
+  sure striking: "You strike more surely." / "Your ever sure strikes faulter."
+  water breathing: "You feel strange as you start having trouble breathing air." / "You start gasping for air as you can breath normally again!"
+  we come, we come: {"The song enrages your groupmates and demoralizes your enemies." / "Your song enrages your groupmates and demoralized your enemies."} / "The bard's ally song leaves your mind"
+  withstand death: "Death has no power over you." / "You shiver as you become susceptible to death again."
+
+-- **[UNCONFIRMED — missing from PNP's table entirely]** "heart blight"
+   (distinct from "bone blight", which IS in the table above) — found via
+   the PNP-family sibling profiles' native XML, not in DSL_PNP_Affects.echoes.lua
+   at all: --
+  heart blight: onset "Your heart blight has taken hold of" / observer-side "stumbles in pain!" / fail "Your blight failed to take hold."
+
+-- Random Affects (flavor stat-fluctuation lines, a passive periodic
+   mechanic distinct from spells) — **[NATIVE ONLY]**, cross-confirmed
+   across DSL2's own native XML and the PNP-family sibling profiles, which
+   additionally attach a stat delta + a physical emote to each line
+   (confirmed literal text, not wired into any MyDSL parser): --
+  "You feel more agile."                          -> dex +1
+  "You feel less agile."                          -> dex -1 (sigh)
+  "You seem to be well focused."                  -> damroll +1 (peer)
+  "You seem to have a loss of concentration."     -> hitroll -1 (wince)
+  "You feel slightly under the weather today."    -> con -1 (mutter)
+  "You feel run down."                            -> hp -10 (scuff)
+  "You feel slightly weaker."                     -> str -1 (flinch)
+  "You feel a loss of mental concentration."      -> mana -10 (ponder)
+  "You feel a burst of energy."                   -> hp +10 (hop)
+  "You feel slightly stronger."                   -> str +1 (flex)
+  "You feel a loss of energy."                    (delta not independently confirmed)
+
+==============================================================================
+5. REGULAR EVENTS / STATUS
+==============================================================================
+-- **[ACTIVE — DSL2]** (MyDSL_DataLayer.lua, MyDSL_MoonWeather.lua,
+   MyDSL_PromptSetup.lua) --
+
+Pos'n (real-time, GMCP is_flying cross-checked before committing):
+  ^You stand up\.$                    -> Standing
+  ^You sit down\.$                    -> Sitting
+  ^You rest\.$                        -> Resting
+  ^You go to sleep\.$                 -> Sleeping
+  ^You are already standing\.$        -> Standing
+  ^You are already sitting down\.$    -> Sitting
+  ^You wake and stand up\.$           -> Standing
+  ^You wake up and start resting\.$   -> Resting
+  ^You mount .+\.$                    -> Mounted
+  ^You dismount\.$                    -> Standing
+  ^You (?:slowly float|float gently) to the ground\.$  -> Standing (landing)
+  ^You stop resting\.$                -> Sitting (kept from PNP, not corpus-confirmed for DSL2)
+
+  **[PNP SOURCE]** original (deliberately NOT ported — too broad, false-
+  positives on room descriptions starting "You stand on/in the..."):
+    ^You (?:go to )?(stand|rest|sit|sleep|mount|dismount)
+    ^You wake (?:up )?and (?:start )?(stand|sit|rest)
+    ^You are already (stand|rest|sleep|sit)t?ing(?: down)?\.
+    ^CON\s*:\s*\d+\(\d+\)\s*Pos'n: (\w+?)ing         (extracts Pos'n directly from `score` text)
+
+Wimpy (real-time):
+  ^Wimpy set to (\d+) hit points\.$
+
+Weather (broad any-sentence trigger + rare period-joined wind continuation):
+  ^[A-Z][^.]+\.$
+  ^and (a \w+ \w+ (breeze|wind) blows in from the \w+|the wind is calm)
+  Confirmed granular taxonomy cross-checked against native XML "Weather
+  Conditions" group (DSL2 and, independently, the PNP-family profiles):
+  Steady Rain, Lightning arcs across the night sky, cold/temperate/warm
+  gentle breeze, temperate moderate wind, Snow falls steadily/Snow falls
+  down, Rain falls steadily/Rain falls, plus several unenumerated
+  lightning-strike variants — matches DSL2's own corpus-derived taxonomy.
+
+Time / day-night:
+  ^It is                                    (game-time line)
+  ^==-[A-Z]                                 (prompt line 2, day/night period)
+  ^The sun rises in the east\.$              -> is_night = false
+  ^The night has begun\.$                    -> is_night = true
+
+Lunar block (`lunar` command):
+  ^The (red|white|black) moon is             (begin block)
+  .*                                         (catch-all body, ends on blank line)
+  MoonWeather's own gag-mode triggers (same anchor + bonus-stat line):
+    ^The (red|white|black) moon is
+    ^\s+\[Mana
+  **[PNP SOURCE]** capture-group form (more explicit than DSL2's anchor+
+  catch-all approach):
+    The (.*) moon is (.*) and (.*).
+    \[Mana .*\%\]  \[Saves .*\]  \[Casting .*\]  \[Regen .*\%\]  \[Cycles remaining (.*) \(.* Hours\)\]\s*
+
+Score block:
+  ^Score for                                 (begin block, captures charName)
+  .*                                         (catch-all body until "^---" separator logic completes)
+
+Group block:
+  ^.+'s group:$                              (begin block; also gag-header trigger, same pattern)
+
+Scan block:
+  ^\s*Looking around you see:$               (begin, all-directions)
+  ^You peer intently ([a-zA-Z]+)\.$          (begin, directional)
+
+Look / exits:
+  ^\s*\[Exits: .*\]\s*$                      (anchors beginLook() — always immediately precedes room content)
+
+Players near you (`where`/autowhere):
+  ^Players near you:$                        (header, someone nearby)
+  ^None$                                     (bare empty-case, whole-line only)
+
+CreatureLore block:
+  ^Creature:\s                               (begin block)
+  **[UNCONFIRMED]** DSL1's own MyDSL.CreatureDB (embedded Lua, its own
+  independent port, not DSL2's) parses the `lore <name>` command's full
+  body with dedicated per-field patterns rather than a generic catch-all —
+  worth checking DSL2's own CreatureLore capture covers all of these
+  fields, since the prompt that built it only explicitly confirmed
+  look/scan porting, not lore's own output format line-by-line:
+    ^Creature:%s*(.-)%s+Race:%s*(.-)%s*$
+    ^The base health of this creature is (%d+)%.
+    ^This creature is upon the cycle of training '([^']+)'
+    ^This creature does ([%ddD%+%-]+) damage in a ([%a%s_%-]+) manner%.
+    ^Offensive Tactics:%s*(.+)$
+    ^Immunities:%s*(.+)$   /   ^Immune:%s*(.+)$
+    ^Invulnerabilities:%s*(.+)$   (also seen misspelled "Invulnerablities:" in-game)
+    ^Resistances:%s*(.+)$
+    ^Vulnerabilities:%s*(.+)$   (also seen misspelled "Vulnerbilities:" in-game)
+    ^This creature is affected by%s+(.+)$
+
+Equipment (`equipment`/`eq`):
+  ^You are using:$                           (begin block)
+  **[PNP SOURCE]** body-line parser (DSL2 parses equipment lines with its
+  own logic instead of this exact pattern):
+    ^<([a-z\s]+)>\s*([a-zA-Z\(\)\"\s]*?)\s*([a-zA-Z\-\'\"\s,]*)$
+
+New-character detection:
+  ^The Gray Mist of Nothingness$
+
+-- **[NATIVE ONLY]** — DSL2's own native Trigger Editor "Notifications" /
+   "Toasts/History Captures" groups, real confirmed text, not wired into
+   any MyDSL parser: --
+
+Room arrival echoes:
+  "walks in."
+  "runs in."
+  "floats in."
+  "flies in."
+  **[UNCONFIRMED]** additional forms found in sibling profiles:
+    "has arrived."
+    "appears in the room."
+    "has arrived through a portal"
+    "has arrived through a gate."
+    "hops in."
+    "grows in."
+
+Item/portal:
+  "transports an object to you."
+  (portal transition group — arrival/departure via portal, name only, body pattern not extracted)
+
+Server-wide kill/death broadcasts (distinct from DSL2's own personal-combat
+death trigger — this is the server-wide "toast" announcement style):
+  got (offed|killed|toasted|RAMPAGED|ROCKED) by
+  got \*\*\*DESTROYED\*\*\* by
+
+Kingdom-join/rank broadcasts **[UNCONFIRMED]**, found in PNP-family sibling
+profiles' "Trumpet Sounds and History" group, not in DSL2:
+  "joins the kingdom of Darkonin."     (and presumably other kingdom names)
+  "takes the vows of Knighthood in Gareth's Keep."
+  "becomes a citizen of Althainia."
+  "has conquered"
+
+Experience gain:
+  ^You receive ([0-9]*) experience points.$
+
+Blood Bath event notifications (group exists natively; specific text not
+further broken out in this pass). **[UNCONFIRMED]** DSL1 also shows a
+distinct "Bloodbath System: '" prefix alongside the plain "Bloodbath: '"
+already listed under Chats below — possibly a system-message variant of
+the same channel.
+
+Quest system **[UNCONFIRMED]**, found in DSL1's native XML "Quests" group —
+an entire mechanic with zero coverage anywhere in DSL2 today:
+  "You can now quest again."
+  "You aren't currently on a quest."
+  "You may quest again in"
+  "Better hurry, you're almost out of time for your quest!"
+  "You have run out of time for your quest!"
+  Quest-item pickup lines are keyed to specific items (e.g. "A Blue diamond
+  shard sits here gleaming.", "You get a Blue diamond shard.") — tied to
+  individual quests, not a general pattern; see also the "SeaQuest"
+  sub-quest example below.
+  SeaQuest (ship-boarding sub-quest, DSL1's native XML "Sailing" group —
+  ship names matched as bare keywords: Golden Koi, Merchant Ship Sygzani,
+  Nomad, Sea Mage, Silver Bass, Black Crane):
+    "You whistle, and a cabin boy lowers a rope ladder for you."
+    "You disembark from"
+    "The gentle patter of waves brushing against the shore surrounds you."
+    "Waves gently break as they reach the shore"
+
+==============================================================================
+6. CHATS
+==============================================================================
+-- **[ACTIVE — DSL2]** (MyDSL_ChatTriggers.lua) — all patterns anchored to
+   line start ("^\a?...", the \a is a real optional BEL control char DSL
+   sometimes prefixes) and use "[^']+"/"[^']*" prefixes (stop at the first
+   quote) to prevent one message's quoted dialogue text from cross-matching
+   a different channel's verb. gag=false means the line still echoes to
+   main console too. --
+
+Tells (gag=false):
+  ^\a?You tell [^']*']
+  ^\a?[^']+ tells you[^']*']
+
+Group chat:
+  ^\a?[^']+ tells the group[^']*']
+  ^\a?You tell the group[^']*']
+
+OOC (direct):
+  ^\a?[^']+ OOC:[^']*']
+
+City (gossip family):
+  ^\a?[^']+ (?:clan )?gossips[^']*']
+  ^\a?(?:[^']+ )?(?:OOC )?Kingdom: ']
+
+Local (room-level speech; say/yell/shout gag=false, whisper stays gagged):
+  ^\a?(?:You say|[^']+ says)[^']*']              gag=false
+  ^\a?(?:You whisper|[^']+ whispers)[^']*']
+  ^\a?(?:You yell|[^']+ yells)[^']*']            gag=false
+  ^\a?(?:You shout|[^']+ shouts)[^']*']          gag=false
+
+OOC (misc. public channels — native routes ALL of these to OOC, not City):
+  ^\a?[^']+ auctions:[^']*']
+  ^\a?[^']*radios[^']*']
+  ^\a?[^']+ grats[^']*']
+  ^\a?(?:You ask|[^']+ asks)[^']*']
+  ^\a?[^']+ (?:answers|newbie)[^']*']
+  ^\a?\[Newbie\]: ']
+  ^\a?Bloodbath: ']
+  ^\a?[^']*quests[^']*']
+
+Note on voice-type modifiers: "says" accepts ANY text between the verb and
+the opening quote (covers all 21 DSL_Helpfiles voice types — Soft, Raspy,
+Low toned, etc. — plus optional "(to Name)"/"(Language)" tags in any
+combination) rather than enumerating each phrasing.
+
+-- **[NATIVE ONLY]** — confirmed native regex, real DSL text, not currently
+   routed by MyDSL_ChatTriggers.lua: --
+  ^\a?\[BROADCAST(?:\s+from\s+.+?)?\].*$      (immortal/system broadcast channel, DSL2/DSL1's own form)
+  ^\[BROADCAST from (.+?)\] (.*)$             (PNP-family's form — capture-group variant of the same channel)
+
+-- **[PNP SOURCE]** — PNP's channel_patterns table covers several channels
+   DSL2 hasn't built dedicated routing for (kingdom-specific and immortal
+   channels): --
+  thaxanos    — [tT]haxanos            (kingdom-specific channel)
+  shalonesti  — [sS]halonesti          (kingdom-specific channel)
+  conclave    — [cC]onclave
+  imm         — imm                    (immortal chat)
+  pray        — pray                   (prayer to immortals)
+  radio       — [rR]adio               (already generically covered in DSL2)
+
+-- **[UNCONFIRMED — flag only]** — parenthesis-quoted say/whisper variants,
+   e.g. literal "You say (" / "says (" / "whispers (" alongside the
+   standard apostrophe-quoted "You say '" / "says '". Seen independently in
+   TWO sibling-profile families now (the profile DSL2 was originally cloned
+   from, AND the PNP-family profiles), which raises confidence this is a
+   real (if rare) DSL quote-delimiter form — possibly
+   an older client-side or emote-adverb speech format (e.g. "says
+   (happily), 'hello.'"). Still not corpus-confirmed for DSL2's own session
+   logs specifically. DSL2's own apostrophe-only patterns would silently
+   miss this form if it does occur.
+
+-- **[UNCONFIRMED]** additional say-mode variants found in DSL1's native
+   XML "Chat" group — all of these are already implicitly covered by
+   DSL2's own general "says" pattern (accepts any text between the verb and
+   the opening quote), included here as concrete real-text examples of what
+   that general pattern actually matches: --
+  "says (to You) '"
+  "says (to"
+  "says softly '"
+  "says growlingly '"
+  "says in a low toned manner (to"
+  "says softly (to"
+  "says growlingly (to"
+
+-- **[UNCONFIRMED]** immortal-presence markers, found alongside chat lines
+   in DSL1's native XML, not specifically routed anywhere in DSL2: --
+  "(An Imm)"
+  "(Imm)"
+  "WARNING:"
+  "peers at you."
+
+==============================================================================
+7. GMCP STRUCTURED EVENTS  **[ACTIVE — DSL2]**
+==============================================================================
+Not text regex — structured data via registerAnonymousEventHandler
+(MyDSL_DataLayer.lua ~564-750). Listed for completeness.
+
+  gmcp.char_data     — hp/mana/move/stats/gold/silver/tnl/wimpy/carry weight/
+                        stance/language/is_flying/is_riding/is_fighting/
+                        is_afk/is_quiet. Fires once per prompt/combat round.
+  gmcp.login_data    — name, level, kingdom, is_clan, is_kingdom, time.
+                        Authoritative source of character identity.
+  gmcp.room_data     — room name, sector, exits array. See the ordering note
+                        below before using it to detect room renders.
+  gmcp.tick          — tick.time (game tick countdown, feeds TickView).
+  gmcp.affect_data   — full affects array (keyed lowercase by name).
+  gmcp.add_affect    — single affect added.
+  gmcp.remove_affect — single affect removed.
+
+-- Room render vs. room_data — ordering  **[CORPUS-VERIFIED 2026-08-02]** --
+
+A room render is a fixed four-part structure, in this order:
+
+  <title>                      column 0, and it is EXACTLY the string
+                               gmcp.room_data reports as `room`
+  <description>                2-space indent, word-wrapped over many lines
+   [Exits: north east ... ]    one leading space
+  <objects and creatures>      objects 5-space indented, creatures column 0
+                               (both optional)
+
+A render is ALWAYS immediately followed by gmcp.char_data then gmcp.room_data,
+then the prompt. The gap from the render's first line to its room_data is
+p50 1ms, p95 5ms, p99 8ms, max 89ms (n=31,185).
+
+THE TITLE IS OFTEN NOT THE FIRST LINE AFTER THE PROMPT. Movement, look and
+portal commands all behave identically here, so this is not a per-command
+quirk — the render simply gets whatever else the server had to say first:
+
+  "You enter a dark glowing orb."          portals/enter (23% of those renders)
+  "You step through a gate and vanish."    gate/summon
+  "You wake and stand up."                 waking before moving
+  "Just as you start to leave, a fountain of blood erupts from the altar."
+                                           failed-exit flavor
+  a chat or OOC line that landed mid-render
+  an entire multi-room sequence            river drift, speedwalk, ship travel
+
+Measured over 298,141 prompt-delimited windows containing 37,997 renders:
+15.7% of renders are preceded by other output. A consumer that anchors on the
+first line after the prompt therefore misses 6,170 of them — 16.2%, one room
+in six. Scanning the window for a line that IS the room name instead (last
+match, since a window can hold several renders) misses 283, or 0.74%; those
+remaining are scrying ("You peer into a shimmering gate.") and ship movement,
+where room_data reports YOUR room while the text describes a different one.
+
+THE CONVERSE IS FALSE, and it is the trap worth documenting. room_data does
+not mark a room render — it fires before EVERY prompt. Across 207 docker
+*.jsonl logs and 341,481 room_data events:
+
+  9.1%   (31,185)   followed an actual room render
+  78.9%  (269,276)  followed unrelated output — equipment lists, auction
+                    chat, "You have become better at pugil!", "You are
+                    thirsty.", "You lost your concentration."
+  12.0%  (41,020)   followed no text at all (consecutive prompts)
+
+So the event's arrival confirms nothing. What discriminates is the NAME:
+somewhere in the window is a line that IS room_data's `room` value, and the
+render starts there. Whole-line equality only — containment would let a chat
+line quoting a room name open a render. Measured, that separates them
+cleanly: every matched window also carried an [Exits:] line, bar 20 short
+brief-mode renders that legitimately have none.
+
+Practical consequence for any real-time consumer: room_data is a TRAILING
+marker. It can confirm text that already arrived but cannot announce text
+that is coming, so a consumer that must classify a description has to hold
+lines briefly and decide on the name — it cannot decide on sight, because
+nothing in the text itself distinguishes a room description from any other
+prose.
+
+==============================================================================
+NOT INCLUDED / OUT OF SCOPE FOR THIS PASS
+==============================================================================
+- Item/equipment catalogs (native XML "Items" group — crafted armor/weapon
+  tiers by level range, gear slots, potions/wands/scrolls/staves) — this is
+  Layer 4 reference-library territory (items/mobs/lore), a separate planned
+  module, not "game-echo patterns" in the trigger sense.
+- Room-litter/gore text ("The splattered brains...", severed limbs, etc.)
+  — atmospheric flavor text, not state-bearing.
+- Quest-item-specific triggers (e.g. "Blue diamond shard", "Crown Jewels")
+  — tied to individual quests, not general patterns.
+- PNP files/ (46 files, vendored reference, not ported/active in DSL2) and
+  native Mudlet XML in sibling profiles are covered only where explicitly
+  marked [PNP SOURCE] / [NATIVE ONLY] above — this is not an exhaustive
+  dump of every native trigger on the machine, just what's relevant to the
+  6 requested categories.
+- MyDSL_RawCapture.lua's own trigger (pattern ".", matches every line) is a
+  raw debug logger, not a game-pattern capture.
+
+==============================================================================
+STATUS
+==============================================================================
+This pass covers, in full: DSL2's own .lua layer, DSL2's own native Mudlet
+XML, the vendored PNP source, and every sibling Mudlet profile on this
+machine with meaningful custom content — the 3 PNP-family profiles
+(byte-identical Lua to the vendored copy; native XML byte-identical across
+all three, reported once), the profile DSL2 was itself cloned from, and
+several other DSL-client sibling profiles (some race/character-specific
+content found there was deliberately left out of this doc to keep it
+general-purpose). The remaining scratch/test
+profiles on this machine were confirmed to be near-empty default
+scaffolding (18-36 files each, no custom trigger content) and were not
+deep-scanned.
+
+Sections marked **[UNCONFIRMED]** are real text pulled from a native
+Trigger Editor object or a sibling profile, but have NOT been independently
+verified against DSL2's own log corpus — they're included deliberately,
+unfiltered, so the community can help confirm, correct, or rule them out.
+If you can confirm one live, or spot a wording error, that's exactly the
+kind of feedback this doc is for.
+
+------------------------------------------------------------------------------
+2026-08-02 — corpus verification pass (changelog)
+------------------------------------------------------------------------------
+Nothing was deleted; everything below is an annotation on an existing entry.
+
+Resolved:
+  - "bubbles and boils!" / "blackens and crisps!" / "sparks and sputters!"
+    identified as INVENTORY DESTRUCTION (acid/fire/lightning), lifting them
+    out of the unreconstructed breath-weapon group. Section 3.
+  - The bash "causing him/her to fall flat" lines re-read as "You EVADE X's
+    bash..." — the attacker falls, not you. Section 3.
+
+Searched for and NOT found (now marked [CORPUS-ABSENT], so the search is not
+repeated): gore "into the air!"; "You fall flat on your face!"; the neuter
+"causing it to fall flat on its face."; the three pet/charmed-follower lines.
+
+------------------------------------------------------------------------------
+2026-08-02 (later the same day) — RETRACTION + full-corpus re-search
+------------------------------------------------------------------------------
+The CORPUS-ABSENT calls above were made against a partial corpus using the
+QUOTED forms as written in this document. Re-run across all 2,478 log files
+(2.85 GB: GameLogs/*.txt, ShatteredArchive/Docker/**/*.jsonl, AGL, Books,
+raw.log) with quotes stripped, ANSI stripped and JSON unescaped, three of the
+four are RETRACTED and two of this doc's own older notes fall with them. See
+"HOW TO SEARCH THIS CORPUS" at the top for the three traps.
+
+  RETRACTED — present after all:
+    "You fall flat on your face!"                       243
+    "bash, causing it to fall flat on its face."        641
+    gore/toss "into the air!"                         1,482  (real wording is
+        "<X> tosses <Y> into the air!" — earlier searches probed for
+        gore/trample/charge/ram, but the verb is "tosses")
+    "What?  And leave your beloved master?"             224
+    Unholy proc "A flash of unholy power erupts..."  96,825  (this line was
+        absent from the doc entirely and had been dismissed as a symmetry
+        guess; it is one of the commonest lines in the corpus)
+    Mana-drain proc "<X> draws energy from <Y>."    128,796
+    "You hear something's death cry."                 6,975  (was UNCONFIRMED)
+
+  STANDS — genuinely zero:
+    "That's up to your master!"     (its two siblings confirm, so the wording
+                                     itself is probably wrong)
+    "Your drool is insufficient."   (real fail line: "<X> kicked dirt misses <Y>.")
+    "by the spit in it's eyes!"     (his/her confirm; no neuter spit form)
+    "blinded by the dirt in your eyes"  (no self form of this line exists)
+
+  NEWLY RECOVERED WORDINGS: self-death "You have been KILLED!!"; the full
+  shield-disarm line "<X> has <shield> knocked loose from their hands by <Y>!";
+  the dirt-kick fail; the toss pair; mount-rear "…at <X> but fails."
+
+------------------------------------------------------------------------------
+2026-08-02 (third pass) — affect table checked end to end
+------------------------------------------------------------------------------
+The ~90-spell table in section 4 is no longer unchecked. All 182 of its lines
+were run against the full corpus; see the results block at the head of that
+table. Headline: 66 of 92 spells fully confirmed, 8 never occur at all, and
+SIX wordings are wrong as written (prayer, taunt, charm, warcry, antimagic
+shell, prevent recovery) — corrected inline.
+
+Everything in this document has now been checked against the logs at least
+once, one way or the other. What remains genuinely open is narrower:
+  - the 8 never-cast spells, which need a character who has them;
+  - self-side forms for the affects that only ever appeared third-person here;
+  - the scrying / ship-movement room renders noted in section 7, where GMCP
+    reports your own room while the text describes another.
+
+Flagged as suspect, left as captured:
+  - Shield disarm "knocked loose from their hands by" — third-person wording
+    inside a done-TO-you group. Section 3.
+  - The `poison` entry's {a/b}+{c/d} bracketing, which read literally makes
+    an onset line a wear-off. Section 4.
+
+Added:
+  - Section 7 — the room-render / room_data ordering result, from the *.jsonl
+    protocol corpus (341,481 events). Two headlines: room_data does NOT mark a
+    room render (only ~9% of them follow one), and the render's title is NOT
+    reliably the first line after the prompt (15.7% of renders are preceded by
+    portal echoes, wake-up messages, failed-exit flavor or interleaved chat).
+    Find the room NAME in the window; do not anchor on position.
+
+Still open, and worth a capture if anyone has one: your own death line
+("You have been KILLED!!" or whatever it actually is — no death line here is
+self-side); the self forms of blindness-by-dirt and the dirt-kick fail; a
+third-person weaken line (none exists in any source, so enemy-side weaken is
+currently undetectable); and the full wording behind the two shield-disarm
+and mount-rear tail fragments.

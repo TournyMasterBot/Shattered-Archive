@@ -18,7 +18,7 @@ export type EqDeltaEvent =
   | { kind: 'wield'; item: string; isSecondary: boolean }
   | { kind: 'wear'; slot: EqSlot; item: string }
   | { kind: 'stop_using'; item: string }
-  | { kind: 'disarm' };
+  | { kind: 'disarm'; attacker: string };
 
 function matchWield(line: string): { item: string; isSecondary: boolean } | null {
   const s = clean(line);
@@ -39,9 +39,10 @@ function matchStopUsing(line: string): string | null {
   return cleanItem(m[1]);
 }
 
-function matchDisarm(line: string): boolean {
+function matchDisarm(line: string): string | null {
   const s = clean(line);
-  return s.includes('DISARMS you and sends your weapon flying!');
+  const m = s.match(/^(.+?) DISARMS you and sends your weapon flying!$/);
+  return m ? m[1].trim() : null;
 }
 
 function matchWear(line: string): { slot: EqSlot; item: string } | null {
@@ -129,7 +130,8 @@ export function parseEqDeltaLine(line: string): EqDeltaEvent | null {
   const stopItem = matchStopUsing(s);
   if (stopItem) return { kind: 'stop_using', item: stopItem };
 
-  if (matchDisarm(s)) return { kind: 'disarm' };
+  const disarmedBy = matchDisarm(s);
+  if (disarmedBy !== null) return { kind: 'disarm', attacker: disarmedBy };
 
   const w = matchWield(s);
   if (w) return { kind: 'wield', item: w.item, isSecondary: w.isSecondary };

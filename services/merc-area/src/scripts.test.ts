@@ -7,8 +7,8 @@ import { validateScripts, MAX_SCRIPT_LINES } from './validate.js';
 import type { ScriptsSection } from './types.js';
 import { SCRIPT_TRIGGERS } from './types.js';
 
-// Jest runs with cwd = package root (pnpm --filter / local jest.config.cjs).
-const fixture = (name: string) => fs.readFileSync(path.resolve('src/__fixtures__', name), 'utf8');
+// Resolve fixtures from the test file, not cwd — the root jest config runs this suite too.
+const fixture = (name: string) => fs.readFileSync(path.join(__dirname, '__fixtures__', name), 'utf8');
 
 const AREA_WITH_SCRIPTS = `#AREA
 scripted.are~
@@ -67,7 +67,7 @@ describe('#SCRIPTS section', () => {
   it('rejects a bad entry letter with a line-numbered error', () => {
     const bad = AREA_WITH_SCRIPTS.replace('M 3701', 'Q 3701');
     expect(() => parseAreaFile(bad)).toThrow(ParseError);
-    expect(() => parseAreaFile(bad)).toThrow(/Load_scripts: expected 'M' or '#0'/);
+    expect(() => parseAreaFile(bad)).toThrow(/Load_scripts: expected 'M', 'R' or '#0'/);
   });
 
   it('rejects a non-zero # terminator', () => {
@@ -111,5 +111,70 @@ describe('validateScripts (mirror of the C-side checks)', () => {
     expect(summary.errors[0]).toContain("unknown trigger 'sneeze'");
     expect(summary.errors[1]).toContain('mob 9999');
     expect(summary.errors[2]).toContain(`max ${MAX_SCRIPT_LINES}`);
+  });
+});
+
+describe('room scripts (Phase 12b)', () => {
+  const ROOM_SCRIPTED = `#AREA
+warp.are~
+Warp~
+{ 1 50} Test  Warp~
+100 199
+
+#ROOMS
+#110
+Trap Room~
+An innocuous-looking chamber.
+~
+0 0 0
+S
+#0
+
+#SCRIPTS
+R 110 entry ~
+echo A vortex seizes you!
+warp 3001~
+#0
+
+#$
+`;
+
+  it('parses and round-trips R entries with attach: room', () => {
+    const area = parseAreaFile(ROOM_SCRIPTED);
+    const scripts = area.sections.find((s) => s.kind === 'scripts') as ScriptsSection;
+    expect(scripts.scripts[0]).toEqual({
+      attach: 'room',
+      mobVnum: 110,
+      trigger: 'entry',
+      phrase: '',
+      body: 'echo A vortex seizes you!\nwarp 3001',
+    });
+    const emitted = emitAreaFile(area);
+    expect(emitted).toContain('R 110 entry ~');
+    expect(parseAreaFile(emitted)).toEqual(area);
+  });
+
+  it('validates the room branch: trigger vocabulary and same-file room', () => {
+    const good = validateScripts(parseAreaFile(ROOM_SCRIPTED));
+    expect(good.errors).toEqual([]);
+
+    const area = parseAreaFile(ROOM_SCRIPTED);
+    const scripts = area.sections.find((s) => s.kind === 'scripts') as ScriptsSection;
+    scripts.scripts.push(
+      { attach: 'room', mobVnum: 110, trigger: 'speech', phrase: '', body: 'echo x' },
+      { attach: 'room', mobVnum: 999, trigger: 'entry', phrase: '', body: 'echo y' },
+    );
+    const summary = validateScripts(area);
+    expect(summary.errors.some((e) => e.includes("unknown room trigger 'speech'"))).toBe(true);
+    expect(summary.errors.some((e) => e.includes('room 999'))).toBe(true);
+  });
+
+  it('blocks a #SCRIPTS section that precedes #ROOMS when it holds room scripts', () => {
+    const reordered = parseAreaFile(ROOM_SCRIPTED);
+    const scriptsIdx = reordered.sections.findIndex((s) => s.kind === 'scripts');
+    const [scriptsSection] = reordered.sections.splice(scriptsIdx, 1);
+    reordered.sections.splice(1, 0, scriptsSection);
+    const summary = validateScripts(reordered);
+    expect(summary.errors.some((e) => e.includes('must come AFTER #ROOMS'))).toBe(true);
   });
 });

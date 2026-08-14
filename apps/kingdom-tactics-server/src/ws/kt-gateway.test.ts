@@ -77,6 +77,24 @@ describe('/ws/kt gateway (handleClientMessage)', () => {
     expect(conn.matchId).toBe('m1');
   });
 
+  it('an already-resolved accountId is attached to the claimed seat', () => {
+    const registry = new MatchRegistry({ seed: 1 });
+    const conn = fakeConn('c1');
+    handleClientMessage(conn, { type: 'join', matchId: 'm1' }, registry, 'acc-42');
+
+    const session = registry.get('m1');
+    expect(session?.accountIdForSeat(0)).toBe('acc-42');
+  });
+
+  it('a join with no accountId (anonymous) leaves the seat unattached, exactly like before Phase F', () => {
+    const registry = new MatchRegistry({ seed: 1 });
+    const conn = fakeConn('c1');
+    handleClientMessage(conn, { type: 'join', matchId: 'm1' }, registry);
+
+    const session = registry.get('m1');
+    expect(session?.accountIdForSeat(0)).toBeUndefined();
+  });
+
   it('a legal action broadcasts a snapshot and then drives the AI seat', () => {
     const registry = new MatchRegistry({ seed: 1 });
     const conn = fakeConn('c1');
@@ -138,5 +156,42 @@ describe('/ws/kt gateway (handleClientMessage)', () => {
     const over = conn.sent.find((m) => m.type === 'over');
     expect(over).toBeDefined();
     if (over?.type === 'over') expect(over.winner).toBe(0);
+  });
+
+  it('onMatchComplete fires exactly once, with the decided session, when a match finishes', () => {
+    const registry = new MatchRegistry({ seed: 1, createInitial: dominantMatch, combatSalt: 42 });
+    const conn = fakeConn('c1');
+    const completed: unknown[] = [];
+    const onMatchComplete = (session: unknown) => completed.push(session);
+
+    handleClientMessage(conn, { type: 'join', matchId: 'm3' }, registry, undefined, onMatchComplete);
+
+    const humanBrain = new GreedyPolicy();
+    const chooseRng = createRng(0);
+    let guard = 0;
+    while (!conn.sent.some((m) => m.type === 'over') && guard < 5000) {
+      guard++;
+      const session = registry.get('m3');
+      if (!session || session.isOver() || session.snapshot().activeSide !== 0) break;
+      const action = humanBrain.chooseAction(session.snapshot(), 0, providers, chooseRng);
+      const before = conn.sent.length;
+      handleClientMessage(conn, { type: 'action', matchId: 'm3', action }, registry, undefined, onMatchComplete);
+      if (conn.sent[before]?.type === 'error') {
+        handleClientMessage(
+          conn,
+          { type: 'action', matchId: 'm3', action: { type: 'end-turn', side: 0 } },
+          registry,
+          undefined,
+          onMatchComplete,
+        );
+      }
+    }
+
+    expect(completed).toHaveLength(1);
+    expect(completed[0]).toBe(registry.get('m3'));
+
+    // A later message against the already-decided match must not fire it again.
+    handleClientMessage(conn, { type: 'join', matchId: 'm3' }, registry, undefined, onMatchComplete);
+    expect(completed).toHaveLength(1);
   });
 });

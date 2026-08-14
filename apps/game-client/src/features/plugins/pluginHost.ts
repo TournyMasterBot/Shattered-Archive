@@ -11,6 +11,15 @@ import { renderDslToAnsi } from '../userScripts/dslToAnsi';
 
 type PluginCleanup = {
   api?: PluginRuntimeApi;
+  /**
+   * The exact normalized module instance this api/cleanup belongs to.
+   *
+   * Kept here rather than re-read from `modules` because a plugin module is a
+   * CLOSURE (`create()` mints fresh queues/timers/state every call), so "the
+   * module with this id" and "the module that is actually running" are not
+   * necessarily the same object.
+   */
+  module?: IPluginModule;
   stopScripts?: () => void;
   removeBaseCss?: () => void;
   onDisable?: () => void;
@@ -119,8 +128,12 @@ function makeDefaultApi(
     args
       .map((a) => {
         if (typeof a === 'string') return a;
+        // Error objects JSON.stringify to "{}" (message/stack are non-enumerable),
+        // which hides the actual failure reason from users reading plugin logs.
+        if (a instanceof Error) return `${a.name}: ${a.message}`;
         try {
-          return JSON.stringify(a);
+          const json = JSON.stringify(a);
+          return json === undefined ? String(a) : json;
         } catch {
           return String(a);
         }
@@ -198,9 +211,24 @@ export class PluginHost {
     return this.state?.connectionId ?? 'default';
   }
 
+  /**
+   * Register a plugin module. Idempotent for anything already RUNNING.
+   *
+   * Callers re-register the whole core set on every pass, and `create()` mints a
+   * brand-new closure each time. Blindly overwriting meant a plugin could have a
+   * dead instance in `modules` while the live listeners, timers and queues still
+   * belonged to the previous instance recorded in `cleanups` — so every consumer
+   * that resolves a module by id (tryExecuteAlias, the config UI) addressed a
+   * closure that was not the one doing the work.
+   *
+   * A module that is not currently enabled has no state worth keeping, so it is
+   * still replaced freely (that is how an updated definition gets picked up).
+   */
   registerModule(module: IPluginModule) {
     if (!this.state) this.setConnection('default');
-    this.state!.modules.set(module.manifest.id, module);
+    const id = module.manifest.id;
+    if (this.state!.enabled.has(id) && this.state!.modules.has(id)) return;
+    this.state!.modules.set(id, module);
   }
 
   // PluginsPage / UI usage
@@ -236,11 +264,11 @@ export class PluginHost {
     const actionHandlers = new Map<string, () => void>();
     const apiBase = makeDefaultApi(s.connectionId, pluginId, mod, actionHandlers);
 
-    const api: PluginRuntimeApi = {
-      ...apiBase,
-      log: (...args) => apiBase.log(`[${mod.manifest.id}]`, ...args),
-      error: (...args) => apiBase.error(`[${mod.manifest.id}]`, ...args),
-    };
+    // No id-stamping wrapper here: makeDefaultApi already prefixes every emitted
+    // line with `[plugin:<id>]`, and the registry keys modules by manifest.id, so
+    // wrapping only produced `[plugin:text-to-speech] [text-to-speech] …` in the
+    // terminal for every plugin.
+    const api: PluginRuntimeApi = apiBase;
 
     // hydrate config: defaults + stored userConfig
     const defaults = mod.configSchema?.defaults ?? {};
@@ -274,6 +302,7 @@ export class PluginHost {
     s.enabled.add(pluginId);
     s.cleanups.set(pluginId, {
       api,
+      module: mod,
       stopScripts: scriptBundle.stop,
       removeBaseCss: () => removePluginBaseCss(s.connectionId, pluginId),
       offEvents,
@@ -303,6 +332,47 @@ export class PluginHost {
     s.enabled.delete(pluginId);
   }
 
+  /**
+   * Reconcile the running plugins against the installed-plugin records.
+   *
+   * DIFFS — it does not tear down and rebuild. The caller (MainContainer) used to
+   * shut the whole host down and re-`create()` every plugin whenever the installed
+   * list changed identity, which happens for reasons that have nothing to do with
+   * which plugins are running: a config edit, a cloud sync, the boot storage
+   * migration, toggling any OTHER plugin. Every one of those silently replaced
+   * every plugin's closure.
+   *
+   * For most plugins that is merely wasteful. For anything holding in-flight state
+   * it is a correctness bug: text-to-speech buffers lines for ~300ms and then
+   * speaks on a ~150ms deferred timer, and its disable path calls stopSpeaking(),
+   * so a rebuild anywhere inside that ~450ms window discarded the pending line
+   * AND invalidated the already-scheduled speak(). Sustained churn meant nothing
+   * ever reached the synthesizer — a full queue, no errors, and total silence.
+   *
+   * An already-enabled plugin therefore keeps its instance and only has its config
+   * refreshed (same defaults+userConfig merge enable() applies).
+   */
+  syncInstalled(records: Array<{ id: PluginId; enabled?: boolean; userConfig?: Record<string, unknown> }>) {
+    if (!this.state) return;
+
+    for (const rec of records) {
+      if (!rec.enabled) {
+        this.disable(rec.id);
+        continue;
+      }
+
+      if (!this.isEnabled(rec.id)) {
+        this.enable(rec.id, rec.userConfig);
+        continue;
+      }
+
+      const c = this.state.cleanups.get(rec.id);
+      if (!c?.api) continue;
+      const defaults = c.module?.configSchema?.defaults ?? {};
+      c.api.setConfig({ ...defaults, ...(rec.userConfig ?? {}) });
+    }
+  }
+
   shutdown() {
     if (!this.state) return;
     const ids = Array.from(this.state.enabled.values());
@@ -320,7 +390,9 @@ export class PluginHost {
     if (!this.state) return false;
 
     for (const [pluginId, cleanup] of this.state.cleanups.entries()) {
-      const mod = this.state.modules.get(pluginId);
+      // The running instance, not "whatever is registered under this id" — see
+      // PluginCleanup.module.
+      const mod = cleanup.module ?? this.state.modules.get(pluginId);
       if (!mod?.onAlias || !cleanup.api) continue;
 
       try {

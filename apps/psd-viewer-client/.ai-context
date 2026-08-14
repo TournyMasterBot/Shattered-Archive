@@ -1,0 +1,9 @@
+psd-viewer-client is a small Vite + React front-end (port 62080) for opening Photoshop .psd
+files and saving them as PNG. It does NO decoding itself — the source PSDs are hundreds of
+MB, so all parsing lives in psd-viewer-server, which the Vite dev proxy forwards /api and
+/health to (target localhost:62000). The whole UI is one component (App.tsx): it loads the
+bundled presets from /api/presets, lets the user pick a preset or type a full .psd path,
+then fetches GET /api/psd/png?path=… once, wraps the returned PNG blob in an object URL for
+the <img> preview, and reuses that same blob for the Save-as-PNG download — so each file is
+decoded exactly once per open. Object URLs are revoked on change/unmount to avoid leaks;
+non-2xx responses surface the server's JSON error message inline.

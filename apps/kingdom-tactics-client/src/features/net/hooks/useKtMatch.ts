@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Action, MatchState, Side } from '@shatteredarchive/kingdom-tactics-engine';
 import { KtSocket, type KtSocketStatus, type SocketFactory } from '../kt-socket';
+import { getToken, isExpired } from '../../auth/authTokenStore';
 
 /** What `connect` needs: where to dial, which match, and (optionally) which seat to request. */
 export interface KtConnectConfig {
@@ -91,7 +92,12 @@ export function useKtMatch(open?: SocketFactory): UseKtMatch {
           onOpen: () => {
             if (!current()) return;
             setStatus('open');
-            socket.send({ type: 'join', matchId: cfg.matchId, side: cfg.side });
+            // Phase F: attach a valid stored token, if any, so the seat gets an accountId server
+            // side (match history/replay). Purely additive — omitted or expired, join proceeds
+            // exactly as before this phase (anonymous).
+            const stored = getToken();
+            const token = stored && !isExpired(stored) ? stored.token : undefined;
+            socket.send({ type: 'join', matchId: cfg.matchId, side: cfg.side, token });
           },
           onClose: () => {
             if (current()) setStatus('closed');

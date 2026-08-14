@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import express from 'express';
 import fs from 'fs';
 import os from 'os';
@@ -159,6 +160,14 @@ describe('area routes (writes gated OFF)', () => {
       body: JSON.stringify({ mode: 'hot', file: 'tiny.are' }),
     });
     expect(reloadRes.status).toBe(403);
+
+    const createRes = await fetch(`${t.base}/api/areas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file: 'gated.are', name: 'Gated', minVnum: 900, maxVnum: 999 }),
+    });
+    expect(createRes.status).toBe(403);
+    expect(fs.existsSync(path.join(t.dir, 'gated.are'))).toBe(false);
   });
 
   it('previews scripts with a summary and 400s invalid ones', async () => {
@@ -201,6 +210,34 @@ describe('area routes (writes gated OFF)', () => {
     expect(((await bad2.json()) as { error: string }).error).toContain('mob 9999');
   });
 
+  it('400s an in-range dangling vnum reference and passes cross-area refs as warnings', async () => {
+    const getRes = await fetch(`${t.base}/api/areas/tiny.are`);
+    const { area } = (await getRes.json()) as { area: any };
+    const resets = area.sections.find((s: any) => s.kind === 'resets');
+
+    // Reset spawning mob 150: in the 100-199 range but not defined → 400.
+    resets.resets = [{ command: 'M', ifFlag: 0, arg1: 150, arg2: 1, arg3: 100, arg4: 1, comment: '' }];
+    const bad = await fetch(`${t.base}/api/areas/tiny.are/preview`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ area }),
+    });
+    expect(bad.status).toBe(400);
+    expect(((await bad.json()) as { error: string }).error).toContain('mob 150');
+
+    // Same reset pointing at mob 101 but an out-of-range room → 200 + warning.
+    resets.resets = [{ command: 'M', ifFlag: 0, arg1: 101, arg2: 1, arg3: 5000, arg4: 1, comment: '' }];
+    const ok = await fetch(`${t.base}/api/areas/tiny.are/preview`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ area }),
+    });
+    expect(ok.status).toBe(200);
+    const body = (await ok.json()) as { refs: { errors: string[]; warnings: string[] } };
+    expect(body.refs.errors).toEqual([]);
+    expect(body.refs.warnings.join('; ')).toContain('room 5000');
+  });
+
   it('rejects malformed bodies with 400, never 500', async () => {
     const res = await fetch(`${t.base}/api/areas/tiny.are/preview`, {
       method: 'POST',
@@ -241,6 +278,46 @@ describe('area routes (writes ENABLED)', () => {
     expect(fs.readFileSync(path.join(t.dir, 'tiny.are'), 'utf8')).toContain('The Renamed Room');
   });
 
+  it('conditional saves: GET carries baseHash, fresh hash saves, stale hash 409s with disk untouched (Phase 11)', async () => {
+    const sha = (p: string) => crypto.createHash('sha256').update(fs.readFileSync(p, 'utf8'), 'utf8').digest('hex');
+    const target = path.join(t.dir, 'tiny.are');
+
+    const getRes = await fetch(`${t.base}/api/areas/tiny.are`);
+    const loaded = (await getRes.json()) as { area: any; baseHash: string };
+    expect(loaded.baseHash).toBe(sha(target));
+
+    const put = (body: unknown) =>
+      fetch(`${t.base}/api/areas/tiny.are`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+    // Fresh hash saves and returns the NEW hash (client keeps editing without a reload).
+    const rooms = loaded.area.sections.find((s: any) => s.kind === 'rooms');
+    rooms.rooms[0].name = 'The Conditional Room';
+    const ok = await put({ area: loaded.area, baseHash: loaded.baseHash });
+    expect(ok.status).toBe(200);
+    const okBody = (await ok.json()) as { saved: boolean; hash: string };
+    expect(okBody.saved).toBe(true);
+    expect(okBody.hash).toBe(sha(target));
+    expect(okBody.hash).not.toBe(loaded.baseHash);
+
+    // The now-stale hash conflicts: 409 carries the current hash, disk untouched.
+    const before = fs.readFileSync(target, 'utf8');
+    const stale = await put({ area: loaded.area, baseHash: loaded.baseHash });
+    expect(stale.status).toBe(409);
+    const staleBody = (await stale.json()) as { error: string; currentHash: string };
+    expect(staleBody.currentHash).toBe(okBody.hash);
+    expect(fs.readFileSync(target, 'utf8')).toBe(before);
+
+    // No baseHash keeps the legacy unconditional save; a non-string one is a 400.
+    const legacy = await put({ area: loaded.area });
+    expect(legacy.status).toBe(200);
+    const bad = await put({ area: loaded.area, baseHash: 42 });
+    expect(bad.status).toBe(400);
+  });
+
   it('writes hot and copyover reload signals', async () => {
     const hot = await fetch(`${t.base}/api/reload`, {
       method: 'POST',
@@ -266,6 +343,102 @@ describe('area routes (writes ENABLED)', () => {
     expect(bad.status).toBe(400);
   });
 
+  it('creates a new area file registered in area.lst (copyover-flagged, Phase 5)', async () => {
+    const res = await fetch(`${t.base}/api/areas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file: 'annex.are', name: 'The Annex', minVnum: 300, maxVnum: 399 }),
+    });
+    expect(res.status).toBe(201);
+    const body = (await res.json()) as { created: boolean; requiresCopyover: boolean; lstBackupPath: string };
+    expect(body.created).toBe(true);
+    expect(body.requiresCopyover).toBe(true);
+    expect(fs.existsSync(body.lstBackupPath)).toBe(true);
+
+    // The .are file parses and the list gained the line BEFORE the terminator.
+    const onDisk = fs.readFileSync(path.join(t.dir, 'annex.are'), 'utf8');
+    expect(onDisk).toContain('The Annex~');
+    const lst = fs.readFileSync(path.join(t.dir, 'area.lst'), 'utf8');
+    expect(lst.indexOf('annex.are')).toBeGreaterThan(-1);
+    expect(lst.indexOf('annex.are')).toBeLessThan(lst.indexOf('$'));
+
+    // It is immediately listed and readable through the API.
+    const list = await fetch(`${t.base}/api/areas`);
+    const { areas } = (await list.json()) as { areas: { file: string; name?: string }[] };
+    expect(areas.some((a) => a.file === 'annex.are' && a.name === 'The Annex')).toBe(true);
+  });
+
+  it('400s an overlapping vnum range and 409s a duplicate file', async () => {
+    const overlap = await fetch(`${t.base}/api/areas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file: 'overlap.are', name: 'Overlap', minVnum: 150, maxVnum: 250 }),
+    });
+    expect(overlap.status).toBe(400);
+    const overlapBody = (await overlap.json()) as { error: string };
+    expect(overlapBody.error).toContain('overlaps tiny.are');
+    expect(fs.existsSync(path.join(t.dir, 'overlap.are'))).toBe(false);
+
+    const dup = await fetch(`${t.base}/api/areas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file: 'tiny.are', name: 'Dup', minVnum: 500, maxVnum: 599 }),
+    });
+    expect(dup.status).toBe(409);
+  });
+
+  it('guards header range edits: shrink-below-used 400s, overlap-on-grow 400s, rename saves (Phase 6)', async () => {
+    const getRes = await fetch(`${t.base}/api/areas/tiny.are`);
+    const { area } = (await getRes.json()) as { area: any };
+    const header = area.sections.find((s: any) => s.kind === 'area');
+
+    // Shrink below a defined vnum: tiny.are defines room 100 and mob 101.
+    header.minVnum = 150;
+    const shrink = await fetch(`${t.base}/api/areas/tiny.are`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ area }),
+    });
+    expect(shrink.status).toBe(400);
+    const shrinkBody = (await shrink.json()) as { error: string };
+    expect(shrinkBody.error).toContain('100');
+    expect(shrinkBody.error).toContain('101');
+    expect(fs.readFileSync(path.join(t.dir, 'tiny.are'), 'utf8')).toContain('100 199');
+
+    // Grow into annex.are's 300-399 (created by the Phase 5 test above).
+    header.minVnum = 100;
+    header.maxVnum = 350;
+    const grow = await fetch(`${t.base}/api/areas/tiny.are`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ area }),
+    });
+    expect(grow.status).toBe(400);
+    expect(((await grow.json()) as { error: string }).error).toContain('overlaps annex.are');
+
+    // A safe grow + rename + credits edit saves and round-trips.
+    header.maxVnum = 250;
+    header.name = 'Tiny Renamed';
+    header.credits = '{ 1 60} Test  Tiny Renamed';
+    const okRes = await fetch(`${t.base}/api/areas/tiny.are`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ area }),
+    });
+    expect(okRes.status).toBe(200);
+    const onDisk = fs.readFileSync(path.join(t.dir, 'tiny.are'), 'utf8');
+    expect(onDisk).toContain('Tiny Renamed~');
+    expect(onDisk).toContain('100 250');
+
+    // Saving again with the (now unchanged) range skips the range checks.
+    const again = await fetch(`${t.base}/api/areas/tiny.are`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ area }),
+    });
+    expect(again.status).toBe(200);
+  });
+
   it('refuses a model that cannot round-trip (400, disk untouched)', async () => {
     const getRes = await fetch(`${t.base}/api/areas/tiny.are`);
     const { area } = (await getRes.json()) as { area: any };
@@ -280,5 +453,81 @@ describe('area routes (writes ENABLED)', () => {
     expect(res.status).toBe(400);
     const onDisk = fs.readFileSync(path.join(t.dir, 'tiny.are'), 'utf8');
     expect(onDisk).not.toContain('Illegal');
+  });
+
+  it('resolves cross-area refs against the world index, with live cache invalidation (Phase 11)', async () => {
+    const NEIGHBOR = `#AREA
+neighbor.are~
+Neighbor~
+{ 1 50} Test  Neighbor~
+500 599
+
+#MOBILES
+#0
+
+#OBJECTS
+#0
+
+#ROOMS
+#500
+The Neighbor Plaza~
+A plaza next door.
+~
+0 0 1
+S
+#0
+
+#RESETS
+S
+
+#SHOPS
+0
+
+#SPECIALS
+S
+
+#$
+`;
+    fs.writeFileSync(path.join(t.dir, 'neighbor.are'), NEIGHBOR);
+    const lst = fs.readFileSync(path.join(t.dir, 'area.lst'), 'utf8');
+    // Anchored to the terminator LINE. A bare .replace('$', …) hits the first '$' anywhere in
+    // the file, which happens to be the terminator today but would silently corrupt the
+    // fixture the moment a filename above it contained one.
+    fs.writeFileSync(path.join(t.dir, 'area.lst'), lst.replace(/^\$$/m, 'neighbor.are\n$'));
+
+    const { area } = (await (await fetch(`${t.base}/api/areas/tiny.are`)).json()) as { area: any };
+    const rooms = area.sections.find((s: any) => s.kind === 'rooms');
+    rooms.rooms[0].exits = [{ door: 0, description: '', keyword: '', locks: 0, key: 0, toVnum: 500 }];
+
+    const previewIt = async () => {
+      const res = await fetch(`${t.base}/api/areas/tiny.are/preview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ area }),
+      });
+      expect(res.status).toBe(200);
+      return (await res.json()) as {
+        refs: { warnings: string[]; external: { kind: string; vnum: number; file: string; name: string }[] };
+      };
+    };
+
+    // The ref into neighbor.are resolves: a link, not a warning.
+    let body = await previewIt();
+    expect(body.refs.warnings).toEqual([]);
+    expect(body.refs.external).toEqual([
+      expect.objectContaining({ kind: 'room', vnum: 500, file: 'neighbor.are', name: 'The Neighbor Plaza' }),
+    ]);
+
+    // Change the neighbor on disk — the per-file index cache must refresh.
+    fs.writeFileSync(path.join(t.dir, 'neighbor.are'), NEIGHBOR.replace('The Neighbor Plaza', 'The Renamed Plaza Annex'));
+    body = await previewIt();
+    expect(body.refs.external[0].name).toBe('The Renamed Plaza Annex');
+
+    // A vnum no listed area defines is a REAL warning now.
+    rooms.rooms[0].exits[0].toVnum = 9999;
+    body = await previewIt();
+    expect(body.refs.external).toEqual([]);
+    expect(body.refs.warnings.join('; ')).toContain('room 9999');
+    expect(body.refs.warnings.join('; ')).toContain('any listed area');
   });
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from '../styles/ContributeLoreModal.module.scss';
 import { DispatchEvent, ListenEvent } from '../features/event-emitter/event-dispatcher';
+import { siteApiBase } from '../features/auth/siteApi';
 
 type RawDataPayload = {
   rawText?: string;
@@ -413,8 +414,9 @@ export const ContributeCreatureLoreModal: React.FC<ContributeCreatureLoreModalPr
         creatureLook,
       };
 
-      //const res = await fetch('https://web-server.shatteredarchive.dev/contribute/creaturelore', {
-      const res = await fetch('http://localhost:5000/contribute/creaturelore', {
+      // See ContributeIdentifyModal for why this goes through siteApiBase()
+      // rather than a hardcoded origin.
+      const res = await fetch(`${siteApiBase()}/contribute/creaturelore`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

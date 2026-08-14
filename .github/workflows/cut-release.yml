@@ -1,0 +1,96 @@
+name: Cut Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - release/dev
+      - release/staging
+      - release/production
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cut-release-${{ github.base_ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.event.pull_request.merged == true
+    name: Cut release (${{ github.base_ref }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Compute release metadata
+        id: meta
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          env_name="${BASE_REF#release/}"
+          date_stamp="$(date -u +%Y.%m.%d)"
+          sha_short="${MERGE_SHA:0:7}"
+          tag="${env_name}-${date_stamp}-${sha_short}"
+
+          {
+            echo "env_name=$env_name"
+            echo "tag=$tag"
+            echo "title=${env_name} release ${date_stamp} (#${PR_NUMBER})"
+          } >> "$GITHUB_OUTPUT"
+
+      # Scopes --generate-notes to "since the last release for this same
+      # environment" — tags interleave across dev/staging/production, so
+      # gh's own chronological-previous-release default would otherwise
+      # pull in commits from a different tier's more recent release.
+      - name: Find previous release for this environment
+        id: prev
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENV_NAME: ${{ steps.meta.outputs.env_name }}
+        run: |
+          set -euo pipefail
+
+          prev_tag="$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 \
+            --json tagName,createdAt,isDraft | \
+            jq -r --arg envn "$ENV_NAME" '
+              [.[] | select(.isDraft == false) | select(.tagName | startswith($envn + "-"))]
+              | sort_by(.createdAt)
+              | last
+              | .tagName // empty
+            ')"
+
+          echo "prev_tag=$prev_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          TITLE: ${{ steps.meta.outputs.title }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          ENV_NAME: ${{ steps.meta.outputs.env_name }}
+          PREV_TAG: ${{ steps.prev.outputs.prev_tag }}
+        run: |
+          set -euo pipefail
+
+          args=(release create "$TAG"
+            --repo "$GITHUB_REPOSITORY"
+            --target "$MERGE_SHA"
+            --title "$TITLE"
+            --generate-notes)
+
+          if [ -n "$PREV_TAG" ]; then
+            args+=(--notes-start-tag "$PREV_TAG")
+          fi
+
+          # dev/staging builds are marked prerelease so the repo's
+          # "Latest release" badge always points at release/production.
+          if [ "$ENV_NAME" != "production" ]; then
+            args+=(--prerelease)
+          fi
+
+          gh "${args[@]}"

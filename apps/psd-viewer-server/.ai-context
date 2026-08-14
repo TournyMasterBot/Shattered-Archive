@@ -1,0 +1,13 @@
+psd-viewer-server is a minimal, self-contained Express service (port 62000, no shared
+services-server framework) whose single job is to turn a large Photoshop .psd on disk into
+a compact PNG for the psd-viewer-client. The design constraint is file size: the target
+PSDs are 200-500 MB, so raw bytes are never shipped to the browser. GET /api/psd/png reads
+the file and decodes ONLY the flattened composite via ag-psd with skipLayerImageData +
+skipThumbnail (skipping per-layer pixels — the bulk of the file), using useImageData so the
+composite comes back as a raw RGBA buffer that feeds straight into pngjs. ag-psd still
+requires a canvas/imageData factory, so at module load initializeCanvas() installs a plain
+ImageData-shaped shim (createCanvas throws — we never touch real layer canvases), which
+avoids any native canvas dependency. If a PSD has no composite (saved without Maximize
+Compatibility) the route returns 422 with guidance. This is a LOCAL-FIRST tool: the path
+query is read verbatim off disk, so it must not be exposed to an untrusted network. Errors
+never escape a handler; expected failures are 4xx/5xx JSON.

@@ -1,7 +1,7 @@
 File Index
 
-/useKtMatch.ts
-Purpose: React hook driving one online match over a KtSocket — server-authoritative (no local reducer): connect opens the socket and sends join on open; joined/snapshot/over frames replace the snapshot (over also latches winner+over), error surfaces a message; submit sends an action only while open & not over; a generation ref drops a superseded connection's late frames; leave/unmount sends leave + closes. Injectable socket factory.
-
 /useKtMatch.test.ts
 Purpose: Tests (injected fake socket) join-on-open then joined→snapshot→over frame tracking, submit sends a well-formed action (and no-ops after over), server error surfaces, leave/unmount send leave + close, and a superseded connection's late frame is ignored.
+
+/useKtMatch.ts
+Purpose: React hook driving one online match over a KtSocket — server-authoritative (no local reducer): connect opens the socket and sends join on open; joined/snapshot/over frames replace the snapshot (over also latches winner+over), error surfaces a message; submit sends an action only while open & not over; a generation ref drops a superseded connection's late frames; leave/unmount sends leave + closes. Injectable socket factory. Phase F: the `join` frame sent on open now attaches a valid (non-expired) stored bearer token, if any, read directly from `features/auth/authTokenStore` — purely additive, an absent/expired token behaves exactly as before this phase.

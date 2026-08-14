@@ -1,3 +1,32 @@
+docker compose -f deploy/docker-compose.yml build --no-cache
+docker compose -f deploy/docker-compose.yml up -d
+docker compose -f deploy/docker-compose.yml up -d --force-recreate nginx
+
+auth.shatteredarchive.dev grant role explicitly
+```shell
+docker exec -i shatteredarchive-prod-auth-server node --input-type=module <<'EOF'
+import { getAuthServerConfig } from '/repo/apps/auth-server/dist/config.js';
+import { loadDataKey } from '/repo/apps/auth-server/dist/crypto-primitives.js';
+import { AccountStore } from '/repo/apps/auth-server/dist/account-store.js';
+
+const username = 'melchaleve';
+const tier = 'owner';
+
+const config = getAuthServerConfig();
+const store = new AccountStore(config.dataDir, loadDataKey());
+
+const account = store.findByUsername(username);
+if (!account) {
+  console.error(`no account with username ${JSON.stringify(username)}`);
+  process.exit(1);
+}
+
+store.setGlobalRole(account.id, tier);
+console.log(`${account.username} (${account.id}) now has global tier: ${store.require(account.id).globalRole}`);
+EOF
+```
+
+
 # ── DslLogViewer ────────────────────────────────────────────
 # Run from C:\Projects\DslLogViewer (or wherever the files are copied on server)
 

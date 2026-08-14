@@ -1,0 +1,30 @@
+{
+  "name": "@shatteredarchive/auth-server",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "jest --config ./jest.config.cjs --runInBand --passWithNoTests",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\"",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "temp-password": "tsx scripts/issue-temp-password.ts",
+    "register-service": "tsx scripts/register-service.ts",
+    "revoke-service-key": "tsx scripts/revoke-service-key.ts",
+    "grant-tier": "tsx scripts/grant-tier.ts",
+    "revoke-tier": "tsx scripts/revoke-tier.ts",
+    "register-redirect-uri": "tsx scripts/register-redirect-uri.ts"
+  },
+  "dependencies": {
+    "@shatteredarchive/types-server": "workspace:*",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "nodemailer": "^9.0.3",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^8.0.1"
+  }
+}

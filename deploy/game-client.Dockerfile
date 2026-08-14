@@ -19,8 +19,14 @@ ARG VITE_WEB_API
 ARG VITE_WEB_WS
 ARG VITE_WEB_SECURE
 ARG VITE_ENV
+# The C# site service (Server.Web.Public). Must be a real build ARG/ENV rather
+# than left to apps/game-client/.env: that file IS in the build context and
+# names this machine's dev value, so without an explicit env var every image
+# would bake in localhost:5000.
+ARG VITE_SITE_API
 
 ENV VITE_PORT=$VITE_PORT
+ENV VITE_SITE_API=$VITE_SITE_API
 ENV VITE_WEB_API=$VITE_WEB_API
 ENV VITE_WEB_WS=$VITE_WEB_WS
 ENV VITE_WEB_SECURE=$VITE_WEB_SECURE

@@ -154,33 +154,46 @@ export function useEnemyHudState(): EnemyHudState {
     statusText: '',
   });
 
-  const keyRef = useRef<string>(makeInstanceKey('useEnemyHudState::event:enemy-hp'));
+  const keyRef = useRef<string>(makeInstanceKey('useEnemyHudState::event:fighting:opponent'));
+  const lastSeenRef = useRef<number>(0);
 
-  // TMB TODO : This is probably the wrong event to listen to now,
-  // review for correct event
+  // Enemy condition is dispatched as 'event:fighting:opponent' (OpponentStatusDetail:
+  // { pct, label, statusText, ts, ... }) by the combat opponent probe. This was
+  // previously wired to a phantom 'event:enemy-hp' that nothing emits.
   useEffect(() => {
+    const STALE_MS = 10000; // no opponent line for this long → hide the enemy HUD
+
     const dispose = ListenEvent<any>(
-      'event:enemy-hp',
+      'event:fighting:opponent',
       (payload) => {
         const d = isRecord(payload) ? payload : {};
 
-        const visible = typeof d.visible === 'boolean' ? d.visible : undefined;
-        const label = typeof d.label === 'string' ? d.label : undefined;
+        const pctRaw = toNum(d.pct);
+        if (pctRaw === undefined) return; // ignore lines without a usable pct
+        const pct = Math.max(0, Math.min(100, pctRaw));
 
-        const pctRaw = typeof d.pct === 'number' ? d.pct : toNum(d.pct);
-        const pct = typeof pctRaw === 'number' ? Math.max(0, Math.min(100, pctRaw)) : undefined;
-
+        const label = typeof d.label === 'string' ? d.label.trim() : '';
         const statusText = typeof d.statusText === 'string' ? d.statusText : undefined;
 
+        lastSeenRef.current = Date.now();
+
         setState((prev) => ({
-          visible: visible ?? prev.visible,
-          label: label ?? prev.label,
-          pct: pct ?? prev.pct,
+          visible: true,
+          label: label || prev.label || 'Enemy',
+          pct,
           statusText: statusText ?? prev.statusText,
         }));
       },
       { key: keyRef.current },
     );
+
+    // Staleness sweep: combat ended (no opponent line) → hide.
+    const ticker = window.setInterval(() => {
+      if (lastSeenRef.current === 0) return;
+      if (Date.now() - lastSeenRef.current >= STALE_MS) {
+        setState((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+      }
+    }, 1000);
 
     return () => {
       try {
@@ -188,6 +201,7 @@ export function useEnemyHudState(): EnemyHudState {
       } catch {
         // ignore
       }
+      window.clearInterval(ticker);
     };
   }, []);
 
@@ -201,56 +215,56 @@ export function useEnemyHudState(): EnemyHudState {
 /**
  * Affects state.
  *
- * Supported events:
- *   game:affects-sync   – full replace: { affects: AffectEntry[] }
- *   game:affects-add    – add/update:   { affect: AffectEntry }
- *   game:affects-remove – remove by id: { id: string }
+ * Sourced from GMCP, dispatched by the script runtime:
+ *   game:affects-trueup – full replace: { affects: [{ n, d, m, lc, t }] }
+ *   game:affect-added   – add/update:   { n, d, m, lc, t }  (or { affect: {...} })
+ *   game:affect-removed – remove:       { n }               (by affect name)
+ *
+ * GMCP affects use short keys (n = name; d/m/lc/t = duration/modifier/location/type)
+ * and carry no server id, so entries are keyed by lower-cased name.
  */
 export function useAffectsState(): AffectEntry[] {
   const [affects, setAffects] = useState<AffectEntry[]>([]);
 
-  const syncKeyRef = useRef<string>(makeInstanceKey('useAffectsState::game:affects-sync'));
-  const addKeyRef = useRef<string>(makeInstanceKey('useAffectsState::game:affects-add'));
-  const remKeyRef = useRef<string>(makeInstanceKey('useAffectsState::game:affects-remove'));
+  const trueupKeyRef = useRef<string>(makeInstanceKey('useAffectsState::game:affects-trueup'));
+  const addKeyRef = useRef<string>(makeInstanceKey('useAffectsState::game:affect-added'));
+  const remKeyRef = useRef<string>(makeInstanceKey('useAffectsState::game:affect-removed'));
 
   useEffect(() => {
+    // Map a GMCP affect object → AffectEntry. Accepts the affect directly or wrapped
+    // in { affect: {...} }. Name comes from `n` (fallback `name`); id is the lc name.
+    const toEntry = (raw: unknown): AffectEntry | null => {
+      const outer = isRecord(raw) ? raw : {};
+      const src = isRecord((outer as any).affect) ? ((outer as any).affect as AnyRecord) : outer;
+      const name = String((src as any).n ?? (src as any).name ?? '').trim();
+      if (!name) return null;
+      return { id: name.toLowerCase(), name };
+    };
+
     const disposeSync = ListenEvent<any>(
-      'game:affects-sync',
+      'game:affects-trueup',
       (payload) => {
         const d = isRecord(payload) ? payload : {};
         const raw = (d as any).affects;
 
-        const list: AffectEntry[] = Array.isArray(raw)
-          ? raw
-              .filter((x): x is AnyRecord => isRecord(x))
-              .map((x) => ({
-                id: typeof x.id === 'string' ? x.id : '',
-                name: typeof x.name === 'string' ? x.name : '',
-                summary: typeof x.summary === 'string' ? x.summary : undefined,
-              }))
-              .filter((x) => x.id.length > 0 && x.name.length > 0)
-          : [];
+        const byId = new Map<string, AffectEntry>();
+        if (Array.isArray(raw)) {
+          for (const item of raw) {
+            const a = toEntry(item);
+            if (a) byId.set(a.id, a); // de-dupe by name (keep last)
+          }
+        }
 
-        setAffects(list);
+        setAffects(Array.from(byId.values()));
       },
-      { key: syncKeyRef.current },
+      { key: trueupKeyRef.current },
     );
 
     const disposeAdd = ListenEvent<any>(
-      'game:affects-add',
+      'game:affect-added',
       (payload) => {
-        const d = isRecord(payload) ? payload : {};
-        const raw = (d as any).affect;
-
-        if (!isRecord(raw)) return;
-
-        const a: AffectEntry = {
-          id: typeof raw.id === 'string' ? raw.id : '',
-          name: typeof raw.name === 'string' ? raw.name : '',
-          summary: typeof raw.summary === 'string' ? raw.summary : undefined,
-        };
-
-        if (!a.id || !a.name) return;
+        const a = toEntry(payload);
+        if (!a) return;
 
         setAffects((prev) => {
           const idx = prev.findIndex((x) => x.id === a.id);
@@ -264,13 +278,15 @@ export function useAffectsState(): AffectEntry[] {
     );
 
     const disposeRemove = ListenEvent<any>(
-      'game:affects-remove',
+      'game:affect-removed',
       (payload) => {
         const d = isRecord(payload) ? payload : {};
-        const id = typeof (d as any).id === 'string' ? String((d as any).id) : '';
-        if (!id) return;
+        const name = String((d as any).n ?? (d as any).name ?? '')
+          .trim()
+          .toLowerCase();
+        if (!name) return;
 
-        setAffects((prev) => prev.filter((a) => a.id !== id));
+        setAffects((prev) => prev.filter((a) => a.id !== name));
       },
       { key: remKeyRef.current },
     );

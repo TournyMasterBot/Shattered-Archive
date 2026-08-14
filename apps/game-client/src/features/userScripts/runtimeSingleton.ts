@@ -189,6 +189,14 @@ export class RuntimeSingleton {
       ),
     );
 
+    // NOTE: do NOT also attach gmcpRouter here. The typed GMCP fan-out
+    // (game:char-data / game:room-data / game:tick / game:affects-trueup /
+    // game:affect-added / game:affect-removed) is produced by
+    // UserScriptRuntime.processGmcpEvent(), which consumes the
+    // `shatteredarchive:gmcp-data` redispatch above. Attaching the router as
+    // well made every GMCP package dispatch its typed event TWICE (visible as
+    // doubled output in echo-style consumers like the affect-echo plugin).
+
     // ERROR -> shatteredarchive:server-error
     this.disposers.push(
       ListenRedispatchMap<GameRemoteServerError, ShatteredArchiveServerError>(

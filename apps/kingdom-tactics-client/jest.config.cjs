@@ -12,6 +12,16 @@
  */
 module.exports = {
   displayName: 'kingdom-tactics-client',
+
+  // WebCrypto + a minimal IndexedDB, both absent from jsdom and both needed by device
+  // credentials (features/auth/deviceCredentials.ts). Same file as mud-builder-client's.
+  setupFiles: ['<rootDir>/jest.setup.cjs'],
+
+  // jsdom defaults to http://localhost/, which it reports as a NON-secure context — so device
+  // credentials would correctly refuse to initialise and the tests would exercise the wrong
+  // branch. Point it at an https origin on the real hostname instead, which is how this app
+  // actually runs everywhere (edge nginx over TLS, dev included).
+  testEnvironmentOptions: { url: 'https://kingdom-tactics.shatteredarchive.dev/' },
   preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'jsdom',
   rootDir: '.',
@@ -37,8 +47,11 @@ module.exports = {
     // Resolve the engine to its TS source so tests don't require a prior build.
     '^@shatteredarchive/kingdom-tactics-engine$':
       '<rootDir>/../../services/kingdom-tactics-engine/src/index.ts',
+    '^@shatteredarchive/sdk-client$': '<rootDir>/../../sdks/sdks-client/src/index.ts',
     // kt-config reads Vite's `import.meta.env`, which jest (CJS) cannot parse — use a static stub.
     '^\\./kt-config$': '<rootDir>/src/features/net/kt-config.stub.ts',
+    // Same problem, Phase F's auth/site-API config.
+    '^\\./kt-auth-config$': '<rootDir>/src/features/auth/kt-auth-config.stub.ts',
     // Stub CSS/asset imports (Vite handles them at build; jsdom cannot parse them).
     '\\.(css|scss|sass)$': '<rootDir>/jest.style-stub.cjs',
     // NodeNext ESM specifiers in engine source use `.js`; strip for ts-jest resolution.

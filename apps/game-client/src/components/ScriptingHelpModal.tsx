@@ -864,6 +864,8 @@ if (cmd) {
                 { id: 'plugin-affect-echo', label: 'Affect Echo' },
                 { id: 'plugin-warlock-alphabet', label: 'Warlock Alphabet' },
                 { id: 'plugin-questbot', label: 'Quest Bot' },
+                { id: 'plugin-text-to-speech', label: 'Text to Speech' },
+                { id: 'plugin-voice-dictation', label: 'Voice Dictation' },
               ].map(({ id, label }) => (
                 <button key={id} type="button" className={styles.pluginIndexLink} onClick={() => scrollToAnchor(id)}>
                   {label}
@@ -1885,6 +1887,185 @@ Jovar               — icewall_port start`}</pre>
                   <code>c gate bloody nose</code> gate
                 </span>
               </div>
+            </div>
+
+            {/* ── Text to Speech ── */}
+            <h4 id="plugin-text-to-speech" className={styles.pluginHeading}>
+              Text to Speech
+            </h4>
+            <p>
+              Reads game text aloud using the browser's built-in speech synthesis. Two independent targets:
+              auto-reading incoming play-area lines as they arrive, and an on-demand floating button that reads
+              whatever text is currently selected or focused anywhere else on the page.
+            </p>
+            <ul className={styles.list}>
+              <li>
+                <em>Read the play area aloud</em> / <em>Read page items aloud</em>: the two targets, independent of
+                each other
+              </li>
+              <li>
+                <em>Voice / Rate / Pitch / Volume</em>: <em>Voice</em> is a dropdown of the voices actually
+                installed on your system, each labeled with its language — no need to type anything
+              </li>
+              <li>
+                <em>Include / Exclude patterns (play area)</em>: one pattern per line — plain text or a regex (a
+                line that fails to compile as a regex falls back to a literal substring match); exclusions always
+                win over includes
+              </li>
+              <li>
+                <em>Skip prompt/status lines</em>: on by default — see the callout below for how it detects your{' '}
+                <code>PROMPT</code> line without knowing its exact format
+              </li>
+              <li>
+                <em>Line grouping window</em>: lines arriving within this many ms of each other (default 300) are
+                spoken as one combined utterance instead of several choppy ones — smooths out bursts like room
+                descriptions and combat rounds
+              </li>
+              <li>
+                <em>Max queued lines</em>: caps the backlog so a busy combat log can't queue speech far behind the
+                game
+              </li>
+              <li>
+                <em>Utterance start delay</em>: a small delay (default 150ms) before each utterance starts — works
+                around a Chrome/Edge bug that clips the first word of a line, e.g. a speaker's name on a chat
+                line ("Joat gossips '...'" losing "Joat"), whether right after the previous utterance ends or
+                after the engine has sat idle for a while
+              </li>
+              <li>
+                <em>Announce your health changes</em> / <em>Announce enemy health changes</em>: speaks an alert
+                whenever your hp, or the current opponent's health bar, crosses into a new condition tier —
+                excellent, scratches, wounds, hurt, awful, same 7 boundaries for both — not on every point of
+                damage. Enemies speak the phrase (e.g. "Alert: The goblin has some small wounds and bruises."),
+                since that's all the game's own text gives for them; you speak the numeric estimate instead (e.g.
+                "Alert: You are around 82 percent health."), since exact hp/hpMax numbers are available for
+                yourself
+              </li>
+              <li>
+                <em>Announce game ticks</em>: speaks "Tick." on the server's tick event — the same heartbeat that
+                drives the tick timer HUD
+              </li>
+              <li>
+                <em>Include the time in tick alerts</em>: adds the in-game time to the tick alert (e.g. "Tick. It
+                is 12:30am.") — only matters when the tick toggle above is on
+              </li>
+              <li>
+                <em>Combat mode</em>: <strong>Off</strong> reads combat lines the same as anything else — no
+                special handling. <strong>Battle Focus</strong> is a "game caster" mode for your own fights:
+                instead of every blow, it calls out status effects (buffs AND debuffs), stuns/incapacitation,
+                disarms, deaths, and flees, and drops plain damage, avoidance, mundane movement, item-use lines,
+                named special-attack cast flavor ("rears back and throws a massive roundhouse punch!" — a blow,
+                reskinned, not a debuff), and weapon-flag procs as noise (reuses <strong>Combat Compression</strong>
+                's full pattern list plus <strong>Weapon Flag Squelch</strong>'s patterns, regardless of those
+                plugins' own toggles). Condition/health-tier lines are dropped here rather than spoken — that's
+                "Announce self/enemy health changes" above's job, which is deduped separately; speaking both was a
+                double announcement of the same tier change. A line that immediately repeats the same structural
+                shape (e.g. the same weapon proc landing again right after) is squelched once, then re-announced
+                once something else interrupts the streak. Unmatched lines are still spoken by default — surfacing
+                the unusual is the point, this isn't an allowlist. Only affects speech, not the terminal.
+              </li>
+              <li>
+                <em>Announce when you're stunned</em>: speaks "Alert: You are stunned!" on a confirmed self-stun
+                (bash knockdown, trip) — reuses the same lines the <strong>Stun Highlight</strong> plugin
+                recolors, and still fires even if Stun Highlight is also enabled and squelching the original line.
+                Independent of Combat Mode above — but whenever Combat Mode is Battle Focus, this same toggle also
+                covers the game's own char-affects tracking (<code>game:affect-added</code>/
+                <code>game:affect-removed</code> — the same feed the Affects panel uses): a self debuff is
+                announced the moment it lands ("You are afflicted by weaken.") and again when it wears off, using
+                the modifier's sign to tell debuff from buff (inverted for <code>ac</code>, where a higher value is
+                worse under DSL/MERC convention). Stuns, charms, and other zero-modifier binary effects carry no
+                sign to read, so they're left to the text-pattern coverage above instead.
+              </li>
+              <li>
+                <em>Arena observer mode (Coliseum + Bloodbath)</em>: a "game caster" mode — narrates the
+                highlights/lowlights of a fight rather than every blow, covering both DSL arena types.
+                <br />
+                <strong>Coliseum</strong> is a spectator mode: ONLY lines broadcast from the five Coliseum rooms
+                (Eastern/Western/Northern/Southern Wall, The Center) are spoken — everything else, including your
+                own surroundings if you aren't one of the fighters, is silent, and there's no "you" since the
+                listener is a spectator.
+                <br />
+                <strong>Bloodbath</strong> is the opposite: you ARE a fighter, physically inside a single maze
+                room (every cell shares the literal name "The Bloodbath Arena"), so it's gated on your current
+                room instead of a broadcast prefix. Room-look renders (title/description/exits/who's-here
+                listings) and ordinary command noise (scan/group/affects output, "Ok.", "You failed.", etc.) are
+                dropped as UI clutter, not combat. "Bloodbath System:" announcements (join window, elimination
+                countdown, sponsor, winner) always speak regardless of room — they're the event's own narrator.
+                The recurring "You sure are BLEEDING!" nag is spoken once, not on every repeat.
+                <br />
+                Both types: plain damage, avoidance, mundane movement (incl. mounts), item-use lines (quaffing,
+                wielding, wearing, stopping use), named special-attack cast flavor ("rears back and throws a
+                massive roundhouse punch!" — a blow, reskinned, not a debuff), weapon-flag procs, and chat/speech
+                lines (say/tell/yell/gossip/OOC/whisper/etc., classified the same way{' '}
+                <strong>strict chat mode</strong> does) are all dropped as noise — a spectator doesn't need every
+                blow OR every OOC aside. Status effects (buffs AND debuffs), stuns/incapacitation, disarms, deaths,
+                and flees are spoken about whichever fighter they happened to. Health/condition-tier lines are
+                spoken once per fighter and only again on a real tier change. A line that immediately repeats the
+                same structural shape (e.g. the same weapon proc landing on the same target again right after) is
+                squelched once, then re-announced the next time something interrupts the streak. Unmatched lines
+                — rare finishing-move flavor text, anything without its own pattern — are still spoken by
+                default, since surfacing the unusual is the point. This replaces the normal play-area filtering
+                entirely (include/exclude patterns, prompt-skip, and Combat Mode are ignored while it's on) — it
+                isn't additive with those settings.
+              </li>
+            </ul>
+            <div className={styles.callout}>
+              <strong>Skip prompt/status lines:</strong> every player builds a different <code>PROMPT</code> line
+              (see <code>HELP PROMPT</code> in-game) from their own mix of <code>%h %H %m %M %v %V</code> etc.
+              tokens, so there's no single literal string to match against. Instead this looks for the one thing
+              every prompt shares — hp packed tightly together with mana and/or moves (e.g.{' '}
+              <code>&lt;100hp 100m 100mv&gt;</code> or <code>1645/1645hp 1190/1190m 406/406mv 24872tnl</code>) — a
+              shape ordinary game text doesn't produce, so it works regardless of what your own prompt looks like.
+            </div>
+            <p>
+              Actions: <strong>Apply target settings</strong> (click after toggling targets above — not applied
+              live otherwise), <strong>List voices</strong> (the Voice dropdown is usually already populated, but if
+              it looked empty when this dialog opened, click this then close and reopen the dialog to refresh it),
+              and <strong>Stop speaking</strong> (cancels current speech and clears the queue).
+            </p>
+
+            {/* ── Voice Dictation ── */}
+            <h4 id="plugin-voice-dictation" className={styles.pluginHeading}>
+              Voice Dictation
+            </h4>
+            <p>
+              Speech-to-text dictation into the play/command input and/or any other focused page text field. One
+              plugin covers both which recognition engine to use and where it dictates to.
+            </p>
+            <ul className={styles.list}>
+              <li>
+                <em>Recognition engine</em>: <strong>Browser</strong> uses your browser's built-in recognition;{' '}
+                <strong>Advanced</strong> downloads a wav2vec2 model that runs entirely in-browser — a literal,
+                non-generative model (no translation, no invented punctuation/wording) chosen so dictated commands
+                come back verbatim, and works offline once downloaded
+              </li>
+              <li>
+                <em>Language</em>: used by the Browser engine only; pick <strong>Other</strong> and set a custom
+                BCP-47 code (e.g. <code>pt-BR</code>) for anything not listed
+              </li>
+              <li>
+                <em>Advanced engine model</em>: wav2vec2 Base (smaller/faster) or Large (more accurate), English
+                only
+              </li>
+              <li>
+                <em>Custom vocabulary</em>: one MUD-specific word per line (mob/spell/item/room names) — applied as
+                a fuzzy correction pass on the transcribed text, single-word matching only
+              </li>
+              <li>
+                <em>Dictate into the play area</em>: restores the mic button in the command bar; text dictated into
+                the command input has trailing sentence punctuation stripped so it doesn't corrupt exact MUD syntax
+              </li>
+              <li>
+                <em>Dictate into page items</em>: adds a floating mic button that dictates into whatever text field
+                is currently focused (notes, chat, etc.), keeping natural punctuation
+              </li>
+            </ul>
+            <p>
+              Actions: <strong>Apply engine settings</strong> (click after changing engine/language/model),{' '}
+              <strong>Download advanced model</strong>, <strong>Check for engine update</strong>, and{' '}
+              <strong>Apply target settings</strong> (click after toggling the two dictation targets above).
+            </p>
+            <div className={styles.callout}>
+              Click a mic button to start, click it again to stop and transcribe.
             </div>
 
             {/* ── Scripts vs Plugins ── */}

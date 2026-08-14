@@ -1,0 +1,13 @@
+File Index
+
+/useAuthSession.ts
+Purpose: The hub's own session state (loading | loggedOut | mustChangePassword | ready) plus login/logout/refresh, driven by GET /api/account/me over the same-origin session cookie. auth-client never reads or stores the token itself.
+
+/useAuthSession.test.ts
+Purpose: Status-machine coverage for the four session states and the transitions between them, against a mocked fetch.
+
+/useReturnTo.ts
+Purpose: `?returnTo=` support for the login page — an app needing a hub session sends the user here and they are returned afterwards, which is what makes the other apps' sign-in feel like one step rather than a detour. The destination is validated against auth-server's OWN configured device origins (public GET /api/device/origins), never a list kept here: an unvalidated returnTo is a textbook open redirect (a phishing page reached via a genuine, trusted login URL), and a second hand-maintained allowlist would drift from the one that actually governs enrollment. Match is on the exact ORIGIN — scheme, host AND port — because a substring/endsWith check is the classic bug that lets build.shatteredarchive.dev.attacker.test through. Absolute URLs only (a relative value would resolve against the hub itself and is never what a returning app wants), http/https only, so javascript: and data: are refused. A failed fetch of the allowlist means NO redirect: landing on the account page is harmless, whereas guessing would not be. App.tsx only acts on it from a FULLY onboarded session ('ready' excludes mustChangePassword), so arriving with a returnTo can never skip a forced password change, and uses location.replace so the login URL does not sit in history.
+
+/useReturnTo.test.ts
+Purpose: parseReturnTo's rejections, each pinned separately because each is a security property: unconfigured origin, lookalike host containing an allowed one, right host on the wrong scheme or port, javascript:/data: URLs, relative and protocol-relative paths, an empty allowlist, and an unparseable value returning null rather than throwing.

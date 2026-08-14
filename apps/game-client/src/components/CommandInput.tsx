@@ -1,8 +1,7 @@
 // apps/game-client/src/components/CommandInput.tsx
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styles from '../styles/CommandInput.module.scss';
 import { useGameCommand } from '../hooks/useGameCommand';
-import { useVoiceDictation } from '../hooks/useVoiceDictation';
 import { CommandInputProps } from '../types/chat-types/command-input-props';
 import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 
@@ -24,42 +23,6 @@ export const CommandInput: React.FC<CommandInputProps> = ({
     isConnected,
     inputRef,
   });
-
-  const onFinalText = useCallback(
-    (text: string) => {
-      const prev = inputValue ?? '';
-      const next = text ?? '';
-
-      let merged: string;
-      if (prev.length === 0) merged = next;
-      else if (next.length === 0) merged = prev;
-      else {
-        const left = prev.replace(/\s+$/, '');
-        const right = next.replace(/^\s+/, '');
-        merged = `${left} ${right}`;
-      }
-
-      setInputValue(merged);
-
-      queueMicrotask(() => {
-        try {
-          inputRef.current?.focus();
-          inputRef.current?.select();
-        } catch {
-          // ignore
-        }
-      });
-    },
-    [inputValue, setInputValue],
-  );
-
-  const { isSupported, isRecording, lastError, toggle } = useVoiceDictation({
-    enabled: isConnected,
-    onFinalText,
-    stopForceAbortMs: 700,
-  });
-
-  const micDisabled = !isConnected || !isSupported;
 
   const status = autoLevelRunState?.status ?? 'idle';
   const isRunning = status === 'running';
@@ -129,7 +92,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
       <input
         ref={inputRef}
         id="game-command-input"
-        className={`${styles.commandInput} ${isRecording ? styles.commandInputRecording : ''}`}
+        className={styles.commandInput}
         type="text"
         // Mobile soft keyboards default to sentence-case; MUD commands are
         // case-sensitive, so let the user's keyboard decide the first letter's
@@ -140,20 +103,8 @@ export const CommandInput: React.FC<CommandInputProps> = ({
         //spellCheck={false}
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (isRecording && e.key === 'Enter') {
-            e.preventDefault();
-            return;
-          }
-          handleKeyDown(e);
-        }}
-        placeholder={
-          !isConnected
-            ? 'Connect to a server to begin'
-            : isRecording
-              ? 'Recording… tap mic again to stop & transcribe'
-              : 'Type commands…'
-        }
+        onKeyDown={handleKeyDown}
+        placeholder={!isConnected ? 'Connect to a server to begin' : 'Type commands…'}
         disabled={!isConnected}
       />
 
@@ -279,29 +230,24 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 
       {/* Show gear separately when mode active (it's inside the panel already) */}
 
+      {/*
+        Inert placeholder for the voice-dictation plugin. Hidden by default
+        (see .micSlotHidden); the plugin unhides it by setting an inline
+        display style directly on this element (an inline style always beats
+        the .micSlotHidden class rule) and wires its own click handler +
+        speech recognition directly against it (no React state here — see
+        features/plugins/core-plugins/voice-dictation.plugin.ts).
+      */}
       <button
         type="button"
-        className={`${styles.micButton} ${isRecording ? styles.micButtonRecording : ''}`}
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={toggle}
-        disabled={micDisabled}
-        aria-label={micDisabled ? 'Voice dictation unavailable' : isRecording ? 'Stop recording' : 'Start dictation'}
-        aria-pressed={isRecording}
-        title={
-          !isSupported
-            ? 'Voice dictation not supported in this browser'
-            : !isConnected
-              ? 'Connect to a server to use dictation'
-              : isRecording
-                ? 'Stop recording'
-                : 'Start recording'
-        }
+        id="voice-dictation-mic-slot"
+        className={`${styles.micButton} ${styles.micSlotHidden}`}
+        disabled
+        aria-hidden="true"
+        tabIndex={-1}
       >
-        {isRecording ? '⏺️' : '🎤'}
+        🎤
       </button>
-
-      {isRecording ? <div className={styles.recordingHint}>Recording… tap again to stop & transcribe</div> : null}
-      {lastError ? <div className={styles.micError}>{lastError}</div> : null}
     </div>
   );
 };

@@ -1,0 +1,43 @@
+# apps/scrum-poker-client
+
+The browser UI for scrum-poker.shatteredarchive.dev (Vite + React 19, dev port 63080, with
+`/api`, `/health` and `/ws/scrum` proxied to scrum-poker-server on 63000). All domain types,
+deck rules and the wire protocol come from `@shatteredarchive/scrum-poker-core`, so the client
+and server share one definition of a legal deck and one message contract.
+
+Design tenets:
+
+- **The server owns room state; nothing is optimistic.** A card renders as selected because
+  the server echoed it back, so what you see is what the room sees. Planning poker is
+  low-frequency — the round trip is invisible, and the alternative briefly shows a card that
+  lies.
+- **Two routes, no router library.** `routing/useRoute.ts` is ~40 lines of `pushState` +
+  `popstate`. Room URLs are real paths (`/room/<uuid>`) meant to be pasted into chat, which is
+  why the client image's nginx conf serves index.html for unknown paths. The path pattern stays
+  permissive rather than matching the UUID grammar, so pre-switch numeric room links still work.
+- **Light and dark are equals.** `index.css` defines both as CSS-variable blocks keyed off a
+  `data-theme` attribute that an inline script in index.html sets BEFORE first paint (no white
+  flash); `theme/useTheme.ts` adopts that decision rather than recomputing it. `color-scheme`
+  is set per theme so native controls follow.
+- **One ad slot, off by default.** `features/shared/AdSlot.tsx` renders a single bounded block,
+  and nothing at all — no container, no placeholder, and no request to any ad network — unless
+  both `VITE_AD_CLIENT` and `VITE_AD_SLOT` were set at build time. (The loader code still sits
+  in the bundle as dead code; it can't be tree-shaken because the injectable `config` prop that
+  makes the component testable stops the minifier proving the branch unreachable. The guarantee
+  is no ad REQUEST, not no ad code.) Those arrive via Vite `define`
+  constants, not `import.meta.env`, because this repo's Jest client setup cannot compile
+  `import.meta` anywhere in a module graph (see game-client's features/auth/authFragment.ts) —
+  using it would make AdSlot and every importer untestable.
+
+What `storage.ts` keeps per room is a `participantSecret`, not the participant id. The id is in
+every roster the server broadcasts, so it identifies a row to render, never a person to trust;
+the secret is what re-attaches you to your seat after a refresh. Treat it like the host token.
+
+`net/useScrumRoom.ts` holds the socket and is where the subtle behaviour lives: it reconnects
+with capped exponential backoff, re-joins automatically when it finds itself missing from the
+roster (which is what makes "clear all users" drop ghosts while live participants reappear
+untouched), and deliberately does NOT auto-rejoin after an idle eviction — it branches on the
+server's error `code`, never on message text, because auto-rejoining there would defeat the
+one-hour sweep it came from. That suppression also covers the RECONNECT path (`onopen` skips
+the join while evicted): a dropped connection is not activity, so re-joining there would put an
+idled-out person back on the roster without them touching anything.

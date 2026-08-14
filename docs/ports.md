@@ -13,3 +13,7 @@ apps/kingdom-tactics-server: 51000
 # MUD Builder
 apps/mud-builder-client: 60080
 apps/mud-builder-server: 61000
+
+# Auth Service
+apps/auth-client: 62080
+apps/auth-server: 62000

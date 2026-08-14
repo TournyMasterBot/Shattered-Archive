@@ -5,6 +5,7 @@ import { ArmyBuilderScreen } from './features/army-builder';
 import { ScenarioScreen } from './features/scenario';
 import { SimulatorScreen } from './features/simulator';
 import { OnlineMatchScreen } from './features/net';
+import { AccountScreen, useAuthCallback } from './features/auth';
 
 /**
  * App shell for the Kingdom Tactics client. Wraps the screen router in the nav store and
@@ -27,12 +28,15 @@ function ScreenRouter() {
       return <SimulatorScreen />;
     case 'online':
       return <OnlineMatchScreen />;
+    case 'account':
+      return <AccountScreen />;
     default:
       return <MainMenu />;
   }
 }
 
 export function App() {
+  useAuthCallback();
   return (
     <NavProvider>
       <div className="kt-shell">

@@ -5,10 +5,54 @@ The Kingdom Tactics multiplayer server (Phase 4). An Express 5 + `ws` Node app t
 `createExpressService`, Winston logging, `/health`) and mounts a `/ws/kt` WebSocket gateway
 hosting **server-authoritative** matches.
 
-Architecture: all game rules live in `@shatteredarchive/kingdom-tactics-engine`; this app is
-transport + match-lifecycle glue. `src/match/MatchSession` owns a `GameEngine`/`MatchState` per
-match, authorizes each client action (seat ownership + engine legality), and auto-plays an
-`IAiPolicy` (GreedyPolicy) opponent. `src/ws/kt-gateway` mounts the socket, keeps a
-`MatchRegistry` (matchId → session + subscribers), validates untrusted frames against the
-engine's shared `net/protocol` contract, and broadcasts full-state snapshots (v1: no deltas).
-Default port 51000. No auth/reconnect in v1 (Phase 7).
+Architecture: all game rules AND match ownership live in `@shatteredarchive/kingdom-tactics-engine`
+(`MatchSession`, isomorphic — this app never reimplements it); this app is transport +
+match-lifecycle glue only. `MatchSession` owns a `GameEngine`/`MatchState` per match, authorizes
+each client action (seat ownership + engine legality), and auto-plays an `IAiPolicy`
+(GreedyPolicy) opponent. `src/ws/kt-gateway` mounts the socket, keeps a `MatchRegistry`
+(matchId → session + subscribers), validates untrusted frames against the engine's shared
+`net/protocol` contract, and broadcasts full-state snapshots (v1: no deltas). Default port 51000.
+No reconnect yet.
+
+**Phase F (centralized auth) — join-frame auth added.** A `join` frame's optional `token` is
+introspected via `@shatteredarchive/services-server`'s `introspect`/`matchesAudience`
+(`index.ts`'s `buildAccountIdResolver`, wired as `setupKtWebSocketGateway`'s `resolveAccountId`)
+and, on success, attached to the claimed seat as an accountId (`MatchSession.claimSeat`'s
+optional 3rd arg, read via `claimedSeats()` — pure metadata, never consulted by seat-ownership
+authorization itself). Additive only: no token, an invalid/expired token, or an unreachable
+auth-server all resolve to the SAME outcome as before this phase — a fully anonymous join, never
+a rejection. This service holds its own registered Ed25519 key (a STANDARD Phase A consumer,
+unlike game-client's Phase D pattern of borrowing another service's key — kingdom-tactics-server
+is a real backend and performs its own SSO code exchange).
+
+**Phase F — persistence + this service's first-ever HTTP surface beyond `/`/`/health`.**
+`src/persistence/` holds two per-account JSON file stores (`src/persistence/json-account-store.ts`'s
+generic `<dataDir>/<subdir>/<accountId>.json` helper): `MatchHistoryStore` (25-entry cap, oldest
+evicted; a no-op for a fully-anonymous match) and `ArmyLayoutStore` (100-army cap, mirrors
+kt-client's `state/saved-armies.ts` shape exactly). `MatchSession` gained action-log accumulation
++ `replaySeed()`/`initial()` + `replayAction()` (Phase F, in the engine) so a completed match can
+be deterministically reconstructed later via `replayMatch` — the hidden-outcome `combatSalt`
+never leaves the server (`match-history/:id/replay` runs the replay server-side and returns only
+the resulting state sequence). `setupKtWebSocketGateway`'s new `onMatchComplete` hook (guarded by
+`MatchSession.tryClaimForRecording()` for an exactly-once fire) is where `index.ts` wires a
+finished match into `MatchHistoryStore.record()`. `src/http/kt-api-routes.ts` adds
+`GET /api/kt/match-history`, `GET /api/kt/match-history/:id/replay`, and
+`GET`/`PUT /api/kt/army-layouts`, all guarded by `src/http/auth-guard.ts`'s `requireAccount` — a
+DIFFERENT failure policy than the WS join resolver: these routes 401 on a missing/invalid token
+rather than degrading to anonymous, since "my match history" has no anonymous equivalent.
+
+**Phase F Step 3 — kt-client's login hand-off.** `src/http/kt-sso-routes.ts` adds
+`GET /api/kt/auth/start` (validates `returnUrl`'s origin against `KT_CLIENT_ALLOWED_RETURN_ORIGINS`,
+sets a `kt-sso-state` cookie — hand-rolled, no `cookie-parser` dependency added for one narrow
+use — redirects to the hub's `/sso/authorize`) and `GET /api/kt/auth/callback` (validates state,
+exchanges the code via `services-server`'s `exchangeCode` — injected as a dependency so this
+file's own test suite never imports `services-server` at all, sidestepping a real transitive
+ESM-parse issue in this app's jest config; ANY future file needing `services-server` in a test
+should do the same, not chase that rabbit hole again — redirects to kt-client with
+`#auth_token=...&expires_at=...`, same safe fragment mechanism as game-client's Phase D). Only
+registered when this service is actually configured for it (missing credentials/allowlist ⇒ a
+clear 404 on "log in," never a half-working flow). `index.ts` builds `readServiceCredentials`
+ONCE, shared by the WS resolver, the `/api/kt/*` HTTP guard, AND these SSO routes. The
+`hubBaseUrl` used for both the browser redirect and the exchange is the SAME public edge URL
+today (this service isn't dockerized yet) — Step 4's dockerization should split this into a
+public-vs-internal pair like the C# site's `AuthorizeBaseUrl`/`BaseUrl`, not before.

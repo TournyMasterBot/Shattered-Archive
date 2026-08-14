@@ -1,0 +1,4 @@
+File Index
+
+/gen-skills-stock.ts
+Purpose: Host-run only (Phase 15) — regenerates BOTH src/skills-stock.ts and src/groups-stock.ts from merc-mud/2.4/src/const.c's skill_table/group_table (MERC_MUD_PATH env, same default as mud-builder-server's config.ts). Decode-then-re-encode C string handling (adjacent literal concatenation, literal raw control bytes) fixed by hand once this session before this script existed — see skills-stock.ts's src/.annotated entry for the incident. Deliberately host-run/human-reviewed, never part of an automated pipeline (Phase 15 plan Constraints) — run it, `git diff`, review, then commit.

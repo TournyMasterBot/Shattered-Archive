@@ -34,12 +34,13 @@ export default defineConfig(({ mode }) => {
               secure: ktSecure,
               rewrite: (p) => p.replace(/^\/api/, ''),
             },
-            // HTTP → kingdom-tactics-server
+            // HTTP → kingdom-tactics-server. No rewrite (unlike /api/health above): kt-server's
+            // Phase F routes are themselves registered under /api/kt/*, matching this path
+            // verbatim — same no-rewrite convention as the /ws/kt entry below.
             '/api/kt': {
               target: ktApiTarget,
               changeOrigin: true,
               secure: ktSecure,
-              rewrite: (p) => p.replace(/^\/api\/kt/, ''),
             },
             // WebSocket → kingdom-tactics-server
             '/ws/kt': {

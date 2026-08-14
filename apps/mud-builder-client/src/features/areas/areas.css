@@ -86,6 +86,12 @@
   border-radius: 999px;
 }
 
+.mb-unsaved-indicator {
+  color: #ffe1a8;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
 .mb-editor-split {
   display: flex;
   gap: 1rem;
@@ -107,6 +113,12 @@
   flex-direction: column;
   gap: 0.2rem;
   margin-bottom: 0.6rem;
+  min-width: 0;
+}
+
+.mb-field > span {
+  font-size: 0.78rem;
+  opacity: 0.75;
 }
 
 .mb-field input,
@@ -123,6 +135,252 @@
 .mb-row {
   display: flex;
   gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Grouped form section — one visual box per topic keeps long editors tidy. */
+.mb-fieldset {
+  border: 1px solid var(--mb-border, #3a3a4a);
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem 0.55rem;
+  margin: 0 0 0.7rem;
+}
+
+.mb-connections-list {
+  margin: 0.3rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.mb-connections-list li {
+  margin-bottom: 0.15rem;
+}
+
+.mb-fieldset > legend,
+.mb-flag-grid > legend {
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0.85;
+  padding: 0 0.35rem;
+}
+
+/* Editors cap their width so forms stay scannable on wide screens. */
+.mb-form {
+  max-width: 64rem;
+}
+
+/* Fields in a stretch row share the width equally (text inputs). */
+.mb-row--stretch > .mb-field {
+  flex: 1 1 14rem;
+}
+
+/* A single field that should soak up leftover row width. */
+.mb-field--grow {
+  flex: 1 1 16rem;
+}
+
+/* Bottom-aligns a button next to labeled fields in a row. */
+.mb-row-actions {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 0.6rem;
+}
+
+/* Delete row above an entity editor. */
+.mb-entity-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.35rem;
+  max-width: 64rem;
+}
+
+/* ── Areas dashboard (2026-07-26) — nested room/mob/object/prog accordions ── */
+.mb-dashboard-room {
+  border: 1px solid var(--mb-border, #3a3a4a);
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  margin-bottom: 0.5rem;
+  max-width: 64rem;
+}
+
+.mb-dashboard-room > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.mb-dashboard-room-body {
+  margin-top: 0.5rem;
+}
+
+.mb-dashboard-accordion {
+  border: 1px solid var(--mb-border, #3a3a4a);
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  margin: 0 0 0.5rem;
+}
+
+.mb-dashboard-accordion > summary {
+  cursor: pointer;
+}
+
+.mb-dashboard-accordion--nested {
+  margin-top: 0.4rem;
+  background: rgba(127, 127, 127, 0.06);
+}
+
+.mb-dashboard-subitems {
+  list-style: none;
+  margin: 0.3rem 0;
+  padding: 0;
+}
+
+.mb-dashboard-subitems > li {
+  border-top: 1px solid var(--mb-border, #3a3a4a);
+  padding: 0.3rem 0;
+}
+
+.mb-dashboard-subitems > li:first-child {
+  border-top: none;
+}
+
+.mb-entity-actions button,
+.mb-room-list > button {
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--mb-border, #3a3a4a);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.mb-room-list > button {
+  margin-bottom: 0.4rem;
+}
+
+/* "+ New area" sidebar form: stacked compact fields, real (bordered) buttons. */
+.mb-area-list > button,
+.mb-new-area button {
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--mb-border, #3a3a4a);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  width: auto;
+  margin-bottom: 0.4rem;
+}
+
+.mb-new-area {
+  border: 1px solid var(--mb-border, #3a3a4a);
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  margin: 0 0.25rem 0.5rem 0;
+}
+
+.mb-new-area .mb-field {
+  margin-bottom: 0.35rem;
+}
+
+.mb-new-area input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mb-new-area .mb-row input {
+  width: 5rem;
+}
+
+.mb-new-area .mb-muted {
+  font-size: 0.75rem;
+  margin: 0.25rem 0 0;
+}
+
+.mb-preview-warnings {
+  color: #ffd9a0;
+  font-size: 0.85rem;
+}
+
+/* ── Resets tab ─────────────────────────────────────────────────────────── */
+
+.mb-reset-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mb-reset-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  border: 1px solid var(--mb-border, #3a3a4a);
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem 0;
+  margin-bottom: 0.45rem;
+}
+
+.mb-reset-cmd {
+  font-family: ui-monospace, Consolas, monospace;
+  font-weight: 700;
+  padding: 0.35rem 0.4rem 0;
+  min-width: 1.2rem;
+}
+
+/* Phase 12b: an M and its G/E/P riders read as one colored unit. */
+.mb-reset-row--anchor {
+  border-left: 4px solid var(--mb-group-color, #7aa2f7);
+  margin-bottom: 0.15rem;
+}
+
+.mb-reset-row--member {
+  border-left: 4px solid var(--mb-group-color, #7aa2f7);
+  margin-left: 1.8rem;
+  margin-bottom: 0.15rem;
+  background: color-mix(in srgb, var(--mb-group-color, #7aa2f7) 7%, transparent);
+}
+
+.mb-reset-row--anchor + .mb-reset-row:not(.mb-reset-row--member),
+.mb-reset-row--member + .mb-reset-row:not(.mb-reset-row--member) {
+  margin-top: 0.45rem;
+}
+
+.mb-reset-fields {
+  flex: 1;
+  gap: 0.4rem 0.9rem;
+}
+
+.mb-reset-fields .mb-field {
+  margin-bottom: 0.35rem;
+}
+
+.mb-reset-fields input[type='number'] {
+  width: 6.5rem;
+}
+
+.mb-reset-actions {
+  display: flex;
+  gap: 0.25rem;
+  padding-top: 0.3rem;
+}
+
+.mb-reset-actions button {
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  border: 1px solid var(--mb-border, #3a3a4a);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.mb-reset-actions button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.mb-reset-add {
+  margin-top: 0.5rem;
+}
+
+.mb-form h4 {
+  margin: 0.25rem 0 0.75rem;
 }
 
 .mb-flags {
@@ -164,6 +422,28 @@
 
 .mb-exit-row input[type='number'] {
   width: 6rem;
+}
+
+.mb-exit-block {
+  margin-bottom: 0.6rem;
+}
+
+.mb-exit-block .mb-exit-row {
+  margin-bottom: 0.2rem;
+}
+
+.mb-exit-description {
+  margin: 0 0 0.35rem;
+}
+
+.mb-exit-description textarea {
+  font: inherit;
+  width: 100%;
+  padding: 0.2rem 0.35rem;
+  border-radius: 4px;
+  border: 1px solid var(--mb-border, #3a3a4a);
+  background: transparent;
+  color: inherit;
 }
 
 .mb-preview,
@@ -214,6 +494,16 @@
   color: #f3c4bf;
 }
 
+.mb-toast--warn {
+  background: #5a4212;
+  color: #ffe1a8;
+}
+
+.mb-toast--info {
+  background: #1c3a5e;
+  color: #bfe0ff;
+}
+
 .mb-muted {
   opacity: 0.65;
 }
@@ -228,24 +518,8 @@
   margin: 0.5rem 0;
 }
 
-.mb-script-editor .mb-form-row {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-end;
-  margin-bottom: 0.75rem;
-}
-
-.mb-script-editor label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex: 1;
-}
-
-.mb-script-editor textarea,
-.mb-script-editor input,
-.mb-script-editor select {
-  font-family: ui-monospace, monospace;
+.mb-mono {
+  font-family: ui-monospace, Consolas, monospace !important;
 }
 
 .mb-script-vocab pre {
@@ -255,45 +529,304 @@
   overflow-x: auto;
 }
 
+/* ── Area header editor (Phase 6) ──────────────────────────────── */
+.mb-area-header {
+  margin-bottom: 0.6rem;
+}
+
+.mb-warning {
+  color: #b45309;
+}
+
+/* ── World overview dashboard (Phase 6) ────────────────────────── */
+.mb-world {
+  padding: 0.5rem 0.75rem;
+}
+
+.mb-world-table-wrap {
+  overflow-x: auto;
+}
+
+.mb-world-table {
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+.mb-world-table th,
+.mb-world-table td {
+  border-bottom: 1px solid #d0d0d0;
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.mb-world-row--bad td {
+  background: #fef2f2;
+}
+
+.mb-world-issues {
+  margin: 0.25rem 0 0;
+  padding-left: 1rem;
+}
+
+.mb-world-error {
+  color: #b91c1c;
+}
+
+/* Phase 12b: proven-undefined refs and limit-pressure flags */
+.mb-world-invalid,
+.mb-invalid-ref {
+  color: #f47171;
+  font-weight: 600;
+}
+
+.mb-world-limit {
+  color: #e0af68;
+}
+
 /* ── Mob/Object form editors (Phase 3) ─────────────────────────── */
 .mb-form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 0.4rem 1rem;
-  margin: 0.5rem 0;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: 0.45rem 0.75rem;
+  margin: 0.25rem 0;
 }
 
+.mb-form-grid .mb-field {
+  margin-bottom: 0;
+}
+
+/* A "2 d 6 + 60" style inline row under an mb-field label. */
 .mb-dice-row {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-}
-
-.mb-dice-row span {
-  min-width: 12rem;
+  gap: 0.3rem;
 }
 
 .mb-dice-row input {
-  width: 5rem;
+  width: 3.8rem;
+  font: inherit;
+  padding: 0.3rem 0.45rem;
+  border-radius: 6px;
+  border: 1px solid var(--mb-border, #3a3a4a);
+  background: transparent;
+  color: inherit;
 }
 
 .mb-flag-grid {
-  border: 1px solid var(--mb-border, #444);
+  border: 1px solid var(--mb-border, #3a3a4a);
   border-radius: 6px;
-  margin: 0.6rem 0;
-  padding: 0.4rem 0.8rem;
+  margin: 0 0 0.7rem;
+  padding: 0.3rem 0.75rem 0.45rem;
 }
 
 .mb-flag-grid-items {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 0.15rem 0.8rem;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.1rem 0.75rem;
 }
 
 .mb-flag-grid-items label {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   white-space: nowrap;
+}
+
+.mb-extra-descr {
+  border-bottom: 1px dashed var(--mb-border, #3a3a4a);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ── .are import + audit viewer (Phase 10) ─────────────────────── */
+.mb-import {
+  padding: 0.5rem 0.75rem;
+  max-width: 60rem;
+}
+
+.mb-import textarea {
+  width: 100%;
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+
+.mb-audit-table {
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.mb-audit-table th,
+.mb-audit-table td {
+  border-bottom: 1px solid #d0d0d0;
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+/* ── presence + save conflicts + resolved cross-area refs (Phase 11) ── */
+.mb-presence-badge {
+  margin-left: 0.35rem;
+  font-size: 0.75rem;
+  color: #2b6cb0;
+  white-space: nowrap;
+}
+
+.mb-presence-banner {
+  padding: 0.4rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid #2b6cb0;
+  border-radius: 4px;
+  background: #ebf4ff;
+}
+
+.mb-conflict {
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid #c05621;
+  border-radius: 4px;
+  background: #fffaf0;
+}
+
+.mb-conflict .mb-row {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ── Blocked-delete reconciliation panel (2026-07-26) ──────────────────── */
+.mb-delete-blockers {
+  padding: 0.6rem 0.75rem;
+  margin: 0.5rem 0;
+  border: 1px solid #c05621;
+  border-radius: 4px;
+  background: #fffaf0;
+  color: #7a3a0f;
+}
+
+.mb-delete-blockers-group {
+  margin-top: 0.5rem;
+}
+
+.mb-delete-blockers-group h5 {
+  margin: 0 0 0.2rem;
+  font-size: 0.85rem;
+}
+
+.mb-delete-blockers-group ul {
+  margin: 0 0 0.3rem;
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+}
+
+.mb-preview-external {
+  margin: 0.5rem 0;
+}
+
+.mb-ref-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #2b6cb0;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.mb-ref-link:hover {
+  color: #1a4d80;
+}
+
+.mb-room-spawn-link,
+.mb-room-edit-link {
+  margin-left: 0.75rem;
+  font-size: 0.75em;
+  font-weight: normal;
+}
+
+/* ── Resets: Simulate pane (Phase 13) ──────────────────────────── */
+
+.mb-simulate .mb-row {
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin: 0.5rem 0;
+}
+
+.mb-spawn-warnings {
+  margin-bottom: 0.5rem;
+}
+
+.mb-spawn-room {
+  border: 1px solid rgba(127, 127, 127, 0.3);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.4rem;
+}
+
+.mb-spawn-room summary {
+  cursor: pointer;
+}
+
+.mb-spawn-list {
+  margin: 0.4rem 0 0.2rem 0;
+  padding-left: 1.2rem;
+}
+
+.mb-spawn-gear,
+.mb-spawn-contents {
+  margin: 0.2rem 0;
+  padding-left: 1.2rem;
+  font-size: 0.9em;
+}
+
+.mb-spawn-drift {
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed rgba(127, 127, 127, 0.35);
+}
+
+.mb-spawn-drift-missing {
+  color: #c0392b;
+}
+
+.mb-spawn-drift-extra {
+  color: #d68910;
+}
+
+/* Small explanatory line under a field — used by the Access tab's token/device copy and by
+   MaskedSecret's state hint. Muted so it reads as guidance, not as a validation error. */
+.mb-hint {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 0.85em;
+  opacity: 0.75;
+}
+
+/* Show-once secret box (MaskedSecret): input + Reveal/Copy on one row, hint beneath. */
+.mb-masked-secret {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mb-masked-secret input {
+  flex: 1 1 22ch;
+  /* Monospace so a revealed value is transcribable without ambiguous glyphs. */
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.mb-masked-secret .mb-hint {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+/* The Access tab's sign-in hand-off link. Styled as the primary action of that panel because
+   it is the one step that makes everything else automatic — a plain inline link read as
+   incidental next to the Enrol button beside it. */
+.mb-primary-link {
+  font-weight: 600;
 }

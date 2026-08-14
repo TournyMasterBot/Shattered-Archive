@@ -8,6 +8,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "jest --config ./jest.config.cjs --runInBand --passWithNoTests",
-    "format": "prettier --write \"src/**/*.{ts,json}\""
+    "format": "prettier --write \"src/**/*.{ts,json}\"",
+    "gen-skills-stock": "tsx scripts/gen-skills-stock.ts"
   }
 }

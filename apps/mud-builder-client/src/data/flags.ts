@@ -71,7 +71,18 @@ export const SECTOR_TYPES: { value: number; label: string }[] = [
   { value: 10, label: 'Desert' },
 ];
 
-export const DOOR_NAMES = ['North', 'East', 'South', 'West', 'Up', 'Down'] as const;
+export const DOOR_NAMES = [
+  'North',
+  'East',
+  'South',
+  'West',
+  'Up',
+  'Down',
+  'Northeast',
+  'Northwest',
+  'Southeast',
+  'Southwest',
+] as const;
 
 export const LOCK_STATES: { value: number; label: string }[] = [
   { value: 0, label: 'Open passage' },
@@ -207,6 +218,43 @@ export const ATTACK_TYPES = [
   'wrath', 'magic', 'divine', 'cleave', 'scratch', 'peck', 'peckb',
   'chop', 'sting', 'smash', 'shbite', 'flbite', 'frbite', 'acbite', 'choke',
   'thump',
+];
+
+/**
+ * Numeric item types (merc.h ITEM_*) — shops declare what they buy with these
+ * numbers (SHOP_DATA.buy_type); 0 = unused slot. Gaps in the numbering are
+ * real (merc.h skips 6-7, 14, 16, 21).
+ */
+export const ITEM_TYPES: { value: number; label: string }[] = [
+  { value: 1, label: 'light' },
+  { value: 2, label: 'scroll' },
+  { value: 3, label: 'wand' },
+  { value: 4, label: 'staff' },
+  { value: 5, label: 'weapon' },
+  { value: 8, label: 'treasure' },
+  { value: 9, label: 'armor' },
+  { value: 10, label: 'potion' },
+  { value: 11, label: 'clothing' },
+  { value: 12, label: 'furniture' },
+  { value: 13, label: 'trash' },
+  { value: 15, label: 'container' },
+  { value: 17, label: 'drink container' },
+  { value: 18, label: 'key' },
+  { value: 19, label: 'food' },
+  { value: 20, label: 'money' },
+  { value: 22, label: 'boat' },
+  { value: 23, label: 'npc corpse' },
+  { value: 24, label: 'pc corpse' },
+  { value: 25, label: 'fountain' },
+  { value: 26, label: 'pill' },
+  { value: 27, label: 'protect' },
+  { value: 28, label: 'map' },
+  { value: 29, label: 'portal' },
+  { value: 30, label: 'warp stone' },
+  { value: 31, label: 'room key' },
+  { value: 32, label: 'gem' },
+  { value: 33, label: 'jewelry' },
+  { value: 34, label: 'jukebox' },
 ];
 
 export const POSITIONS = ['stand', 'sit', 'rest', 'sleep', 'fight'];

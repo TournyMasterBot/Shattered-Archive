@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+
+    "lib": ["DOM", "DOM.Iterable", "ES2023"],
+    // Tests run under jsdom with jest + node APIs available.
+    "types": ["jest", "node"],
+
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
+    "noEmit": true
+  }
+}

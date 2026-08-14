@@ -1,0 +1,6 @@
+# File Index — apps/kingdom-tactics-server/src/persistence
+
+- json-account-store.ts — Generic per-account JSON-array file store (`<dataDir>/<subdir>/<accountId>.json`); malformed/missing file degrades to `[]`. accountId format-validated before touching the filesystem (defense in depth — it's always a server-generated hex id from introspection, never raw user input).
+- match-history-store.ts — `MatchHistoryStore`: records a completed match under every participant accountId's own file (25-entry cap, oldest evicted), retrievable as a salt/actionLog-free `MatchHistorySummary` list or a full `MatchHistoryEntry` (incl. `replaySeed`) scoped to the requesting account only. A no-op for a fully-anonymous match (no participant accountId).
+- army-layout-store.ts — `ArmyLayoutStore`: whole-collection save/load of `SavedArmy[]`, mirroring kt-client's `state/saved-armies.ts` shape exactly (100-army cap; contrast the tighter 25-entry history cap — armies are curated data, not fast-growing telemetry).
+- to-history-entry.ts — `toHistoryEntry(session)`: builds a storable `MatchHistoryEntry` from a just-decided `MatchSession` (fresh random id, `claimedSeats()`, `getActionLog()`, `replaySeed()`, `initial()`).

@@ -1,0 +1,97 @@
+/*
+ * Soulsteel's palette — dark and fixed, no light/dark toggle (see the MVP plan's Constraints).
+ * Named for the game's own iconography: umbral violet for the mystical/evil-magic accent,
+ * soulsteel grey for the dagger, blood-red for danger/elimination states.
+ */
+:root {
+  color-scheme: dark;
+
+  --ss-bg: #0b0710;
+  --ss-bg-elevated: #150f20;
+  --ss-bg-panel: #1c1428;
+  --ss-border: #33254a;
+
+  --ss-text: #e7e0f0;
+  --ss-text-dim: #a89bc2;
+
+  --ss-accent: #8b5cf6;
+  --ss-accent-soft: #c4b5fd;
+  --ss-steel: #b8c4d9;
+  --ss-danger: #e0537a;
+  --ss-success: #58d68d;
+
+  --ss-glow: 0 0 24px rgba(139, 92, 246, 0.25);
+  --ss-radius: 10px;
+
+  /*
+   * Rules content palette — the actual colors intended by the DSL Story Notes' `{X` markup
+   * (C:/Projects/DSL/Books/.../Umbral-Cloak-and-Soulsteel-Dagger.txt), each carried over from
+   * its resolved hex (per game-client's renderDslColorPreviewHtml.ts / the DSL server's
+   * BookRenderColorModel.cs) and only re-tuned where the literal value would be illegible
+   * against this near-black background (e.g. {D "black" -> steel, not #000).
+   */
+  --ss-rule-cyan: #6fa89e; /* {C Lt Cyan — major section headers, dimmed to a tarnished-silver witchlight rather than a neon glow */
+  --ss-rule-teal: #4a8a80; /* {c cyan — divider glyphs, dimmed to match */
+  --ss-rule-magenta: #a97bc4; /* {M Lt Magenta — sub-section headers, dimmed to a faded grimoire-ink violet */
+  --ss-rule-violet: #a78bfa; /* {u purple — the Umbraseer */
+  --ss-rule-purple: #b565d8; /* {m magenta — "night" */
+  --ss-rule-amber: #fb923c; /* {o orange — "day" */
+  --ss-rule-brown: #c19a6b; /* {n brown — the Herald */
+  --ss-rule-pink: #f472b6; /* {p pink — "vote" */
+  --ss-rule-red: #ef4444; /* {r/{R red — the Cultist Assassin */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at top, #170f24 0%, var(--ss-bg) 60%);
+  color: var(--ss-text);
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.02em;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+input,
+select {
+  font-family: inherit;
+  background: var(--ss-bg-elevated);
+  color: var(--ss-text);
+  border: 1px solid var(--ss-border);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+}
+
+input:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--ss-accent-soft);
+  outline-offset: 2px;
+}

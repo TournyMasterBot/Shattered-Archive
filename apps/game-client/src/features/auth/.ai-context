@@ -1,0 +1,1 @@
+Phase D's cloud-account feature: an optional login against the central Shattered Archive hub (via the C# site's backend, since game-client is a public client with no service key of its own) plus manual cloud save/load of user scripts and plugin configs. Nothing here gates any existing game-client functionality — logged out is, and remains, the default and fully-supported state.

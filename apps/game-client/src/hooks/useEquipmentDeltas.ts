@@ -128,6 +128,7 @@ export function useEquipmentDeltas(connectionId: string) {
           try {
             DispatchEvent('event:disarm', {
               wielded,
+              attacker: evt.attacker,
             });
           } catch {
             // ignore

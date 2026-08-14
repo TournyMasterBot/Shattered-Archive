@@ -11,6 +11,8 @@
   - [Editing and preview](#editing-and-preview)
     - [Draft state](#draft-state)
     - [Preview](#preview)
+  - [Tags and grouping](#tags-and-grouping)
+  - [Line and character limit warnings](#line-and-character-limit-warnings)
   - [Saving](#saving)
   - [Deleting (and safety confirmations)](#deleting-and-safety-confirmations)
   - [Unsaved changes guard (Books)](#unsaved-changes-guard-books)
@@ -18,6 +20,7 @@
     - [Parchment scribe](#parchment-scribe)
     - [Notes scribe](#notes-scribe)
     - [Book scribe](#book-scribe)
+  - [Cloud sync (optional)](#cloud-sync-optional)
   - ["Why does it do it this way?"](#why-does-it-do-it-this-way)
   - [Glossary](#glossary)
 
@@ -39,6 +42,8 @@ It’s written for someone who may be new to the codebase (or new to React).
 - **Color Preview** (a safe place to test DSL color codes and see how they render)
 
 It is driven by the `useLibrary(connectionId)` hook, which provides the stored items and save/delete actions.
+Items can be tagged for sidebar grouping (see [Tags and grouping](#tags-and-grouping)), and everything
+optionally syncs to the user's account (see [Cloud sync](#cloud-sync-optional)) — both purely local by default.
 
 ---
 
@@ -160,6 +165,38 @@ This turns DSL color codes into HTML so users can see what the text will look li
 
 ---
 
+## Tags and grouping
+
+Every item (parchment, note, or book) can carry an optional **tag** — a free-text field the
+user types into an `<input>` under the title/page controls. It has no effect on the item
+itself; it only changes how the sidebar groups things.
+
+`groupByTag` (ported from the mobile app's `BookEditorScreen.tsx`) buckets items by tag,
+with untagged items falling into a shared `UNTAGGED` bucket. Notes are grouped by **spool
+first, then tag** — a tag header only appears within a spool if more than one tag (or an
+untagged group) exists there. `tag` round-trips through the JSON export/import bundle
+(`ParchmentExport`/`NoteExport`/`BookExport`) so it survives being shared as a file, and
+through cloud sync (below).
+
+---
+
+## Line and character limit warnings
+
+The editor shows two live indicators, fed by `getLineStats`/`getWarnings` in
+`library-types.ts` (a verbatim port of the same functions in the mobile app's
+`book-types.ts`, so both editors warn at the same thresholds):
+
+| Indicator | Warn | Over |
+|---|---|---|
+| Total lines | > 60 | > 70 |
+| Current line length | > 80 | > 100 |
+
+These are soft guidance, not a hard stop — the editor never blocks typing or saving past
+them. `bodyCursorPos` tracks the textarea's cursor (via `onChange`/`onSelect`) so "current
+line" always means the line the cursor is actually on.
+
+---
+
 ## Saving
 
 The **Save** button changes behavior depending on the active tab:
@@ -247,6 +284,29 @@ So the UI is not directly writing to a socket; it is raising an event that the g
 
 ---
 
+## Cloud sync (optional)
+
+LibraryModal's own storage is 100% local (IndexedDB, via `useLibrary`) — cloud sync is a
+separate, opt-in layer on top, wired through the same Account modal (File → Account…) that
+already syncs scripts/plugins. For what this looks like to a player, see
+[docs/features/library-sync.md](library-sync.md); this section is the implementation view.
+
+- **`features/auth/cloudSync.ts`** — nine thin fetch wrappers (load/upsert/delete ×
+  parchment/notes/books) against the C# backend's `library/my-writings/*` endpoints.
+- **`features/library/librarySync.ts`** (new) — `saveLibraryToCloud(connectionId)` /
+  `loadLibraryFromCloud(connectionId)`. Save upserts every local item, then deletes cloud
+  rows **only** if they belong to *this* `connectionId` and no longer exist locally — it
+  never touches another connection's rows or connection-less rows created by the mobile app
+  or the site's My Writings page. This is deliberately narrower than the pre-existing
+  scripts sync, whose whole-blob PUT can silently clobber other connections' scripts.
+- **`hooks/useAccountModal.ts`** — wires both functions into the existing Save/Load
+  `Promise.all`, and reports back a per-type item count in the status line.
+- **Load merges, it does not replace.** Unlike scripts/plugins (which Load fully
+  overwrites), library content from the cloud is added/updated into local storage —
+  nothing local is ever deleted by a Load. The confirmation dialog text says so explicitly.
+
+---
+
 ## "Why does it do it this way?"
 
 A few design choices that are intentional:
@@ -254,6 +314,10 @@ A few design choices that are intentional:
 - **Draft editing** keeps typing responsive and avoids overwriting storage on every keystroke.
 - **Missing pages** allow page navigation even when the page wasn’t created yet (or was removed).
 - **Scribing** is separated from saving. Saving stores locally; scribing sends commands to the game.
+- **Sync deletes are connection-scoped, and Load never deletes.** A device can't tell "I
+  deleted this on purpose" apart from "I've simply never seen this yet" (an item created
+  through the My Writings page or another device) — so the safer default is to only ever
+  delete what this exact connection is sure it owns, and to let Load only add.
 
 ---
 

@@ -2,6 +2,7 @@
 import React from 'react';
 import styles from '../styles/ContributeIdentifyModal.module.scss';
 import { DispatchEvent, ListenEvent } from '../features/event-emitter/event-dispatcher';
+import { siteApiBase } from '../features/auth/siteApi';
 
 type RawDataPayload = {
   rawText?: string;
@@ -213,8 +214,14 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
         description,
       };
 
-      const res = await fetch('http://localhost:5000/contribute/identify', {
-        //const res = await fetch('https://web-server.shatteredarchive.dev/contribute/identify', {
+      // Same base as every other call to the C# site service: in dev the vite
+      // proxy (/api/site/* -> VITE_SITE_API) keeps this same-origin so no CORS
+      // is involved; in prod it targets the real site origin, which that
+      // service's Cors:AllowedOrigins allowlists. The hardcoded
+      // http://localhost:5000 this replaced only ever worked from the one dev
+      // origin that allowlist happens to name — and in a production build it
+      // pointed every user's browser at their own machine.
+      const res = await fetch(`${siteApiBase()}/contribute/identify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

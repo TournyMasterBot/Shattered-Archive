@@ -1,0 +1,7 @@
+File Index
+
+/WorldPage.test.tsx
+Purpose: Table rendering, totals line, warning drill-down, and resolved-link navigation (onOpenArea) tests against a mocked /api/world.
+
+/WorldPage.tsx
+Purpose: Read-only World dashboard — one GET /api/world request rendered as a per-area table (range, entity counts) with a details expander splitting ✖ INVALID refs (proven undefined world-wide) / errors / parse failures / ⚖ limit-pressure flags (Phase 12b: spawn demand vs tightest reset limit) from resolved cross-area links (navigable via onOpenArea → Areas tab), plus corpus totals.

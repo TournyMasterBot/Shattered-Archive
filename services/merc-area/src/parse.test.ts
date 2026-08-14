@@ -5,8 +5,8 @@ import { Reader } from './reader.js';
 import { parseAreaFile, ParseError } from './parse.js';
 import type { MobilesSection, ObjectsSection, RoomsSection, AreaHeaderSection } from './types.js';
 
-// Jest runs with cwd = package root (pnpm --filter / local jest.config.cjs).
-const fixture = (name: string) => fs.readFileSync(path.resolve('src/__fixtures__', name), 'utf8');
+// Resolve fixtures from the test file, not cwd — the root jest config runs this suite too.
+const fixture = (name: string) => fs.readFileSync(path.join(__dirname, '__fixtures__', name), 'utf8');
 
 describe('Reader primitives (db.c fread_* semantics)', () => {
   it('reads numbers with signs and | chains', () => {

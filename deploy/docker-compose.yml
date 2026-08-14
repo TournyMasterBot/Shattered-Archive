@@ -35,11 +35,47 @@ services:
     
     environment:
       NGINX_TLS_INCLUDE_FILE: "tls-off.conf"
+      # Production CSP profile: connect-src names the real site domain. Never the -dev
+      # variant here — that one allows http://localhost:5000, which in production would mean
+      # whatever the VISITOR is running on their own machine. Required — an unset value
+      # leaves the literal ${...} in the rendered config and nginx refuses to start.
+      NGINX_CSP_SCRIPTING_FILE: "${NGINX_CSP_SCRIPTING_FILE:-security-headers-scripting.conf}"
+      # CSP profile for scrum-poker.shatteredarchive.dev — the ONLY app permitted to carry an
+      # ad unit and an analytics tag. Set to the ad-permitting profile here because this stack
+      # is the one that actually serves them (see the scrum-poker-client build args below); it
+      # must stay in step with those, since a mismatch fails silently in one direction or the
+      # other — strict profile + populated args renders a permanently blank unit with a console
+      # CSP violation, and the ad profile + empty args pays 'unsafe-inline' for nothing.
+      #
+      # The experimental/local compose deliberately keeps the STRICT profile: ads and analytics
+      # are off there. Read security-headers-ads.conf before pointing any other block at it —
+      # never auth, never game-client.
+      NGINX_CSP_SCRUM_FILE: "${NGINX_CSP_SCRUM_FILE:-security-headers-ads.conf}"
+      # CSP profile for the shatteredarchive.dev landing page + /privacy — same mechanism and
+      # same rationale as NGINX_CSP_SCRUM_FILE just above. This stack is the one that actually
+      # serves the ad unit + GA4 tag (see deploy/index.html), so it defaults to the ad-permitting
+      # profile here; the experimental/local compose keeps the strict one. See
+      # includes/landing-page.conf and includes/security-headers-ads.conf before touching this.
+      NGINX_CSP_LANDING_FILE: "${NGINX_CSP_LANDING_FILE:-security-headers-ads.conf}"
+      # The FRONT proxy (DSL/nginx/shattered_archive.site) that terminates TLS and forwards
+      # here. Consumed by edge-subdomains.conf's set_real_ip_from, which is what keeps the
+      # per-IP limit_req/limit_conn zones keyed on the real client instead of collapsing
+      # into global limits. Must stay a /32 of the proxy itself — see the long note there.
+      FRONT_PROXY_CIDR: "${FRONT_PROXY_CIDR:-144.217.6.225/32}"
 
     volumes:
       - ./nginx/edge-subdomains.conf:/etc/nginx/templates/default.conf.template:ro
       - ./nginx/includes:/etc/nginx/includes:ro
       - ./nginx/certs:/etc/nginx/certs:ro
+
+      # shatteredarchive.dev landing page + /privacy — see includes/landing-page.conf. Mounted
+      # individually (not the whole deploy/ folder as root) so nginx configs and this compose
+      # file itself are never exposed over HTTP.
+      - ./favicon.ico:/var/www/shatteredarchive-dev/favicon.ico:ro
+      - ./index.html:/var/www/shatteredarchive-dev/index.html:ro
+      - ./privacy.html:/var/www/shatteredarchive-dev/privacy.html:ro
+      - ./site.js:/var/www/shatteredarchive-dev/site.js:ro
+      - ./sitemap.xml:/var/www/shatteredarchive-dev/sitemap.xml:ro
 
     networks:
       shatteredarchive-prod:
@@ -49,6 +85,8 @@ services:
           - web-client.shatteredarchive.dev
           - game-server.shatteredarchive.dev
           - web-server.shatteredarchive.dev
+          - auth.shatteredarchive.dev
+          - scrum-poker.shatteredarchive.dev
       sa-shared: {}
 
     restart: unless-stopped
@@ -72,6 +110,10 @@ services:
         VITE_WEB_API: "https://web-server.shatteredarchive.dev"
         VITE_WEB_WS: "wss://web-server.shatteredarchive.dev"
         VITE_WEB_SECURE: "true"
+        # Explicit, even though it matches the code default: apps/game-client/.env
+        # ships in the build context naming a dev value, and a real env var is
+        # what overrides it.
+        VITE_SITE_API: "https://shatteredarchive.com"
         VITE_ENV: "development"
     image: shatteredarchive-prod-game-client
     container_name: shatteredarchive-prod-game-client
@@ -169,3 +211,304 @@ services:
       timeout: 3s
       retries: 12
       start_period: 20s
+
+  ############################################################
+  # AUTH SERVER (auth.shatteredarchive.dev) — additive, like mud-builder:
+  # nothing in Phase 1 requires it to be up (no consumer calls /api/introspect
+  # until Phase 2), so it must never block the rest of the stack from
+  # starting. NOT in nginx's depends_on: for that reason.
+  ############################################################
+  auth-server:
+    build:
+      context: ..
+      dockerfile: deploy/auth-server.Dockerfile
+    image: shatteredarchive-prod-auth-server
+    container_name: shatteredarchive-prod-auth-server
+    restart: unless-stopped
+    volumes:
+      # Bind-mounted (not a named volume) on purpose: dsl-questions.json in here is a
+      # deliberately-plain, operator-hand-edited file (see questions-store.ts) — it needs
+      # a real host path to edit with a text editor. auth-server-secrets stays a named
+      # volume: the encryption key must NOT be casually host-editable/visible.
+      # HAZARD on a machine that also runs the experimental stack: this bind mount is the
+      # SAME host directory that compose file uses, while the encryption key below comes
+      # from a PROJECT-SCOPED volume (shatteredarchive-prod_auth-server-secrets vs
+      # shatteredarchive_auth-server-secrets). Run both stacks on one host and whichever
+      # starts second reads data encrypted under the other's key, fails the AES-GCM auth
+      # tag and LOCKS the store ("unable to authenticate data ... store LOCKED"). Nothing
+      # is lost — read() locks and throws, write() refuses while locked, so the files are
+      # never rewritten — but login stays down until the intruding stack is stopped.
+      # Cannot happen on a real production host, where only this stack exists.
+      # deploy/scripts/deploy-auth-stack.sh refuses --prod when it detects the collision.
+      - ../apps/auth-server/data:/repo/apps/auth-server/data
+      - auth-server-secrets:/repo/apps/auth-server/secrets
+      # Public keys published by consuming services, mounted READ-ONLY: this server only
+      # ever reads them, and the consumer that owns a key is the only thing that should
+      # write it. Scanned on boot and every 30s, so container start order does not matter.
+      - sa-service-pubkeys:/repo/apps/auth-server/service-public-keys:ro
+    environment:
+      NODE_ENV: production
+      PORT: "62000"
+      LOG_LEVEL: "info"
+      DATA_DIR: "/repo/apps/auth-server/data"
+      # Mounted-file secret (auth-server-secrets, above) — self-generated on first boot,
+      # persists across recreation. See crypto-primitives.ts's loadDataKey() precedence.
+      DATA_ENCRYPTION_KEY_FILE: "/repo/apps/auth-server/secrets/encryption.key"
+      PUBLIC_ORIGIN: "https://auth.shatteredarchive.dev"
+      # origin=service — which services a device enrolled at each origin may mint tokens for,
+      # mirroring nginx's own origin → upstream routing. Also derives the CORS allowlist for
+      # /api/device, so the two can never drift apart.
+      #
+      # EMPTY ON PURPOSE, not an oversight: the two clients that use device credentials
+      # (mud-builder-client, kingdom-tactics-client) exist only in the experimental compose,
+      # so nothing in THIS stack needs an entry yet. Empty means deny-all, which is the
+      # correct fail-closed state — auth-client is same-origin with auth-server here (nginx
+      # routes /api/ on auth.shatteredarchive.dev to this service) so CORS never applies to it.
+      #
+      # When a client lands in this stack, add `origin=service`: comma-separated, the origin
+      # lowercase, scheme+host, no path, and NO default port (a browser sends
+      # https://x.dev, never https://x.dev:443); `origin=svc1|svc2` for several services.
+      # Wildcards are unsupported — invalid with credentials, and reflecting arbitrary origins
+      # would let any hostile page enroll itself against a signed-in account. See the
+      # experimental compose for a filled-in example.
+      #
+      # NOTE a shatteredarchive.COM origin cannot use this path: it is cross-SITE relative to
+      # the .dev hub, so the SameSite=Lax session cookie is never sent and enrollment cannot
+      # authenticate. That is a cookie limit, not a CORS one — such an app needs the SSO code
+      # flow instead.
+      DEVICE_ORIGIN_SERVICES: ""
+      # Services that additionally require an active API key on the account before a device may
+      # mint for them. Empty = no service requires one. See the experimental compose.
+      DEVICE_GRANT_REQUIRED_SERVICES: ""
+      # ------------------------------------------------------------------
+      # Declarative service registry (2026-08-01) — the source of truth for which
+      # services may use SSO and which redirect URIs each may return to. Reconciled into
+      # the encrypted service-key store at boot and every 30s, which is what replaced the
+      # manual `register-service` + `register-redirect-uri` deployment ceremony.
+      #
+      # Keys are NOT listed here: each service generates its own keypair and publishes the
+      # public half into sa-service-pubkeys, which this server registers automatically.
+      # Nothing secret belongs in this file.
+      #
+      # THIS IS A FULL RECONCILE — it PRUNES. A service or redirect URI removed from here
+      # is deregistered on the next pass, so the list must be EXHAUSTIVE: every service
+      # that uses this hub needs an entry, or it loses access. Three refusals bound the
+      # damage (see service-registry-reconciler.ts): unparseable JSON skips the whole
+      # pass, an unset/empty value skips the whole pass, and a service that has published
+      # no public key yet keeps its existing keys untouched rather than being revoked
+      # while it boots.
+      #
+      # Redirect URIs are matched BYTE-FOR-BYTE by /api/sso/approve — no trailing slash,
+      # no case-insensitivity, no path normalisation. They must equal exactly what the
+      # consuming service sends (for shattered-web: AuthHub__RedirectUri and
+      # GameSso__CallbackRedirectUri in DSL/Server/docker-compose-prod.yml).
+      # ------------------------------------------------------------------
+      SERVICE_REGISTRY: >-
+        {
+          "shattered-web": {
+            "redirectUris": [
+              "https://shatteredarchive.com/user/sso/callback",
+              "https://shatteredarchive.com/user/game-sso/callback"
+            ]
+          }
+        }
+      SERVICE_PUBLIC_KEY_DIR: "/repo/apps/auth-server/service-public-keys"
+    expose:
+      - "62000"
+    networks:
+      shatteredarchive-prod:
+        aliases:
+          - auth-server.shatteredarchive.dev
+      # ALSO on sa-shared, under the SAME alias. The C# site (DSL repo,
+      # docker-compose-prod.yml — its own compose project) reaches the hub for
+      # server-to-server calls (token exchange, introspect) and can only resolve
+      # a name that exists on the network the two projects share. Without this
+      # it has no internal route to the hub at all and would have to hairpin out
+      # through the public front proxy and back.
+      #
+      # Direct to :62000, deliberately NOT through the edge: service-to-service
+      # traffic must not be charged against the browser-sized per-IP limit_req
+      # zones (auth_login/auth_api), which would otherwise see every container's
+      # calls as one client. See deploy/nginx/edge-subdomains.conf's note above
+      # those zones. This mirrors mud-builder-server's AUTH_SERVER_URL in the
+      # experimental compose, which is the proven form of this wiring.
+      sa-shared:
+        aliases:
+          - auth-server.shatteredarchive.dev
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(62000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  ############################################################
+  # AUTH CLIENT (auth.shatteredarchive.dev, / split) — additive, like
+  # auth-server: no expose/ports, nginx reaches it by container name.
+  ############################################################
+  auth-client:
+    build:
+      context: ..
+      dockerfile: deploy/auth-client.Dockerfile
+    image: shatteredarchive-prod-auth-client
+    container_name: shatteredarchive-prod-auth-client
+    restart: unless-stopped
+    networks:
+      shatteredarchive-prod:
+        aliases:
+          - auth-client.shatteredarchive.dev
+
+  ############################################################
+  # SCRUM POKER (scrum-poker.shatteredarchive.dev) — additive, like auth: not in nginx's
+  # depends_on, so it can never block the rest of the stack from starting. Single subdomain
+  # for client+server; the client calls same-origin /api/scrum and /ws/scrum.
+  #
+  # Deliberately NOT wired to auth-server — an accounts-free tool by design. The
+  # room id (a UUID) is membership; the host token minted at creation is the only organizer notion.
+  ############################################################
+  scrum-poker-server:
+    build:
+      context: ..
+      dockerfile: deploy/scrum-poker-server.Dockerfile
+    image: shatteredarchive-prod-scrum-poker-server
+    container_name: shatteredarchive-prod-scrum-poker-server
+    restart: unless-stopped
+    volumes:
+      # Named volume: rooms.json is pure application data, never hand-edited on the host.
+      # It survives a container recreate, so a team's room config outlives a deploy.
+      - "scrum-poker-data:/repo/apps/scrum-poker-server/data"
+    environment:
+      NODE_ENV: production
+      PORT: "63000"
+      LOG_LEVEL: "info"
+      DATA_DIR: "/repo/apps/scrum-poker-server/data"
+      CORS_ORIGIN: "https://scrum-poker.shatteredarchive.dev"
+      # An hour of inactivity drops a participant; a month drops the whole room.
+      SCRUM_IDLE_TIMEOUT_MS: "3600000"
+      SCRUM_ROOM_TTL_MS: "2592000000"
+    expose:
+      - "63000"
+    networks:
+      shatteredarchive-prod:
+        aliases:
+          - scrum-poker-server.shatteredarchive.dev
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(63000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  scrum-poker-client:
+    build:
+      context: ..
+      dockerfile: deploy/scrum-poker-client.Dockerfile
+      args:
+        # The app's single ad placement. Leave both empty and nothing renders — the page
+        # makes no request to any ad network.
+        #
+        # Enabling this takes THREE things, not one, and a partial job fails silently:
+        #   1. both values below non-empty (either one empty = AdSlot renders nothing),
+        #   2. NGINX_CSP_SCRUM_FILE=security-headers-ads.conf on the nginx service above,
+        #      or the strict CSP blocks the loader and the unit stays blank,
+        #   3. the publisher id present in the ads.txt served at the registrable-domain root
+        #      (already there — see the `location = /ads.txt` block in the front proxy's
+        #      shattered_archive.site, which covers *.shatteredarchive.dev too).
+        #
+        # VITE_AD_CLIENT is the publisher id in `ca-pub-…` form (note the `ca-` prefix, which
+        # ads.txt does NOT carry). VITE_AD_SLOT is the ad UNIT id — a ~10-digit number from
+        # the AdSense console, per placement, NOT the publisher id again.
+        #
+        # Neither value is a secret: the publisher id is already public in the ads.txt served
+        # at the domain root, and both are readable in any visitor's page source. They are
+        # env-overridable anyway so a fork or a second deployment can point at its own account.
+        VITE_AD_CLIENT: "${SCRUM_AD_CLIENT:-ca-pub-1852178360854840}"
+        VITE_AD_SLOT: "${SCRUM_AD_SLOT:-2791506790}"
+        # GA4 measurement id. Scoped host-only at runtime rather than to the registrable domain
+        # — see apps/scrum-poker-client/src/features/shared/analytics.ts for why that matters
+        # with auth.shatteredarchive.dev as a sibling.
+        VITE_GA_ID: "${SCRUM_GA_ID:-G-7BKPVVZ1BS}"
+        # VITE_SP_DEV deliberately absent: it forces the dev/experimental compose's placeholder
+        # box regardless of the credentials above, and this stack is where a configured slot is
+        # actually meant to serve. See deploy/scrum-poker-client.Dockerfile and AdSlot.tsx.
+    image: shatteredarchive-prod-scrum-poker-client
+    container_name: shatteredarchive-prod-scrum-poker-client
+    restart: unless-stopped
+    networks:
+      shatteredarchive-prod:
+        aliases:
+          - scrum-poker-client.shatteredarchive.dev
+
+  ############################################################
+  # SOULSTEEL (soulsteel.shatteredarchive.dev) — additive, like scrum-poker: not in nginx's
+  # depends_on, so it can never block the rest of the stack from starting. Single subdomain
+  # for client+server; the client calls same-origin /api/soulsteel and /health.
+  #
+  # Phase 1 (see .ai-plans/20260813-1911-soulsteel-herald-tool-mvp.md): the server is a
+  # health-check-only skeleton — no data dir, no volume, not wired to auth-server. Game state
+  # lives entirely in the browser's IndexedDB. The follow-on plan
+  # (.ai-plans/20260813-1912-soulsteel-auth-archive-dashboard.md) is what adds persistence,
+  # auth wiring, and a named volume — do not add those here speculatively ahead of that plan.
+  ############################################################
+  soulsteel-server:
+    build:
+      context: ..
+      dockerfile: deploy/soulsteel-server.Dockerfile
+    image: shatteredarchive-prod-soulsteel-server
+    container_name: shatteredarchive-prod-soulsteel-server
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "64000"
+      LOG_LEVEL: "info"
+      CORS_ORIGIN: "https://soulsteel.shatteredarchive.dev"
+    expose:
+      - "64000"
+    networks:
+      shatteredarchive-prod:
+        aliases:
+          - soulsteel-server.shatteredarchive.dev
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(64000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  soulsteel-client:
+    build:
+      context: ..
+      dockerfile: deploy/soulsteel-client.Dockerfile
+    image: shatteredarchive-prod-soulsteel-client
+    container_name: shatteredarchive-prod-soulsteel-client
+    restart: unless-stopped
+    networks:
+      shatteredarchive-prod:
+        aliases:
+          - soulsteel-client.shatteredarchive.dev
+
+volumes:
+  auth-server-secrets:
+  scrum-poker-data:
+  # Public keys published by consuming services for auto-registration. Named explicitly
+  # (not project-scoped) because the C# site is a SEPARATE compose project that declares
+  # it `external` — without a fixed name each project would create its own, and the two
+  # would never see each other's files. Same ownership split as the sa-shared network:
+  # this stack creates it, the other consumes it, so bring this one up first.
+  sa-service-pubkeys:
+    name: sa-service-pubkeys

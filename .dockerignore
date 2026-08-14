@@ -20,3 +20,12 @@
 .vscode
 .DS_Store
 Thumbs.db
+
+# secrets/runtime data that must only ever reach a container via a volume mount at
+# runtime, never baked into an image layer at build time (Phase F finding: kt-server's
+# Dockerfile wholesale-copies its app dir like every other service's does, which would
+# otherwise bake in this session's live-test residue — real, if low-stakes, test-account
+# match-history/army-layout data, and the service's own private key).
+**/secrets
+**/shattered-service.key
+apps/*/data

@@ -46,6 +46,26 @@ services:
     
     environment:
       NGINX_TLS_INCLUDE_FILE: "tls-dev.conf"
+      # Dev variant: connect-src allows this host's C# service on :5000 instead of the real
+      # site domain. Required — an unset value leaves the literal ${...} in the rendered
+      # config and nginx refuses to start.
+      NGINX_CSP_SCRIPTING_FILE: "${NGINX_CSP_SCRIPTING_FILE:-security-headers-scripting-dev.conf}"
+      # CSP profile for scrum-poker.shatteredarchive.dev — see the prod compose for the full
+      # reasoning. Also required (unset = literal ${...} = nginx refuses to start). Defaults
+      # to the strict profile; flip to security-headers-ads.conf only together with the
+      # client's VITE_AD_CLIENT/VITE_AD_SLOT build args below.
+      NGINX_CSP_SCRUM_FILE: "${NGINX_CSP_SCRUM_FILE:-security-headers.conf}"
+      # CSP profile for the shatteredarchive.dev landing page + /privacy — see the prod compose
+      # for the full reasoning. Also required. Defaults to the strict profile, same as
+      # NGINX_CSP_SCRUM_FILE above; flip to security-headers-ads.conf to exercise the ad wiring
+      # locally over plain HTTP (the HTTPS mirror in includes/tls-dev.conf is hardcoded strict
+      # regardless — see the comment there).
+      NGINX_CSP_LANDING_FILE: "${NGINX_CSP_LANDING_FILE:-security-headers.conf}"
+      # Required by edge-subdomains.conf (set_real_ip_from) — nginx will not start if it is
+      # unset, because envsubst leaves the ${...} in place. Inert on this stack: nothing
+      # reaches it via the front proxy, so no request ever arrives from that address and the
+      # rewrite never fires. Kept in step with the prod file so the two render identically.
+      FRONT_PROXY_CIDR: "${FRONT_PROXY_CIDR:-144.217.6.225/32}"
 
     volumes:
       # keep your template-based config flow
@@ -53,6 +73,15 @@ services:
       - ./nginx/includes:/etc/nginx/includes:ro
       # DO NOT CHANGE CERTS (as requested)
       - ./nginx/certs:/etc/nginx/certs:ro
+
+      # shatteredarchive.dev landing page + /privacy — see includes/landing-page.conf. Mounted
+      # individually (not the whole deploy/ folder as root) so nginx configs and this compose
+      # file itself are never exposed over HTTP.
+      - ./favicon.ico:/var/www/shatteredarchive-dev/favicon.ico:ro
+      - ./index.html:/var/www/shatteredarchive-dev/index.html:ro
+      - ./privacy.html:/var/www/shatteredarchive-dev/privacy.html:ro
+      - ./site.js:/var/www/shatteredarchive-dev/site.js:ro
+      - ./sitemap.xml:/var/www/shatteredarchive-dev/sitemap.xml:ro
 
       # nginx logs to host
       - "C:/Projects/DSL/GameLogs/ShatteredArchive/Docker/nginx:/var/log/nginx"
@@ -68,6 +97,9 @@ services:
           - game-server.shatteredarchive.dev
           - web-server.shatteredarchive.dev
           - build.shatteredarchive.dev
+          - auth.shatteredarchive.dev
+          - kingdom-tactics.shatteredarchive.dev
+          - scrum-poker.shatteredarchive.dev
       sa-shared: {}
 
     restart: unless-stopped
@@ -91,6 +123,11 @@ services:
         VITE_WEB_API: "https://web-server.shatteredarchive.dev"
         VITE_WEB_WS: "wss://web-server.shatteredarchive.dev"
         VITE_WEB_SECURE: "true"
+        # This stack mirrors production, but the C# site service is published on
+        # the host at :5000 here instead of sitting behind the real site domain.
+        # Cross-origin from this client, so DSL/Server/docker-compose.yml
+        # allowlists http://game-client.shatteredarchive.dev to match.
+        VITE_SITE_API: "http://localhost:5000"
         VITE_ENV: "development"
     image: shatteredarchive-game-client
     stdin_open: true
@@ -140,12 +177,18 @@ services:
       LOG_LEVEL: "debug"
       DOTENV_CONFIG_QUIET: "true"
       GAME_PROXY_ALLOW_ALL: "false"
-      GAME_PROXY_ALLOWLIST: "dsl-mud.org:4000,dsl-mud.org:8000,localhost:4000"
+      GAME_PROXY_ALLOWLIST: "dsl-mud.org:4000,dsl-mud.org:8000,localhost:4000,host.docker.internal:4000,simulacrum.shatteredarchive.dev:4000"
       LOG_DATE_PARTITIONED: "true"
       LOG_FILE_PATH: "/repo/apps/game-server/log/server.log"
       JSON_LOG_FILE_PATH: "/repo/apps/game-server/log/server.log.jsonl"
       LOG_RESPECT_SOH: "true"
       CORS_ORIGIN: "https://game-client.shatteredarchive.dev,https://web-client.shatteredarchive.dev"
+    # merc-mud (simulacrum) runs in its own compose stack, publishing 4000 on the
+    # Windows host — not on this network. host-gateway resolves the same as
+    # host.docker.internal, letting the allowlist above use the friendly subdomain
+    # name (matching the Windows hosts-file entry) instead of the Docker-internal one.
+    extra_hosts:
+      - "simulacrum.shatteredarchive.dev:host-gateway"
     expose:
       - "31000"
     networks:
@@ -225,6 +268,23 @@ services:
     restart: unless-stopped
     volumes:
       - "C:/Projects/merc-mud/2.4/area:/mud/area"
+      # Ed25519 private half for the auth-server introspect fallback (Phase 4) —
+      # git-ignored (see .gitignore's `shattered-service.key` pattern), minted via
+      # `pnpm --filter @shatteredarchive/auth-server register-service mud-builder-server`
+      # run against auth-server's live data dir/key, never regenerate this casually:
+      # rotation needs revoke-service-key on the OLD key id after the new one is live.
+      - "../apps/mud-builder-server/secrets:/repo/apps/mud-builder-server/secrets:ro"
+      # Phase 15 (Step 5): capabilities for the future rebuild pipeline (Step 7) —
+      # NOTHING in this container's code uses any of these three mounts yet. This is a
+      # deliberate, large increase in blast radius (root-equivalent host access from a
+      # bearer-token-authenticated Express app), accepted knowingly during planning — see
+      # .ai-plans/20260725-1223-mud-builder-phase15-engine-rebuild-auth-hardening.md's
+      # Constraints. The docker socket lets this container drive the SAME docker engine
+      # the host uses; the two read-only repo mounts give it a LIVE view of host source
+      # (distinct from its own baked-in /repo build-time copy) to build/recreate against.
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "C:/Projects/merc-mud:/host-merc-mud:ro"
+      - "C:/Projects/ShatteredArchive:/host-shattered-archive:ro"
     environment:
       NODE_ENV: production
       PORT: "61000"
@@ -232,6 +292,41 @@ services:
       MERC_AREA_DIR: "area"
       # The ONLY place in the repo where the MUD write gate is enabled.
       MUD_WRITE_ENABLED: "true"
+      # Builder auth (Phase 9) needs NO env var here: with writes enabled the
+      # guard is always on, and the server generates a per-install master key
+      # on first run at /mud/area/auth/builder-auth.json (the bind mount above —
+      # git-ignored in merc-mud, survives recreation; auth moved from backups/ to
+      # auth/ in Phase 12b). Read it there; mint API keys via the UI's Access tab.
+      # MUD_BUILDER_AUTH=off exists for LOCAL testing only and must never be set
+      # in this file.
+      # Phase 4: centrally-issued account keys (minted via auth-client) also
+      # authenticate here, via auth-server's /api/introspect. AUTH_SERVER_URL
+      # must resolve on the docker network, NOT localhost (this container's
+      # default) — the alias below matches auth-server's own service block.
+      AUTH_SERVER_URL: "http://auth-server.shatteredarchive.dev:62000"
+      # The BROWSER-facing counterpart, handed to the client via /api/capabilities so it can
+      # enrol a device key. Must be the real public edge, never the internal alias above —
+      # a browser cannot resolve that, and handing it over would fail silently. Absent here
+      # means the client never offers device enrolment and stays on manual token entry, so
+      # this is the switch that turns the feature on for the Builder. Its counterpart is
+      # auth-server's DEVICE_ORIGIN_SERVICES, which must map this client's origin to this service.
+      AUTH_SERVER_PUBLIC_URL: "https://auth.shatteredarchive.dev"
+      SERVICE_PRIVATE_KEY_PATH: "/repo/apps/mud-builder-server/secrets/shattered-service.key"
+      # Phase 15: the rebuild pipeline exists behind this flag. Enabled 2026-07-25,
+      # user-authorized, to run the live end-to-end verification test — see the Phase 15
+      # plan's Step 7 sign-off for the full evidence trail once that run completes.
+      # Phase G retired the MUD_REBUILD_ALLOWED_USERNAMES allowlist this used to also need —
+      # eligibility is now the mud-builder-local role store (admin tier+), granted via the
+      # Roles tab / POST /api/roles, not an env var.
+      MUD_REBUILD_ENABLED: "true"
+      # Phase 15 (Step 7): where THIS container reads the full repo trees from — the Step 5
+      # read-only mounts above, NOT MERC_MUD_PATH (that's the narrow area/-only mount).
+      MERC_MUD_REPO_PATH: "/host-merc-mud"
+      SHATTERED_ARCHIVE_REPO_PATH: "/host-shattered-archive"
+      # MERC_MUD_HOST_PATH / SHATTERED_ARCHIVE_HOST_PATH deliberately left at their config.ts
+      # defaults (C:/Projects/merc-mud, C:/Projects/ShatteredArchive) — the real Windows host
+      # paths the DAEMON needs for bind-mount sources never differ from those defaults on
+      # this single-operator host.
     expose:
       - "61000"
     networks:
@@ -263,5 +358,356 @@ services:
         aliases:
           - mud-builder-client.shatteredarchive.dev
 
+  ############################################################
+  # KINGDOM TACTICS (kingdom-tactics.shatteredarchive.dev) — Phase F,
+  # additive like mud-builder/auth: neither container is in nginx's
+  # depends_on, so the rest of the stack starts fine either way. Single
+  # subdomain for client+server (see edge-subdomains.conf) — kt-client's own
+  # code calls relative /api/kt paths, no separate server subdomain.
+  ############################################################
+  kingdom-tactics-server:
+    build:
+      context: ..
+      dockerfile: deploy/kingdom-tactics-server.Dockerfile
+    image: shatteredarchive-kingdom-tactics-server
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    volumes:
+      # Ed25519 private half for this service's own SSO registration (Step 1) — git-ignored
+      # (see .gitignore's `shattered-service.key` pattern), minted via `pnpm --filter
+      # @shatteredarchive/auth-server register-service kingdom-tactics-server` run against
+      # auth-server's live data dir/key. Rotation needs revoke-service-key on the OLD key id.
+      - "../apps/kingdom-tactics-server/secrets:/repo/apps/kingdom-tactics-server/secrets:ro"
+      # Named volume (not a host bind-mount like auth-server's data/): match-history/army-layout
+      # JSON is pure application data, never hand-edited on the host.
+      - "kingdom-tactics-data:/repo/apps/kingdom-tactics-server/data"
+    environment:
+      NODE_ENV: production
+      PORT: "51000"
+      DATA_DIR: "/repo/apps/kingdom-tactics-server/data"
+      # Server-to-server calls (introspect/exchange) use the internal alias, no TLS — matches
+      # mud-builder-server's own AUTH_SERVER_URL convention. AUTH_SERVER_PUBLIC_URL is what the
+      # BROWSER gets redirected to, so it must stay the real public edge. Since 2026-07-30 it
+      # has a SECOND consumer: GET /api/kt/config serves it to kt-client so the browser can
+      # enrol a device key. Its counterpart is auth-server's DEVICE_ORIGIN_SERVICES, which must
+      # list kingdom-tactics.shatteredarchive.dev (it does).
+      AUTH_SERVER_URL: "http://auth-server.shatteredarchive.dev:62000"
+      AUTH_SERVER_PUBLIC_URL: "https://auth.shatteredarchive.dev"
+      SERVICE_PRIVATE_KEY_PATH: "/repo/apps/kingdom-tactics-server/secrets/shattered-service.key"
+      # MUST match exactly what's registered via register-redirect-uri for this service, or the
+      # hub's code store burns the code on a mismatch.
+      KT_SERVER_CALLBACK_URL: "https://kingdom-tactics.shatteredarchive.dev/api/kt/auth/callback"
+      KT_CLIENT_ALLOWED_RETURN_ORIGINS: "https://kingdom-tactics.shatteredarchive.dev"
+    expose:
+      - "51000"
+    networks:
+      shatteredarchive:
+        aliases:
+          - kingdom-tactics-server.shatteredarchive.dev
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(51000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  kingdom-tactics-client:
+    build:
+      context: ..
+      dockerfile: deploy/kingdom-tactics-client.Dockerfile
+    image: shatteredarchive-kingdom-tactics-client
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    networks:
+      shatteredarchive:
+        aliases:
+          - kingdom-tactics-client.shatteredarchive.dev
+
+  ############################################################
+  # AUTH SERVER (auth.shatteredarchive.dev) — additive, like mud-builder:
+  # nothing in Phase 1 requires it to be up (no consumer calls /api/introspect
+  # until Phase 2), so it must never block the rest of the stack from
+  # starting. NOT in nginx's depends_on: for that reason.
+  ############################################################
+  auth-server:
+    build:
+      context: ..
+      dockerfile: deploy/auth-server.Dockerfile
+    image: shatteredarchive-auth-server
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    volumes:
+      # Bind-mounted (not a named volume) on purpose: dsl-questions.json in here is a
+      # deliberately-plain, operator-hand-edited file (see questions-store.ts) — it needs
+      # a real host path to edit with a text editor. auth-server-secrets stays a named
+      # volume: the encryption key must NOT be casually host-editable/visible.
+      - ../apps/auth-server/data:/repo/apps/auth-server/data
+      - auth-server-secrets:/repo/apps/auth-server/secrets
+      # Public keys published by consuming services, READ-ONLY here — see the prod compose.
+      - sa-service-pubkeys:/repo/apps/auth-server/service-public-keys:ro
+    environment:
+      NODE_ENV: production
+      PORT: "62000"
+      # Declarative service registry — mirrors deploy/docker-compose.yml, with this
+      # machine's LOCALHOST callbacks instead of the public ones. See the long note there;
+      # the short version is that this list is exhaustive and prunes what it omits, and
+      # the URIs must byte-match what the C# site sends (AuthHub__RedirectUri and
+      # GameSso__CallbackRedirectUri in DSL/Server/docker-compose.yml).
+      SERVICE_REGISTRY: >-
+        {
+          "shattered-web": {
+            "redirectUris": [
+              "http://localhost:5000/user/sso/callback",
+              "http://localhost:5000/user/game-sso/callback"
+            ]
+          }
+        }
+      SERVICE_PUBLIC_KEY_DIR: "/repo/apps/auth-server/service-public-keys"
+      LOG_LEVEL: "debug"
+      DATA_DIR: "/repo/apps/auth-server/data"
+      # Mounted-file secret (auth-server-secrets, above) — self-generated on first boot,
+      # persists across recreation. See crypto-primitives.ts's loadDataKey() precedence.
+      DATA_ENCRYPTION_KEY_FILE: "/repo/apps/auth-server/secrets/encryption.key"
+      PUBLIC_ORIGIN: "https://auth.shatteredarchive.dev"
+      # origin=service — which services a device enrolled at each origin may mint tokens for.
+      # THIS FILE'S COPY OF NGINX'S ROUTING TABLE: an origin may reach exactly the upstream
+      # the edge routes it to, and nothing else. Keep the two in step (edge-subdomains.conf).
+      #
+      # It is one variable, not an origins list plus an audience map, because the CORS
+      # allowlist is DERIVED from these keys — so an origin that may enroll always has a
+      # defined audience and the two cannot drift.
+      #
+      # Why this is load-bearing: a device names the service it wants a token for, and without
+      # this map any enrolled browser could name ANY service. An XSS on the game could then
+      # mint a Builder token. Binding the audience to the enrolling origin is what stops that.
+      #
+      # Needed at all because browser key storage is ORIGIN-scoped: a device key enrolled on
+      # auth.* is invisible to build.*, so every client site enrolls its own key, which makes
+      # enrollment an inherently cross-origin credentialed call. No cookie loosening is
+      # required — these are all one registrable domain, so same-SITE, so the existing
+      # SameSite=Lax session cookie is still sent — but each origin must be named here.
+      # (A .com origin would be cross-SITE and gets NO cookie, so it cannot enroll this way at
+      # all; such an app needs the SSO code flow instead.)
+      #
+      # Exact string match against the browser's Origin header: lowercase, no path, and NO
+      # default port (a browser sends https://x.dev, never https://x.dev:443). Wildcards are
+      # not supported — invalid with credentials, and reflecting arbitrary origins would let
+      # any hostile page enroll itself against a signed-in account. Unset = deny all, which
+      # is the deliberate fail-closed default. Use `a=svc1|svc2` for an origin needing several.
+      #
+      # auth-client is absent on purpose: it is same-origin with auth-server here (nginx
+      # routes /api/ on auth.shatteredarchive.dev to this service), so CORS never applies.
+      DEVICE_ORIGIN_SERVICES: "https://build.shatteredarchive.dev=mud-builder-server,https://kingdom-tactics.shatteredarchive.dev=kingdom-tactics-server"
+      # Services where holding a device key is NOT sufficient: the account must also hold an
+      # active API key for that service, minted in auth-client's API keys tab. That makes the
+      # API key the ENTITLEMENT record — granted and revoked in one place, never pasted into
+      # an app — while the device key remains the thing that authenticates.
+      #
+      # Empty by DEFAULT and deliberately so: switching a service on here immediately refuses
+      # every account that has no key for it. kingdom-tactics-server must stay open (anyone
+      # signed in may play); mud-builder-server is the candidate to turn on, since authoring
+      # access should be explicitly granted. Enable with:
+      #   DEVICE_GRANT_REQUIRED_SERVICES: "mud-builder-server"
+      DEVICE_GRANT_REQUIRED_SERVICES: ""
+    expose:
+      - "62000"
+    networks:
+      shatteredarchive:
+        aliases:
+          - auth-server.shatteredarchive.dev
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(62000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  ############################################################
+  # AUTH CLIENT (auth.shatteredarchive.dev, / split) — additive, like
+  # mud-builder-client: no expose/ports, nginx reaches it by container name.
+  ############################################################
+  auth-client:
+    build:
+      context: ..
+      dockerfile: deploy/auth-client.Dockerfile
+    image: shatteredarchive-auth-client
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    networks:
+      shatteredarchive:
+        aliases:
+          - auth-client.shatteredarchive.dev
+
+  ############################################################
+  # SCRUM POKER (scrum-poker.shatteredarchive.dev) — additive like mud-builder/auth/KT:
+  # neither container is in nginx's depends_on, so the rest of the stack starts fine
+  # either way. Single subdomain for client+server (see edge-subdomains.conf): the client
+  # calls same-origin /api/scrum and /ws/scrum, so there is no separate server subdomain.
+  #
+  # Deliberately NOT wired to auth-server. This is an accounts-free tool by design —
+  # possession of the room id (a UUID) is membership, and the host token minted at room
+  # creation is the only notion of organizer. Nothing here holds a service key.
+  ############################################################
+  scrum-poker-server:
+    build:
+      context: ..
+      dockerfile: deploy/scrum-poker-server.Dockerfile
+    image: shatteredarchive-scrum-poker-server
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    volumes:
+      # Named volume (not a host bind-mount): rooms.json is pure application data, written
+      # by the server on a debounce and never hand-edited on the host. It survives a
+      # container recreate, which is the whole reason a team's room config outlives a deploy.
+      - "scrum-poker-data:/repo/apps/scrum-poker-server/data"
+    environment:
+      NODE_ENV: production
+      PORT: "63000"
+      LOG_LEVEL: "debug"
+      DATA_DIR: "/repo/apps/scrum-poker-server/data"
+      # Same-origin in production (the edge serves the SPA and proxies /api on one host), so
+      # this only matters for a browser pointed straight at the server. Kept explicit rather
+      # than relying on the localhost-only default.
+      CORS_ORIGIN: "https://scrum-poker.shatteredarchive.dev"
+      # Defaults from config.ts, stated here because they are the two knobs anyone will want
+      # to change: an hour of inactivity drops a participant, a month drops the whole room.
+      SCRUM_IDLE_TIMEOUT_MS: "3600000"
+      SCRUM_ROOM_TTL_MS: "2592000000"
+    expose:
+      - "63000"
+    networks:
+      shatteredarchive:
+        aliases:
+          - scrum-poker-server.shatteredarchive.dev
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(63000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  scrum-poker-client:
+    build:
+      context: ..
+      dockerfile: deploy/scrum-poker-client.Dockerfile
+      args:
+        # Ads and analytics stay OFF on this stack, and that is a policy requirement rather
+        # than a preference: this is the local dev replica, and serving live ad units from a
+        # development machine generates exactly the self-clicking / non-public-site traffic the
+        # AdSense program policies treat as invalid, which risks the account rather than the
+        # page. Analytics is off for the mirror-image reason — dev traffic in the property
+        # makes the real numbers useless.
+        #
+        # All three empty means the built bundle contains no publisher id, requests nothing from
+        # any ad network or from Google Analytics, and sets no third-party cookie. The nginx
+        # service above correspondingly keeps NGINX_CSP_SCRUM_FILE on the strict profile.
+        #
+        # To exercise the ad/analytics wiring locally, override via the environment rather than
+        # editing these lines, and use a TEST property — never the live ids in the prod compose.
+        # VITE_SP_DEV below still forces the placeholder box even if you do this: it is the
+        # backstop for exactly that scenario, so overriding these three for local testing can
+        # never accidentally ship a live ad request from this stack (2026-08-06).
+        VITE_AD_CLIENT: "${SCRUM_AD_CLIENT:-}"
+        VITE_AD_SLOT: "${SCRUM_AD_SLOT:-}"
+        VITE_GA_ID: "${SCRUM_GA_ID:-}"
+        VITE_SP_DEV: "true"
+    image: shatteredarchive-scrum-poker-client
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    networks:
+      shatteredarchive:
+        aliases:
+          - scrum-poker-client.shatteredarchive.dev
+
+  ############################################################
+  # SOULSTEEL (soulsteel.shatteredarchive.dev) — additive like scrum-poker/mud-builder/auth:
+  # neither container is in nginx's depends_on, so the rest of the stack starts fine either
+  # way. Single subdomain for client+server (see edge-subdomains.conf): the client calls
+  # same-origin /api/soulsteel and /health, so there is no separate server subdomain.
+  #
+  # Phase 1 (see .ai-plans/20260813-1911-soulsteel-herald-tool-mvp.md): the server is a
+  # health-check-only skeleton — no data dir, no volume, not wired to auth-server. Game state
+  # lives entirely in the browser's IndexedDB. The follow-on plan
+  # (.ai-plans/20260813-1912-soulsteel-auth-archive-dashboard.md) is what adds persistence,
+  # an auth wiring block matching kingdom-tactics-server's, and a named volume — do not add
+  # those here speculatively ahead of that plan landing.
+  ############################################################
+  soulsteel-server:
+    build:
+      context: ..
+      dockerfile: deploy/soulsteel-server.Dockerfile
+    image: shatteredarchive-soulsteel-server
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "64000"
+      LOG_LEVEL: "debug"
+      # Same-origin in production (the edge serves the SPA and proxies /api on one host), so
+      # this only matters for a browser pointed straight at the server. Kept explicit rather
+      # than relying on the localhost-only default.
+      CORS_ORIGIN: "https://soulsteel.shatteredarchive.dev"
+    expose:
+      - "64000"
+    networks:
+      shatteredarchive:
+        aliases:
+          - soulsteel-server.shatteredarchive.dev
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(64000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  soulsteel-client:
+    build:
+      context: ..
+      dockerfile: deploy/soulsteel-client.Dockerfile
+    image: shatteredarchive-soulsteel-client
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    networks:
+      shatteredarchive:
+        aliases:
+          - soulsteel-client.shatteredarchive.dev
+
 volumes:
   nginx-logrotate-state:
+  auth-server-secrets:
+  # Public keys published by consuming services for auto-registration. Fixed name (not
+  # project-scoped) because the C# site is a SEPARATE compose project declaring it
+  # external — without a fixed name each project makes its own and neither sees the
+  # other's files. See deploy/docker-compose.yml for the full rationale.
+  sa-service-pubkeys:
+    name: sa-service-pubkeys
+  kingdom-tactics-data:
+  scrum-poker-data:

@@ -1,1 +1,7 @@
 File Index
+
+/AccountModal.module.scss
+Purpose: Phase D — AccountModal.tsx's CSS module. Visual language mirrors ConnectModal.module.scss (backdrop/modal/header/closeButton, primary/secondaryButton) at AudioSettingsModal's narrower single-column width; adds statusOk/statusErr lines for save/load feedback.
+
+/LibraryModal.module.scss
+Purpose: LibraryModal.tsx's CSS module (tabs, list/editor split, tree grouping, scribe panel). Phase E added tagRow/tagInput (the new tag field), bodyStats/bodyStatsWarn/bodyStatsOver (line/char-limit warning text), and treeSubGroupHeader (nested tag sub-groups within a spool group on the Notes tab) — reused the existing treeGroup/treeGroupHeader classes for parchment/books tag headers rather than adding parallel ones.

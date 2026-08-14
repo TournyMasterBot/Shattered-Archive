@@ -1,0 +1,7 @@
+File Index
+
+/SocialsPage.test.tsx
+Purpose: Field editing/blanking, early-termination preservation through the manual pane, and add/delete tests against a mocked API.
+
+/SocialsPage.tsx
+Purpose: Socials tab on the workbench hook — social list + per-field message form (blank ⇔ `$` unset, early-terminated socials preserved unless lines are explicitly added); UI states socials load at boot only, so saves take effect at the next copyover. 2026-07-26 (UX polish pass): addSocial/deleteSocial now each fire a success toast (Socials has no blocked-delete concept at all — nothing in the data model can reference a social by name, confirmed via RefKind having no 'social' variant — so its existing plain confirm-then-remove was already structurally correct, just silent on success until now). AreaSidebar now gets onBeforeOpen={() => wb.confirmDiscard('switch areas')} (Step 5 dirty-guard rollout).

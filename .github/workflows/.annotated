@@ -2,3 +2,6 @@ File Index
 
 /ci-test-coverage.yml
 Purpose: This file automates test execution and coverage reporting for pull requests and pushes to specific branches.
+
+/cut-release.yml
+Purpose: On a merged PR into release/dev, release/staging, or release/production, tags the merge commit and creates a per-environment GitHub Release (env-date-shortsha) with auto-generated notes scoped to that environment's prior release; dev/staging are marked prerelease.

@@ -62,3 +62,10 @@ export function removeArmy(name: string): SavedArmy[] {
   writeStore(next);
   return next;
 }
+
+/** Phase F: wholesale replace (e.g. "load from cloud" — a deliberate overwrite, not a merge). */
+export function replaceAllArmies(armies: readonly SavedArmy[]): SavedArmy[] {
+  const next = armies.map((a) => ({ name: a.name, picks: a.picks }));
+  writeStore(next);
+  return next;
+}

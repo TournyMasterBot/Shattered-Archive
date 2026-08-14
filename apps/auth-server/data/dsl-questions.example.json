@@ -1,0 +1,19 @@
+{
+  "questions": [
+    {
+      "id": "example-1",
+      "prompt": "In the DSL, what keyword declares a new area file?",
+      "acceptedAnswers": ["#AREA", "AREA"]
+    },
+    {
+      "id": "example-2",
+      "prompt": "What three-letter file extension do MUD area files use?",
+      "acceptedAnswers": [".are", "are"]
+    },
+    {
+      "id": "example-3",
+      "prompt": "What does 'vnum' stand for in a MUD area file?",
+      "acceptedAnswers": ["virtual number", "vnum"]
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+# services/scrum-poker-core
+
+The isomorphic heart of Scrum Poker (scrum-poker.shatteredarchive.dev), imported unchanged by
+both `apps/scrum-poker-server` and `apps/scrum-poker-client` — the same arrangement
+`services/kingdom-tactics-engine` has with the KT client/server pair, and enforced the same way:
+`tsconfig.json` sets `"types": []`, so a shipped module that reaches for `fs`, `process` or a DOM
+global fails the build.
+
+Four modules, all pure:
+
+- `types.ts` — the domain. The important distinction is `Room` (SERVER-side record: every raw
+  vote plus the room's `hostToken`) versus `RoomView` (the ONLY shape that goes over the wire).
+  `Participant` splits identity in two for the same reason: `id` is PUBLIC (broadcast in every
+  roster, so it is a render key and nothing more) while `secret` is the private re-attach
+  credential. They were once one field, and that let any member rejoin as any other — casting
+  votes in their name and reading their hidden estimate, since a viewer always sees their own
+  card. Anything that adds a field here must decide which side of that line it is on.
+- `deck.ts` — estimate-card decks. `parseDeck`/`formatDeck` handle the comma-separated string the
+  settings dialog edits; `validateDeck` is the single rule set both the dialog and the server use.
+  `cardValue` deliberately returns null for `?`/`☕` so they never skew an average.
+- `room.ts` — every state transition as `(room, …, now) -> room`. Nothing reads a clock or mints
+  an id; the caller supplies both, which is what makes an hour of idle time a one-line test.
+  `joinRoom` re-attaches on the replayed SECRET and returns the row the server settled on;
+  it never matches on the public id.
+  `toRoomView` is the single chokepoint that enforces vote hiding — while a room is unrevealed and
+  `hideUntilRevealed` is on, other participants' votes are erased from the payload server-side
+  (the viewer still sees their own), so hiding is not a client-side rendering choice.
+- `protocol.ts` — the `/ws/scrum` contract plus `parseScrumClientMessage`, which treats its input
+  as hostile: it validates shape and primitive types for every field, discards unknown settings
+  keys, and returns `undefined` instead of throwing. Value RANGES are not checked here —
+  `applySettingsPatch` owns those, so there is exactly one definition of a legal deck.
+  `applySettingsPatch` checks TYPES as well as values, which looks redundant beside the parser
+  but is not: it is also the validator for records read off DISK, where nothing has vouched for
+  the shape, and throwing there used to stop scrum-poker-server booting entirely.

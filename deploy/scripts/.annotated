@@ -22,7 +22,10 @@ Purpose: Removes ShatteredArchive entries from the system hosts file.
 Purpose: Removes ShatteredArchive entries from the system hosts file.
 
 /setup-certs.ps1
-Purpose: Generates self-signed SSL certificates for local development using mkcert.
+Purpose: Generates the local dev TLS cert via mkcert into deploy/nginx/certs — apex + *.shatteredarchive.dev wildcard so every one-level subdomain is covered.
 
 /setup-certs.sh
-Purpose: Generates local development SSL certificates for multiple project domains using mkcert.
+Purpose: Bash twin of setup-certs.ps1 — same apex + wildcard cert into deploy/nginx/certs (the dir nginx mounts).
+
+/deploy-auth-stack.sh
+Purpose: One idempotent command to deploy the auth hub + the C# site that consumes it, with no manual key or redirect-URI steps (2026-08-01). Order is load-bearing: the hub stack comes up FIRST because it owns both shared resources the C# stack declares external (the sa-shared network and the sa-service-pubkeys volume), and docker compose up fails outright against ones that do not exist. Runs a PRE-FLIGHT comparing auth-server SERVICE_REGISTRY against the C# site AuthHub__RedirectUri / GameSso__CallbackRedirectUri across both rendered compose files — matched byte-for-byte at runtime by /api/sso/approve, which answers ONE generic 400 for both "unknown service" and "unregistered redirect URI", so a mismatch is invisible in production and costs an afternoon. --build also runs dotnet publish, because neither C# Dockerfile builds from source (both COPY a prebuilt publish output), so docker compose build alone would silently ship whatever stale output sat in the build context. Verification polls rather than asserting immediately, since the site publishes its key at startup and the hub picks it up on its next 30s pass.

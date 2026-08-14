@@ -19,6 +19,10 @@ export default defineConfig(({ mode }) => {
   const webWsTarget = env.VITE_WEB_WS; // e.g. ws://localhost:41000
   const webSecure = env.VITE_WEB_SECURE === 'true';
 
+  // Phase D: the C# service (Server.Web.Public) — a DIFFERENT backend from
+  // web-server above, used for the game-sso hand-off + cloud-sync APIs.
+  const siteApiTarget = env.VITE_SITE_API; // e.g. http://localhost:5000
+
   console.log('Loaded environment', {
     port,
     gameApiTarget,
@@ -27,6 +31,7 @@ export default defineConfig(({ mode }) => {
     webApiTarget,
     webWsTarget,
     webSecure,
+    siteApiTarget,
   });
 
   return {
@@ -84,6 +89,15 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: webSecure,
         },
+
+        // HTTP → the C# service (Server.Web.Public): game-sso + cloud-sync APIs
+        // /api/site/* (dev) -> /* on the site API — keeps these same-origin in
+        // dev so no CORS is involved at all (see features/auth/siteApi.ts).
+        '/api/site': {
+          target: siteApiTarget,
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/api\/site/, ''),
+        },
       },
     },
     build: {
@@ -94,6 +108,11 @@ export default defineConfig(({ mode }) => {
         input: {
           main: path.resolve(__dirname, 'index.html'),
           status: path.resolve(__dirname, 'status.html'),
+          // The login popup's landing page. A real entry, not an asset: without
+          // it the page 404s in the built image (dev serves root .html files
+          // implicitly, so this only ever breaks in prod), and logging in hangs
+          // until it times out. nginx try_files serves it as a plain file.
+          authCallback: path.resolve(__dirname, 'auth-callback.html'),
         },
       },
     },

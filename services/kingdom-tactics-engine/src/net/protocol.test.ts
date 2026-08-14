@@ -32,6 +32,19 @@ describe('KT protocol', () => {
     expect(isKtClientMessage({ type: 'join', matchId: 'm1' })).toBe(true);
   });
 
+  it('round-trips a join message with an optional token', () => {
+    const msg = parseKtClientMessage(JSON.stringify({ type: 'join', matchId: 'm1', token: 'tok-1' }));
+    expect(msg).toEqual({ type: 'join', matchId: 'm1', token: 'tok-1' });
+  });
+
+  it('accepts join without a token (anonymous, unaffected)', () => {
+    expect(isKtClientMessage({ type: 'join', matchId: 'm1' })).toBe(true);
+  });
+
+  it('rejects a join whose token is not a string', () => {
+    expect(isKtClientMessage({ type: 'join', matchId: 'm1', token: 123 })).toBe(false);
+  });
+
   it('returns null for malformed JSON', () => {
     expect(parseKtClientMessage('{not json')).toBeNull();
   });

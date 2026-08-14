@@ -1,0 +1,50 @@
+# apps/scrum-poker-server
+
+The backend for scrum-poker.shatteredarchive.dev (port 63000). An Express 5 + `ws` app that
+mirrors kingdom-tactics-server's bootstrap (`@shatteredarchive/services-server`:
+`getConfigFromEnv` + `createExpressService`, Winston logging, `/health`) and mounts a
+`/ws/scrum` gateway.
+
+All domain logic lives in `@shatteredarchive/scrum-poker-core` — this app is transport,
+persistence, the clock, and permissions. There are no accounts by design: possession of the
+room id (a UUID) is membership, possession of the `hostToken` (returned once by
+`POST /api/scrum/rooms`) is organizer, and possession of a `participantSecret` (issued to one
+connection on `joined`) is one particular seat at the table. Everything here is possession-based,
+so the rule that follows from it is: a value that identifies you is never broadcast. Nothing
+here talks to auth-server.
+
+- `config.ts` — every knob has a working default; the service needs no env and no secrets.
+  `SCRUM_IDLE_TIMEOUT_MS` (1h) is the participant sweep, `SCRUM_ROOM_TTL_MS` (30d) the room one,
+  and `SCRUM_EMPTY_ROOM_TTL_MS` (24h) reclaims rooms NOBODY EVER JOINED — the guard on an
+  unauthenticated create endpoint, keyed off `lastActiveAt === createdAt` so a real team's room
+  can never be caught by it, even after everyone has idled out of the roster.
+  `SCRUM_MAX_ROOMS` (10,000) is a backstop, not a quota: what it really bounds is the persist
+  path, which rewrites the whole file per flush, so TOTAL rooms sets the cost of one vote.
+  Per-IP abuse is rate-limited at the nginx edge instead, because this cap can only start
+  refusing everyone once it fills.
+- `room-store.ts` — in-memory registry over a single `rooms.json`, flushed on a 750 ms debounce
+  and written temp+rename. Persistence is best-effort by design (an unwritable volume degrades to
+  memory-only, never a crash), and an unparseable file is renamed aside so boot still succeeds.
+  `normalizeStoredRoom` re-validates every record read off disk against the CURRENT rules, so a
+  room written by an older build can't load into a state the reducers consider illegal — it
+  narrows stored settings to known keys (an unexpected one would otherwise be merged through
+  and re-broadcast) and drops participant rows with no `secret`, which predate split identity
+  and cannot be re-attached to safely — and
+  `load()` wraps each record in its own try/catch — one unreadable room degrades to "that room
+  is gone", never to "the server won't start" (it used to: a `deck: null` threw a TypeError
+  clean out of the constructor, which is why `applySettingsPatch` now type-checks too).
+- `http/scrum-api-routes.ts` — the only REST, and only for what must happen before a socket
+  exists: mint a room, and check a pasted code is real. `GET /rooms/:id` returns name + headcount
+  and nothing else. Everything in-room is websocket-only, so state has one path and one broadcast.
+- `ws/scrum-gateway.ts` — every mutation: parse (hostile input, via the core parser) → core
+  reducer → save → broadcast. Frames are capped at 16 KB (`maxPayload`), overriding `ws`'s 100 MB
+  default, since the largest legal frame is a 20-card deck. Broadcasts are projected PER
+  CONNECTION via `toRoomView(room, viewerId)`, never built once and fanned out, because each
+  viewer must see their own hidden vote and no one else's. The `joined` ack is the one place a
+  `participantSecret` leaves the server, and it goes to a single connection — never a broadcast. `handleClientMessage`/`runSweep` are exported and take a `now()` so the whole
+  gateway is testable with fake connections and no socket (same shape as kt-gateway).
+
+Two behaviours that look like bugs but are load-bearing: a `ping` frame does NOT bump the idle
+clock (the timer measures interaction, not an open tab, so a heartbeat would make the one-hour
+sweep unreachable), and a socket close does NOT remove the participant row (a refresh or dropped
+wifi must not wipe someone's vote mid-round — the sweeper is what eventually removes them).

@@ -13,11 +13,19 @@ export const KT_PROTOCOL_VERSION = 1 as const;
 // Client → server
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Join (or create) a match and claim a seat. `side` omitted = server assigns. */
+/**
+ * Join (or create) a match and claim a seat. `side` omitted = server assigns.
+ * `token` (Phase F) is an optional hub bearer token — the server introspects
+ * it to attach an accountId to the claimed seat for history/persistence.
+ * Additive only: omitting it is identical to today's fully anonymous join,
+ * and an invalid/expired token degrades to anonymous rather than rejecting
+ * the join.
+ */
 export interface KtJoinMessage {
   readonly type: 'join';
   readonly matchId: string;
   readonly side?: Side;
+  readonly token?: string;
 }
 
 /** Submit an intent; the server validates seat ownership + engine legality. */
@@ -121,7 +129,11 @@ export function isKtClientMessage(x: unknown): x is KtClientMessage {
   if (!isRecord(x) || typeof x.type !== 'string') return false;
   switch (x.type) {
     case 'join':
-      return typeof x.matchId === 'string' && (x.side === undefined || typeof x.side === 'number');
+      return (
+        typeof x.matchId === 'string' &&
+        (x.side === undefined || typeof x.side === 'number') &&
+        (x.token === undefined || typeof x.token === 'string')
+      );
     case 'action':
       return typeof x.matchId === 'string' && looksLikeAction(x.action);
     case 'requestSnapshot':

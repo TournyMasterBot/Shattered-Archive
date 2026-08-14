@@ -24,6 +24,12 @@ Purpose: This file documents the protocol and configuration for a WebSocket-to-T
 /ports.md
 Purpose: This file indexes application ports for different project components.
 
+/scrum-poker-user-guide.md
+Purpose: End-user guide for Scrum Poker, written for the people ESTIMATING rather than the people running the stack — quick start, how a round works, reading the three estimate-column states, the buttons, organizer settings, and a symptom-to-action troubleshooting table. Deliberately free of ports, env vars and API routes; those live in scrum-poker.md, which this links to at the bottom.
+
+/scrum-poker.md
+Purpose: Guide to the Scrum Poker app (scrum-poker.shatteredarchive.dev) — the three packages and ports, local dev commands, how server-enforced vote hiding and the two possession-based identities (room code = membership, host token = organizer) work, the idle/TTL timeouts and the behaviours that depend on them, storage, the single opt-in ad slot, the HTTP API, and deployment.
+
 /web-client.md
 Purpose: This file indexes the web client module's overview, location, and server connections.
 

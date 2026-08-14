@@ -1,1 +1,16 @@
 File Index
+
+/MobEditor.test.tsx
+Purpose: Stat/dice/flag/verbatim-word round-trip tests plus MobsPage gated-writes, add/delete (unblocked path — the confirm-then-remove of an unreferenced mob), shop/special attach, and manual-edit flows. The BLOCKED-delete path (categorized panel, Go-fix-it wiring) is covered separately in the new MobsPage.test.tsx (2026-07-26) — MobsPage previously had no dedicated test file of its own.
+
+/MobEditor.tsx
+Purpose: #MOBILES form editor in grouped fieldsets (Descriptions/Stats/Combat/Position & body) + six flag grids; word fields verbatim, unlisted bits preserved. Phase G: header gained a SaveAsSnippetButton (features/content) — same component embedded in every entity editor, renders nothing for a non-account actor.
+
+/MobExtras.tsx
+Purpose: Shopkeeper + Special function fieldsets for one mob — edits the area's #SHOPS/#SPECIALS sections keyed by the mob's vnum; unlisted buy types and unknown spec_funs preserved "(as written)".
+
+/MobsPage.test.tsx
+Purpose: (2026-07-26 UX polish pass, new file) list+add; blocked delete via a referencing reset shows the categorized DeleteBlockersPanel (Resets group) with a working "Go fix it in Resets →" wiring; unblocked delete succeeds after confirm; switching mobs clears a stale blocked-delete panel.
+
+/MobsPage.tsx
+Purpose: Mobs tab — area sidebar + mob list + MobEditor over the shared useAreaWorkbench (preview-first, gated writes). 2026-07-26 (UX polish pass): delete refactored onto the shared useDeleteWithBlockers hook (features/areas/DeleteBlockersPanel.tsx) — same categorized panel as Rooms/Objects instead of a flat wb.err() listing. New onGoToResets/onGoToScripts props (both plain tab switches, no vnum-scoped hand-off exists for either) — deliberately NO onGoToMap (a mob can never be exit-referenced) or onGoToMobs (linking Mobs to itself is meaningless; the blocker text already names whichever other mob holds the shop/special). addMob fires a success toast; delete's success toast is centralized inside useDeleteWithBlockers. AreaSidebar now gets onBeforeOpen={() => wb.confirmDiscard('switch areas')} (Step 5 dirty-guard rollout). Phase G: new `pendingSnippet` prop — a useEffect mirrors addMob's own vnum-allocation flow but seeds the new mob from the snippet's saved data (discarding its stored vnum, which is meaningless outside its original area).

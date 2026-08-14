@@ -161,7 +161,7 @@ type CharacterPaths = {
   gem_merchant: string[];
 };
 
-const shadowHallFromRecall = ['e', 'e', 'e', 's', 's', 's', 's', 's', 's'];
+const shadowHallFromRecall = ['s', 'e', 'e', 'e', 's', 's', 's', 's', 's', 's'];
 const eclipseTowerEntranceToResting = ['open west', 'w', 'u', 'enter orb'];
 const gemMerchantFromVermTaskMaster = ['e', 's', 's', 's', 's', 's', 'w', 'n'];
 const HOME_PATHS: Record<HomeKey, CharacterPaths> = {

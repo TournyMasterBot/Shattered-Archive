@@ -550,6 +550,10 @@ export function useMainContainer() {
   const openEquipmentModal = () => setIsEquipmentModalOpen(true);
   const closeEquipmentModal = () => setIsEquipmentModalOpen(false);
 
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const openAccountModal = () => setIsAccountModalOpen(true);
+  const closeAccountModal = () => setIsAccountModalOpen(false);
+
   return {
     isConnectModalOpen,
     openConnectModal,
@@ -562,5 +566,9 @@ export function useMainContainer() {
     isEquipmentModalOpen,
     openEquipmentModal,
     closeEquipmentModal,
+
+    isAccountModalOpen,
+    openAccountModal,
+    closeAccountModal,
   };
 }

@@ -1,0 +1,10 @@
+File Index
+
+/README.md
+Purpose: What the service does, the endpoint table, the local-first security caveat, and how to run it.
+
+/package.json
+Purpose: @shatteredarchive/psd-viewer-server manifest — deps ag-psd + pngjs + express + cors; dev/start set --max-old-space-size=8192 for large composites.
+
+/tsconfig.json
+Purpose: NodeNext ESM build config extending the repo base; emits to dist/.

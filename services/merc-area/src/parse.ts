@@ -280,7 +280,7 @@ function parseRooms(r: Reader): RoomsSection {
         room.clan = r.string();
       } else if (letter === 'D') {
         const door = r.number();
-        if (door < 0 || door > 5) r.fail(`Load_rooms: room #${vnum} has bad door number ${door}`);
+        if (door < 0 || door > 9) r.fail(`Load_rooms: room #${vnum} has bad door number ${door}`);
         room.exits.push({
           door,
           description: r.string(),
@@ -396,8 +396,8 @@ function parseScripts(r: Reader): ScriptsSection {
       if (n !== 0) r.fail(`Load_scripts: expected #0 terminator (got #${n})`);
       return { kind: 'scripts', scripts };
     }
-    if (letter !== 'M') {
-      r.fail(`Load_scripts: expected 'M' or '#0' (got ${JSON.stringify(letter)})`);
+    if (letter !== 'M' && letter !== 'R') {
+      r.fail(`Load_scripts: expected 'M', 'R' or '#0' (got ${JSON.stringify(letter)})`);
     }
     const script: MobScript = {
       mobVnum: r.number(),
@@ -405,6 +405,7 @@ function parseScripts(r: Reader): ScriptsSection {
       phrase: r.string(),
       body: r.string(),
     };
+    if (letter === 'R') script.attach = 'room';
     scripts.push(script);
   }
 }

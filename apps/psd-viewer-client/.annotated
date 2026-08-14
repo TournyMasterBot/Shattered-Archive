@@ -1,0 +1,25 @@
+File Index
+
+/package.json
+Purpose: @shatteredarchive/psd-viewer-client manifest — Vite + React 19, plugin-react-swc; dev/build/preview scripts.
+
+/vite.config.ts
+Purpose: Vite config — port 62080, alias @ → src, and the /api + /health proxy to psd-viewer-server (localhost:62000).
+
+/index.html
+Purpose: SPA shell mounting src/main.tsx into #root.
+
+/tsconfig.json
+Purpose: Bundler-resolution DOM+JSX build config extending the repo base.
+
+/README.md
+Purpose: What the client is, its decode-server relationship, and how to run it.
+
+/src/main.tsx
+Purpose: React entry — mounts <App/> under StrictMode, imports index.css.
+
+/src/App.tsx
+Purpose: The entire UI — preset chips + path input, fetches /api/psd/png once per open, shows the PNG blob via an object URL, and the Save-as-PNG download; manages loading/error state and revokes stale object URLs.
+
+/src/index.css
+Purpose: Dark-theme styling — controls panel, preset chips, checkerboard image backdrop, meta row + save button.

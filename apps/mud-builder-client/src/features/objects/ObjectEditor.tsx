@@ -2,7 +2,8 @@ import type { MudObject, ObjValue } from '@shatteredarchive/merc-area';
 import { ITEM_TYPES, itemLookup, objValueKinds } from '@shatteredarchive/merc-area';
 
 import { ATTACK_TYPES, EXTRA_FLAGS, LIQUIDS, WEAPON_TYPES, WEAR_FLAGS } from '../../data/flags.js';
-import { FlagGrid, WordInput } from '../areas/workbench.js';
+import { FlagGrid, NumField, TextField, WordInput } from '../areas/workbench.js';
+import SaveAsSnippetButton from '../content/SaveAsSnippetButton.js';
 
 /** Human labels + word suggestions for the five values, per item type. */
 function valueMeta(itemType: string): { labels: [string, string, string, string, string]; words: (string[] | null)[] } {
@@ -44,15 +45,6 @@ function valueMeta(itemType: string): { labels: [string, string, string, string,
   }
 }
 
-function NumRow({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
-  return (
-    <label className="mb-form-row">
-      {label}
-      <input aria-label={label} type="number" value={value} onChange={(e) => onChange(Number(e.target.value) || 0)} />
-    </label>
-  );
-}
-
 /**
  * Form editor for one #OBJECTS entry. The five values change meaning (and
  * number-vs-word tokenization) with the item type — objValueKinds is the same
@@ -79,39 +71,39 @@ export default function ObjectEditor({ obj, onChange }: { obj: MudObject; onChan
   };
 
   return (
-    <div className="mb-script-editor mb-obj-editor">
+    <div className="mb-form mb-obj-editor">
       <h4>
         Object #{obj.vnum} — {obj.shortDescr}
+        <SaveAsSnippetButton kind="object" data={obj} />
       </h4>
 
-      <label className="mb-form-row">
-        Keywords
-        <input aria-label="Keywords" value={obj.name} onChange={(e) => set('name', e.target.value)} />
-      </label>
-      <label className="mb-form-row">
-        Short description
-        <input aria-label="Short description" value={obj.shortDescr} onChange={(e) => set('shortDescr', e.target.value)} />
-      </label>
-      <label className="mb-form-row">
-        Description (in room)
-        <input aria-label="Description" value={obj.description} onChange={(e) => set('description', e.target.value)} />
-      </label>
+      <fieldset className="mb-fieldset">
+        <legend>Descriptions</legend>
+        <div className="mb-row mb-row--stretch">
+          <TextField label="Keywords" value={obj.name} onChange={(v) => set('name', v)} />
+          <TextField label="Short description" value={obj.shortDescr} onChange={(v) => set('shortDescr', v)} />
+        </div>
+        <TextField label="Description (in room)" value={obj.description} onChange={(v) => set('description', v)} />
+      </fieldset>
 
-      <div className="mb-form-grid">
-        <WordInput label="Item type" value={obj.itemType} words={[...ITEM_TYPES]} onChange={(v) => set('itemType', v)} />
-        <WordInput label="Material" value={obj.material} words={['unknown']} onChange={(v) => set('material', v)} />
-        <NumRow label="Level" value={obj.level} onChange={(v) => set('level', v)} />
-        <NumRow label="Weight" value={obj.weight} onChange={(v) => set('weight', v)} />
-        <NumRow label="Cost" value={obj.cost} onChange={(v) => set('cost', v)} />
-        <WordInput
-          label="Condition"
-          value={obj.condition}
-          words={['P', 'G', 'A', 'W', 'D', 'B', 'R']}
-          onChange={(v) => set('condition', v)}
-        />
-      </div>
+      <fieldset className="mb-fieldset">
+        <legend>Basics</legend>
+        <div className="mb-form-grid">
+          <WordInput label="Item type" value={obj.itemType} words={[...ITEM_TYPES]} onChange={(v) => set('itemType', v)} />
+          <WordInput label="Material" value={obj.material} words={['unknown']} onChange={(v) => set('material', v)} />
+          <NumField label="Level" value={obj.level} onChange={(v) => set('level', v)} />
+          <NumField label="Weight" value={obj.weight} onChange={(v) => set('weight', v)} />
+          <NumField label="Cost" value={obj.cost} onChange={(v) => set('cost', v)} />
+          <WordInput
+            label="Condition"
+            value={obj.condition}
+            words={['P', 'G', 'A', 'W', 'D', 'B', 'R']}
+            onChange={(v) => set('condition', v)}
+          />
+        </div>
+      </fieldset>
 
-      <fieldset className="mb-flag-grid">
+      <fieldset className="mb-fieldset">
         <legend>Values ({itemLookup(obj.itemType) ?? 'unknown type — raw'})</legend>
         <div className="mb-form-grid">
           {kinds.map((kind, i) =>
@@ -124,7 +116,7 @@ export default function ObjectEditor({ obj, onChange }: { obj: MudObject; onChan
                 onChange={(v) => setValue(i, v)}
               />
             ) : (
-              <NumRow
+              <NumField
                 key={i}
                 label={kind === 'flag' ? `${meta.labels[i]} (flag bits)` : meta.labels[i]}
                 value={Number(obj.values[i]) || 0}
@@ -138,20 +130,30 @@ export default function ObjectEditor({ obj, onChange }: { obj: MudObject; onChan
       <FlagGrid label="Extra flags" flags={EXTRA_FLAGS} value={obj.extraFlags} onChange={(v) => set('extraFlags', v)} />
       <FlagGrid label="Wear flags" flags={WEAR_FLAGS} value={obj.wearFlags} onChange={(v) => set('wearFlags', v)} />
 
-      <fieldset className="mb-flag-grid">
+      <fieldset className="mb-fieldset">
         <legend>Extra descriptions ({obj.extraDescrs.length})</legend>
         {obj.extraDescrs.map((ed, i) => (
           <div key={i} className="mb-extra-descr">
-            <label className="mb-form-row">
-              Keyword(s)
-              <input
-                aria-label={`Extra description ${i + 1} keywords`}
-                value={ed.keyword}
-                onChange={(e) => setExtraDescr(i, e.target.value, ed.description)}
-              />
-            </label>
-            <label className="mb-form-row">
-              Text
+            <div className="mb-row mb-row--stretch">
+              <label className="mb-field">
+                <span>Keyword(s)</span>
+                <input
+                  aria-label={`Extra description ${i + 1} keywords`}
+                  value={ed.keyword}
+                  onChange={(e) => setExtraDescr(i, e.target.value, ed.description)}
+                />
+              </label>
+              <div className="mb-row-actions">
+                <button
+                  type="button"
+                  onClick={() => set('extraDescrs', obj.extraDescrs.filter((_, j) => j !== i))}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+            <label className="mb-field">
+              <span>Text</span>
               <textarea
                 aria-label={`Extra description ${i + 1} text`}
                 rows={3}
@@ -159,12 +161,6 @@ export default function ObjectEditor({ obj, onChange }: { obj: MudObject; onChan
                 onChange={(e) => setExtraDescr(i, ed.keyword, e.target.value)}
               />
             </label>
-            <button
-              type="button"
-              onClick={() => set('extraDescrs', obj.extraDescrs.filter((_, j) => j !== i))}
-            >
-              Remove
-            </button>
           </div>
         ))}
         <button

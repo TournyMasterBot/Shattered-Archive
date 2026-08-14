@@ -1,1 +1,4 @@
 File Index
+
+/App.tsx
+Purpose: App shell — NavProvider + a plain switch-based ScreenRouter (no router lib). Phase F added the `'account'` case (AccountScreen) and mounts `useAuthCallback()` once at the top level (reads the kt-sso callback's URL fragment on load, mirrors game-client's Phase D pattern).

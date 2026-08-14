@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Signing in… – Shattered Archive</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      /* Inline, and deliberately not the app's SCSS: this page exists for a few
+         hundred milliseconds inside a popup and must not pull in the bundle. */
+      body {
+        margin: 0;
+        display: grid;
+        place-items: center;
+        min-height: 100vh;
+        background: #1a1a1a;
+        color: #f0f0f0;
+        font-family: system-ui, sans-serif;
+        text-align: center;
+      }
+      p {
+        margin: 0.35rem 1rem;
+      }
+      .muted {
+        color: #9a9a9a;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div>
+      <p id="message">Signing you in…</p>
+      <p class="muted" id="hint">This window closes by itself.</p>
+    </div>
+    <script type="module" src="/src/auth-callback.ts"></script>
+  </body>
+</html>

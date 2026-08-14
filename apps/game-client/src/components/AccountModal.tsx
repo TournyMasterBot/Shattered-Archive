@@ -1,0 +1,93 @@
+// apps/game-client/src/components/AccountModal.tsx
+import React from 'react';
+import styles from '../styles/AccountModal.module.scss';
+import { useAccountModal } from '../hooks/useAccountModal';
+
+interface AccountModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  connectionId: string;
+}
+
+export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, connectionId }) => {
+  const { isLoggedIn, busy, loginPending, status, handleLogin, handleLogout, handleSaveToCloud, handleLoadFromCloud } =
+    useAccountModal({ isOpen, connectionId, onClose });
+
+  if (!isOpen) return null;
+
+  return (
+    <div className={styles.backdrop}>
+      <div className={styles.modal} role="dialog" aria-modal="true" aria-label="Account">
+        <header className={styles.header}>
+          <div className={styles.title}>Account</div>
+          <button type="button" className={styles.closeButton} onClick={onClose}>
+            ✕
+          </button>
+        </header>
+
+        <div className={styles.body}>
+          {!isLoggedIn && (
+            <>
+              <div className={styles.blurb}>
+                Log in with your Shattered Archive account to save and load this connection's scripts, plugin
+                configs, and library writings (parchment/notes/books) from the cloud. This is optional — everything
+                keeps working locally without it. Signing in opens a separate window, so your connection to the game
+                stays up the whole time.
+              </div>
+              <div className={styles.actionsColumn}>
+                <button
+                  type="button"
+                  className={styles.primaryButton}
+                  onClick={handleLogin}
+                  disabled={busy || loginPending}
+                >
+                  {loginPending ? 'Waiting for the sign-in window…' : 'Log in with Shattered Archive account'}
+                </button>
+              </div>
+              {loginPending && (
+                <div className={styles.blurb}>
+                  Finish signing in in the window that just opened. This panel updates by itself when you're done —
+                  you can keep playing in the meantime.
+                </div>
+              )}
+            </>
+          )}
+
+          {isLoggedIn && (
+            <>
+              <div className={styles.connectionLine}>Connection: {connectionId}</div>
+              <div className={styles.blurb}>
+                Save pushes this connection's local scripts, plugin configs, and library writings to the cloud. Load
+                replaces the scripts/plugin configs with whatever was last saved there, and merges in any library
+                writings saved from the cloud (your local writings are never deleted by Load).
+              </div>
+              <div className={styles.actionsColumn}>
+                <button type="button" className={styles.secondaryButton} onClick={handleSaveToCloud} disabled={busy}>
+                  Save this connection's scripts + plugins to the cloud
+                </button>
+                <button type="button" className={styles.secondaryButton} onClick={handleLoadFromCloud} disabled={busy}>
+                  Load from cloud into this connection
+                </button>
+                <button type="button" className={styles.secondaryButton} onClick={handleLogout} disabled={busy}>
+                  Log out
+                </button>
+              </div>
+            </>
+          )}
+
+          {status?.kind === 'ok' && <div className={styles.statusOk}>{status.text}</div>}
+          {status?.kind === 'err' && <div className={styles.statusErr}>{status.text}</div>}
+          {status?.kind === 'info' && <div className={styles.statusInfo}>{status.text}</div>}
+        </div>
+
+        <div className={styles.footer}>
+          <button type="button" className={styles.secondaryButton} onClick={onClose}>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AccountModal;

@@ -1,0 +1,10 @@
+File Index
+
+/jest.config.cjs
+Purpose: Self-contained node jest config; maps types-server to its TS source so tests don't need a prior build.
+
+/package.json
+Purpose: Express-based auth service package (port 62000); scripts include temp-password/register-service/revoke-service-key host-run CLIs.
+
+/tsconfig.json
+Purpose: NodeNext build config mirroring mud-builder-server.
