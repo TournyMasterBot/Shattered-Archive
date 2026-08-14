@@ -35,7 +35,7 @@ export type RoomAction =
   | { type: 'addCustomRole'; role: Omit<RoleDef, 'builtin'> }
   | { type: 'removeCustomRole'; roleId: string }
   | { type: 'updateSettings'; settings: Partial<RoomSettings> }
-  | { type: 'recordNightCheck'; checkerId: string; targetId: string; result: RoleDef['alignment'] }
+  | { type: 'recordNightCheck'; checkerId: string; targetId: string; result: RoleDef['alignment']; roleName: string }
   | { type: 'recordNightProtect'; protectorId: string; targetId: string }
   | { type: 'recordAssassinTarget'; targetId: string }
   | { type: 'advanceToNight' }
@@ -126,6 +126,7 @@ function applyAction(state: RoomState, action: RoomAction): RoomState {
         checkerId: action.checkerId,
         targetId: action.targetId,
         result: action.result,
+        roleName: action.roleName,
       };
       return { ...state, timeline: upsertNightFact(state.timeline, entry) };
     }

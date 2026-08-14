@@ -559,3 +559,40 @@ sign-in + per-account archive + C# dashboard reload).
   and verified live: toggled two players dead in one sitting (multi-kill), revived one
   (resurrection), confirmed both the Day-vote pool and the Timeline reacted correctly, confirmed
   the ADMIN-tagged entries render as designed — screenshotted.
+- 2026-08-14T02:00:00-05:00 three final items, same sitting:
+  (1) **Real bug fix**: the Umbraseer's night-check computed its result via
+  `countsTowardAlignment(..., 'assassin')` — a helper meant for WIN-TALLY counting, not
+  alignment detection. Any custom role with `countsTowardWinTally: false` (the rules' own
+  "Cultist Minion" example) or any custom "neutral" role was silently misreported. Fixed
+  `NightActionLog.tsx` to read `findRole(room.roles, target?.roleId)?.alignment` directly —
+  correct for any role, built-in or custom, regardless of its win-tally flag. Added tests for
+  both the opted-out-assassin case and a custom-neutral-role case; verified live (a custom
+  "Cultist Minion" opted out of the win tally now correctly reads "an Assassin").
+  (2) **Front proxy wiring**: replaced the soulsteel 503 stub in
+  `C:/Projects/DSL/nginx/shattered_archive.site` with a real block mirroring the auth
+  block's shape (single `/` location, no websocket — matches soulsteel's own routing), proxying
+  to the docker host (`51.222.137.28`) same as every other real block. Research pass first
+  (dedicated Explore agent) found the shared `shatteredarchive-dev-apps` cert's documented SAN
+  list actually covers FIVE names today (game-client was folded in 2026-08-01 — the "four
+  blocks" comment I was about to copy was already stale before I touched it), and that no
+  deploy script pushes this file to the real front-proxy host — it's a manual/out-of-repo step.
+  Corrected the stale count while adding soulsteel as a sixth, and updated the matching
+  `-d` lists/counts in `ssl-cert.md` and `TRAFFIC-FLOW.md`. **Left an explicit, unresolved
+  caveat** (in-file comments + here): routing and TLS cert coverage are separate steps — the
+  shared cert must be re-issued on the real front-proxy host with the full 6-name `-d` list
+  (command given in ssl-cert.md) before `https://soulsteel.shatteredarchive.dev` presents a
+  matching certificate for real visitors; nginx won't fail to reload in the meantime (the cert
+  FILE already exists, just without this name in its SAN list yet), so this is safe to leave
+  wired but not yet reissued — I have no access to that host or Let's Encrypt credentials to do
+  the reissue myself. Verified the new block's syntax in isolation (throwaway nginx container,
+  SSL directives stripped for the test) and confirmed the full file's syntax is unaffected
+  (same pre-existing unrelated failure point as before my edit, from missing local cert files
+  that only exist on the real host).
+  (3) **Landing page**: added a Soulsteel card to `deploy/index.html`'s live-demos grid,
+  matching the established `<a class="demo">`/`badge-live` pattern exactly (the file's own
+  comment already documented this as the correct trigger: swap from `demo-soon` div to a real
+  `<a href>` once the front-proxy stub is replaced, which step (2) just did). Verified live: the
+  card is served immediately (static file, no rebuild/restart needed) and renders correctly
+  alongside the other live demos.
+  All three verified live via Playwright; 83/83 client tests pass (up from 81, two new
+  Umbraseer-detection tests); soulsteel-client rebuilt/redeployed for the Umbraseer fix.

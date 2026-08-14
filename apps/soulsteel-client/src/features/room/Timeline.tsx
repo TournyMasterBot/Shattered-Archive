@@ -14,10 +14,9 @@ function describeEntry(room: RoomState, entry: TimelineEntry): string {
   switch (entry.kind) {
     case 'night-check': {
       const target = playerName(room, entry.targetId);
-      const trueResult = entry.result === 'assassin' ? 'an Assassin' : 'not an Assassin';
       return isUmbraseerBlocked(room, entry.day)
-        ? `${playerName(room, entry.checkerId)} checked ${target}, but was told "${UMBRASEER_BLOCKED_MESSAGE}" (actually ${trueResult}).`
-        : `${playerName(room, entry.checkerId)} checked ${target}: ${trueResult}.`;
+        ? `${playerName(room, entry.checkerId)} checked ${target}, but was told "${UMBRASEER_BLOCKED_MESSAGE}" (actually ${entry.roleName}).`
+        : `${playerName(room, entry.checkerId)} checked ${target}: ${entry.roleName}.`;
     }
     case 'night-protect':
       return `${playerName(room, entry.protectorId)} protected ${playerName(room, entry.targetId)}.`;

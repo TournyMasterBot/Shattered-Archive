@@ -47,12 +47,20 @@ describe('Timeline', () => {
       ],
       timeline: [
         { id: 'e1', kind: 'night-protect', day: 1, protectorId: 'shield', targetId: 'cultist' },
-        { id: 'e2', kind: 'night-check', day: 1, checkerId: 'seer', targetId: 'cultist', result: 'assassin' },
+        {
+          id: 'e2',
+          kind: 'night-check',
+          day: 1,
+          checkerId: 'seer',
+          targetId: 'cultist',
+          result: 'assassin',
+          roleName: 'Cultist Assassin',
+        },
       ],
     };
     render(<Timeline room={room} />);
     expect(screen.getByText(/Umbral forces block your sight/)).toBeDefined();
-    expect(screen.getByText(/actually an Assassin/)).toBeDefined();
+    expect(screen.getByText(/actually Cultist Assassin/)).toBeDefined();
   });
 
   it('flags a manual Herald status change with an Admin tag and describes it distinctly', () => {

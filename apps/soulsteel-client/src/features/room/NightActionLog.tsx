@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
-import { countsTowardAlignment } from '../../domain/roleCatalog.js';
+import { findRole } from '../../domain/roleCatalog.js';
 import { isUmbraseerBlocked, UMBRASEER_BLOCKED_MESSAGE } from '../../domain/umbraseerBlock.js';
 import type { RoomAction } from '../../domain/gameReducer.js';
-import type { Player, RoomState, TimelineEntry } from '../../domain/types.js';
+import type { Alignment, Player, RoomState, TimelineEntry } from '../../domain/types.js';
 
 interface NightActionLogProps {
   room: RoomState;
@@ -109,16 +109,24 @@ export default function NightActionLog({ room, dispatch }: NightActionLogProps) 
           recordedText={
             checkEntry
               ? isUmbraseerBlocked(room, day)
-                ? `${playerName(room, checkEntry.targetId)}: ${UMBRASEER_BLOCKED_MESSAGE} (actually ${
-                    checkEntry.result === 'assassin' ? 'an Assassin' : 'not an Assassin'
-                  })`
-                : `${playerName(room, checkEntry.targetId)}: ${checkEntry.result === 'assassin' ? 'an Assassin' : 'not an Assassin'}`
+                ? `${playerName(room, checkEntry.targetId)}: ${UMBRASEER_BLOCKED_MESSAGE} (actually ${checkEntry.roleName})`
+                : `${playerName(room, checkEntry.targetId)}: ${checkEntry.roleName}`
               : null
           }
           onConfirm={(targetId) => {
             const target = room.players.find((p) => p.id === targetId);
-            const result = countsTowardAlignment(room.roles, target?.roleId, 'assassin') ? 'assassin' : 'darkKnight';
-            dispatch({ type: 'recordNightCheck', checkerId: umbraseer.id, targetId, result });
+            // The target's OWN role, not `countsTowardAlignment`'s win-tally-gated check — that
+            // helper answers a different question (does this role count toward the automatic win
+            // tally), and using it here silently misdetected any custom role that opted out of
+            // the tally (or any custom "neutral" role, collapsed into "not an Assassin"/"Dark
+            // Knight" instead of its real alignment). This works for any role, built-in or
+            // custom, regardless of its win-tally flag. A successful check reveals the target's
+            // actual role (not just an assassin/not-assassin binary), so both the alignment and
+            // the role's name are recorded.
+            const role = findRole(room.roles, target?.roleId);
+            const result: Alignment = role?.alignment ?? 'darkKnight';
+            const roleName = role?.name ?? 'Dark Knight';
+            dispatch({ type: 'recordNightCheck', checkerId: umbraseer.id, targetId, result, roleName });
           }}
         />
       )}
@@ -127,7 +135,7 @@ export default function NightActionLog({ room, dispatch }: NightActionLogProps) 
         <NightActionRow
           title="Darkshield's protection"
           actorName={darkshield.name}
-          candidates={alive.filter((p) => p.id !== darkshield.id)}
+          candidates={alive}
           recordedText={protectEntry ? `Protecting ${playerName(room, protectEntry.targetId)}` : null}
           onConfirm={(targetId) => dispatch({ type: 'recordNightProtect', protectorId: darkshield.id, targetId })}
         />

@@ -43,7 +43,7 @@ export interface Player {
 }
 
 export type TimelineEntry =
-  | { id: string; kind: 'night-check'; day: number; checkerId: string; targetId: string; result: Alignment }
+  | { id: string; kind: 'night-check'; day: number; checkerId: string; targetId: string; result: Alignment; roleName: string }
   | { id: string; kind: 'night-protect'; day: number; protectorId: string; targetId: string }
   | { id: string; kind: 'night-assassin-target'; day: number; targetId: string }
   | { id: string; kind: 'night-elimination'; day: number; targetId: string; protected: boolean }
