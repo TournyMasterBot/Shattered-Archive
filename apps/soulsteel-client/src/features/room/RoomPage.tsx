@@ -7,8 +7,9 @@ import DayVoteRecorder from './DayVoteRecorder.js';
 import NightActionLog from './NightActionLog.js';
 import PhaseController from './PhaseController.js';
 import PlayerRoster from './PlayerRoster.js';
-import RoleAssignmentPanel from './RoleAssignmentPanel.js';
+import RolesPanel from './RolesPanel.js';
 import RoomSettingsDialog from './RoomSettingsDialog.js';
+import RulesModal from '../shared/RulesModal.js';
 import Timeline from './Timeline.js';
 import WinConditionBanner from './WinConditionBanner.js';
 
@@ -27,6 +28,7 @@ export default function RoomPage({ roomId, onExit }: RoomPageProps) {
   const [room, setRoom] = useState<RoomState | null>(null);
   const [loading, setLoading] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -64,18 +66,22 @@ export default function RoomPage({ roomId, onExit }: RoomPageProps) {
           ← Back to games
         </button>
         <PhaseController room={room} dispatch={dispatch} />
+        <button type="button" onClick={() => setRulesOpen(true)}>
+          Rules
+        </button>
         <button type="button" onClick={() => setSettingsOpen(true)}>
           Settings
         </button>
       </div>
 
+      {rulesOpen && <RulesModal onClose={() => setRulesOpen(false)} />}
       {settingsOpen && <RoomSettingsDialog room={room} dispatch={dispatch} onClose={() => setSettingsOpen(false)} />}
 
       <WinConditionBanner room={room} />
 
       <div className="ss-room-grid">
         <PlayerRoster room={room} dispatch={dispatch} />
-        <RoleAssignmentPanel room={room} dispatch={dispatch} />
+        <RolesPanel room={room} dispatch={dispatch} />
         {room.phase === 'night' ? (
           <NightActionLog room={room} dispatch={dispatch} />
         ) : (

@@ -48,7 +48,8 @@ export type TimelineEntry =
   | { id: string; kind: 'night-assassin-target'; day: number; targetId: string }
   | { id: string; kind: 'night-elimination'; day: number; targetId: string; protected: boolean }
   | { id: string; kind: 'day-vote-tally'; day: number; tally: Record<string, number> }
-  | { id: string; kind: 'day-execution'; day: number; targetId: string | null; note?: string };
+  | { id: string; kind: 'day-execution'; day: number; targetId: string | null; note?: string }
+  | { id: string; kind: 'admin-status-change'; day: number; phase: 'day' | 'night'; targetId: string; alive: boolean };
 
 export interface RoomSettings {
   nightTimerSeconds: number;
@@ -57,6 +58,10 @@ export interface RoomSettings {
   /** Recommendations section: "Don't block a murder first night in very small games... or add a
    * twist." Left as a Herald toggle rather than an enforced rule. */
   firstNightNoKill: boolean;
+  /** House rule for small games that otherwise resolve too quickly: if the Darkshield's
+   * protection target for a night turns out to be Assassin-aligned, "Umbral forces" interfere
+   * with the Umbraseer's sight that same night, regardless of who the Umbraseer checked. */
+  darkshieldBlocksUmbraseer: boolean;
 }
 
 export type WinResult = 'darkKnights' | 'assassins' | null;

@@ -103,6 +103,19 @@
   box-shadow: var(--ss-glow);
 }
 
+.ss-rules-link {
+  align-self: center;
+  background: none;
+  border: none;
+  color: var(--ss-rule-cyan);
+  font-size: 0.85rem;
+  padding: 0.25rem;
+}
+
+.ss-rules-link:hover {
+  text-decoration: underline;
+}
+
 .ss-resume-paste label {
   display: block;
   margin-bottom: 0.4rem;
@@ -128,8 +141,14 @@
   gap: 0.5rem;
 }
 
-.ss-resume-list button {
-  width: 100%;
+.ss-resume-list li {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+.ss-resume-list li > button:first-child {
+  flex: 1;
   text-align: left;
   padding: 0.6rem 0.85rem;
   background: var(--ss-bg-panel);
@@ -138,8 +157,59 @@
   color: var(--ss-text);
 }
 
-.ss-resume-list button:hover {
+.ss-resume-list li > button:first-child:hover {
   border-color: var(--ss-accent);
+}
+
+.ss-resume-item-delete {
+  background: none;
+  border: 1px solid var(--ss-border);
+  border-radius: 8px;
+  padding: 0 0.75rem;
+  color: var(--ss-text-dim);
+  flex-shrink: 0;
+}
+
+.ss-resume-item-delete:hover {
+  border-color: var(--ss-danger);
+  color: var(--ss-danger);
+}
+
+.ss-resume-item-confirm {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  background: var(--ss-bg-panel);
+  border: 1px solid var(--ss-danger);
+  border-radius: 8px;
+}
+
+.ss-resume-item-confirm span {
+  flex: 1;
+  min-width: 12rem;
+  font-size: 0.85rem;
+}
+
+.ss-bulk-delete {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--ss-border);
+}
+
+.ss-bulk-delete-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--ss-text-dim);
+}
+
+.ss-bulk-delete-row input {
+  width: 4rem;
 }
 
 /* ============================================================
@@ -219,14 +289,18 @@
   flex: 1;
 }
 
-.ss-roster-empty,
-.ss-roles-empty {
+.ss-roster-empty {
   color: var(--ss-text-dim);
   font-style: italic;
 }
 
-.ss-roster-list,
-.ss-roles-list {
+.ss-roster-hint {
+  font-size: 0.85rem;
+  color: var(--ss-text-dim);
+  margin-top: 0;
+}
+
+.ss-roster-list {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -238,11 +312,12 @@
 .ss-roster-list li {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.ss-roster-list input {
-  flex: 1;
+.ss-roster-list li input[type='text'] {
+  flex: 1 1 8rem;
   min-width: 0;
 }
 
@@ -250,27 +325,108 @@
   opacity: 0.55;
 }
 
-.ss-player-status {
+.ss-player-status-toggle {
   font-size: 0.78rem;
-  color: var(--ss-text-dim);
   white-space: nowrap;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  color: var(--ss-text-dim);
+}
+
+.ss-player-status-toggle:hover {
+  border-color: var(--ss-border);
+}
+
+.ss-player-status-alive {
+  color: var(--ss-success);
+}
+
+.ss-player-status-dead {
+  color: var(--ss-danger);
+  opacity: 0.8;
 }
 
 /* ============================================================
-   Roles
+   Roles (catalog — independent of player assignment)
    ============================================================ */
 
-.ss-roles-hint {
-  font-size: 0.85rem;
-  color: var(--ss-text-dim);
-  margin-top: 0;
+.ss-roles-catalog {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-.ss-roles-list li {
+.ss-roles-catalog > li {
+  border-bottom: 1px solid var(--ss-border);
+  padding-bottom: 0.75rem;
+}
+
+.ss-roles-catalog > li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.ss-role-catalog-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+}
+
+.ss-role-catalog-info {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.ss-role-catalog-name {
+  font-weight: 600;
+  color: var(--ss-steel);
+}
+
+.ss-role-catalog-alignment {
+  font-size: 0.75rem;
+  color: var(--ss-text-dim);
+  white-space: nowrap;
+}
+
+.ss-role-catalog-count {
+  font-size: 0.75rem;
+  color: var(--ss-accent-soft);
+}
+
+.ss-role-catalog-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.ss-role-catalog-description {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--ss-text-dim);
+}
+
+.ss-role-note-icon {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0.2rem 0.4rem;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--ss-text-dim);
+}
+
+.ss-role-note-icon:hover {
+  border-color: var(--ss-border);
+  color: var(--ss-accent-soft);
 }
 
 /* ============================================================
@@ -349,6 +505,24 @@
 .ss-timeline-day {
   color: var(--ss-accent-soft);
   font-weight: 600;
+}
+
+.ss-timeline-admin {
+  border-left: 2px solid var(--ss-rule-brown);
+  padding-left: 0.5rem;
+  font-style: italic;
+}
+
+.ss-timeline-admin-tag {
+  display: inline-block;
+  font-style: normal;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ss-rule-brown);
+  border: 1px solid var(--ss-rule-brown);
+  border-radius: 4px;
+  padding: 0 0.3rem;
 }
 
 /* ============================================================
@@ -441,27 +615,226 @@
   gap: 0.5rem;
 }
 
-.ss-custom-role-list {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin-bottom: 0.75rem;
+.ss-dialog-hint {
+  font-size: 0.8rem;
+  color: var(--ss-text-dim);
+  margin: 0.5rem 0 0;
 }
 
-.ss-custom-role-list li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+.ss-add-custom-role-toggle {
+  width: 100%;
+  background: none;
+  border: 1px dashed var(--ss-border);
+  border-radius: 6px;
+  padding: 0.5rem;
   font-size: 0.85rem;
+  color: var(--ss-text-dim);
+}
+
+.ss-add-custom-role-toggle:hover {
+  border-color: var(--ss-accent);
+  color: var(--ss-accent-soft);
 }
 
 .ss-custom-role-form {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.ss-custom-role-form h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ss-steel);
+}
+
+.ss-custom-role-form-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ss-parchment-hint {
+  font-size: 0.85rem;
+  color: var(--ss-text-dim);
+}
+
+.ss-parchment-commands {
+  width: 100%;
+  resize: vertical;
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+/* ============================================================
+   Rules — ornate, illuminated-manuscript treatment
+   ============================================================ */
+
+.ss-rules-dialog {
+  max-width: 40rem;
+  background: radial-gradient(ellipse at 50% 15%, #241a35 0%, #150f20 55%, #08050d 100%);
+  border: 1px solid rgba(91, 59, 130, 0.5);
+  /* The umbral bleed: a dark violet glow dissolving outward into the backdrop's own black,
+     plus a heavy inward vignette so the manuscript itself darkens toward its own edges. */
+  box-shadow:
+    0 0 10px 2px rgba(11, 7, 16, 0.9),
+    0 0 70px 14px rgba(60, 20, 90, 0.35),
+    0 0 140px rgba(139, 92, 246, 0.12),
+    inset 0 0 70px rgba(0, 0, 0, 0.55);
+}
+
+.ss-rules-content {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--ss-text-dim);
+}
+
+.ss-rules-content p {
+  margin: 0 0 0.85rem;
+}
+
+.ss-rules-content ol {
+  margin: 0 0 0.85rem;
+  padding-left: 1.25rem;
+}
+
+.ss-rules-content li {
+  margin-bottom: 0.4rem;
+}
+
+.ss-rules-title {
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.ss-rules-title-main {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.3rem;
+  letter-spacing: 0.03em;
+  color: #d9d2c3;
+  text-shadow:
+    0 0 16px rgba(139, 92, 246, 0.55),
+    0 0 36px rgba(91, 33, 182, 0.35);
+  margin: 0;
+}
+
+.ss-rules-title-sub {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  color: var(--ss-rule-magenta);
+  opacity: 0.85;
+  margin: 0.25rem 0 0;
+}
+
+.ss-rules-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1.1rem 0;
+}
+
+.ss-rules-divider::before,
+.ss-rules-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(91, 59, 130, 0.7), transparent);
+}
+
+.ss-rules-divider-glyph {
+  color: var(--ss-text-dim);
+  font-size: 0.75rem;
+  filter: drop-shadow(0 0 5px rgba(139, 92, 246, 0.5));
+  transform: rotate(90deg);
+  display: inline-block;
+}
+
+.ss-rules-h1 {
+  font-family: Georgia, 'Times New Roman', serif;
+  color: var(--ss-rule-cyan);
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+  margin: 0 0 0.6rem;
+}
+
+.ss-rules-h2 {
+  font-family: Georgia, 'Times New Roman', serif;
+  color: var(--ss-rule-magenta);
+  font-size: 0.95rem;
+  margin: 1rem 0 0.5rem;
+}
+
+.ss-rules-h2::before {
+  content: '\25c6  ';
+  color: var(--ss-rule-teal);
+  font-size: 0.65rem;
+}
+
+.ss-rules-h3 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.9rem;
+  margin: 0.75rem 0 0.4rem;
+}
+
+.ss-rules-role {
+  margin-bottom: 0.9rem;
+}
+
+.ss-rules-role-name {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1rem;
+  margin: 0 0 0.25rem;
+}
+
+.ss-rules-role p {
+  margin: 0;
+}
+
+.ss-rules-win-list {
+  margin: 0;
+}
+
+.ss-rules-win-list dt {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 600;
+  margin-top: 0.6rem;
+}
+
+.ss-rules-win-list dd {
+  margin: 0.15rem 0 0;
+}
+
+/* Inline term colors — the actual colors the source text's {X codes resolve to (see
+   index.css's --ss-rule-* tokens), applied once per concept rather than reproducing that
+   markup's per-letter span mechanics. */
+.ss-rules-herald {
+  color: var(--ss-rule-brown);
+}
+
+.ss-rules-umbraseer {
+  color: var(--ss-rule-violet);
+}
+
+.ss-rules-darkshield,
+.ss-rules-darkknight {
+  color: var(--ss-steel);
+}
+
+.ss-rules-assassin {
+  color: var(--ss-rule-red);
+}
+
+.ss-rules-night {
+  color: var(--ss-rule-purple);
+}
+
+.ss-rules-day {
+  color: var(--ss-rule-amber);
+}
+
+.ss-rules-vote {
+  color: var(--ss-rule-pink);
 }
 
 /* ============================================================

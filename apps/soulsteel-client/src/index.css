@@ -22,6 +22,23 @@
 
   --ss-glow: 0 0 24px rgba(139, 92, 246, 0.25);
   --ss-radius: 10px;
+
+  /*
+   * Rules content palette — the actual colors intended by the DSL Story Notes' `{X` markup
+   * (C:/Projects/DSL/Books/.../Umbral-Cloak-and-Soulsteel-Dagger.txt), each carried over from
+   * its resolved hex (per game-client's renderDslColorPreviewHtml.ts / the DSL server's
+   * BookRenderColorModel.cs) and only re-tuned where the literal value would be illegible
+   * against this near-black background (e.g. {D "black" -> steel, not #000).
+   */
+  --ss-rule-cyan: #6fa89e; /* {C Lt Cyan — major section headers, dimmed to a tarnished-silver witchlight rather than a neon glow */
+  --ss-rule-teal: #4a8a80; /* {c cyan — divider glyphs, dimmed to match */
+  --ss-rule-magenta: #a97bc4; /* {M Lt Magenta — sub-section headers, dimmed to a faded grimoire-ink violet */
+  --ss-rule-violet: #a78bfa; /* {u purple — the Umbraseer */
+  --ss-rule-purple: #b565d8; /* {m magenta — "night" */
+  --ss-rule-amber: #fb923c; /* {o orange — "day" */
+  --ss-rule-brown: #c19a6b; /* {n brown — the Herald */
+  --ss-rule-pink: #f472b6; /* {p pink — "vote" */
+  --ss-rule-red: #ef4444; /* {r/{R red — the Cultist Assassin */
 }
 
 * {

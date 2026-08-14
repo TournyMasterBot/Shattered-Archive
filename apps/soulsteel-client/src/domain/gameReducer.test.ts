@@ -87,6 +87,48 @@ describe('gameReducer', () => {
     expect(targetEntries).toHaveLength(1);
     expect(targetEntries[0]).toMatchObject({ targetId: ids[2] });
   });
+
+  it('setPlayerAlive manually kills a living player and logs an admin timeline entry', () => {
+    const { state, ids } = withPlayers(['A', 'B']);
+    const s = apply(state, { type: 'setPlayerAlive', playerId: ids[0]!, alive: false });
+
+    const player = s.players.find((p) => p.id === ids[0]);
+    expect(player?.alive).toBe(false);
+    expect(player?.eliminatedAt).toEqual({ day: 1, phase: 'day', cause: 'other' });
+    expect(s.timeline).toContainEqual(
+      expect.objectContaining({ kind: 'admin-status-change', day: 1, phase: 'day', targetId: ids[0], alive: false }),
+    );
+  });
+
+  it('setPlayerAlive can revive a dead player, clearing their eliminatedAt', () => {
+    const { state, ids } = withPlayers(['A', 'B']);
+    let s = apply(state, { type: 'setPlayerAlive', playerId: ids[0]!, alive: false });
+    s = apply(s, { type: 'setPlayerAlive', playerId: ids[0]!, alive: true });
+
+    const player = s.players.find((p) => p.id === ids[0]);
+    expect(player?.alive).toBe(true);
+    expect(player?.eliminatedAt).toBeUndefined();
+    const adminEntries = s.timeline.filter((e) => e.kind === 'admin-status-change');
+    expect(adminEntries).toHaveLength(2);
+    expect(adminEntries[1]).toMatchObject({ alive: true });
+  });
+
+  it('setPlayerAlive is a no-op (no state change, no timeline entry) when already in that state', () => {
+    const { state, ids } = withPlayers(['A', 'B']);
+    const s = apply(state, { type: 'setPlayerAlive', playerId: ids[0]!, alive: true });
+
+    expect(s.players).toEqual(state.players);
+    expect(s.timeline).toHaveLength(0);
+  });
+
+  it('setPlayerAlive supports multiple simultaneous kills for large-game modifiers', () => {
+    const { state, ids } = withPlayers(['A', 'B', 'C']);
+    let s = apply(state, { type: 'setPlayerAlive', playerId: ids[0]!, alive: false });
+    s = apply(s, { type: 'setPlayerAlive', playerId: ids[1]!, alive: false });
+
+    expect(s.players.filter((p) => p.alive)).toHaveLength(1);
+    expect(s.timeline.filter((e) => e.kind === 'admin-status-change')).toHaveLength(2);
+  });
 });
 
 describe('computeWinResult', () => {

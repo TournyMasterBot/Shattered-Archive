@@ -6,6 +6,7 @@ const DEFAULT_SETTINGS: RoomSettings = {
   discussTimerSeconds: 300,
   voteTimerSeconds: 180,
   firstNightNoKill: false,
+  darkshieldBlocksUmbraseer: false,
 };
 
 function genId(): string {
@@ -40,7 +41,8 @@ export type RoomAction =
   | { type: 'advanceToNight' }
   | { type: 'resolveNight' }
   | { type: 'recordVoteTally'; tally: Record<string, number> }
-  | { type: 'executePlayer'; targetId: string | null; note?: string };
+  | { type: 'executePlayer'; targetId: string | null; note?: string }
+  | { type: 'setPlayerAlive'; playerId: string; alive: boolean };
 
 /** Replaces any existing entry of the same `kind` for the given day — these are singular
  * per-night facts (the Herald correcting a mistake overwrites, not accumulates). */
@@ -67,6 +69,34 @@ function applyAction(state: RoomState, action: RoomAction): RoomState {
         ...state,
         players: state.players.map((p) => (p.id === action.playerId ? { ...p, name: action.name } : p)),
       };
+
+    case 'setPlayerAlive': {
+      const player = state.players.find((p) => p.id === action.playerId);
+      // No-op on a redundant toggle — nothing changed, so no timeline entry either.
+      if (!player || player.alive === action.alive) return state;
+
+      const day = state.dayNumber;
+      const phase = state.phase;
+
+      const players = state.players.map((p) =>
+        p.id === action.playerId
+          ? action.alive
+            ? { ...p, alive: true, eliminatedAt: undefined }
+            : { ...p, alive: false, eliminatedAt: { day, phase, cause: 'other' as const } }
+          : p,
+      );
+
+      const entry: TimelineEntry = {
+        id: genId(),
+        kind: 'admin-status-change',
+        day,
+        phase,
+        targetId: action.playerId,
+        alive: action.alive,
+      };
+
+      return { ...state, players, timeline: [...state.timeline, entry] };
+    }
 
     case 'assignRole':
       return {

@@ -1,7 +1,6 @@
-import { useState } from 'react';
-
+import { UMBRASEER_BLOCKED_MESSAGE } from '../../domain/umbraseerBlock.js';
 import type { RoomAction } from '../../domain/gameReducer.js';
-import type { Alignment, RoomState } from '../../domain/types.js';
+import type { RoomState } from '../../domain/types.js';
 
 interface RoomSettingsDialogProps {
   room: RoomState;
@@ -9,37 +8,8 @@ interface RoomSettingsDialogProps {
   onClose: () => void;
 }
 
-const ALIGNMENT_LABELS: Record<Alignment, string> = {
-  darkKnight: 'Dark Knight-aligned',
-  assassin: 'Assassin-aligned',
-  neutral: 'Neutral',
-};
-
+/** Custom/modifier roles live in `RolesPanel` now — this dialog is timers only. */
 export default function RoomSettingsDialog({ room, dispatch, onClose }: RoomSettingsDialogProps) {
-  const [newRoleName, setNewRoleName] = useState('');
-  const [newRoleAlignment, setNewRoleAlignment] = useState<Alignment>('darkKnight');
-  const [newRoleCounts, setNewRoleCounts] = useState(true);
-  const [newRoleDescription, setNewRoleDescription] = useState('');
-
-  const customRoles = room.roles.filter((r) => !r.builtin);
-
-  const addRole = () => {
-    const trimmed = newRoleName.trim();
-    if (!trimmed) return;
-    dispatch({
-      type: 'addCustomRole',
-      role: {
-        id: crypto.randomUUID(),
-        name: trimmed,
-        alignment: newRoleAlignment,
-        description: newRoleDescription.trim() || 'Custom Game Modifier role.',
-        countsTowardWinTally: newRoleCounts,
-      },
-    });
-    setNewRoleName('');
-    setNewRoleDescription('');
-  };
-
   return (
     <div className="ss-dialog-backdrop" role="presentation" onClick={onClose}>
       <div className="ss-dialog" role="dialog" aria-label="Room settings" onClick={(e) => e.stopPropagation()}>
@@ -81,6 +51,10 @@ export default function RoomSettingsDialog({ room, dispatch, onClose }: RoomSett
               onChange={(e) => dispatch({ type: 'updateSettings', settings: { nightTimerSeconds: Number(e.target.value) } })}
             />
           </label>
+        </section>
+
+        <section className="ss-dialog-section">
+          <h3>House rules</h3>
           <label className="ss-dialog-checkbox">
             <input
               type="checkbox"
@@ -89,67 +63,21 @@ export default function RoomSettingsDialog({ room, dispatch, onClose }: RoomSett
             />
             No kill allowed on the first night
           </label>
-        </section>
-
-        <section className="ss-dialog-section">
-          <h3>Custom / modifier roles</h3>
-
-          {customRoles.length === 0 ? (
-            <p>No custom roles yet.</p>
-          ) : (
-            <ul className="ss-custom-role-list">
-              {customRoles.map((r) => (
-                <li key={r.id}>
-                  <span>
-                    {r.name} ({ALIGNMENT_LABELS[r.alignment]}
-                    {r.countsTowardWinTally === false ? ', not counted toward the win check' : ''})
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => dispatch({ type: 'removeCustomRole', roleId: r.id })}
-                    aria-label={`Remove ${r.name}`}
-                  >
-                    ✕
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <div className="ss-custom-role-form">
+          <label className="ss-dialog-checkbox">
             <input
-              type="text"
-              placeholder="Role name"
-              value={newRoleName}
-              onChange={(e) => setNewRoleName(e.target.value)}
-              aria-label="New role name"
+              type="checkbox"
+              checked={room.settings.darkshieldBlocksUmbraseer}
+              onChange={(e) =>
+                dispatch({ type: 'updateSettings', settings: { darkshieldBlocksUmbraseer: e.target.checked } })
+              }
             />
-            <select
-              aria-label="New role alignment"
-              value={newRoleAlignment}
-              onChange={(e) => setNewRoleAlignment(e.target.value as Alignment)}
-            >
-              {(Object.entries(ALIGNMENT_LABELS) as [Alignment, string][]).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            <label className="ss-dialog-checkbox">
-              <input type="checkbox" checked={newRoleCounts} onChange={(e) => setNewRoleCounts(e.target.checked)} />
-              Counts toward the automatic win check
-            </label>
-            <input
-              type="text"
-              placeholder="Description (optional)"
-              value={newRoleDescription}
-              onChange={(e) => setNewRoleDescription(e.target.value)}
-              aria-label="New role description"
-            />
-            <button type="button" onClick={addRole} disabled={!newRoleName.trim()}>
-              Add role
-            </button>
-          </div>
+            Darkshield blocks Umbraseer
+          </label>
+          <p className="ss-dialog-hint">
+            If the Darkshield protects an Assassin-aligned player, the Umbraseer is told &ldquo;
+            {UMBRASEER_BLOCKED_MESSAGE}&rdquo; that night instead of the true result. Good for small
+            games that otherwise resolve too quickly.
+          </p>
         </section>
       </div>
     </div>

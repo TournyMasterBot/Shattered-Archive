@@ -56,4 +56,33 @@ describe('NightActionLog', () => {
     fireEvent.click(screen.getByText('Change'));
     expect(screen.getByLabelText("Darkshield's protection")).toBeDefined();
   });
+
+  function darkshieldBlockScenario(darkshieldBlocksUmbraseer: boolean): RoomState {
+    const base = createRoom('r1', '2026-01-01T00:00:00.000Z');
+    return {
+      ...base,
+      phase: 'night',
+      settings: { ...base.settings, darkshieldBlocksUmbraseer },
+      players: [
+        { id: 'seer', name: 'Seer', roleId: 'umbraseer', alive: true },
+        { id: 'shield', name: 'Shield', roleId: 'darkshield', alive: true },
+        { id: 'cultist', name: 'Cultist', roleId: 'cultist-assassin', alive: true },
+      ],
+      timeline: [
+        { id: 'e1', kind: 'night-protect', day: 1, protectorId: 'shield', targetId: 'cultist' },
+        { id: 'e2', kind: 'night-check', day: 1, checkerId: 'seer', targetId: 'cultist', result: 'assassin' },
+      ],
+    };
+  }
+
+  it('shows the blocked message (with the true result for the Herald) when the house rule triggers', () => {
+    render(<NightActionLog room={darkshieldBlockScenario(true)} dispatch={jest.fn()} />);
+    expect(screen.getByText(/Umbral forces block your sight/)).toBeDefined();
+    expect(screen.getByText(/actually an Assassin/)).toBeDefined();
+  });
+
+  it('shows the true result when the house rule is off, even if the Darkshield protected the Assassin', () => {
+    render(<NightActionLog room={darkshieldBlockScenario(false)} dispatch={jest.fn()} />);
+    expect(screen.getByText('Cultist: an Assassin')).toBeDefined();
+  });
 });

@@ -434,3 +434,128 @@ experimental stack, surviving a browser reload.
 **Plan status: COMPLETE.** All 7 steps done and verified against the live deployed stack. Next
 up, if wanted: the follow-on plan `20260813-1912-soulsteel-auth-archive-dashboard.md` (central-auth
 sign-in + per-account archive + C# dashboard reload).
+
+- 2026-08-13T22:45:00-05:00 post-completion addition (user request, not a new plan — small and
+  single-sitting): a 📜 icon next to each assigned role in `RoleAssignmentPanel.tsx` opens
+  `RoleParchmentModal.tsx`, showing the exact in-game command sequence to write a role-reveal
+  parchment (`dip quill ink` / `write parch` / role text / `Share your role with the Herald.` /
+  `write parch title Umbral Cloak & Soulsteel Dagger Role`), with a copy-to-clipboard button. New
+  `src/domain/roleParchment.ts` (`roleRevealText`/`roleParchmentCommands`, pure functions, reuse
+  `RoleDef.description` rather than a second copy of role text). Tests added for the domain
+  functions, the modal, and the icon's conditional visibility (46/46 client tests pass). Rebuilt
+  and redeployed `soulsteel-client` to the live stack; verified live via Playwright against the
+  real deployed edge — exact command text confirmed, copy-to-clipboard confirmed working (one
+  false-negative in the verification script itself, from Windows normalizing `\n` to `\r\n` on
+  clipboard write — content matched byte-for-byte once normalized, not a real bug). Screenshot
+  confirmed the modal renders correctly in the dark theme.
+- 2026-08-13T23:05:00-05:00 minor correction (user request): the parchment command sequence now
+  inserts `@` (closes the multi-line write editor) between "Share your role with the Herald." and
+  the title command, and ends with a new `read soulsteel` line. Updated
+  `roleParchment.ts`/`.test.ts` accordingly; rebuilt/redeployed and confirmed the new lines are
+  present in both the unit tests and the live deployed bundle.
+- 2026-08-13T23:20:00-05:00 restructuring (user request): decoupled the role CATALOG from role
+  ASSIGNMENT, which had been conflated in one component. `RoleAssignmentPanel.tsx` deleted;
+  replaced by `RolesPanel.tsx` (right side) — a pure catalog of built-in + custom roles, each
+  with its own 📜 parchment icon that works independent of whether any player holds that role
+  yet, plus the "add a custom role" form (moved out of `RoomSettingsDialog.tsx`, which is now
+  timers-only). Actual role assignment (`<select>` per player, `assignRole` dispatch) and the
+  recommended-distribution hint both moved into `PlayerRoster.tsx` (left side), so assigning a
+  role now happens directly on the player's own row rather than in a separate panel.
+  `RoleParchmentModal.tsx` simplified to take just a `role` prop (it never actually used the
+  player's name in the generated commands, so the coupling was unnecessary). Added `×N`
+  assigned-count badges to the Roles catalog for at-a-glance visibility without needing the
+  player list. 48/48 tests pass (new `RolesPanel.test.tsx`, updated `PlayerRoster.test.tsx`/
+  `RoomSettingsDialog.test.tsx`/`RoleParchmentModal.test.tsx`), clean build, rebuilt/redeployed
+  and verified live: the Roles catalog shows all four built-ins with zero players present,
+  parchment generation works for an unassigned role (Darkshield, screenshotted), assignment via
+  the roster row dispatches correctly and the win-condition banner/×N badges react live.
+- 2026-08-13T23:40:00-05:00 two more user requests, same sitting: (1) the "Add a custom role"
+  form in `RolesPanel.tsx` now starts collapsed behind a `+ Add a custom role` toggle button
+  (Cancel resets and re-collapses without dispatching; a successful Add also auto-collapses).
+  (2) New house rule, off by default: `RoomSettings.darkshieldBlocksUmbraseer` — if the
+  Darkshield's protection target for a night is Assassin-aligned, the Umbraseer is shown "Umbral
+  forces block your sight" instead of the true result that night (Herald still sees the true
+  result in parentheses alongside it, since they already know all roles — only the phrase meant
+  for the player is obscured). New pure `src/domain/umbraseerBlock.ts`
+  (`isUmbraseerBlocked`/`UMBRASEER_BLOCKED_MESSAGE`), live-derived from current settings +
+  timeline rather than baked into the stored check entry, so a settings toggle or role
+  reassignment stays consistent everywhere it's displayed (`NightActionLog.tsx`,
+  `Timeline.tsx`). New checkbox in a "House rules" section of `RoomSettingsDialog.tsx`
+  (`firstNightNoKill` moved there too, out of Timers, for a cleaner grouping). 59/59 tests pass
+  (new `umbraseerBlock.test.ts` + coverage added to `NightActionLog`/`Timeline`/
+  `RoomSettingsDialog`/`RolesPanel` tests), clean build, rebuilt/redeployed and confirmed live
+  end-to-end via Playwright + screenshots: collapsed-by-default custom-role toggle, the new
+  Settings copy, and a full Darkshield-protects-Cultist → Umbraseer-checks-Cultist sequence
+  correctly showing the blocked message with the true result alongside it in both the Night
+  Actions panel and the Timeline.
+- 2026-08-14T00:00:00-05:00 user request, same sitting: `LandingPage.tsx`'s "Resume a game on
+  this device" list now supports deletion. Per-row ✕ turns that row into an inline confirm
+  ("Delete this Day N game (N players)?" + Delete/Cancel) rather than a native `confirm()`, to
+  match the app's own dark-themed modal/confirm idiom instead of a jarring browser popup — same
+  "confirm destructive, not trivially-undoable actions" convention used elsewhere in this
+  workspace. New bulk control below the list: a day-threshold input + "Delete old games",
+  disabled when nothing qualifies, confirming with the exact count before deleting
+  (`updatedAt` compared against `now - N days`). Both call `soulsteelDb.ts`'s existing
+  `deleteRoom` (already implemented since Step 2, just not wired to any UI until now) and
+  refresh the list afterward. New `LandingPage.test.tsx` (didn't exist before) — mocks
+  `soulsteelDb.js` entirely via `jest.mock` rather than touching real IndexedDB, covering
+  confirm/cancel for both single and bulk delete, threshold changes, and that bulk delete only
+  touches qualifying rooms. 67/67 tests pass, clean build. Rebuilt/redeployed and verified live
+  against real IndexedDB (not mocked) via Playwright: created 2 real games through the UI,
+  injected a third directly into IndexedDB with a 40-day-old `updatedAt` (to exercise the
+  threshold without waiting 40 real days), confirmed cancel leaves all 3, single delete removes
+  exactly one, and bulk delete at the default 30-day threshold correctly identifies and removes
+  only the injected old room — screenshotted.
+- 2026-08-14T01:00:00-05:00 user request, same sitting: a Rules modal, reachable via "📜 Read
+  the rules" near "Start a new game" on the Landing page and a "Rules" button next to Settings
+  in the Room toolbar. Content is the game's canonical source doc
+  (`C:/Projects/DSL/Books/Melchaleve/Story Notes/.../Umbral-Cloak-and-Soulsteel-Dagger.txt`),
+  researched its `{X` color-code scheme first (own dedicated Explore agent — found the
+  translation tables in `game-client/renderDslColorPreviewHtml.ts`, the mobile port, the DSL C#
+  `BookRenderColorModel.cs`, and merc-mud's own `comm.c` ANSI implementation) so the role/
+  night/day/vote term colors in the UI are the colors that markup actually intends (Herald
+  brown, Umbraseer violet, Dark Knights/Darkshield steel, Cultist Assassin blood red, etc. — new
+  `--ss-rule-*` tokens in index.css), not an invented palette.
+  Two corrections mid-build, both real: (1) my first pass had reworded the rules into my own
+  prose — user caught this immediately ("you are not allowed to change the actual phrasings...
+  written quite intentionally") and clarified they only wanted the COLOR MEANING understood, not
+  the source's per-letter span mechanics literally reproduced. Rewrote `RulesModal.tsx` to the
+  verbatim source text (typos included — "excercise", "aide", the trailing comma on Daytime step
+  2), applying `Term`/`RoleEntry` color wrappers around the same words only — added a test
+  (`matches the source text verbatim, typos and all`) specifically to guard against this
+  regressing. (2) First visual pass read more "arcane neon" than gothic — user wanted more dark/
+  spooky, edges "bleeding umbral", and pointed at the harrowing Sanctum-Stories for palette cues
+  (read `The Harrowing.txt` + `mastery-of-blood.txt` — recurring umbral-violet/bone/blood/ash
+  imagery, notably "the scar upon his neck pulsed a sharp violet color before fading back to
+  inert black"). Dimmed the translated cyan/magenta header tokens from neon-bright to a
+  muted "tarnished silver" / "faded grimoire-ink" register, replaced the bright teal modal
+  border+glow with a layered box-shadow (inset black vignette + outward violet-black bleed
+  dissolving into the backdrop), retitled in pale bone-ivory with a violet glow, swapped the
+  diamond divider glyphs for a rotated dagger (🗡, echoing the brand mark and the "Soulsteel
+  Dagger" itself). Inline term colors (Herald/Umbraseer/night/day/vote/etc.) were untouched —
+  those were already correct per the first round of feedback. 74/74 tests pass, clean build,
+  rebuilt/redeployed both revisions and verified live via Playwright screenshots at every stage
+  (both trigger points, full scroll-through, before/after the gothic pass).
+- 2026-08-14T01:30:00-05:00 user request, same sitting: manual alive/dead override. Rather than
+  building bespoke mechanics for every hypothetical variant the user named (multi-kill in large
+  games, resurrection), implemented one general primitive — a `setPlayerAlive` reducer action —
+  since any such house-rule composes from just flipping a player's status, no special-casing
+  needed. New `TimelineEntry` kind `admin-status-change` (carries its own explicit `phase` field,
+  since — unlike every other entry kind — it can happen in either phase, so it can't reuse the
+  existing `kind`-prefix phase inference; `Timeline.tsx`'s sort/label logic now goes through a
+  shared `entryPhase()` helper instead of guessing from the string prefix). Killing via the
+  toggle reuses the existing `EliminationRecord.cause: 'other'` sentinel (already meant for
+  exactly this: elimination outside vote/assassination) rather than adding a new cause value;
+  reviving clears `eliminatedAt` (the Timeline keeps the permanent historical record either way
+  — only current-status fields on the player object change). No-ops (toggling to the state
+  already held) intentionally add nothing to the timeline, so idle re-clicks don't create noise.
+  `PlayerRoster.tsx`'s alive/dead `<span>` became a one-click `<button>` (color-only styling —
+  green/red text, no fill — deliberately "subtle" per the request, no confirmation step since
+  it's trivially reversible by clicking again). `Timeline.tsx` renders admin entries with a
+  left accent border + an "ADMIN" tag (both in the Herald's own established brown/amber token,
+  `--ss-rule-brown`, tying the indicator visually back to "this was a Herald action") so they
+  read as clearly distinct from ordinary game-flow entries — directly satisfying the "indicator
+  / administrative note in the timeline" ask. 81/81 tests pass, clean build. Rebuilt/redeployed
+  and verified live: toggled two players dead in one sitting (multi-kill), revived one
+  (resurrection), confirmed both the Day-vote pool and the Timeline reacted correctly, confirmed
+  the ADMIN-tagged entries render as designed — screenshotted.

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { countsTowardAlignment } from '../../domain/roleCatalog.js';
+import { isUmbraseerBlocked, UMBRASEER_BLOCKED_MESSAGE } from '../../domain/umbraseerBlock.js';
 import type { RoomAction } from '../../domain/gameReducer.js';
 import type { Player, RoomState, TimelineEntry } from '../../domain/types.js';
 
@@ -107,7 +108,11 @@ export default function NightActionLog({ room, dispatch }: NightActionLogProps) 
           candidates={alive.filter((p) => p.id !== umbraseer.id)}
           recordedText={
             checkEntry
-              ? `${playerName(room, checkEntry.targetId)}: ${checkEntry.result === 'assassin' ? 'an Assassin' : 'not an Assassin'}`
+              ? isUmbraseerBlocked(room, day)
+                ? `${playerName(room, checkEntry.targetId)}: ${UMBRASEER_BLOCKED_MESSAGE} (actually ${
+                    checkEntry.result === 'assassin' ? 'an Assassin' : 'not an Assassin'
+                  })`
+                : `${playerName(room, checkEntry.targetId)}: ${checkEntry.result === 'assassin' ? 'an Assassin' : 'not an Assassin'}`
               : null
           }
           onConfirm={(targetId) => {
