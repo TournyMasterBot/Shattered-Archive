@@ -14,17 +14,31 @@ export function roleRevealText(role: RoleDef): string {
 
 const PARCHMENT_TITLE_COMMAND = 'write parch title Umbral Cloak & Soulsteel Dagger Role';
 
+/** A physical bag this parchment is destined for, identified by its ordinal `number` and the
+ * shared container `keyword` every bag uses (e.g. `{ number: 2, keyword: 'sack' }` → `2.sack`). */
+export interface ParchmentBagTarget {
+  number: number;
+  keyword: string;
+}
+
 /** The in-game command sequence a Herald can hand a player to write a role-reveal parchment —
- * one command per line, ready to paste into the client. `@` closes the multi-line write editor
- * before the follow-up commands; `read soulsteel` verifies the finished parchment at the end. */
-export function roleParchmentCommands(role: RoleDef): string {
-  return [
+ * one command per line, ready to paste into the client. The title must be set BEFORE the body
+ * editor opens (`write parch title ...` before `write parch`) — setting it after was the
+ * original order and it does not stick reliably once the body editor has already been entered
+ * and exited. `@` closes the multi-line write editor; `read soulsteel` verifies the finished
+ * parchment afterward. When `bag` is given, a final `put parch N.keyword` line seals it into that
+ * numbered bag, using the same `N.container` ordinal addressing the MUD's `get`/`put` parser
+ * understands. */
+export function roleParchmentCommands(role: RoleDef, bag?: ParchmentBagTarget): string {
+  const commands = [
     'dip quill ink',
+    PARCHMENT_TITLE_COMMAND,
     'write parch',
     roleRevealText(role),
     'Share your role with the Herald.',
     '@',
-    PARCHMENT_TITLE_COMMAND,
     'read soulsteel',
-  ].join('\n');
+  ];
+  if (bag) commands.push(`put parch ${bag.number}.${bag.keyword}`);
+  return commands.join('\n');
 }

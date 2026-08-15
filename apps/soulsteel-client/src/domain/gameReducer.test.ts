@@ -1,4 +1,4 @@
-import { computeWinResult, createRoom, reduceRoom, type RoomAction } from './gameReducer.js';
+import { computeWinResult, createRoom, reduceRoom, rematchRoom, type RoomAction } from './gameReducer.js';
 import type { RoomState } from './types.js';
 
 const NOW = '2026-08-13T00:00:00.000Z';
@@ -128,6 +128,119 @@ describe('gameReducer', () => {
 
     expect(s.players.filter((p) => p.alive)).toHaveLength(1);
     expect(s.timeline.filter((e) => e.kind === 'admin-status-change')).toHaveLength(2);
+  });
+
+  it('setBagCount grows the bag list, preserving role mappings by number', () => {
+    const { state } = withPlayers([]);
+    let s = apply(state, { type: 'setBagCount', count: 2 });
+    s = apply(s, { type: 'assignBagRole', number: 1, roleId: 'umbraseer' });
+    s = apply(s, { type: 'setBagCount', count: 3 });
+
+    expect(s.bags).toEqual([
+      { number: 1, roleId: 'umbraseer' },
+      { number: 2, roleId: null },
+      { number: 3, roleId: null },
+    ]);
+  });
+
+  it('setBagCount shrinks the bag list, dropping mappings for removed numbers', () => {
+    const { state } = withPlayers([]);
+    let s = apply(state, { type: 'setBagCount', count: 3 });
+    s = apply(s, { type: 'assignBagRole', number: 3, roleId: 'darkshield' });
+    s = apply(s, { type: 'setBagCount', count: 1 });
+
+    expect(s.bags).toEqual([{ number: 1, roleId: null }]);
+  });
+
+  it('setBagContainerKeyword updates the shared bag keyword', () => {
+    const { state } = withPlayers([]);
+    const s = apply(state, { type: 'setBagContainerKeyword', keyword: 'pouch' });
+    expect(s.bagContainerKeyword).toBe('pouch');
+  });
+
+  it('setMasterBagKeyword updates the master bag keyword', () => {
+    const { state } = withPlayers([]);
+    const s = apply(state, { type: 'setMasterBagKeyword', keyword: 'coffer' });
+    expect(s.masterBagKeyword).toBe('coffer');
+  });
+
+  it('a new room defaults commandDelayMs to 350', () => {
+    const { state } = withPlayers([]);
+    expect(state.commandDelayMs).toBe(350);
+  });
+
+  it('setCommandDelayMs updates the delay, floored and clamped to 0', () => {
+    const { state } = withPlayers([]);
+    let s = apply(state, { type: 'setCommandDelayMs', delayMs: 500.7 });
+    expect(s.commandDelayMs).toBe(500);
+
+    s = apply(s, { type: 'setCommandDelayMs', delayMs: -100 });
+    expect(s.commandDelayMs).toBe(0);
+  });
+
+  it('removeCustomRole clears any bag mapped to that role, not just players', () => {
+    const { state } = withPlayers([]);
+    let s = apply(state, {
+      type: 'addCustomRole',
+      role: { id: 'cultist-minion', name: 'Cultist Minion', alignment: 'assassin', description: 'x' },
+    });
+    s = apply(s, { type: 'setBagCount', count: 1 });
+    s = apply(s, { type: 'assignBagRole', number: 1, roleId: 'cultist-minion' });
+
+    s = apply(s, { type: 'removeCustomRole', roleId: 'cultist-minion' });
+
+    expect(s.bags).toEqual([{ number: 1, roleId: null }]);
+  });
+
+});
+
+describe('rematchRoom', () => {
+  it('gives the new room a fresh id, same roster, roles/status/timeline cleared, reset to Day 1', () => {
+    const { state, ids } = withPlayers(['A', 'B']);
+    let s = apply(state, { type: 'assignRole', playerId: ids[0]!, roleId: 'cultist-assassin' });
+    s = apply(s, { type: 'assignRole', playerId: ids[1]!, roleId: 'dark-knight' });
+    s = apply(s, { type: 'setPlayerAlive', playerId: ids[1]!, alive: false });
+    s = apply(s, { type: 'advanceToNight' });
+    s = apply(s, { type: 'recordAssassinTarget', targetId: ids[1]! });
+
+    const next = rematchRoom(s, 'room-2', NOW);
+
+    expect(next.id).toBe('room-2');
+    expect(next.dayNumber).toBe(1);
+    expect(next.phase).toBe('day');
+    expect(next.timeline).toEqual([]);
+    expect(next.players.map((p) => p.id)).toEqual(ids);
+    expect(next.players.every((p) => p.roleId === null && p.alive === true && p.eliminatedAt === undefined)).toBe(
+      true,
+    );
+  });
+
+  it('does not modify the source room — the finished match stays intact under its own id', () => {
+    const { state, ids } = withPlayers(['A']);
+    const s = apply(state, { type: 'assignRole', playerId: ids[0]!, roleId: 'umbraseer' });
+    const before: RoomState = JSON.parse(JSON.stringify(s));
+
+    rematchRoom(s, 'room-2', NOW);
+
+    expect(s).toEqual(before);
+  });
+
+  it('carries over the bag plan, role catalog, and settings unchanged', () => {
+    const { state } = withPlayers(['A']);
+    let s = apply(state, { type: 'setBagCount', count: 1 });
+    s = apply(s, { type: 'assignBagRole', number: 1, roleId: 'umbraseer' });
+    s = apply(s, {
+      type: 'addCustomRole',
+      role: { id: 'custom-1', name: 'Custom', alignment: 'neutral', description: 'x' },
+    });
+
+    const next = rematchRoom(s, 'room-2', NOW);
+
+    expect(next.bags).toEqual([{ number: 1, roleId: 'umbraseer' }]);
+    expect(next.roles.some((r) => r.id === 'custom-1')).toBe(true);
+    expect(next.settings).toEqual(s.settings);
+    expect(next.bagContainerKeyword).toBe(s.bagContainerKeyword);
+    expect(next.commandDelayMs).toBe(s.commandDelayMs);
   });
 });
 

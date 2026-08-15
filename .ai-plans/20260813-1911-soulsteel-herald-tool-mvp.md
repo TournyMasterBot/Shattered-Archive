@@ -596,3 +596,218 @@ sign-in + per-account archive + C# dashboard reload).
   alongside the other live demos.
   All three verified live via Playwright; 83/83 client tests pass (up from 81, two new
   Umbraseer-detection tests); soulsteel-client rebuilt/redeployed for the Umbraseer fix.
+- 2026-08-14T14:30:00-05:00 two new features, new sitting: (1) **Play again**: `gameReducer.ts` gained a
+  `playAgain` action — keeps the roster (same player ids/names) but clears `roleId`/`alive`/
+  `eliminatedAt` on every player, clears the timeline, and resets to Day 1 (previous match's role
+  assignments are public knowledge by the time a match ends, so they're not carried forward). A
+  "Play again" button was added as the rightmost item in `RoomPage`'s toolbar (the toolbar's
+  `PhaseController` already has `flex: 1`, so this naturally lands on the right), gated behind a
+  `window.confirm` since it discards the current match's live state.
+  (2) **Bag-based role distribution**: reviewed a week of real `game:client:input`/
+  `game:remote-server:raw` lines from `DSL/GameLogs/.../game-server/2026/08/*.jsonl` (Aug 1 and
+  Aug 13 sessions) to confirm actual in-game `write`/`put` usage, then cross-checked against
+  `merc-mud/2.4/src/act_obj.c`'s `do_get`/`do_put` and `handler.c`'s `get_obj_list`/
+  `number_argument` (`interp.c:659`) to confirm the `N.keyword` ordinal-addressing syntax (default
+  `N=1` when no dot; `N` counts occurrences of that keyword in encounter order) applies to BOTH
+  the item and the container argument — i.e. `put parch 2.sack` is valid merc syntax, matching
+  what the user described. Added `RoomState.bags: BagEntry[]` (bag number → roleId) +
+  `bagContainerKeyword` (herald-editable, no in-repo authority for DSL's actual container
+  keywords since that's a third-party remote MUD we only have play logs for, not area source) and
+  four reducer actions (`setBagCount` grows/shrinks by number, preserving existing mappings by
+  number; `setBagContainerKeyword`; `assignBagRole`). New pure helper `domain/bagPlan.ts`
+  (`roleForBag`) distinguishes "no such bag" (`undefined`) from "bag exists, unassigned" (`null`).
+  `roleParchmentCommands()` gained an optional bag param that appends a final
+  `put parch N.keyword` line. New `BagSetupPanel.tsx`, wired into `RolesPanel.tsx` as a second
+  collapsible section (mirrors the existing custom-role-form collapse pattern) — herald sets a
+  bag count + container keyword, maps each bag number to a role via the same role-select pattern
+  as the roster, and gets a bag-specific 📜 parchment modal (disabled until a role is mapped).
+  `PlayerRoster.tsx` gained a per-player "Bag #" quick-assign input (only rendered once
+  `room.bags.length > 0`) — Enter looks up the bag's mapped role and dispatches the existing
+  `assignRole` action; a missing/unmapped bag number is a silent no-op. The roster's role
+  `<select>` remains untouched, so manual override is always available. `playAgain` deliberately
+  leaves `bags`/`bagContainerKeyword` alone — the bag plan is a reusable template, not per-match
+  state (tested explicitly). New tests: `bagPlan.test.ts`, `BagSetupPanel.test.tsx`, plus cases
+  added to `gameReducer.test.ts`, `roleParchment.test.ts`, `RoleParchmentModal.test.tsx`,
+  `RolesPanel.test.tsx`, `PlayerRoster.test.tsx`. Full suite: 17/17 suites, all tests green;
+  `tsc --noEmit` clean. **Not yet deployed or verified live** — this entry covers implementation
+  + unit/component tests only; no browser/Playwright verification was performed this pass.
+- 2026-08-14T15:15:00-05:00 follow-on to the bag feature above, same sitting: a **master bag**
+  consolidator. `RoomState` gained `masterBagKeyword` (herald-editable, same reasoning as
+  `bagContainerKeyword` — defaults to `'chest'`) and a `setMasterBagKeyword` action. New
+  `bagPlan.ts` export `compiledBagSetupCommands(roles, bags, bagContainerKeyword,
+  masterBagKeyword)`: for every bag with a role mapped, in number order, concatenates that bag's
+  full write-parchment-and-bag command block, then appends one `put N.bagContainerKeyword
+  masterBagKeyword` line per stuffed bag — one paste that writes every parchment, bags each one,
+  and gathers all the bags into a single carry before the game starts. Bags with no role mapped
+  are skipped (nothing to write); a bag whose mapped role no longer resolves in the catalog is
+  skipped too, defensively. While wiring that defensive case, caught and fixed a real dangling-
+  reference bug in the `assignBagRole`/bag work from the entry above: `removeCustomRole` cleared
+  a removed role from `players` but not from `bags`, so a bag mapped to a since-removed custom
+  role would silently keep pointing at a role that no longer existed — fixed by clearing matching
+  bags' `roleId` alongside players', and added a reducer test for it. Extracted the modal chrome
+  (backdrop-click-to-close, readonly textarea, copy-with-confirmation) that `RoleParchmentModal`
+  already had into a new shared `CommandsDialog.tsx`, since the master-bag view needed the exact
+  same chrome for a script that isn't about any single role — `RoleParchmentModal` is now a thin
+  wrapper over it, and all of its existing tests still pass unchanged (same aria-labels/text
+  preserved deliberately). `BagSetupPanel.tsx` gained a "Master bag" row below the per-bag list:
+  a keyword input and a "📜 Compiled setup commands" button (disabled until at least one bag is
+  stuffed) opening the compiled script in a `CommandsDialog`. New/updated tests:
+  `bagPlan.test.ts` (compiled-output ordering, skip-unmapped, skip-dangling-role, empty case),
+  `gameReducer.test.ts` (`setMasterBagKeyword`, the `removeCustomRole` bag-cleanup fix), and
+  `BagSetupPanel.test.tsx` (keyword dispatch, disabled state, dialog content). Full suite: 17/17
+  suites, 111/111 tests green; `tsc --noEmit` clean. **Not yet deployed or verified live.**
+- 2026-08-14T16:00:00-05:00 follow-on to the master bag above, same sitting: two more note slots
+  on the master bag — a portable userscript **template** and a room-populated **alias script** —
+  so a Herald can bind the whole compiled setup to a single in-game-client alias instead of
+  pasting it by hand. The user supplied a detailed, self-described "verified against source"
+  context dump about `apps/game-client`'s userscript engine (api surface, `doAfter` scheduling,
+  export-file schema, alias `{var}` capture syntax, the five script languages). Per this repo's
+  qwen pre-flight rule, checked the load-bearing claims directly against that app's actual source
+  (MCP/qwen stack was down again — `qdigest.sh --status` — so this was direct Grep/Read, degrade-
+  and-tell) rather than trusting the paste outright: `exportFormat.ts`/`types.ts` match the
+  described schema exactly; `runtime.ts` confirms `text`-language scripts fire every line via
+  `sendCommand` with **zero delay between lines** (unlike JS/TS/Lua/Python, which all bridge the
+  same camelCase `doAfter(delayMs, 'world'|'alias', command)` — confirmed in `pythonRuntime.ts`
+  and `luaRuntime.ts` too; notably Python does NOT get snake_case names, a wrong-by-default
+  assumption this check specifically avoided); `userScriptRuntime.ts`'s `compileAliasTemplate`
+  confirms the `{var}` capture rules as described, and also that a **plain alias with no `{}` at
+  all matches by simple case-insensitive string equality** — which is what the generated alias
+  script actually uses (no captures needed, since it's a fixed sequence baked in at generation
+  time). New `domain/aliasScript.ts`: `bagSetupAliasSource(commands, language)` turns
+  `compiledBagSetupCommands`'s flat command list into a staggered `doAfter` chain (350ms step,
+  matching the reference example's own convention) for the four scripted languages, and passes
+  `text` through unchanged (line-per-command, no delay — matching `runPlainText`'s real
+  behavior); command strings are escaped for safe embedding in a double-quoted string literal.
+  `TEMPLATE_EXAMPLES` holds a static, room-independent example per language (deliberately generic
+  — three filler commands, not this room's data — so it stays useful as reference material beyond
+  Soulsteel, per the user's "multiple mud clients can similarly benefit" framing); `BAG_SETUP_ALIAS`
+  is the suggested (two-word, collision-unlikely) alias text. New `UserScriptDialog.tsx` — a
+  `CommandsDialog` sibling with a row of language tabs switching which variant's source/copy
+  button is shown. `BagSetupPanel.tsx` gained two more buttons next to "Compiled setup commands":
+  "📜 Userscript template" (always enabled — room-independent) and "📜 Use as alias" (disabled
+  until at least one bag is stuffed, same gating as the compile button), each opening a
+  `UserScriptDialog`. Deliberately did NOT wrap the alias script in the full `exportFormat.ts`
+  JSON container (schema/items/selection) — raw source + a suggested alias name and manual-import
+  instructions in the hint text is simpler, has no timestamp/id-stability edge cases to get
+  wrong, and mirrors the template slot's presentation; can revisit as an importable-JSON follow-up
+  if asked. New tests: `aliasScript.test.ts`, `UserScriptDialog.test.tsx`, plus cases added to
+  `BagSetupPanel.test.tsx`. Full suite: 19/19 suites, 127/127 tests green; `tsc --noEmit` clean.
+  **Not yet deployed or verified live.**
+- 2026-08-14T16:20:00-05:00 corrected the template slot per user feedback, same sitting, on two
+  points: (1) the `text` variant "doesn't really do anything" — correct: text scripting has no
+  `doAfter`/logic at all, so a hand-authored "text template" was never meaningful in the first
+  place; (2) the four scripted-language templates used arbitrary unrelated filler commands
+  (`look`/`say Ready.`/`north`), which the user pointed out doesn't reflect what the feature
+  actually does ("the goal is to transcribe all the parchments, put them in a bag, then put them
+  in the aggregate container"). Fixed by deleting the hand-authored `TEMPLATE_EXAMPLES` map
+  entirely and replacing it with `exampleBagSetupSource(language)`: runs the exact same real
+  pipeline (`compiledBagSetupCommands` → `bagSetupAliasSource`) against a small placeholder
+  role/bag plan (two example roles, bags 1–2, keyword `sack`/`chest`) instead of hand-duplicated
+  per-language boilerplate — so the template is now a genuine worked example of the real
+  transcribe-bag-gather flow, for every language including `text` (which now just shows the
+  placeholder plan's raw compiled commands, same as the real alias script's `text` tab always
+  did), and it can never drift out of sync with the real generator since it *is* the real
+  generator. `BagSetupPanel.tsx`'s template hint rewritten to match. Updated tests:
+  `aliasScript.test.ts`'s `TEMPLATE_EXAMPLES` describe block replaced with one for
+  `exampleBagSetupSource`; `BagSetupPanel.test.tsx`'s default-tab-content assertion updated.
+  19/19 suites, 127/127 tests green; `tsc --noEmit` clean.
+- 2026-08-14T16:35:00-05:00 redeploy + one more template fix, same sitting. First did a scoped
+  redeploy per the user's "redeploy only this service" — confirmed the live stack on this host is
+  actually `docker-compose.shattered-archive-experimental.yml` (project name `shatteredarchive`,
+  not `shatteredarchive-prod` from the plain `docker-compose.yml` — checked via `docker ps` +
+  each file's `name:` field before touching anything), rebuilt just `soulsteel-client` (only
+  client files changed this sitting; `soulsteel-server` untouched, left alone), recreated the
+  container, and confirmed via `docker exec ... grep` that the deployed bundle contains this
+  sitting's code (`setup soulsteel`). Then the user flagged that the userscript template
+  shouldn't show the placeholder "Example Role A/B" once the room has real configured data —
+  "that's just noise." Fixed: `templateVariants` in `BagSetupPanel.tsx` now switches on
+  `stuffedBagCount > 0` — real compiled data (same as "Use as alias") once any bag is actually
+  mapped to a role, falling back to the placeholder example only when nothing is configured yet
+  (so the template still teaches the pattern to a Herald who hasn't set up bags at all). Hint
+  text made conditional to match. Added a test pinning the switch-over. 19/19 suites, 128/128
+  tests green; `tsc --noEmit` clean; redeployed `soulsteel-client` again with this fix and
+  confirmed the same way.
+- 2026-08-14T16:50:00-05:00 real correctness bug in the consolidation step, caught by the user
+  from actual play: `compiledBagSetupCommands` emitted `put N.sack chest` in ASCENDING bag order
+  (1, 2, 3, ...), but `N.keyword` addresses the Nth bag by CURRENT ordinal position among bags
+  still held, not a stable per-bag id — and every `put` removes one from that same pool. Removing
+  bag 1 first shifts every remaining bag down by one ordinal, so the very next literal "2.sack"
+  actually resolves to what was bag 3, cascading into "you don't have that" errors partway
+  through. Verified the mechanism directly against `merc-mud/2.4/src/handler.c`'s `get_obj_list`
+  (ordinal position = list-iteration order) and `obj_to_obj` (prepends: `obj->next_content =
+  obj_to->contains; obj_to->contains = obj`) before committing to a fix, rather than assuming.
+  Fixed in `bagPlan.ts`: consolidation now walks HIGHEST bag number to LOWEST — removing the top
+  of the pool never perturbs the ordinals of bags still waiting below it, so every literal number
+  stays valid through the last `put`. Verified this also gives a useful side effect for free:
+  since bag 1 is inserted into the chest LAST, `obj_to_obj`'s prepend means bag 1 ends up at the
+  HEAD of the chest's contents — i.e. "1.sack" *inside the chest* still means bag 1 — so a future
+  "retrieve bag N from the chest" flow (not built yet) would already have correct addressing to
+  build on. The parchment-writing/stuffing half of the script is unaffected (it only ADDS
+  parchments into each bag, never removes a bag from the pool, so those ordinals never shift) and
+  stays in ascending order for readability. Updated the two order-dependent tests
+  (`bagPlan.test.ts`, `BagSetupPanel.test.tsx`) to expect descending consolidation order; the
+  membership-only assertions in `aliasScript.test.ts` needed no change. 19/19 suites, 128/128
+  tests green; `tsc --noEmit` clean; redeployed `soulsteel-client`.
+- 2026-08-14T17:05:00-05:00 another real ordering bug, caught by the user pasting the actual
+  4-parchment compiled output and reading it back: `roleParchmentCommands` set the title via
+  `write parch title ...` AFTER `@` closed the body editor (dip → write parch → body → @ → title
+  → read) — the ORIGINAL order from the very first "generate in-game commands" request early this
+  plan. In practice the title does not stick reliably once set after the body editor has already
+  been entered and exited; the correct order the user confirmed is title → body-open → body → end
+  → read → put. Fixed by moving `PARCHMENT_TITLE_COMMAND` to right after `dip quill ink`, before
+  `write parch`. Low blast radius: `compiledBagSetupCommands`, `bagSetupAliasSource`, and
+  `exampleBagSetupSource` all call `roleParchmentCommands` directly rather than hardcoding its
+  line order, so they picked up the fix with no code changes of their own — only
+  `roleParchment.test.ts`'s exact-sequence assertion needed updating (line count unchanged at 8
+  with a bag target, just reordered). 19/19 suites, 128/128 tests green; `tsc --noEmit` clean;
+  redeployed `soulsteel-client`.
+- 2026-08-14T17:20:00-05:00 made the alias script's stagger delay configurable, same sitting.
+  `RoomState.commandDelayMs` (new field, defaults to `aliasScript.ts`'s `DEFAULT_COMMAND_DELAY_MS`
+  = 350, renamed from the previously-private `DELAY_STEP_MS` and now exported) + a
+  `setCommandDelayMs` action (floored, clamped to >= 0). `bagSetupAliasSource` and
+  `exampleBagSetupSource` both gained an optional `delayMs` parameter (defaulting to the same
+  350ms constant, so every existing call site and test kept working unchanged); `text` ignores it
+  entirely since it has no scripting/delay concept at all, consistent with the earlier fixes.
+  `BagSetupPanel.tsx` gained a "Command delay (ms)" number input next to the master bag keyword
+  field, and both the template and alias-script variant builders now thread `room.commandDelayMs`
+  through. New tests covering the custom-delay path (including 0 and the text no-op case) in
+  `aliasScript.test.ts`, the reducer action in `gameReducer.test.ts`, and the input wiring +
+  end-to-end delay threading in `BagSetupPanel.test.tsx`. 19/19 suites, 136/136 tests green;
+  `tsc --noEmit` clean; redeployed `soulsteel-client`.
+- 2026-08-14T17:35:00-05:00 real bug in "Play again," caught by the user: the original
+  `playAgain` reducer action reset the CURRENT room's state in place (same id), so IndexedDB
+  still only ever held one record for that id — the finished match's own history was silently
+  overwritten by the rematch, and the Landing page's "Resume a game" list never grew to reflect
+  that two (or more) matches had actually been played. Fixed by making "Play again" spawn a
+  genuinely NEW room instead of mutating the existing one: removed the `playAgain` RoomAction/
+  reducer case entirely and replaced it with a plain constructor, `rematchRoom(source, newId,
+  now)`, alongside `createRoom` in `gameReducer.ts` — same players (ids kept), role catalog,
+  settings, and bag plan (keyword/count/mapping/delay), but a fresh id/createdAt and every
+  match-progression field reset to Day 1; the source room object is left completely untouched.
+  `RoomPage.tsx` gained an `onPlayAgain: (roomId: string) => void` prop (mirroring `onExit`); its
+  button handler now generates a `crypto.randomUUID()` id (same convention as "Start a new
+  game" in `LandingPage.tsx`), builds the rematch room, `await saveRoom(...)`s it BEFORE
+  navigating (so the new room is already persisted when `RoomPage` remounts for it — avoids a
+  race where it would otherwise load as empty), then calls `onPlayAgain`. `App.tsx` wires that to
+  the same `navigate(roomPath(roomId))` pattern `onEnterRoom` already uses. Confirm-dialog wording
+  updated to say the current game stays saved and a fresh one opens, rather than implying an
+  in-place reset. `gameReducer.test.ts`'s old in-place `playAgain` tests replaced with
+  `rematchRoom` tests (new id, source room provably unmodified via a deep-equality snapshot,
+  bag/role/settings carry-over). No `RoomPage.tsx`/`App.tsx` test files exist in this repo
+  (composition/wiring layers are left untested here, same as before this change), so no test
+  changes were needed there. 19/19 suites, 137/137 tests green; `tsc --noEmit` clean; redeployed
+  `soulsteel-client`.
+- 2026-08-14T17:45:00-05:00 removed the per-player "Bag #" quick-assign input, at the user's
+  request. Stripped from `PlayerRoster.tsx`: the `bagInputs` state, `assignFromBag` handler, and
+  the conditional `<input class="ss-bag-quick-assign">` next to each roster row's role `<select>`
+  (manual role assignment there is untouched). Since that was `roleForBag`'s only caller anywhere
+  in the app, removed the now-dead `roleForBag` export from `bagPlan.ts` too rather than leaving
+  it orphaned, plus its dedicated test block in `bagPlan.test.ts` (the shared `bags` fixture stays
+  — `compiledBagSetupCommands`'s "skips bags with no role mapped" test still uses it) and the
+  three `PlayerRoster.test.tsx` cases that exercised it. `.ss-bag-quick-assign` dropped from
+  `App.css`. Bag setup itself (`BagSetupPanel.tsx` — count, keyword, per-bag role mapping, master
+  bag, userscript/alias generation) is unaffected; only the roster-row shortcut for pulling a
+  role out of that plan by number is gone, so assigning a role in the roster now always goes
+  through the plain role dropdown. Confirmed via grep that nothing else in the app referenced any
+  of the removed names. 19/19 suites, 131/131 tests green (6 fewer, all from the removed
+  coverage); `tsc --noEmit` clean; redeployed `soulsteel-client`.

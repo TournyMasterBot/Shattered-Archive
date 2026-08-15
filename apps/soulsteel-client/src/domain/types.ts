@@ -66,6 +66,14 @@ export interface RoomSettings {
 
 export type WinResult = 'darkKnights' | 'assassins' | null;
 
+/** One numbered physical bag a Herald pre-stuffs with a role parchment before the game, keyed by
+ * its ordinal position — the same number used in the in-game `N.container` addressing syntax
+ * (merc's `number_argument`, e.g. `put parch 2.sack` targets the 2nd "sack" the Herald holds). */
+export interface BagEntry {
+  number: number;
+  roleId: string | null;
+}
+
 export interface RoomState {
   id: string;
   createdAt: string;
@@ -77,4 +85,14 @@ export interface RoomState {
   roles: RoleDef[];
   timeline: TimelineEntry[];
   settings: RoomSettings;
+  /** The in-game keyword for the container the Herald is using as bags (e.g. "sack"), shared by
+   * every bag — only the `N.` ordinal in `bags` tells them apart. */
+  bagContainerKeyword: string;
+  bags: BagEntry[];
+  /** The keyword for a single larger container the Herald consolidates every stuffed bag into
+   * before the game — see `bagPlan.ts`'s `compiledBagSetupCommands`. */
+  masterBagKeyword: string;
+  /** Milliseconds between staggered `doAfter` calls in a generated alias script — see
+   * `aliasScript.ts`'s `DEFAULT_COMMAND_DELAY_MS`. */
+  commandDelayMs: number;
 }

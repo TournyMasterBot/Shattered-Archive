@@ -21,6 +21,14 @@ describe('RoleParchmentModal', () => {
     expect(screen.getByText('Umbraseer role parchment')).toBeDefined();
   });
 
+  it('appends the bag put command and notes the bag number in the title when a bag is given', () => {
+    render(<RoleParchmentModal role={umbraseer} bag={{ number: 2, keyword: 'sack' }} onClose={jest.fn()} />);
+    const textarea = screen.getByLabelText('Role parchment commands') as HTMLTextAreaElement;
+    expect(textarea.value).toBe(roleParchmentCommands(umbraseer, { number: 2, keyword: 'sack' }));
+    expect(textarea.value.split('\n').at(-1)).toBe('put parch 2.sack');
+    expect(screen.getByText('Umbraseer role parchment — Bag 2')).toBeDefined();
+  });
+
   it('copies the commands to the clipboard and shows confirmation', async () => {
     const writeText = jest.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });

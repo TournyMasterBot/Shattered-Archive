@@ -1,5 +1,6 @@
+import { DEFAULT_COMMAND_DELAY_MS } from './aliasScript.js';
 import { BUILTIN_ROLES, countsTowardAlignment } from './roleCatalog.js';
-import type { Player, RoleDef, RoomSettings, RoomState, TimelineEntry, WinResult } from './types.js';
+import type { BagEntry, Player, RoleDef, RoomSettings, RoomState, TimelineEntry, WinResult } from './types.js';
 
 const DEFAULT_SETTINGS: RoomSettings = {
   nightTimerSeconds: 180,
@@ -24,6 +25,32 @@ export function createRoom(id: string, now: string): RoomState {
     roles: BUILTIN_ROLES.map((r) => ({ ...r })),
     timeline: [],
     settings: { ...DEFAULT_SETTINGS },
+    bagContainerKeyword: 'sack',
+    bags: [],
+    masterBagKeyword: 'chest',
+    commandDelayMs: DEFAULT_COMMAND_DELAY_MS,
+  };
+}
+
+/**
+ * Builds a fresh room for a "Play again" rematch: same players (ids kept, so nothing needs
+ * re-typing), role catalog, settings, and bag plan (keyword/count/mapping/delay), but a new
+ * `id`/`createdAt` and every match-progression field reset to a Day 1 start — the previous
+ * match's role assignments are public knowledge by the time a match ends, so they aren't carried
+ * forward. Deliberately does NOT touch the source room: that finished match is left exactly as
+ * it was under its own id, so it keeps showing up as its own entry on the Landing page instead of
+ * being silently overwritten by the rematch.
+ */
+export function rematchRoom(source: RoomState, newId: string, now: string): RoomState {
+  return {
+    ...source,
+    id: newId,
+    createdAt: now,
+    updatedAt: now,
+    dayNumber: 1,
+    phase: 'day',
+    timeline: [],
+    players: source.players.map((p) => ({ ...p, roleId: null, alive: true, eliminatedAt: undefined })),
   };
 }
 
@@ -42,7 +69,12 @@ export type RoomAction =
   | { type: 'resolveNight' }
   | { type: 'recordVoteTally'; tally: Record<string, number> }
   | { type: 'executePlayer'; targetId: string | null; note?: string }
-  | { type: 'setPlayerAlive'; playerId: string; alive: boolean };
+  | { type: 'setPlayerAlive'; playerId: string; alive: boolean }
+  | { type: 'setBagContainerKeyword'; keyword: string }
+  | { type: 'setBagCount'; count: number }
+  | { type: 'assignBagRole'; number: number; roleId: string | null }
+  | { type: 'setMasterBagKeyword'; keyword: string }
+  | { type: 'setCommandDelayMs'; delayMs: number };
 
 /** Replaces any existing entry of the same `kind` for the given day — these are singular
  * per-night facts (the Herald correcting a mistake overwrites, not accumulates). */
@@ -112,6 +144,7 @@ function applyAction(state: RoomState, action: RoomAction): RoomState {
         ...state,
         roles: state.roles.filter((r) => r.id !== action.roleId),
         players: state.players.map((p) => (p.roleId === action.roleId ? { ...p, roleId: null } : p)),
+        bags: state.bags.map((b) => (b.roleId === action.roleId ? { ...b, roleId: null } : b)),
       };
 
     case 'updateSettings':
@@ -210,6 +243,31 @@ function applyAction(state: RoomState, action: RoomAction): RoomState {
         : state.players;
       return { ...state, players, timeline };
     }
+
+    case 'setBagContainerKeyword':
+      return { ...state, bagContainerKeyword: action.keyword };
+
+    case 'setBagCount': {
+      const count = Math.max(0, Math.floor(action.count));
+      const existing = new Map(state.bags.map((b) => [b.number, b.roleId]));
+      const bags: BagEntry[] = Array.from({ length: count }, (_, i) => {
+        const number = i + 1;
+        return { number, roleId: existing.get(number) ?? null };
+      });
+      return { ...state, bags };
+    }
+
+    case 'assignBagRole':
+      return {
+        ...state,
+        bags: state.bags.map((b) => (b.number === action.number ? { ...b, roleId: action.roleId } : b)),
+      };
+
+    case 'setMasterBagKeyword':
+      return { ...state, masterBagKeyword: action.keyword };
+
+    case 'setCommandDelayMs':
+      return { ...state, commandDelayMs: Math.max(0, Math.floor(action.delayMs) || 0) };
 
     default:
       return state;

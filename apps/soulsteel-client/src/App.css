@@ -233,6 +233,11 @@
   flex-wrap: wrap;
 }
 
+.ss-play-again {
+  border-color: var(--ss-accent);
+  color: var(--ss-accent-soft);
+}
+
 .ss-phase-controller {
   display: flex;
   align-items: center;
@@ -651,6 +656,114 @@
 .ss-custom-role-form-actions {
   display: flex;
   gap: 0.5rem;
+}
+
+.ss-bag-setup-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.ss-bag-setup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ss-bag-setup-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ss-steel);
+}
+
+.ss-bag-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ss-bag-setup-controls {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ss-bag-setup-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--ss-text-dim);
+}
+
+.ss-bag-setup-controls input[type='number'] {
+  width: 5rem;
+}
+
+.ss-bag-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ss-bag-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ss-bag-number {
+  font-weight: 600;
+  color: var(--ss-steel);
+  min-width: 4.5rem;
+}
+
+.ss-master-bag {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--ss-border);
+}
+
+.ss-master-bag label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--ss-text-dim);
+}
+
+.ss-master-bag input[type='number'] {
+  width: 6rem;
+}
+
+.ss-master-bag-compile {
+  border-color: var(--ss-accent);
+  color: var(--ss-accent-soft);
+}
+
+.ss-script-lang-tabs {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.ss-script-lang-tabs button {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.6rem;
+}
+
+.ss-script-lang-tabs button.ss-active {
+  background: var(--ss-accent);
+  color: #fff;
+  border-color: var(--ss-accent);
 }
 
 .ss-parchment-hint {
