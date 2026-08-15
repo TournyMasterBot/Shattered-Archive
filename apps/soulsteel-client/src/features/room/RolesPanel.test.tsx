@@ -69,6 +69,17 @@ describe('RolesPanel', () => {
     expect(screen.queryByLabelText('New role name')).toBeNull();
   });
 
+  it('keeps bag setup collapsed behind a toggle by default, and expands it on click', () => {
+    render(<RolesPanel room={createRoom('r1', '2026-01-01T00:00:00.000Z')} dispatch={jest.fn()} />);
+    expect(screen.queryByLabelText('Bag container keyword')).toBeNull();
+
+    fireEvent.click(screen.getByText('🎒 Bag setup'));
+    expect(screen.getByLabelText('Bag container keyword')).toBeDefined();
+
+    fireEvent.click(screen.getByText('Hide'));
+    expect(screen.queryByLabelText('Bag container keyword')).toBeNull();
+  });
+
   it('can remove a custom role but not a built-in one', () => {
     const dispatch = jest.fn<void, [RoomAction]>();
     const room: RoomState = {

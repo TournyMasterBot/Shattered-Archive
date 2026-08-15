@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { createRoom, reduceRoom, type RoomAction } from '../../domain/gameReducer.js';
+import { createRoom, reduceRoom, rematchRoom, type RoomAction } from '../../domain/gameReducer.js';
 import type { RoomState } from '../../domain/types.js';
 import { loadRoom, saveRoom } from '../../storage/soulsteelDb.js';
 import DayVoteRecorder from './DayVoteRecorder.js';
@@ -16,6 +16,7 @@ import WinConditionBanner from './WinConditionBanner.js';
 interface RoomPageProps {
   roomId: string;
   onExit: () => void;
+  onPlayAgain: (roomId: string) => void;
 }
 
 /**
@@ -24,7 +25,7 @@ interface RoomPageProps {
  * plain on-dispatch writes, not debounced, since IndexedDB writes here are local and cheap (no
  * network round-trip, unlike scrum-poker-server's debounced room-file flush).
  */
-export default function RoomPage({ roomId, onExit }: RoomPageProps) {
+export default function RoomPage({ roomId, onExit, onPlayAgain }: RoomPageProps) {
   const [room, setRoom] = useState<RoomState | null>(null);
   const [loading, setLoading] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -59,6 +60,22 @@ export default function RoomPage({ roomId, onExit }: RoomPageProps) {
     return <p className="ss-room-loading">Loading room…</p>;
   }
 
+  // Rematch spawns a brand-new room rather than resetting this one in place — the finished
+  // match stays saved under its own id (its own entry in the Landing page's list) instead of
+  // being overwritten, which a plain in-place reset was doing before.
+  const playAgain = async () => {
+    if (
+      !window.confirm(
+        "Start a new game with the same players? This game stays saved as its own entry — a fresh one opens for the rematch.",
+      )
+    ) {
+      return;
+    }
+    const newRoomId = crypto.randomUUID();
+    await saveRoom(rematchRoom(room, newRoomId, new Date().toISOString()));
+    onPlayAgain(newRoomId);
+  };
+
   return (
     <div className="ss-room">
       <div className="ss-room-toolbar">
@@ -71,6 +88,9 @@ export default function RoomPage({ roomId, onExit }: RoomPageProps) {
         </button>
         <button type="button" onClick={() => setSettingsOpen(true)}>
           Settings
+        </button>
+        <button type="button" className="ss-play-again" onClick={playAgain}>
+          Play again
         </button>
       </div>
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import type { RoomAction } from '../../domain/gameReducer.js';
 import type { Alignment, RoomState } from '../../domain/types.js';
+import BagSetupPanel from './BagSetupPanel.js';
 import RoleParchmentModal from './RoleParchmentModal.js';
 
 interface RolesPanelProps {
@@ -24,6 +25,7 @@ const ALIGNMENT_LABELS: Record<Alignment, string> = {
 export default function RolesPanel({ room, dispatch }: RolesPanelProps) {
   const [parchmentRoleId, setParchmentRoleId] = useState<string | null>(null);
   const [showCustomRoleForm, setShowCustomRoleForm] = useState(false);
+  const [showBagSetup, setShowBagSetup] = useState(false);
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleAlignment, setNewRoleAlignment] = useState<Alignment>('darkKnight');
   const [newRoleCounts, setNewRoleCounts] = useState(true);
@@ -148,6 +150,22 @@ export default function RolesPanel({ room, dispatch }: RolesPanelProps) {
       ) : (
         <button type="button" className="ss-add-custom-role-toggle" onClick={() => setShowCustomRoleForm(true)}>
           + Add a custom role
+        </button>
+      )}
+
+      {showBagSetup ? (
+        <div className="ss-bag-setup-section">
+          <div className="ss-bag-setup-header">
+            <h3>Bag setup</h3>
+            <button type="button" onClick={() => setShowBagSetup(false)}>
+              Hide
+            </button>
+          </div>
+          <BagSetupPanel room={room} dispatch={dispatch} />
+        </div>
+      ) : (
+        <button type="button" className="ss-add-custom-role-toggle" onClick={() => setShowBagSetup(true)}>
+          🎒 Bag setup
         </button>
       )}
 

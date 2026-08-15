@@ -27,7 +27,12 @@ export default function App() {
 
       <main className="ss-main">
         {route.name === 'room' ? (
-          <RoomPage key={route.roomId} roomId={route.roomId} onExit={() => navigate('/')} />
+          <RoomPage
+            key={route.roomId}
+            roomId={route.roomId}
+            onExit={() => navigate('/')}
+            onPlayAgain={(roomId) => navigate(roomPath(roomId))}
+          />
         ) : (
           <LandingPage onEnterRoom={(roomId) => navigate(roomPath(roomId))} />
         )}

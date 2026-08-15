@@ -32,12 +32,19 @@ describe('roleParchmentCommands', () => {
     const commands = roleParchmentCommands(umbraseer);
     expect(commands.split('\n')).toEqual([
       'dip quill ink',
+      'write parch title Umbral Cloak & Soulsteel Dagger Role',
       'write parch',
       roleRevealText(umbraseer),
       'Share your role with the Herald.',
       '@',
-      'write parch title Umbral Cloak & Soulsteel Dagger Role',
       'read soulsteel',
     ]);
+  });
+
+  it('appends a put command addressing the numbered bag when one is given', () => {
+    const commands = roleParchmentCommands(umbraseer, { number: 3, keyword: 'sack' });
+    const lines = commands.split('\n');
+    expect(lines[lines.length - 1]).toBe('put parch 3.sack');
+    expect(lines).toHaveLength(8);
   });
 });
