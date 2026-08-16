@@ -1,0 +1,25 @@
+File Index
+
+/package.json
+Purpose: VS Code extension manifest (dsl-color-preview) — command contribution, editor/title icon, explorer/editor context-menu entries scoped to .txt files, esbuild-backed build/watch/package/typecheck scripts.
+
+/tsconfig.json
+Purpose: NodeNext build config extending the repo base, typed against @types/vscode and @types/node.
+
+/esbuild.mjs
+Purpose: Bundles src/extension.ts to dist/extension.js (CJS, node20, vscode external); --production for minified/no-sourcemap, --watch for incremental rebuilds during F5 debugging.
+
+/.vscodeignore
+Purpose: Excludes source/dev files from the packaged .vsix — only dist/ + package.json ship.
+
+/README.md
+Purpose: What the extension does, how to run/develop/package it, and the manual-sync note for the color table.
+
+/src/extension.ts
+Purpose: Activation entrypoint — registers dslColorPreview.showPreview, creates a singleton WebviewPanel bound to whichever document was active on invocation (or the right-clicked file's Uri, when invoked from a context menu), debounce-rerenders it on every onDidChangeTextDocument edit to that document, and auto-follows (via onDidChangeActiveTextEditor) whenever the active editor switches to a different .txt file.
+
+/src/renderDslToHtml.ts
+Purpose: Hand-synced copy of game-client's renderDslColorPreviewHtml.ts — parses {X DSL color/attribute codes into HTML spans. Not imported across the workspace on purpose (see README). Two deliberate divergences for legibility against the preview's dark backdrop: {D (black) and {& (reverse video) both render "black" as a plain gray text color instead of literal black, which would go invisible (black-on-black) or need an ugly highlight box to stay visible.
+
+/src/getWebviewHtml.ts
+Purpose: Wraps the rendered body in a full webview HTML document styled to match the game-client Library modal's .previewBody (near-black bg, monospace, white-space: pre).

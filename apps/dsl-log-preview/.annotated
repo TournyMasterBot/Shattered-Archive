@@ -1,0 +1,23 @@
+/package.json
+Purpose: Extension manifest — command dslLogPreview.showPreview, context-menu/editor-title contribution gated to .jsonl files, esbuild/vsce scripts. Mirrors dsl-color-preview's scaffold.
+
+/esbuild.mjs
+Purpose: Bundles src/extension.ts into dist/extension.js (cjs, node20, vscode external). Same as dsl-color-preview's.
+
+/tsconfig.json
+Purpose: Extends the repo's tsconfig.base.json; adds vscode/node types. Same as dsl-color-preview's.
+
+/README.md
+Purpose: What the extension does, how it decides what to render (raw-only, concatenated across records), how to run/develop/package it, and the palette-sync note.
+
+/src/extension.ts
+Purpose: Activation entrypoint — registers dslLogPreview.showPreview, creates a singleton WebviewPanel bound to whichever .jsonl document was active on invocation (or the right-clicked file's Uri), debounce-rerenders on every onDidChangeTextDocument edit, and auto-follows (onDidChangeActiveTextEditor) whenever the active editor switches to a different .jsonl file.
+
+/src/parseJsonlLog.ts
+Purpose: Parses a .jsonl log's lines and concatenates every game:remote-server:raw record's payload.data (in file order) into one continuous ANSI text stream. Everything else in the file (GMCP, game:client:input, server lifecycle lines) is dropped — game:client:input was tried as an inline "> command" marker but the real data is raw per-keystroke fragments with no reliable line boundary, so that was scoped out.
+
+/src/ansiToHtml.ts
+Purpose: Real ANSI SGR (\x1b[...m) parser → HTML spans, for the raw text parseJsonlLog produces. Same 16(+extended)-color palette as dsl-color-preview's DSL color table / game-client's dsl-to-ansi.ts, plus the standard xterm-256 cube/grayscale formula for 38;5;N codes. True black (SGR 30/90, or any 256-color code resolving to (0,0,0)) renders as a visible gray, matching dsl-color-preview's {D treatment. Reverse video (SGR 7) is the same simplified solid-gray-block treatment as that plugin's {& handling. Handles only what the real log corpus emits (reset/bold/underline/reverse fg colors); background colors and other SGR attributes are ignored.
+
+/src/getWebviewHtml.ts
+Purpose: Wraps the rendered ANSI HTML in a full webview document — same near-black backdrop and monospace styling as dsl-color-preview's, but white-space: pre-wrap (not pre) since raw game-log lines can run much longer than authored DSL story text and horizontal scrolling would hurt "quick log review."

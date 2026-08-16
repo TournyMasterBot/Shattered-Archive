@@ -54,6 +54,27 @@ describe('per-script Python', () => {
     expect(r.errors.length).toBeGreaterThan(0);
     expect(r.sent).toEqual([]);
   });
+
+  it('exposes the trigger event payload as a dict via `event`', async () => {
+    const r = recorder();
+    r.api.event = { name: 'shatteredarchive:raw-data', payload: { text: 'Someone tells the group hi' } };
+
+    await runPythonSourceInBrowser(
+      'payload = (event or {}).get("payload") or {}\nsendCommand(payload.get("text", ""))\n',
+      r.api,
+    );
+
+    expect(r.errors).toEqual([]);
+    expect(r.sent).toEqual(['Someone tells the group hi']);
+  });
+
+  it('leaves `event` as None when no event context is active', async () => {
+    const r = recorder();
+    await runPythonSourceInBrowser('sendCommand("is none: %s" % (event is None))\n', r.api);
+
+    expect(r.errors).toEqual([]);
+    expect(r.sent).toEqual(['is none: True']);
+  });
 });
 
 describe('global Python modules', () => {

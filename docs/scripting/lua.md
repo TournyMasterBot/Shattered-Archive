@@ -19,11 +19,24 @@ Injected globals (and also under the `api` table):
 - `setGlobalVar(key, valueJsonOrString)`
 - `deleteGlobalVar(key)`
 - `getNamedVar(name) -> string` *(empty if missing)*
+- `event` *(trigger/alias/timer context table: `event.name`, `event.payload`; `nil` if not applicable)*
 
 Also available:
 - `httpGetJson(url)` *(fire-and-forget; logs result asynchronously if available)*
 
 **Important:** In Lua, `httpGetJson()` does **not** return a Lua table. It logs results via `log(...)` when the fetch completes.
+
+---
+
+## Example: Trigger reading the matched line
+
+```lua
+-- Event: shatteredarchive:raw-data, Match text: "tells the group"
+local text = ""
+if event and event.payload then text = event.payload.text or "" end
+
+writeTerminal("{c" .. text .. "{x\n")
+```
 
 ---
 

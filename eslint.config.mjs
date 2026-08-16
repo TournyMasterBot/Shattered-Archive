@@ -15,6 +15,7 @@ const serverGlobs = [
   'services/**/src/**/*.{ts,js}',
   'apps/game-server/**',
   'apps/web-server/**',
+  'apps/dsl-color-preview/**',
   'scripts/**/*.{js,cjs,mjs,ts}',
   '*.config.{js,cjs,mjs}',
   'jest.config.{js,cjs,mjs}',

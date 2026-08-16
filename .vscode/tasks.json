@@ -22,6 +22,21 @@
         "close": true
       },
       "problemMatcher": []
+    },
+    {
+      "label": "build:dsl-color-preview",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["--filter", "dsl-color-preview", "build"],
+      "problemMatcher": []
+    },
+    {
+      "label": "watch:dsl-color-preview",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["--filter", "dsl-color-preview", "watch"],
+      "isBackground": true,
+      "problemMatcher": []
     }
   ]
 }

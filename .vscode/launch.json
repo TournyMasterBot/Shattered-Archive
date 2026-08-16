@@ -2,6 +2,18 @@
     "version": "0.2.0",
     "configurations": [
       {
+        "name": "Run DSL Color Preview Extension",
+        "type": "extensionHost",
+        "request": "launch",
+        "args": [
+          "--extensionDevelopmentPath=${workspaceFolder}/apps/dsl-color-preview"
+        ],
+        "outFiles": [
+          "${workspaceFolder}/apps/dsl-color-preview/dist/**/*.js"
+        ],
+        "preLaunchTask": "build:dsl-color-preview"
+      },
+      {
         "type": "node",
         "name": "Debug Jest Tests",
         "request": "launch",

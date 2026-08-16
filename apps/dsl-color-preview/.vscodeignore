@@ -1,0 +1,11 @@
+.vscode/**
+src/**
+tsconfig.json
+*.tsbuildinfo
+esbuild.mjs
+.annotated
+.ai-context
+**/*.map
+**/*.ts
+node_modules/**
+.gitignore

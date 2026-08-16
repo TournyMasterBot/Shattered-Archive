@@ -1,0 +1,65 @@
+{
+  "name": "dsl-color-preview",
+  "displayName": "DSL Color Preview",
+  "description": "Live side-by-side preview of Shattered Archive DSL color codes ({R, {G, {x, ...) while you type.",
+  "version": "0.1.0",
+  "private": true,
+  "publisher": "shatteredarchive",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TournyMasterBot/Shattered-Archive.git",
+    "directory": "apps/dsl-color-preview"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "dslColorPreview.showPreview",
+        "title": "DSL Color Preview: Open Preview to the Side",
+        "icon": "$(preview)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "dslColorPreview.showPreview",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "dslColorPreview.showPreview",
+          "when": "resourceExtname == .txt",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "dslColorPreview.showPreview",
+          "when": "resourceExtname == .txt",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs --production",
+    "watch": "node esbuild.mjs --watch",
+    "vscode:prepublish": "node esbuild.mjs --production",
+    "package": "vsce package --no-dependencies",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "0.28.1",
+    "typescript": "^5.9.3"
+  }
+}

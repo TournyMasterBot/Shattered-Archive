@@ -1,0 +1,66 @@
+{
+  "name": "dsl-log-preview",
+  "displayName": "DSL Log Preview",
+  "description": "Side-by-side ANSI-colorized preview of Shattered Archive game-server .jsonl logs, for quick, searchable log review.",
+  "version": "0.1.0",
+  "private": true,
+  "publisher": "shatteredarchive",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TournyMasterBot/Shattered-Archive.git",
+    "directory": "apps/dsl-log-preview"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "dslLogPreview.showPreview",
+        "title": "DSL Log Preview: Open Preview to the Side",
+        "icon": "$(preview)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "dslLogPreview.showPreview",
+          "when": "resourceExtname == .jsonl",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "dslLogPreview.showPreview",
+          "when": "resourceExtname == .jsonl",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "dslLogPreview.showPreview",
+          "when": "resourceExtname == .jsonl",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs --production",
+    "watch": "node esbuild.mjs --watch",
+    "vscode:prepublish": "node esbuild.mjs --production",
+    "package": "vsce package --no-dependencies",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "0.28.1",
+    "typescript": "^5.9.3"
+  }
+}
