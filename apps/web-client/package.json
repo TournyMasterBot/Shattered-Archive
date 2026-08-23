@@ -10,13 +10,13 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css,scss,html}\""
   },
   "dependencies": {
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@shatteredarchive/utils-client": "workspace:*",
     "@shatteredarchive/utils-global": "workspace:*",
-    "@vitejs/plugin-react-swc": "^4.3.1",
-    "vite": "^8.0.16"
+    "@vitejs/plugin-react-swc": "^4.3.3",
+    "vite": "^8.2.2"
   }
 }

@@ -21,7 +21,7 @@
     "@shatteredarchive/types-server": "workspace:*",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "nodemailer": "^9.0.3",
+    "nodemailer": "^9.0.5",
     "winston": "^3.19.0"
   },
   "devDependencies": {
