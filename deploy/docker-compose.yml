@@ -268,24 +268,21 @@ services:
       # mirroring nginx's own origin → upstream routing. Also derives the CORS allowlist for
       # /api/device, so the two can never drift apart.
       #
-      # EMPTY ON PURPOSE, not an oversight: the two clients that use device credentials
-      # (mud-builder-client, kingdom-tactics-client) exist only in the experimental compose,
-      # so nothing in THIS stack needs an entry yet. Empty means deny-all, which is the
-      # correct fail-closed state — auth-client is same-origin with auth-server here (nginx
-      # routes /api/ on auth.shatteredarchive.dev to this service) so CORS never applies to it.
+      # mud-builder-client is now deployed to THIS stack (build.shatteredarchive.dev), so it
+      # needs an entry or device enrollment 502s/CORS-fails from that origin. kingdom-tactics-client
+      # still only exists in the experimental compose — no entry for it here.
       #
-      # When a client lands in this stack, add `origin=service`: comma-separated, the origin
-      # lowercase, scheme+host, no path, and NO default port (a browser sends
-      # https://x.dev, never https://x.dev:443); `origin=svc1|svc2` for several services.
-      # Wildcards are unsupported — invalid with credentials, and reflecting arbitrary origins
-      # would let any hostile page enroll itself against a signed-in account. See the
-      # experimental compose for a filled-in example.
+      # Format: comma-separated `origin=service` pairs, the origin lowercase, scheme+host, no
+      # path, and NO default port (a browser sends https://x.dev, never https://x.dev:443);
+      # `origin=svc1|svc2` for several services. Wildcards are unsupported — invalid with
+      # credentials, and reflecting arbitrary origins would let any hostile page enroll itself
+      # against a signed-in account. See the experimental compose for the fuller example.
       #
       # NOTE a shatteredarchive.COM origin cannot use this path: it is cross-SITE relative to
       # the .dev hub, so the SameSite=Lax session cookie is never sent and enrollment cannot
       # authenticate. That is a cookie limit, not a CORS one — such an app needs the SSO code
       # flow instead.
-      DEVICE_ORIGIN_SERVICES: ""
+      DEVICE_ORIGIN_SERVICES: "https://build.shatteredarchive.dev=mud-builder-server"
       # Services that additionally require an active API key on the account before a device may
       # mint for them. Empty = no service requires one. See the experimental compose.
       DEVICE_GRANT_REQUIRED_SERVICES: ""
