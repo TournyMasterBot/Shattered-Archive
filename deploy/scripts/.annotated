@@ -1,10 +1,13 @@
 File Index
 
 /add-hosts.ps1
-Purpose: This PowerShell script automatically updates the system hosts file to map local domain names to localhost for development purposes.
+Purpose: This PowerShell script automatically updates the system hosts file to map local domain names to localhost for development purposes. Simulacrum (2026-08-16): `simulacrum.shatteredarchive.dev` was missing from the entries list — a real gap, not just doc staleness, since self-hosters following deploy/index.html's setup steps would have no way to reach it. Added; keep in step with add-hosts.sh and deploy/index.html's own domain-list (which was ALSO stale on several pre-existing names — apex, build., kingdom-tactics., soulsteel. — fixed in the same pass).
 
 /add-hosts.sh
-Purpose: This script modifies the system hosts file to map local domain names for a development environment.
+Purpose: This script modifies the system hosts file to map local domain names for a development environment. Same 2026-08-16 `simulacrum.shatteredarchive.dev` fix as add-hosts.ps1 — see that entry.
+
+/deploy-auth-stack.sh
+Purpose: One idempotent command to deploy the auth hub + the C# site that consumes it, with no manual key or redirect-URI steps (2026-08-01). Order is load-bearing: the hub stack comes up FIRST because it owns both shared resources the C# stack declares external (the sa-shared network and the sa-service-pubkeys volume), and docker compose up fails outright against ones that do not exist. Runs a PRE-FLIGHT comparing auth-server SERVICE_REGISTRY against the C# site AuthHub__RedirectUri / GameSso__CallbackRedirectUri across both rendered compose files — matched byte-for-byte at runtime by /api/sso/approve, which answers ONE generic 400 for both "unknown service" and "unregistered redirect URI", so a mismatch is invisible in production and costs an afternoon. --build also runs dotnet publish, because neither C# Dockerfile builds from source (both COPY a prebuilt publish output), so docker compose build alone would silently ship whatever stale output sat in the build context. Verification polls rather than asserting immediately, since the site publishes its key at startup and the hub picks it up on its next 30s pass.
 
 /firewall-open-ports.ps1
 Purpose: Opens specified network ports in Windows firewall for a project based on environment mode.
@@ -26,6 +29,3 @@ Purpose: Generates the local dev TLS cert via mkcert into deploy/nginx/certs —
 
 /setup-certs.sh
 Purpose: Bash twin of setup-certs.ps1 — same apex + wildcard cert into deploy/nginx/certs (the dir nginx mounts).
-
-/deploy-auth-stack.sh
-Purpose: One idempotent command to deploy the auth hub + the C# site that consumes it, with no manual key or redirect-URI steps (2026-08-01). Order is load-bearing: the hub stack comes up FIRST because it owns both shared resources the C# stack declares external (the sa-shared network and the sa-service-pubkeys volume), and docker compose up fails outright against ones that do not exist. Runs a PRE-FLIGHT comparing auth-server SERVICE_REGISTRY against the C# site AuthHub__RedirectUri / GameSso__CallbackRedirectUri across both rendered compose files — matched byte-for-byte at runtime by /api/sso/approve, which answers ONE generic 400 for both "unknown service" and "unregistered redirect URI", so a mismatch is invisible in production and costs an afternoon. --build also runs dotnet publish, because neither C# Dockerfile builds from source (both COPY a prebuilt publish output), so docker compose build alone would silently ship whatever stale output sat in the build context. Verification polls rather than asserting immediately, since the site publishes its key at startup and the hub picks it up on its next 30s pass.

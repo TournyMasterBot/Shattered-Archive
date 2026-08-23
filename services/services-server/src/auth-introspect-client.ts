@@ -98,6 +98,40 @@ export function matchesAudience(result: IntrospectResult, expectedService: strin
   return result.valid === true && result.service === expectedService;
 }
 
+/** Successful POST /api/service/resolve-username response, always {found:false} on a miss. */
+export type ResolveUsernameResult = { found: false } | { found: true; id: string; username: string };
+
+/**
+ * Calls auth-server's POST /api/service/resolve-username (2026-08-16) to turn a memorable
+ * username into the opaque accountId a service actually needs to key its own data on — e.g.
+ * mud-builder-server's role grants take a username from the operator and resolve it here
+ * before writing to its role store, rather than requiring the operator to already know/paste
+ * a raw accountId. An unknown username is a normal `{found:false}`, not a throw — same
+ * "expected no answer" shape as introspect()'s `{valid:false}`. Throws only on a genuine
+ * transport/assertion failure (non-2xx), matching introspect()'s own convention.
+ */
+export async function resolveUsername(
+  authServerBaseUrl: string,
+  service: string,
+  privateKeyPem: string,
+  username: string,
+): Promise<ResolveUsernameResult> {
+  const assertion = signAssertion(service, privateKeyPem);
+  const res = await fetch(`${authServerBaseUrl.replace(/\/+$/, '')}/api/service/resolve-username`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Service-Assertion': assertion,
+    },
+    body: JSON.stringify({ username }),
+  });
+  const body = (await res.json().catch(() => ({}))) as ResolveUsernameResult & { error?: string };
+  if (!res.ok) {
+    throw new Error(`resolve-username failed: ${res.status} ${'error' in body ? body.error : res.statusText}`);
+  }
+  return body;
+}
+
 /**
  * Calls auth-server's POST /api/token-exchange with grantType
  * 'authorization_code' — redeems a one-time SSO code (from /api/sso/approve)

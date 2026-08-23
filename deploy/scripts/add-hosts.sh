@@ -24,6 +24,7 @@ BLOCK=$(cat <<'EOF'
 127.0.0.1 kingdom-tactics.shatteredarchive.dev
 127.0.0.1 scrum-poker.shatteredarchive.dev
 127.0.0.1 soulsteel.shatteredarchive.dev
+127.0.0.1 simulacrum.shatteredarchive.dev
 # END ShatteredArchive
 EOF
 )

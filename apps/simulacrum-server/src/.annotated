@@ -1,0 +1,25 @@
+File Index
+
+/access-codes.test.ts
+Purpose: mint/consume round-trip, single-use (second consume of the same code fails), expiry, malformed-code rejection before any path.join.
+
+/access-codes.ts
+Purpose: Single-use, short-lived (default 5min TTL) access codes gating every simulacrum connection — plain `key: value` text files under accessCodesPath, one per code, tmp+rename atomic write mirroring merc-mud's own state_snapshot.c file-handshake convention. mintAccessCode(dir, accountId, username, ttlMs)/consumeAccessCode(dir, code) are positional, not options objects. isValidCode() (16-64 char base64url) is checked before any caller-supplied code reaches path.join.
+
+/app.ts
+Purpose: Express surface — /health, the SSO sign-in hand-off (sso.ts), POST /api/access-code (the one auth-gated route here — trusted+ only, introspect-only resolveAccount since this service has no local key store), GET /api/whoami, and the static sign-in page. NOT the TCP relay — that's relay.ts, a separate listener index.ts starts alongside this one.
+
+/config.ts
+Purpose: SimulacrumConfig — port (Express)/relayPort (TCP relay) as two independent listeners sharing one process; mercMudHost/mercMudPort (the sa-shared docker alias); accessCodePromptTimeoutMs/accessCodeTtlMs/accessCodesPath; roleStoreDataPath (the single-file bind mount's PARENT dir, RoleStore joins 'roles.json' itself); authServerUrl (internal, introspect) vs authServerPublicUrl (browser-facing SSO + doubles as auth-client's SPA origin).
+
+/index.ts
+Purpose: HTTP + relay listener bootstrap — starts registerRoutes' Express app on config.port and createRelay's TCP server on config.relayPort side by side; boot log announces both. 2026-08-16 (live bug fix): overrides `config.helmetOptions = { contentSecurityPolicy: false }` before calling createExpressService — this app is the one createExpressService consumer that serves its own page HTML/JS directly (every other consumer here is a JSON-only API behind a separate static-nginx client), so helmet's default `default-src 'none'` CSP was stacking with nginx's own page-facing CSP and the browser's policy-intersection rule silently blocked the page's own fetch() calls (no connect-src override in helmet's default means it inherits default-src 'none', blocking same-origin fetch too). nginx's security-headers.conf is now the sole CSP source for this page, matching the repo-wide convention.
+
+/relay.ts
+Purpose: The gated TCP relay (Step 1, correction 5) — on connect, prompts for a trusted+-minted access code, reads exactly one line, and validates it BEFORE ever dialing merc-mud; an anonymous or under-tier attempt never reaches the engine. The role-store re-check inside validateAccessCode is LIVE, not cached against the code's mint time — a grant revoked via mud-builder-client's Roles tab (shared roles.json) takes effect on the next connection attempt. admit(accountId, username, socket) is deliberately isolated from the connection handler; the follow-on plan (20260816-0724) extended it to send a `#SIMACCT <accountId> <username>\n` preamble to merc-mud before piping human bytes through, so a linked character can be created without a second access code.
+
+/role-store.ts
+Purpose: Exact mirror of mud-builder-server/src/role-store.ts (deliberately not imported across the app boundary, same rationale as auth-tiers.ts) — this service's dataDir is a single-file bind mount onto mud-builder-server's OWN roles.json, so both processes' atomic tmp+rename writes land on the same file and a trusted+ grant is shared data, not two independent lists. Known gap: RoleStore.setTier()'s tmp+rename write EBUSYs against a Docker single-file bind mount on Windows — harmless here since this service's real code path only ever calls tierFor(), never setTier().
+
+/sso.ts
+Purpose: Browser half of the sign-in flow — /sso/start redirects to auth-client's /sso/authorize consent screen (same page Server.Web.Public's UserController.cs redirects to, reimplemented here in Node); /api/sso/callback redeems the one-time code server-side (exchangeAuthorizationCode) and stores the resulting bearer in a short-lived HttpOnly `simulacrum_token` cookie so the static page's "Get access code" button needs no client-side token handling. No cookie-parser dependency — exactly one cookie, hand-rolled read/write.

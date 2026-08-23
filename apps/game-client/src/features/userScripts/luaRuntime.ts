@@ -10,6 +10,48 @@ function pushJsFunction(L: any, fn: (Linner: any) => number) {
 }
 
 /**
+ * Recursively push a plain JS value onto the Lua stack as the Lua-native
+ * equivalent (table for objects/arrays, string/number/boolean/nil for
+ * primitives). Fengari has no built-in JS<->Lua remapper (unlike Skulpt's
+ * ffi.remapToPy), so this is what lets `event` cross the bridge as a table.
+ */
+function pushJsValue(L: any, value: unknown): void {
+  if (value === null || value === undefined) {
+    lua.lua_pushnil(L);
+    return;
+  }
+  if (typeof value === 'string') {
+    lua.lua_pushstring(L, to_luastring(value));
+    return;
+  }
+  if (typeof value === 'number') {
+    lua.lua_pushnumber(L, value);
+    return;
+  }
+  if (typeof value === 'boolean') {
+    lua.lua_pushboolean(L, value);
+    return;
+  }
+  if (Array.isArray(value)) {
+    lua.lua_newtable(L);
+    value.forEach((item, idx) => {
+      pushJsValue(L, item);
+      lua.lua_rawseti(L, -2, idx + 1);
+    });
+    return;
+  }
+  if (typeof value === 'object') {
+    lua.lua_newtable(L);
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      pushJsValue(L, v);
+      lua.lua_setfield(L, -2, to_luastring(k));
+    }
+    return;
+  }
+  lua.lua_pushstring(L, to_luastring(String(value)));
+}
+
+/**
  * Create a fresh Lua state with standard libs opened.
  */
 export function createLuaState(): any {
@@ -29,6 +71,7 @@ export function createLuaState(): any {
  *   - setGlobalVar(key, valueJson)
  *   - deleteGlobalVar(key)
  *   - getNamedVar(name)
+ *   - event (table: event.name, event.payload, ...; nil if not applicable)
  */
 export function bindApiToLuaState(L: any, api: ScriptSandboxApi) {
   // ----- 1) api table -----
@@ -156,6 +199,12 @@ export function bindApiToLuaState(L: any, api: ScriptSandboxApi) {
     });
   }
 
+  // api.event – current trigger/alias/timer context, as a Lua table:
+  //   api.event.name, api.event.payload, api.event.payload.text, etc.
+  // nil when no event context is active (e.g. most Timer scripts).
+  pushJsValue(L, api.event ?? null);
+  lua.lua_setfield(L, -2, to_luastring('event'));
+
   // expose table as global "api"
   lua.lua_setglobal(L, to_luastring('api'));
 
@@ -281,6 +330,10 @@ export function bindApiToLuaState(L: any, api: ScriptSandboxApi) {
       return 0;
     });
   }
+
+  // global event
+  pushJsValue(L, api.event ?? null);
+  lua.lua_setglobal(L, to_luastring('event'));
 }
 
 function safeJsonParse(text: string): unknown | null {

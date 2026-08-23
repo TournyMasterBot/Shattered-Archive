@@ -1,0 +1,20 @@
+{
+  "name": "@shatteredarchive/simulacrum-server",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node -e \"require('fs').cpSync('src/public','dist/public',{recursive:true})\"",
+    "test": "jest --config ./jest.config.cjs --runInBand --passWithNoTests",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\"",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@shatteredarchive/services-server": "workspace:*",
+    "@shatteredarchive/types-server": "workspace:*",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}

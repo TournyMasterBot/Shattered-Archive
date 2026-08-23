@@ -17,11 +17,24 @@ You can call these directly:
 - `setGlobalVar(key: str, value)`
 - `deleteGlobalVar(key: str)`
 - `getNamedVar(name: str) -> str` *(empty if missing)*
+- `event` *(trigger/alias/timer context dict: `event["name"]`, `event["payload"]`; `None` if not applicable)*
 
 Also available:
 - `httpGetJson(url: str)` *(fire-and-forget; logs result asynchronously if available)*
 
 **Important:** In Python, `httpGetJson()` does **not** return a value. It triggers a request and logs results via `log(...)` when the fetch completes.
+
+---
+
+## Example: Trigger reading the matched line
+
+```python
+# Event: shatteredarchive:raw-data, Match text: "tells the group"
+payload = (event or {}).get("payload") or {}
+text = payload.get("text", "")
+
+writeTerminal("{c%s{x\n" % text)
+```
 
 ---
 

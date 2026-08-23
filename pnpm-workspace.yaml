@@ -8,7 +8,13 @@ packages:
 allowBuilds:
   '@parcel/watcher': true
   '@swc/core': true
+  # Optional deps of @vscode/vsce (dsl-color-preview's local packaging script)
+  # used only for signing/publishing to the Marketplace and OS-keychain-backed
+  # publisher login — neither is exercised by `vsce package --no-dependencies`,
+  # which is the only vsce usage in this repo.
+  '@vscode/vsce-sign': false
   esbuild: true
+  keytar: false
   # Optional Node-side deps of @huggingface/transformers (game-client only
   # uses its browser/WASM path via dynamic import) — no build scripts needed.
   onnxruntime-node: false

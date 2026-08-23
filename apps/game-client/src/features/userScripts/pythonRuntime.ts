@@ -70,6 +70,7 @@ function pyNone(): unknown {
  *  - setGlobalVar(key, value)
  *  - deleteGlobalVar(key)
  *  - getNamedVar(name)
+ *  - event (dict: event["name"], event["payload"], ...; None if not applicable)
  */
 function registerBuiltins(api: ScriptSandboxApi) {
   const sk = getSk();
@@ -95,6 +96,11 @@ function registerBuiltins(api: ScriptSandboxApi) {
     api.sendCommand?.(String(cmd));
     return pyNone();
   });
+
+  // event (trigger/alias/timer context), exposed as a Python dict:
+  //   event["name"], event["payload"], event["payload"]["text"], etc.
+  // None when no event context is active (e.g. most Timer scripts).
+  b.event = api.event !== undefined ? sk.ffi.remapToPy(api.event) : pyNone();
 
   // httpGetJson(url) – only if provided
   if (api.httpGetJson) {
@@ -235,6 +241,7 @@ export function configurePythonForApi(api: ScriptSandboxApi) {
  *   runGlobal("global.lua.foo", {"x": 1})
  *   setGlobalVar("k", "v")
  *   getNamedVar("TARGET")
+ *   event["payload"]["text"]  (trigger/alias context; None if not applicable)
  */
 export async function runPythonSourceInBrowser(source: string, api: ScriptSandboxApi): Promise<void> {
   const sk = getSk();

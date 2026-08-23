@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-import { signAssertion, introspect, exchangeCode } from './auth-introspect-client.js';
+import { signAssertion, introspect, exchangeCode, resolveUsername } from './auth-introspect-client.js';
 
 function generateKeypair(): { publicKeyPem: string; privateKeyPem: string } {
   const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519');
@@ -127,6 +127,47 @@ describe('introspect', () => {
     }) as unknown as typeof fetch;
     await expect(introspect('http://localhost:62000', 'mud-builder-server', privateKeyPem, 'x')).rejects.toThrow(
       /ECONNREFUSED/,
+    );
+  });
+});
+
+describe('resolveUsername', () => {
+  const { privateKeyPem } = generateKeypair();
+
+  function mockFetch(impl: (url: string, init: RequestInit | undefined) => Response): void {
+    globalThis.fetch = jest.fn(async (input: string | URL, init?: RequestInit) => impl(String(input), init)) as unknown as typeof fetch;
+  }
+
+  function jsonResponse(body: unknown, status = 200): Response {
+    return { ok: status < 400, status, statusText: 'x', json: async () => body } as unknown as Response;
+  }
+
+  it('calls POST /api/service/resolve-username with the signed assertion and returns a found result', async () => {
+    let seenUrl = '';
+    let seenBody = '';
+    mockFetch((url, init) => {
+      seenUrl = url;
+      seenBody = String(init?.body ?? '');
+      return jsonResponse({ found: true, id: 'acc-1', username: 'melchaleve' });
+    });
+
+    const result = await resolveUsername('http://localhost:62000', 'mud-builder-server', privateKeyPem, 'melchaleve');
+
+    expect(seenUrl).toBe('http://localhost:62000/api/service/resolve-username');
+    expect(JSON.parse(seenBody)).toEqual({ username: 'melchaleve' });
+    expect(result).toEqual({ found: true, id: 'acc-1', username: 'melchaleve' });
+  });
+
+  it('returns {found:false} for an unknown username — not a throw', async () => {
+    mockFetch(() => jsonResponse({ found: false }));
+    const result = await resolveUsername('http://localhost:62000', 'mud-builder-server', privateKeyPem, 'nobody');
+    expect(result).toEqual({ found: false });
+  });
+
+  it('throws with a readable message on a non-2xx (e.g. a rejected assertion)', async () => {
+    mockFetch(() => jsonResponse({ error: 'service assertion is invalid, unknown, or expired' }, 401));
+    await expect(resolveUsername('http://localhost:62000', 'mud-builder-server', privateKeyPem, 'x')).rejects.toThrow(
+      /401.*service assertion is invalid/,
     );
   });
 });

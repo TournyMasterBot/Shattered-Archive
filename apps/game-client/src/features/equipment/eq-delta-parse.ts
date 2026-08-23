@@ -41,7 +41,9 @@ function matchStopUsing(line: string): string | null {
 
 function matchDisarm(line: string): string | null {
   const s = clean(line);
-  const m = s.match(/^(.+?) DISARMS you and sends your weapon flying!$/);
+  const m = s.match(
+    /^(.+?) (?:DISARMS you and sends your weapon flying!|hooks your weapon and wrenches it violently from your grasp!)$/,
+  );
   return m ? m[1].trim() : null;
 }
 

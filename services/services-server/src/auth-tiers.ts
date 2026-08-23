@@ -14,7 +14,7 @@
 export const GLOBAL_TIERS = ['owner', 'admin', 'moderator', 'user'] as const;
 export type GlobalTier = (typeof GLOBAL_TIERS)[number];
 
-export const SERVICE_TIERS = ['owner', 'admin', 'manager', 'trusted', 'user'] as const;
+export const SERVICE_TIERS = ['owner', 'admin', 'manager', 'builder', 'trusted', 'user'] as const;
 export type ServiceTier = (typeof SERVICE_TIERS)[number];
 
 /** Index in the ladder (0 = highest authority); -1 for a tier the ladder doesn't know. */

@@ -89,6 +89,7 @@ dist/
 build/
 out/
 coverage/
+*.vsix
 
 # ============================================================
 # OS-specific Files

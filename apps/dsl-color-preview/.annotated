@@ -1,0 +1,13 @@
+File Index
+
+/README.md
+Purpose: What the extension does, how to run/develop/package it, and the manual-sync note for the color table.
+
+/esbuild.mjs
+Purpose: Bundles src/extension.ts to dist/extension.js (CJS, node20, vscode external); --production for minified/no-sourcemap, --watch for incremental rebuilds during F5 debugging.
+
+/package.json
+Purpose: VS Code extension manifest (dsl-color-preview) — command contribution, editor/title icon, explorer/editor context-menu entries scoped to .txt files, esbuild-backed build/watch/package/typecheck scripts.
+
+/tsconfig.json
+Purpose: NodeNext build config extending the repo base, typed against @types/vscode and @types/node.

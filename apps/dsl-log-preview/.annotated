@@ -1,0 +1,13 @@
+File Index
+
+/README.md
+Purpose: What the extension does, how it decides what to render (raw-only, concatenated across records), how to run/develop/package it, and the palette-sync note.
+
+/esbuild.mjs
+Purpose: Bundles src/extension.ts into dist/extension.js (cjs, node20, vscode external). Same as dsl-color-preview's.
+
+/package.json
+Purpose: Extension manifest — command dslLogPreview.showPreview, context-menu/editor-title contribution gated to .jsonl files, esbuild/vsce scripts. Mirrors dsl-color-preview's scaffold.
+
+/tsconfig.json
+Purpose: Extends the repo's tsconfig.base.json; adds vscode/node types. Same as dsl-color-preview's.

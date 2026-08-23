@@ -1,26 +1,38 @@
+import fs from 'fs';
+
 import express, { type Application, type Request, type Response } from 'express';
-import { SERVICE_TIERS, canManage, type ServiceTier } from '@shatteredarchive/services-server';
+import { SERVICE_TIERS, canManage, resolveUsername, type ServiceTier } from '@shatteredarchive/services-server';
 
 import type { AuthStore, BuilderActor } from '../auth-store.js';
 import type { MudBuilderConfig } from '../config.js';
 import { RoleStore, isServiceTier } from '../role-store.js';
 import { requireAnyActor } from './auth.js';
 
+// Matches routes/auth.ts's own private INTROSPECT_SERVICE_NAME — the identity mud-builder-server
+// registers under with auth-server's SERVICE_REGISTRY/register-service.
+const RESOLVE_USERNAME_SERVICE_NAME = 'mud-builder-server';
+
 /**
  * AI-ANNOTATION
  * @ai-summary Phase G: mud-builder's delegated role-management surface
- *   (Decision 4) — GET /api/roles/me (any actor, own standing only), GET
- *   /api/roles (grant list, gated), POST /api/roles/:accountId (set a
- *   grant, gated). 'owner' is never assignable over HTTP by anyone
- *   (mirrors auth-server admin-guard.ts's identical rule for its GLOBAL
- *   ladder) — the ceiling for master AND a hub-global owner/admin AND an
- *   existing local owner/admin is all the same: 'admin' and below.
+ *   (Decision 4) — GET /api/roles/me (any actor, own standing only, plus
+ *   their own accountId since 2026-08-16), GET /api/roles (grant list,
+ *   gated), POST /api/roles (set a grant, gated). 'owner' is never
+ *   assignable over HTTP by anyone (mirrors auth-server admin-guard.ts's
+ *   identical rule for its GLOBAL ladder) — the ceiling for master AND a
+ *   hub-global owner/admin AND an existing local owner/admin is all the
+ *   same: 'admin' and below.
  * @ai-public registerRoleRoutes, canGrant
  * @ai-notes A `kind:'key'` actor (local API key, master included via its own
  *   `kind:'master'` branch) can never OWN a grant — only `kind:'account'`
- *   actors have an accountId. `username` on a grant is caller-supplied free
- *   text for readability only, same non-identity caveat as an API key's
- *   label — accountId is the only real key.
+ *   actors have an accountId. 2026-08-16: the grant route took a raw
+ *   accountId in the URL until a live bug (a real user typed their username
+ *   there instead, silently granting a role to nothing) — it now takes a
+ *   USERNAME in the body and resolves it to the real accountId itself via
+ *   auth-server's service-authenticated /api/service/resolve-username,
+ *   same authServerUrl/servicePrivateKeyPath config as the introspect
+ *   fallback. An unresolvable username 404s; resolution being unconfigured
+ *   is a 501, not a crash.
  */
 
 type Handler = (req: Request, res: Response) => void | Promise<void>;
@@ -84,7 +96,14 @@ export function registerRoleRoutes(
       const actor = res.locals.builderActor as BuilderActor;
       const localTier = actor.kind === 'account' ? roleStore.tierFor(actor.accountId) : null;
       const globalRole = actor.kind === 'account' ? (actor.globalRole ?? 'user') : null;
-      res.json({ kind: actor.kind, localTier, globalRole });
+      // 2026-08-16 live bug (superseded same day by the grant route itself moving to
+      // username-based resolution — see that route's own note — but this is still useful
+      // reference/debugging info and the "use it" self-fill button below now fills username
+      // instead of accountId): a user reasonably typed their username where an accountId
+      // belonged, and the grant silently landed on a key matching no real session.
+      const accountId = actor.kind === 'account' ? actor.accountId : null;
+      const username = actor.kind === 'account' ? (actor.username ?? null) : null;
+      res.json({ kind: actor.kind, localTier, globalRole, accountId, username });
     }),
   );
 
@@ -102,9 +121,9 @@ export function registerRoleRoutes(
   );
 
   app.post(
-    '/api/roles/:accountId',
+    '/api/roles',
     requireAnyActor(store, config),
-    safe((req, res) => {
+    safe(async (req, res) => {
       const actor = res.locals.builderActor as BuilderActor;
       const body = req.body as { tier?: unknown; username?: unknown };
       if (!isServiceTier(body.tier)) {
@@ -119,9 +138,34 @@ export function registerRoleRoutes(
         res.status(403).json({ error: 'you are not permitted to grant this tier' });
         return;
       }
-      const accountId = String(req.params.accountId);
-      const username = typeof body.username === 'string' && body.username.trim() ? body.username.trim() : accountId;
-      const grant = roleStore.setTier(accountId, username, body.tier, granterLabel(actor));
+      const username = typeof body.username === 'string' ? body.username.trim() : '';
+      if (!username) {
+        res.status(400).json({ error: 'username is required' });
+        return;
+      }
+      // 2026-08-16: grants are by USERNAME now, not a raw accountId — usernames are memorable,
+      // accountIds are not, and requiring an operator to paste one directly is exactly what
+      // produced a live bug (a real user typed their username where the id belonged, silently
+      // granting a role to a string matching no real session). Resolved server-side via
+      // auth-server's service-authenticated lookup, mirroring the introspect fallback's own
+      // authServerUrl/servicePrivateKeyPath config and error shape.
+      if (!config.authServerUrl || !config.servicePrivateKeyPath) {
+        res.status(501).json({ error: 'username resolution is not configured on this deployment' });
+        return;
+      }
+      let resolved: Awaited<ReturnType<typeof resolveUsername>>;
+      try {
+        const privateKeyPem = fs.readFileSync(config.servicePrivateKeyPath, 'utf8');
+        resolved = await resolveUsername(config.authServerUrl, RESOLVE_USERNAME_SERVICE_NAME, privateKeyPem, username);
+      } catch (e) {
+        res.status(502).json({ error: `could not resolve username: ${(e as Error).message}` });
+        return;
+      }
+      if (!resolved.found) {
+        res.status(404).json({ error: `no account found with username ${JSON.stringify(username)}` });
+        return;
+      }
+      const grant = roleStore.setTier(resolved.id, resolved.username, body.tier, granterLabel(actor));
       res.json({ grant });
     }),
   );

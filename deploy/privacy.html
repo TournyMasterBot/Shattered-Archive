@@ -7,7 +7,7 @@
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <meta
       name="description"
-      content="How the shatteredarchive.dev demo services and mobile app handle data: cookies, local storage, Google AdSense, Google Analytics, Firebase Analytics/Crashlytics, push notifications, Google AdMob, server logs and retention."
+      content="How the shatteredarchive.dev demo services and mobile app handle data: cookies, local storage, Google AdSense, Google Analytics, Firebase Analytics/Crashlytics/Performance Monitoring, push notifications, Google AdMob, server logs and retention."
     />
 
     <!--
@@ -269,7 +269,7 @@
 
     <main class="wrap">
       <h1>Privacy &amp; Cookies</h1>
-      <p class="updated">Applies to <code>shatteredarchive.dev</code> and its subdomains, and to the Shattered Archive mobile app for Android. Last updated 14 August 2026.</p>
+      <p class="updated">Applies to <code>shatteredarchive.dev</code> and its subdomains, and to the Shattered Archive mobile app for Android. Last updated 15 August 2026.</p>
 
       <p class="lede">
         ShatteredArchive is an independent fan project. The services on
@@ -336,7 +336,7 @@
               <td>No</td>
             </tr>
             <tr>
-              <td><code>build.shatteredarchive.dev</code>, <code>kingdom-tactics.shatteredarchive.dev</code></td>
+              <td><code>build.shatteredarchive.dev</code>, <code>kingdom-tactics.shatteredarchive.dev</code>, <code>simulacrum.shatteredarchive.dev</code></td>
               <td>No</td>
               <td>No</td>
             </tr>
@@ -356,8 +356,9 @@
 
       <p>
         This table covers the web pages above only. The mobile app has its own SDKs — Firebase Analytics,
-        Firebase Crashlytics, push notifications, and (once enabled) Google AdMob — covered separately
-        under <a href="#mobile-app">The Shattered Archive mobile app</a> below.
+        Firebase Crashlytics, Firebase Performance Monitoring, push notifications, and (once enabled)
+        Google AdMob — covered separately under <a href="#mobile-app">The Shattered Archive mobile app</a>
+        below.
       </p>
 
       <p>
@@ -451,8 +452,8 @@
         the website itself stores, exactly as described in <code>shatteredarchive.com</code>'s own privacy
         notice for that data. That reuse is a backend implementation detail; it does not put analytics,
         ads, or the app itself onto <code>shatteredarchive.com</code>. What is specific to the app is the
-        set of SDKs it carries: Firebase Analytics, Firebase Crashlytics, push notifications, and — once
-        enabled — Google AdMob.
+        set of SDKs it carries: Firebase Analytics, Firebase Crashlytics, Firebase Performance Monitoring,
+        push notifications, and — once enabled — Google AdMob.
       </p>
 
       <div class="table-scroll">
@@ -489,6 +490,20 @@
               <td>Per Firebase's own crash-report retention — see the link above.</td>
             </tr>
             <tr>
+              <td>Firebase Performance Monitoring</td>
+              <td>
+                App start time, screen rendering, and network request timing to our own API, automatically
+                — plus timing for a handful of internal operations we instrument ourselves (bucketed by how
+                long you have been in a play session), attached to your app version and Android version, not
+                to your account. No account identifier is included.
+              </td>
+              <td>
+                Find performance problems (for example, a play session that gradually gets slower) across
+                real installs, not just a hands-on tester's device.
+              </td>
+              <td>Per Firebase's own performance data-retention setting (not customised by us) — see the link above.</td>
+            </tr>
+            <tr>
               <td>Push notifications (Firebase Cloud Messaging)</td>
               <td>
                 A device-specific push token, associated with your account while you are signed in to
@@ -517,9 +532,9 @@
       </div>
 
       <p>
-        We do not receive raw analytics or crash data ourselves — Google/Firebase processes it and
-        surfaces aggregated dashboards to us. We never supply Google with your name, email address, or
-        account credentials from the app.
+        We do not receive raw analytics, crash, or performance data ourselves — Google/Firebase processes
+        it and surfaces aggregated dashboards to us. We never supply Google with your name, email address,
+        or account credentials from the app.
       </p>
 
       <h3>Your choices, in the app</h3>
@@ -654,6 +669,26 @@
         <li>
           The only thing this page sends to a third party is the Google Analytics visit measurement
           described above.
+        </li>
+      </ul>
+
+      <h3>Simulacrum (<code>simulacrum.shatteredarchive.dev</code>)</h3>
+      <ul>
+        <li>
+          Connecting requires a short-lived, single-use access code minted from your signed-in
+          auth.shatteredarchive.dev account (trusted tier or above). The code is a plain text file on
+          the server, valid for five minutes and consumed on first use — it is not a password and
+          cannot be replayed.
+        </li>
+        <li>
+          If you create a character, your account ID is linked to it server-side so it appears on your
+          Auth Hub dashboard, and the character's name, race, class, level and similar play data sync
+          there too. Gameplay itself happens on the underlying MUD engine, same as any other connection
+          to it.
+        </li>
+        <li>
+          This is a demo of the engine MUD Builder edits, not a persistent MUD — its world resets
+          without notice, per the callout at the top of this page.
         </li>
       </ul>
 

@@ -442,8 +442,8 @@ export interface LiveStateResponse {
 }
 
 /** Phase G: mud-builder's own delegated tier ladder — 'owner' is never HTTP-assignable. */
-export type ServiceTier = 'owner' | 'admin' | 'manager' | 'trusted' | 'user';
-export const SERVICE_TIERS: ServiceTier[] = ['owner', 'admin', 'manager', 'trusted', 'user'];
+export type ServiceTier = 'owner' | 'admin' | 'manager' | 'builder' | 'trusted' | 'user';
+export const SERVICE_TIERS: ServiceTier[] = ['owner', 'admin', 'manager', 'builder', 'trusted', 'user'];
 
 export interface RoleGrant {
   accountId: string;
@@ -457,6 +457,10 @@ export interface RolesMe {
   kind: 'master' | 'key' | 'account';
   localTier: ServiceTier | null;
   globalRole: string | null;
+  /** Reference/debugging info — grants are keyed by username now (2026-08-16), not this. */
+  accountId: string | null;
+  /** The caller's own username, for the grant form's "use it" self-fill — see RolesPage.tsx. */
+  username: string | null;
 }
 
 /** Phase G: a builder's own private Room/Mob/Object/Script template, never touching the live area files. */
@@ -573,11 +577,12 @@ export const api = {
   stateLive: () => request<LiveStateResponse>('/api/state/live'),
   rolesMe: () => request<RolesMe>('/api/roles/me'),
   rolesList: () => request<{ grants: RoleGrant[] }>('/api/roles'),
-  setRole: (accountId: string, tier: ServiceTier, username?: string) =>
-    request<{ grant: RoleGrant }>(`/api/roles/${encodeURIComponent(accountId)}`, {
+  /** 2026-08-16: by username, not accountId — the server resolves it. See roles.ts's own note. */
+  setRole: (username: string, tier: ServiceTier) =>
+    request<{ grant: RoleGrant }>('/api/roles', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tier, username }),
+      body: JSON.stringify({ username, tier }),
     }),
   snippets: () => request<{ snippets: Snippet[] }>('/api/snippets'),
   saveSnippets: (snippets: Snippet[]) =>

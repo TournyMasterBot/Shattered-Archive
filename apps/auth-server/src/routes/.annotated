@@ -39,6 +39,12 @@ Purpose: Session/mustChangePassword gating, create+list shape (no token/sha256 l
 /keys.ts
 Purpose: Session-guarded API key management (list/create/rotate/revoke), blocked entirely during mustChangePassword; mintApiKey reads the account's CURRENT epoch fresh per request rather than trusting the session.
 
+/resolve-username.test.ts
+Purpose: Missing/bad assertion 401s, a real username resolves to {found:true,id,username}, an unknown one returns {found:false} not an error, case-insensitive match (canonical stored casing returned, not the query's), response shape pinned to exactly {found,id,username} — no other account fields leak.
+
+/resolve-username.ts
+Purpose: Server-to-server ONLY (2026-08-16), same assertion/rate-limit shape as introspect.ts — POST /api/service/resolve-username lets a registered service turn a memorable USERNAME into the opaque accountId it actually needs, so consumers stop requiring an operator to paste a raw id directly (mud-builder-server's role grants used to, and a real user typo'd their username where the id belonged — see apps/mud-builder-server/src/routes/roles.ts's own note). Any registered service may resolve ANY username — no per-caller privilege distinction, since the privilege decision belongs to the CALLING service (e.g. mud-builder's canGrant()); usernames aren't secret here already (signup uniqueness reveals them immediately). Deliberately returns only {found,id,username}, never other account fields.
+
 /safe.ts
 Purpose: Shared try/catch route wrapper — maps a thrown AuthError to its HTTP status, anything else to a 500; spreads AuthError's optional `code` into the body for failures clients must branch on.
 

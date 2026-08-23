@@ -1,0 +1,10 @@
+File Index
+
+/jest.config.cjs
+Purpose: Self-contained node jest config for the simulacrum-server package, mirrors mud-builder-server's own.
+
+/package.json
+Purpose: Two-listener Node service (health/SSO/access-code Express API on 65000, gated TCP relay to merc-mud on 65001). build: tsc -p tsconfig.json then copies src/public into dist/public (the static sign-in page isn't TS, so tsc alone won't carry it).
+
+/tsconfig.json
+Purpose: NodeNext build config mirroring mud-builder-server's.

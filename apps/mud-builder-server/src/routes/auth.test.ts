@@ -75,8 +75,16 @@ function makeServiceKeyFile(): string {
   return file;
 }
 
-/** Minimal stand-in for auth-server's POST /api/introspect: canned JSON, tracks hit count. */
-function startFakeIntrospect(respond: () => unknown): Promise<{ server: Server; url: string; hits: () => number }> {
+/**
+ * Minimal stand-in for auth-server's two service-to-service endpoints: POST /api/introspect
+ * (canned JSON, tracks hit count, as before) and POST /api/service/resolve-username
+ * (2026-08-16, backs roles.ts's grant-by-username resolution) — `usernames` is a
+ * {username: accountId} map; omitted entirely for the many call sites that never grant a role.
+ */
+function startFakeIntrospect(
+  respond: () => unknown,
+  usernames: Record<string, string> = {},
+): Promise<{ server: Server; url: string; hits: () => number }> {
   let hits = 0;
   const server = http.createServer((req, res) => {
     if (req.method === 'POST' && req.url === '/api/introspect') {
@@ -85,6 +93,17 @@ function startFakeIntrospect(respond: () => unknown): Promise<{ server: Server; 
       req.on('end', () => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(respond()));
+      });
+      return;
+    }
+    if (req.method === 'POST' && req.url === '/api/service/resolve-username') {
+      let body = '';
+      req.on('data', (c) => (body += c));
+      req.on('end', () => {
+        const { username } = JSON.parse(body || '{}') as { username?: string };
+        const id = username ? usernames[username] : undefined;
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(id ? { found: true, id, username } : { found: false }));
       });
       return;
     }
@@ -423,6 +442,9 @@ describe('Phase 4: centralized-auth introspect fallback', () => {
     const { server, base } = await startApp(
       makeConfig(dir, { authServerUrl: fake.url, servicePrivateKeyPath: makeServiceKeyFile() }),
     );
+    // This test is about introspect-fallback identity resolution, not tier gating — grant the
+    // floor tier so it isn't incidentally blocked by the (separate) builder-tier check.
+    new RoleStore(path.join(dir, 'auth')).setTier('acct1', 'alice', 'builder', 'test-setup');
     try {
       expect((await putGroups(base, 'a-centrally-issued-token')).status).toBe(200);
       expect(fake.hits()).toBe(1);
@@ -499,6 +521,7 @@ describe('Phase 4: centralized-auth introspect fallback', () => {
     const { server, base } = await startApp(
       makeConfig(dir, { authServerUrl: fake.url, servicePrivateKeyPath: makeServiceKeyFile() }),
     );
+    new RoleStore(path.join(dir, 'auth')).setTier('acct2', 'melchaleve', 'builder', 'test-setup');
     try {
       expect((await putGroups(base, 'a-centrally-issued-token')).status).toBe(200);
       const audit = fs.readFileSync(path.join(dir, 'backups', 'audit.log'), 'utf8');
@@ -605,6 +628,168 @@ describe('Phase 4: centralized-auth introspect fallback', () => {
   });
 });
 
+describe('simulacrum-wiring correction 5: builder-tier floor on the general write gate', () => {
+  /**
+   * Mirrors the three-way split .ai-plans/20260816-0701-simulacrum-mud-wiring.md Step 3
+   * describes: `user` and `trusted` are both below the floor for the REAL persist path
+   * (authGuard gates PUT /api/areas/:file, POST /api/reload, and — exercised here as a
+   * stand-in, same as the rest of this file — PUT /api/groups); `builder`+ passes. This is
+   * a NEW restriction: before this correction, ANY authenticated account could mutate.
+   */
+  async function accountApp(dir: string, tier: 'user' | 'trusted' | 'builder' | 'manager' | 'admin' | 'owner' | null) {
+    const fake = await startFakeIntrospect(() => ({
+      valid: true,
+      accountId: 'acct1',
+      service: 'mud-builder-server',
+      label: 'test key',
+      username: 'melchaleve',
+      expiresAt: null,
+      tokenType: 'api',
+    }));
+    const { server, base } = await startApp(
+      makeConfig(dir, { authServerUrl: fake.url, servicePrivateKeyPath: makeServiceKeyFile() }),
+    );
+    if (tier) new RoleStore(path.join(dir, 'auth')).setTier('acct1', 'melchaleve', tier, 'test-setup');
+    return { server, base, fakeServer: fake.server };
+  }
+
+  it('a plain user-tier account (no role-store grant) 403s on a mutation', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-guard-user-'));
+    const { server, base, fakeServer } = await accountApp(dir, null);
+    try {
+      const res = await putGroups(base, 'a-centrally-issued-token');
+      expect(res.status).toBe(403);
+      expect(((await res.json()) as { error: string }).error).toMatch(/builder tier or above/);
+      expect(fs.existsSync(path.join(dir, 'groups.dat'))).toBe(false);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fakeServer.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('a trusted-tier account (can draft via snippets) still 403s on the real persist path', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-guard-trusted-'));
+    const { server, base, fakeServer } = await accountApp(dir, 'trusted');
+    try {
+      const res = await putGroups(base, 'a-centrally-issued-token');
+      expect(res.status).toBe(403);
+      expect(fs.existsSync(path.join(dir, 'groups.dat'))).toBe(false);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fakeServer.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('a builder-tier account succeeds — the new floor', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-guard-builder-'));
+    const { server, base, fakeServer } = await accountApp(dir, 'builder');
+    try {
+      expect((await putGroups(base, 'a-centrally-issued-token')).status).toBe(200);
+      expect(fs.existsSync(path.join(dir, 'groups.dat'))).toBe(true);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fakeServer.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('manager/admin/owner tiers are unaffected — still succeed, same as before', async () => {
+    for (const tier of ['manager', 'admin', 'owner'] as const) {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), `mud-builder-guard-${tier}-`));
+      const { server, base, fakeServer } = await accountApp(dir, tier);
+      try {
+        expect((await putGroups(base, 'a-centrally-issued-token')).status).toBe(200);
+      } finally {
+        await new Promise((r) => server.close(r));
+        await new Promise((r) => fakeServer.close(r));
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    }
+  });
+
+  it('anonymous GETs stay open regardless — the read short-circuit runs before any tier check', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-guard-anon-get-'));
+    const { server, base } = await startApp(makeConfig(dir));
+    try {
+      const res = await fetch(`${base}/api/groups`);
+      expect(res.status).toBe(200);
+    } finally {
+      await new Promise((r) => server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  /**
+   * Live bug, found 2026-08-16 via a real user: a hub owner with NO pre-existing local grant
+   * (this floor's default is 'user') got 403'd by THIS floor before ever reaching roles.ts's
+   * own `canGrant()`, which already has the correct hub-owner-bootstrap exception — Decision
+   * 4's whole "hub owners appoint a service's admins" mechanism was unreachable over HTTP.
+   * Neither existing suite caught it: roles.test.ts calls registerRoleRoutes directly on a
+   * bare app (never exercises this floor at all), and this describe block's own tests above
+   * only ever exercised /api/groups, never /api/roles/:accountId. This test goes through the
+   * FULL app (startApp -> registerRoutes, same as everything else here) specifically so the
+   * floor and the route are tested together, not in isolation.
+   */
+  it('a hub owner with no local grant CAN bootstrap a role grant via POST /api/roles', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-guard-roles-bootstrap-'));
+    const fake = await startFakeIntrospect(
+      () => ({
+        valid: true,
+        accountId: 'acct1',
+        service: 'mud-builder-server',
+        label: 'test key',
+        username: 'melchaleve',
+        expiresAt: null,
+        tokenType: 'api',
+        globalRole: 'owner',
+      }),
+      { melchaleve: 'acct1' }, // self-grant: the username resolves back to the caller's own accountId
+    );
+    const { server, base } = await startApp(
+      makeConfig(dir, { authServerUrl: fake.url, servicePrivateKeyPath: makeServiceKeyFile() }),
+    );
+    // Deliberately NO roleStore.setTier call — melchaleve's exact scenario: zero pre-existing
+    // local grant, defaulting to 'user', well below the 'builder' floor this describe block
+    // otherwise enforces.
+    try {
+      const res = await fetch(`${base}/api/roles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer a-centrally-issued-token' },
+        body: JSON.stringify({ username: 'melchaleve', tier: 'trusted' }),
+      });
+      expect(res.status).toBe(200);
+      expect(new RoleStore(path.join(dir, 'auth')).tierFor('acct1')).toBe('trusted');
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('a plain user (no hub owner/admin standing, no local grant) still 403s on POST /api/roles', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-guard-roles-denied-'));
+    const { server, base, fakeServer } = await accountApp(dir, null);
+    try {
+      const res = await fetch(`${base}/api/roles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer a-centrally-issued-token' },
+        body: JSON.stringify({ username: 'someone', tier: 'trusted' }),
+      });
+      // canGrant()'s own rejection, NOT the blanket floor's — proves the exemption routes to
+      // the intended, more precise check rather than merely disabling authorization outright.
+      // 403, before username resolution is even attempted, matching roles.ts's own check order.
+      expect(res.status).toBe(403);
+      expect(((await res.json()) as { error: string }).error).toBe('you are not permitted to grant this tier');
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fakeServer.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('Phase 15/G: requireRebuildAllowed', () => {
   /** Mounts the guard alone on a throwaway route — rebuild.ts wires it onto the real /api/rebuild. */
   function startRebuildApp(
@@ -663,7 +848,7 @@ describe('Phase 15/G: requireRebuildAllowed', () => {
       const { token } = store.createKey('melchaleve');
       const res = await postRebuild(base, token);
       expect(res.status).toBe(403);
-      expect(((await res.json()) as { error: string }).error).toMatch(/admin tier or above/);
+      expect(((await res.json()) as { error: string }).error).toMatch(/builder tier or above/);
     } finally {
       await new Promise((r) => server.close(r));
       fs.rmSync(dir, { recursive: true, force: true });
@@ -796,7 +981,7 @@ describe('Phase 15/G: requireRebuildAllowed', () => {
     try {
       const res = await postRebuild(base, 'a-centrally-issued-token');
       expect(res.status).toBe(403);
-      expect(((await res.json()) as { error: string }).error).toMatch(/admin tier or above/);
+      expect(((await res.json()) as { error: string }).error).toMatch(/builder tier or above/);
     } finally {
       await new Promise((r) => server.close(r));
       await new Promise((r) => fake.server.close(r));
@@ -804,7 +989,12 @@ describe('Phase 15/G: requireRebuildAllowed', () => {
     }
   });
 
-  it('a manager-tier account (below admin) 403s', async () => {
+  /**
+   * Simulacrum-wiring correction 5 lowered the threshold from 'admin' to 'builder' — manager
+   * sits ABOVE builder in the ladder (owner > admin > manager > builder > trusted > user), so
+   * it must still pass, same as admin/owner already do above.
+   */
+  it('a manager-tier account also passes (above the new builder floor)', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-rebuild-manager-'));
     const soon = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
     const fake = await startFakeIntrospect(() => ({
@@ -822,9 +1012,61 @@ describe('Phase 15/G: requireRebuildAllowed', () => {
     });
     roleStore.setTier('acct1', 'melchaleve', 'manager', 'test-setup');
     try {
+      expect((await postRebuild(base, 'a-centrally-issued-token')).status).toBe(200);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('a builder-tier account passes — the new floor itself', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-rebuild-builder-'));
+    const soon = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+    const fake = await startFakeIntrospect(() => ({
+      valid: true,
+      accountId: 'acct1',
+      service: 'mud-builder-server',
+      label: 'rebuild key',
+      username: 'melchaleve',
+      expiresAt: soon,
+      tokenType: 'api',
+    }));
+    const { server, base, roleStore } = await startRebuildApp(dir, {
+      authServerUrl: fake.url,
+      servicePrivateKeyPath: makeServiceKeyFile(),
+    });
+    roleStore.setTier('acct1', 'melchaleve', 'builder', 'test-setup');
+    try {
+      expect((await postRebuild(base, 'a-centrally-issued-token')).status).toBe(200);
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('a trusted-tier account (just below the new floor) still 403s', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mud-builder-rebuild-trusted-'));
+    const soon = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+    const fake = await startFakeIntrospect(() => ({
+      valid: true,
+      accountId: 'acct1',
+      service: 'mud-builder-server',
+      label: 'rebuild key',
+      username: 'melchaleve',
+      expiresAt: soon,
+      tokenType: 'api',
+    }));
+    const { server, base, roleStore } = await startRebuildApp(dir, {
+      authServerUrl: fake.url,
+      servicePrivateKeyPath: makeServiceKeyFile(),
+    });
+    roleStore.setTier('acct1', 'melchaleve', 'trusted', 'test-setup');
+    try {
       const res = await postRebuild(base, 'a-centrally-issued-token');
       expect(res.status).toBe(403);
-      expect(((await res.json()) as { error: string }).error).toMatch(/admin tier or above/);
+      expect(((await res.json()) as { error: string }).error).toMatch(/builder tier or above/);
     } finally {
       await new Promise((r) => server.close(r));
       await new Promise((r) => fake.server.close(r));
