@@ -595,18 +595,19 @@ services:
       SIMULACRUM_PUBLIC_URL: "https://simulacrum.shatteredarchive.dev"
       SERVICE_PRIVATE_KEY_PATH: "/repo/apps/simulacrum-server/secrets/shattered-service.key"
       # Engine management (2026-08-23) — see engine-reload.ts/engine-rebuild.ts/engine-auth.ts.
-      # Both flags default off — this is production's FIRST docker.sock-adjacent deployment
-      # (mud-builder-server, the only other service with this pattern, was never actually
-      # deployed here). Land this off, verify reload/copyover in dev first (zero docker risk),
-      # then flip SIMULACRUM_ENGINE_RELOAD_ENABLED here, then only after confirming the real
-      # value for MERC_MUD_HOST_PATH below (`docker inspect merc-mud2.4 --format
-      # '{{json .Mounts}}'` on this host — do not trust the guessed default) flip
-      # SIMULACRUM_ENGINE_REBUILD_ENABLED. Only mercmud24 is ever a build/recreate target —
+      # Reload/copyover turned on 2026-08-23: MERC_MUD_HOST_PATH below was confirmed against
+      # the real prod host (~/src/merc-mud, sibling to ~/src/shatteredarchive) and the
+      # docker-socket-proxy wiring was confirmed live (docker version through the proxy
+      # succeeded from inside this container) before this flip. REBUILD stays off — this is
+      # production's FIRST docker.sock-adjacent deployment (mud-builder-server, the only other
+      # service with this pattern, was never actually deployed here), and rebuild is the one
+      # of the three that actually touches the daemon; flip SIMULACRUM_ENGINE_REBUILD_ENABLED
+      # only as its own deliberate step. Only mercmud24 is ever a build/recreate target —
       # hardcoded in engine-rebuild.ts, no request input ever reaches those docker commands.
       SIMULACRUM_ENGINE_AREA_PATH: "/opt/simulacrum-engine/area"
       MERC_MUD_REPO_PATH: "/host-merc-mud"
       MERC_MUD_HOST_PATH: "/home/ubuntu/src/merc-mud"
-      SIMULACRUM_ENGINE_RELOAD_ENABLED: "false"
+      SIMULACRUM_ENGINE_RELOAD_ENABLED: "true"
       SIMULACRUM_ENGINE_REBUILD_ENABLED: "false"
       # Never a raw /var/run/docker.sock bind mount here — this process talks to the daemon
       # ONLY through the verb-scoped proxy below (simulacrum-docker-proxy has EXEC=0 and every
