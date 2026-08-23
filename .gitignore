@@ -38,6 +38,13 @@ coverage/*
 # present in a build run against the local working tree — it only went missing wherever the
 # build source came from a git checkout instead, which is exactly where prod redeploys did.
 !apps/scrum-poker-client/public/theme-init.js
+# Third instance of the same bug, found live 2026-08-23: simulacrum-server's sign-in page (its
+# ONE UI surface — src/app.ts's express.static(publicDir), copied to dist/public at build time
+# by the package's own build script) never shipped app.js to any git-clone-based deploy. index.html
+# (committed fine, *.js doesn't match it) rendered and correctly requested `<script src="/app.js">`,
+# but the file itself had zero git history — the blanket rule ate it from the very first commit,
+# so nothing ever flagged it as missing until a live 404 in production surfaced it.
+!apps/simulacrum-server/src/public/app.js
 jwt-secret.dat
 
 # auth-server: per-app encrypted JSON stores, and the private key files that
