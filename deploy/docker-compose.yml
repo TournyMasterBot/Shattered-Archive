@@ -95,6 +95,7 @@ services:
           - web-server.shatteredarchive.dev
           - auth.shatteredarchive.dev
           - scrum-poker.shatteredarchive.dev
+          - simulacrum.shatteredarchive.dev
       sa-shared: {}
 
     restart: unless-stopped
@@ -164,7 +165,7 @@ services:
       PORT: "31000"
       LOG_LEVEL: "info"
       DOTENV_CONFIG_QUIET: "true"
-      GAME_PROXY_ALLOWLIST: "dsl-mud.org:4000,dsl-mud.org:8000"
+      GAME_PROXY_ALLOWLIST: "dsl-mud.org:4000,dsl-mud.org:8000,simulacrum-server.shatteredarchive.dev:65001"
       GAME_PROXY_ALLOW_ALL: "false"
       LOG_DATE_PARTITIONED: "true"
       LOG_RESPECT_SOH: "true"
@@ -311,6 +312,17 @@ services:
       # consuming service sends (for shattered-web: AuthHub__RedirectUri and
       # GameSso__CallbackRedirectUri in DSL/Server/docker-compose-prod.yml).
       # ------------------------------------------------------------------
+      #
+      # LIVE BUG (2026-08-16): both simulacrum-server and mud-builder-server were missing
+      # from this list — confirmed against the experimental stack (which shares this exact
+      # gap) that an absent entry means every account-based sign-in against that service is
+      # silently rejected, no matter how valid the credential is. simulacrum-server's own
+      # container ships in THIS file already (see its service block); mud-builder-server's
+      # does not yet (experimental-only) but is declared here regardless — an entry with no
+      # published key yet is a harmless, expected no-op per the reconciler's own third
+      # refusal, and pre-declaring it avoids re-discovering this exact bug the day
+      # mud-builder-server IS added here for real.
+      # ------------------------------------------------------------------
       SERVICE_REGISTRY: >-
         {
           "shattered-web": {
@@ -318,6 +330,14 @@ services:
               "https://shatteredarchive.com/user/sso/callback",
               "https://shatteredarchive.com/user/game-sso/callback"
             ]
+          },
+          "simulacrum-server": {
+            "redirectUris": [
+              "https://simulacrum.shatteredarchive.dev/api/sso/callback"
+            ]
+          },
+          "mud-builder-server": {
+            "redirectUris": []
           }
         }
       SERVICE_PUBLIC_KEY_DIR: "/repo/apps/auth-server/service-public-keys"
@@ -516,6 +536,76 @@ services:
       shatteredarchive-prod:
         aliases:
           - soulsteel-client.shatteredarchive.dev
+
+  ############################################################
+  # SIMULACRUM (simulacrum.shatteredarchive.dev) — .ai-plans/
+  # 20260816-0701-simulacrum-mud-wiring.md Step 5. Same two-listener shape as the
+  # experimental compose (Express 65000 + gated TCP relay 65001) — see that file
+  # for the full design note.
+  #
+  # OPERATIONAL GAP, flagged rather than silently worked around: mud-builder-server
+  # is NOT deployed to this prod compose (still experimental-only — its own front-
+  # proxy block is a 503 stub). This service's role-store mount below (Constraints:
+  # trusted+ tier shared between mud-builder-server and simulacrum-server) therefore
+  # has nothing real to share with in PROD yet — the path is a best guess mirroring
+  # this host's dev sibling-directory layout, unconfirmed, and until either
+  # mud-builder-server also goes live here (letting the Roles tab grant tiers) or an
+  # operator manually seeds a roles.json row at that path, simulacrum is publicly
+  # reachable but NO ACCOUNT can obtain an access code — a safe failure mode (fails
+  # closed to "nobody"), not a broken one, but worth knowing before wondering why a
+  # trusted+ account still gets 403'd here.
+  ############################################################
+  simulacrum-server:
+    build:
+      context: ..
+      dockerfile: deploy/simulacrum-server.Dockerfile
+    image: shatteredarchive-prod-simulacrum-server
+    container_name: shatteredarchive-prod-simulacrum-server
+    restart: unless-stopped
+    volumes:
+      # Ed25519 private half for this service's own SSO/introspect registration — git-ignored,
+      # minted via `pnpm --filter @shatteredarchive/auth-server register-service
+      # simulacrum-server` run against the PROD auth-server's live data dir/key (a SEPARATE
+      # registration from the experimental stack's — the two are different auth-server
+      # instances with different key stores).
+      - ../apps/simulacrum-server/secrets:/repo/apps/simulacrum-server/secrets:ro
+      # BEST-GUESS path — see the operational-gap note above. Single-file mount (not the whole
+      # auth/ directory) on purpose: this must never also expose mud-builder-server's master key.
+      - ../../merc-mud/2.4/area/auth/roles.json:/repo/apps/simulacrum-server/data/roles/roles.json
+      - ../../merc-mud/simulacrum-access-codes:/repo/apps/simulacrum-server/data/access-codes
+    environment:
+      NODE_ENV: production
+      PORT: "65000"
+      SIMULACRUM_RELAY_PORT: "65001"
+      SIMULACRUM_HOST: "simulacrum-engine"
+      SIMULACRUM_PORT: "4000"
+      SIMULACRUM_ACCESS_CODES_PATH: "/repo/apps/simulacrum-server/data/access-codes"
+      SIMULACRUM_ROLE_STORE_PATH: "/repo/apps/simulacrum-server/data/roles"
+      AUTH_SERVER_URL: "http://auth-server.shatteredarchive.dev:62000"
+      AUTH_SERVER_PUBLIC_URL: "https://auth.shatteredarchive.dev"
+      SIMULACRUM_PUBLIC_URL: "https://simulacrum.shatteredarchive.dev"
+      SERVICE_PRIVATE_KEY_PATH: "/repo/apps/simulacrum-server/secrets/shattered-service.key"
+    expose:
+      - "65000"
+      - "65001"
+    networks:
+      shatteredarchive-prod:
+        aliases:
+          - simulacrum-server.shatteredarchive.dev
+      sa-shared:
+        aliases:
+          - simulacrum-server
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(65000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
 
 volumes:
   auth-server-secrets:

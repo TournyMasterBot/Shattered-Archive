@@ -69,9 +69,13 @@ export function registerRoutes(app: Application, config: MudBuilderConfig = getM
   // Order matters: guard, then audit, then ANY route — a route registered
   // before the audit middleware would end the chain and never be audited.
   const authStore = config.authEnabled ? new AuthStore(config.authDataPath) : null;
+  // Simulacrum-wiring correction 5: authGuard now needs the role store too (the builder-tier
+  // floor on every mutation), so this construction moved above the mount it used to follow —
+  // the store itself has no gate of its own (roles.ts's routes do the guarding).
+  const roleStore = new RoleStore(config.authDataPath);
   if (authStore) {
     authStore.init();
-    app.use(authGuard(authStore, config));
+    app.use(authGuard(authStore, config, roleStore));
   }
   if (config.writeEnabled) {
     app.use(auditMiddleware(config.auditDataPath));
@@ -79,15 +83,12 @@ export function registerRoutes(app: Application, config: MudBuilderConfig = getM
   if (authStore) {
     registerAuthRoutes(app, authStore, config);
     registerAuditViewRoutes(app, authStore, config.auditDataPath, config);
-    // Phase G: same "requires a real AuthStore" reasoning as rebuild below — the role
-    // store itself has no gate of its own (roles.ts's routes do the guarding).
-    const roleStore = new RoleStore(config.authDataPath);
     registerRoleRoutes(app, authStore, roleStore, config);
     // Phase G: private per-account content, kept alongside area data (NOT under auth/ —
     // it's user content, not credentials) but structurally separate from the MUD's own
     // .are files (area.lst-driven registration means an extra subdirectory here is inert).
     const snippetStore = new SnippetStore(config.areaPath);
-    registerSnippetRoutes(app, authStore, snippetStore, config);
+    registerSnippetRoutes(app, authStore, snippetStore, roleStore, config);
     // Phase H: same route name as kingdom-tactics-server's own summary endpoint, for a
     // uniform C# dashboard caller.
     registerSummaryRoutes(app, authStore, snippetStore, config);

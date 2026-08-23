@@ -9,8 +9,10 @@ import type { Server } from 'http';
 
 import { AuthStore } from '../auth-store.js';
 import type { MudBuilderConfig } from '../config.js';
+import { RoleStore } from '../role-store.js';
 import { SnippetStore, type Snippet } from '../snippet-store.js';
 import { registerSnippetRoutes } from './snippets.js';
+import type { ServiceTier } from '@shatteredarchive/services-server';
 
 type IntrospectConfig = Pick<MudBuilderConfig, 'authServerUrl' | 'servicePrivateKeyPath'>;
 
@@ -45,15 +47,16 @@ function startFakeIntrospect(respond: () => unknown): Promise<{ server: Server; 
 function startTestApp(
   dir: string,
   introspectConfig: IntrospectConfig = { authServerUrl: 'http://127.0.0.1:1' },
-): Promise<{ server: Server; base: string; store: AuthStore; snippetStore: SnippetStore }> {
+): Promise<{ server: Server; base: string; store: AuthStore; snippetStore: SnippetStore; roleStore: RoleStore }> {
   const store = new AuthStore(path.join(dir, 'auth'));
   store.init();
   const snippetStore = new SnippetStore(dir);
+  const roleStore = new RoleStore(path.join(dir, 'auth'));
   const app = express();
-  registerSnippetRoutes(app, store, snippetStore, introspectConfig);
+  registerSnippetRoutes(app, store, snippetStore, roleStore, introspectConfig);
   return new Promise((resolve) => {
     const server = app.listen(0, '127.0.0.1', () => {
-      resolve({ server, base: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, store, snippetStore });
+      resolve({ server, base: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, store, snippetStore, roleStore });
     });
   });
 }
@@ -63,10 +66,12 @@ function readMasterKey(dir: string): string {
   return (JSON.parse(raw) as { masterKey: string }).masterKey;
 }
 
+/** Defaults to `trusted` — the floor every existing snippet test relies on; pass a lower/higher tier explicitly to probe the boundary. */
 async function startAppAsAccount(
   dir: string,
   accountId: string,
-): Promise<{ server: Server; base: string; snippetStore: SnippetStore; fakeServer: Server; token: string }> {
+  tier: ServiceTier | null = 'trusted',
+): Promise<{ server: Server; base: string; snippetStore: SnippetStore; roleStore: RoleStore; fakeServer: Server; token: string }> {
   const fake = await startFakeIntrospect(() => ({
     valid: true,
     accountId,
@@ -76,8 +81,12 @@ async function startAppAsAccount(
     expiresAt: null,
     tokenType: 'api',
   }));
-  const { server, base, snippetStore } = await startTestApp(dir, { authServerUrl: fake.url, servicePrivateKeyPath: makeServiceKeyFile() });
-  return { server, base, snippetStore, fakeServer: fake.server, token: 'a-centrally-issued-token' };
+  const { server, base, snippetStore, roleStore } = await startTestApp(dir, {
+    authServerUrl: fake.url,
+    servicePrivateKeyPath: makeServiceKeyFile(),
+  });
+  if (tier) roleStore.setTier(accountId, 'builder', tier, 'test-setup');
+  return { server, base, snippetStore, roleStore, fakeServer: fake.server, token: 'a-centrally-issued-token' };
 }
 
 function makeSnippet(overrides: Partial<Snippet> = {}): Snippet {
@@ -132,6 +141,29 @@ describe('snippet routes', () => {
         expect(res.status).toBe(403);
       } finally {
         await new Promise((r) => server.close(r));
+      }
+    });
+
+    it('403s a plain user-tier account (no role-store grant)', async () => {
+      const { server, base, fakeServer, token } = await startAppAsAccount(dir, 'acct1', null);
+      try {
+        const res = await fetch(`${base}/api/snippets`, { headers: { Authorization: `Bearer ${token}` } });
+        expect(res.status).toBe(403);
+        expect(((await res.json()) as { error: string }).error).toMatch(/trusted tier or above/);
+      } finally {
+        await new Promise((r) => server.close(r));
+        await new Promise((r) => fakeServer.close(r));
+      }
+    });
+
+    it('succeeds for an owner-tier account too (trusted is a floor, not an exact match)', async () => {
+      const { server, base, fakeServer, token } = await startAppAsAccount(dir, 'acct1', 'owner');
+      try {
+        const res = await fetch(`${base}/api/snippets`, { headers: { Authorization: `Bearer ${token}` } });
+        expect(res.status).toBe(200);
+      } finally {
+        await new Promise((r) => server.close(r));
+        await new Promise((r) => fakeServer.close(r));
       }
     });
 
@@ -209,6 +241,23 @@ describe('snippet routes', () => {
           body: JSON.stringify({ snippets: [{ id: 'x', kind: 'room', data: {}, createdAt: '', updatedAt: '' }] }),
         });
         expect(res.status).toBe(400);
+      } finally {
+        await new Promise((r) => server.close(r));
+        await new Promise((r) => fakeServer.close(r));
+      }
+    });
+
+    it('403s a plain user-tier account (no role-store grant), writing nothing', async () => {
+      const { server, base, snippetStore, fakeServer, token } = await startAppAsAccount(dir, 'acct1', null);
+      try {
+        const res = await fetch(`${base}/api/snippets`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ snippets: [makeSnippet()] }),
+        });
+        expect(res.status).toBe(403);
+        expect(((await res.json()) as { error: string }).error).toMatch(/trusted tier or above/);
+        expect(snippetStore.list('acct1')).toEqual([]);
       } finally {
         await new Promise((r) => server.close(r));
         await new Promise((r) => fakeServer.close(r));

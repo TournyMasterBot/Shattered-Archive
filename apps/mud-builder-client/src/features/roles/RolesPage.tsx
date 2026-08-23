@@ -11,6 +11,12 @@ import '../areas/areas.css';
  * here," not an error, so it's treated as "hide the table," matching AccessPage's own
  * open-vs-gated section pattern. Same "UI hides what you can't do, server enforces it
  * for real" rule as auth-client's AdminPage.
+ *
+ * 2026-08-16: the grant form takes a USERNAME, not a raw accountId — the server resolves it
+ * (roles.ts, POST /api/roles). A real user typed their own username into the old accountId
+ * field (nothing showed them the actual value), silently granting a role to a string matching
+ * no real session; requiring the memorable value up front removes that mistake by construction
+ * rather than just labelling the field better.
  */
 
 const ASSIGNABLE_TIERS: ServiceTier[] = ['admin', 'manager', 'trusted', 'user'];
@@ -19,7 +25,6 @@ export default function RolesPage() {
   const [me, setMe] = useState<RolesMe | null>(null);
   const [grants, setGrants] = useState<RoleGrant[] | null>(null);
   const [toast, setToast] = useState<ToastState>(null);
-  const [accountId, setAccountId] = useState('');
   const [username, setUsername] = useState('');
   const [tier, setTier] = useState<ServiceTier>('user');
   const [busy, setBusy] = useState(false);
@@ -51,13 +56,14 @@ export default function RolesPage() {
   }, [loadMe, loadGrants]);
 
   const grant = async () => {
-    const id = accountId.trim();
-    if (!id) return;
+    const name = username.trim();
+    if (!name) return;
     setBusy(true);
     try {
-      await api.setRole(id, tier, username.trim() || undefined);
-      setToast({ kind: 'ok', text: `granted "${tier}" to ${id}` });
-      setAccountId('');
+      // 2026-08-16: by username — the server resolves it to the real accountId itself,
+      // closing the class of bug where an operator pasted the wrong (or no) raw id.
+      await api.setRole(name, tier);
+      setToast({ kind: 'ok', text: `granted "${tier}" to ${name}` });
       setUsername('');
       setTier('user');
       await loadGrants();
@@ -92,6 +98,15 @@ export default function RolesPage() {
                     · hub global role: <strong>{me.globalRole}</strong>
                   </>
                 ) : null}
+                {me.username ? (
+                  <>
+                    <br />
+                    Your username: <code>{me.username}</code>{' '}
+                    <button type="button" onClick={() => setUsername(me.username ?? '')}>
+                      Use for a grant below
+                    </button>
+                  </>
+                ) : null}
               </>
             )}
           </p>
@@ -111,17 +126,13 @@ export default function RolesPage() {
             ))}
           </ul>
           <label className="mb-field">
-            Account ID
+            Username
             <input
-              aria-label="Account ID to grant"
-              value={accountId}
-              onChange={(e) => setAccountId(e.target.value)}
-              placeholder="paste from the hub's Admin page or an audit-log line"
+              aria-label="Username to grant"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="the account's sign-in username"
             />
-          </label>
-          <label className="mb-field">
-            Username (optional, for readability only)
-            <input aria-label="Username label" value={username} onChange={(e) => setUsername(e.target.value)} />
           </label>
           <label className="mb-field">
             Tier
@@ -137,7 +148,7 @@ export default function RolesPage() {
             'owner' cannot be granted from this screen — it is set only by editing roles.json on the host, same as the
             master key.
           </p>
-          <button type="button" onClick={() => void grant()} disabled={busy || accountId.trim().length === 0}>
+          <button type="button" onClick={() => void grant()} disabled={busy || username.trim().length === 0}>
             Grant
           </button>
         </fieldset>

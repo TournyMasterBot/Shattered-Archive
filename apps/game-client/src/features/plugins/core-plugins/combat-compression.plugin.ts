@@ -55,6 +55,10 @@ import type { IPluginModule, PluginRuntimeApi } from '@shatteredarchive/types-cl
  * effect line that follows); Status/Incapacitation/Disarm-other default OFF
  * (real, informative state changes) — same policy as their siblings above.
  *
+ * 2026-08-18 addendum: added the "hooks your weapon and wrenches it violently
+ * from your grasp!" phrasing to Disarm Weapon (user-reported, not yet cross-
+ * checked against the corpus).
+ *
  * All rules use the 'm' (multiline) regex flag. Raw-data payloads arrive as
  * a single line INCLUDING its trailing "\n" — without multiline mode, a
  * trailing `$` anchor would never match, because the line is not literally
@@ -247,8 +251,8 @@ export const PATTERNS: LinePattern[] = [
   {
     configKey: 'squelchDisarmWeapon',
     categoryLabel: 'Disarm',
-    variantLabel: '"X DISARMS/grabs/controls your weapon ... flying!" line (weapon knocked from your hand)',
-    pattern: `(DISARMS you and sends your weapon flying!|grabs your weapon,? and sends it flying!|controls your weapon,? and sends it flying!)$`,
+    variantLabel: '"X DISARMS/grabs/controls/hooks your weapon ... flying/grasp!" line (weapon knocked from your hand)',
+    pattern: `(DISARMS you and sends your weapon flying!|grabs your weapon,? and sends it flying!|controls your weapon,? and sends it flying!|hooks your weapon and wrenches it violently from your grasp!)$`,
     defaultSquelch: false,
   },
   {

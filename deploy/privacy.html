@@ -336,7 +336,7 @@
               <td>No</td>
             </tr>
             <tr>
-              <td><code>build.shatteredarchive.dev</code>, <code>kingdom-tactics.shatteredarchive.dev</code></td>
+              <td><code>build.shatteredarchive.dev</code>, <code>kingdom-tactics.shatteredarchive.dev</code>, <code>simulacrum.shatteredarchive.dev</code></td>
               <td>No</td>
               <td>No</td>
             </tr>
@@ -669,6 +669,26 @@
         <li>
           The only thing this page sends to a third party is the Google Analytics visit measurement
           described above.
+        </li>
+      </ul>
+
+      <h3>Simulacrum (<code>simulacrum.shatteredarchive.dev</code>)</h3>
+      <ul>
+        <li>
+          Connecting requires a short-lived, single-use access code minted from your signed-in
+          auth.shatteredarchive.dev account (trusted tier or above). The code is a plain text file on
+          the server, valid for five minutes and consumed on first use — it is not a password and
+          cannot be replayed.
+        </li>
+        <li>
+          If you create a character, your account ID is linked to it server-side so it appears on your
+          Auth Hub dashboard, and the character's name, race, class, level and similar play data sync
+          there too. Gameplay itself happens on the underlying MUD engine, same as any other connection
+          to it.
+        </li>
+        <li>
+          This is a demo of the engine MUD Builder edits, not a persistent MUD — its world resets
+          without notice, per the callout at the top of this page.
         </li>
       </ul>
 

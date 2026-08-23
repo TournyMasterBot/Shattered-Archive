@@ -13,7 +13,8 @@ $entries = @(
   "127.0.0.1 auth.shatteredarchive.dev",
   "127.0.0.1 kingdom-tactics.shatteredarchive.dev",
   "127.0.0.1 scrum-poker.shatteredarchive.dev",
-  "127.0.0.1 soulsteel.shatteredarchive.dev"
+  "127.0.0.1 soulsteel.shatteredarchive.dev",
+  "127.0.0.1 simulacrum.shatteredarchive.dev"
 )
 
 $begin = "# BEGIN ShatteredArchive"

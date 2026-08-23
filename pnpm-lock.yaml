@@ -495,6 +495,21 @@ importers:
         specifier: ^8.21.0
         version: 8.21.0
 
+  apps/simulacrum-server:
+    dependencies:
+      '@shatteredarchive/services-server':
+        specifier: workspace:*
+        version: link:../../services/services-server
+      '@shatteredarchive/types-server':
+        specifier: workspace:*
+        version: link:../../types/types-server
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
+
   apps/soulsteel-client:
     dependencies:
       react:

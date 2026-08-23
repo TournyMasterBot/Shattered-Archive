@@ -649,22 +649,34 @@
               <span class="demo-host">soulsteel.shatteredarchive.dev</span>
             </a>
 
-            <!-- Not linked: these two have full server blocks on the docker edge but are
-                 still 503 stubs on the front proxy, so a link would land on "Not yet
-                 deployed". Swap the <div> for an <a href> when the stub is replaced by a
-                 real proxy block in DSL/nginx/shattered_archive.site. -->
-            <div class="demo demo-soon">
+            <a class="demo" href="https://build.shatteredarchive.dev" target="_blank" rel="noopener noreferrer">
               <div class="demo-head">
                 <h3>MUD Builder</h3>
-                <span class="badge badge-soon">Coming soon</span>
+                <span class="badge badge-live">Live</span>
               </div>
               <p>
                 Full area authoring for a Merc-derived MUD — rooms, mobs, objects, resets, scripts and
-                generated area maps, with hot reload into a running game.
+                generated area maps, with hot reload into a running game. Free to browse; sign in at trusted
+                tier or above to edit.
               </p>
               <span class="demo-host">build.shatteredarchive.dev</span>
-            </div>
+            </a>
 
+            <a class="demo" href="https://simulacrum.shatteredarchive.dev" target="_blank" rel="noopener noreferrer">
+              <div class="demo-head">
+                <h3>Simulacrum</h3>
+                <span class="badge badge-live">Live</span>
+              </div>
+              <p>
+                The near-stock ROM 2.4 world that MUD Builder edits, reachable only by a signed-in trusted+
+                account — sign in at the Auth Hub and request access rather than connecting anonymously.
+              </p>
+              <span class="demo-host">simulacrum.shatteredarchive.dev</span>
+            </a>
+
+            <!-- Still a 503 stub on the front proxy, so a link would land on "Not yet
+                 deployed". Swap the <div> for an <a href> when the stub is replaced by a
+                 real proxy block in DSL/nginx/shattered_archive.site. -->
             <div class="demo demo-soon">
               <div class="demo-head">
                 <h3>Kingdom Tactics</h3>
@@ -708,12 +720,17 @@
             <pre>sudo pnpm setup:hosts:nix</pre>
             <p>This writes entries pointing the following names at <code>127.0.0.1</code>:</p>
             <ul class="domain-list">
+              <li><code>shatteredarchive.dev</code></li>
               <li><code>game-client.shatteredarchive.dev</code></li>
               <li><code>game-server.shatteredarchive.dev</code></li>
               <li><code>web-client.shatteredarchive.dev</code></li>
               <li><code>web-server.shatteredarchive.dev</code></li>
+              <li><code>build.shatteredarchive.dev</code></li>
               <li><code>auth.shatteredarchive.dev</code></li>
+              <li><code>kingdom-tactics.shatteredarchive.dev</code></li>
               <li><code>scrum-poker.shatteredarchive.dev</code></li>
+              <li><code>soulsteel.shatteredarchive.dev</code></li>
+              <li><code>simulacrum.shatteredarchive.dev</code></li>
             </ul>
           </div>
 
@@ -721,7 +738,9 @@
             <h3>2. Bring the stack up</h3>
             <p>
               From <code>deploy/</code>. The default compose file runs the published services; the
-              experimental one adds MUD Builder and Kingdom Tactics.
+              experimental one adds MUD Builder, Kingdom Tactics, and Simulacrum. Simulacrum's own
+              container also ships in the default file, but it needs MUD Builder's shared role
+              store to grant anyone access, so it only works when run via the experimental stack.
             </p>
             <pre>docker compose -f docker-compose.yml up -d</pre>
           </div>

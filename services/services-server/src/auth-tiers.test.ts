@@ -3,9 +3,9 @@ import { GLOBAL_TIERS, SERVICE_TIERS, tierRank, canManage } from './auth-tiers.j
 describe('auth tiers', () => {
   it('the two ladders are distinct and ordered highest-authority first', () => {
     expect(GLOBAL_TIERS).toEqual(['owner', 'admin', 'moderator', 'user']);
-    expect(SERVICE_TIERS).toEqual(['owner', 'admin', 'manager', 'trusted', 'user']);
+    expect(SERVICE_TIERS).toEqual(['owner', 'admin', 'manager', 'builder', 'trusted', 'user']);
     expect(tierRank(GLOBAL_TIERS, 'owner')).toBe(0);
-    expect(tierRank(SERVICE_TIERS, 'trusted')).toBe(3);
+    expect(tierRank(SERVICE_TIERS, 'trusted')).toBe(4);
     expect(tierRank(GLOBAL_TIERS, 'manager')).toBe(-1); // service-only tier is unknown globally
   });
 
@@ -36,6 +36,12 @@ describe('auth tiers', () => {
     expect(canManage(SERVICE_TIERS, 'trusted', 'manager')).toBe(false);
     expect(canManage(SERVICE_TIERS, 'trusted', 'trusted')).toBe(false);
     expect(canManage(SERVICE_TIERS, 'admin', 'manager')).toBe(true);
+    // `builder` (added between manager and trusted — simulacrum-wiring correction 5) slots in
+    // at the same relative rules as any other middle tier.
+    expect(canManage(SERVICE_TIERS, 'manager', 'builder')).toBe(true);
+    expect(canManage(SERVICE_TIERS, 'builder', 'trusted')).toBe(true);
+    expect(canManage(SERVICE_TIERS, 'trusted', 'builder')).toBe(false);
+    expect(canManage(SERVICE_TIERS, 'builder', 'builder')).toBe(false); // peers refuse
   });
 
   it('an unknown tier on EITHER side fails closed', () => {

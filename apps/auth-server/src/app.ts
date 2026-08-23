@@ -6,6 +6,7 @@ import { registerAuthRoutes } from './routes/auth.js';
 import { registerAccountRoutes } from './routes/account.js';
 import { registerKeysRoutes } from './routes/keys.js';
 import { registerIntrospectRoutes } from './routes/introspect.js';
+import { registerResolveUsernameRoutes } from './routes/resolve-username.js';
 import { registerSsoRoutes } from './routes/sso.js';
 import { registerTokenExchangeRoutes } from './routes/token-exchange.js';
 import { registerAdminRoutes } from './routes/admin.js';
@@ -58,6 +59,7 @@ export function registerRoutes(app: Application, deps: AuthServerDeps): void {
   registerAccountRoutes(app, deps);
   registerKeysRoutes(app, deps);
   registerIntrospectRoutes(app, deps);
+  registerResolveUsernameRoutes(app, deps);
   registerSsoRoutes(app, deps);
   registerTokenExchangeRoutes(app, deps);
   registerAdminRoutes(app, deps);

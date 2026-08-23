@@ -106,6 +106,7 @@ services:
           - auth.shatteredarchive.dev
           - kingdom-tactics.shatteredarchive.dev
           - scrum-poker.shatteredarchive.dev
+          - simulacrum.shatteredarchive.dev
       sa-shared: {}
 
     restart: unless-stopped
@@ -183,18 +184,18 @@ services:
       LOG_LEVEL: "debug"
       DOTENV_CONFIG_QUIET: "true"
       GAME_PROXY_ALLOW_ALL: "false"
-      GAME_PROXY_ALLOWLIST: "dsl-mud.org:4000,dsl-mud.org:8000,localhost:4000,host.docker.internal:4000,simulacrum.shatteredarchive.dev:4000"
+      GAME_PROXY_ALLOWLIST: "dsl-mud.org:4000,dsl-mud.org:8000,localhost:4000,host.docker.internal:4000,simulacrum-server.shatteredarchive.dev:65001"
       LOG_DATE_PARTITIONED: "true"
       LOG_FILE_PATH: "/repo/apps/game-server/log/server.log"
       JSON_LOG_FILE_PATH: "/repo/apps/game-server/log/server.log.jsonl"
       LOG_RESPECT_SOH: "true"
       CORS_ORIGIN: "https://game-client.shatteredarchive.dev,https://web-client.shatteredarchive.dev"
-    # merc-mud (simulacrum) runs in its own compose stack, publishing 4000 on the
-    # Windows host — not on this network. host-gateway resolves the same as
-    # host.docker.internal, letting the allowlist above use the friendly subdomain
-    # name (matching the Windows hosts-file entry) instead of the Docker-internal one.
-    extra_hosts:
-      - "simulacrum.shatteredarchive.dev:host-gateway"
+    # Step 1 (.ai-plans/20260816-0701-simulacrum-mud-wiring.md) made simulacrum-server a real
+    # container on THIS network with its own internal alias, same "-server"-suffixed convention
+    # as auth-server.shatteredarchive.dev/mud-builder-server.shatteredarchive.dev — resolved by
+    # Docker's own embedded DNS, no extra_hosts override needed (the old host-gateway entry here,
+    # from when merc-mud published its raw port straight to the Windows host, is gone — it would
+    # now incorrectly bounce to the host, where nothing listens on 65001).
     expose:
       - "31000"
     networks:
@@ -437,6 +438,77 @@ services:
           - kingdom-tactics-client.shatteredarchive.dev
 
   ############################################################
+  # SIMULACRUM (simulacrum.shatteredarchive.dev) — .ai-plans/
+  # 20260816-0701-simulacrum-mud-wiring.md Step 1. Two listeners in one
+  # process: a small Express surface (65000 — /health, the SSO sign-in page,
+  # POST /api/access-code) and a gated plain TCP relay (65001 — the actual
+  # play connection; game-server dials THIS, never merc-mud directly). Joins
+  # sa-shared so it can reach merc-mud's container once that plan's Step 4
+  # attaches it there — merc-mud is not reachable yet until that step lands.
+  ############################################################
+  simulacrum-server:
+    build:
+      context: ..
+      dockerfile: deploy/simulacrum-server.Dockerfile
+    image: shatteredarchive-simulacrum-server
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    volumes:
+      # Ed25519 private half for this service's own SSO/introspect registration — git-ignored
+      # (see .gitignore's `shattered-service.key` pattern), minted via `pnpm --filter
+      # @shatteredarchive/auth-server register-service simulacrum-server` run against
+      # auth-server's live data dir/key, same ceremony as mud-builder-server/kingdom-tactics-server.
+      - "../apps/simulacrum-server/secrets:/repo/apps/simulacrum-server/secrets:ro"
+      # SINGLE-FILE bind mount onto mud-builder-server's OWN roles.json (Constraints: trusted+
+      # tier is shared between mud-builder-server and simulacrum-server, not two independent
+      # lists — a grant made once in mud-builder-client's Roles tab governs both). Deliberately
+      # NOT the whole auth/ directory: that also holds mud-builder-server's master key
+      # (builder-auth.json), which must stay unshared. The source file must already exist on
+      # the host (Docker turns a missing single-file bind-mount source into a directory) — it
+      # does, mud-builder-server created it.
+      - "C:/Projects/merc-mud/2.4/area/auth/roles.json:/repo/apps/simulacrum-server/data/roles/roles.json"
+      # Access-code files — short-lived (a few minutes) and single-use, so losing them on a
+      # container recreate is harmless; bind-mounted (not a named volume) purely so an operator
+      # can `ls` them for debugging.
+      - "C:/Projects/merc-mud/simulacrum-access-codes:/repo/apps/simulacrum-server/data/access-codes"
+    environment:
+      NODE_ENV: production
+      PORT: "65000"
+      SIMULACRUM_RELAY_PORT: "65001"
+      # merc-mud's alias on sa-shared (this plan's Step 4) — unreachable until that step lands;
+      # Step 1 itself is verified against a throwaway stand-in listener, per its Verify.
+      SIMULACRUM_HOST: "simulacrum-engine"
+      SIMULACRUM_PORT: "4000"
+      SIMULACRUM_ACCESS_CODES_PATH: "/repo/apps/simulacrum-server/data/access-codes"
+      SIMULACRUM_ROLE_STORE_PATH: "/repo/apps/simulacrum-server/data/roles"
+      AUTH_SERVER_URL: "http://auth-server.shatteredarchive.dev:62000"
+      AUTH_SERVER_PUBLIC_URL: "https://auth.shatteredarchive.dev"
+      SIMULACRUM_PUBLIC_URL: "https://simulacrum.shatteredarchive.dev"
+      SERVICE_PRIVATE_KEY_PATH: "/repo/apps/simulacrum-server/secrets/shattered-service.key"
+    expose:
+      - "65000"
+      - "65001"
+    networks:
+      shatteredarchive:
+        aliases:
+          - simulacrum-server.shatteredarchive.dev
+      sa-shared:
+        aliases:
+          - simulacrum-server
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(65000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  ############################################################
   # AUTH SERVER (auth.shatteredarchive.dev) — additive, like mud-builder:
   # nothing in Phase 1 requires it to be up (no consumer calls /api/introspect
   # until Phase 2), so it must never block the rest of the stack from
@@ -465,6 +537,18 @@ services:
       # Declarative service registry — mirrors deploy/docker-compose.yml, with this
       # machine's LOCALHOST callbacks instead of the public ones. See the long note there;
       # the short version is that this list is exhaustive and prunes what it omits, and
+      #
+      # LIVE BUG (2026-08-16): mud-builder-server was missing from this list entirely — its
+      # registered key was being revoked every time this container recreated ("not declared
+      # in SERVICE_REGISTRY"), so EVERY account-based sign-in against it (device credentials
+      # or a pasted API key, either one) failed with a bare 401, no matter how valid the
+      # credential actually was. Confirmed live: a freshly minted, correctly-audienced API
+      # key for mud-builder-server was rejected until this entry was added. No redirectUris —
+      # mud-builder-client has no browser-redirect SSO flow of its own (device credentials /
+      # pasted key only), unlike shattered-web and simulacrum-server. Re-registering the key
+      # after this container recreates (`register-service mud-builder-server`) is still a
+      # required manual step — being declared here only stops the PRUNE, it does not by
+      # itself restore an already-revoked key.
       # the URIs must byte-match what the C# site sends (AuthHub__RedirectUri and
       # GameSso__CallbackRedirectUri in DSL/Server/docker-compose.yml).
       SERVICE_REGISTRY: >-
@@ -474,6 +558,14 @@ services:
               "http://localhost:5000/user/sso/callback",
               "http://localhost:5000/user/game-sso/callback"
             ]
+          },
+          "simulacrum-server": {
+            "redirectUris": [
+              "https://simulacrum.shatteredarchive.dev/api/sso/callback"
+            ]
+          },
+          "mud-builder-server": {
+            "redirectUris": []
           }
         }
       SERVICE_PUBLIC_KEY_DIR: "/repo/apps/auth-server/service-public-keys"

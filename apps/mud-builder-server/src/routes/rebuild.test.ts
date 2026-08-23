@@ -221,6 +221,41 @@ describe('rebuild routes', () => {
     }
   });
 
+  /** Simulacrum-wiring correction 5 lowered the trigger's floor from admin to builder — confirmed at the route level too, not just the unit-level matrix in auth.test.ts. */
+  it('POST /api/rebuild with a builder-tier account (the new floor) starts the pipeline', async () => {
+    const soon = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+    const fake = await startFakeIntrospect(() => ({
+      valid: true,
+      accountId: 'acct1',
+      service: 'mud-builder-server',
+      label: 'rebuild key',
+      username: 'melchaleve',
+      expiresAt: soon,
+      tokenType: 'api',
+    }));
+    const run: CommandRunner = async () => ({ stdout: '', stderr: '' });
+    const { server, base, rebuildStore, roleStore } = await startTestApp(
+      dir,
+      { authServerUrl: fake.url, servicePrivateKeyPath: makeServiceKeyFile() },
+      run,
+    );
+    roleStore.setTier('acct1', 'melchaleve', 'builder', 'test-setup');
+    try {
+      const res = await fetch(`${base}/api/rebuild`, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer a-centrally-issued-token' },
+      });
+      expect(res.status).toBe(202);
+      for (let i = 0; i < 50 && rebuildStore.read()?.actor !== 'melchaleve'; i++) {
+        await new Promise((r) => setTimeout(r, 20));
+      }
+      expect(rebuildStore.read()?.actor).toBe('melchaleve');
+    } finally {
+      await new Promise((r) => server.close(r));
+      await new Promise((r) => fake.server.close(r));
+    }
+  });
+
   it('POST /api/rebuild 403s an account actor with no local role grant (defaults to user tier)', async () => {
     const soon = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
     const fake = await startFakeIntrospect(() => ({

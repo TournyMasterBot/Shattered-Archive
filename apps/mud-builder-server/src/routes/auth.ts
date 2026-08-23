@@ -114,17 +114,52 @@ async function resolveActor(
 }
 
 /**
- * Global write guard: every mutating request requires a valid builder token.
- * Deliberately method-based with NO path filter — Express route matching is
- * case-insensitive by default, so a path check like startsWith('/api/') can
- * be sidestepped with '/API/…' while the route still matches. Reads (GET/
- * HEAD) and preflight stay open; this server serves nothing else mutable —
- * EXCEPT GET /api/rebuild/status (Phase 15), which is operationally sensitive
- * output and gets its own explicit guard (requireAnyActor) at registration.
+ * Advisory, never-persisted routes exempted from the builder-tier check below (NOT from the
+ * identity check above it, which stays universal) — discovered mid-implementation of the
+ * simulacrum-wiring plan's Step 3: presence heartbeats ("this credential is editing this
+ * file") never touch disk and are explicitly documented ("independent of the write gate") as
+ * a lighter-weight concern than a real content mutation. An exact-string ALLOWLIST is safe
+ * here even though authGuard deliberately avoids path filtering elsewhere: unlike a bypass
+ * filter (which fails OPEN on a case trick — the risk the no-path-filter comment below
+ * describes), this fails CLOSED — a case-tricked '/API/presence' simply doesn't match and
+ * stays tier-gated, never the reverse.
+ */
+/**
+ * `/api/roles` was added 2026-08-16 (found live): the blanket builder-tier floor below ran
+ * BEFORE roles.ts's own `canGrant()` ever got a chance to run, so a hub owner/admin with NO
+ * pre-existing local grant (roleStore.tierFor default = 'user') got 403'd by THIS check before
+ * reaching the route that exists specifically to let them bootstrap one — Decision 4's whole
+ * "hub owners appoint a service's admins" mechanism was unreachable via HTTP. `canGrant()` is
+ * the correct, more precise authority for this one surface (it already re-derives the SAME
+ * roleStore.tierFor() floor for non-hub-privileged callers), so this floor defers to it
+ * entirely rather than double-gating. Was briefly a prefix set (the grant route used to carry
+ * the target accountId as a path segment, `/api/roles/:accountId`) — simplified back to this
+ * exact-match set once that segment moved into the request body (see roles.ts's own 2026-08-16
+ * note) and the same-day username-resolution change.
+ */
+const TIER_CHECK_EXEMPT_PATHS = new Set(['/api/presence', '/api/roles']);
+
+/**
+ * Global write guard: every mutating request requires a valid builder token AND, for an
+ * `account` actor (outside `TIER_CHECK_EXEMPT_PATHS` above), `builder` tier or above
+ * (Constraints: `trusted` may draft via `/api/snippets` but must not reach the real persist
+ * path this guard gates — `PUT /api/areas/:file` and everything nested in the area body,
+ * `POST /api/reload`; `/api/roles` is exempt for a different reason — see that constant's own
+ * comment). Deliberately method-based with NO path filter for the IDENTITY check —
+ * Express route matching is case-insensitive by default, so a path check like
+ * startsWith('/api/') can be sidestepped with '/API/…' while the route still matches. Reads
+ * (GET/HEAD) and preflight stay open; this server serves nothing else mutable — EXCEPT GET
+ * /api/rebuild/status (Phase 15), which is operationally sensitive output and gets its own
+ * explicit guard (requireAnyActor) at registration.
+ *
+ * `master`/`key` actors skip the tier check entirely — same exemption `checkRebuildEligibility`
+ * already grants them (a local API key's label is free text, never a verified identity; the
+ * master key is the operator's own).
  */
 export function authGuard(
   store: AuthStore,
   introspectConfig: Pick<MudBuilderConfig, 'authServerUrl' | 'servicePrivateKeyPath'>,
+  roleStore: RoleStore,
 ): RequestHandler {
   return async (req, res, next) => {
     if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
@@ -135,6 +170,13 @@ export function authGuard(
     if (!actor) {
       res.status(401).json({ error: 'a valid builder token is required (Authorization: Bearer <token>)' });
       return;
+    }
+    if (actor.kind === 'account' && !TIER_CHECK_EXEMPT_PATHS.has(req.path)) {
+      const tier = roleStore.tierFor(actor.accountId);
+      if (tierRank(SERVICE_TIERS, tier) > tierRank(SERVICE_TIERS, 'builder')) {
+        res.status(403).json({ error: 'this action requires builder tier or above (see the Roles tab)' });
+        return;
+      }
     }
     res.locals.builderActor = actor;
     next();
@@ -201,17 +243,18 @@ export type RebuildEligibility = { allowed: true } | { allowed: false; reason: s
  * `canTrigger`, so the client can hide the trigger button entirely rather than show it
  * and let it 403).
  *
- * Passes for kind:'master', or kind:'account' with a local role-store tier of 'admin' or
- * 'owner' AND an expiresAt present and no more than 7 days out — a "forever" or
- * long-lived account key must not unlock this action even once the account holds
- * admin-tier standing (the plan's Constraints scope the short-lived-token requirement to
- * THIS check only, not a global API-key policy change — unchanged from Phase 15). Any
- * kind:'key' actor (a local API key, master or not) fails outright — a key's label is
- * free text typed at mint time, never a valid identity check; only a centrally-verified
- * accountId is. An already genuinely-expired token can never reach the expiresAt check
- * below at all: introspect only returns a valid actor for a token auth-server's own
- * KeyStore.verify() accepted, which already rejects expired keys — so "too far in the
- * future" is the only expiry failure mode possible here.
+ * Passes for kind:'master', or kind:'account' with a local role-store tier of 'builder' or
+ * above (the mud-wiring plan's correction 5 lowered this from 'admin' — "builders, admins,
+ * owners" trigger builds — matching req 3 of that review) AND an expiresAt present and no
+ * more than 7 days out — a "forever" or long-lived account key must not unlock this action
+ * even once the account holds builder-tier standing (the plan's Constraints scope the
+ * short-lived-token requirement to THIS check only, not a global API-key policy change —
+ * unchanged from Phase 15). Any kind:'key' actor (a local API key, master or not) fails
+ * outright — a key's label is free text typed at mint time, never a valid identity check;
+ * only a centrally-verified accountId is. An already genuinely-expired token can never reach
+ * the expiresAt check below at all: introspect only returns a valid actor for a token
+ * auth-server's own KeyStore.verify() accepted, which already rejects expired keys — so "too
+ * far in the future" is the only expiry failure mode possible here.
  *
  * Phase G retired the static MUD_REBUILD_ALLOWED_USERNAMES env-var allowlist this
  * replaced — granting access no longer needs a redeploy, see routes/roles.ts.
@@ -219,11 +262,11 @@ export type RebuildEligibility = { allowed: true } | { allowed: false; reason: s
 export function checkRebuildEligibility(actor: BuilderActor, roleStore: RoleStore): RebuildEligibility {
   if (actor.kind === 'master') return { allowed: true };
   if (actor.kind !== 'account') {
-    return { allowed: false, reason: 'this action requires an account with admin tier or above' };
+    return { allowed: false, reason: 'this action requires an account with builder tier or above' };
   }
   const tier = roleStore.tierFor(actor.accountId);
-  if (tierRank(SERVICE_TIERS, tier) > tierRank(SERVICE_TIERS, 'admin')) {
-    return { allowed: false, reason: 'this action requires admin tier or above (see the Roles tab)' };
+  if (tierRank(SERVICE_TIERS, tier) > tierRank(SERVICE_TIERS, 'builder')) {
+    return { allowed: false, reason: 'this action requires builder tier or above (see the Roles tab)' };
   }
   if (!actor.expiresAt) {
     return {
