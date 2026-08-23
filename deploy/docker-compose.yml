@@ -596,19 +596,21 @@ services:
       SERVICE_PRIVATE_KEY_PATH: "/repo/apps/simulacrum-server/secrets/shattered-service.key"
       # Engine management (2026-08-23) — see engine-reload.ts/engine-rebuild.ts/engine-auth.ts.
       # Reload/copyover turned on 2026-08-23: MERC_MUD_HOST_PATH below was confirmed against
-      # the real prod host (~/src/merc-mud, sibling to ~/src/shatteredarchive) and the
-      # docker-socket-proxy wiring was confirmed live (docker version through the proxy
-      # succeeded from inside this container) before this flip. REBUILD stays off — this is
-      # production's FIRST docker.sock-adjacent deployment (mud-builder-server, the only other
-      # service with this pattern, was never actually deployed here), and rebuild is the one
-      # of the three that actually touches the daemon; flip SIMULACRUM_ENGINE_REBUILD_ENABLED
-      # only as its own deliberate step. Only mercmud24 is ever a build/recreate target —
-      # hardcoded in engine-rebuild.ts, no request input ever reaches those docker commands.
+      # the real prod host (~/src/merc-mud, sibling to ~/src/shatteredarchive), live-verified
+      # healthy with SIMULACRUM_ENGINE_RELOAD_ENABLED=true actually set inside the container.
+      # REBUILD turned on the same day, after the full pipeline was proven end to end in dev
+      # against the real merc-mud2.4 through this exact docker-socket-proxy shape (build +
+      # force-recreate succeeded, volumes came back non-empty — the regression the absolute-
+      # path override exists to prevent — and the engine rebooted clean), and `docker version`
+      # through simulacrum-docker-proxy was separately confirmed live in prod before this flip.
+      # Only mercmud24 is ever a build/recreate target — hardcoded in engine-rebuild.ts, no
+      # request input ever reaches those docker commands; the proxy's own EXEC=0 was confirmed
+      # to reject `docker exec` into any container, including mercmud24 itself.
       SIMULACRUM_ENGINE_AREA_PATH: "/opt/simulacrum-engine/area"
       MERC_MUD_REPO_PATH: "/host-merc-mud"
       MERC_MUD_HOST_PATH: "/home/ubuntu/src/merc-mud"
       SIMULACRUM_ENGINE_RELOAD_ENABLED: "true"
-      SIMULACRUM_ENGINE_REBUILD_ENABLED: "false"
+      SIMULACRUM_ENGINE_REBUILD_ENABLED: "true"
       # Never a raw /var/run/docker.sock bind mount here — this process talks to the daemon
       # ONLY through the verb-scoped proxy below (simulacrum-docker-proxy has EXEC=0 and every
       # swarm/secrets/services endpoint off), so a compromised simulacrum-server process can't
