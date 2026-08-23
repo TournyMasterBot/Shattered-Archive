@@ -472,6 +472,16 @@ services:
       # container recreate is harmless; bind-mounted (not a named volume) purely so an operator
       # can `ls` them for debugging.
       - "C:/Projects/merc-mud/simulacrum-access-codes:/repo/apps/simulacrum-server/data/access-codes"
+      # Engine management (2026-08-23): RW mount of merc-mud's OWN area dir — hot-reload/copyover
+      # signal files only (engine-reload.ts), a DIFFERENT container path than mud-builder-server's
+      # /mud/area even though both point at the same host directory in dev, to keep the two
+      # mount PURPOSES visually distinct. Safe to share: the two processes only ever write
+      # disjoint top-level filenames (reload.signal/copyover.signal vs .are/backups/auth/).
+      - "C:/Projects/merc-mud/2.4/area:/opt/simulacrum-engine/area"
+      # Read-only — engine-rebuild.ts reads docker-compose.yml + the 2.4/ build context from
+      # here to trigger a rebuild of mercmud24 ONLY. Never writable; the actual mutation happens
+      # through the docker socket proxy below, not through this filesystem view.
+      - "C:/Projects/merc-mud:/host-merc-mud:ro"
     environment:
       NODE_ENV: production
       PORT: "65000"
@@ -486,6 +496,21 @@ services:
       AUTH_SERVER_PUBLIC_URL: "https://auth.shatteredarchive.dev"
       SIMULACRUM_PUBLIC_URL: "https://simulacrum.shatteredarchive.dev"
       SERVICE_PRIVATE_KEY_PATH: "/repo/apps/simulacrum-server/secrets/shattered-service.key"
+      # Engine management (2026-08-23) — see engine-reload.ts/engine-rebuild.ts/engine-auth.ts.
+      # Both flags default off in this file too; only mercmud24 is ever a build/recreate target
+      # (hardcoded in engine-rebuild.ts — no request input ever reaches those docker commands).
+      SIMULACRUM_ENGINE_AREA_PATH: "/opt/simulacrum-engine/area"
+      MERC_MUD_REPO_PATH: "/host-merc-mud"
+      MERC_MUD_HOST_PATH: "C:/Projects/merc-mud"
+      SIMULACRUM_ENGINE_RELOAD_ENABLED: "false"
+      SIMULACRUM_ENGINE_REBUILD_ENABLED: "false"
+      # Never a raw /var/run/docker.sock bind mount here — this process talks to the daemon
+      # ONLY through the verb-scoped proxy below (simulacrum-docker-proxy has EXEC=0 and every
+      # swarm/secrets/services endpoint off), so a compromised simulacrum-server process can't
+      # exec into or inspect secrets from any OTHER container even though the proxy can't scope
+      # by container NAME — see that service's own comment for exactly what it does and doesn't
+      # close off.
+      DOCKER_HOST: "tcp://simulacrum-docker-proxy:2375"
     expose:
       - "65000"
       - "65001"
@@ -507,6 +532,46 @@ services:
       timeout: 3s
       retries: 12
       start_period: 20s
+
+  # Fronts the real /var/run/docker.sock so simulacrum-server never mounts it directly — scopes
+  # by API verb/endpoint (tecnativa/docker-socket-proxy has NO container-name filtering; see
+  # engine-rebuild.ts's own header comment for what actually enforces "only mercmud24"). EXEC=0
+  # permanently blocks `docker exec` into ANY container via this socket — the single most
+  # dangerous lateral-movement primitive on a shared socket — and every swarm/secrets/services/
+  # nodes/plugins/configs/tasks/auth endpoint stays off, all irrelevant to a single-host compose
+  # deployment. CONTAINERS/IMAGES/BUILD/POST/ALLOW_START/ALLOW_STOP/ALLOW_RESTARTS are the
+  # minimum verified empirically to make `docker compose build`+`up --force-recreate` work
+  # end to end (see .ai-plans for the verification run) — NETWORKS/VOLUMES are also on because
+  # mercmud24's `up --force-recreate` touches its `sa-shared` attachment and named volumes.
+  # tecnativa/docker-socket-proxy v0.5.0
+  simulacrum-docker-proxy:
+    image: tecnativa/docker-socket-proxy:latest@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      CONTAINERS: "1"
+      IMAGES: "1"
+      BUILD: "1"
+      POST: "1"
+      NETWORKS: "1"
+      VOLUMES: "1"
+      ALLOW_START: "1"
+      ALLOW_STOP: "1"
+      ALLOW_RESTARTS: "1"
+      EXEC: "0"
+      SECRETS: "0"
+      SERVICES: "0"
+      SWARM: "0"
+      NODES: "0"
+      PLUGINS: "0"
+      CONFIGS: "0"
+      TASKS: "0"
+      AUTH: "0"
+      DISTRIBUTION: "0"
+    networks:
+      shatteredarchive: {}
 
   ############################################################
   # AUTH SERVER (auth.shatteredarchive.dev) — additive, like mud-builder:

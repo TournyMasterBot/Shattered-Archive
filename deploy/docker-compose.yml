@@ -574,6 +574,14 @@ services:
       # auth/ directory) on purpose: this must never also expose mud-builder-server's master key.
       - ../../merc-mud/2.4/area/auth/roles.json:/repo/apps/simulacrum-server/data/roles/roles.json
       - ../../merc-mud/simulacrum-access-codes:/repo/apps/simulacrum-server/data/access-codes
+      # Engine management (2026-08-23): RW mount of merc-mud's OWN area dir — hot-reload/copyover
+      # signal files only (engine-reload.ts). Same "best-guess sibling path, unconfirmed" caveat
+      # as the operational-gap note above applies to this mount too.
+      - ../../merc-mud/2.4/area:/opt/simulacrum-engine/area
+      # Read-only — engine-rebuild.ts reads docker-compose.yml + the 2.4/ build context from
+      # here to trigger a rebuild of mercmud24 ONLY. The actual mutation happens through the
+      # docker socket proxy below, never through this filesystem view.
+      - ../../merc-mud:/host-merc-mud:ro
     environment:
       NODE_ENV: production
       PORT: "65000"
@@ -586,6 +594,27 @@ services:
       AUTH_SERVER_PUBLIC_URL: "https://auth.shatteredarchive.dev"
       SIMULACRUM_PUBLIC_URL: "https://simulacrum.shatteredarchive.dev"
       SERVICE_PRIVATE_KEY_PATH: "/repo/apps/simulacrum-server/secrets/shattered-service.key"
+      # Engine management (2026-08-23) — see engine-reload.ts/engine-rebuild.ts/engine-auth.ts.
+      # Both flags default off — this is production's FIRST docker.sock-adjacent deployment
+      # (mud-builder-server, the only other service with this pattern, was never actually
+      # deployed here). Land this off, verify reload/copyover in dev first (zero docker risk),
+      # then flip SIMULACRUM_ENGINE_RELOAD_ENABLED here, then only after confirming the real
+      # value for MERC_MUD_HOST_PATH below (`docker inspect merc-mud2.4 --format
+      # '{{json .Mounts}}'` on this host — do not trust the guessed default) flip
+      # SIMULACRUM_ENGINE_REBUILD_ENABLED. Only mercmud24 is ever a build/recreate target —
+      # hardcoded in engine-rebuild.ts, no request input ever reaches those docker commands.
+      SIMULACRUM_ENGINE_AREA_PATH: "/opt/simulacrum-engine/area"
+      MERC_MUD_REPO_PATH: "/host-merc-mud"
+      MERC_MUD_HOST_PATH: "/home/ubuntu/src/merc-mud"
+      SIMULACRUM_ENGINE_RELOAD_ENABLED: "false"
+      SIMULACRUM_ENGINE_REBUILD_ENABLED: "false"
+      # Never a raw /var/run/docker.sock bind mount here — this process talks to the daemon
+      # ONLY through the verb-scoped proxy below (simulacrum-docker-proxy has EXEC=0 and every
+      # swarm/secrets/services endpoint off), so a compromised simulacrum-server process can't
+      # exec into or inspect secrets from any OTHER production container even though the proxy
+      # can't scope by container NAME — see that service's own comment for exactly what it does
+      # and doesn't close off.
+      DOCKER_HOST: "tcp://simulacrum-docker-proxy:2375"
     expose:
       - "65000"
       - "65001"
@@ -607,6 +636,48 @@ services:
       timeout: 3s
       retries: 12
       start_period: 20s
+
+  # Fronts the real /var/run/docker.sock so simulacrum-server never mounts it directly — scopes
+  # by API verb/endpoint (tecnativa/docker-socket-proxy has NO container-name filtering; see
+  # engine-rebuild.ts's own header comment for what actually enforces "only mercmud24"). EXEC=0
+  # permanently blocks `docker exec` into ANY container via this socket — the single most
+  # dangerous lateral-movement primitive on a shared socket — and every swarm/secrets/services/
+  # nodes/plugins/configs/tasks/auth endpoint stays off, all irrelevant to a single-host compose
+  # deployment. CONTAINERS/IMAGES/BUILD/POST/ALLOW_START/ALLOW_STOP/ALLOW_RESTARTS/NETWORKS/
+  # VOLUMES are on — the minimum verified in dev to make `docker compose build`+
+  # `up --force-recreate` succeed end to end (mercmud24's recreate touches its `sa-shared`
+  # attachment and named volumes). Verify the SAME set against THIS proxy in dev before ever
+  # flipping SIMULACRUM_ENGINE_REBUILD_ENABLED here — don't assume dev's working set transfers
+  # unchanged. tecnativa/docker-socket-proxy v0.5.0
+  simulacrum-docker-proxy:
+    image: tecnativa/docker-socket-proxy:latest@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
+    container_name: shatteredarchive-prod-simulacrum-docker-proxy
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      CONTAINERS: "1"
+      IMAGES: "1"
+      BUILD: "1"
+      POST: "1"
+      NETWORKS: "1"
+      VOLUMES: "1"
+      ALLOW_START: "1"
+      ALLOW_STOP: "1"
+      ALLOW_RESTARTS: "1"
+      EXEC: "0"
+      SECRETS: "0"
+      SERVICES: "0"
+      SWARM: "0"
+      NODES: "0"
+      PLUGINS: "0"
+      CONFIGS: "0"
+      TASKS: "0"
+      AUTH: "0"
+      DISTRIBUTION: "0"
+    networks:
+      shatteredarchive-prod: {}
 
 volumes:
   auth-server-secrets:

@@ -42,6 +42,27 @@ export interface SimulacrumConfig {
   publicUrl?: string;
   /** Whether the sign-in cookie gets the `Secure` attribute — off only for local HTTP dev. */
   cookieSecure: boolean;
+  /**
+   * Engine management (hot reload / copyover / rebuild) — see engine-reload.ts,
+   * engine-rebuild.ts, engine-auth.ts. RW bind mount of merc-mud's OWN area directory,
+   * distinct from mud-builder-server's /mud/area to keep the two mount purposes visually
+   * separate even though (in dev) they point at the same host path.
+   */
+  engineAreaPath: string;
+  /** Read-only mount of the merc-mud repo root — where THIS process reads docker-compose.yml
+   * and the 2.4/ build context from, to trigger a rebuild. Same field/env name as
+   * mud-builder-server's own MERC_MUD_REPO_PATH, deliberately reused. */
+  mercMudRepoPath: string;
+  /** The REAL host-filesystem path to the merc-mud repo, as the DOCKER DAEMON needs to see it
+   * for the rebuild pipeline's absolute-path volume override. Same field/env name as
+   * mud-builder-server's own MERC_MUD_HOST_PATH. */
+  mercMudHostPath: string;
+  /** Independent, default-off gate for hot reload + copyover — zero docker involvement, so
+   * this can be turned on without ever granting the docker socket. */
+  engineReloadEnabled: boolean;
+  /** Independent, default-off gate for the engine-rebuild feature, alongside whatever
+   * container capabilities (docker socket via the proxy, docker CLI) are or aren't present. */
+  engineRebuildEnabled: boolean;
 }
 
 export function getSimulacrumConfig(env: NodeJS.ProcessEnv = process.env): SimulacrumConfig {
@@ -59,5 +80,10 @@ export function getSimulacrumConfig(env: NodeJS.ProcessEnv = process.env): Simul
     servicePrivateKeyPath: env.SERVICE_PRIVATE_KEY_PATH || undefined,
     publicUrl: env.SIMULACRUM_PUBLIC_URL?.replace(/\/+$/, '') || undefined,
     cookieSecure: env.SIMULACRUM_COOKIE_SECURE !== 'false',
+    engineAreaPath: env.SIMULACRUM_ENGINE_AREA_PATH ?? './data/engine-area',
+    mercMudRepoPath: env.MERC_MUD_REPO_PATH ?? 'C:/Projects/merc-mud',
+    mercMudHostPath: env.MERC_MUD_HOST_PATH ?? 'C:/Projects/merc-mud',
+    engineReloadEnabled: env.SIMULACRUM_ENGINE_RELOAD_ENABLED === 'true',
+    engineRebuildEnabled: env.SIMULACRUM_ENGINE_REBUILD_ENABLED === 'true',
   };
 }

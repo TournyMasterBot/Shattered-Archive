@@ -27,6 +27,11 @@ RUN pnpm --filter @shatteredarchive/simulacrum-server... build
 # node 26.3.1-alpine3.24
 FROM node:26.3.1-alpine3.24@sha256:a2dc166a387cc6ca1e62d0c8e265e49ca985d6e60abc9fe6e6c3d6ce8e63f606 AS runtime
 RUN apk --no-cache upgrade
+# docker CLI + compose v2 plugin — engine-rebuild.ts shells out to `docker compose` to rebuild
+# ONLY the merc-mud engine container. Meaningless without the docker.sock (proxied, never
+# mounted raw — see deploy/docker-compose*.yml's simulacrum-docker-proxy service) that the
+# compose files add alongside this. Mirrors mud-builder-server.Dockerfile's identical line.
+RUN apk add --no-cache docker-cli docker-cli-compose
 WORKDIR /repo
 
 # index.ts's dotenv bootstrap only WARNS when this is missing, but the base file keeps the

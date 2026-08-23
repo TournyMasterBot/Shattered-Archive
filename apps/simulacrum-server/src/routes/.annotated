@@ -1,0 +1,7 @@
+File Index
+
+/engine.test.ts
+Purpose: Route-level tests for registerEngineRoutes, injecting a stub resolveAccount directly (unit-level — introspect wiring itself is exercised elsewhere via the shared services-server introspect() helper). Covers auth ordering (401 -> 403 -> 501), the builder-tier floor, rebuild's short-lived-token requirement vs reload's lack of one, and the 409 already-running case.
+
+/engine.ts
+Purpose: registerEngineRoutes — POST /api/engine/reload, POST /api/engine/rebuild, GET /api/engine/status. All three require builder+ tier (engine-auth.ts); rebuild additionally requires a token expiring within 7 days. Auth ordering is deliberate: identity -> tier/eligibility -> feature-enabled flag, so an ineligible caller never learns whether a feature is even turned on.

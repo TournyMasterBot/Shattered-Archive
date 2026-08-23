@@ -8,6 +8,7 @@ import { introspect, matchesAudience, SERVICE_TIERS, tierRank } from '@shattered
 
 import type { SimulacrumConfig } from './config.js';
 import { mintAccessCode } from './access-codes.js';
+import { registerEngineRoutes } from './routes/engine.js';
 import { readCookieToken, registerSsoRoutes } from './sso.js';
 import type { RoleStore } from './role-store.js';
 
@@ -51,6 +52,9 @@ function bearerToken(req: Request): string {
 interface Account {
   accountId: string;
   username: string;
+  /** Phase 15 introspect field, threaded through for the engine-rebuild TTL check
+   * (engine-auth.ts) — previously silently dropped here since nothing needed it yet. */
+  expiresAt?: string | null;
 }
 
 /** Introspect-only account resolution — no local key store exists for this service to check first. */
@@ -66,7 +70,7 @@ export async function resolveAccount(
       INTROSPECT_TIMEOUT_MS,
     );
     if (!matchesAudience(result, INTROSPECT_SERVICE_NAME) || !result.accountId) return null;
-    return { accountId: result.accountId, username: result.username ?? result.accountId };
+    return { accountId: result.accountId, username: result.username ?? result.accountId, expiresAt: result.expiresAt };
   } catch {
     return null;
   }
@@ -110,6 +114,14 @@ export function registerRoutes(app: Application, config: SimulacrumConfig, roleS
     const code = mintAccessCode(config.accessCodesPath, account.accountId, account.username, config.accessCodeTtlMs);
     res.status(201).json({ code, expiresInMs: config.accessCodeTtlMs });
   });
+
+  registerEngineRoutes(
+    app,
+    config,
+    roleStore,
+    (token) => resolveAccount(config, token),
+    tokenFromRequest,
+  );
 
   // simulacrum's ONE UI surface (Constraints: never a game-client addition).
   const publicDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');

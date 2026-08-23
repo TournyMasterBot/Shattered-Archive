@@ -7,10 +7,25 @@ Purpose: mint/consume round-trip, single-use (second consume of the same code fa
 Purpose: Single-use, short-lived (default 5min TTL) access codes gating every simulacrum connection — plain `key: value` text files under accessCodesPath, one per code, tmp+rename atomic write mirroring merc-mud's own state_snapshot.c file-handshake convention. mintAccessCode(dir, accountId, username, ttlMs)/consumeAccessCode(dir, code) are positional, not options objects. isValidCode() (16-64 char base64url) is checked before any caller-supplied code reaches path.join.
 
 /app.ts
-Purpose: Express surface — /health, the SSO sign-in hand-off (sso.ts), POST /api/access-code (the one auth-gated route here — trusted+ only, introspect-only resolveAccount since this service has no local key store), GET /api/whoami, and the static sign-in page. NOT the TCP relay — that's relay.ts, a separate listener index.ts starts alongside this one.
+Purpose: Express surface — /health, the SSO sign-in hand-off (sso.ts), POST /api/access-code (the one auth-gated route here — trusted+ only, introspect-only resolveAccount since this service has no local key store), GET /api/whoami, the engine-management routes (routes/engine.ts, wired in registerRoutes), and the static sign-in page. NOT the TCP relay — that's relay.ts, a separate listener index.ts starts alongside this one. 2026-08-23: local Account interface gained expiresAt (threaded through from IntrospectResult, previously silently dropped) for the engine-rebuild TTL check.
 
 /config.ts
-Purpose: SimulacrumConfig — port (Express)/relayPort (TCP relay) as two independent listeners sharing one process; mercMudHost/mercMudPort (the sa-shared docker alias); accessCodePromptTimeoutMs/accessCodeTtlMs/accessCodesPath; roleStoreDataPath (the single-file bind mount's PARENT dir, RoleStore joins 'roles.json' itself); authServerUrl (internal, introspect) vs authServerPublicUrl (browser-facing SSO + doubles as auth-client's SPA origin).
+Purpose: SimulacrumConfig — port (Express)/relayPort (TCP relay) as two independent listeners sharing one process; mercMudHost/mercMudPort (the sa-shared docker alias); accessCodePromptTimeoutMs/accessCodeTtlMs/accessCodesPath; roleStoreDataPath (the single-file bind mount's PARENT dir, RoleStore joins 'roles.json' itself); authServerUrl (internal, introspect) vs authServerPublicUrl (browser-facing SSO + doubles as auth-client's SPA origin). 2026-08-23: gained engineAreaPath (RW area-dir mount for reload/copyover signals), mercMudRepoPath/mercMudHostPath (reusing mud-builder-server's exact field/env names, for the trimmed rebuild pipeline), engineReloadEnabled/engineRebuildEnabled (independent default-off gates).
+
+/engine-auth.ts
+Purpose: checkEngineActionEligibility(account, roleStore, requireShortLivedToken) — tier/eligibility gate for the engine routes, mirroring mud-builder-server's routes/auth.ts checkRebuildEligibility() exactly (builder-tier floor, 7-day-max-TTL requirement for the highest-risk action) but adapted for this service's single-actor-kind (introspect-only, no master/local-key concept).
+
+/engine-rebuild.test.ts
+Purpose: DI-recording-runner tests for EngineRebuildStore — asserts exactly 2 docker invocations (not mud-builder's 4), never any other service/project name in the argv, absolute-path override covers all three mercmud24 volumes, failure/already-running/status transitions.
+
+/engine-rebuild.ts
+Purpose: EngineRebuildStore — rebuilds ONLY the merc-mud engine container (compose service mercmud24, project merc-mud). A deliberately trimmed copy of mud-builder-server's rebuild-store.ts covering just its steps 1-2 (build, recreate) — no ephemeral self-recreate helper, since this process never touches its own container. Every docker invocation is a hardcoded literal; combined with the docker-socket-proxy sidecar in the compose files, that's the whole enforcement boundary for "only ever mercmud24." Status is in-memory only (no status.json) — justified since, unlike mud-builder's pipeline, nothing here tears down this process's own container mid-run.
+
+/engine-reload.test.ts
+Purpose: EngineReloadWriter tests — enabled-flag gate, hot/copyover signal content and path, filename-regex rejection (path traversal, non-.are), last-write-wins overwrite behavior.
+
+/engine-reload.ts
+Purpose: EngineReloadWriter — writes reload.signal/copyover.signal for the merc-mud engine's own pulse-loop poll (2.4/src/area_reload.c, copyover.c). Standalone mirror of mud-builder-server's AreaStore.requestReload(), not an import (same don't-cross-the-app-boundary precedent as role-store.ts) — pure file I/O, zero docker involvement.
 
 /index.ts
 Purpose: HTTP + relay listener bootstrap — starts registerRoutes' Express app on config.port and createRelay's TCP server on config.relayPort side by side; boot log announces both. 2026-08-16 (live bug fix): overrides `config.helmetOptions = { contentSecurityPolicy: false }` before calling createExpressService — this app is the one createExpressService consumer that serves its own page HTML/JS directly (every other consumer here is a JSON-only API behind a separate static-nginx client), so helmet's default `default-src 'none'` CSP was stacking with nginx's own page-facing CSP and the browser's policy-intersection rule silently blocked the page's own fetch() calls (no connect-src override in helmet's default means it inherits default-src 'none', blocking same-origin fetch too). nginx's security-headers.conf is now the sole CSP source for this page, matching the repo-wide convention.
