@@ -80,11 +80,18 @@ const HELPER_IMAGE = 'docker:27-cli@sha256:851f91d241214e7c6db86513b270d58776379
 // bug — but every invocation gets an explicit -p here anyway, for the same robustness
 // against future compose-file edits.
 const MERC_MUD_PROJECT = 'merc-mud';
-const SHATTERED_ARCHIVE_PROJECT = 'shatteredarchive';
 
 type RebuildConfig = Pick<
   MudBuilderConfig,
-  'areaPath' | 'mercMudRepoPath' | 'mercMudHostPath' | 'shatteredArchiveRepoPath' | 'shatteredArchiveHostPath'
+  | 'areaPath'
+  | 'mercMudRepoPath'
+  | 'mercMudHostPath'
+  | 'shatteredArchiveRepoPath'
+  | 'shatteredArchiveHostPath'
+  | 'rebuildMercMud'
+  | 'builderComposeFile'
+  | 'builderComposeProject'
+  | 'dockerNetworkName'
 >;
 
 export class RebuildStore {
@@ -162,7 +169,7 @@ export class RebuildStore {
   }
 
   private builderComposePath(): string {
-    return `${this.config.shatteredArchiveRepoPath}/deploy/docker-compose.shattered-archive-experimental.yml`;
+    return `${this.config.shatteredArchiveRepoPath}/${this.config.builderComposeFile}`;
   }
 
   /** Writes a small volumes-only override for ONE service, absolute-path-only (Step 6). Written under the writable rebuildDir, read back by this SAME process — no cross-container path issue. */
@@ -183,10 +190,18 @@ export class RebuildStore {
   /**
    * The final recreate targets THIS process's own container — per Step 6, that MUST go
    * through a detached ephemeral helper, never run directly. The helper is a fresh,
-   * unrelated container with only the docker socket and a read-only view of the repo (for
-   * the base compose file); its OWN absolute-path override is generated as an inline
-   * heredoc in its shell script rather than a file this process writes, since this
-   * process has no writable location the helper could read from.
+   * unrelated container with a read-only view of the repo (for the base compose file);
+   * its OWN absolute-path override is generated as an inline heredoc in its shell script
+   * rather than a file this process writes, since this process has no writable location
+   * the helper could read from.
+   *
+   * Docker access (2026-08-23): when DOCKER_HOST is set (production — a verb-scoped
+   * docker-socket-proxy sidecar, never a raw socket mount, mirroring simulacrum-server's
+   * engine-rebuild.ts precedent), the helper is handed DOCKER_HOST + an explicit --network
+   * so its bare `docker run` (not compose-managed, so it gets none of compose's automatic
+   * network attachment) can resolve the proxy by name. With DOCKER_HOST unset — every
+   * existing test, and the experimental compose, which still mounts the raw socket
+   * directly — this reproduces the exact prior args, byte for byte.
    */
   private async spawnRecreateHelper(): Promise<void> {
     const repoMount = '/host-shattered-archive';
@@ -202,20 +217,24 @@ export class RebuildStore {
       `REBUILD_OVERRIDE_EOF`,
       [
         'docker compose',
-        `-p ${SHATTERED_ARCHIVE_PROJECT}`,
-        `-f ${repoMount}/deploy/docker-compose.shattered-archive-experimental.yml`,
+        `-p ${this.config.builderComposeProject}`,
+        `-f ${repoMount}/${this.config.builderComposeFile}`,
         '-f /tmp/builder-override.yml',
         'up -d --force-recreate --no-build',
         'mud-builder-server mud-builder-client',
       ].join(' '),
     ].join('\n');
 
+    const dockerHost = process.env.DOCKER_HOST;
+    const dockerConnectArgs = dockerHost
+      ? ['-e', `DOCKER_HOST=${dockerHost}`, ...(this.config.dockerNetworkName ? ['--network', this.config.dockerNetworkName] : [])]
+      : ['-v', '/var/run/docker.sock:/var/run/docker.sock'];
+
     await this.run('docker', [
       'run',
       '--rm',
       '-d',
-      '-v',
-      '/var/run/docker.sock:/var/run/docker.sock',
+      ...dockerConnectArgs,
       '-v',
       `${this.config.shatteredArchiveHostPath}:${repoMount}:ro`,
       HELPER_IMAGE,
@@ -244,42 +263,54 @@ export class RebuildStore {
     this.persist(status);
 
     try {
-      // Step 1: build mercmud24 (compile). Safe — doesn't touch the running container.
-      await this.run('docker', ['compose', '-p', MERC_MUD_PROJECT, '-f', this.mercMudComposePath(), 'build', 'mercmud24'], {
-        cwd: this.config.mercMudRepoPath,
-      });
-      status = this.advance(status, 'recreating-mercmud24', 'mercmud24 image built');
+      // Steps 1-2 (build+recreate mercmud24) are gated by rebuildMercMud (2026-08-23) —
+      // false in production, where mercmud24 is exclusively simulacrum-server's
+      // responsibility (see engine-rebuild.ts and rebuildMercMud's own doc comment in
+      // config.ts). Default true reproduces every prior caller's behavior unchanged.
+      if (this.config.rebuildMercMud) {
+        // Step 1: build mercmud24 (compile). Safe — doesn't touch the running container.
+        await this.run('docker', ['compose', '-p', MERC_MUD_PROJECT, '-f', this.mercMudComposePath(), 'build', 'mercmud24'], {
+          cwd: this.config.mercMudRepoPath,
+        });
+        status = this.advance(status, 'recreating-mercmud24', 'mercmud24 image built');
 
-      // Step 2: recreate mercmud24 — a DIFFERENT container from this process's own, so this
-      // runs directly (no self-termination race, no ephemeral helper needed). MUST use the
-      // absolute-path override (Step 6) or the area/player mounts silently go empty, AND the
-      // explicit -p (see MERC_MUD_PROJECT's comment) or compose creates a conflicting second
-      // container instead of recreating the existing one.
-      const mercMudOverride = this.writeMercMudOverride();
-      await this.run(
-        'docker',
-        [
-          'compose',
-          '-p',
-          MERC_MUD_PROJECT,
-          '-f',
-          this.mercMudComposePath(),
-          '-f',
-          mercMudOverride,
-          'up',
-          '-d',
-          '--force-recreate',
-          '--no-build',
-          'mercmud24',
-        ],
-        { cwd: this.config.mercMudRepoPath },
-      );
-      status = this.advance(status, 'building-builder-images', 'mercmud24 recreated');
+        // Step 2: recreate mercmud24 — a DIFFERENT container from this process's own, so this
+        // runs directly (no self-termination race, no ephemeral helper needed). MUST use the
+        // absolute-path override (Step 6) or the area/player mounts silently go empty, AND the
+        // explicit -p (see MERC_MUD_PROJECT's comment) or compose creates a conflicting second
+        // container instead of recreating the existing one.
+        const mercMudOverride = this.writeMercMudOverride();
+        await this.run(
+          'docker',
+          [
+            'compose',
+            '-p',
+            MERC_MUD_PROJECT,
+            '-f',
+            this.mercMudComposePath(),
+            '-f',
+            mercMudOverride,
+            'up',
+            '-d',
+            '--force-recreate',
+            '--no-build',
+            'mercmud24',
+          ],
+          { cwd: this.config.mercMudRepoPath },
+        );
+        status = this.advance(status, 'building-builder-images', 'mercmud24 recreated');
+      } else {
+        status = this.advance(
+          status,
+          'building-builder-images',
+          'mercmud24 rebuild skipped in this environment — owned exclusively by simulacrum-server',
+        );
+      }
 
       // Step 3: build (not recreate) the builder images. Safe — no running container touched.
       await this.run(
         'docker',
-        ['compose', '-p', SHATTERED_ARCHIVE_PROJECT, '-f', this.builderComposePath(), 'build', 'mud-builder-server', 'mud-builder-client'],
+        ['compose', '-p', this.config.builderComposeProject, '-f', this.builderComposePath(), 'build', 'mud-builder-server', 'mud-builder-client'],
         { cwd: this.config.shatteredArchiveRepoPath },
       );
       status = this.advance(

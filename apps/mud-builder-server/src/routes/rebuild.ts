@@ -52,6 +52,10 @@ export function registerRebuildRoutes(
     | 'mercMudHostPath'
     | 'shatteredArchiveRepoPath'
     | 'shatteredArchiveHostPath'
+    | 'rebuildMercMud'
+    | 'builderComposeFile'
+    | 'builderComposeProject'
+    | 'dockerNetworkName'
   >,
   roleStore: RoleStore,
   rebuildStore: RebuildStore = new RebuildStore(config),

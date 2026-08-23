@@ -544,17 +544,11 @@ services:
   # experimental compose (Express 65000 + gated TCP relay 65001) — see that file
   # for the full design note.
   #
-  # OPERATIONAL GAP, flagged rather than silently worked around: mud-builder-server
-  # is NOT deployed to this prod compose (still experimental-only — its own front-
-  # proxy block is a 503 stub). This service's role-store mount below (Constraints:
-  # trusted+ tier shared between mud-builder-server and simulacrum-server) therefore
-  # has nothing real to share with in PROD yet — the path is a best guess mirroring
-  # this host's dev sibling-directory layout, unconfirmed, and until either
-  # mud-builder-server also goes live here (letting the Roles tab grant tiers) or an
-  # operator manually seeds a roles.json row at that path, simulacrum is publicly
-  # reachable but NO ACCOUNT can obtain an access code — a safe failure mode (fails
-  # closed to "nobody"), not a broken one, but worth knowing before wondering why a
-  # trusted+ account still gets 403'd here.
+  # mud-builder-server is now ALSO deployed to this prod compose (2026-08-23, see its own
+  # block below) — the role-store mount below (Constraints: trusted+ tier shared between
+  # mud-builder-server and simulacrum-server) is a real, live shared file now, not a
+  # best-guess path: both services genuinely write/read
+  # ../../merc-mud/2.4/area/auth/roles.json, confirmed against role-store.ts on both sides.
   ############################################################
   simulacrum-server:
     build:
@@ -570,13 +564,13 @@ services:
       # registration from the experimental stack's — the two are different auth-server
       # instances with different key stores).
       - ../apps/simulacrum-server/secrets:/repo/apps/simulacrum-server/secrets:ro
-      # BEST-GUESS path — see the operational-gap note above. Single-file mount (not the whole
-      # auth/ directory) on purpose: this must never also expose mud-builder-server's master key.
+      # Real, confirmed shared file (2026-08-23) — mud-builder-server writes/reads the SAME
+      # path. Single-file mount (not the whole auth/ directory) on purpose: this must never
+      # also expose mud-builder-server's master key.
       - ../../merc-mud/2.4/area/auth/roles.json:/repo/apps/simulacrum-server/data/roles/roles.json
       - ../../merc-mud/simulacrum-access-codes:/repo/apps/simulacrum-server/data/access-codes
       # Engine management (2026-08-23): RW mount of merc-mud's OWN area dir — hot-reload/copyover
-      # signal files only (engine-reload.ts). Same "best-guess sibling path, unconfirmed" caveat
-      # as the operational-gap note above applies to this mount too.
+      # signal files only (engine-reload.ts). Confirmed live against the real prod host.
       - ../../merc-mud/2.4/area:/opt/simulacrum-engine/area
       # Read-only — engine-rebuild.ts reads docker-compose.yml + the 2.4/ build context from
       # here to trigger a rebuild of mercmud24 ONLY. The actual mutation happens through the
@@ -655,6 +649,152 @@ services:
   simulacrum-docker-proxy:
     image: tecnativa/docker-socket-proxy:latest@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
     container_name: shatteredarchive-prod-simulacrum-docker-proxy
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      CONTAINERS: "1"
+      IMAGES: "1"
+      BUILD: "1"
+      POST: "1"
+      NETWORKS: "1"
+      VOLUMES: "1"
+      ALLOW_START: "1"
+      ALLOW_STOP: "1"
+      ALLOW_RESTARTS: "1"
+      EXEC: "0"
+      SECRETS: "0"
+      SERVICES: "0"
+      SWARM: "0"
+      NODES: "0"
+      PLUGINS: "0"
+      CONFIGS: "0"
+      TASKS: "0"
+      AUTH: "0"
+      DISTRIBUTION: "0"
+    networks:
+      shatteredarchive-prod: {}
+
+  ############################################################
+  # MUD BUILDER (build.shatteredarchive.dev) — first prod deployment (2026-08-23), fixing a
+  # live 502 (both nginx layers already had complete routes to mud-builder-server:61000/
+  # mud-builder-client:80; no real containers existed here to answer them). Ported from
+  # deploy/docker-compose.shattered-archive-experimental.yml, retargeted at THIS compose
+  # file/project via SHATTERED_ARCHIVE_COMPOSE_FILE/_PROJECT below (see rebuild-store.ts).
+  #
+  # MUD_WRITE_ENABLED=true: real, live area-file writes against merc-mud/2.4/area — the
+  # SAME host directory mercmud24 itself mounts. Deliberate, user-accepted risk, not a
+  # fallback from a safer option — verify with a disposable test area file before trusting
+  # it against real content (see the deploy plan's verification section).
+  #
+  # mercmud24 rebuilds are DELIBERATELY excluded from this service's own rebuild pipeline
+  # in prod (MUD_REBUILD_MERCMUD_ENABLED=false below) — that stays exclusively
+  # simulacrum-server's job (engine-rebuild.ts, already live-proven). The two pipelines had
+  # already drifted (this one's volume override omits character-sync; simulacrum's covers
+  # it), so duplicating privileged access to the same container bought nothing but risk.
+  ############################################################
+  mud-builder-server:
+    build:
+      context: ..
+      dockerfile: deploy/mud-builder-server.Dockerfile
+    image: shatteredarchive-prod-mud-builder-server
+    container_name: shatteredarchive-prod-mud-builder-server
+    restart: unless-stopped
+    volumes:
+      # Ed25519 private half for SSO/introspect registration — minted via `pnpm --filter
+      # @shatteredarchive/auth-server register-service mud-builder-server` against the PROD
+      # auth-server's live data dir/key (a separate registration from the experimental
+      # stack's — different auth-server instances, different key stores).
+      - ../apps/mud-builder-server/secrets:/repo/apps/mud-builder-server/secrets:ro
+      # THE write target: the same host directory the live merc-mud game engine itself
+      # mounts at /opt/merc-mud/area. Builder writes here ARE live game files.
+      - ../../merc-mud/2.4/area:/mud/area
+      # Read-only self-view for rebuild-store.ts's OWN build/self-recreate steps (3-4) — a
+      # live view of this repo's own compose file and Dockerfiles, distinct from the
+      # baked-in /repo build-time copy. No /host-merc-mud mount here: mercmud24 rebuild is
+      # intentionally out of scope for this service in prod (see MUD_REBUILD_MERCMUD_ENABLED).
+      - ..:/host-shattered-archive:ro
+    environment:
+      NODE_ENV: production
+      PORT: "61000"
+      MERC_MUD_PATH: "/mud"
+      MERC_AREA_DIR: "area"
+      # The ONLY place in THIS file where the MUD write gate is enabled.
+      MUD_WRITE_ENABLED: "true"
+      AUTH_SERVER_URL: "http://auth-server.shatteredarchive.dev:62000"
+      AUTH_SERVER_PUBLIC_URL: "https://auth.shatteredarchive.dev"
+      SERVICE_PRIVATE_KEY_PATH: "/repo/apps/mud-builder-server/secrets/shattered-service.key"
+      MUD_BUILDER_CLIENT_URL: "https://build.shatteredarchive.dev"
+      # Phase 15 self-recreate trigger: OFF for this initial deploy. The compose-retargeting
+      # fix and the raw-socket-to-proxy swap below have never run anywhere before, not even
+      # in dev — and the ordinary "ship a code change" path is already covered without it:
+      # deploy/nightly-build/shatteredarchive-nightly-deploy.sh rebuilds+redeploys every
+      # service in this file automatically on every release/dev merge. Flip this only as its
+      # own dedicated, separately-verified follow-up.
+      MUD_REBUILD_ENABLED: "false"
+      # mercmud24 stays exclusively simulacrum-server's responsibility in prod, even after
+      # MUD_REBUILD_ENABLED above is eventually flipped on. Never remove this override here.
+      MUD_REBUILD_MERCMUD_ENABLED: "false"
+      # Retargets rebuild-store.ts's builder-image build/recreate steps at THIS real prod
+      # compose file/project instead of the experimental one it defaults to.
+      SHATTERED_ARCHIVE_COMPOSE_FILE: "deploy/docker-compose.yml"
+      SHATTERED_ARCHIVE_COMPOSE_PROJECT: "shatteredarchive-prod"
+      SHATTERED_ARCHIVE_REPO_PATH: "/host-shattered-archive"
+      SHATTERED_ARCHIVE_HOST_PATH: "/home/ubuntu/src/shatteredarchive"
+      # REQUIRED only once MUD_REBUILD_ENABLED above is (eventually) true: the real docker
+      # network name the self-recreate helper's bare `docker run` must join to resolve
+      # mud-builder-docker-proxy by name (a bare `docker run`, not compose-managed, gets none
+      # of compose's automatic network attachment). CONFIRM THE REAL VALUE via
+      # `docker network ls | grep shatteredarchive-prod` on the prod host before ever
+      # setting MUD_REBUILD_ENABLED=true — do not guess; a wrong value fails the self-recreate
+      # helper, which by design has no way to report failure back. Irrelevant while
+      # MUD_REBUILD_ENABLED stays false.
+      MUD_BUILDER_DOCKER_NETWORK: "REPLACE_WITH_REAL_NETWORK_NAME"
+      # Never a raw /var/run/docker.sock mount in this file — talks to the daemon ONLY
+      # through the verb-scoped proxy below (EXEC=0, SECRETS=0, SWARM=0, etc.), same
+      # enforcement boundary as simulacrum-docker-proxy above.
+      DOCKER_HOST: "tcp://mud-builder-docker-proxy:2375"
+    expose:
+      - "61000"
+    networks:
+      shatteredarchive-prod:
+        aliases:
+          - mud-builder-server.shatteredarchive.dev
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(61000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  mud-builder-client:
+    build:
+      context: ..
+      dockerfile: deploy/mud-builder-client.Dockerfile
+    image: shatteredarchive-prod-mud-builder-client
+    container_name: shatteredarchive-prod-mud-builder-client
+    restart: unless-stopped
+    networks:
+      shatteredarchive-prod:
+        aliases:
+          - mud-builder-client.shatteredarchive.dev
+
+  # A SECOND, dedicated docker-socket-proxy — deliberately NOT shared with
+  # simulacrum-docker-proxy above (that was the explicit precedent set when that one was
+  # built: not shared with any future mud-builder-server-in-prod instance, keeping the
+  # audit story and blast radius separated the same way the container targets are kept
+  # separated). Identical image/digest/verb-scoping — see simulacrum-docker-proxy's own
+  # comment for the full argument. Fronts ONLY mud-builder-server's self-recreate helper;
+  # mercmud24 is never a target here (MUD_REBUILD_MERCMUD_ENABLED=false above).
+  mud-builder-docker-proxy:
+    image: tecnativa/docker-socket-proxy:latest@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
+    container_name: shatteredarchive-prod-mud-builder-docker-proxy
     restart: unless-stopped
     privileged: true
     volumes:

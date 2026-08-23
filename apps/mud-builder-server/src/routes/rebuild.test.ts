@@ -23,6 +23,10 @@ type RebuildConfig = Pick<
   | 'mercMudHostPath'
   | 'shatteredArchiveRepoPath'
   | 'shatteredArchiveHostPath'
+  | 'rebuildMercMud'
+  | 'builderComposeFile'
+  | 'builderComposeProject'
+  | 'dockerNetworkName'
 >;
 
 function makeConfig(dir: string, overrides: Partial<RebuildConfig> = {}): RebuildConfig {
@@ -34,6 +38,9 @@ function makeConfig(dir: string, overrides: Partial<RebuildConfig> = {}): Rebuil
     mercMudHostPath: 'C:/Projects/merc-mud',
     shatteredArchiveRepoPath: 'C:/Projects/ShatteredArchive',
     shatteredArchiveHostPath: 'C:/Projects/ShatteredArchive',
+    rebuildMercMud: true,
+    builderComposeFile: 'deploy/docker-compose.shattered-archive-experimental.yml',
+    builderComposeProject: 'shatteredarchive',
     ...overrides,
   };
 }

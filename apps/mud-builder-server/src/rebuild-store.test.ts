@@ -22,13 +22,21 @@ function makeRecordingRunner(opts: { failOnCallIndex?: number } = {}): { run: Co
   return { run, calls };
 }
 
-function makeConfig(dir: string) {
+function makeConfig(dir: string, overrides: Partial<ReturnType<typeof baseConfig>> = {}) {
+  return { ...baseConfig(dir), ...overrides };
+}
+
+function baseConfig(dir: string) {
   return {
     areaPath: dir,
     mercMudRepoPath: 'C:/Projects/merc-mud',
     mercMudHostPath: 'C:/Projects/merc-mud',
     shatteredArchiveRepoPath: 'C:/Projects/ShatteredArchive',
     shatteredArchiveHostPath: 'C:/Projects/ShatteredArchive',
+    rebuildMercMud: true,
+    builderComposeFile: 'deploy/docker-compose.shattered-archive-experimental.yml',
+    builderComposeProject: 'shatteredarchive',
+    dockerNetworkName: undefined as string | undefined,
   };
 }
 
@@ -251,5 +259,85 @@ describe('RebuildStore', () => {
     const store = new RebuildStore(makeConfig(dir), run);
     expect(() => store.resolveDanglingOnBoot()).not.toThrow();
     expect(store.read()).toBeNull();
+  });
+
+  it('rebuildMercMud:false skips steps 1-2 entirely — exactly 2 docker calls, both builder-image related', async () => {
+    const { run, calls } = makeRecordingRunner();
+    const store = new RebuildStore(makeConfig(dir, { rebuildMercMud: false }), run);
+
+    await store.runPipeline('melchaleve');
+
+    expect(calls).toHaveLength(2);
+    expect(calls[0].args).toContain('build');
+    expect(calls[0].args).toEqual(expect.arrayContaining(['mud-builder-server', 'mud-builder-client']));
+    expect(calls[1].args).toContain('run'); // the ephemeral helper spawn
+    // mercmud24 never named anywhere.
+    for (const call of calls) {
+      expect(call.args).not.toContain('mercmud24');
+    }
+    const status = store.read();
+    expect(status!.log).toEqual(
+      expect.arrayContaining([expect.stringContaining('mercmud24 rebuild skipped in this environment')]),
+    );
+  });
+
+  it('DOCKER_HOST set: the helper is handed -e DOCKER_HOST/--network, never the raw socket mount', async () => {
+    const { run, calls } = makeRecordingRunner();
+    const store = new RebuildStore(
+      makeConfig(dir, { rebuildMercMud: false, dockerNetworkName: 'shatteredarchive-prod_default' }),
+      run,
+    );
+    const originalDockerHost = process.env.DOCKER_HOST;
+    process.env.DOCKER_HOST = 'tcp://mud-builder-docker-proxy:2375';
+    try {
+      await store.runPipeline('melchaleve');
+    } finally {
+      if (originalDockerHost === undefined) delete process.env.DOCKER_HOST;
+      else process.env.DOCKER_HOST = originalDockerHost;
+    }
+
+    const helperCall = calls[calls.length - 1];
+    expect(helperCall.args).toEqual(
+      expect.arrayContaining(['-e', 'DOCKER_HOST=tcp://mud-builder-docker-proxy:2375', '--network', 'shatteredarchive-prod_default']),
+    );
+    expect(helperCall.args).not.toEqual(expect.arrayContaining(['-v', '/var/run/docker.sock:/var/run/docker.sock']));
+  });
+
+  it('DOCKER_HOST unset reproduces the exact prior raw-socket-mount args (no regression for the experimental compose)', async () => {
+    const { run, calls } = makeRecordingRunner();
+    const store = new RebuildStore(makeConfig(dir), run);
+    const originalDockerHost = process.env.DOCKER_HOST;
+    delete process.env.DOCKER_HOST;
+    try {
+      await store.runPipeline('melchaleve');
+    } finally {
+      if (originalDockerHost !== undefined) process.env.DOCKER_HOST = originalDockerHost;
+    }
+
+    const helperCall = calls[calls.length - 1];
+    expect(helperCall.args).toEqual(expect.arrayContaining(['-v', '/var/run/docker.sock:/var/run/docker.sock']));
+    expect(helperCall.args).not.toEqual(expect.arrayContaining(['-e']));
+  });
+
+  it('builderComposeFile/builderComposeProject overrides propagate into both the direct build call and the helper heredoc', async () => {
+    const { run, calls } = makeRecordingRunner();
+    const store = new RebuildStore(
+      makeConfig(dir, {
+        rebuildMercMud: false,
+        builderComposeFile: 'deploy/docker-compose.yml',
+        builderComposeProject: 'shatteredarchive-prod',
+      }),
+      run,
+    );
+    await store.runPipeline('melchaleve');
+
+    const buildCall = calls[0];
+    expect(buildCall.args).toEqual(expect.arrayContaining(['-p', 'shatteredarchive-prod']));
+    expect(buildCall.args).toContain('C:/Projects/ShatteredArchive/deploy/docker-compose.yml');
+
+    const helperScript = calls[calls.length - 1].args[calls[calls.length - 1].args.length - 1];
+    expect(helperScript).toContain('-p shatteredarchive-prod');
+    expect(helperScript).toContain('/host-shattered-archive/deploy/docker-compose.yml');
+    expect(helperScript).not.toContain('docker-compose.shattered-archive-experimental.yml');
   });
 });

@@ -78,6 +78,34 @@ export interface MudBuilderConfig {
   shatteredArchiveHostPath: string;
   /** Phase H: mud-builder-client's own origin, for the dashboard summary's link-out. Unset = omitted from the response, never guessed. */
   clientUrl?: string;
+  /**
+   * Production hardening (2026-08-23): gates rebuild-store.ts's steps 1-2 (build+recreate
+   * mercmud24) independently of rebuildEnabled itself. Default true reproduces every existing
+   * caller's behavior unchanged (the experimental compose, every test). Production sets this
+   * false — mercmud24 rebuilds are exclusively simulacrum-server's job there (see
+   * apps/simulacrum-server/src/engine-rebuild.ts), since the two pipelines had already drifted
+   * (this one's volume override omits character-sync; simulacrum's covers it) and duplicating
+   * privileged access to the same container buys nothing.
+   */
+  rebuildMercMud: boolean;
+  /**
+   * Production hardening (2026-08-23): the compose file (relative to shatteredArchiveRepoPath)
+   * rebuild-store.ts's OWN build/self-recreate steps (3-4) target. Was a hardcoded literal
+   * pointing at the experimental compose file; default here preserves that exact behavior.
+   * Production overrides to "deploy/docker-compose.yml".
+   */
+  builderComposeFile: string;
+  /** Same idea as builderComposeFile, for the -p project name — was the hardcoded literal
+   * "shatteredarchive"; production overrides to "shatteredarchive-prod". */
+  builderComposeProject: string;
+  /**
+   * Production hardening (2026-08-23): the real docker network name the ephemeral self-recreate
+   * helper's bare `docker run` must join to resolve a docker-socket-proxy sidecar by name — a
+   * bare `docker run` doesn't inherit compose's automatic network attachment. Only meaningful
+   * when DOCKER_HOST is set; unset in the experimental compose, which still mounts the raw
+   * socket directly.
+   */
+  dockerNetworkName?: string;
 }
 
 export function getMudBuilderConfig(env: NodeJS.ProcessEnv = process.env): MudBuilderConfig {
@@ -105,5 +133,9 @@ export function getMudBuilderConfig(env: NodeJS.ProcessEnv = process.env): MudBu
     shatteredArchiveRepoPath: env.SHATTERED_ARCHIVE_REPO_PATH ?? 'C:/Projects/ShatteredArchive',
     shatteredArchiveHostPath: env.SHATTERED_ARCHIVE_HOST_PATH ?? 'C:/Projects/ShatteredArchive',
     clientUrl: env.MUD_BUILDER_CLIENT_URL || undefined,
+    rebuildMercMud: env.MUD_REBUILD_MERCMUD_ENABLED !== 'false',
+    builderComposeFile: env.SHATTERED_ARCHIVE_COMPOSE_FILE ?? 'deploy/docker-compose.shattered-archive-experimental.yml',
+    builderComposeProject: env.SHATTERED_ARCHIVE_COMPOSE_PROJECT ?? 'shatteredarchive',
+    dockerNetworkName: env.MUD_BUILDER_DOCKER_NETWORK || undefined,
   };
 }

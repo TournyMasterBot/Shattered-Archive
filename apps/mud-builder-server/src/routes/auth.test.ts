@@ -30,6 +30,9 @@ function makeConfig(dir: string, overrides: Partial<MudBuilderConfig> = {}): Mud
     mercMudHostPath: 'C:/Projects/merc-mud',
     shatteredArchiveRepoPath: 'C:/Projects/ShatteredArchive',
     shatteredArchiveHostPath: 'C:/Projects/ShatteredArchive',
+    rebuildMercMud: true,
+    builderComposeFile: 'deploy/docker-compose.shattered-archive-experimental.yml',
+    builderComposeProject: 'shatteredarchive',
     ...overrides,
   };
 }

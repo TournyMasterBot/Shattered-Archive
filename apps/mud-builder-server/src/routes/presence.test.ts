@@ -116,6 +116,9 @@ describe('presence routes (full app, auth ON)', () => {
       mercMudHostPath: 'C:/Projects/merc-mud',
       shatteredArchiveRepoPath: 'C:/Projects/ShatteredArchive',
       shatteredArchiveHostPath: 'C:/Projects/ShatteredArchive',
+      rebuildMercMud: true,
+      builderComposeFile: 'deploy/docker-compose.shattered-archive-experimental.yml',
+      builderComposeProject: 'shatteredarchive',
     };
     const app = express();
     registerRoutes(app, config);
@@ -193,6 +196,9 @@ describe('presence routes: Phase 4 account actor names the heartbeat', () => {
       mercMudHostPath: 'C:/Projects/merc-mud',
       shatteredArchiveRepoPath: 'C:/Projects/ShatteredArchive',
       shatteredArchiveHostPath: 'C:/Projects/ShatteredArchive',
+      rebuildMercMud: true,
+      builderComposeFile: 'deploy/docker-compose.shattered-archive-experimental.yml',
+      builderComposeProject: 'shatteredarchive',
     };
     const app = express();
     registerRoutes(app, config);
