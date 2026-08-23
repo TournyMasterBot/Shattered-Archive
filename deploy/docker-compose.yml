@@ -465,7 +465,7 @@ services:
         # GA4 measurement id. Scoped host-only at runtime rather than to the registrable domain
         # — see apps/scrum-poker-client/src/features/shared/analytics.ts for why that matters
         # with auth.shatteredarchive.dev as a sibling.
-        VITE_GA_ID: "${SCRUM_GA_ID:-G-7BKPVVZ1BS}"
+        VITE_GA_ID: "${SCRUM_GA_ID:-G-PS7FT8E9MG}"
         # VITE_SP_DEV deliberately absent: it forces the dev/experimental compose's placeholder
         # box regardless of the credentials above, and this stack is where a configured slot is
         # actually meant to serve. See deploy/scrum-poker-client.Dockerfile and AdSlot.tsx.
@@ -528,7 +528,7 @@ services:
         # apps/soulsteel-client/src/features/shared/analytics.ts for why that matters with
         # auth.shatteredarchive.dev as a sibling. Same GA4 property as scrum-poker/landing;
         # the per-hostname cookie_domain pin is what keeps the three from sharing an identity.
-        VITE_GA_ID: "${SOULSTEEL_GA_ID:-G-7BKPVVZ1BS}"
+        VITE_GA_ID: "${SOULSTEEL_GA_ID:-G-PS7FT8E9MG}"
     image: shatteredarchive-prod-soulsteel-client
     container_name: shatteredarchive-prod-soulsteel-client
     restart: unless-stopped

@@ -74,7 +74,7 @@ var AD_CONFIG = {
  *
  * Leave GA_ID empty to disable: no gtag request is made and no cookie is set.
  */
-var GA_ID = 'G-7BKPVVZ1BS';
+var GA_ID = 'G-PS7FT8E9MG';
 
 (function () {
   var slot = document.getElementById('sa-ad');
