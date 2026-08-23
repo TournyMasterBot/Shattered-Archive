@@ -20,11 +20,12 @@
  * have no use for it, and this app is the one origin here that permits inline script (it
  * carries an ad unit; see deploy/nginx/includes/security-headers-ads.conf).
  *
- * Pinning it to `location.hostname` also means the visit identifier is NOT shared between this
- * app and the shatteredarchive.dev landing page, which runs the same property id. That is
- * intentional: it costs cross-property attribution and buys not following a visitor between
- * two unrelated tools. deploy/index.html does the same thing for the same reason — keep the
- * two in step.
+ * Pinning it to `location.hostname` also means the visit identifier is NOT shared with any
+ * sibling host, regardless of GA4 property. This app runs its OWN dedicated property
+ * (2026-08-23), separate from the landing page's and Soulsteel's — but the pin stays even
+ * though property-sharing is no longer the reason: it's still what keeps `_ga` off
+ * auth.shatteredarchive.dev and every other sibling subdomain. deploy/index.html does the same
+ * thing for the same reason.
  * ---------------------------------------------------------------------------------------
  */
 declare const __SP_GA_ID__: string;

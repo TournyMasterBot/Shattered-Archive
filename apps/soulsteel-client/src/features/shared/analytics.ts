@@ -23,11 +23,12 @@
  * problem rather than an exploitable one, but a cookie has no business reaching origins that
  * have no use for it.
  *
- * Pinning it to `location.hostname` also means the visit identifier is NOT shared between this
- * app and any other host running the same GA4 property (landing page, scrum-poker). That is
- * intentional: it costs cross-property attribution and buys not following a visitor between
- * unrelated tools. deploy/privacy.html documents this same guarantee for the other two hosts —
- * keep all three in step.
+ * Pinning it to `location.hostname` also means the visit identifier is NOT shared with any
+ * sibling host, regardless of GA4 property. This app runs its OWN dedicated property
+ * (2026-08-23), separate from scrum-poker's and the landing page's — but the pin stays even
+ * though property-sharing is no longer the reason: it's still what keeps `_ga` off
+ * auth.shatteredarchive.dev and every other sibling subdomain. deploy/privacy.html documents
+ * this same host-scoping guarantee for all three hosts — keep it in step.
  * ---------------------------------------------------------------------------------------
  */
 declare const __SS_GA_ID__: string;

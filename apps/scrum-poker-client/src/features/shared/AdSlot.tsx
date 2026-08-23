@@ -12,17 +12,26 @@ import { readAdConfig, type AdConfig } from './ad-config.js';
  * Labelled "Ads by Google" rather than a vague "Advertisement", and given its own bordered
  * surface, so paid content is unmistakably distinct from the app around it.
  *
- * SHAPE comes from the FORMAT REQUEST plus the container width, not from clipping: `rectangle`
- * with `full-width-responsive="false"` restricts Google to the square/rectangle family
- * (336x280, 300x250, 250x250, 200x200) and `.sp-ad-inner` caps at 336px wide, that family's
- * widest member. `.sp-ad-inner` deliberately does NOT set a `max-height` with
- * `overflow: hidden` — the AdSense program policies prohibit obscuring any part of an ad, so
- * clipping a creative is a policy violation rather than tidy layout. Bound the request.
+ * SHAPE comes from the FORMAT REQUEST plus the container width, not from clipping: `auto` with
+ * `full-width-responsive="true"` — matching how the slot id was actually created in the
+ * AdSense console (2026-08-23: switched from a hardcoded `rectangle`/336px-cap request after a
+ * live "No slot size for availableWidth=90" failure). `.sp-ad-inner` no longer caps its own
+ * width below `.sp-ad`'s — Google's responsive algorithm picks whatever creative shape fits
+ * the space it's actually given, which is far more robust than us guessing a pixel family in
+ * advance. It deliberately does NOT set a `max-height` with `overflow: hidden` — the AdSense
+ * program policies prohibit obscuring any part of an ad, so clipping a creative is a policy
+ * violation rather than tidy layout. The bound is still real: `.sp-ad` itself is a separate,
+ * bordered block below the estimating content (never inline with it — see App.css), just no
+ * longer artificially narrower than that block allows.
  *
- * Note the slot id in production was created in the console as a RESPONSIVE unit, whose
- * generated snippet carries `data-ad-format="auto"` and `data-full-width-responsive="true"`.
- * The tag attributes override that, which is the whole reason they are spelled out here — do
- * not "fix" them to match the console snippet.
+ * THE REAL 2026-08-23 ROOT CAUSE, for anyone chasing this error again: it was never a sizing
+ * request problem. `.sp-ad { margin: 0 auto 24px; }` sets auto left/right margins, and per the
+ * Flexbox spec an item with an auto cross-axis margin is NEVER stretched by the parent's
+ * `align-items`, full stop — `align-self: stretch` on the item itself does not override this.
+ * `.sp-ad` was silently shrinking to its content's width (~131px) regardless of viewport, and
+ * everything nested inside it (including this component's own `width: 100%` inline styles)
+ * was just inheriting that starved container. The fix is `width: 100%` on `.sp-ad` in App.css
+ * — see the comment there. Live-reproduced and confirmed against production before and after.
  *
  * With no `VITE_AD_CLIENT`/`VITE_AD_SLOT` at build time it renders NOTHING: no container, no
  * placeholder, and — importantly — the loader below is never injected, so the page makes no
@@ -55,7 +64,7 @@ import { readAdConfig, type AdConfig } from './ad-config.js';
  * Inline sizing guarantees the correct dimensions from the very first paint, CSS or no CSS,
  * which removes the race outright rather than narrowing its window.
  */
-const AD_INNER_STYLE = { width: '100%', maxWidth: 336, minHeight: 250 } as const;
+const AD_INNER_STYLE = { width: '100%', minHeight: 100 } as const;
 
 interface AdSlotProps {
   /** Injected in tests; production reads the build-time env. */
@@ -122,8 +131,8 @@ export default function AdSlot({ config }: AdSlotProps) {
           style={{ display: 'block', width: '100%' }}
           data-ad-client={client}
           data-ad-slot={slot}
-          data-ad-format="rectangle"
-          data-full-width-responsive="false"
+          data-ad-format="auto"
+          data-full-width-responsive="true"
         />
       </div>
     </aside>

@@ -519,16 +519,26 @@
  * of the estimating UI: an ad a user could mistake for a control is both worse UX and an
  * AdSense placement-policy problem.
  *
- * SHAPE comes from the FORMAT REQUEST in AdSlot.tsx (`data-ad-format="rectangle"` with
- * `data-full-width-responsive="false"`) plus the 336px cap below — that is the square/
- * rectangle family's widest member, and the container width is what Google measures to pick a
- * creative. It is NOT enforced by clipping: the AdSense program policies prohibit obscuring
- * any part of an ad, so a `max-height` plus `overflow: hidden` here would be a policy
- * violation dressed up as tidy layout. An earlier version of this rule had exactly that;
- * `min-height` alone now reserves the space so the footer does not jump when the creative
- * lands.
+ * SHAPE comes from the FORMAT REQUEST in AdSlot.tsx (`data-ad-format="auto"` with
+ * `data-full-width-responsive="true"`, matching how the slot was actually created in the
+ * AdSense console) plus the container width below — the container is what Google measures to
+ * pick a creative, no pixel cap imposed here. It is NOT enforced by clipping: the AdSense
+ * program policies prohibit obscuring any part of an ad, so a `max-height` plus
+ * `overflow: hidden` here would be a policy violation dressed up as tidy layout. An earlier
+ * version of this rule had exactly that; `min-height` (in AdSlot.tsx's inline style, not here)
+ * reserves a floor so the footer doesn't jump before the creative lands.
+ *
+ * `width: 100%` below is LOAD-BEARING, not decoration (2026-08-23). `margin: 0 auto` sets auto
+ * left/right margins, and per the Flexbox spec a flex item with an auto cross-axis margin is
+ * never stretched by the parent's `align-items` — `align-self: stretch` on this rule does not
+ * override that, confirmed live. Without an explicit width this block silently collapsed to
+ * its own content's shrink-to-fit size (~131px, regardless of viewport) while still reporting
+ * `max-width: var(--max-width)` as available — which is what actually produced AdSense's
+ * "No slot size for availableWidth=90" error, not a stylesheet-load race. `.sp-main` above
+ * already carries this same `width: 100%` for the same reason; this rule was just missing it.
  */
 .sp-ad {
+  width: 100%;
   max-width: var(--max-width);
   margin: 0 auto 24px;
   padding: 20px;
