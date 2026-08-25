@@ -86,7 +86,11 @@ services:
       - ./favicon.ico:/var/www/shatteredarchive-dev/favicon.ico:ro
       - ./index.html:/var/www/shatteredarchive-dev/index.html:ro
       - ./privacy.html:/var/www/shatteredarchive-dev/privacy.html:ro
-      - ./site.js:/var/www/shatteredarchive-dev/site.js:ro
+      # site-dev.js, NOT site.js: same landing page script, but with AD_CONFIG/GA_ID blanked out
+      # so the browser never even attempts the AdSense/GA4 requests locally (NGINX_CSP_LANDING_FILE
+      # above already blocks them via CSP, but that still logs a script-src violation on every
+      # load for the real site.js's hardcoded ids — see site-dev.js's header for the full reason).
+      - ./site-dev.js:/var/www/shatteredarchive-dev/site.js:ro
       - ./sitemap.xml:/var/www/shatteredarchive-dev/sitemap.xml:ro
 
       # nginx logs to host
