@@ -14,6 +14,7 @@ export type ChatSubtype =
   | 'ooc'
   | 'askanswer'
   | 'whisper'
+  | 'pray'
   | 'radio'
   | 'newbie'
   | 'quest'
@@ -36,6 +37,7 @@ export const KNOWN_CHAT_SUBTYPES: ChatSubtype[] = [
   'ooc',
   'askanswer',
   'whisper',
+  'pray',
   'radio',
   'newbie',
   'quest',

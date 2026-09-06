@@ -17,8 +17,20 @@ function textContainsString(haystack: string, needle: string) {
   return haystack.includes(needle);
 }
 
+// Every channel line is "<speaker> <verb phrase> '<message>'" — the channel
+// tag always lives in the verb phrase before the opening quote. Matching
+// against the whole line let a keyword *inside* someone's quoted message
+// misclassify it (an OOC message mentioning "clans" got sorted as Clan
+// because ' clans ' matched the message body, not a channel tag). Restrict
+// matching to the envelope up to and including the first quote; lines with
+// no quote at all (some tag formats don't use one) fall back to the full line.
+function envelope(s: string): string {
+  const q = s.indexOf("'");
+  return q === -1 ? s : s.slice(0, q + 1);
+}
+
 export function classifyStrictChatSubtype(rawLine: string): ChatSubtype | undefined {
-  const s = normalizeLine(rawLine);
+  const s = envelope(normalizeLine(rawLine));
 
   // TEMP DEBUG (remove after you verify it matches)
   // Debug: console.log('[chat strict] normalized=', JSON.stringify(s));
@@ -77,6 +89,10 @@ export function classifyStrictChatSubtype(rawLine: string): ChatSubtype | undefi
   // WHISPER
   if (textContainsString(s, ' whispers ')) return 'whisper';
   if (textContainsString(s, 'You whisper ')) return 'whisper';
+
+  // PRAY
+  if (textContainsString(s, " prays '")) return 'pray';
+  if (s.startsWith("You pray '")) return 'pray';
 
   // RADIO
   if (textContainsString(s, ' radios ')) return 'radio';
