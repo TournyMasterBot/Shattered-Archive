@@ -1,13 +1,37 @@
 File Index
 
 /autoleveling-actions.ts
-Purpose: Parses and serializes autoleveling action scripts from and to a text editor format.
+Purpose: Parses and serializes autoleveling action scripts to/from the one-line-per-action editor format. Action kinds incl. send, send_cooldown (`cooldown <sec> <cmd>`), send_every_ticks (`every_ticks <n> <cmd>` — recast every N GMCP ticks, for affect-less buffs), wait_ms/text/regex/fighting, if_hp/mp/mv_below, if_affect_missing.
+
+/autoleveling-alignment.ts
+Purpose: alignmentXpModifier(player, target) — the DSL-customized XP rule (opposite alignment 2×, same 0.5×, any-neutral / unknown 1×). The engine divides observed tnl-drops by it to get a base kill-XP figure, then re-applies it for the "near a level-up" prediction. Alignment types live in autoleveling-types.ts (AutoLevelAlignment); the wizard captures them (not in GMCP).
+
+/autoleveling-buff-catalog.ts
+Purpose: BUFF_CATALOG — log-verified command↔GMCP-affect-name pairs for the common leveling buffs (sanc→sanctuary, stone→stone skin, fren→frenzy, 'detect inv'→detect invis, …). Consumed by CombatStep's "Add from catalog". Entries carry suggestInCombat (sanctuary is item-only in combat) / suggestHoldNearLevel (haste hurts mana regen); Berserk has affect:'' (no GMCP affect → tick gate).
+
+/autoleveling-content-types.ts
+Purpose: DTOs for the C#-served content — AutoPilotAreaSummary (index row), AutoPilotArea (detail: route dirs, level range, start room/speedwalk, recommendedTargets), AutoPilotTarget, AND the class catalog: AutoPilotClass ({name, mortalClass, isReclass, classGroup, abilities}) + AutoPilotAbility ({name, type skill|spell|song, level, groups[] — semantic IAbilityGroup names since IAbility.Usage/Duration/Group are unpopulated, helpFile?}). Mirrors Server.Dsl/Models/Autopilot.cs. normalizeAreaSummary / normalizeArea / normalizeClass / normalizeAbility COERCE rather than type-guard (C# serializer omits false/0/""). Buffs / fight scripts are NOT here — wizard-time client overlay in autoleveling-user-data.ts.
+
+/autoleveling-classes.ts
+Purpose: Read-through IndexedDB cache (shatteredarchive-maps DB, key autolevelingClasses, 7d soft TTL, network→cache fallback) of GET /api/web/maps/autoleveling/classes — getClassCatalog({force?}) + getClassCatalogCached(). Pure helpers: classByName (case-insensitive), classNames (base classes — !isReclass — first, each half A→Z), abilitiesForClass(list, name, {atOrBelowLevel?, type?, groups?}) (groups = any-of). Rotation helpers for CombatStep: BUFF_GROUPS / OFFENSIVE_GROUPS / COMBAT_SKILL_NAMES constants, classBuffAbilities (buff-group spells/songs, skills excluded), classOffensiveAbilities (offensive-group abilities OR a known combat skill). __setClassStoreForTests seam. Mirrors autoleveling-content.ts.
+
+/autoleveling-idb.ts
+Purpose: Tiny async KvStore abstraction — indexedDbKvStore(db,store) is the browser default; memoryKvStore() is the test/no-IDB drop-in. Backs the area cache and the user-data store.
+
+/autoleveling-content.ts
+Purpose: Read-through IndexedDB cache (shatteredarchive-maps DB, 7d soft TTL, network→cache fallback) of the split list/detail API — getAreaIndex() (all areas as lightweight AutoPilotAreaSummary, GET /api/web/maps/autoleveling/areas) + getAreaDetail(slug) (one area's route+targets, cached per slug). Pure helpers areasForLevel / areaBySlug / areasByContinent / isLevelInRange operate on the summary shape; fullRoute needs the detail. __setAreaStoreForTests seam. Mirrors autoleveling-maps-client.ts.
+
+/autoleveling-user-data.ts
+Purpose: Player's own auto-leveling additions in a dedicated IndexedDB DB (shatteredarchive-autoleveling/userData): custom targets (per area), buff overlays (per area), fight-command overlays (per area+class), custom paths, prefs (remembered class + player alignment). Records carry id + updatedAt for profile cloud-sync (exportAll / importRecords = last-writer-wins) — step 12 wired this pair into useAccountModal.ts's Save/Load-to-cloud via cloudSync.saveAutolevelUserData/loadAutolevelUserData (api/user-content/autoleveling), the same way scripts/plugins/library already sync; see autoleveling-user-data.test.ts's export→JSON→fresh-store→import round-trip test. ensureMigrated() folds in the legacy localStorage stores (autoleveling-saved-targets, autoleveling-user-paths) once. __setUserDataStoreForTests seam. BuffRow = {label, cmd, affect? (if_affect_missing gate), refreshTicks? (tick gate), inCombatCmd? (mid-fight item action), holdNearLevel? (stop refreshing near a ding), unverified? (class-ability guess, UI hint)}; FightRow = {cmd, cooldownSec}; AutoLevelPrefs = {playerClass?, playerAlignment?}.
+
+/autoleveling-wizard-config.ts
+Purpose: draftToConfig(ConfigDraft) → AutoLevelConfig (v3). Maps the wizard draft to what the engine runs: area route (fullRoute) → init.trainingPath; enabled targets → init.targets; buffs → steps.start.pre (if_affect_missing / send_every_ticks / send by gate); buffs with inCombatCmd|holdNearLevel → config.criticalBuffs[]; fight rows → steps.fight.exec (send_cooldown/send); adds a `look` to steps.identify; 3s round pause for active leveling (5-min default only for sightsee). Passes draft.playerAlignment/targetAlignment through when set. ConfigDraft is a local structural type so features/ doesn't import components/ (WizardDraft satisfies it). Buff EXECUTION is the engine's job (autoleveling-engine.ts).
 
 /autoleveling-defaults.ts
-Purpose: Provides default autoleveling configuration with safe, disabled-by-default settings.
+Purpose: Default autoleveling config, disabled-by-default. AUTOLEVELING_CONFIG_VERSION = 3 (v2→v3 added criticalBuffs[]).
 
 /autoleveling-engine.ts
-Purpose: Automates in-game leveling by executing movement and encounter sequences based on configuration.
+Purpose: Runtime that drives a leveling round: runs steps.start (buffs) → per-segment move.pre/move.post around each gated movement → injected encounters (engage → fight.pre/exec/post → recheckBuffs → postFight → identify re-scan) → steps.reset.endRound → steps.reset.wait (or roundLoopTimeMs). Buff runtime: affect-gated (if_affect_missing) + tick (send_every_ticks) buffs are re-evaluated at the top of each round AND after every fight ends (recheckBuffs); "every round" bare sends fire only at round top; tick buffs fire OUT OF COMBAT only. Tracks char_data.tnl drops into a rolling kill-XP estimate — the mob's alignment is read live from the (Golden Aura)/(Red Aura) line prefix (scanMobAlignment; White/Blue/Thorn/etc. are not alignment) and normalized by alignmentXpModifier vs config.playerAlignment; while running writes a bright yellow `[auto-level] +xp · ~N kills to level …` terminal line on each gain. config.criticalBuffs on game:affect-removed → mid-fight inCombatCmd (item action, anti-flap throttle) only; the recast is recheckBuffs' job. holdNearLevel suppresses recasts once tnl ≤ the estimate. send_cooldown / vitals gates as before.
 
 /autoleveling-index.ts
 Purpose: Centralized export file for autoleveling feature with backward compatibility.
@@ -19,19 +43,19 @@ Purpose: Provides cached and remote loading of autoleveling map data with Indexe
 Purpose: Imports and converts Mudlet leveling script data into buildable path steps.
 
 /autoleveling-normalize.ts
-Purpose: Normalizes auto-leveling configurations and migrates legacy settings into a standard format.
+Purpose: Config repair + migration. `normalizeAutoLevelConfig` (currently unused) repairs old/broken shapes + old `enabled:bool`→`mode`. `migrateAutoLevelConfigV2ToV3` (used by autoleveling-storage) carries a v2 blob forward: same shape + version:3 + criticalBuffs:[].
 
 /autoleveling-saved-targets.ts
 Purpose: Stores and manages manually entered auto-leveling targets per game zone in local storage.
 
 /autoleveling-storage.ts
-Purpose: Manages persistent autoleveling configuration storage with versioned keys and fallback logic.
+Purpose: Per-connection config persistence in localStorage. Key `autoleveling-config-v3:<connId>`; hard-gates version 3. On a v3 miss it reads the old `autoleveling-config-v2:` key, migrates forward (migrateAutoLevelConfigV2ToV3), and re-saves under v3. coerceConfig fills missing fields from the default.
 
 /autoleveling-text.ts
 Purpose: Processes and normalizes text input for autoleveling functionality.
 
 /autoleveling-types.ts
-Purpose: Defines the TypeScript types and interfaces for the autoleveling feature's configuration and runtime behavior.
+Purpose: Persisted config schema (v3) + runtime runState types. AutoLevelConfig carries criticalBuffs[], playerAlignment/targetAlignment (AutoLevelAlignment, absent = neutral), the step triplets, and timing knobs. AutoLevelStepConfig no longer has the dead `trainingPath` field — the route is init.trainingPath. Actions incl. send_every_ticks. Alignment math is in autoleveling-alignment.ts.
 
 /autoleveling-user-paths.ts
 Purpose: Manages user-created training paths for auto-leveling features with local storage persistence and JSON export/import functionality.

@@ -17,6 +17,21 @@
 
 export type AutoLevelAction =
   | { kind: 'send'; cmd: string }
+  /**
+   * Send cmd only if at least cooldownSec seconds have passed since it was last
+   * sent by THIS engine run. Used for fight commands that have an in-game reuse
+   * timer (bash, kick, a quaffed pot). cooldownSec 0 behaves like a plain send.
+   * Syntax in the step editor: cooldown <sec> <command>
+   */
+  | { kind: 'send_cooldown'; cmd: string; cooldownSec: number }
+  /**
+   * Send cmd only if at least everyTicks game ticks have elapsed since it was
+   * last sent by THIS engine run. A "tick" is the GMCP `tick` event (~40s on
+   * DSL). Used for buffs that never register a GMCP affect (berserk, fury) so
+   * `if_affect_missing` cannot gate them. everyTicks 0 behaves like a plain send.
+   * Syntax in the step editor: every_ticks <n> <command>
+   */
+  | { kind: 'send_every_ticks'; cmd: string; everyTicks: number }
   | { kind: 'wait_ms'; ms: number }
   | { kind: 'wait_text'; text: string; caseInsensitive?: boolean; timeoutMs?: number }
   | { kind: 'wait_regex'; pattern: string; flags?: string; timeoutMs?: number }
@@ -43,13 +58,6 @@ export type AutoLevelPhaseTriplet = {
 };
 
 export type AutoLevelStepConfig = {
-  /**
-   * Optional end-to-end movement route, expressed as semicolon-separated commands.
-   * NOTE: In the current engine implementation, the authoritative training path is `config.init.trainingPath`,
-   * not this `steps.trainingPath` field. This field is currently effectively unused.
-   */
-  trainingPath?: string | null;
-
   start: AutoLevelPhaseTriplet;
   move: AutoLevelPhaseTriplet;
 
@@ -139,12 +147,49 @@ export type AutoLevelInitConfigV2 = {
 
 export type AutoLevelMode = 'disabled' | 'dry_run' | 'auto_level' | 'sightsee';
 
+/** Alignment for the kill-XP estimate. Absent = neutral (no XP correction applied). */
+export type AutoLevelAlignment = 'good' | 'neutral' | 'evil';
+
+/**
+ * A buff the engine watches at runtime, built by the wizard from buff rows that
+ * carry an in-combat action and/or a hold-near-level flag. The pre-round recast
+ * of a buff still lives in `steps.start.pre`; this list is the extra behaviour
+ * that reacts to the affect dropping (mid-combat or near a level-up).
+ *
+ * Consumed by the engine in a later step — safe to be empty.
+ */
+export type AutoLevelCriticalBuff = {
+  /** GMCP affect name (matched case-insensitively against AffectData.n). */
+  affect: string;
+  /** The normal out-of-combat recast — used for the post-combat top-up. */
+  cmd: string;
+  /** Fast item action to use if the affect drops while `is_fighting` (quaff/brandish/zap). */
+  inCombatCmd?: string;
+  /** Stop refreshing (let it fall) when close to leveling — `tnl` ≤ est. next-kill XP. */
+  holdNearLevel?: boolean;
+  /** Minimum seconds between reactions for this affect (anti-flap). */
+  cooldownSec?: number;
+};
+
 export type AutoLevelConfig = {
-  version: 2;
+  version: 3;
   mode: AutoLevelMode;
 
   init: AutoLevelInitConfigV2;
   steps: AutoLevelStepConfig;
+
+  /** Runtime-watched buffs (in-combat reapply / hold-near-level). May be empty. */
+  criticalBuffs: AutoLevelCriticalBuff[];
+
+  /**
+   * Alignment inputs for the engine's rolling kill-XP estimate (DSL rule:
+   * opposite = 2×, same = 0.5×, any-neutral = 1×). Absent = neutral.
+   * - `playerAlignment` is set by the wizard's Combat step (a character property).
+   * - `targetAlignment` is an optional manual override; normally the engine reads
+   *   the mob's alignment live from the `(Golden Aura)` / `(Red Aura)` line prefix.
+   */
+  playerAlignment?: AutoLevelAlignment;
+  targetAlignment?: AutoLevelAlignment;
 
   loopRounds: boolean;
   roundLoopTimeMs: number;
@@ -187,3 +232,25 @@ export type AutoLevelRunState =
   | { status: 'paused'; round: number; step: string; actionIndex: number }
   | { status: 'stopping' }
   | { status: 'error'; message: string };
+
+/**
+ * Snapshot of the rolling kill-XP estimate, taken on every XP gain (see
+ * AutoLevelingEngine.emitXpProgress). Kept as its own piece of state — separate from
+ * AutoLevelRunState — so it survives status transitions instead of being wiped by the
+ * next `setRunState` call, letting the UI keep showing "last kill" info while waiting
+ * between rounds.
+ */
+export interface AutoLevelXpProgress {
+  /** tnl drop from the most recent kill. */
+  gainedXp: number;
+  /** tnl (xp to next level) after that kill. */
+  tnl: number;
+  /** Rolling-estimate kills remaining to level, or null if there's no estimate yet. */
+  killsLeft: number | null;
+  /** Rolling average xp/kill (alignment-adjusted) driving the estimate above. */
+  estKillXp: number;
+  /** Kills counted so far this run. */
+  sessionKills: number;
+  /** Date.now() when this snapshot was taken. */
+  ts: number;
+}

@@ -17,7 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { AutoLevelConfig, AutoLevelRunState } from '../features/autoleveling/autoleveling-types';
+import type { AutoLevelConfig, AutoLevelRunState, AutoLevelXpProgress } from '../features/autoleveling/autoleveling-types';
 import { createDefaultAutoLevelConfig } from '../features/autoleveling/autoleveling-defaults';
 import {
   loadAutoLevelConfig,
@@ -59,7 +59,6 @@ function isAutoLevelingDebugEnabled(): boolean {
 // @ai-hash: 301a8ba5
 // ── END AI-METHOD ──
 function hdbg(...args: any[]) {
-  return;
   if (!isAutoLevelingDebugEnabled()) return;
   // eslint-disable-next-line no-console
   console.debug(HOOK_LOG_PREFIX, ...args);
@@ -153,6 +152,10 @@ export function useAutoLeveling(connectionId: string, isConnectedInitial = false
     hdbg('runState updated', runState);
   }, [runState]);*/
 
+  // Last kill's XP/tnl estimate — kept separate from runState so it isn't wiped by the
+  // next status transition (see AutoLevelXpProgress doc comment).
+  const [xpProgress, setXpProgress] = useState<AutoLevelXpProgress | null>(null);
+
   const engineRef = useRef<AutoLevelingEngine | null>(null);
 
   // (Re)create engine when connection changes
@@ -164,6 +167,10 @@ export function useAutoLeveling(connectionId: string, isConnectedInitial = false
       setRunState: (s) => {
         hdbg('engine setRunState', s);
         setRunState(s);
+      },
+      setXpProgress: (p) => {
+        hdbg('engine setXpProgress', p);
+        setXpProgress(p);
       },
     });
 
@@ -208,6 +215,7 @@ export function useAutoLeveling(connectionId: string, isConnectedInitial = false
       return;
     }
 
+    setXpProgress(null); // clear last run's estimate — it's not this run's yet
     await eng.start();
   }, [runState.status, socketReady]);
 
@@ -361,6 +369,7 @@ export function useAutoLeveling(connectionId: string, isConnectedInitial = false
     setConfig,
 
     runState,
+    xpProgress,
     socketReady,
 
     start,

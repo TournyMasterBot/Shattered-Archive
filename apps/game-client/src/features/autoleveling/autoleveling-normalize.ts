@@ -79,6 +79,23 @@ function normalizeEscapeCommands(x: unknown): string[] {
 }
 
 /**
+ * v2 → v3 migration: the old modal's config shape carried forward, with the new
+ * `version: 3` and an empty `criticalBuffs`. Everything else is preserved so a
+ * user's tuned timings / targets survive.
+ */
+export function migrateAutoLevelConfigV2ToV3(v2: Record<string, any>): AutoLevelConfig {
+  const def = createDefaultAutoLevelConfig();
+  return {
+    ...def,
+    ...v2,
+    version: 3,
+    criticalBuffs: Array.isArray(v2.criticalBuffs) ? v2.criticalBuffs : [],
+    init: { ...def.init, ...(isObj(v2.init) ? v2.init : {}) },
+    steps: { ...def.steps, ...(isObj(v2.steps) ? v2.steps : {}) },
+  };
+}
+
+/**
  * Repairs unknown/old/broken shapes into a fully-formed AutoLevelConfig.
  * - Also supports older configs that accidentally placed fleePk/escapeCommands inside init.
  * - Migrates old `enabled: boolean` to the new `mode: AutoLevelMode` field.
@@ -100,7 +117,9 @@ function normalizeAutoLevelConfig(raw: AutoLevelConfig): AutoLevelConfig {
   return {
     ...def,
     ...raw,
+    version: 3,
     mode,
+    criticalBuffs: Array.isArray((raw as any).criticalBuffs) ? (raw as any).criticalBuffs : def.criticalBuffs,
     init: {
       ...def.init,
       ...(raw as any).init,

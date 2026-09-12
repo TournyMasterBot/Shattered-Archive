@@ -13,22 +13,28 @@
  * - Provide wait primitives for scripted actions:
  *   - wait_ms, wait_text, wait_regex, wait_fighting
  *
- * Strong inferred step order:
+ * Step order (as implemented):
  *  Round:
- *   A) start.pre -> start.exec -> start.post
- *   B) For each trainingPath segment (config.init.trainingPath split by ';', empty segments preserved):
- *       1) move.pre -> move.exec
- *       2) send segment (dispatches shatteredarchive:send-command, plus shatteredarchive:movement-attempt for directionals)
- *       3) if segment is movement:
- *            waitForMovement(...) using shatteredarchive:movement-succeeded/failed
- *            move.post
- *            identify.pre -> identify.exec -> identify.post
- *          else:
- *            move.post
- *       4) flushInjected()  (may run injected encounter sequence)
+ *   A) start.pre -> start.exec -> start.post   (every round; if_affect_missing / send_every_ticks gate the buffs)
+ *   B) For each trainingPath segment (config.init.trainingPath split by ';', blanks dropped):
+ *       1) if the segment is a movement: move.pre
+ *       2) send segment (shatteredarchive:send-command, plus shatteredarchive:movement-attempt for directionals)
+ *       3) if movement: waitForMovement(...) via game:room-data ; else: delay lookSettleMs
+ *       4) if movement: move.post
+ *       5) flushInjected()  (injected encounter: engage -> fight.pre/exec/post -> recheckBuffs -> postFight -> identify re-scan)
+ *       6) if movement: delay moveSettleMs
  *   C) reset.endRound
- *   D) reset.wait
- *   E) if loopRounds=true: set runState waiting + delay roundLoopTimeMs, then next round
+ *   D) if loopRounds=false: stop. else: reset.wait actions if any, else delay roundLoopTimeMs; then next round
+ *
+ * Runtime buff behaviour (config.criticalBuffs + tnl tracking):
+ *   - game:tick increments a counter that send_every_ticks paces against; tick buffs fire OUT OF COMBAT only
+ *   - affect-gated (if_affect_missing) + tick buffs are re-checked at the top of each round AND after every fight
+ *     ends (recheckBuffs); "every round" buffs (bare send) fire only at the top of the round
+ *   - char_data.tnl drops feed a rolling kill-XP estimate; the mob's alignment is read live from the
+ *     (Golden Aura)/(Red Aura) prefix on its room line (scanMobAlignment), normalized by the alignment modifier
+ *   - each XP gain writes a bright [auto-level] terminal line: xp gained + ~kills-to-level from that estimate
+ *   - a criticalBuff affect dropping mid-fight fires its inCombatCmd (item action); the recast is left to recheckBuffs
+ *   - a holdNearLevel buff is not re-cast while tnl <= the kill-XP estimate
  *
  * Encounter injection (async between any two actions/segments):
  * - on terminal-data: if lookName matches and not locked => inject __engage_target at front of queue, lock encounters
@@ -39,11 +45,21 @@
  */
 
 import { DispatchEvent, ListenEvent } from '../event-emitter/event-dispatcher';
-import type { AutoLevelAction, AutoLevelConfig, AutoLevelRunState, AutoLevelTarget } from './autoleveling-types';
+import type {
+  AutoLevelAction,
+  AutoLevelAlignment,
+  AutoLevelConfig,
+  AutoLevelCriticalBuff,
+  AutoLevelRunState,
+  AutoLevelTarget,
+  AutoLevelXpProgress,
+} from './autoleveling-types';
+import { alignmentXpModifier } from './autoleveling-alignment';
 
 type EngineDeps = {
   getConfig: () => AutoLevelConfig;
   setRunState: (s: AutoLevelRunState) => void;
+  setXpProgress?: (p: AutoLevelXpProgress) => void;
 };
 
 type MovementResult =
@@ -76,21 +92,14 @@ function isAutoLevelingDebugEnabled(): boolean {
 
     const v = typeof localStorage !== 'undefined' ? localStorage.getItem('autoleveling.debug') : null;
     if (v === '1' || v === 'true') return true;
-    if (v === '0' || v === 'false') return false;
 
-    try {
-      const dev = typeof import.meta !== 'undefined' && !!(import.meta as any).env?.DEV;
-      return dev;
-    } catch {
-      return false;
-    }
+    return false;
   } catch {
     return false;
   }
 }
 
 function dbg(...args: any[]) {
-  return;
   if (!isAutoLevelingDebugEnabled()) return;
   // eslint-disable-next-line no-console
   console.debug(ENG_LOG_PREFIX, ...args);
@@ -129,6 +138,9 @@ function now() {
 }
 
 const MOVE_DIRS = new Set(['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw', 'u', 'd', 'up', 'down']);
+
+/** Backstop for "waiting for a fight to end with no fight.exec configured" — see call site. */
+const FIGHT_END_BACKSTOP_MS = 10 * 60_000;
 
 function isMovementCommand(cmd: string): { isMove: boolean; dir?: string } {
   const trimmed = String(cmd ?? '').trim();
@@ -235,6 +247,8 @@ export class AutoLevelingEngine {
 
   private stopping = false;
   private paused = false;
+  /** True between start() entering its loop and the loop exiting. Gates the XP-progress terminal line. */
+  private running = false;
 
   private injectedQueue: InjectedEngineAction[] = [];
 
@@ -309,6 +323,31 @@ export class AutoLevelingEngine {
   // GMCP vitals — updated by game:char-data events
   private charVitals = { hp: 0, hpMax: 0, mp: 0, mpMax: 0, mv: 0, mvMax: 0 };
 
+  /** last-sent timestamp (ms) per command, for `send_cooldown` actions. Cleared each run. */
+  private cooldownLastSent = new Map<string, number>();
+
+  /** GMCP tick counter — drives `send_every_ticks`. Reset each run. */
+  private tickCount = 0;
+  /** tickCount at last cast, per command, for `send_every_ticks`. Cleared each run. */
+  private everyTicksLastCast = new Map<string, number>();
+
+  /** Last observed `char_data.tnl` (XP to next level). */
+  private lastTnl: number | null = null;
+  /** Rolling per-kill XP samples, normalized to base XP (alignment modifier divided out). */
+  private killXpSamples: number[] = [];
+  /** Predicted raw XP of the next kill (rolling base average × current alignment modifier). */
+  private estKillXp = 0;
+  /** Kills observed this run (via tnl drops) — shown in the XP-progress line. Reset each run. */
+  private sessionKills = 0;
+  /** Last reaction time (ms) per critical-buff affect — anti-flap throttle. */
+  private criticalBuffReactionAt = new Map<string, number>();
+  /**
+   * Alignment of the mob currently being engaged, read from the `(Golden Aura)` /
+   * `(Red Aura)` prefix on its room/look line (needs `detect good` / `detect evil`
+   * running). null = not detected → treated as neutral for the kill-XP estimate.
+   */
+  private currentTargetAlignment: AutoLevelAlignment | null = null;
+
   // GMCP affects — normalized lowercase names of currently-active affects
   private activeAffects = new Set<string>();
 
@@ -329,11 +368,27 @@ export class AutoLevelingEngine {
     // engagement failure signal: "They aren't here"
     this.onTerminalEngageHeuristics(text);
 
+    // mob alignment from the (Golden Aura) / (Red Aura) prefix
+    this.scanMobAlignment(text);
+
     // encounter detection
     if (!this.encounterLocked && !this.stopping) {
       this.tryDetectEncounter(text);
     }
   };
+
+  /**
+   * A mob's room / look line is prefixed with parenthesised flags; among them
+   * `(Golden Aura)` marks a good-aligned mob and `(Red Aura)` an evil one (only
+   * visible with `detect good` / `detect evil` up). Other auras — White
+   * (sanctuary), Blue (bless), Pink/Green/Thorn (misc) — are not alignment.
+   * The two are mutually exclusive. Latest wins; cleared on room change.
+   */
+  private scanMobAlignment(textRaw: string) {
+    const clean = stripAnsi(String(textRaw ?? '')).toLowerCase();
+    if (clean.includes('(red aura)')) this.currentTargetAlignment = 'evil';
+    else if (clean.includes('(golden aura)')) this.currentTargetAlignment = 'good';
+  }
 
   private boundOnMovementSucceeded = (ev: Event) => {
     if (!this.moveWait) return;
@@ -392,7 +447,27 @@ export class AutoLevelingEngine {
     if (this.stopping || this.paused) return;
 
     const ce = ev as CustomEvent<any>;
+    const textRaw = String(ce?.detail?.text ?? '');
     dbg('creature death observed', { detail: ce?.detail });
+
+    if (!this.isFighting || !this.lastEncounterMatch) return;
+
+    // GMCP char-data's isFighting is the authoritative combat signal — but it doesn't
+    // reliably flip false when a PET lands the killing blow instead of the player; the
+    // fight loop then waits on isFighting forever (or times out the whole run at
+    // idleTimeoutMs). "<name> is DEAD!!" is a direct, GMCP-independent signal that a
+    // mob just died. Match it against the target we're actually tracking (its room-scan
+    // line always starts with the same name the death line does) before trusting it —
+    // a different mob dying nearby (e.g. the pet's own separate kill) shouldn't end
+    // tracking for the one we're still fighting.
+    const deathName = normMatch(textRaw).replace(/\s+is\s+dead\s*$/, '');
+    const targetLook = normMatch(this.lastEncounterMatch.lookName);
+    if (deathName && targetLook.startsWith(deathName)) {
+      dbg('creature death matches tracked target -> forcing isFighting=false', {
+        target: this.lastEncounterMatch.targetCleanName,
+      });
+      this.setIsFighting(false, 'event:creature-death');
+    }
   };
 
   private boundOnCharDataFighting = (ev: Event) => {
@@ -430,6 +505,105 @@ export class AutoLevelingEngine {
     const mvMax = Number(d.max_move ?? 0);
     this.charVitals = { hp, hpMax, mp, mpMax, mv, mvMax };
     dbg('charVitals updated', this.charVitals);
+    this.trackToNextLevel(d);
+  }
+
+  /** Alignment used for the kill-XP estimate: what we detected off the last mob's aura, else a config override. */
+  private effectiveTargetAlignment(): AutoLevelAlignment | undefined {
+    return this.currentTargetAlignment ?? this.deps.getConfig().targetAlignment;
+  }
+
+  /**
+   * Track `char_data.tnl` (XP to next level). A DECREASE means XP was gained
+   * without leveling — that drop is (roughly) one kill's worth of XP. An INCREASE
+   * means a level-up reset tnl to the next threshold, so we ignore it. The rolling
+   * estimate is kept in *base* XP (alignment modifier divided out) and the modifier
+   * re-applied for the prediction.
+   */
+  private trackToNextLevel(d: any) {
+    const tnl = Number(d?.tnl);
+    if (!Number.isFinite(tnl) || tnl < 0) return;
+
+    const prev = this.lastTnl;
+    this.lastTnl = tnl;
+    if (prev == null || tnl >= prev) return;
+
+    const cfg = this.deps.getConfig();
+    const mod = alignmentXpModifier(cfg.playerAlignment, this.effectiveTargetAlignment()) || 1;
+    const baseDelta = (prev - tnl) / mod;
+
+    this.killXpSamples.push(baseDelta);
+    if (this.killXpSamples.length > 10) this.killXpSamples.shift();
+
+    const avgBase = this.killXpSamples.reduce((a, b) => a + b, 0) / this.killXpSamples.length;
+    this.estKillXp = avgBase * mod;
+    this.sessionKills += 1;
+    dbg('kill-xp sample', { drop: prev - tnl, mod, baseDelta, estKillXp: this.estKillXp });
+
+    if (this.running) this.emitXpProgress(prev - tnl, tnl);
+  }
+
+  /**
+   * Bright terminal line on every XP gain: how much dropped, and — using the same
+   * rolling per-kill estimate that drives hold-near-level — roughly how many more
+   * kills to the next level.
+   */
+  private emitXpProgress(gained: number, tnl: number) {
+    const est = this.estKillXp;
+    const fmt = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const killsLeft = est > 0 ? Math.max(1, Math.ceil(tnl / est)) : null;
+
+    const ESC = String.fromCharCode(27);
+    const NOTE = `${ESC}[1;93m`; // bold bright yellow — stands out against game text
+    const BODY = `${ESC}[93m`;
+    const OFF = `${ESC}[0m`;
+
+    const parts = [`+${fmt(gained)} xp`];
+    if (killsLeft != null) parts.push(`~${fmt(killsLeft)} ${killsLeft === 1 ? 'kill' : 'kills'} to level`);
+    parts.push(`${fmt(tnl)} tnl`);
+    parts.push(`avg ${fmt(est)} xp/kill over ${this.sessionKills}`);
+
+    const line = `\r\n${NOTE}[auto-level]${OFF} ${BODY}${parts.join(' · ')}${OFF}\r\n`;
+    DispatchEvent('shatteredarchive:write-terminal' as any, { rawText: line });
+
+    this.deps.setXpProgress?.({
+      gainedXp: gained,
+      tnl,
+      killsLeft,
+      estKillXp: est,
+      sessionKills: this.sessionKills,
+      ts: now(),
+    });
+  }
+
+  /** True when we're within one estimated kill's XP of leveling up. */
+  private nearLevelUp(): boolean {
+    return this.estKillXp > 0 && this.lastTnl != null && this.lastTnl > 0 && this.lastTnl <= this.estKillXp;
+  }
+
+  private holdNearLevelBuffs(): AutoLevelCriticalBuff[] {
+    return (this.deps.getConfig().criticalBuffs ?? []).filter((c) => c && c.holdNearLevel);
+  }
+
+  /**
+   * A pre-round buff action belonging to a `holdNearLevel` critical buff, while
+   * we're near a level-up — suppress it so the buff falls and mana/regen recovers
+   * before the ding. Matched by affect name (`if_affect_missing`) or command.
+   */
+  private isHeldBuffAction(a: AutoLevelAction): boolean {
+    if (!this.nearLevelUp()) return false;
+    const held = this.holdNearLevelBuffs();
+    if (held.length === 0) return false;
+
+    if (a.kind === 'if_affect_missing') {
+      const n = String(a.affectName ?? '').trim().toLowerCase();
+      return !!n && held.some((c) => String(c.affect ?? '').trim().toLowerCase() === n);
+    }
+    if (a.kind === 'send' || a.kind === 'send_every_ticks') {
+      const c = normCmd(a.cmd).toLowerCase();
+      return !!c && held.some((x) => normCmd(x.cmd ?? '').toLowerCase() === c);
+    }
+    return false;
   }
 
   constructor(deps: EngineDeps) {
@@ -519,11 +693,23 @@ export class AutoLevelingEngine {
           'game:affect-removed',
           (payload) => {
             if (payload?.n) {
-              this.activeAffects.delete(String(payload.n).trim().toLowerCase());
+              const n = String(payload.n).trim().toLowerCase();
+              this.activeAffects.delete(n);
               dbg('affect-removed', { n: payload.n });
+              this.onCriticalBuffDropped(n);
             }
           },
           { key: 'AutoLevelingEngine:game:affect-removed' },
+        ),
+
+        // GMCP tick — count ticks so `send_every_ticks` buffs can pace themselves
+        ListenEvent<any>(
+          'game:tick',
+          () => {
+            this.tickCount += 1;
+            dbg('tick', { tickCount: this.tickCount });
+          },
+          { key: 'AutoLevelingEngine:game:tick' },
         ),
 
         // Pause on flee
@@ -576,6 +762,7 @@ export class AutoLevelingEngine {
     dbg('stop() called');
     this.stopping = true;
     this.paused = false;
+    this.running = false;
     this.deps.setRunState({ status: 'stopping' });
 
     // release encounter lock so future runs aren't stuck if stop occurs mid-encounter
@@ -683,6 +870,15 @@ export class AutoLevelingEngine {
     this.dryRunAnnouncedThisRoom.clear();
     this.sightseeWait = null;
     this.lastMovementCmd = null;
+    this.cooldownLastSent.clear();
+    this.tickCount = 0;
+    this.everyTicksLastCast.clear();
+    this.lastTnl = null;
+    this.killXpSamples = [];
+    this.estKillXp = 0;
+    this.sessionKills = 0;
+    this.currentTargetAlignment = null;
+    this.criticalBuffReactionAt.clear();
 
     // normalize targets for detection
     this.targets = (cfg.init.targets ?? [])
@@ -698,10 +894,15 @@ export class AutoLevelingEngine {
 
     // Let the games begin
     let round = 1;
-    this.deps.setRunState({ status: 'running', round, step: 'start', actionIndex: 0 });
+    this.running = true;
 
     while (!this.stopping) {
       try {
+        // Pre-round setup / buffs (steps.start). Runs at the top of every round;
+        // `if_affect_missing` / `send_every_ticks` gates keep it from re-spamming.
+        this.deps.setRunState({ status: 'running', round, step: 'start', actionIndex: 0 });
+        await this.runTriplet(cfg.steps.start, 'start', round);
+
         while (this.trainingPathSteps.length > 0) {
           const step = this.trainingPathSteps.shift()!;
 
@@ -748,6 +949,7 @@ export class AutoLevelingEngine {
 
           if (mv.isMove) {
             this.deps.setRunState({ status: 'running', round, step: 'move', actionIndex: 0 });
+            await this.runActions(cfg.steps.move.pre, 'move.pre', round);
           }
 
           const gate = mv.isMove ? this.waitForMovement(step, cfg.idleTimeoutMs) : null;
@@ -768,14 +970,19 @@ export class AutoLevelingEngine {
               warn('movement failed (non-fatal)', { cmd: res.cmd, reasonLine: res.reasonLine });
             } else {
               dbg('movement succeeded', { cmd: res.cmd, room: res.room });
-              // New room — reset dry_run announced set so mobs here get announced fresh.
+              // New room — reset dry_run announced set + the last mob's aura alignment.
               this.dryRunAnnouncedThisRoom.clear();
+              this.currentTargetAlignment = null;
             }
           } else {
             // Non-movement command (e.g. look) — wait for the server's response text to
             // arrive before checking for encounter detections.
             const settleMs = cfg.lookSettleMs ?? 500;
             if (settleMs > 0) await this.delayMs(settleMs);
+          }
+
+          if (mv.isMove && !this.stopping) {
+            await this.runActions(cfg.steps.move.post, 'move.post', round);
           }
 
           await this.flushInjected(round);
@@ -787,19 +994,28 @@ export class AutoLevelingEngine {
           }
         }
 
+        // End-of-round reset actions (steps.reset.endRound).
+        this.deps.setRunState({ status: 'running', round, step: 'reset.endRound', actionIndex: 0 });
+        await this.runActions(cfg.steps.reset.endRound, 'reset.endRound', round);
+
         if (!cfg.loopRounds) {
           this.stopping = true;
           break;
         }
 
         // Round complete — signal we are waiting before the next one starts.
+        // steps.reset.wait, when configured, replaces the bare round-loop delay;
+        // otherwise fall back to roundLoopTimeMs.
         this.deps.setRunState({ status: 'waiting' });
         dbg('engine waiting for next round', { roundDelay: cfg.roundLoopTimeMs });
-        await this.delayMs(cfg.roundLoopTimeMs);
+        if ((cfg.steps.reset.wait ?? []).length > 0) {
+          await this.runActions(cfg.steps.reset.wait, 'reset.wait', round);
+        } else {
+          await this.delayMs(cfg.roundLoopTimeMs);
+        }
 
         this.trainingPathSteps = cfg.init.trainingPath.split(';').filter((x) => x?.trim()?.length > 0);
         round += 1;
-        this.deps.setRunState({ status: 'running', round, step: 'start', actionIndex: 0 });
       } catch (e: any) {
         const msg = String(e?.message ?? e ?? 'AutoLeveling error');
         warn('fatal error', msg);
@@ -808,6 +1024,7 @@ export class AutoLevelingEngine {
       }
     }
 
+    this.running = false;
     dbg('engine stopped');
     this.deps.setRunState({ status: 'idle' });
   }
@@ -858,10 +1075,50 @@ export class AutoLevelingEngine {
   }
 
   private async execAction(a: AutoLevelAction, round: number): Promise<void> {
+    // Near a level-up: let a `holdNearLevel` buff fall instead of re-casting it.
+    if (this.isHeldBuffAction(a)) {
+      dbg('action held (near level-up)', a);
+      return;
+    }
+
     switch (a.kind) {
       case 'send':
         await this.sendCommand(a.cmd);
         return;
+
+      case 'send_cooldown': {
+        const key = normCmd(a.cmd).toLowerCase();
+        const cdMs = Math.max(0, (a.cooldownSec ?? 0) * 1000);
+        const last = this.cooldownLastSent.get(key) ?? 0;
+        const elapsed = now() - last;
+        if (cdMs === 0 || elapsed >= cdMs) {
+          dbg('send_cooldown fire', { cmd: a.cmd, cooldownSec: a.cooldownSec, elapsedMs: elapsed });
+          this.cooldownLastSent.set(key, now());
+          await this.sendCommand(a.cmd);
+        } else {
+          dbg('send_cooldown skip (cooling)', { cmd: a.cmd, remainingMs: cdMs - elapsed });
+        }
+        return;
+      }
+
+      case 'send_every_ticks': {
+        // Tick buffs (berserk, fury) are only worth casting out of combat.
+        if (this.isFighting) {
+          dbg('send_every_ticks skip (in combat)', { cmd: a.cmd });
+          return;
+        }
+        const key = normCmd(a.cmd).toLowerCase();
+        const every = Math.max(0, Math.floor(a.everyTicks ?? 0));
+        const last = this.everyTicksLastCast.get(key);
+        if (every === 0 || last === undefined || this.tickCount - last >= every) {
+          dbg('send_every_ticks fire', { cmd: a.cmd, every, tickCount: this.tickCount, last });
+          this.everyTicksLastCast.set(key, this.tickCount);
+          await this.sendCommand(a.cmd);
+        } else {
+          dbg('send_every_ticks skip (waiting ticks)', { cmd: a.cmd, every, since: this.tickCount - last });
+        }
+        return;
+      }
 
       case 'wait_ms':
         dbg('wait_ms', { ms: a.ms, round });
@@ -1171,6 +1428,58 @@ export class AutoLevelingEngine {
     }
   }
 
+  /* ----------------------------- critical buffs --------------------------- */
+
+  /**
+   * A GMCP affect the wizard flagged as critical (`config.criticalBuffs`) just
+   * dropped. The only thing to do HERE is the mid-fight item action — a caster
+   * usually can't re-cast the spell while fighting, so `inCombatCmd` (quaff a
+   * potion / brandish a staff) covers the gap. Everything else — recasting the
+   * spell itself — is handled by the post-combat buff recheck (`recheckBuffs`),
+   * which re-runs every affect-gated `start.pre` action when a fight ends.
+   */
+  private onCriticalBuffDropped(affectLower: string) {
+    if (this.stopping || !this.isFighting) return;
+
+    const buff = (this.deps.getConfig().criticalBuffs ?? []).find(
+      (c) => c && String(c.affect ?? '').trim().toLowerCase() === affectLower,
+    );
+    const inCombat = String(buff?.inCombatCmd ?? '').trim();
+    if (!buff || !inCombat) return;
+
+    if (buff.holdNearLevel && this.nearLevelUp()) {
+      dbg('criticalBuff drop ignored — holding near level-up', { affect: affectLower });
+      return;
+    }
+
+    const cdMs = Math.max(0, (buff.cooldownSec ?? 0) * 1000);
+    const last = this.criticalBuffReactionAt.get(affectLower) ?? 0;
+    if (cdMs > 0 && now() - last < cdMs) {
+      dbg('criticalBuff drop throttled', { affect: affectLower });
+      return;
+    }
+
+    dbg('criticalBuff drop — firing in-combat action', { affect: affectLower, cmd: inCombat });
+    this.criticalBuffReactionAt.set(affectLower, now());
+    void this.sendCommand(inCombat);
+  }
+
+  /**
+   * Re-run the affect-gated + tick buff actions from `steps.start.pre`. Called at
+   * the top of each round AND after every fight ends — a dropped sanctuary /
+   * armor / etc. gets recast as soon as combat is over, not only at the next lap.
+   * "Every round" buffs (bare `send`) are intentionally excluded — those the user
+   * asked to fire only at the top of the round. `holdNearLevel` suppression and
+   * the in-combat gate for tick buffs are handled inside `execAction`.
+   */
+  private async recheckBuffs(round: number, label: string) {
+    const pre = this.deps.getConfig().steps.start.pre ?? [];
+    const gated = pre.filter((a) => a.kind === 'if_affect_missing' || a.kind === 'send_every_ticks');
+    if (gated.length === 0) return;
+    dbg('recheckBuffs', { label, round, count: gated.length });
+    await this.runActions(gated, label, round);
+  }
+
   /* ----------------------------- engagement helpers ------------------------- */
 
   private onTerminalEngageHeuristics(textRaw: string) {
@@ -1448,7 +1757,13 @@ export class AutoLevelingEngine {
           dbg('fight loop skip (no exec actions), waiting for fight end', { target: eng.target.cleanName });
           if (this.isFighting) {
             try {
-              await this.waitForFighting(false, Math.max(30_000, cfg.idleTimeoutMs || 30_000));
+              // This is a "something's actually stuck" backstop, not a fight-duration cap —
+              // the "X is DEAD!!" text handler (boundOnCreatureDeath) is the normal way this
+              // wait ends, the instant the mob dies, however long that takes (a tanky mob can
+              // easily run past a minute). A short ceiling here would abort perfectly healthy
+              // long fights with a full engine stop, so give it a generous floor and still let
+              // cfg.idleTimeoutMs raise it further for anyone who needs more.
+              await this.waitForFighting(false, Math.max(FIGHT_END_BACKSTOP_MS, cfg.idleTimeoutMs || 0));
             } catch {
               this.deps.setRunState({ status: 'error', message: 'Timed out waiting for fight to end' });
               this.stopping = true;
@@ -1459,6 +1774,11 @@ export class AutoLevelingEngine {
         // fight.post — runs once when fight loop exits
         this.deps.setRunState({ status: 'running', round, step: 'fight.post', actionIndex: 0 });
         await this.runActions(cfg.steps.fight.post, 'fight.post', round);
+
+        // Re-check the affect-gated + tick buffs now that combat is over — a
+        // sanctuary / armor / etc. that fell mid-fight gets recast right away.
+        this.deps.setRunState({ status: 'running', round, step: 'postFight.buffs', actionIndex: 0 });
+        await this.recheckBuffs(round, 'postFight.buffs');
 
         // postFight triplet — loot, rest, health check
         this.deps.setRunState({ status: 'running', round, step: 'postFight', actionIndex: 0 });

@@ -29,6 +29,7 @@ import { useEquipmentCapture } from '../hooks/useEquipmentCapture';
 import { useEquipmentDeltas } from '../hooks/useEquipmentDeltas';
 
 import AutoLevelingModal from '../components/AutoLevelingModal';
+import AutoLevelingWizard from '../components/AutoLevelingWizard';
 import { useAutoLeveling } from '../hooks/useAutoLeveling';
 import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
 import { useTerminal } from '../hooks/useTerminal';
@@ -77,6 +78,15 @@ export const MainContainer: React.FC = () => {
   const [isScriptModalOpen, setIsScriptModalOpen] = React.useState(false);
   const [isPluginsModalOpen, setIsPluginsModalOpen] = React.useState(false);
   const [isAutoLevelingModalOpen, setIsAutoLevelingModalOpen] = React.useState(false);
+  // Opt-in preview of the new wizard-style auto-leveling UI (localStorage flag).
+  // Removed once the wizard fully replaces AutoLevelingModal (plan step 5).
+  const useAutoLevelingWizard = React.useMemo(() => {
+    try {
+      return localStorage.getItem('autoleveling.wizard') === '1';
+    } catch {
+      return false;
+    }
+  }, []);
 
   // Contribute modals
   const [isIdentifyModalOpen, setIsIdentifyModalOpen] = React.useState(false);
@@ -253,24 +263,32 @@ export const MainContainer: React.FC = () => {
         connectionId={connectionId}
       />
 
-      <AutoLevelingModal
-        isOpen={isAutoLevelingModalOpen}
-        onClose={() => setIsAutoLevelingModalOpen(false)}
-        connectionId={connectionId}
-        isConnected={gameConn.isConnected}
-        config={auto.config}
-        setConfig={auto.setConfig}
-        runState={auto.runState}
-        socketReady={auto.socketReady}
-        start={auto.start}
-        stop={auto.stop}
-        pause={auto.pause}
-        resume={auto.resume}
-        resetToDefaults={auto.resetToDefaults}
-        moveNext={auto.moveNext}
-        movePrev={auto.movePrev}
-        rescanRoom={auto.rescanRoom}
-      />
+      {(() => {
+        const autoLevelingProps = {
+          isOpen: isAutoLevelingModalOpen,
+          onClose: () => setIsAutoLevelingModalOpen(false),
+          connectionId,
+          isConnected: gameConn.isConnected,
+          config: auto.config,
+          setConfig: auto.setConfig,
+          runState: auto.runState,
+          xpProgress: auto.xpProgress,
+          socketReady: auto.socketReady,
+          start: auto.start,
+          stop: auto.stop,
+          pause: auto.pause,
+          resume: auto.resume,
+          resetToDefaults: auto.resetToDefaults,
+          moveNext: auto.moveNext,
+          movePrev: auto.movePrev,
+          rescanRoom: auto.rescanRoom,
+        };
+        return useAutoLevelingWizard ? (
+          <AutoLevelingWizard {...autoLevelingProps} />
+        ) : (
+          <AutoLevelingModal {...autoLevelingProps} />
+        );
+      })()}
 
       {/* ✅ CHANGED: pass connectionId to both contribute modals */}
       <ContributeIdentifyModal

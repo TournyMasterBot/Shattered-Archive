@@ -7,6 +7,7 @@ import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
 import { getAllGlobalScriptBuckets, replaceGlobalScriptBuckets } from '../features/userScripts/globalScriptsStore';
 import { PLUGINS_STORAGE_KEY, writeInstalledPlugins, type InstalledPluginRecord } from './usePlugins';
 import { saveLibraryToCloud, loadLibraryFromCloud } from '../features/library/librarySync';
+import { exportAll as exportAutolevelUserData, importRecords as importAutolevelUserData } from '../features/autoleveling/autoleveling-user-data';
 
 interface UseAccountModalOptions {
   isOpen: boolean;
@@ -88,19 +89,22 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
       // Every connection's globals, not just this one — see
       // getAllGlobalScriptBuckets on why a partial save would drop the rest.
       const globals = getAllGlobalScriptBuckets();
+      const autolevelRecords = await exportAutolevelUserData();
 
-      const [scriptsResult, pluginsResult, globalsResult, libraryResult] = await Promise.all([
+      const [scriptsResult, pluginsResult, globalsResult, libraryResult, autolevelResult] = await Promise.all([
         cloudSync.saveScripts(scripts),
         cloudSync.savePluginConfigs(plugins),
         cloudSync.saveGlobalScripts(globals),
         saveLibraryToCloud(connectionId),
+        cloudSync.saveAutolevelUserData(autolevelRecords),
       ]);
 
       if (
         scriptsResult.kind === 'unauthenticated' ||
         pluginsResult.kind === 'unauthenticated' ||
         globalsResult.kind === 'unauthenticated' ||
-        libraryResult.kind === 'unauthenticated'
+        libraryResult.kind === 'unauthenticated' ||
+        autolevelResult.kind === 'unauthenticated'
       ) {
         setIsLoggedIn(false);
         setStatus({ kind: 'err', text: 'Your session expired — please log in again.' });
@@ -122,14 +126,18 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
         setStatus({ kind: 'err', text: `Save failed (library): ${libraryResult.message}` });
         return;
       }
+      if (autolevelResult.kind === 'error') {
+        setStatus({ kind: 'err', text: `Save failed (auto-leveling data): ${autolevelResult.message}` });
+        return;
+      }
 
       const lib = libraryResult.data;
       setStatus({
         kind: 'ok',
         text:
           `Saved ${scriptsResult.data.count} script(s), ${pluginsResult.data.count} plugin config(s), ` +
-          `${globalsResult.data.count} global-script set(s), and ${lib.parchment} parchment / ${lib.notes} note(s) / ` +
-          `${lib.books} book(s) to the cloud.`,
+          `${globalsResult.data.count} global-script set(s), ${lib.parchment} parchment / ${lib.notes} note(s) / ` +
+          `${lib.books} book(s), and ${autolevelResult.data.count} auto-leveling record(s) to the cloud.`,
       });
     } finally {
       setBusy(false);
@@ -140,25 +148,28 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
     const confirmed = window.confirm(
       "Load from the cloud into this connection? This replaces this connection's local scripts and " +
         'plugin configs with whatever was last saved to the cloud, merges in any parchment/notes/books ' +
-        'saved from the cloud (nothing local is deleted), and reloads the page.',
+        'and auto-leveling targets/overlays/paths saved from the cloud (nothing local is deleted), and ' +
+        'reloads the page.',
     );
     if (!confirmed) return;
 
     setBusy(true);
     setStatus(null);
     try {
-      const [scriptsResult, pluginsResult, globalsResult, libraryResult] = await Promise.all([
+      const [scriptsResult, pluginsResult, globalsResult, libraryResult, autolevelResult] = await Promise.all([
         cloudSync.loadScripts(),
         cloudSync.loadPluginConfigs(),
         cloudSync.loadGlobalScripts(),
         loadLibraryFromCloud(connectionId),
+        cloudSync.loadAutolevelUserData(),
       ]);
 
       if (
         scriptsResult.kind === 'unauthenticated' ||
         pluginsResult.kind === 'unauthenticated' ||
         globalsResult.kind === 'unauthenticated' ||
-        libraryResult.kind === 'unauthenticated'
+        libraryResult.kind === 'unauthenticated' ||
+        autolevelResult.kind === 'unauthenticated'
       ) {
         setIsLoggedIn(false);
         setStatus({ kind: 'err', text: 'Your session expired — please log in again.' });
@@ -180,6 +191,12 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
         setStatus({ kind: 'err', text: `Load failed (library): ${libraryResult.message}` });
         return;
       }
+      if (autolevelResult.kind === 'error') {
+        setStatus({ kind: 'err', text: `Load failed (auto-leveling data): ${autolevelResult.message}` });
+        return;
+      }
+
+      await importAutolevelUserData(autolevelResult.data);
 
       const scriptsKey = RuntimeSingleton.Runtime.getStorageKey(connectionId);
       window.localStorage.setItem(scriptsKey, JSON.stringify(scriptsResult.data));

@@ -1,0 +1,24 @@
+File Index
+
+Sub-components + hooks for AutoLevelingWizard.tsx (the wizard that replaces AutoLevelingModal).
+
+/useCharacterLevel.ts
+Purpose: useCharacterLogin() — the connected character's level + name from GMCP login_data (game:character-login event + __SA_EVENT_SNAPSHOTS__ for late subscribers).
+
+/useWizardDraft.ts
+Purpose: useWizardDraft() — in-memory wizard draft (areaSlug, area detail, DraftTarget[], mode, playerClass, initiationCommand, buffs, fightCommands, playerAlignment — default 'neutral'; the MOB's alignment is engine-detected from auras, not in the draft) + actions (setArea, toggleTarget, addCustomTarget, removeCustomTarget, patch, reset). Not persisted until Start builds the AutoLevelConfig.
+
+/AreaStep.tsx
+Purpose: Step 1 — area list from autoleveling-content.getAreaIndex() grouped by continent, search box, a min/max Level range gate (seeded ±5 from GMCP level once, then user-owned; areasForLevelRange overlaps with a ±4 margin and drops "range not set" areas), level-match dot + in-band L-range highlight when connected, ★ for IsExcellentLevelingArea, per-row L-range/steps/targets ("level range not set" when span ≥ 40), "Custom path…" fallthrough row.
+
+/TargetsStep.tsx
+Purpose: Step 2 — recommended targets (from the area detail) pre-checked with level badge + kill keyword; separate "Your targets" list for user additions; manual add row (look description + kill keyword). Toggle/add/remove flow up to the wizard which persists customs to autoleveling-user-data.
+
+/CombatStep.tsx
+Purpose: Step 3 — class selector (served catalog via getClassCatalog(), base classes then a "Reclasses" optgroup, DSL_CLASSES_FALLBACK only if the catalog is empty → setPrefs + reloads that class's fight overlay), read-only level/name from useCharacterLogin, engage-command input, one Good/Neutral/Evil "Your alignment" AlignPick (persists via setPrefs; the mob's alignment is read live from auras by the engine), a pre-round buff editor and a per-class fight-command rotation. Buff picker "Add a buff…" has two optgroups: the verified BUFF_CATALOG, and the class's own buff-ish spells/songs (classBuffAbilities, L badge) — a class spell with no catalog match seeds cmd `cast '<name>'` + affect `<name>` + `unverified: true` (yellow badge). Fight section gains an "Add ability" picker of the class's offensive abilities (classOffensiveAbilities → skill = bare name, spell = `cast '<name>' {name}`). 3-way gate segmented control per buff (affect drops / every N ticks / every round) + affect-gated inCombatCmd + holdNearLevel unchanged. Debounce-saves to autoleveling-user-data; the wizard seeds the draft from those stores on area selection.
+
+/ReviewStep.tsx
+Purpose: Step 4 — read-only plain-language summary of the draft (area + level range + ★, fullRoute() step count, enabled/total targets, class, alignment row (your alignment + a note that the mob's is aura-detected), engage command, buff list with per-row gate/in-combat/hold-near-level via describeBuffGate() + an "unverified" flag, fight-command list with cooldowns, mode + loop). No config is built here — that happens on Start.
+
+/dsl-classes.ts
+Purpose: DSL_CLASSES_FALLBACK — just the 5 base class names, a last-resort static list for CombatStep's class picker when the served catalog (autoleveling-classes) is unreachable AND its offline JSON is empty. The real list comes from GET /maps/autoleveling/classes.
