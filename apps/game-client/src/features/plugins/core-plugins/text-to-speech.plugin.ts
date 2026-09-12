@@ -2037,7 +2037,7 @@ export function createTextToSpeechPlugin(): IPluginModule {
           type: 'boolean',
           label: 'Speak communication lines',
           description:
-            'Anything the chat classifier recognises as a channel — say, tell, gtell, whisper, yell, gossip/cgossip, OOC, clan/oclan, king/oking, ask-answer, radio, newbie, quest, bloodbath, auction, grats and community. Tested before every other category, so chat arriving in the middle of a room render stays chat.',
+            'Anything the chat classifier recognises as a channel — say, tell, gtell, whisper, pray, yell, gossip/cgossip, OOC, clan/oclan, king/oking, ask-answer, radio, newbie, quest, bloodbath, auction, grats and community. Tested before every other category, so chat arriving in the middle of a room render stays chat.',
         },
         {
           key: 'speakIncidental',

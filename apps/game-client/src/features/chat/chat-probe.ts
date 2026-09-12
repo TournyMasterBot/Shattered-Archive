@@ -239,8 +239,10 @@ export function probeChatRange(buf: string, start: number, end: number): ChatPro
 
   if (messageEnd <= messageStart) return { isChat: false };
 
-  // Ensure at least one alpha in the message (cheap sanity)
-  let msgHasAlpha = false;
+  // Ensure the message has at least one visible character once ANSI codes are
+  // skipped (cheap sanity against empty/ANSI-only quotes). Don't require a
+  // *letter* — real chat can be pure punctuation, e.g. "?" or "...".
+  let msgHasVisibleChar = false;
   for (let i = messageStart; i < messageEnd; i++) {
     const c = buf.charCodeAt(i);
     if (c === 27 /* ESC */) {
@@ -250,12 +252,12 @@ export function probeChatRange(buf: string, start: number, end: number): ChatPro
         continue;
       }
     }
-    if (isAlphaCode(c)) {
-      msgHasAlpha = true;
+    if (!isSpaceCode(c)) {
+      msgHasVisibleChar = true;
       break;
     }
   }
-  if (!msgHasAlpha) return { isChat: false };
+  if (!msgHasVisibleChar) return { isChat: false };
 
   // Speaker token: first non-space, non-ANSI chunk up to whitespace
   let speakerStart = start;
