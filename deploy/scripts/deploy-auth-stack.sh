@@ -115,50 +115,28 @@ preflight_redirect_uris() {
 }
 
 # ---------------------------------------------------------------------------
+# There used to be a preflight_stack_collision() here, refusing --prod on a machine already
+# running the experimental stack: both compose files bind-mounted the SAME host directory
+# (../apps/auth-server/data) for their encrypted stores while each took its encryption key
+# from its own project-scoped volume — whichever stack started/wrote second silently
+# re-encrypted the shared files under its own key, and the other stack's next read failed the
+# AES-GCM auth tag and permanently locked ("unable to authenticate data ... store LOCKED").
+# Real incident: 2026-09-13.
+#
+# Fixed at the root instead of guarded around: each stack's encrypted stores now live under
+# their OWN stack-specific SECURE_DATA_DIR (docker-compose.yml / docker-compose.shattered-
+# archive-experimental.yml's auth-server volumes, config.ts's secureDataDir) — they no longer
+# share any encrypted file, so running both stacks on one host at once is safe and the guard
+# is no longer needed.
+# ---------------------------------------------------------------------------
+log "Pre-flight checks"
+preflight_redirect_uris
+
+# ---------------------------------------------------------------------------
 # 2. Bring up the hub stack FIRST. It owns both shared resources the C# stack
 #    declares as external (the sa-shared network and the sa-service-pubkeys volume),
 #    and `docker compose up` fails outright against ones that do not exist yet.
 # ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-# Refuse --prod on a machine already running the experimental stack.
-#
-# Both compose files BIND-MOUNT the same host directory (../apps/auth-server/data) but
-# each takes its encryption key from its OWN project-scoped volume
-# (shatteredarchive_auth-server-secrets vs shatteredarchive-prod_auth-server-secrets).
-# Start the second stack on one host and its auth-server reads data encrypted under the
-# other stack's key, fails the AES-GCM auth tag, and LOCKS the store:
-#   "cannot read .../auth-accounts.json (Unsupported state or unable to authenticate
-#    data) — store LOCKED until fixed or removed on the host"
-#
-# Nothing is lost when that happens (read() locks and throws; write() refuses while
-# locked, so the files are never rewritten) but login is down until the intruding stack
-# is stopped. On a REAL production host only one stack exists and this cannot occur —
-# it is purely a dev-replica hazard, and one this script caused before the guard existed.
-# ---------------------------------------------------------------------------
-preflight_stack_collision() {
-  [ "$MODE" = "prod" ] || return 0
-  command -v docker >/dev/null 2>&1 || return 0
-
-  local running
-  running="$(docker ps --filter 'name=shatteredarchive-auth-server' --format '{{.Names}}' 2>/dev/null || true)"
-  [ -n "$running" ] || return 0
-
-  die "$(cat <<MSG
-the EXPERIMENTAL auth stack is running on this host ($running).
-
-Both stacks bind-mount the same apps/auth-server/data but use different encryption keys,
-so starting the prod stack here would lock that store and take login down until stopped.
-Your data would not be damaged, only unreadable by the wrong stack.
-
-Use --local on this machine, or stop the experimental stack first:
-  docker compose -f deploy/docker-compose.shattered-archive-experimental.yml stop auth-server
-MSG
-)"
-}
-
-log "Pre-flight checks"
-preflight_stack_collision
-preflight_redirect_uris
 
 log "Deploying auth hub stack ($MODE)"
 if [ "$DO_BUILD" -eq 1 ]; then

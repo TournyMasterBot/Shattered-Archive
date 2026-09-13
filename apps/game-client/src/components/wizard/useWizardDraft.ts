@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 
-import type { AutoLevelAlignment } from '../../features/autoleveling/autoleveling-types';
+import type { AutoLevelAlignment, AutoLevelRestDuringRoundRule } from '../../features/autoleveling/autoleveling-types';
 import type { AutoPilotArea } from '../../features/autoleveling/autoleveling-content-types';
 import type { BuffRow, FightRow } from '../../features/autoleveling/autoleveling-user-data';
 
@@ -45,6 +45,24 @@ export interface WizardDraft {
    * that. Purely informational: nothing checks the player's actual room against it.
    */
   startRoom: string;
+
+  /**
+   * Rest step. `restStartOfRound`/`restEndOfRound` are semicolon-separated command lists
+   * (e.g. "wake;stand") — out of combat only, see AutoLevelRestConfig. `restDuringRound`
+   * rules reuse those same two command lists as their "how to rest"/"how to wake" actions.
+   */
+  restStartOfRound: string;
+  restEndOfRound: string;
+  restDuringRound: AutoLevelRestDuringRoundRule[];
+
+  /**
+   * Weight step. `weightCommands` is a semicolon-separated command list (e.g. "drop gold;drop
+   * silver"), same convention as the rest fields above — out of combat only, fires once when
+   * carry-weight% crosses `weightAtOrAbovePct`. No separate on/off flag: a blank `weightCommands`
+   * IS off. See AutoLevelWeightConfig.
+   */
+  weightAtOrAbovePct: number;
+  weightCommands: string;
 }
 
 export function emptyDraft(): WizardDraft {
@@ -60,6 +78,11 @@ export function emptyDraft(): WizardDraft {
     fightCommands: [],
     playerAlignment: 'neutral',
     startRoom: '',
+    restStartOfRound: '',
+    restEndOfRound: '',
+    restDuringRound: [],
+    weightAtOrAbovePct: 90,
+    weightCommands: '',
   };
 }
 

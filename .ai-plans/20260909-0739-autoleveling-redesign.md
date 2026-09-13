@@ -38,6 +38,43 @@ The auto-leveling feature is a linear wizard (Area → Targets → Combat → Re
 - Cloud sync precedent: `AccountModal.tsx` + `hooks/useAccountModal.ts` sync scripts+plugins to the profile via the C# site API.
 ## CURRENT STATE — step 12 wrapped, waiting on the user's C# build+deploy pass before step 13 (read this first)
 
+**⚠ 2026-09-12: a SECOND, related plan exists — read it before touching anything this note
+covers.** While step 13's live DSL play-test has been underway (multiple real bugs found and
+fixed live this session — stale-cache misses, a Beastiary/hand-curated merge-priority bug that
+silently discarded correct kill keywords, the pet-kill isFighting gap, ANSI-palette mismatch,
+etc.), the user spec'd a large follow-on feature set for the same wizard (vitals-percentage
+gates on buffs/fight commands, once-per-fight/once-per-round toggles, a queue-buildup detector
++ conditional `~` clear, self-tuning fight-command cooldowns, and a whole new Rest wizard step).
+Rather than fold that into this near-complete plan, it got its own document:
+**`.ai-plans/20260912-1629-autoleveling-combat-rest-tuning.md`** — 7 of 9 steps DONE as of
+2026-09-12T19:25Z (a new step 8, flee-pause hardening + a look-first resume resync, and its own
+step 9, a live play-test + docs refresh, remain — mirroring this plan's own step 13). It touches
+the SAME files this plan built
+(autoleveling-engine.ts, autoleveling-types.ts, autoleveling-user-data.ts,
+autoleveling-wizard-config.ts, CombatStep.tsx, ReviewStep.tsx, AutoLevelingWizard.tsx) and adds
+real, load-bearing changes step 13's tester needs to know about before assuming this plan's
+scope is unchanged:
+- The wizard is now **6 steps**, not 5 — a new **Rest** step was inserted between Combat and Review.
+- `AutoLevelConfig` gained a required `rest` field; `BuffRow`/`FightRow` gained optional
+  `vitalsGate`/`onceKey` fields — old persisted configs still load fine (`coerceConfig`
+  backfills `rest` from the default), but don't be surprised by the extra fields in a fresh
+  config dump.
+- `fullRoute()` (autoleveling-content.ts) now deliberately EXCLUDES `speedwalkToStart` — a
+  step-13 live-testing finding from earlier this session, not from the other plan, but
+  relevant to both: the player is expected to already be at `autopilot_start_room` when
+  hitting Start.
+- The engine now sends a bare `~` after some fights (queue-buildup detected) and can silently
+  bump a fight-command's `cooldownSec` + write a terminal heads-up when it does (see that
+  plan's own progress log for the exact heuristics — both are flagged there as UNVERIFIED
+  live, same as this plan's own "not yet live-tested" callouts elsewhere).
+- (new, step 8 in that plan, not yet implemented as of this note) A flee mid-run will pause the
+  engine, and resuming (flee-triggered or via the manual pause/resume button) will fire a fresh
+  look/identify scan before the round loop continues — if you're live-testing step 13 after that
+  plan's step 8 lands, expect a resume to always cost one extra look/settle beat.
+If you are resuming EITHER plan, check the OTHER one's Progress log for anything dated after
+your own plan's last entry before making further changes — they are being developed
+concurrently against the same files.
+
 **RESUME HERE → step 12 is now DONE, closed out 2026-09-11 by explicit user decision ("wrap up part 1, move to build/deploy") rather than chasing full coverage of the ~38-area Lua dump.** Steps 1–11 done, verified live (2026-09-10). Step 12 parts 2 (cloud-sync) and 3 (index refresh) were already DONE/verified; part 1 (C# area-data) had expanded into a ~30-area content-filling effort driven by the user's own Mudlet/Lua automation database, and is now considered closed for this plan — remaining gaps (`yeti`/`fissure` unmatched; `gahbather`/`excavators`/Clockworks sub-areas deferred) are OUT OF SCOPE going forward, not forgotten, and can be revisited as their own follow-up if the user ever gets more info. Index refresh for the whole batch was completed this turn: every touched `Areas/<Continent>/.annotated` (Althainia, Arkania, Icewall, Limbo, OceanSW, Tropica) now has a one-line note per batch-filled file (dirs/secondary_mobs source + date), closing the "bulk note owed" gap flagged in the prior entry. Nothing committed (user commits). **Nothing built/deployed yet — that's the user's pass next**, same as every C# change all session; this is now a large accumulated diff (see the 2026-09-11T10:00 progress-log entry for the full file list) that deserves one careful review rather than incremental review.
 
 **Next up is step 13**, but only after the user has: (1) reviewed the accumulated C# diff, (2) built + deployed the DSL service, (3) confirmed via the live (or regenerated offline) `/maps/autoleveling/areas` payload that the newly-filled areas now return real routes. Once that's confirmed, proceed to the step 13 play-test.
@@ -77,7 +114,7 @@ The auto-leveling feature is a linear wizard (Area → Targets → Combat → Re
 - **C# (DSL repo, class/area caches DEPLOYED + running as of 2026-09-10):** `GET /maps/autoleveling/classes` + `/areas` live. The area-data C# diff described above (this whole session) is NOT yet built/deployed — sitting in the DSL working tree.
 - **Dev stack:** `pnpm run dev` up (game-client :30080, web-server :41000).
 - **Tests:** `pnpm --filter game-client test` = **20 suites / 312 tests** green (311→312 after the cloud-sync round-trip test added this session); `tsc` (game-client + web-server) clean.
-- **Flag still on:** everything gated behind `localStorage['autoleveling.wizard']='1'`; `AutoLevelingModal.tsx` is still the default. Flag + old modal retire at **step 13** only, after a real DSL play-test.
+- **Flag flipped to opt-OUT, 2026-09-12:** the wizard is now the DEFAULT auto-leveling UI (`localStorage['autoleveling.wizard']` unset or `'1'` → wizard; explicit `'0'` → falls back to the old `AutoLevelingModal.tsx`, kept as a rollback escape hatch during step 13's live testing, not yet deleted). Full removal of the flag + `AutoLevelingModal.tsx` + its SCSS still only happens at **step 13**, once the live DSL play-test fully proves the wizard out.
 
 **Step 12 — 3 parts, final status:**
 1. **C# area-data.** See the whole CURRENT STATE section above — this ballooned far past the original 3-area scope (AlgoronThreadworks/GahboomHill/GlonnoilFjord) into ~30 areas total, still not 100% done (`yeti`/`fissure` unmatched, a few optional sub-areas deferred).
@@ -302,6 +339,67 @@ Buff line shows the full behavior: `Sanctuary — skip if 'sanctuary' active · 
 - Verify: a recorded clean multi-round leveling run; `grep -r AutoLevelingModal apps/game-client/src` shows no imports; `pnpm --filter game-client test` (full) + `tsc` green; Playwright `autoleveling.mjs wizard` green WITHOUT setting the flag; committed showcase PNGs exist.
 
 ## Progress log
+
+- 2026-09-12T19:50:00Z **C# bug found + fixed: `AutoPilotCache.BuildTargets()` sent multi-word
+  engage keywords verbatim, truncated server-side to a colliding first word.** User reported
+  Amethyst Falls occasionally "attacking the wrong thing." Audited all 20 hand-written
+  `secondary_mobs` keywords in `AmethystFalls.cs` against their Beastiary `FirstKeyword` — all 20
+  check out (each is a valid token/prefix, matching the area's own established last-word
+  convention). The real bug: 4 Beastiary-only mobs with NO `secondary_mobs` override (cave
+  spider, cave rat, purple-fanged shrew, AFHS vendor) fell through `BuildTargets()`'s middle
+  fallback tier, which used `FirstKeyword` **as-is** (e.g. "Amethyst Falls cave spider") as the
+  kill argument. Confirmed via merc's `do_kill`/`one_argument()` (a near-universal Diku/ROM
+  parsing convention — `fight.c:2611`) that a MUD server only reads the FIRST WORD of a multi-
+  word command argument: `kill Amethyst Falls cave spider` is read as `kill Amethyst`, which
+  collides with every other "Amethyst Falls X" mob in the same area (bat/deer/fox/owl/
+  archaeologist all share that prefix) — the exact "wrong thing" symptom. The code's own comment
+  two lines above (`AutoPilotCache.cs:144-146`) already warned about this class of bug for the
+  bottom fallback tier (`DeriveKeywordFromName(Name)`, article-stripped last word) but the middle
+  tier (`FirstKeyword` verbatim) was missed. **Fix:** route `FirstKeyword` through
+  `DeriveKeywordFromName` too (same last-word extraction), so the fallback chain is
+  `Keywords[0] → DeriveKeywordFromName(FirstKeyword) → DeriveKeywordFromName(Name)` — no tier
+  uses a raw multi-word string anymore. This resolves cave spider→"spider", cave rat→"rat",
+  shrew→"shrew", vendor→"vendor" automatically, matching the SAME last-word pattern every
+  existing hand-written target in this area already uses — confirmed **no `secondary_mobs`
+  overrides needed**, since the general fix now derives the identical keywords a human override
+  would have written; adding them anyway would just be redundant duplication of the same string.
+  This bug is not Amethyst-Falls-specific — it affects any area's Beastiary-derived (non-
+  overridden) targets wherever `Keywords` is unset (true for all 24 AmethystFalls Beastiary
+  files) and `FirstKeyword` is multi-word, so this is a general improvement, not a one-area
+  patch. Separately flagged (not fixed, unverifiable): the hand-written "An Amethyst Falls cave
+  frog is here." → `"frog"` entry has no matching Beastiary `.cs` file anywhere in the repo — no
+  way to cross-check its keyword statically. Also found and left alone: an orphaned duplicate
+  Beastiary folder `Beastiary/Arkania/Amethyst_Falls/` (underscore, `AreaID="Amethyst_Falls"`,
+  `SubArea="Unknown"`, single-word keywords) — confirmed dead/inert via `BeastiaryCache.
+  GetBeastsByAreaIdFuzzy`'s tier-1 exact-AreaID match already returning non-empty for the
+  canonical `"AmethystFalls"` ID, so the fuzzy folder-tree fallback (which WOULD merge the two on
+  a normalized-key collision) never triggers; not touched, out of scope. Also corrected a
+  separate premise while investigating: `engageTarget`/`waitForEngageOutcome`
+  (`autoleveling-engine.ts:1827-1890`) already waits for either "They aren't here" (confirmed via
+  2,755 real occurrences across 123 game-log files) or `isFighting` before declaring an attack
+  successful — the attack path already does the negative-finding/combat-start check the user
+  described wanting; see the movement-tracking-fix plan for the actual identified gap (a
+  fixed, not queue-depth-aware, `attemptTimeout`). C# fix only — not yet built/deployed (user's
+  pass, per usual).
+
+- 2026-09-12T19:30:00Z **Wizard flipped to the DEFAULT auto-leveling UI (user ask), old modal
+  NOT yet removed.** `MainContainer.tsx`'s `useAutoLevelingWizard` flag inverted from opt-in
+  (`=== '1'`) to opt-out (`!== '0'`): with no flag set at all, or `'1'`, the wizard now renders;
+  only an explicit `localStorage['autoleveling.wizard'] = '0'` falls back to the old
+  `AutoLevelingModal.tsx`, kept purely as a rollback escape hatch for the remainder of step 13's
+  live testing — not deleted, per the user's explicit "do not yet remove the old
+  implementation." Updated the permanent Playwright harness (`autoleveling.mjs`) to match: its
+  "baseline" (old-modal) mode now sets the flag to `'0'` explicitly rather than just clearing
+  it, since clearing it now selects the wizard. Screenshot-verified live both directions (no
+  flag → wizard; flag `'0'` → old modal). Also cross-linked this plan with the newer
+  `.ai-plans/20260912-1629-autoleveling-combat-rest-tuning.md` (vitals gates, once-per-fight/
+  round, a Rest step, queue hygiene, cooldown learning — 7/8 of ITS steps done, built directly
+  on top of this plan's wizard/engine) earlier the same session: both docs now point at each
+  other's Progress log right at the top, since they're being developed concurrently against the
+  same files and a step-13 tester needs to know the wizard is now 6 steps, `AutoLevelConfig`
+  gained a required `rest` field, etc. Nothing else in this plan's own scope changed; step 13
+  itself (final live play-test + full removal of the flag/old modal) is still open.
+  tsc + 333/333 tests green.
 
 - 2026-09-11T15:00:00Z **Step 12 closed out — checked `[x]`.** Resumed after a `/clear`; asked the user how to proceed given the plan's "resume with a few more areas" note, and they chose to wrap up part 1 now rather than keep chasing the remaining `yeti`/`fissure`/sub-area gaps. Did the index-refresh cleanup that was explicitly flagged as owed in the 2026-09-11T10:00 entry ("the 24-area batch fill did NOT get individual `.annotated` write-ups... a bulk note would be worth adding if resuming"): added a one-line note to each batch-filled file's entry (not full paragraphs like the earlier flagship GahboomFactory/GahboomHill notes — matching the "bulk note" scale the volume calls for) across `Areas/Althainia/.annotated` (8 files), `Areas/Arkania/.annotated` (10 files, on top of its existing GahboomFactory/GahboomHill/PhilosophyGuild entries), `Areas/Icewall/.annotated` (2), `Areas/Limbo/.annotated` (1), `Areas/OceanSW/.annotated` (1), `Areas/Tropica/.annotated` (2) — 24 file-notes total, each dated and pointing back to this plan doc for full detail rather than duplicating it. No `.cs` changes this turn (verified via `git status` that the working tree's C# area/cache diff matches exactly what the plan doc already describes — nothing surprised, nothing missing), so no re-`dotnet build` needed; the last build check (0 errors, 2026-09-11T14:00 entry) still stands. Did NOT touch `yeti`/`fissure`/`gahbather`/`excavators`/Clockworks — those stay explicitly deferred/out-of-scope per the user's choice, not silently dropped. Next action is the user's: review the full accumulated C# diff, build+deploy, then either come back to confirm live routes or go straight to step 13.
 

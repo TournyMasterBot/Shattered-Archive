@@ -16,8 +16,9 @@
 import { indexedDbKvStore, type KvStore } from './autoleveling-idb';
 import type { AutoPilotTarget } from './autoleveling-content-types';
 import type { UserBuiltPath } from './autoleveling-user-paths';
+import type { AutoLevelOnceKey, AutoLevelVitalsGate } from './autoleveling-types';
 
-export type UserRecordKind = 'target' | 'buff' | 'fight' | 'path' | 'pref';
+export type UserRecordKind = 'target' | 'buff' | 'fight' | 'path' | 'pref' | 'abilityTiming';
 
 export interface UserRecord<T = unknown> {
   id: string;
@@ -60,10 +61,18 @@ export interface BuffRow {
    * their real affects. UI hint only — the engine ignores it.
    */
   unverified?: boolean;
+  /** Optional HP/MP/MV percentage precondition — see AutoLevelVitalsGate. */
+  vitalsGate?: AutoLevelVitalsGate;
+  /** Fire at most once per round/fight — see AutoLevelOnceKey. */
+  onceKey?: AutoLevelOnceKey;
 }
 export interface FightRow {
   cmd: string;
   cooldownSec: number;
+  /** Optional HP/MP/MV percentage precondition — see AutoLevelVitalsGate. */
+  vitalsGate?: AutoLevelVitalsGate;
+  /** Fire at most once per round/fight — see AutoLevelOnceKey. */
+  onceKey?: AutoLevelOnceKey;
 }
 export interface AutoLevelPrefs {
   playerClass?: string;
@@ -186,6 +195,40 @@ export async function setFightOverlay(areaSlug: string, className: string, rows:
     areaSlug,
     className: key,
     data: rows,
+    updatedAt: 0,
+  });
+}
+
+/* --------------------------- learned ability timing --------------------------- */
+// Cooldown the engine has learned for a fight-command ability, keyed by the command
+// string itself (normalized) — NOT per-area/per-class. Real in-game lag is a property
+// of the ability, not where you're standing, so this is global: cast it once, too fast,
+// anywhere, and every future add of that same ability (any area, any character) starts
+// from the learned value instead of 0.
+
+function normalizeAbilityCmd(cmd: string): string {
+  return String(cmd ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+const abilityTimingId = (cmdKey: string) => `abilityTiming:${cmdKey}`;
+
+export async function getLearnedCooldown(cmd: string): Promise<number | null> {
+  await ensureMigrated();
+  const key = normalizeAbilityCmd(cmd);
+  if (!key) return null;
+  const rec = await store.get<UserRecord<{ cooldownSec: number }>>(abilityTimingId(key));
+  const sec = rec?.data?.cooldownSec;
+  return typeof sec === 'number' && Number.isFinite(sec) ? sec : null;
+}
+
+/** Overwrites the learned value (last write wins — the engine only ever bumps upward). */
+export async function bumpLearnedCooldown(cmd: string, cooldownSec: number): Promise<void> {
+  const key = normalizeAbilityCmd(cmd);
+  if (!key) return;
+  await putRecord({
+    id: abilityTimingId(key),
+    kind: 'abilityTiming',
+    data: { cooldownSec },
     updatedAt: 0,
   });
 }

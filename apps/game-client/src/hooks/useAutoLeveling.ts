@@ -25,7 +25,9 @@ import {
   saveAutoLevelConfig,
 } from '../features/autoleveling/autoleveling-storage';
 import { AutoLevelingEngine } from '../features/autoleveling/autoleveling-engine';
-import { ListenEvent } from '../features/event-emitter/event-dispatcher';
+import { bumpLearnedCooldown, getLearnedCooldown } from '../features/autoleveling/autoleveling-user-data';
+import { ListenEvent, DispatchEvent } from '../features/event-emitter/event-dispatcher';
+import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
 
 /* ----------------------------- debug helpers ------------------------------ */
 
@@ -171,6 +173,22 @@ export function useAutoLeveling(connectionId: string, isConnectedInitial = false
       setXpProgress: (p) => {
         hdbg('engine setXpProgress', p);
         setXpProgress(p);
+      },
+      onAbilityCooldownLearned: (cmd, cooldownSec) => {
+        hdbg('engine onAbilityCooldownLearned', { cmd, cooldownSec });
+        void bumpLearnedCooldown(cmd, cooldownSec);
+      },
+      getLearnedCooldown: (cmd) => getLearnedCooldown(cmd),
+      sendThroughCommandProcessor: (cmd) => {
+        hdbg('engine sendThroughCommandProcessor', { cmd });
+        // Same fallback useGameCommand.ts uses for a typed line: prefer the alias/script
+        // runtime (so a user's own rest macro actually expands) and fall back to the plain
+        // wire-send event the engine already uses everywhere else if it's ever unavailable.
+        if (RuntimeSingleton.Runtime) {
+          RuntimeSingleton.Runtime.executeAlias(cmd);
+        } else {
+          DispatchEvent('shatteredarchive:send-command', { cmd });
+        }
       },
     });
 

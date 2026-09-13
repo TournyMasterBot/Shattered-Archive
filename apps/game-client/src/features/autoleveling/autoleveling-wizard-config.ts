@@ -25,6 +25,7 @@ import type {
   AutoLevelAlignment,
   AutoLevelConfig,
   AutoLevelCriticalBuff,
+  AutoLevelRestDuringRoundRule,
   AutoLevelTarget,
 } from './autoleveling-types';
 import { createDefaultAutoLevelConfig } from './autoleveling-defaults';
@@ -58,6 +59,13 @@ export interface ConfigDraft {
    * from auras by the engine, not set here.
    */
   playerAlignment?: AutoLevelAlignment;
+  /** Rest step (optional so WizardDraft stays structurally assignable). */
+  restStartOfRound?: string;
+  restEndOfRound?: string;
+  restDuringRound?: AutoLevelRestDuringRoundRule[];
+  /** Weight step (optional so WizardDraft stays structurally assignable). */
+  weightAtOrAbovePct?: number;
+  weightCommands?: string;
 }
 
 /** Pause between laps for an active leveling run — the 5-min default is a sightsee pace. */
@@ -84,17 +92,32 @@ function draftTargetToConfig(t: ConfigDraftTarget): AutoLevelTarget {
 /** A pre-round buff row → its start-step action. */
 function buffToStartAction(b: BuffRow): AutoLevelAction {
   const cmd = b.cmd.trim();
+  const vitalsGate = b.vitalsGate;
+  const onceKey = b.onceKey;
   if (b.refreshTicks != null) {
-    return { kind: 'send_every_ticks', cmd, everyTicks: Math.max(0, Math.floor(b.refreshTicks)) };
+    return { kind: 'send_every_ticks', cmd, everyTicks: Math.max(0, Math.floor(b.refreshTicks)), vitalsGate, onceKey };
   }
   const affect = b.affect?.trim();
-  if (affect) return { kind: 'if_affect_missing', affectName: affect, cmd };
-  return { kind: 'send', cmd };
+  if (affect) return { kind: 'if_affect_missing', affectName: affect, cmd, vitalsGate, onceKey };
+  return { kind: 'send', cmd, vitalsGate, onceKey };
+}
+
+/** "wake;stand" -> [{kind:'send',cmd:'wake'}, {kind:'send',cmd:'stand'}] — same split convention as fullRoute. */
+function parseRestCommands(raw: string | undefined): AutoLevelAction[] {
+  return (raw ?? '')
+    .split(';')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((cmd) => ({ kind: 'send' as const, cmd }));
 }
 
 function fightRowToAction(f: FightRow): AutoLevelAction {
   const cmd = f.cmd.trim();
-  return f.cooldownSec > 0 ? { kind: 'send_cooldown', cmd, cooldownSec: f.cooldownSec } : { kind: 'send', cmd };
+  const vitalsGate = f.vitalsGate;
+  const onceKey = f.onceKey;
+  return f.cooldownSec > 0
+    ? { kind: 'send_cooldown', cmd, cooldownSec: f.cooldownSec, vitalsGate, onceKey }
+    : { kind: 'send', cmd, vitalsGate, onceKey };
 }
 
 function buffToCriticalBuff(b: BuffRow): AutoLevelCriticalBuff {
@@ -158,6 +181,15 @@ export function draftToConfig(draft: ConfigDraft): AutoLevelConfig {
       // Re-scan the room after each kill so multi-mob rooms get fully cleared.
       identify: { pre: [], exec: [{ kind: 'send', cmd: 'look' }], post: [] },
       fight: { pre: [], exec: fightExec, post: [] },
+    },
+    rest: {
+      startOfRound: parseRestCommands(draft.restStartOfRound),
+      endOfRound: parseRestCommands(draft.restEndOfRound),
+      duringRound: draft.restDuringRound ?? [],
+    },
+    weight: {
+      atOrAbovePct: draft.weightAtOrAbovePct ?? def.weight.atOrAbovePct,
+      commands: parseRestCommands(draft.weightCommands),
     },
   };
 }

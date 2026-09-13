@@ -16,6 +16,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styles from '../../styles/AutoLevelingWizard.module.scss';
 import {
   getFightOverlay,
+  getLearnedCooldown,
   setBuffOverlay,
   setFightOverlay,
   setPrefs,
@@ -24,13 +25,18 @@ import {
 } from '../../features/autoleveling/autoleveling-user-data';
 import { BUFF_CATALOG } from '../../features/autoleveling/autoleveling-buff-catalog';
 import {
-  classBuffAbilities,
+  abilitiesForClass,
   classOffensiveAbilities,
   getClassCatalog,
 } from '../../features/autoleveling/autoleveling-classes';
 import type { AutoPilotAbility, AutoPilotClass } from '../../features/autoleveling/autoleveling-content-types';
-import type { AutoLevelAlignment } from '../../features/autoleveling/autoleveling-types';
+import type {
+  AutoLevelAlignment,
+  AutoLevelOnceKey,
+  AutoLevelVitalsGate,
+} from '../../features/autoleveling/autoleveling-types';
 import { DSL_CLASSES_FALLBACK } from './dsl-classes';
+import { FilterableSelect, type FilterableSelectOption } from './FilterableSelect';
 import type { WizardDraft } from './useWizardDraft';
 
 type BuffGate = 'affect' | 'ticks' | 'always';
@@ -62,8 +68,176 @@ const AlignPick: React.FC<{
   </div>
 );
 
+/** Swaps index `i` with its neighbor in `dir` (-1 up / +1 down); a no-op past either end. */
+function moveItem<T>(arr: readonly T[], i: number, dir: -1 | 1): T[] {
+  const j = i + dir;
+  if (j < 0 || j >= arr.length) return arr.slice();
+  const next = arr.slice();
+  [next[i], next[j]] = [next[j], next[i]];
+  return next;
+}
+
+/**
+ * Up/down arrows for reordering a row within its list — execution order matters (buffs cast
+ * top-to-bottom pre-round, fight commands sent top-to-bottom on the fight loop), so this is how
+ * the player controls which one applies first.
+ */
+const ReorderButtons: React.FC<{
+  index: number;
+  count: number;
+  onMove: (dir: -1 | 1) => void;
+  contextLabel: string;
+}> = ({ index, count, onMove, contextLabel }) => (
+  <span className={styles.reorderGroup}>
+    <button
+      type="button"
+      className={styles.iconButton}
+      onClick={() => onMove(-1)}
+      disabled={index === 0}
+      aria-label={`Move ${contextLabel} up`}
+      title="Move up — applies earlier"
+    >
+      ↑
+    </button>
+    <button
+      type="button"
+      className={styles.iconButton}
+      onClick={() => onMove(1)}
+      disabled={index === count - 1}
+      aria-label={`Move ${contextLabel} down`}
+      title="Move down — applies later"
+    >
+      ↓
+    </button>
+  </span>
+);
+
 const gateOf = (b: BuffRow): BuffGate =>
   b.refreshTicks != null ? 'ticks' : b.affect != null ? 'affect' : 'always';
+
+const VITALS_STATS: readonly { value: AutoLevelVitalsGate['stat']; label: string }[] = [
+  { value: 'hp', label: 'HP' },
+  { value: 'mp', label: 'MP' },
+  { value: 'mv', label: 'Stamina' },
+];
+
+/**
+ * Fire-limit toggle (off / once per round / once per fight), shared by buff cards and
+ * fight-command rows. "Round" and "fight" are the engine's own definitions — see
+ * AutoLevelOnceKey.
+ */
+const OnceGateControl: React.FC<{
+  value: AutoLevelOnceKey | undefined;
+  onChange: (v: AutoLevelOnceKey | undefined) => void;
+  contextLabel: string;
+}> = ({ value, onChange, contextLabel }) => (
+  <div className={styles.gateBar}>
+    <span className={styles.gateLabel}>limit</span>
+    <div className={styles.gateSeg} role="group" aria-label={`Fire limit for ${contextLabel}`}>
+      <button
+        type="button"
+        className={`${styles.gateOpt} ${!value ? styles.gateOptOn : ''}`}
+        aria-pressed={!value}
+        onClick={() => onChange(undefined)}
+      >
+        no limit
+      </button>
+      <button
+        type="button"
+        className={`${styles.gateOpt} ${value === 'round' ? styles.gateOptOn : ''}`}
+        aria-pressed={value === 'round'}
+        title="Fire at most once per round (a burst of damage with no ~1s gap)."
+        onClick={() => onChange('round')}
+      >
+        once per round
+      </button>
+      <button
+        type="button"
+        className={`${styles.gateOpt} ${value === 'fight' ? styles.gateOptOn : ''}`}
+        aria-pressed={value === 'fight'}
+        title="Fire at most once for the whole encounter."
+        onClick={() => onChange('fight')}
+      >
+        once per fight
+      </button>
+    </div>
+  </div>
+);
+
+/**
+ * Optional HP/MP/Stamina percentage precondition, shared by buff cards and fight-command
+ * rows — "and" condition on top of whatever else gates the row (recast gate, cooldown).
+ */
+const VitalsGateControl: React.FC<{
+  gate: AutoLevelVitalsGate | undefined;
+  onChange: (g: AutoLevelVitalsGate | undefined) => void;
+  contextLabel: string;
+}> = ({ gate, onChange, contextLabel }) => {
+  const enabled = !!gate;
+  return (
+    <div className={styles.gateBar}>
+      <label className={styles.checkInline}>
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={(e) => onChange(e.target.checked ? { stat: 'hp', op: 'below', pct: 50 } : undefined)}
+          aria-label={`Enable vitals gate for ${contextLabel}`}
+        />
+        only when
+      </label>
+      {gate && (
+        <>
+          <select
+            className={styles.select}
+            value={gate.stat}
+            onChange={(e) => onChange({ ...gate, stat: e.target.value as AutoLevelVitalsGate['stat'] })}
+            aria-label={`Vitals gate stat for ${contextLabel}`}
+          >
+            {VITALS_STATS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+          <div className={styles.gateSeg} role="group" aria-label={`Vitals gate direction for ${contextLabel}`}>
+            <button
+              type="button"
+              className={`${styles.gateOpt} ${gate.op === 'below' ? styles.gateOptOn : ''}`}
+              aria-pressed={gate.op === 'below'}
+              onClick={() => onChange({ ...gate, op: 'below' })}
+            >
+              below
+            </button>
+            <button
+              type="button"
+              className={`${styles.gateOpt} ${gate.op === 'above' ? styles.gateOptOn : ''}`}
+              aria-pressed={gate.op === 'above'}
+              onClick={() => onChange({ ...gate, op: 'above' })}
+            >
+              above
+            </button>
+          </div>
+          <span className={styles.inlineField}>
+            <input
+              className={styles.levelInput}
+              type="number"
+              min={1}
+              max={100}
+              step={1}
+              value={gate.pct}
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                onChange({ ...gate, pct: Number.isFinite(n) ? Math.max(1, Math.min(100, Math.round(n))) : gate.pct });
+              }}
+              aria-label={`Vitals gate percentage for ${contextLabel}`}
+            />
+            %
+          </span>
+        </>
+      )}
+    </div>
+  );
+};
 
 const DEFAULT_REFRESH_TICKS = 6;
 
@@ -124,8 +298,6 @@ export const CombatStep: React.FC<Props> = ({
   playerAlignment,
   onPatch,
 }) => {
-  const [catalogPick, setCatalogPick] = useState('');
-  const [fightPick, setFightPick] = useState('');
   const [catalog, setCatalog] = useState<AutoPilotClass[]>([]);
 
   useEffect(() => {
@@ -147,11 +319,32 @@ export const CombatStep: React.FC<Props> = ({
       ? catalog.filter((c) => c.isReclass).map((c) => c.name).sort((a, b) => a.localeCompare(b))
       : [];
 
-  const classBuffs = playerClass && catalog.length > 0 ? classBuffAbilities(catalog, playerClass) : [];
+  // Every ability the class actually has — no buff/attack guessing here (that heuristic kept
+  // mis-categorizing real spells; see the ability-picker-fix plan). Grouped by type below so the
+  // picker stays scannable; which of these go under "buffs" is the player's own call until the
+  // C# ability-classification admin system (separate plan) can drive it precisely.
+  const classAbilities = playerClass && catalog.length > 0 ? abilitiesForClass(catalog, playerClass) : [];
   const classOffense = playerClass && catalog.length > 0 ? classOffensiveAbilities(catalog, playerClass) : [];
 
   const levelTag = (a: AutoPilotAbility) =>
     charLevel != null && a.level > charLevel ? `(L${a.level} — above your level)` : `(L${a.level})`;
+
+  const byName = (a: AutoPilotAbility, b: AutoPilotAbility) => a.name.localeCompare(b.name);
+
+  const TYPE_ORDER: AutoPilotAbility['type'][] = ['skill', 'spell', 'song'];
+  const TYPE_LABELS: Record<AutoPilotAbility['type'], string> = { skill: 'Skills', spell: 'Spells', song: 'Songs' };
+
+  const buffOptions: FilterableSelectOption[] = TYPE_ORDER.flatMap((t) =>
+    classAbilities
+      .filter((a) => a.type === t)
+      .sort(byName)
+      .map((a) => ({ value: a.name, label: `${a.name} ${levelTag(a)}`, group: TYPE_LABELS[t] })),
+  );
+
+  const fightOptions: FilterableSelectOption[] = [...classOffense].sort(byName).map((a) => ({
+    value: a.name,
+    label: `${a.name} ${levelTag(a)}`,
+  }));
 
   const saveBuffs = useDebouncedSave((slug: string, rows: BuffRow[]) => {
     void setBuffOverlay(slug, rows);
@@ -190,6 +383,7 @@ export const CombatStep: React.FC<Props> = ({
   const updateBuff = (i: number, patch: Partial<BuffRow>) =>
     commitBuffs(buffs.map((b, ix) => (ix === i ? { ...b, ...patch } : b)));
   const removeBuff = (i: number) => commitBuffs(buffs.filter((_, ix) => ix !== i));
+  const moveBuff = (i: number, dir: -1 | 1) => commitBuffs(moveItem(buffs, i, dir));
 
   const setBuffGate = (i: number, gate: BuffGate) =>
     commitBuffs(
@@ -226,9 +420,10 @@ export const CombatStep: React.FC<Props> = ({
     commitBuffs([...buffs, row]);
   };
 
-  // A class buff-ish ability → a buff row. If the name matches a BUFF_CATALOG
-  // entry we get the verified command + GMCP affect; otherwise it's a best guess
-  // the player should check (`unverified`).
+  // A class ability → a buff row. If the name matches a BUFF_CATALOG entry we get the verified
+  // command + GMCP affect; otherwise it's a best guess the player should check (`unverified`) —
+  // a skill guesses a bare command + tick-gate (skills rarely register a GMCP affect, same as
+  // Berserk), a spell/song guesses `cast '<name>'` + an affect-name gate.
   const addClassBuff = (name: string) => {
     if (buffs.some((b) => b.label.toLowerCase() === name.toLowerCase())) return;
     const cat = BUFF_CATALOG.find(
@@ -239,13 +434,12 @@ export const CombatStep: React.FC<Props> = ({
       return;
     }
     const lc = name.trim().toLowerCase();
+    const ability = classAbilities.find((a) => a.name === name);
+    if (ability?.type === 'skill') {
+      commitBuffs([...buffs, { label: name, cmd: lc, refreshTicks: DEFAULT_REFRESH_TICKS, unverified: true }]);
+      return;
+    }
     commitBuffs([...buffs, { label: name, cmd: `cast '${lc}'`, affect: lc, unverified: true }]);
-  };
-
-  const pickBuff = (v: string) => {
-    setCatalogPick('');
-    if (v.startsWith('cat:')) addFromCatalog(v.slice(4));
-    else if (v.startsWith('cls:')) addClassBuff(v.slice(4));
   };
 
   /* ---------------------------- fight commands --------------------------- */
@@ -258,15 +452,18 @@ export const CombatStep: React.FC<Props> = ({
   const updateFight = (i: number, patch: Partial<FightRow>) =>
     commitFight(fightCommands.map((f, ix) => (ix === i ? { ...f, ...patch } : f)));
   const removeFight = (i: number) => commitFight(fightCommands.filter((_, ix) => ix !== i));
+  const moveFight = (i: number, dir: -1 | 1) => commitFight(moveItem(fightCommands, i, dir));
 
-  const addClassFight = (name: string) => {
-    setFightPick('');
+  const addClassFight = async (name: string) => {
     const ab = classOffense.find((a) => a.name === name);
     if (!ab) return;
     const lc = name.trim().toLowerCase();
     const cmd = ab.type === 'skill' ? lc : `cast '${lc}' {name}`;
     if (fightCommands.some((f) => f.cmd.trim().toLowerCase() === cmd.toLowerCase())) return;
-    commitFight([...fightCommands, { cmd, cooldownSec: 0 }]);
+    // Pre-fill from a previously-learned cooldown for this exact ability (any area, any
+    // character) — the engine bumps this whenever it sees the command queue up.
+    const learned = await getLearnedCooldown(cmd);
+    commitFight([...fightCommands, { cmd, cooldownSec: learned ?? 0 }]);
   };
 
   if (!areaSlug) {
@@ -358,30 +555,14 @@ export const CombatStep: React.FC<Props> = ({
           Pre-round buffs <span className={styles.countPill}>{buffs.length}</span>
         </span>
         <span className={styles.subHeadActions}>
-          <select
-            className={styles.select}
-            aria-label="Add buff from catalog"
-            value={catalogPick}
-            onChange={(e) => pickBuff(e.target.value)}
-          >
-            <option value="">Add a buff…</option>
-            <optgroup label="Verified catalog">
-              {BUFF_CATALOG.map((c) => (
-                <option key={c.label} value={`cat:${c.label}`}>
-                  {c.label}
-                </option>
-              ))}
-            </optgroup>
-            {classBuffs.length > 0 && (
-              <optgroup label={`${playerClass} spells`}>
-                {classBuffs.map((a) => (
-                  <option key={a.name} value={`cls:${a.name}`}>
-                    {a.name} {levelTag(a)}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-          </select>
+          {buffOptions.length > 0 && (
+            <FilterableSelect
+              options={buffOptions}
+              onPick={addClassBuff}
+              placeholder="Add a buff…"
+              ariaLabel="Add buff from class abilities"
+            />
+          )}
           <button type="button" className={styles.linkButton} onClick={addBuff}>
             + add buff
           </button>
@@ -397,6 +578,12 @@ export const CombatStep: React.FC<Props> = ({
         return (
           <div key={i} className={styles.buffCard} data-buff-card>
             <div className={styles.buffCardTop}>
+              <ReorderButtons
+                index={i}
+                count={buffs.length}
+                onMove={(dir) => moveBuff(i, dir)}
+                contextLabel={`buff ${i + 1}`}
+              />
               <input
                 className={styles.inputNarrow}
                 type="text"
@@ -518,6 +705,17 @@ export const CombatStep: React.FC<Props> = ({
                 </label>
               </div>
             )}
+
+            <VitalsGateControl
+              gate={b.vitalsGate}
+              onChange={(g) => updateBuff(i, { vitalsGate: g })}
+              contextLabel={`buff ${i + 1}`}
+            />
+            <OnceGateControl
+              value={b.onceKey}
+              onChange={(v) => updateBuff(i, { onceKey: v })}
+              contextLabel={`buff ${i + 1}`}
+            />
           </div>
         );
       })}
@@ -528,20 +726,13 @@ export const CombatStep: React.FC<Props> = ({
           Fight commands <span className={styles.countPill}>{fightCommands.length}</span>
         </span>
         <span className={styles.subHeadActions}>
-          {classOffense.length > 0 && (
-            <select
-              className={styles.select}
-              aria-label="Add fight ability"
-              value={fightPick}
-              onChange={(e) => addClassFight(e.target.value)}
-            >
-              <option value="">Add ability…</option>
-              {classOffense.map((a) => (
-                <option key={a.name} value={a.name}>
-                  {a.name} {levelTag(a)}
-                </option>
-              ))}
-            </select>
+          {fightOptions.length > 0 && (
+            <FilterableSelect
+              options={fightOptions}
+              onPick={addClassFight}
+              placeholder="Add ability…"
+              ariaLabel="Add fight ability"
+            />
           )}
           <button type="button" className={styles.linkButton} onClick={addFight} disabled={!playerClass}>
             + add command
@@ -560,37 +751,56 @@ export const CombatStep: React.FC<Props> = ({
             <div className={styles.notice}>No extra commands — the engine still auto-attacks.</div>
           )}
           {fightCommands.map((f, i) => (
-            <div key={i} className={styles.editorRow}>
-              <input
-                className={styles.input}
-                type="text"
-                placeholder="command — e.g. bash"
-                value={f.cmd}
-                onChange={(e) => updateFight(i, { cmd: e.target.value })}
-              />
-              <span className={styles.inlineField}>
-                <input
-                  className={styles.levelInput}
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={f.cooldownSec}
-                  onChange={(e) => {
-                    const n = Number(e.target.value);
-                    updateFight(i, { cooldownSec: Number.isFinite(n) ? Math.max(0, n) : 0 });
-                  }}
-                  aria-label={`Cooldown seconds for command ${i + 1}`}
+            <div key={i} className={styles.buffCard}>
+              <div className={styles.editorRow}>
+                <ReorderButtons
+                  index={i}
+                  count={fightCommands.length}
+                  onMove={(dir) => moveFight(i, dir)}
+                  contextLabel={`fight command ${i + 1}`}
                 />
-                <span className={styles.fieldHint}>sec</span>
-              </span>
-              <button
-                type="button"
-                className={styles.linkButton}
-                onClick={() => removeFight(i)}
-                aria-label={`Remove command ${i + 1}`}
-              >
-                remove
-              </button>
+                <input
+                  className={styles.input}
+                  type="text"
+                  placeholder="command — e.g. bash"
+                  value={f.cmd}
+                  onChange={(e) => updateFight(i, { cmd: e.target.value })}
+                />
+                <span className={styles.inlineField}>
+                  <input
+                    className={styles.levelInput}
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={f.cooldownSec}
+                    onChange={(e) => {
+                      const n = Number(e.target.value);
+                      updateFight(i, { cooldownSec: Number.isFinite(n) ? Math.max(0, n) : 0 });
+                    }}
+                    aria-label={`Cooldown seconds for command ${i + 1}`}
+                  />
+                  <span className={styles.fieldHint}>sec</span>
+                </span>
+                <button
+                  type="button"
+                  className={styles.linkButton}
+                  onClick={() => removeFight(i)}
+                  aria-label={`Remove command ${i + 1}`}
+                >
+                  remove
+                </button>
+              </div>
+
+              <VitalsGateControl
+                gate={f.vitalsGate}
+                onChange={(g) => updateFight(i, { vitalsGate: g })}
+                contextLabel={`fight command ${i + 1}`}
+              />
+              <OnceGateControl
+                value={f.onceKey}
+                onChange={(v) => updateFight(i, { onceKey: v })}
+                contextLabel={`fight command ${i + 1}`}
+              />
             </div>
           ))}
         </>

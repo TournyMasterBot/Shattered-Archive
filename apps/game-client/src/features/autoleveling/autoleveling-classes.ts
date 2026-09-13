@@ -79,22 +79,10 @@ export async function getClassCatalog(opts: { force?: boolean } = {}): Promise<A
 
 /* ------------------------------ ability sets ---------------------------- */
 
-/**
- * Ability-group names that read as a "buff" for a leveling rotation — a spell/song
- * you cast on yourself before the fight. The Combat step's buff picker offers a
- * class's spells/songs in these groups (cross-referenced against BUFF_CATALOG for
- * the exact command + GMCP affect name).
- */
-export const BUFF_GROUPS: readonly string[] = [
-  'Protective',
-  'Benedictions',
-  'Detection',
-  'Transportation',
-  'Enhancement',
-  'DivineBlessings',
-  'Curative',
-  'Healing',
-];
+// Song abilities are grouped under their own semantic names server-side
+// (Server.Dsl/ClassAbilityGroups/{HymnsOfLife,SkaldChants,WarHymns}.cs, GroupType.Songs) rather
+// than the generic categories below.
+const SONG_GROUPS: readonly string[] = ['HymnsOfLife', 'SkaldChants', 'WarHymns'];
 
 /** Ability-group names that read as offensive — something you do TO the mob. */
 export const OFFENSIVE_GROUPS: readonly string[] = [
@@ -105,6 +93,11 @@ export const OFFENSIVE_GROUPS: readonly string[] = [
   'Invocation',
   'Necromancy',
   'Battlemagic',
+  // 'Weather' (Server.Dsl/ClassAbilityGroups/Weather.cs) is mostly attack spells (Call
+  // Lightning, Lightning Bolt, Tornado) plus Faerie Fire — a debuff cast in combat, not a
+  // pre-round buff — so the whole group reads as fight-rotation material.
+  'Weather',
+  ...SONG_GROUPS,
 ];
 
 /**
@@ -116,7 +109,6 @@ export const COMBAT_SKILL_NAMES: readonly string[] = [
   'kick',
   'disarm',
   'trip',
-  'berserk',
   'bite',
   'gouge',
   'dirt kicking',
@@ -133,13 +125,6 @@ export const COMBAT_SKILL_NAMES: readonly string[] = [
 function anyGroup(a: AutoPilotAbility, wanted: readonly string[]): boolean {
   const w = wanted.map((g) => g.trim().toLowerCase());
   return a.groups.some((g) => w.includes(g.trim().toLowerCase()));
-}
-
-/** A class's buff-ish spells/songs (BUFF_GROUPS ∩ groups, skills excluded), by level. */
-export function classBuffAbilities(classes: AutoPilotClass[], name: string): AutoPilotAbility[] {
-  const cls = classByName(classes, name);
-  if (!cls) return [];
-  return cls.abilities.filter((a) => a.type !== 'skill' && anyGroup(a, BUFF_GROUPS));
 }
 
 /** A class's offensive abilities (OFFENSIVE_GROUPS ∩ groups, or a known combat skill), by level. */

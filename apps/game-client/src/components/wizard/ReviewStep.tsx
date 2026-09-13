@@ -47,6 +47,11 @@ export const ReviewStep: React.FC<Props> = ({ draft, onPatch }) => {
     loopRounds,
     playerAlignment,
     startRoom,
+    restStartOfRound,
+    restEndOfRound,
+    restDuringRound,
+    weightAtOrAbovePct,
+    weightCommands,
   } = draft;
 
   if (!area) {
@@ -204,6 +209,61 @@ export const ReviewStep: React.FC<Props> = ({ draft, onPatch }) => {
                   </li>
                 ))}
               </ul>
+            )}
+          </dd>
+        </div>
+
+        <div className={styles.reviewRow}>
+          <dt>Rest</dt>
+          <dd>
+            {!restStartOfRound.trim() && !restEndOfRound.trim() && restDuringRound.length === 0 ? (
+              <span className={styles.reviewDim}>none configured</span>
+            ) : (
+              <>
+                {restStartOfRound.trim() && (
+                  <div>
+                    wake: <code>{restStartOfRound}</code>
+                  </div>
+                )}
+                {restEndOfRound.trim() && (
+                  <div>
+                    rest: <code>{restEndOfRound}</code>
+                  </div>
+                )}
+                {restDuringRound.length > 0 && (
+                  <ul className={styles.reviewSubList}>
+                    {restDuringRound.map((r, i) => {
+                      const thresholds = (['hp', 'mp', 'mv'] as const)
+                        .filter((s) => r[s] != null)
+                        .map((s) => `${s.toUpperCase()} ≤ ${r[s]}%`)
+                        .join(' and ');
+                      const recover = (['hp', 'mp', 'mv'] as const)
+                        .filter((s) => r.recoverTo[s] != null)
+                        .map((s) => `${s.toUpperCase()} ≥ ${r.recoverTo[s]}%`)
+                        .join(', ');
+                      return (
+                        <li key={i}>
+                          {thresholds || <span className={styles.reviewWarn}>no threshold set</span>}
+                          <span className={styles.reviewDim}> → recover to {recover || 'nothing set'}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </>
+            )}
+          </dd>
+        </div>
+
+        <div className={styles.reviewRow}>
+          <dt>Weight</dt>
+          <dd>
+            {!weightCommands.trim() ? (
+              <span className={styles.reviewDim}>off</span>
+            ) : (
+              <>
+                drop at <strong>{weightAtOrAbovePct}%</strong> carry weight: <code>{weightCommands}</code>
+              </>
             )}
           </dd>
         </div>

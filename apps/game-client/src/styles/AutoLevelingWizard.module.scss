@@ -195,6 +195,20 @@ $accent: #8bc34a;
   color: $text-dim;
 }
 
+.liveApplyBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: rgba(139, 195, 74, 0.08);
+  border: 1px solid rgba(139, 195, 74, 0.35);
+  border-radius: 6px;
+  font-size: 0.76rem;
+  color: $accent;
+}
+
 .stepPanel {
   display: flex;
   flex-direction: column;
@@ -330,6 +344,12 @@ $accent: #8bc34a;
 .iconButton {
   padding: 6px 10px;
   background: #151515;
+}
+
+.reorderGroup {
+  display: flex;
+  gap: 2px;
+  flex: 0 0 auto;
 }
 
 /* -------------------------------------------------
@@ -740,6 +760,72 @@ $accent: #8bc34a;
     padding: 3px 6px;
     font-size: 0.74rem;
   }
+}
+
+/* FilterableSelect — a typeahead replacement for a catalog/ability <select> */
+.filterableSelect {
+  position: relative;
+  width: 190px;
+}
+
+.filterableSelectInput {
+  width: 100%;
+  background: $bg-inset;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  color: $text;
+  padding: 3px 6px;
+  font-size: 0.74rem;
+  color-scheme: dark;
+
+  &::placeholder {
+    color: $text-dim;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: $accent;
+    box-shadow: 0 0 0 1px rgba(139, 195, 74, 0.4);
+  }
+}
+
+.filterableSelectList {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  background: $bg-raised;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.filterableSelectGroup {
+  padding: 4px 9px 2px;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: $text-dim;
+}
+
+.filterableSelectOption {
+  padding: 5px 9px;
+  font-size: 0.78rem;
+  color: $text;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filterableSelectOptionActive {
+  background: rgba(139, 195, 74, 0.16);
 }
 
 /* buff card — label/cmd row + gate bar + optional extras */

@@ -4,10 +4,12 @@ import { memoryKvStore } from './autoleveling-idb';
 import {
   __setUserDataStoreForTests,
   addCustomTarget,
+  bumpLearnedCooldown,
   exportAll,
   getBuffOverlay,
   getCustomTargets,
   getFightOverlay,
+  getLearnedCooldown,
   getPrefs,
   importRecords,
   setBuffOverlay,
@@ -76,6 +78,22 @@ describe('autoleveling-user-data', () => {
 
     expect(await getFightOverlay('centaur-village', 'warrior')).toEqual([{ cmd: 'bash', cooldownSec: 8 }]);
     expect(await getFightOverlay('centaur-village', 'MAGE')).toEqual([{ cmd: 'cast fireball', cooldownSec: 0 }]);
+  });
+
+  it('learned cooldown is unset until bumped, then round-trips by (normalized) command', async () => {
+    __setUserDataStoreForTests(memoryKvStore());
+    expect(await getLearnedCooldown('gore')).toBeNull();
+
+    await bumpLearnedCooldown('gore', 0.5);
+    expect(await getLearnedCooldown('gore')).toBe(0.5);
+    // Case/whitespace-insensitive — it's the same ability regardless of how it was typed.
+    expect(await getLearnedCooldown('  GORE  ')).toBe(0.5);
+
+    await bumpLearnedCooldown('gore', 1); // last write wins
+    expect(await getLearnedCooldown('gore')).toBe(1);
+
+    // A different ability is tracked independently.
+    expect(await getLearnedCooldown('bash')).toBeNull();
   });
 
   it('round-trips prefs', async () => {

@@ -33,6 +33,17 @@ export function createDefaultAutoLevelConfig(): AutoLevelConfig {
 
     criticalBuffs: [],
 
+    rest: {
+      startOfRound: [],
+      endOfRound: [],
+      duringRound: [],
+    },
+
+    weight: {
+      atOrAbovePct: 90,
+      commands: [],
+    },
+
     init: {
       continentName: null,
       areaName: null,

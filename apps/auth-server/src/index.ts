@@ -49,12 +49,14 @@ try {
 }
 
 const deps: AuthServerDeps = {
-  accountStore: new AccountStore(config.dataDir, dataKey),
-  keyStore: new KeyStore(config.dataDir, dataKey),
-  deviceStore: new DeviceStore(config.dataDir, dataKey),
+  // Encrypted stores use secureDataDir (see config.ts) — kept separate from questionsStore/
+  // auditLog below, which stay on the plain, shared, operator-hand-editable dataDir.
+  accountStore: new AccountStore(config.secureDataDir, dataKey),
+  keyStore: new KeyStore(config.secureDataDir, dataKey),
+  deviceStore: new DeviceStore(config.secureDataDir, dataKey),
   deviceNonceStore: new DeviceNonceStore(),
   questionsStore: new QuestionsStore(config.dataDir),
-  serviceKeyStore: new ServiceKeyStore(config.dataDir, dataKey),
+  serviceKeyStore: new ServiceKeyStore(config.secureDataDir, dataKey),
   ssoCodeStore: new SsoCodeStore(),
   challengeThrottle: new ChallengeThrottle(),
   loginLockout: new LoginLockout(),

@@ -5,7 +5,6 @@ import { memoryKvStore } from './autoleveling-idb';
 import {
   __setClassStoreForTests,
   abilitiesForClass,
-  classBuffAbilities,
   classByName,
   classNames,
   classOffensiveAbilities,
@@ -117,14 +116,39 @@ describe('pure helpers', () => {
     expect(abilitiesForClass(CATALOG, 'Bard')).toEqual([]);
   });
 
-  it('classBuffAbilities keeps buff-group spells/songs, drops skills and offensive spells', () => {
-    expect(classBuffAbilities(CATALOG, 'Cleric').map((a) => a.name)).toEqual(['Armor', 'Sanctuary', 'Stone Skin']);
-    expect(classBuffAbilities(CATALOG, 'Warrior')).toEqual([]); // Berserk is a skill
-  });
-
-  it('classOffensiveAbilities keeps offensive-group spells + known combat skills', () => {
+  it('classOffensiveAbilities keeps offensive-group spells + known combat skills, excluding berserk', () => {
     // Kick is a skill but a known combat skill; Cause Critical / Harm are Harmful
     expect(classOffensiveAbilities(CATALOG, 'Cleric').map((a) => a.name)).toEqual(['Kick', 'Cause Critical', 'Harm']);
-    expect(classOffensiveAbilities(CATALOG, 'Warrior').map((a) => a.name)).toEqual(['Berserk']);
+    // Berserk is a buff skill now, not a combat one — Warrior has no offensive abilities left.
+    expect(classOffensiveAbilities(CATALOG, 'Warrior')).toEqual([]);
+  });
+
+  it('a group tagged "Weather" (Faerie Fire\'s real ability group) counts as offensive', () => {
+    const WU_JEN: AutoPilotClass = {
+      name: 'Wu Jen',
+      mortalClass: 600,
+      isReclass: false,
+      classGroup: 'Mage',
+      abilities: [{ name: 'Faerie Fire', type: 'spell', level: 10, groups: ['Weather'] }],
+    };
+    const catalog = [...CATALOG, WU_JEN];
+    expect(classOffensiveAbilities(catalog, 'Wu Jen').map((a) => a.name)).toEqual(['Faerie Fire']);
+  });
+
+  it('songs (real GroupType.Songs group names) count as offensive', () => {
+    const BARD: AutoPilotClass = {
+      name: 'Bard',
+      mortalClass: 500,
+      isReclass: false,
+      classGroup: 'Bard',
+      abilities: [
+        { name: 'Song of Healing', type: 'song', level: 6, groups: ['HymnsOfLife'] },
+        { name: 'War Howl', type: 'song', level: 8, groups: ['WarHymns'] },
+        { name: 'Off-key Hum', type: 'song', level: 1, groups: ['SomeOtherGroup'] },
+      ],
+    };
+    const catalog = [...CATALOG, BARD];
+
+    expect(classOffensiveAbilities(catalog, 'Bard').map((a) => a.name)).toEqual(['Song of Healing', 'War Howl']);
   });
 });

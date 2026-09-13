@@ -15,15 +15,46 @@
  *    initiationCommand template + keyword attempts until fighting starts.
  */
 
+/**
+ * Percentage-based vitals precondition, checked against the engine's live GMCP
+ * char_data snapshot (AutoLevelingEngine.charVitals) immediately before an action
+ * fires. Orthogonal to — and composable with — an action's own kind-specific gate
+ * (cooldown, every-N-ticks, affect-missing): this is an ADDITIONAL "and" condition,
+ * not a replacement for the older if_hp_pct_below-style single-purpose kinds below
+ * (which predate the wizard's Combat step and stay as-is for backward compatibility
+ * with existing raw-text step scripts).
+ */
+export interface AutoLevelVitalsGate {
+  stat: 'hp' | 'mp' | 'mv';
+  op: 'above' | 'below';
+  /** 0-100. Missing/zero max vitals data never blocks — see AutoLevelingEngine.vitalsGateSatisfied. */
+  pct: number;
+}
+
+/**
+ * Fire at most once per round or once per fight, in addition to whatever else gates the
+ * action. "Round" = a burst of damage lines with no ~1s gap (AutoLevelingEngine's
+ * ROUND_GAP_MS tracker); "fight" = one continuous isFighting=true..false span. Recorded
+ * only at the moment the action actually sends — a kind-specific gate (cooldown, ticks,
+ * affect) that skips the send does NOT consume the once-per-X slot.
+ */
+export type AutoLevelOnceKey = 'fight' | 'round';
+
 export type AutoLevelAction =
-  | { kind: 'send'; cmd: string }
+  | { kind: 'send'; cmd: string; vitalsGate?: AutoLevelVitalsGate; onceKey?: AutoLevelOnceKey }
   /**
    * Send cmd only if at least cooldownSec seconds have passed since it was last
    * sent by THIS engine run. Used for fight commands that have an in-game reuse
    * timer (bash, kick, a quaffed pot). cooldownSec 0 behaves like a plain send.
    * Syntax in the step editor: cooldown <sec> <command>
    */
-  | { kind: 'send_cooldown'; cmd: string; cooldownSec: number }
+  | {
+      kind: 'send_cooldown';
+      cmd: string;
+      cooldownSec: number;
+      vitalsGate?: AutoLevelVitalsGate;
+      onceKey?: AutoLevelOnceKey;
+    }
   /**
    * Send cmd only if at least everyTicks game ticks have elapsed since it was
    * last sent by THIS engine run. A "tick" is the GMCP `tick` event (~40s on
@@ -31,7 +62,13 @@ export type AutoLevelAction =
    * `if_affect_missing` cannot gate them. everyTicks 0 behaves like a plain send.
    * Syntax in the step editor: every_ticks <n> <command>
    */
-  | { kind: 'send_every_ticks'; cmd: string; everyTicks: number }
+  | {
+      kind: 'send_every_ticks';
+      cmd: string;
+      everyTicks: number;
+      vitalsGate?: AutoLevelVitalsGate;
+      onceKey?: AutoLevelOnceKey;
+    }
   | { kind: 'wait_ms'; ms: number }
   | { kind: 'wait_text'; text: string; caseInsensitive?: boolean; timeoutMs?: number }
   | { kind: 'wait_regex'; pattern: string; flags?: string; timeoutMs?: number }
@@ -45,7 +82,13 @@ export type AutoLevelAction =
    * affectName is matched case-insensitively against GMCP AffectData.n.
    * Syntax in the step editor: if_affect_missing "affect name" command
    */
-  | { kind: 'if_affect_missing'; affectName: string; cmd: string };
+  | {
+      kind: 'if_affect_missing';
+      affectName: string;
+      cmd: string;
+      vitalsGate?: AutoLevelVitalsGate;
+      onceKey?: AutoLevelOnceKey;
+    };
 
 export type AutoLevelPhaseTriplet = {
   /**
@@ -171,6 +214,48 @@ export type AutoLevelCriticalBuff = {
   cooldownSec?: number;
 };
 
+/**
+ * A during-round rest trigger: ALL of the vitals thresholds present on the rule must be
+ * at/below their percentage (unset stats aren't checked) for it to fire — the user's own
+ * example is "hp below 50% AND mana below 50%". Checked only when NOT fighting. On
+ * trigger, the engine runs `rest.endOfRound` (the "go rest/sleep" commands), waits until
+ * every present `recoverTo` percentage is reached, then runs `rest.startOfRound` (the
+ * "wake/stand" commands) before resuming the route — reusing those two lists rather than
+ * carrying its own rest/wake commands, since it's the same underlying rest cycle.
+ */
+export interface AutoLevelRestDuringRoundRule {
+  hp?: number;
+  mp?: number;
+  mv?: number;
+  recoverTo: { hp?: number; mp?: number; mv?: number };
+}
+
+/**
+ * Rest behavior — all out-of-combat only. `startOfRound` (wake/stand) runs at the very
+ * top of every round, before pre-round buffs. `endOfRound` (rest/sleep/camp) runs at the
+ * same point as `steps.reset.endRound`, and is reused by `duringRound` triggers as the
+ * "how to rest" action list.
+ */
+export interface AutoLevelRestConfig {
+  startOfRound: AutoLevelAction[];
+  endOfRound: AutoLevelAction[];
+  duringRound: AutoLevelRestDuringRoundRule[];
+}
+
+/**
+ * Weight/overburden handling — out-of-combat only, ONE rule (not an array like
+ * `AutoLevelRestDuringRoundRule[]` — a single threshold + command sequence is what was asked
+ * for). `commands` is parsed from the wizard draft's semicolon-separated text the same way
+ * Rest's start/end-of-round fields are (parseRestCommands), e.g. "drop gold;drop silver". Fires
+ * once when carry-weight% crosses `atOrAbovePct`, and doesn't re-fire until it drops back under
+ * the threshold. No separate on/off flag — an empty `commands` list IS off (mirrors Rest's
+ * start/end-of-round fields, which have never had one either).
+ */
+export interface AutoLevelWeightConfig {
+  atOrAbovePct: number;
+  commands: AutoLevelAction[];
+}
+
 export type AutoLevelConfig = {
   version: 3;
   mode: AutoLevelMode;
@@ -180,6 +265,12 @@ export type AutoLevelConfig = {
 
   /** Runtime-watched buffs (in-combat reapply / hold-near-level). May be empty. */
   criticalBuffs: AutoLevelCriticalBuff[];
+
+  /** Rest behavior — start/end-of-round wake/rest actions + during-round threshold triggers. */
+  rest: AutoLevelRestConfig;
+
+  /** Weight/overburden handling — see AutoLevelWeightConfig. */
+  weight: AutoLevelWeightConfig;
 
   /**
    * Alignment inputs for the engine's rolling kill-XP estimate (DSL rule:

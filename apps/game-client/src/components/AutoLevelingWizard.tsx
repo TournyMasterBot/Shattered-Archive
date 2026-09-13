@@ -37,10 +37,12 @@ import {
 import { draftToConfig } from '../features/autoleveling/autoleveling-wizard-config';
 import { AreaStep } from './wizard/AreaStep';
 import { CombatStep } from './wizard/CombatStep';
+import { RestStep } from './wizard/RestStep';
 import { ReviewStep } from './wizard/ReviewStep';
 import { TargetsStep } from './wizard/TargetsStep';
 import { useCharacterLogin } from './wizard/useCharacterLevel';
 import { useWizardDraft, type DraftTarget } from './wizard/useWizardDraft';
+import { WeightStep } from './wizard/WeightStep';
 
 /* ------------------------------------------------------------------------- */
 
@@ -65,12 +67,14 @@ export interface AutoLevelingWizardProps {
   rescanRoom: () => void;
 }
 
-type StepId = 'area' | 'targets' | 'combat' | 'review' | 'start';
+type StepId = 'area' | 'targets' | 'combat' | 'rest' | 'weight' | 'review' | 'start';
 
 const STEPS: { id: StepId; label: string; blurb: string }[] = [
   { id: 'area', label: 'Area', blurb: 'Where to train' },
   { id: 'targets', label: 'Targets', blurb: 'What to kill' },
   { id: 'combat', label: 'Combat', blurb: 'Class, buffs, rotation' },
+  { id: 'rest', label: 'Rest', blurb: 'Recovery, in and out of combat' },
+  { id: 'weight', label: 'Weight', blurb: 'Drop items when overburdened' },
   { id: 'review', label: 'Review', blurb: 'Confirm the plan' },
   { id: 'start', label: 'Start', blurb: 'Run & monitor' },
 ];
@@ -84,7 +88,7 @@ function toRunStateText(runState: AutoLevelRunState): string {
     case 'waiting':
       return 'Waiting';
     case 'resting':
-      return 'Idle';
+      return 'Resting';
     case 'running': {
       const step = runState.step ?? '';
       if (step.startsWith('sightsee:waiting')) return `Sightsee — ready (round ${runState.round})`;
@@ -171,6 +175,23 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
     if (!draft.area || customChosen) return;
     setConfig(draftToConfig(draft));
   }, [isOpen, step.id, isRunning, draft, customChosen, setConfig]);
+
+  // Combat fight-commands, Rest during-round rules, and the Weight gate all re-fetch config
+  // fresh on their own next check (see autoleveling-engine.ts) — no pause needed for these
+  // three specifically. Targets/buffs/route/rest-start-end-of-round sit on a snapshot frozen
+  // for the whole run and only pick up edits via pause->resume (below), so the message is
+  // step-specific: Combat and Rest each mix a hot-swappable part with a frozen one.
+  const LIVE_APPLY_HINT: Partial<Record<StepId, string>> = {
+    combat: "Fight commands apply live below. Buffs need Pause → edit → Resume instead.",
+    rest: "During-round rules apply live below. Start/end-of-round commands need Pause → edit → Resume instead.",
+    weight: 'Changes here apply live.',
+  };
+  const showLiveApply = isRunning && !!LIVE_APPLY_HINT[step.id];
+  const applyLiveChanges = useCallback(() => setConfig(draftToConfig(draft)), [draft, setConfig]);
+
+  // Targets/buffs/route/rest-start-end-of-round have no hot-swap path at all — Pause, edit,
+  // Resume is the ONLY way an edit there reaches the running engine (refreshRunSnapshot()).
+  const showPauseToEditHint = isRunning && step.id === 'targets';
 
   const onHeaderMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('button')) return;
@@ -313,6 +334,19 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
         <div className={styles.stepHeader}>
           <h2 className={styles.stepHeading}>{step.label}</h2>
           <p className={styles.stepSub}>{step.blurb}</p>
+          {showLiveApply && (
+            <div className={styles.liveApplyBar}>
+              <span>{LIVE_APPLY_HINT[step.id]}</span>
+              <button type="button" className={styles.primaryButton} onClick={applyLiveChanges}>
+                Apply live changes
+              </button>
+            </div>
+          )}
+          {showPauseToEditHint && (
+            <div className={styles.liveApplyBar}>
+              <span>Editing while running? Pause, make your changes, then Resume to apply them.</span>
+            </div>
+          )}
         </div>
 
         <div className={styles.stepPanel}>
@@ -366,6 +400,37 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
                 buffs={draft.buffs}
                 fightCommands={draft.fightCommands}
                 playerAlignment={draft.playerAlignment}
+                onPatch={patch}
+              />
+            ))}
+
+          {step.id === 'rest' &&
+            (customChosen ? (
+              <div className={styles.placeholder}>
+                <p>
+                  <strong>Custom path</strong> — rest setup for custom routes comes in a later step.
+                </p>
+              </div>
+            ) : (
+              <RestStep
+                restStartOfRound={draft.restStartOfRound}
+                restEndOfRound={draft.restEndOfRound}
+                restDuringRound={draft.restDuringRound}
+                onPatch={patch}
+              />
+            ))}
+
+          {step.id === 'weight' &&
+            (customChosen ? (
+              <div className={styles.placeholder}>
+                <p>
+                  <strong>Custom path</strong> — weight setup for custom routes comes in a later step.
+                </p>
+              </div>
+            ) : (
+              <WeightStep
+                weightAtOrAbovePct={draft.weightAtOrAbovePct}
+                weightCommands={draft.weightCommands}
                 onPatch={patch}
               />
             ))}
