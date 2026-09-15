@@ -66,7 +66,7 @@ export const CompactLayoutShell: React.FC<CompactLayoutShellProps> = ({
         <div className={styles.chatResizer} onMouseDown={handleChatResizeMouseDown} />
 
         <div className={styles.affectsAndSlot}>
-          <div className="sa-hud-affects-panel">
+          <div className={`${styles.affectsPanel} sa-hud-affects-panel`}>
             <AffectsBlock />
           </div>
           <CompactWidgetSlot slotId="hud.rightColumn" />

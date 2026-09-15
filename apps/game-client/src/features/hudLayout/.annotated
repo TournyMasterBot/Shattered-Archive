@@ -6,5 +6,8 @@ Purpose: Manages HUD layout mode preferences (classic or compact) stored in loca
 /hudThemeStore.ts
 Purpose: Manages HUD theme preferences (default or slate-amber) stored in localStorage.
 
+/hudThemeLoader.ts
+Purpose: Applies/removes the active HUD theme's stylesheet <link> in document.head at runtime (e.g. slate-amber.css).
+
 /hudWidgetRegistry.ts
-Purpose: In-memory registry where plugins publish/clear content into named compact-HUD widget slots (ownership-checked clears, dispatches an update event).
+Purpose: In-memory registry where plugins publish/clear content into named compact-HUD widget slots (ownership-checked clears, dispatches an update event); also owns ALL_HUD_SLOT_IDS, the runtime list of valid slot ids (relocated here from @shatteredarchive/types-client so a stale/missing dist/ there can't leave it undefined at runtime).

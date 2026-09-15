@@ -15,7 +15,11 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 6px;
+  // 8px (not the original 6px): the terminal panel's embedded title pokes
+  // up to ~7.4px above .terminalPanel's border-box edge (top: -0.7em @
+  // font-size: 0.75rem, see _BorderedPanel.scss) — 6px of headroom clipped
+  // it by ~1.4px against .shell's overflow: hidden.
+  padding: 8px;
   box-sizing: border-box;
 }
 
@@ -88,4 +92,18 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+// Restores the flex-container behavior that AffectsBlock relied on when it
+// was a direct child of .affectsAndSlot, before the sa-hud-affects-panel
+// wrapper div was introduced (theme CSS selector fix). Without this,
+// AffectsBlock's own `flex: 1` has no effect on a plain block parent, it
+// collapses to content height, and .affectsScroll never gets a bounded
+// height to scroll within — long affects lists get silently clipped by
+// .shell's overflow: hidden instead of scrolling.
+.affectsPanel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
