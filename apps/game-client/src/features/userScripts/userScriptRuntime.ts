@@ -93,9 +93,12 @@ function scanForScoreSheetIdentity(plainText: string): void {
 
 // ---- World time-of-day snapshot ------------------------------------------
 // The classic ROM/Merc "sunlight" period (Dawn / Day Time / Dusk / Night
-// Time) has no GMCP field either. It's scraped from the bracketed status
-// prompt this game sends after most command output, e.g.:
-//   <9:00pm|1964|1964|700|700|368|368|W|...|Offensive|neutral|Common|Night Time|0||||1845|1906|The Crystal Heart>
+// Time) has no GMCP field either. It's scraped from the player's own
+// customizable prompt string, so the surrounding format can't be relied
+// on — only that the period sits between two `|` characters, which held
+// across both formats observed so far:
+//   <9:00pm|1964|...|Common|Night Time|0||||1845|1906|The Crystal Heart>
+//   <1964/1964hp 700/700m 368/368mv 946 tnl> |Day Time|6:00pm| [E]
 type WorldTimeSnapshot = {
   period?: string;
   updatedAt?: number;
@@ -115,11 +118,13 @@ function setWorldTimeSnapshot(patch: Partial<WorldTimeSnapshot>) {
   DispatchEvent('shatteredarchive:world-time-updated', next);
 }
 
-const PROMPT_PERIOD_RE = /<[^>]*\|(Dawn|Day Time|Dusk|Night Time)\|[^>]*>/;
+const PROMPT_PERIOD_RE = /\|(Dawn|Day Time|Dusk|Night Time)\|/;
 
-// Scans (already ANSI-stripped) lines of incoming server text for the
-// bracketed status prompt's time-of-day field and patches the world-time
-// snapshot when found.
+// Scans (already ANSI-stripped) lines of incoming server text for a
+// pipe-delimited time-of-day field and patches the world-time snapshot
+// when found. Deliberately format-agnostic beyond "pipe-delimited" — the
+// player's prompt string is user-configurable (see the two formats noted
+// above), so this can't assume any fixed surrounding structure.
 function scanForWorldTimePeriod(plainText: string): void {
   for (const rawLine of plainText.split('\n')) {
     const line = rawLine.trim();
