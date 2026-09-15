@@ -10,6 +10,18 @@ import CommandInput from '../CommandInput';
 import { ChatPane } from '../ChatPane';
 import AffectsBlock from '../AffectsBlock';
 import { AutoLevelMode, AutoLevelRunState } from '../../features/autoleveling/autoleveling-types';
+import { getHudLayout, type HudLayoutMode } from '../../features/hudLayout/hudLayoutStore';
+import { getHudTheme, type HudTheme } from '../../features/hudLayout/hudThemeStore';
+
+const HUD_LAYOUT_LABELS: Record<HudLayoutMode, string> = {
+  classic: 'Classic',
+  compact: 'Compact',
+};
+
+const HUD_THEME_LABELS: Record<HudTheme, string> = {
+  default: 'Default',
+  'slate-amber': 'Slate & Amber',
+};
 
 export interface CompactLayoutShellProps {
   isConnected: boolean;
@@ -28,8 +40,11 @@ export const CompactLayoutShell: React.FC<CompactLayoutShellProps> = ({
   autoLevelRunState,
   onSightseeRescan,
 }) => {
-  const { layoutVars, handleVerticalResizeMouseDown, handleChatResizeMouseDown } = useCompactLayoutSizing();
+  const { layoutVars, handleVerticalResizeMouseDown, handleChatResizeMouseDown, chatPaneRef } = useCompactLayoutSizing();
   const { characterName } = useCharacterIdentity();
+  const [footerLabel] = React.useState(
+    () => `${HUD_LAYOUT_LABELS[getHudLayout()]} · ${HUD_THEME_LABELS[getHudTheme()]}`,
+  );
 
   return (
     <div className={`${styles.shell} sa-hud-shell`} style={layoutVars}>
@@ -53,13 +68,14 @@ export const CompactLayoutShell: React.FC<CompactLayoutShellProps> = ({
             autoLevelRunState={autoLevelRunState}
             onSightseeRescan={onSightseeRescan}
           />
+          <div className={`${styles.footerRow} sa-hud-footer-row`}>{footerLabel}</div>
         </div>
       </div>
 
       <div className={styles.verticalResizer} onMouseDown={handleVerticalResizeMouseDown} />
 
       <div className={`${styles.rightColumn} sa-hud-right-column`}>
-        <div className={`${styles.chatPane} sa-hud-chat-pane`}>
+        <div ref={chatPaneRef} className={`${styles.chatPane} sa-hud-chat-pane`}>
           <ChatPane />
         </div>
 

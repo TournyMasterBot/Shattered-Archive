@@ -53,6 +53,17 @@
   gap: 4px;
 }
 
+// A trailing label row (current HUD layout + theme) below the command
+// input, purely so the input field isn't flush against the window's
+// bottom edge / OS rounded corners.
+.footerRow {
+  flex-shrink: 0;
+  padding-top: 2px;
+  font-size: 0.65rem;
+  color: #666;
+  text-align: center;
+}
+
 .verticalResizer {
   width: 4px;
   cursor: col-resize;
@@ -72,7 +83,11 @@
 }
 
 .chatPane {
-  height: var(--sa-chat-pane-height);
+  // Falls back to 50% of the right column's height until the user drags
+  // the resizer, at which point useCompactLayoutSizing sets an explicit
+  // pixel value on this var and it takes over.
+  height: var(--sa-chat-pane-height, 50%);
+  flex-shrink: 0;
   min-height: 120px;
   display: flex;
   overflow: hidden;

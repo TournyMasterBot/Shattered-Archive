@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import type React from 'react';
 
 const MIN_RIGHT_WIDTH = 220;
 const MAX_RIGHT_WIDTH = 640;
 const MIN_CHAT_HEIGHT = 120;
 const MAX_CHAT_HEIGHT = 900;
+// Used only as a drag-start fallback if the chat pane hasn't rendered yet
+// when a user grabs the resizer straight out of the (unset) 50% default.
+const FALLBACK_CHAT_HEIGHT = 400;
 
 const LS_RIGHT_WIDTH = 'shatteredArchive.compactLayout.rightPaneWidth';
 const LS_CHAT_HEIGHT = 'shatteredArchive.compactLayout.chatPaneHeight';
@@ -27,15 +30,20 @@ export function useCompactLayoutSizing() {
     }
   });
 
-  const [chatHeight, setChatHeight] = useState(() => {
+  // null = no explicit override yet; CSS falls back to a 50%-of-column
+  // default (var(--sa-chat-pane-height, 50%)) so the chat pane starts
+  // proportional to the right column instead of a fixed pixel guess.
+  const [chatHeight, setChatHeight] = useState<number | null>(() => {
     try {
       const raw = window.localStorage.getItem(LS_CHAT_HEIGHT);
       const n = raw ? Number(raw) : NaN;
-      return Number.isFinite(n) ? clamp(n, MIN_CHAT_HEIGHT, MAX_CHAT_HEIGHT) : 400;
+      return Number.isFinite(n) ? clamp(n, MIN_CHAT_HEIGHT, MAX_CHAT_HEIGHT) : null;
     } catch {
-      return 400;
+      return null;
     }
   });
+
+  const chatPaneRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     try {
@@ -46,6 +54,7 @@ export function useCompactLayoutSizing() {
   }, [rightWidth]);
 
   useEffect(() => {
+    if (chatHeight === null) return;
     try {
       window.localStorage.setItem(LS_CHAT_HEIGHT, String(chatHeight));
     } catch {
@@ -55,7 +64,7 @@ export function useCompactLayoutSizing() {
 
   const layoutVars: CSSProperties = {
     '--right-pane-width': `${rightWidth}px`,
-    '--sa-chat-pane-height': `${chatHeight}px`,
+    ...(chatHeight !== null ? { '--sa-chat-pane-height': `${chatHeight}px` } : {}),
   } as CSSProperties;
 
   const handleVerticalResizeMouseDown = useCallback(
@@ -85,7 +94,7 @@ export function useCompactLayoutSizing() {
     (e: React.MouseEvent<HTMLDivElement>) => {
       e.preventDefault();
       const startY = e.clientY;
-      const startHeight = chatHeight;
+      const startHeight = chatHeight ?? chatPaneRef.current?.getBoundingClientRect().height ?? FALLBACK_CHAT_HEIGHT;
 
       const onMouseMove = (ev: MouseEvent) => {
         const delta = ev.clientY - startY; // dragged up (negative) => shrink
@@ -104,5 +113,5 @@ export function useCompactLayoutSizing() {
     [chatHeight],
   );
 
-  return { layoutVars, handleVerticalResizeMouseDown, handleChatResizeMouseDown };
+  return { layoutVars, handleVerticalResizeMouseDown, handleChatResizeMouseDown, chatPaneRef };
 }

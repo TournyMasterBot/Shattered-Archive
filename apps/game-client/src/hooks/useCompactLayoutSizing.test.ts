@@ -34,10 +34,14 @@ describe('useCompactLayoutSizing', () => {
     window.localStorage.removeItem(LS_CHAT_HEIGHT);
   });
 
-  it('defaults both variables to sane values', () => {
+  it('defaults right-pane-width to a sane pixel value', () => {
     const { result } = renderHook(() => useCompactLayoutSizing());
     expect(cssVars(result.current.layoutVars)['--right-pane-width']).toBeDefined();
-    expect(cssVars(result.current.layoutVars)['--sa-chat-pane-height']).toBeDefined();
+  });
+
+  it('leaves --sa-chat-pane-height unset by default so CSS falls back to 50%', () => {
+    const { result } = renderHook(() => useCompactLayoutSizing());
+    expect(cssVars(result.current.layoutVars)['--sa-chat-pane-height']).toBeUndefined();
   });
 
   it('reads persisted values on mount', () => {
@@ -59,6 +63,20 @@ describe('useCompactLayoutSizing', () => {
 
     expect(cssVars(result.current.layoutVars)['--right-pane-width']).toBe('350px');
     expect(window.localStorage.getItem(LS_RIGHT_WIDTH)).toBe('350');
+  });
+
+  it('dragging the chat resizer from the unset default falls back to a fixed start height', () => {
+    const { result } = renderHook(() => useCompactLayoutSizing());
+    expect(cssVars(result.current.layoutVars)['--sa-chat-pane-height']).toBeUndefined();
+
+    fireMouseDown(result.current.handleChatResizeMouseDown, 0, 500);
+    fireWindowMouseMove(0, 460); // dragged up by 40
+    fireWindowMouseUp();
+
+    // chatPaneRef isn't attached to a real element via renderHook, so the
+    // drag starts from FALLBACK_CHAT_HEIGHT (400) rather than a measured height.
+    expect(cssVars(result.current.layoutVars)['--sa-chat-pane-height']).toBe('360px');
+    expect(window.localStorage.getItem(LS_CHAT_HEIGHT)).toBe('360');
   });
 
   it('dragging the chat resizer updates --sa-chat-pane-height and persists it', () => {
