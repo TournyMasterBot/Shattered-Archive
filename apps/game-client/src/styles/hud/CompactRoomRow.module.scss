@@ -1,0 +1,33 @@
+.root {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+}
+
+.roomName {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #f0f0f0;
+}
+
+.exits {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #9a9a9a;
+  flex-shrink: 0;
+}
+
+.exitBtn {
+  background: transparent;
+  border: none;
+  padding: 1px 3px;
+  font-size: 0.7rem;
+  color: #e0e0e0;
+  cursor: pointer;
+}
