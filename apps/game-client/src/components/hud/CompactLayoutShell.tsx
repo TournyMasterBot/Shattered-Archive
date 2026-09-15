@@ -12,6 +12,7 @@ import AffectsBlock from '../AffectsBlock';
 import { AutoLevelMode, AutoLevelRunState } from '../../features/autoleveling/autoleveling-types';
 import { getHudLayout, type HudLayoutMode } from '../../features/hudLayout/hudLayoutStore';
 import { getHudTheme, type HudTheme } from '../../features/hudLayout/hudThemeStore';
+import { getCharacterIcon } from '../../features/hudLayout/characterIcon';
 
 const HUD_LAYOUT_LABELS: Record<HudLayoutMode, string> = {
   classic: 'Classic',
@@ -41,7 +42,8 @@ export const CompactLayoutShell: React.FC<CompactLayoutShellProps> = ({
   onSightseeRescan,
 }) => {
   const { layoutVars, handleVerticalResizeMouseDown, handleChatResizeMouseDown, chatPaneRef } = useCompactLayoutSizing();
-  const { characterName } = useCharacterIdentity();
+  const { characterName, raceName, className } = useCharacterIdentity();
+  const characterIcon = getCharacterIcon({ raceName, className });
   const [footerLabel] = React.useState(
     () => `${HUD_LAYOUT_LABELS[getHudLayout()]} · ${HUD_THEME_LABELS[getHudTheme()]}`,
   );
@@ -50,7 +52,11 @@ export const CompactLayoutShell: React.FC<CompactLayoutShellProps> = ({
     <div className={`${styles.shell} sa-hud-shell`} style={layoutVars}>
       <div className={styles.leftColumn}>
         <div className={`${styles.terminalPanel} sa-hud-terminal-panel`}>
-          {characterName && <span className={`${styles.borderedPanelTitle} sa-hud-terminal-title`}>{characterName}</span>}
+          {characterName && (
+            <span className={`${styles.borderedPanelTitle} sa-hud-terminal-title`}>
+              {characterIcon ? `${characterIcon} ${characterName}` : characterName}
+            </span>
+          )}
           <div className={styles.terminalBody}>
             <Terminal />
           </div>

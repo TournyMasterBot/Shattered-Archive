@@ -38,10 +38,16 @@ const addAffectPhrase = 'add_affect ';
 const affectDataPhrase = 'affect_data ';
 const loginDataPhrase = 'login_data ';
 
-// ---- Identity snapshot (GMCP-only) --------------------------------------
+// ---- Identity snapshot ---------------------------------------------------
+// characterName comes from GMCP login_data. raceName/className have no GMCP
+// equivalent — they're scraped from the plain-text `score`/`sc` output (see
+// SCORE_RACE_LINE_RE / SCORE_CLASS_LINE_RE below), so they only populate
+// once the player has run that command this session.
 
 type IdentitySnapshot = {
   characterName?: string;
+  raceName?: string;
+  className?: string;
   updatedAt?: number;
 };
 
@@ -57,6 +63,32 @@ function setIdentitySnapshot(patch: Partial<IdentitySnapshot>) {
   const next: IdentitySnapshot = { ...cur, ...patch, updatedAt: Date.now() };
   w.__SA_IDENTITY__ = next;
   DispatchEvent('shatteredarchive:identity-updated', next);
+}
+
+// Matches the `score`/`sc` command's two-column layout, e.g.:
+//   LEVEL: 42          Race : Topaz dragon      Played: 3887 hours
+//   YEARS: 211         Class: Dragon            Log In: Tue Sep 15 ...
+const SCORE_RACE_LINE_RE = /^LEVEL\s*:\s*\d+\s+Race\s*:\s*(.+?)\s{2,}Played/i;
+const SCORE_CLASS_LINE_RE = /^YEARS\s*:\s*\d+\s+Class\s*:\s*(.+?)\s{2,}Log In/i;
+
+// Scans (already ANSI-stripped) lines of incoming server text for the score
+// sheet's Race/Class row and patches the identity snapshot when found.
+function scanForScoreSheetIdentity(plainText: string): void {
+  for (const rawLine of plainText.split('\n')) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const raceMatch = line.match(SCORE_RACE_LINE_RE);
+    if (raceMatch) {
+      setIdentitySnapshot({ raceName: raceMatch[1].trim() });
+      continue;
+    }
+
+    const classMatch = line.match(SCORE_CLASS_LINE_RE);
+    if (classMatch) {
+      setIdentitySnapshot({ className: classMatch[1].trim() });
+    }
+  }
 }
 
 function toCleanString(v: unknown): string {
@@ -623,6 +655,8 @@ export class UserScriptRuntime {
     const specialEventType = await this.processForSpecialLines(rawText);
 
     const plain = stripAnsi(rawText);
+
+    scanForScoreSheetIdentity(plain);
 
     const omitRaw = shouldOmitLine('shatteredarchive:raw-data', plain);
     const omitSpecial = specialEventType ? shouldOmitLine(specialEventType, plain) : false;

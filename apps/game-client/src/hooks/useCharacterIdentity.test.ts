@@ -10,12 +10,21 @@ describe('useCharacterIdentity', () => {
   it('starts null when there is no snapshot and nothing has been dispatched', () => {
     const { result } = renderHook(() => useCharacterIdentity());
     expect(result.current.characterName).toBeNull();
+    expect(result.current.raceName).toBeNull();
+    expect(result.current.className).toBeNull();
   });
 
   it('seeds from window.__SA_IDENTITY__ at mount, for late subscribers', () => {
-    (window as any).__SA_IDENTITY__ = { characterName: 'Aria', updatedAt: 123 };
+    (window as any).__SA_IDENTITY__ = {
+      characterName: 'Aria',
+      raceName: 'Topaz dragon',
+      className: 'Dragon',
+      updatedAt: 123,
+    };
     const { result } = renderHook(() => useCharacterIdentity());
     expect(result.current.characterName).toBe('Aria');
+    expect(result.current.raceName).toBe('Topaz dragon');
+    expect(result.current.className).toBe('Dragon');
   });
 
   it('updates when shatteredarchive:identity-updated fires after mount', () => {
@@ -23,10 +32,17 @@ describe('useCharacterIdentity', () => {
     expect(result.current.characterName).toBeNull();
 
     act(() => {
-      DispatchEvent('shatteredarchive:identity-updated', { characterName: 'Bram', updatedAt: 456 });
+      DispatchEvent('shatteredarchive:identity-updated', {
+        characterName: 'Bram',
+        raceName: 'Pixie',
+        className: 'Transmuter',
+        updatedAt: 456,
+      });
     });
 
     expect(result.current.characterName).toBe('Bram');
+    expect(result.current.raceName).toBe('Pixie');
+    expect(result.current.className).toBe('Transmuter');
   });
 
   it('unsubscribes on unmount (no state update after unmount)', () => {
