@@ -2,7 +2,7 @@
   display: flex;
   gap: 16px;
   padding: 4px 10px;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 
 .gauge {
@@ -14,9 +14,10 @@
 }
 
 .gaugeLabel {
-  width: 2.3rem;
+  // Widened alongside the font-size bump to keep "MOVE" from clipping.
+  width: 2.5rem;
   color: #9a9a9a;
-  font-size: 0.65rem;
+  font-size: 0.7rem;
 }
 
 // Enemy names are arbitrary-length ("A large spotted jaguar"), unlike the
@@ -28,7 +29,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: #9a9a9a;
-  font-size: 0.65rem;
+  font-size: 0.7rem;
 }
 
 .track {
@@ -70,7 +71,9 @@
 }
 
 .value {
-  min-width: 4.2rem;
+  // Widened alongside the row's font-size bump so wider digits at the
+  // new size still fit without the gauge jittering (see .root above).
+  min-width: 4.5rem;
   text-align: right;
   font-variant-numeric: tabular-nums;
   color: #e0e0e0;
