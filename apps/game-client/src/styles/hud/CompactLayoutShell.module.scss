@@ -15,11 +15,15 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  // 8px (not the original 6px): the terminal panel's embedded title pokes
-  // up to ~7.4px above .terminalPanel's border-box edge (top: -0.7em @
-  // font-size: 0.75rem, see _BorderedPanel.scss) — 6px of headroom clipped
-  // it by ~1.4px against .shell's overflow: hidden.
-  padding: 8px;
+  // Extra top padding (vs. the 8px on every other side): the terminal
+  // panel's embedded title pokes up above .terminalPanel's border-box
+  // edge via top: -0.7em at font-size: 0.75rem (_BorderedPanel.scss) —
+  // both expressed in relative units, so an 8px fixed top padding left
+  // only a sub-pixel margin at the default root font size and clipped
+  // visibly once a larger root font size (e.g. an accessibility zoom
+  // setting) scaled the title's em-based offset past it. 1.25rem scales
+  // alongside that offset instead of racing a fixed pixel value against it.
+  padding: 1.25rem 8px 8px;
   box-sizing: border-box;
 }
 
