@@ -6,6 +6,9 @@ Purpose: Phase D — Account modal's state/actions: login (awaits gameSso.startL
 /useAuthCallback.ts
 Purpose: Phase D — on mount, reads window.location.hash for the game-sso hand-off's result (features/auth/authFragment.ts's parseAuthFragment), stores a successful token via authTokenStore, then strips the fragment via history.replaceState so it never lingers in browser history. No router exists in this app, so this runs as a plain effect from MainContainer rather than a dedicated callback route. NOT the live path since the popup rewrite (2026-07-31) — src/auth-callback.ts handles the hand-off now. Kept as the safety net for a hand-off whose returnUrl still points at the app itself: an attempt already in flight across the deploy, or an old bookmarked link. Do not "clean up" without checking for those.
 
+/useCompactLayoutSizing.ts
+Purpose: HUD compact layout support — mirrors useMainContainer.ts's useLayoutSizing (same clamp/localStorage-backed useState/persist-effect/mousedown-drag shape) but under its own localStorage keys (shatteredArchive.compactLayout.rightPaneWidth / .chatPaneHeight) so compact-layout sizing doesn't collide with classic layout's. Exposes --right-pane-width and --sa-chat-pane-height CSS vars plus handleVerticalResizeMouseDown/handleChatResizeMouseDown drag handlers. Consumed by Task 11's CompactLayoutShell.
+
 /useCharacterIdentity.ts
 Purpose: HUD compact layout support — provides the current character name via window.__SA_IDENTITY__ snapshot and shatteredarchive:identity-updated event subscription. Generates unique listener keys per instance via useId() to support multiple simultaneous consumers (CompactLayoutShell and CompactRoomRow) without event-listener stomping; each hook instance independently seeds from snapshot on mount and updates on event dispatch.
 

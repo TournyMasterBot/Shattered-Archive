@@ -1,0 +1,75 @@
+import { renderHook, act } from '@testing-library/react';
+import type React from 'react';
+import { useCompactLayoutSizing } from './useCompactLayoutSizing';
+
+const LS_RIGHT_WIDTH = 'shatteredArchive.compactLayout.rightPaneWidth';
+const LS_CHAT_HEIGHT = 'shatteredArchive.compactLayout.chatPaneHeight';
+
+function fireMouseDown(handler: (e: any) => void, clientX = 0, clientY = 0) {
+  act(() => {
+    handler({ preventDefault: () => {}, clientX, clientY } as any);
+  });
+}
+
+function fireWindowMouseMove(clientX: number, clientY: number) {
+  act(() => {
+    window.dispatchEvent(Object.assign(new Event('mousemove'), { clientX, clientY }));
+  });
+}
+
+function fireWindowMouseUp() {
+  act(() => {
+    window.dispatchEvent(new Event('mouseup'));
+  });
+}
+
+// CSSProperties doesn't type custom properties as indexable; cast for assertions only.
+function cssVars(vars: React.CSSProperties): Record<string, string | undefined> {
+  return vars as Record<string, string | undefined>;
+}
+
+describe('useCompactLayoutSizing', () => {
+  beforeEach(() => {
+    window.localStorage.removeItem(LS_RIGHT_WIDTH);
+    window.localStorage.removeItem(LS_CHAT_HEIGHT);
+  });
+
+  it('defaults both variables to sane values', () => {
+    const { result } = renderHook(() => useCompactLayoutSizing());
+    expect(cssVars(result.current.layoutVars)['--right-pane-width']).toBeDefined();
+    expect(cssVars(result.current.layoutVars)['--sa-chat-pane-height']).toBeDefined();
+  });
+
+  it('reads persisted values on mount', () => {
+    window.localStorage.setItem(LS_RIGHT_WIDTH, '300');
+    window.localStorage.setItem(LS_CHAT_HEIGHT, '400');
+
+    const { result } = renderHook(() => useCompactLayoutSizing());
+    expect(cssVars(result.current.layoutVars)['--right-pane-width']).toBe('300px');
+    expect(cssVars(result.current.layoutVars)['--sa-chat-pane-height']).toBe('400px');
+  });
+
+  it('dragging the vertical resizer updates --right-pane-width and persists it', () => {
+    window.localStorage.setItem(LS_RIGHT_WIDTH, '300');
+    const { result } = renderHook(() => useCompactLayoutSizing());
+
+    fireMouseDown(result.current.handleVerticalResizeMouseDown, 500, 0);
+    fireWindowMouseMove(450, 0); // dragged left by 50 -> right pane grows by 50
+    fireWindowMouseUp();
+
+    expect(cssVars(result.current.layoutVars)['--right-pane-width']).toBe('350px');
+    expect(window.localStorage.getItem(LS_RIGHT_WIDTH)).toBe('350');
+  });
+
+  it('dragging the chat resizer updates --sa-chat-pane-height and persists it', () => {
+    window.localStorage.setItem(LS_CHAT_HEIGHT, '400');
+    const { result } = renderHook(() => useCompactLayoutSizing());
+
+    fireMouseDown(result.current.handleChatResizeMouseDown, 0, 500);
+    fireWindowMouseMove(0, 460); // dragged up by 40 -> chat pane shrinks by 40
+    fireWindowMouseUp();
+
+    expect(cssVars(result.current.layoutVars)['--sa-chat-pane-height']).toBe('360px');
+    expect(window.localStorage.getItem(LS_CHAT_HEIGHT)).toBe('360');
+  });
+});
