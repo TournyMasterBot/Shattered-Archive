@@ -91,6 +91,47 @@ function scanForScoreSheetIdentity(plainText: string): void {
   }
 }
 
+// ---- World time-of-day snapshot ------------------------------------------
+// The classic ROM/Merc "sunlight" period (Dawn / Day Time / Dusk / Night
+// Time) has no GMCP field either. It's scraped from the bracketed status
+// prompt this game sends after most command output, e.g.:
+//   <9:00pm|1964|1964|700|700|368|368|W|...|Offensive|neutral|Common|Night Time|0||||1845|1906|The Crystal Heart>
+type WorldTimeSnapshot = {
+  period?: string;
+  updatedAt?: number;
+};
+
+function getWorldTimeSnapshot(): WorldTimeSnapshot {
+  const w = window as any;
+  w.__SA_WORLD_TIME__ = w.__SA_WORLD_TIME__ || {};
+  return w.__SA_WORLD_TIME__ as WorldTimeSnapshot;
+}
+
+function setWorldTimeSnapshot(patch: Partial<WorldTimeSnapshot>) {
+  const w = window as any;
+  const cur = getWorldTimeSnapshot();
+  const next: WorldTimeSnapshot = { ...cur, ...patch, updatedAt: Date.now() };
+  w.__SA_WORLD_TIME__ = next;
+  DispatchEvent('shatteredarchive:world-time-updated', next);
+}
+
+const PROMPT_PERIOD_RE = /<[^>]*\|(Dawn|Day Time|Dusk|Night Time)\|[^>]*>/;
+
+// Scans (already ANSI-stripped) lines of incoming server text for the
+// bracketed status prompt's time-of-day field and patches the world-time
+// snapshot when found.
+function scanForWorldTimePeriod(plainText: string): void {
+  for (const rawLine of plainText.split('\n')) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const match = line.match(PROMPT_PERIOD_RE);
+    if (match) {
+      setWorldTimeSnapshot({ period: match[1] });
+    }
+  }
+}
+
 function toCleanString(v: unknown): string {
   return v == null ? '' : String(v).trim();
 }
@@ -657,6 +698,7 @@ export class UserScriptRuntime {
     const plain = stripAnsi(rawText);
 
     scanForScoreSheetIdentity(plain);
+    scanForWorldTimePeriod(plain);
 
     const omitRaw = shouldOmitLine('shatteredarchive:raw-data', plain);
     const omitSpecial = specialEventType ? shouldOmitLine(specialEventType, plain) : false;

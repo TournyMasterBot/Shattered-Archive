@@ -6,8 +6,17 @@
   font-size: 0.75rem;
 }
 
+.periodIcon {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+// No flex: 1 here on purpose — a growing room name pushed the exits (which
+// belong right beside it, for at-a-glance legibility) all the way to the
+// far edge of the row. Sized to its own content, with the default
+// flex-shrink: 1 still truncating it if the row itself runs out of room.
 .roomName {
-  flex: 1;
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
