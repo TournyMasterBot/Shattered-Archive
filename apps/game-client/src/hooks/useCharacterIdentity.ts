@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { ListenEvent } from '../features/event-emitter/event-dispatcher';
 
 type IdentitySnapshot = {
@@ -12,6 +12,7 @@ function readSnapshot(): string | null {
 }
 
 export function useCharacterIdentity(): { characterName: string | null } {
+  const instanceId = useId();
   const [characterName, setCharacterName] = useState<string | null>(() => readSnapshot());
 
   useEffect(() => {
@@ -20,9 +21,9 @@ export function useCharacterIdentity(): { characterName: string | null } {
       (payload) => {
         setCharacterName(payload.characterName ?? null);
       },
-      { key: 'useCharacterIdentity::identity-updated' },
+      { key: `useCharacterIdentity::identity-updated::${instanceId}` },
     );
-  }, []);
+  }, [instanceId]);
 
   return { characterName };
 }
