@@ -1,13 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import styles from '../styles/GraphicsSettingsModal.module.scss';
 import { DispatchEvent, ListenDomEvent } from '../features/event-emitter/event-dispatcher';
+import { getHudLayout, setHudLayout, type HudLayoutMode } from '../features/hudLayout/hudLayoutStore';
+import { getHudTheme, setHudTheme, type HudTheme } from '../features/hudLayout/hudThemeStore';
+import { applyHudTheme } from '../features/hudLayout/hudThemeLoader';
 
 export interface GraphicsSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type GraphicsNavKey = 'rendering';
+type GraphicsNavKey = 'rendering' | 'layout';
 
 type GraphicsConfig = {
   // Rendering
@@ -92,6 +95,9 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
   const [config, setConfig] = useState<GraphicsConfig>(() => loadConfig());
   const [draft, setDraft] = useState<GraphicsConfig>(() => loadConfig());
 
+  const [hudLayout, setHudLayoutState] = useState<HudLayoutMode>(() => getHudLayout());
+  const [hudTheme, setHudThemeState] = useState<HudTheme>(() => getHudTheme());
+
   // Track viewport size (same pattern as your ScriptSandbox)
   useEffect(() => {
     const disposeResize = ListenDomEvent<UIEvent>(
@@ -119,6 +125,8 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
       setConfig(current);
       setDraft(current);
       setActiveNav('rendering');
+      setHudLayoutState(getHudLayout());
+      setHudThemeState(getHudTheme());
     }
   }, [isOpen]);
 
@@ -169,6 +177,7 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
 
   const navItems: Array<{ key: GraphicsNavKey; label: string; hint?: string }> = [
     { key: 'rendering', label: 'Rendering', hint: 'Effects & engine' },
+    { key: 'layout', label: 'Layout', hint: 'HUD arrangement' },
   ];
 
   return (
@@ -207,7 +216,9 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
           {/* Right settings */}
           <div className={styles.settingsPane}>
             <div className={styles.paneHeader}>
-              <div className={styles.paneTitle}>{activeNav === 'rendering' ? 'Rendering' : ''}</div>
+              <div className={styles.paneTitle}>
+                {activeNav === 'rendering' ? 'Rendering' : activeNav === 'layout' ? 'Layout' : ''}
+              </div>
 
               <div className={styles.actions}>
                 <button
@@ -268,6 +279,45 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
                     />
                   </label>
                 </div>
+              </div>
+            )}
+
+            {activeNav === 'layout' && (
+              <div className={styles.section}>
+                <label className={styles.field}>
+                  <div className={styles.fieldLabel}>HUD layout</div>
+                  <select
+                    aria-label="HUD layout"
+                    value={hudLayout}
+                    onChange={(e) => {
+                      const next = e.target.value as HudLayoutMode;
+                      setHudLayoutState(next);
+                      setHudLayout(next);
+                    }}
+                  >
+                    <option value="classic">Classic</option>
+                    <option value="compact">Compact</option>
+                  </select>
+                </label>
+
+                {hudLayout === 'compact' && (
+                  <label className={styles.field}>
+                    <div className={styles.fieldLabel}>HUD theme</div>
+                    <select
+                      aria-label="HUD theme"
+                      value={hudTheme}
+                      onChange={(e) => {
+                        const next = e.target.value as HudTheme;
+                        setHudThemeState(next);
+                        setHudTheme(next);
+                        applyHudTheme(next);
+                      }}
+                    >
+                      <option value="default">Default</option>
+                      <option value="slate-amber">Slate &amp; Amber</option>
+                    </select>
+                  </label>
+                )}
               </div>
             )}
           </div>
