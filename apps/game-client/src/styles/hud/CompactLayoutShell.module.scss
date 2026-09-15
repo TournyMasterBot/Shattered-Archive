@@ -17,13 +17,11 @@
   gap: 6px;
   // Extra top padding (vs. the 8px on every other side): the terminal
   // panel's embedded title pokes up above .terminalPanel's border-box
-  // edge via top: -0.7em at font-size: 0.75rem (_BorderedPanel.scss) —
-  // both expressed in relative units, so an 8px fixed top padding left
-  // only a sub-pixel margin at the default root font size and clipped
-  // visibly once a larger root font size (e.g. an accessibility zoom
-  // setting) scaled the title's em-based offset past it. 1.25rem scales
-  // alongside that offset instead of racing a fixed pixel value against it.
-  padding: 1.25rem 8px 8px;
+  // edge via top: -1.5em at font-size: 1rem (_BorderedPanel.scss) — both
+  // expressed in relative units, so this is sized in rem too rather than
+  // racing a fixed pixel value against a value that scales with root
+  // font size (e.g. an accessibility zoom setting).
+  padding: 2rem 8px 8px;
   box-sizing: border-box;
 }
 

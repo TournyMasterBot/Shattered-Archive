@@ -16,7 +16,12 @@
 
   .borderedPanelTitle {
     position: absolute;
-    top: -0.7em;
+    // -1.5em (not -0.7em): gives clear separation between the title and
+    // the panel's top border below it, rather than sitting right on top
+    // of the border line. The caller must reserve top padding of at
+    // least ~1.5x this element's own font-size to avoid clipping against
+    // an ancestor's overflow: hidden.
+    top: -1.5em;
     left: 12px;
     padding: 0 6px;
     // Falls back to the caller's $bg-color, but a theme that sets
@@ -24,7 +29,8 @@
     // repaints this to stay in sync with the panel's own background
     // without the caller needing to duplicate anything.
     background: var(--sa-panel-bg, $bg-color);
-    font-size: 0.75rem;
+    font-size: 1rem;
+    font-weight: 700;
     line-height: 1;
     white-space: nowrap;
   }
