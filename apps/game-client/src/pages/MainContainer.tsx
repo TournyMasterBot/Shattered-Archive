@@ -14,6 +14,10 @@ import { usePlugins } from '../hooks/usePlugins';
 
 import { MainMenuBar } from '../components/MainMenuBar';
 import { LayoutShell } from '../components/LayoutShell';
+import CompactLayoutShell from '../components/hud/CompactLayoutShell';
+import { getHudLayout } from '../features/hudLayout/hudLayoutStore';
+import { getHudTheme } from '../features/hudLayout/hudThemeStore';
+import { applyHudTheme } from '../features/hudLayout/hudThemeLoader';
 import { useGameConnection } from '../hooks/useGameConnection';
 import { useBeforeUnloadGuard } from '../hooks/useBeforeUnloadGuard';
 
@@ -50,6 +54,23 @@ export const MainContainer: React.FC = () => {
   useAuthCallback();
   const main = useMainContainer();
   const gameConn = useGameConnection();
+
+  const [hudLayout] = React.useState(() => getHudLayout());
+  const [isDesktopWidth, setIsDesktopWidth] = React.useState(() =>
+    typeof window === 'undefined' ? true : window.innerWidth > 900,
+  );
+
+  React.useEffect(() => {
+    const onResize = () => setIsDesktopWidth(window.innerWidth > 900);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  React.useEffect(() => {
+    applyHudTheme(getHudTheme());
+  }, []);
+
+  const useCompactShell = hudLayout === 'compact' && isDesktopWidth;
 
   // Warn before closing/reloading the tab while a play-server connection is live.
   useBeforeUnloadGuard(gameConn.isConnected);
@@ -189,17 +210,28 @@ export const MainContainer: React.FC = () => {
 
       <FocusBarVitals />
 
-      <LayoutShell
-        layoutVars={layoutVars}
-        onVerticalResizeMouseDown={handleVerticalResizeMouseDown}
-        onHorizontalResizeMouseDown={handleHorizontalResizeMouseDown}
-        BottomPaneComponent={BottomPane}
-        isConnected={gameConn.isConnected}
-        sendRaw={gameConn.sendRaw}
-        autoLevelMode={auto.config.mode}
-        autoLevelRunState={auto.runState}
-        onSightseeRescan={auto.rescanRoom}
-      />
+      {useCompactShell ? (
+        <CompactLayoutShell
+          isConnected={gameConn.isConnected}
+          sendRaw={gameConn.sendRaw}
+          onOpenAutoLeveling={handleOpenAutoLeveling}
+          autoLevelMode={auto.config.mode}
+          autoLevelRunState={auto.runState}
+          onSightseeRescan={auto.rescanRoom}
+        />
+      ) : (
+        <LayoutShell
+          layoutVars={layoutVars}
+          onVerticalResizeMouseDown={handleVerticalResizeMouseDown}
+          onHorizontalResizeMouseDown={handleHorizontalResizeMouseDown}
+          BottomPaneComponent={BottomPane}
+          isConnected={gameConn.isConnected}
+          sendRaw={gameConn.sendRaw}
+          autoLevelMode={auto.config.mode}
+          autoLevelRunState={auto.runState}
+          onSightseeRescan={auto.rescanRoom}
+        />
+      )}
 
       <UserStyleOverrideModal
         isOpen={isStyleModalOpen}
