@@ -1,0 +1,13 @@
+File Index
+
+/CompactLayoutShell.tsx
+Purpose: Root component for the opt-in compact HUD layout (rendered by MainContainer.tsx when useCompactShell is true). Left column: bordered terminal panel (title = character name, via useCharacterIdentity) wrapping <Terminal/>, then CompactVitalsRow/CompactRoomRow/the hud.bottomStrip widget slot/CommandInput. Right column: ChatPane, then AffectsBlock (wrapped in a plain `sa-hud-affects-panel` div so the theme CSS has a stable hook instead of matching AffectsBlock's Vite-hashed class name) and the hud.rightColumn widget slot. Sizing (resizer drag, CSS custom properties) comes from useCompactLayoutSizing.
+
+/CompactVitalsRow.tsx
+Purpose: HP/Mana/MOVE gauges (useStatusBlockViewModel) plus the enemy gauge (useOpponentStatus, only rendered while isEnemyActive). Each fill element carries a plain sa-hud-vitals-fill-{hp,mp,move,enemy} class alongside its CSS-module class — the module supplies the default color, a theme may override it.
+
+/CompactRoomRow.tsx
+Purpose: Room name + bracketed available-exits row (useRoomHeader, useCompassBlock). Exit buttons call move(dir) on click.
+
+/CompactWidgetSlot.tsx
+Purpose: Renders whatever a plugin has published (via PluginRuntimeApi.setHudWidget) into a given HudSlotId, or nothing if the slot is empty. Reads the current occupant from hudWidgetRegistry on mount and re-syncs on HUD_WIDGET_UPDATED_EVENT; its ListenEvent key is suffixed with useId() so multiple instances of the same slotId don't evict each other's listener registration.

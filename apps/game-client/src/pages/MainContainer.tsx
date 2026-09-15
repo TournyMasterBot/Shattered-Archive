@@ -66,11 +66,17 @@ export const MainContainer: React.FC = () => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  React.useEffect(() => {
-    applyHudTheme(getHudTheme());
-  }, []);
-
   const useCompactShell = hudLayout === 'compact' && isDesktopWidth;
+
+  // Theme CSS targets selectors that also match real classic-layout
+  // elements (e.g. [class*='affectsBlock_'] pre-I2, #game-command-input:focus),
+  // so only apply it when the compact shell is actually in use — and strip
+  // it back out the moment useCompactShell goes false (layout setting is
+  // 'classic', or a mobile viewport fell back per the Task 14 gate) so
+  // "flipping the toggle off returns to today's LayoutShell exactly" (spec §6).
+  React.useEffect(() => {
+    applyHudTheme(useCompactShell ? getHudTheme() : 'default');
+  }, [useCompactShell]);
 
   // Warn before closing/reloading the tab while a play-server connection is live.
   useBeforeUnloadGuard(gameConn.isConnected);

@@ -19,7 +19,11 @@
     top: -0.7em;
     left: 12px;
     padding: 0 6px;
-    background: $bg-color;
+    // Falls back to the caller's $bg-color, but a theme that sets
+    // --sa-panel-bg (see public/themes/slate-amber.css's :root block)
+    // repaints this to stay in sync with the panel's own background
+    // without the caller needing to duplicate anything.
+    background: var(--sa-panel-bg, $bg-color);
     font-size: 0.75rem;
     line-height: 1;
     white-space: nowrap;

@@ -1,0 +1,13 @@
+File Index
+
+/CompactLayoutShell.module.scss
+Purpose: CSS module for the compact HUD shell (terminal panel + subwindow on the left, resizer, chat pane + affects/widget-slot column on the right). `.terminalPanel` uses the shared `borderedPanelTitle` mixin (styles/_BorderedPanel.scss) for the embedded title; the title itself must render OUTSIDE any clipped/overflow:hidden region on that panel, so `.terminalBody` (not `.terminalPanel`) carries `overflow: hidden` and wraps only `<Terminal />`.
+
+/CompactVitalsRow.module.scss
+Purpose: CSS module for the compact HP/Mana/MOVE/enemy gauge row. `.fill` carries the baseline default gauge color; the `sa-hud-vitals-fill-hp`/`-mp`/`-move`/`-enemy` global classes (applied alongside `.fill` in CompactVitalsRow.tsx) layer per-gauge default colors on top and are the hook a theme (e.g. public/themes/slate-amber.css) overrides. `.gaugeLabel` is fixed-width for the three short unit labels; `.enemyLabel` is the separate ellipsis-truncating variant for the arbitrary-length enemy name.
+
+/CompactRoomRow.module.scss
+Purpose: CSS module for the compact room-name + bracketed-exits row (`.roomName` ellipsis-truncates a long room name; `.exitBtn` renders each available compass direction as a clickable button).
+
+/CompactWidgetSlot.module.scss
+Purpose: CSS module for the plugin-fillable widget slot (hud.bottomStrip / hud.rightColumn) — a simple label/value pair, styled further by theme CSS via the `sa-hud-widget-slot` class and `data-variant` attribute.

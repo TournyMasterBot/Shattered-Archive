@@ -2,10 +2,6 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { CompactRoomRow } from './CompactRoomRow';
 
-jest.mock('../../hooks/useCharacterIdentity', () => ({
-  useCharacterIdentity: () => ({ characterName: 'Aria' }),
-}));
-
 jest.mock('../../hooks/useRoomHeader', () => ({
   useRoomHeader: () => ({ roomName: 'The Chamber of the Body', roomFlags: '(inside)' }),
 }));

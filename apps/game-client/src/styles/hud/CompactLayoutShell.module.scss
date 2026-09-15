@@ -20,13 +20,27 @@
 }
 
 .terminalPanel {
-  @include bp.borderedPanelTitle(#333, #050505);
+  // $bg-color matches this rule's own `background` below so the embedded
+  // title (which pokes above the panel via negative top) reads as one
+  // continuous background instead of a mismatched patch (finding C2).
+  @include bp.borderedPanelTitle(#333, #000);
   flex: 1;
   min-height: 0;
   display: flex;
   border-radius: 8px;
-  overflow: hidden;
   background: #000;
+}
+
+// Wraps ONLY <Terminal />, not the title span — the title is positioned
+// via top: -0.7em off .terminalPanel and must render outside this clip
+// region, or .terminalPanel's own overflow would cut it off (finding C2).
+.terminalBody {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+  border-radius: 8px;
 }
 
 .subWindow {

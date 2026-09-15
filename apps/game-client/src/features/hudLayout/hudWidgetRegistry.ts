@@ -3,6 +3,14 @@ import { DispatchEvent } from '../event-emitter/event-dispatcher';
 
 export type { HudSlotId, HudWidgetContent };
 
+/**
+ * Runtime list of every HUD slot id. Lives here (not in
+ * @shatteredarchive/types-client, which is otherwise type-only/erased at
+ * build time) so a stale-or-missing dist/ in that package can't leave this
+ * undefined at runtime — see final review finding I4.
+ */
+export const ALL_HUD_SLOT_IDS: readonly HudSlotId[] = ['hud.bottomStrip', 'hud.rightColumn'] as const;
+
 export const HUD_WIDGET_UPDATED_EVENT = 'shatteredarchive:hud-widget-updated';
 
 export type HudWidgetOccupant = { ownerId: string; content: HudWidgetContent };

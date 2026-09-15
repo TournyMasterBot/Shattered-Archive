@@ -36,7 +36,9 @@ export const CompactLayoutShell: React.FC<CompactLayoutShellProps> = ({
       <div className={styles.leftColumn}>
         <div className={`${styles.terminalPanel} sa-hud-terminal-panel`}>
           {characterName && <span className={`${styles.borderedPanelTitle} sa-hud-terminal-title`}>{characterName}</span>}
-          <Terminal />
+          <div className={styles.terminalBody}>
+            <Terminal />
+          </div>
         </div>
 
         <div className={`${styles.subWindow} sa-hud-sub-window`}>
@@ -64,7 +66,9 @@ export const CompactLayoutShell: React.FC<CompactLayoutShellProps> = ({
         <div className={styles.chatResizer} onMouseDown={handleChatResizeMouseDown} />
 
         <div className={styles.affectsAndSlot}>
-          <AffectsBlock />
+          <div className="sa-hud-affects-panel">
+            <AffectsBlock />
+          </div>
           <CompactWidgetSlot slotId="hud.rightColumn" />
         </div>
       </div>

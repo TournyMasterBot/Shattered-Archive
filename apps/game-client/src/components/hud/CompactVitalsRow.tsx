@@ -41,7 +41,7 @@ export const CompactVitalsRow: React.FC = () => {
 
       {isEnemyActive && (
         <div className={`${styles.enemyRow} sa-hud-vitals-enemy-row`}>
-          <span className={styles.gaugeLabel}>{enemyUi.label}</span>
+          <span className={styles.enemyLabel}>{enemyUi.label}</span>
           <div className={styles.track}>
             <div className={`${styles.fill} sa-hud-vitals-fill-enemy`} style={{ width: `${enemyUi.pct}%` }} />
           </div>

@@ -19,6 +19,18 @@
   font-size: 0.65rem;
 }
 
+// Enemy names are arbitrary-length ("A large spotted jaguar"), unlike the
+// fixed HP/Mana/MOVE unit labels above — truncate instead of overflowing
+// onto the adjacent track (finding I5).
+.enemyLabel {
+  max-width: 6rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #9a9a9a;
+  font-size: 0.65rem;
+}
+
 .track {
   flex: 1;
   height: 6px;
@@ -30,6 +42,31 @@
 .fill {
   height: 100%;
   border-radius: 999px;
+  // Baseline default look (spec §4.3) — the theme CSS may override any of
+  // these via the sa-hud-vitals-fill-* classes below, but the module must
+  // never leave a gauge colorless on its own.
+  background: #5cb85c;
+}
+
+// Per-gauge default colors, mirroring the classic layout's bar palette
+// (LayoutShell.module.scss: .barHp/.barMp/.barSta/.barEnemy .barFill).
+// These target the plain sa-hud-vitals-fill-* classes already present on
+// the fill elements (see CompactVitalsRow.tsx) so the same hooks the theme
+// CSS overrides also carry a sensible untheme default.
+:global(.sa-hud-vitals-fill-hp) {
+  background: #a94442;
+}
+
+:global(.sa-hud-vitals-fill-mp) {
+  background: #337ab7;
+}
+
+:global(.sa-hud-vitals-fill-move) {
+  background: #ffdf7a;
+}
+
+:global(.sa-hud-vitals-fill-enemy) {
+  background: #c94a4a;
 }
 
 .value {

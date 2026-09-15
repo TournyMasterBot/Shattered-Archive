@@ -13,7 +13,7 @@
 .sa-hud-vitals-row,
 .sa-hud-room-row,
 .sa-hud-chat-pane,
-[class*='affectsBlock_'],
+.sa-hud-affects-panel,
 .sa-hud-widget-slot {
   background: var(--sa-panel-bg);
   border-color: var(--sa-panel-border);

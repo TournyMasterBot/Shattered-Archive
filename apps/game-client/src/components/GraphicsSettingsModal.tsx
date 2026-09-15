@@ -298,6 +298,7 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
                     <option value="classic">Classic</option>
                     <option value="compact">Compact</option>
                   </select>
+                  <div className={styles.hint}>Takes effect after reloading the page.</div>
                 </label>
 
                 {hudLayout === 'compact' && (

@@ -246,8 +246,6 @@ export interface InstalledPluginRecord {
  */
 export type HudSlotId = 'hud.bottomStrip' | 'hud.rightColumn';
 
-export const ALL_HUD_SLOT_IDS: HudSlotId[] = ['hud.bottomStrip', 'hud.rightColumn'];
-
 export interface HudWidgetContent {
   label?: string;
   value: string;

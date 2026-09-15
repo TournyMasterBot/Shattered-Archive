@@ -1,6 +1,5 @@
 // apps/game-client/src/features/plugins/pluginHost.ts
 import {
-  ALL_HUD_SLOT_IDS,
   type HudSlotId,
   type HudWidgetContent,
   type IPluginModule,
@@ -8,7 +7,7 @@ import {
   type PluginRuntimeApi,
 } from '@shatteredarchive/types-client';
 
-import { publishHudWidget } from '../hudLayout/hudWidgetRegistry';
+import { ALL_HUD_SLOT_IDS, publishHudWidget } from '../hudLayout/hudWidgetRegistry';
 import { applyPluginBaseCss, removePluginBaseCss } from './pluginCss';
 import { startPluginBundledScripts } from './pluginScriptRunner';
 import { normalizePluginModule } from './normalizePluginModule';

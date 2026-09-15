@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import styles from '../../styles/hud/CompactWidgetSlot.module.scss';
 import {
   getHudWidget,
@@ -14,6 +14,7 @@ export interface CompactWidgetSlotProps {
 
 export const CompactWidgetSlot: React.FC<CompactWidgetSlotProps> = ({ slotId }) => {
   const [content, setContent] = useState<HudWidgetContent | null>(() => getHudWidget(slotId)?.content ?? null);
+  const instanceId = useId();
 
   useEffect(() => {
     // Re-sync in case the slotId prop itself changes, or another slot's
@@ -26,9 +27,13 @@ export const CompactWidgetSlot: React.FC<CompactWidgetSlotProps> = ({ slotId }) 
         if (payload.slotId !== slotId) return;
         setContent(payload.content);
       },
-      { key: `CompactWidgetSlot::${slotId}` },
+      // instanceId-suffixed like useCharacterIdentity/useOpponentStatus — a
+      // static key gets silently evicted when a second instance registers
+      // under the same key (event-dispatcher's evict-on-duplicate-key
+      // behavior); see finding M2.
+      { key: `CompactWidgetSlot::${slotId}::${instanceId}` },
     );
-  }, [slotId]);
+  }, [slotId, instanceId]);
 
   if (!content) return null;
 
