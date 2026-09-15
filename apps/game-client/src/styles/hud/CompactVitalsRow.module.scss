@@ -1,0 +1,47 @@
+.root {
+  display: flex;
+  gap: 16px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+}
+
+.gauge {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gaugeLabel {
+  width: 2.3rem;
+  color: #9a9a9a;
+  font-size: 0.65rem;
+}
+
+.track {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: #222;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.value {
+  min-width: 4.2rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #e0e0e0;
+}
+
+.enemyRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
