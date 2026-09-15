@@ -8,3 +8,6 @@ Purpose: Phase D — on mount, reads window.location.hash for the game-sso hand-
 
 /useCharacterIdentity.ts
 Purpose: HUD compact layout support — provides the current character name via window.__SA_IDENTITY__ snapshot and shatteredarchive:identity-updated event subscription. Generates unique listener keys per instance via useId() to support multiple simultaneous consumers (CompactLayoutShell and CompactRoomRow) without event-listener stomping; each hook instance independently seeds from snapshot on mount and updates on event dispatch.
+
+/useOpponentStatus.ts
+Purpose: HUD compact layout support — extracted verbatim from RightSidebar.tsx's StatusBlock (2026-09-14): tracks the enemy/opponent combat bar via 'event:fighting:opponent' (200ms staleness ticker, ENEMY_STALE_MS=5000, damage-chunk pulse cleared after 4500ms). Consumed by classic StatusBlock and (later) CompactVitalsRow, so — matching useCharacterIdentity's fix for the same class of bug — its ListenEvent key is suffixed with useId() per instance rather than the single static key StatusBlock used inline, so two simultaneous consumers don't evict each other's listener via the shared event registry.

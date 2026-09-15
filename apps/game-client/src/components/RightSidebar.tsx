@@ -6,13 +6,9 @@ import { useSanctuaryActive } from '../hooks/useSanctuaryActive';
 import AffectsBlock from './AffectsBlock';
 import CompassBlock from './CompassBlock';
 import RoomHeader from './RoomHeader';
-import {
-  enemyColorClass,
-  formatOpponentStatusText,
-  type EnemyUiState,
-  type OpponentStatusDetail,
-} from '../features/combat/opponent-types';
-import { ListenDomEvent, ListenEvent } from '../features/event-emitter/event-dispatcher';
+import { enemyColorClass } from '../features/combat/opponent-types';
+import { ListenDomEvent } from '../features/event-emitter/event-dispatcher';
+import { useOpponentStatus } from '../hooks/useOpponentStatus';
 
 /* ---------------- Status block (tick + vitals + enemy + ancillary) ---------------- */
 
@@ -99,17 +95,7 @@ const StatusBlock: React.FC = () => {
     };
   }, [hudMenuOpen]);
 
-  // Enemy UI state (last known)
-  const [enemyUi, setEnemyUi] = useState<EnemyUiState>({
-    lastSeenTs: 0,
-    label: 'Enemy',
-    pct: 0,
-    statusText: '',
-  });
-
-  type DamageChunk = { leftPct: number; widthPct: number; key: number };
-  const [damageChunk, setDamageChunk] = useState<DamageChunk | null>(null);
-  const chunkTimerRef = useRef<number | null>(null);
+  const { enemyUi, isEnemyActive, damageChunk } = useOpponentStatus();
 
   // HP movement overlay (restore)
   type HpDeltaChunk = { leftPct: number; widthPct: number; key: number; opacity: number };
@@ -125,58 +111,6 @@ const StatusBlock: React.FC = () => {
   const staChunkTimerRef = useRef<number | null>(null);
   const lastMpPctRef = useRef<number | null>(null);
   const lastStaPctRef = useRef<number | null>(null);
-
-  // "Now" ticker so staleness can flip without new events
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const t = window.setInterval(() => setNow(Date.now()), 200);
-    return () => window.clearInterval(t);
-  }, []);
-
-  useEffect(() => {
-    const dispose = ListenEvent<OpponentStatusDetail>(
-      'event:fighting:opponent',
-      (d) => {
-        if (!d || !Number.isFinite(d.pct)) return;
-
-        setEnemyUi((prev) => {
-          const prevSeen = prev.lastSeenTs > 0;
-          const prevPct = prevSeen ? prev.pct : d.pct;
-          const nextPct = d.pct;
-
-          // If enemy pct decreased, show pulsing "damage chunk" over the lost segment.
-          if (nextPct < prevPct) {
-            const left = Math.max(0, Math.min(100, nextPct));
-            const width = Math.max(0, Math.min(100 - left, prevPct - nextPct));
-
-            if (width > 0.05) {
-              setDamageChunk({ leftPct: left, widthPct: width, key: d.ts || Date.now() });
-
-              if (chunkTimerRef.current) window.clearTimeout(chunkTimerRef.current);
-              chunkTimerRef.current = window.setTimeout(() => setDamageChunk(null), 4500);
-            }
-          }
-
-          return {
-            lastSeenTs: d.ts || Date.now(),
-            label: d.label?.trim() || prev.label || 'Enemy',
-            pct: nextPct,
-            statusText: formatOpponentStatusText(d.pct, d.minPct, d.maxPct),
-          };
-        });
-      },
-      { key: 'RightSidebar::StatusBlock::opponent' },
-    );
-
-    return () => {
-      try {
-        dispose?.();
-      } catch {
-        // ignore
-      }
-      if (chunkTimerRef.current) window.clearTimeout(chunkTimerRef.current);
-    };
-  }, []);
 
   // Restore HP movement overlay:
   // - Detect HP percent decreases
@@ -327,15 +261,6 @@ const StatusBlock: React.FC = () => {
     const color = enemyColorClass(styles as any, enemyUi.pct);
     return `${styles.barRow} ${styles.barEnemy} ${color}`;
   }, [enemyUi.pct]);
-
-  // Active if we saw a message in the last 5 seconds
-  const ENEMY_STALE_MS = 5000;
-  const isEnemyActive = enemyUi.lastSeenTs > 0 && now - enemyUi.lastSeenTs <= ENEMY_STALE_MS;
-
-  // If stale, clear any leftover chunk immediately
-  useEffect(() => {
-    if (!isEnemyActive && damageChunk) setDamageChunk(null);
-  }, [isEnemyActive, damageChunk]);
 
   return (
     <div className={styles.statusBlock}>
