@@ -193,7 +193,7 @@ export interface PluginRuntimeApi {
    * markup or break layout. The last publisher to a slot wins; clearing
    * only takes effect if this plugin is the slot's current occupant.
    */
-  setHudWidget: (slotId: HudSlotId, content: HudWidgetContent | null) => void;
+  setHudWidget?: (slotId: HudSlotId, content: HudWidgetContent | null) => void;
 }
 
 /**

@@ -1,11 +1,12 @@
-import { getHudWidget, publishHudWidget } from './hudWidgetRegistry';
+import { getHudWidget, publishHudWidget, __resetForTests } from './hudWidgetRegistry';
 import { ListenEvent } from '../event-emitter/event-dispatcher';
 
 describe('hudWidgetRegistry', () => {
   afterEach(() => {
-    // leave every slot empty between tests
-    publishHudWidget('hud.bottomStrip', 'test-owner', null);
-    publishHudWidget('hud.rightColumn', 'test-owner', null);
+    // leave every slot empty between tests (bypasses ownership checks —
+    // publishHudWidget(..., null) would silently no-op here since no test
+    // publishes under a 'test-owner' id)
+    __resetForTests();
   });
 
   it('is empty for a slot nothing has published to', () => {

@@ -29,3 +29,12 @@ export function publishHudWidget(slotId: HudSlotId, ownerId: string, content: Hu
 
   DispatchEvent(HUD_WIDGET_UPDATED_EVENT, { slotId, ownerId, content });
 }
+
+/**
+ * Test-only escape hatch: clears all slots regardless of ownership. Real
+ * callers must go through publishHudWidget's ownership-checked clear —
+ * this exists only so tests can reset shared module state between cases.
+ */
+export function __resetForTests(): void {
+  current.clear();
+}
