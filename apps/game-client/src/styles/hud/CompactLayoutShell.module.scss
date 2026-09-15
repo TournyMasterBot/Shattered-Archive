@@ -1,0 +1,77 @@
+// apps/game-client/src/styles/hud/CompactLayoutShell.module.scss
+@use '../BorderedPanel' as bp;
+
+.shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.leftColumn {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.terminalPanel {
+  @include bp.borderedPanelTitle(#333, #050505);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+
+.subWindow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.verticalResizer {
+  width: 4px;
+  cursor: col-resize;
+  background: #252525;
+  flex-shrink: 0;
+}
+
+.rightColumn {
+  width: var(--right-pane-width);
+  min-width: 220px;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 6px;
+  gap: 6px;
+}
+
+.chatPane {
+  height: var(--sa-chat-pane-height);
+  min-height: 120px;
+  display: flex;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.chatResizer {
+  height: 4px;
+  cursor: row-resize;
+  background: #252525;
+  flex-shrink: 0;
+}
+
+.affectsAndSlot {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
