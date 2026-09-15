@@ -1,0 +1,15 @@
+.root {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.75rem;
+  padding: 2px 4px;
+}
+
+.label {
+  color: #9a9a9a;
+}
+
+.value {
+  color: #e0e0e0;
+}

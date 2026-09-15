@@ -6,7 +6,7 @@
     "jsx": "react-jsx",
 
     "lib": ["DOM", "ES2022"],
-    "types": ["jest"],
+    "types": ["jest", "@testing-library/jest-dom"],
 
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
