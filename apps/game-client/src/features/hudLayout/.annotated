@@ -1,0 +1,7 @@
+File Index
+
+/hudLayoutStore.ts
+Purpose: Manages HUD layout mode preferences (classic or compact) stored in localStorage.
+
+/hudThemeStore.ts
+Purpose: Manages HUD theme preferences (default or slate-amber) stored in localStorage.
