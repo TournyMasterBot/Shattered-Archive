@@ -185,6 +185,15 @@ export interface PluginRuntimeApi {
       | { pattern: string; flags?: string; eventName?: string }
     >,
   ) => void;
+
+  /**
+   * Publish (or clear, with null) this plugin's content into a named HUD
+   * widget slot in the compact layout. Structured data only — the host
+   * component owns all rendering and styling, so a plugin cannot inject
+   * markup or break layout. The last publisher to a slot wins; clearing
+   * only takes effect if this plugin is the slot's current occupant.
+   */
+  setHudWidget: (slotId: HudSlotId, content: HudWidgetContent | null) => void;
 }
 
 /**
@@ -227,4 +236,20 @@ export interface InstalledPluginRecord {
   enabled: boolean;
   installedAt: number;
   userConfig: Record<string, unknown>;
+}
+
+/**
+ * Named regions the compact HUD layout reserves for other features to fill
+ * (see docs/superpowers/specs/2026-09-14-custom-hud-layout-design.md §4.6).
+ * Deliberately narrow: plain text only, no markup — the host layout owns
+ * all rendering.
+ */
+export type HudSlotId = 'hud.bottomStrip' | 'hud.rightColumn';
+
+export const ALL_HUD_SLOT_IDS: HudSlotId[] = ['hud.bottomStrip', 'hud.rightColumn'];
+
+export interface HudWidgetContent {
+  label?: string;
+  value: string;
+  variant?: 'default' | 'warning' | 'critical';
 }

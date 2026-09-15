@@ -5,3 +5,6 @@ Purpose: Manages HUD layout mode preferences (classic or compact) stored in loca
 
 /hudThemeStore.ts
 Purpose: Manages HUD theme preferences (default or slate-amber) stored in localStorage.
+
+/hudWidgetRegistry.ts
+Purpose: In-memory registry where plugins publish/clear content into named compact-HUD widget slots (ownership-checked clears, dispatches an update event).
