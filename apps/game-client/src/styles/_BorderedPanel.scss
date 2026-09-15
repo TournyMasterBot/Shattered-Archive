@@ -1,0 +1,27 @@
+// apps/game-client/src/styles/_BorderedPanel.scss
+// A bordered panel with its title embedded directly in the top border
+// line (classic box-drawing TUI look), e.g.:
+//
+//   ┌─ Aria ──────────────────────┐
+//   │ ...panel content...         │
+//   └──────────────────────────────┘
+//
+// Baseline structural element (§4.2b of the design spec) — corner radius
+// and color are intentionally left to whatever theme is active; this
+// mixin only establishes the shape.
+@mixin borderedPanelTitle($border-color: #333, $bg-color: #000) {
+  position: relative;
+  border: 1px solid $border-color;
+  box-sizing: border-box;
+
+  .borderedPanelTitle {
+    position: absolute;
+    top: -0.7em;
+    left: 12px;
+    padding: 0 6px;
+    background: $bg-color;
+    font-size: 0.75rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+}
