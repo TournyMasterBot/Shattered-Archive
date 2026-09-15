@@ -26,6 +26,7 @@ coverage/*
 *.js.map
 *.js
 !jest.config.js
+!jest.style-mock.js
 !meta-scripts/**/*.js
 # Hand-written source, not build output — the .dev landing page's own script, externalized
 # specifically so its CSP could drop 'unsafe-inline' (see deploy/index.html). The blanket *.js
