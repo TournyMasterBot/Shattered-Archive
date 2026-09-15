@@ -146,23 +146,41 @@ jest.mock('../features/terminal/shatteredArchiveTerminal', () => ({
   },
 }));
 
-// '../features/auth/siteApi' uses `import.meta.env` (Vite-only syntax). Nothing
-// in this repo previously exercised this file (or its transitive importers —
-// AccountModal, LibraryModal, ContributeIdentifyModal, ContributeCreatureLoreModal
-// all reach it via useAccountModal/useLibrary/direct import) under ts-jest, and
-// requiring it for real here fails the whole suite to even compile with TS1343
-// ("import.meta … only allowed when --module is …") — a pre-existing ts-jest/
-// tsconfig gap unrelated to shell selection. Mocking this one leaf module (rather
-// than each modal that happens to import it) keeps those modals rendering for
-// real.
+// '../features/auth/siteApi' evaluates `import.meta.env.VITE_SITE_API` at module
+// top level. Requiring this file for real here (it's reached from AccountModal,
+// LibraryModal, ContributeIdentifyModal and ContributeCreatureLoreModal, all
+// rendered unconditionally below) reproducibly fails the whole suite to even
+// start running under `pnpm --filter @shatteredarchive/game-client test`, with
+// ts-jest reporting a *compile-time* TS1343 ("'import.meta' meta-property is
+// only allowed when --module is ...") at this file's own import.meta.env lines
+// — verified directly (including after `jest --clearCache`, to rule out a stale
+// cache), not a runtime TypeError. That's notable because it's NOT a genuine
+// tsconfig misconfiguration: building a real ts.Program with
+// tsconfig.jest.client.json's own resolved compilerOptions (module resolves to
+// ESNext, one of TS1343's own permitted values) does not raise TS1343 for this
+// same code — so this is specifically how ts-jest's transform step behaves for
+// this file under Jest, not something a plain `tsc` build of this project would
+// hit. Whatever the precise mechanism, the practical effect is the same: this
+// leaf module can't be required for real in this test, so it's mocked here
+// (rather than mocking every modal that happens to import it) to let those
+// modals keep rendering for real.
 jest.mock('../features/auth/siteApi', () => ({
   SITE_ORIGIN: 'http://localhost:5000',
   siteApiBase: () => '/api/site',
 }));
 
-// AutoLevelingModal.tsx itself (not just something it imports) uses
-// `import.meta.env` directly, so it hits the same TS1343 gap and must be
-// mocked directly rather than via a leaf-module mock.
+// AutoLevelingModal.tsx has its own `import.meta.env` reference at line 127
+// (`(import.meta as any).env?.DEV`, inside `isAutoLevelingDebugEnabled()`).
+// That specific reference is unreachable at runtime — the function's first line
+// is `return false`, before the import.meta check is ever reached — so it can't
+// cause a *runtime* problem. It still matters here for a different reason,
+// verified by removing this mock and re-running the suite: ts-jest reports the
+// same compile-time TS1343 described above, at AutoLevelingModal.tsx:127,
+// before any test code runs. TS1343 is a parse-time/syntactic diagnostic tied to
+// the compiler's `module` setting — it fires on the mere presence of the
+// `import.meta` syntax, independent of whether that code path is ever executed,
+// so the dead-code argument (true at runtime) doesn't prevent ts-jest from
+// raising it at compile time. Confirmed reproducible after `jest --clearCache`.
 jest.mock('../components/AutoLevelingModal', () => ({
   __esModule: true,
   default: () => null,
