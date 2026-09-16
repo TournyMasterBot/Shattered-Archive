@@ -109,3 +109,38 @@ export function useCharData() {
 
   return { vitals, ancillary };
 }
+
+export interface StatusPiece {
+  key: string;
+  text: string;
+  title: string;
+}
+
+// Extracted from RightSidebar.tsx's StatusBlock so both the classic and
+// compact layouts render the same status icons from the same rules.
+export function computeStatusPieces(ancillary: CharDataAncillary): StatusPiece[] {
+  const pieces: StatusPiece[] = [];
+
+  if (ancillary.carryWeight != null && ancillary.carryWeightMax != null && ancillary.carryWeightPct != null) {
+    const cw = ancillary.carryWeight.toFixed(0);
+    const cwm = ancillary.carryWeightMax.toFixed(0);
+    const cwp = ancillary.carryWeightPct.toFixed(0);
+
+    pieces.push({
+      key: 'carry',
+      text: `🧺 ${cw} / ${cwm} (${cwp}%)`,
+      title: `Carry weight: ${cw} / ${cwm} (${cwp}%)`,
+    });
+  }
+
+  if (ancillary.isQuiet) pieces.push({ key: 'quiet', text: '🔇', title: 'Quiet (deafened)' });
+  if (ancillary.isFlying) pieces.push({ key: 'flying', text: '🪽', title: 'Flying' });
+  if (ancillary.isRiding) pieces.push({ key: 'riding', text: '🐎', title: 'Riding' });
+  if (ancillary.isFighting) pieces.push({ key: 'fighting', text: '⚔️', title: 'Fighting' });
+
+  if (ancillary.language && ancillary.language.toLowerCase() !== 'common') {
+    pieces.push({ key: 'language', text: `💬 ${ancillary.language}`, title: `Language: ${ancillary.language}` });
+  }
+
+  return pieces;
+}

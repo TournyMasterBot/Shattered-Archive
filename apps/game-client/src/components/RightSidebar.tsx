@@ -9,6 +9,7 @@ import RoomHeader from './RoomHeader';
 import { enemyColorClass } from '../features/combat/opponent-types';
 import { ListenDomEvent } from '../features/event-emitter/event-dispatcher';
 import { useOpponentStatus } from '../hooks/useOpponentStatus';
+import { computeStatusPieces } from '../hooks/useCharData';
 
 /* ---------------- Status block (tick + vitals + enemy + ancillary) ---------------- */
 
@@ -230,30 +231,7 @@ const StatusBlock: React.FC = () => {
     ancillary.language,
   ]);
 
-  type StatusPiece = { key: string; text: string; title: string };
-
-  const statusPieces: StatusPiece[] = [];
-
-  if (ancillary.carryWeight != null && ancillary.carryWeightMax != null && ancillary.carryWeightPct != null) {
-    const cw = ancillary.carryWeight.toFixed(0);
-    const cwm = ancillary.carryWeightMax.toFixed(0);
-    const cwp = ancillary.carryWeightPct.toFixed(0);
-
-    statusPieces.push({
-      key: 'carry',
-      text: `🧺 ${cw} / ${cwm} (${cwp}%)`,
-      title: `Carry weight: ${cw} / ${cwm} (${cwp}%)`,
-    });
-  }
-
-  if (ancillary.isQuiet) statusPieces.push({ key: 'quiet', text: '🔇', title: 'Quiet (deafened)' });
-  if (ancillary.isFlying) statusPieces.push({ key: 'flying', text: '🪽', title: 'Flying' });
-  if (ancillary.isRiding) statusPieces.push({ key: 'riding', text: '🐎', title: 'Riding' });
-  if (ancillary.isFighting) statusPieces.push({ key: 'fighting', text: '⚔️', title: 'Fighting' });
-
-  if (ancillary.language && ancillary.language.toLowerCase() !== 'common') {
-    statusPieces.push({ key: 'language', text: `💬 ${ancillary.language}`, title: `Language: ${ancillary.language}` });
-  }
+  const statusPieces = computeStatusPieces(ancillary);
 
   const hasStatusPieces = statusPieces.length > 0;
 

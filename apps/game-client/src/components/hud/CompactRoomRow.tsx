@@ -14,7 +14,7 @@ const WORLD_TIME_ICONS: Record<string, string> = {
 };
 
 export const CompactRoomRow: React.FC = () => {
-  const { roomName } = useRoomHeader();
+  const { roomName, roomFlags } = useRoomHeader();
   const { hasExit, move } = useCompassBlock();
   const { period } = useWorldTimePeriod();
 
@@ -29,6 +29,7 @@ export const CompactRoomRow: React.FC = () => {
         </span>
       )}
       <span className={styles.roomName}>{roomName}</span>
+      {roomFlags && <span className={styles.roomSector}>{roomFlags}</span>}
       <span className={`${styles.exits} sa-hud-room-exits`}>
         {'['}
         {availableExits.map((dir) => (

@@ -2,8 +2,9 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { CompactRoomRow } from './CompactRoomRow';
 
+let mockRoomFlags = '(inside)';
 jest.mock('../../hooks/useRoomHeader', () => ({
-  useRoomHeader: () => ({ roomName: 'The Chamber of the Body', roomFlags: '(inside)' }),
+  useRoomHeader: () => ({ roomName: 'The Chamber of the Body', roomFlags: mockRoomFlags }),
 }));
 
 const mockHasExit = jest.fn();
@@ -21,11 +22,23 @@ describe('CompactRoomRow', () => {
     mockHasExit.mockReset();
     mockHasExit.mockImplementation((dir: string) => dir === 'N' || dir === 'E');
     mockPeriod = null;
+    mockRoomFlags = '(inside)';
   });
 
   it('shows the room name', () => {
     render(<CompactRoomRow />);
     expect(screen.getByText('The Chamber of the Body')).toBeInTheDocument();
+  });
+
+  it('shows the room sector/terrain when present', () => {
+    render(<CompactRoomRow />);
+    expect(screen.getByText('(inside)')).toBeInTheDocument();
+  });
+
+  it('shows no sector text when roomFlags is empty', () => {
+    mockRoomFlags = '';
+    render(<CompactRoomRow />);
+    expect(screen.queryByText('(inside)')).toBeNull();
   });
 
   it('shows only the available exits, bracketed', () => {

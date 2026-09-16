@@ -2,6 +2,18 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { CompactVitalsRow } from './CompactVitalsRow';
 
+const BASE_ANCILLARY = {
+  carryWeight: null,
+  carryWeightMax: null,
+  carryWeightPct: null,
+  isQuiet: false,
+  isFlying: false,
+  isRiding: false,
+  isFighting: false,
+  language: null,
+};
+
+let mockAncillary = BASE_ANCILLARY;
 jest.mock('../../hooks/useLayoutShell', () => ({
   useStatusBlockViewModel: () => ({
     remaining: '4:12',
@@ -9,6 +21,9 @@ jest.mock('../../hooks/useLayoutShell', () => ({
     hpPct: 100,
     mpPct: 100,
     staPct: 100,
+    get ancillary() {
+      return mockAncillary;
+    },
   }),
 }));
 
@@ -20,7 +35,21 @@ jest.mock('../../hooks/useOpponentStatus', () => ({
   }),
 }));
 
+let mockHasSanctuary = false;
+jest.mock('../../hooks/useSanctuaryActive', () => ({
+  useSanctuaryActive: () => ({
+    get hasSanctuary() {
+      return mockHasSanctuary;
+    },
+  }),
+}));
+
 describe('CompactVitalsRow', () => {
+  beforeEach(() => {
+    mockAncillary = BASE_ANCILLARY;
+    mockHasSanctuary = false;
+  });
+
   it('shows legible X / Y text for HP, Mana, and Move', () => {
     render(<CompactVitalsRow />);
 
@@ -38,5 +67,36 @@ describe('CompactVitalsRow', () => {
   it('does not render an enemy row when no opponent is active', () => {
     render(<CompactVitalsRow />);
     expect(screen.queryByText(/enemy/i)).toBeNull();
+  });
+
+  it('shows the next-tick countdown', () => {
+    render(<CompactVitalsRow />);
+    expect(screen.getByTitle('Next tick')).toHaveTextContent('4:12');
+  });
+
+  it('shows no status row when nothing is notable', () => {
+    render(<CompactVitalsRow />);
+    expect(screen.queryByTitle('Flying')).toBeNull();
+    expect(screen.queryByTitle('Quiet (deafened)')).toBeNull();
+  });
+
+  it('shows status pieces when the character has notable ancillary state', () => {
+    mockAncillary = { ...BASE_ANCILLARY, isFlying: true, isQuiet: true };
+    render(<CompactVitalsRow />);
+    expect(screen.getByTitle('Flying')).toHaveTextContent('🪽');
+    expect(screen.getByTitle('Quiet (deafened)')).toHaveTextContent('🔇');
+  });
+
+  it('does not mark the HP track as sanctuary-active by default', () => {
+    render(<CompactVitalsRow />);
+    const hpFill = document.querySelector('.sa-hud-vitals-fill-hp');
+    expect(hpFill?.parentElement).toHaveAttribute('data-sanctuary', 'false');
+  });
+
+  it('marks the HP track as sanctuary-active when the buff is up', () => {
+    mockHasSanctuary = true;
+    render(<CompactVitalsRow />);
+    const hpFill = document.querySelector('.sa-hud-vitals-fill-hp');
+    expect(hpFill?.parentElement).toHaveAttribute('data-sanctuary', 'true');
   });
 });

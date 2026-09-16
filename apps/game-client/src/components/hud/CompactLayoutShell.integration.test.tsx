@@ -15,6 +15,16 @@ jest.mock('../../hooks/useLayoutShell', () => ({
     hpPct: 100,
     mpPct: 100,
     staPct: 100,
+    ancillary: {
+      carryWeight: null,
+      carryWeightMax: null,
+      carryWeightPct: null,
+      isQuiet: false,
+      isFlying: false,
+      isRiding: false,
+      isFighting: false,
+      language: null,
+    },
   }),
 }));
 jest.mock('../../hooks/useOpponentStatus', () => ({

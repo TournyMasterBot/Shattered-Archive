@@ -1,8 +1,28 @@
-.root {
+// Wraps the gauges row + status row + enemy row as one themed unit — the
+// theme CSS targets .sa-hud-vitals-row (see public/themes/slate-amber.css)
+// for a single continuous panel background/border around all three.
+.card {
   display: flex;
-  gap: 16px;
+  flex-direction: column;
+  gap: 4px;
   padding: 4px 10px;
   font-size: 0.8rem;
+}
+
+.root {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.tickBadge {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #3a2b1a;
+  color: #ffdf7a;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .gauge {
@@ -40,6 +60,18 @@
   overflow: hidden;
 }
 
+// Sanctuary buff active: a soft white ring around the HP track, mirroring
+// the classic layout's .hpSanctuary treatment (LayoutShell.module.scss).
+.track[data-sanctuary='true'] {
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.9),
+    0 0 0 4px rgba(255, 255, 255, 0.2);
+
+  .fill {
+    filter: brightness(1.1);
+  }
+}
+
 .fill {
   height: 100%;
   border-radius: 999px;
@@ -72,7 +104,7 @@
 
 .value {
   // Widened alongside the row's font-size bump so wider digits at the
-  // new size still fit without the gauge jittering (see .root above).
+  // new size still fit without the gauge jittering (see .card above).
   min-width: 4.5rem;
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -83,5 +115,16 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 4px;
+}
+
+.statusRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.7rem;
+  color: #9a9a9a;
+}
+
+.statusPiece {
+  white-space: nowrap;
 }

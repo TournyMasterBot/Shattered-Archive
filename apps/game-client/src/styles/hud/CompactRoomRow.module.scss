@@ -24,6 +24,11 @@
   color: #f0f0f0;
 }
 
+.roomSector {
+  flex-shrink: 0;
+  color: #9a9a9a;
+}
+
 .exits {
   display: flex;
   align-items: center;
