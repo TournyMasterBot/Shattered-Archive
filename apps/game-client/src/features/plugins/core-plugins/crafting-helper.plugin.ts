@@ -1,7 +1,7 @@
 // apps/game-client/src/features/plugins/core-plugins/crafting-helper.plugin.ts
 import type { IPluginModule, PluginRuntimeApi, HudSlotId, HudWidgetContent } from '@shatteredarchive/types-client';
 import { stripAnsi } from '../../autoleveling/autoleveling-text';
-import { getTrackedSkillLevel, setTrackedSkillLevel } from './crafting-helper-storage';
+import { getTrackedSkillLevel, setTrackedSkillLevel, getOrderQueue, addOrder, removeOrder, updateOrder, type StoredCraftOrder } from './crafting-helper-storage';
 
 /**
  * Crafting Helper — automates tier-3 crafting skill-up training.
@@ -40,6 +40,7 @@ export type EngineState =
   | 'pulling_components'
   | 'crafting'
   | 'storing_trinket'
+  | 'checking_quality'
   | 'error_stopped';
 
 export type CraftOutcome = 'success' | 'failed_destroyed' | 'failed_no_loss' | null;
@@ -289,6 +290,8 @@ function phaseLabel(state: EngineState): string {
       return 'crafting';
     case 'storing_trinket':
       return 'storing trinket';
+    case 'checking_quality':
+      return 'checking quality';
     default:
       return state;
   }
@@ -330,6 +333,9 @@ interface EngineConfig {
   commandPacingDelayMs: number;
   pullConfirmTimeoutMs: number;
   scoreResponseTimeoutMs: number;
+  loreResponseTimeoutMs: number;
+  orderHoldingContainer: string;
+  qualityContainerMap: QualityContainerRow[];
   debug: boolean;
   hudSlot: HudSlotId | 'none';
 }
@@ -352,6 +358,12 @@ function readConfig(api: PluginRuntimeApi): EngineConfig {
     commandPacingDelayMs: numOr(cfg.commandPacingDelayMs, 150),
     pullConfirmTimeoutMs: numOr(cfg.pullConfirmTimeoutMs, 200),
     scoreResponseTimeoutMs: numOr(cfg.scoreResponseTimeoutMs, 1000),
+    loreResponseTimeoutMs: numOr(cfg.loreResponseTimeoutMs, 2000),
+    orderHoldingContainer:
+      typeof cfg.orderHoldingContainer === 'string' && cfg.orderHoldingContainer.trim()
+        ? cfg.orderHoldingContainer.trim()
+        : 'orders',
+    qualityContainerMap: parseQualityContainerMap(cfg.qualityContainerMap),
     debug: cfg.debug === true,
     hudSlot: hudSlot === 'hud.bottomStrip' || hudSlot === 'hud.rightColumn' || hudSlot === 'none'
       ? hudSlot
@@ -376,6 +388,12 @@ export function createCraftingHelperPlugin(): IPluginModule {
   let activeCraftTypeRow: CraftTypeRow | null = null;
   let activeRecipe: ResolvedRecipe | null = null;
   let pullIndex = 0;
+  type EngineMode = 'improve' | 'order';
+  let mode: EngineMode = 'improve';
+  let activeOrder: StoredCraftOrder | null = null;
+  let activeOrderRemoved = false;
+  let orderSession: { inSpecRouted: number; offSpecRouted: number } | null = null;
+  let qualityTimer: ReturnType<typeof setTimeout> | null = null;
   let session: SessionStats | null = null;
 
   let scoreTimer: ReturnType<typeof setTimeout> | null = null;
@@ -387,7 +405,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
     if (scoreTimer) clearTimeout(scoreTimer);
     if (pullTimer) clearTimeout(pullTimer);
     if (pacingTimer) clearTimeout(pacingTimer);
-    scoreTimer = pullTimer = pacingTimer = null;
+    if (qualityTimer) clearTimeout(qualityTimer);
+    scoreTimer = pullTimer = pacingTimer = qualityTimer = null;
   }
 
   function publishHud(api: PluginRuntimeApi, cfg: EngineConfig) {
@@ -420,22 +439,103 @@ export function createCraftingHelperPlugin(): IPluginModule {
     api.writeTerminal(`{R[Crafting Helper] ${msg}{x\n`);
   }
 
-  // ── resolveNextRecipe — improve-mode seam ───────────────────────────
-  // Order mode (Task 4) adds a second branch here: pick the active order's
-  // exact item instead of auto-escalating to the highest qualified tier.
+  // ── resolveNextRecipe — improve-mode / order-mode seam ──────────────
   function resolveNextRecipe(cfg: EngineConfig): ResolvedRecipe | null {
+    if (mode === 'order') {
+      if (!activeOrder) return null;
+      const orderRecipe = ORDER_ITEM_RECIPES[activeOrder.itemName];
+      return orderRecipe ? { outputName: activeOrder.itemName, components: orderRecipe.components } : null;
+    }
     if (trackedSkillLevel == null) return null;
     const row = tierForSkill(cfg.activeCraftType, trackedSkillLevel, cfg.tierTable);
     return row ? tierRowToRecipe(row) : null;
   }
 
-  // ── handleCraftSuccess — improve-mode seam ──────────────────────────
-  // Order mode (Task 4) adds a second branch here: lore the item, parse its
-  // quality %, and route it to an order or a quality→container map instead
-  // of unconditionally storing to vault.
+  // ── handleCraftSuccess — improve-mode / order-mode seam ──────────────
   function handleCraftSuccess(api: PluginRuntimeApi, cfg: EngineConfig, recipe: ResolvedRecipe) {
-    api.sendCommand(`put 1 '${recipe.outputName}' vault`);
-    pacingTimer = setTimeout(() => beginPullCycle(api), cfg.commandPacingDelayMs);
+    if (mode === 'improve') {
+      api.sendCommand(`put 1 '${recipe.outputName}' vault`);
+      pacingTimer = setTimeout(() => beginPullCycle(api), cfg.commandPacingDelayMs);
+      return;
+    }
+    state = 'checking_quality';
+    publishHud(api, cfg);
+    api.sendCommand(`lore '${recipe.outputName}'`);
+    qualityTimer = setTimeout(() => onQualityTimeout(api), cfg.loreResponseTimeoutMs);
+  }
+
+  function onQualityTimeout(api: PluginRuntimeApi) {
+    qualityTimer = null;
+    const cfg = readConfig(api);
+    enterError(
+      api,
+      cfg,
+      `Couldn't verify quality of "${activeRecipe?.outputName}" within ${cfg.loreResponseTimeoutMs}ms — stopped rather than guess where to route it.`,
+    );
+  }
+
+  function resolveOrderQuality(api: PluginRuntimeApi, cfg: EngineConfig, quality: number) {
+    if (!activeRecipe) {
+      enterError(api, cfg, 'Internal error: no active recipe.');
+      return;
+    }
+    const outputName = activeRecipe.outputName;
+    const order = activeOrderRemoved ? null : activeOrder;
+    const inSpec = order != null && qualityMatchesSpec(quality, order.qualitySpec);
+
+    if (inSpec && order) {
+      if (orderSession) orderSession.inSpecRouted += 1;
+      api.sendCommand(`put 1 '${outputName}' '${cfg.orderHoldingContainer}'`);
+      const remaining = order.quantityRemaining - 1;
+      if (remaining <= 0) {
+        removeOrder(characterKey(), order.id);
+        activeOrder = null;
+        pacingTimer = setTimeout(() => advanceOrderQueue(api), cfg.commandPacingDelayMs);
+      } else {
+        updateOrder(characterKey(), order.id, { quantityRemaining: remaining });
+        activeOrder = { ...order, quantityRemaining: remaining };
+        pacingTimer = setTimeout(() => beginPullCycle(api), cfg.commandPacingDelayMs);
+      }
+    } else {
+      if (orderSession) orderSession.offSpecRouted += 1;
+      const container = containerForQuality(quality, cfg.qualityContainerMap);
+      api.sendCommand(`put 1 '${outputName}' '${container}'`);
+      if (activeOrderRemoved) {
+        activeOrderRemoved = false;
+        pacingTimer = setTimeout(() => advanceOrderQueue(api), cfg.commandPacingDelayMs);
+      } else {
+        pacingTimer = setTimeout(() => beginPullCycle(api), cfg.commandPacingDelayMs);
+      }
+    }
+  }
+
+  function advanceOrderQueue(api: PluginRuntimeApi) {
+    const cfg = readConfig(api);
+    if (stopRequested) {
+      goIdle(api, cfg);
+      return;
+    }
+    const queue = getOrderQueue(characterKey());
+    if (queue.length === 0) {
+      mode = 'improve';
+      goIdle(api, cfg);
+      return;
+    }
+    const next = queue[0];
+    const orderRecipe = ORDER_ITEM_RECIPES[next.itemName];
+    if (!orderRecipe) {
+      enterError(api, cfg, `Order item "${next.itemName}" has no known recipe.`);
+      return;
+    }
+    const typeRow = cfg.craftTypes.find((t) => t.id === orderRecipe.craftTypeId);
+    if (!typeRow) {
+      enterError(api, cfg, `Unknown craft type "${orderRecipe.craftTypeId}" for order item "${next.itemName}".`);
+      return;
+    }
+    activeOrder = next;
+    activeOrderRemoved = false;
+    activeCraftTypeRow = typeRow;
+    beginPullCycle(api);
   }
 
   function goIdle(api: PluginRuntimeApi, cfg: EngineConfig) {
@@ -541,7 +641,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
   function handleRawData(api: PluginRuntimeApi, rawText: string) {
     // Every line of game output flows through here — bail immediately unless
     // we're mid-cycle, so idle/stopped/storing sit at effectively zero cost.
-    if (state !== 'awaiting_score' && state !== 'pulling_components' && state !== 'crafting') return;
+    if (state !== 'awaiting_score' && state !== 'pulling_components' && state !== 'crafting' && state !== 'checking_quality') return;
 
     const cfg = readConfig(api);
     const plain = stripAnsi(rawText).replace(/\r/g, '');
@@ -572,6 +672,23 @@ export function createCraftingHelperPlugin(): IPluginModule {
           }
           const missing = activeRecipe?.components[pullIndex]?.material;
           enterError(api, cfg, `Vault is out of "${missing}" — restock needed.`);
+          return;
+        }
+      }
+      return;
+    }
+
+    if (state === 'checking_quality') {
+      for (const rawLine of plain.split('\n')) {
+        const line = rawLine.trim();
+        if (!line) continue;
+        const quality = matchItemCondition(line);
+        if (quality != null) {
+          if (qualityTimer) {
+            clearTimeout(qualityTimer);
+            qualityTimer = null;
+          }
+          resolveOrderQuality(api, cfg, quality);
           return;
         }
       }
@@ -649,70 +766,182 @@ export function createCraftingHelperPlugin(): IPluginModule {
   }
 
   function onAlias(api: PluginRuntimeApi, input: string): boolean | undefined {
-    const trimmed = input.trim().toLowerCase();
-    if (trimmed !== 'crafthelper start' && trimmed !== 'crafthelper stop' && trimmed !== 'crafthelper status') {
-      return undefined;
-    }
+    const trimmed = input.trim();
+    const lower = trimmed.toLowerCase();
 
+    if (lower === 'crafthelper start') return handleImproveStart(api);
+    if (lower === 'crafthelper stop') return handleStop(api);
+    if (lower === 'crafthelper status') return handleStatus(api);
+
+    const addMatch = trimmed.match(/^crafthelper order add\s+(\d+)\s+'([^']+)'\s+(\S+)$/i);
+    if (addMatch) return handleOrderAdd(api, addMatch);
+    if (lower === 'crafthelper order list') return handleOrderList(api);
+    const removeMatch = trimmed.match(/^crafthelper order remove\s+(\S+)$/i);
+    if (removeMatch) return handleOrderRemove(api, removeMatch[1]);
+    if (lower === 'crafthelper order start') return handleOrderStart(api);
+    if (lower === 'crafthelper order stop') return handleStop(api);
+    if (lower === 'crafthelper order status') return handleStatus(api);
+
+    return undefined;
+  }
+
+  function handleImproveStart(api: PluginRuntimeApi): boolean {
     const cfg = readConfig(api);
+    if (state !== 'idle') {
+      writeInfo(api, `Already running (state: ${state}).`);
+      return true;
+    }
 
-    if (trimmed === 'crafthelper start') {
-      if (state !== 'idle') {
-        writeInfo(api, `Already running (state: ${state}).`);
-        return true;
-      }
+    const typeRow = cfg.craftTypes.find((t) => t.id === cfg.activeCraftType);
+    if (!typeRow) {
+      writeError(api, `Unknown active craft type "${cfg.activeCraftType}" — check the Craft types config.`);
+      return true;
+    }
 
-      const typeRow = cfg.craftTypes.find((t) => t.id === cfg.activeCraftType);
-      if (!typeRow) {
-        writeError(api, `Unknown active craft type "${cfg.activeCraftType}" — check the Craft types config.`);
-        return true;
-      }
+    mode = 'improve';
+    activeCraftTypeRow = typeRow;
+    stopRequested = false;
+    stopReason = null;
+    everRun = true;
+    session = {
+      startedAt: Date.now(),
+      craftAttempts: 0,
+      successes: 0,
+      failedDestroyed: 0,
+      failedNoLoss: 0,
+      skillGains: 0,
+    };
+    orderSession = null;
 
-      activeCraftTypeRow = typeRow;
-      stopRequested = false;
-      stopReason = null;
-      everRun = true;
-      session = {
-        startedAt: Date.now(),
-        craftAttempts: 0,
-        successes: 0,
-        failedDestroyed: 0,
-        failedNoLoss: 0,
-        skillGains: 0,
-      };
+    // Best-known value until `score` confirms it — score is always sent
+    // and awaited before any craft command, so this is display-only.
+    trackedSkillLevel = getTrackedSkillLevel(characterKey(), cfg.activeCraftType);
 
-      // Best-known value until `score` confirms it — score is always sent
-      // and awaited before any craft command, so this is display-only.
-      trackedSkillLevel = getTrackedSkillLevel(characterKey(), cfg.activeCraftType);
+    state = 'awaiting_score';
+    publishHud(api, cfg);
+    writeInfo(
+      api,
+      `Starting ${typeRow.label} training — make sure your character is parked wherever your vault and crafting station both are.`,
+    );
+    api.sendCommand('score');
+    scoreTimer = setTimeout(() => onScoreTimeout(api), cfg.scoreResponseTimeoutMs);
+    return true;
+  }
 
-      state = 'awaiting_score';
-      publishHud(api, cfg);
-      writeInfo(
-        api,
-        `Starting ${typeRow.label} training — make sure your character is parked wherever your vault and crafting station both are.`,
+  function handleOrderAdd(api: PluginRuntimeApi, match: RegExpMatchArray): boolean {
+    const qty = parseInt(match[1], 10);
+    const itemName = match[2];
+    const qualitySpec = parseQualitySpec(match[3]);
+
+    if (!Number.isFinite(qty) || qty <= 0) {
+      writeError(api, `Invalid quantity "${match[1]}".`);
+      return true;
+    }
+    if (!ORDER_ITEM_RECIPES[itemName]) {
+      writeError(api, `Unknown order item "${itemName}" — no recipe for it.`);
+      return true;
+    }
+    if (!qualitySpec) {
+      writeError(api, `Invalid quality spec "${match[3]}" — use "97+", "99", or "95-98".`);
+      return true;
+    }
+
+    const order: StoredCraftOrder = {
+      id: `order-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+      itemName,
+      quantityRemaining: qty,
+      quantityTotal: qty,
+      qualitySpec,
+      createdAt: Date.now(),
+    };
+    addOrder(characterKey(), order);
+    writeInfo(api, `Queued order ${order.id}: ${qty}x "${itemName}" @ ${match[3]}.`);
+    return true;
+  }
+
+  function handleOrderList(api: PluginRuntimeApi): boolean {
+    const queue = getOrderQueue(characterKey());
+    if (queue.length === 0) {
+      writeInfo(api, 'No orders queued.');
+      return true;
+    }
+    queue.forEach((o, i) => {
+      const activeTag = i === 0 && mode === 'order' && state !== 'idle' ? ' [active]' : '';
+      writeInfo(api, `${o.id}: ${o.quantityRemaining}/${o.quantityTotal}x "${o.itemName}"${activeTag}`);
+    });
+    return true;
+  }
+
+  function handleOrderRemove(api: PluginRuntimeApi, orderId: string): boolean {
+    const removed = removeOrder(characterKey(), orderId);
+    if (!removed) {
+      writeError(api, `No queued order with id "${orderId}".`);
+      return true;
+    }
+    if (activeOrder?.id === orderId) {
+      activeOrderRemoved = true;
+    }
+    writeInfo(api, `Removed order ${orderId}.`);
+    return true;
+  }
+
+  function handleOrderStart(api: PluginRuntimeApi): boolean {
+    if (state !== 'idle') {
+      writeInfo(api, `Already running (state: ${state}).`);
+      return true;
+    }
+    const queue = getOrderQueue(characterKey());
+    if (queue.length === 0) {
+      writeInfo(api, 'No orders queued.');
+      return true;
+    }
+
+    mode = 'order';
+    stopRequested = false;
+    stopReason = null;
+    everRun = true;
+    session = {
+      startedAt: Date.now(),
+      craftAttempts: 0,
+      successes: 0,
+      failedDestroyed: 0,
+      failedNoLoss: 0,
+      skillGains: 0,
+    };
+    orderSession = { inSpecRouted: 0, offSpecRouted: 0 };
+
+    writeInfo(
+      api,
+      'Starting order fulfillment — make sure your character is parked wherever your vault and crafting station both are.',
+    );
+    advanceOrderQueue(api);
+    return true;
+  }
+
+  function handleStop(api: PluginRuntimeApi): boolean {
+    if (state === 'idle') {
+      writeInfo(api, 'Not running.');
+      return true;
+    }
+    stopRequested = true;
+    writeInfo(api, 'Stop requested — finishing current step, then going idle.');
+    return true;
+  }
+
+  function handleStatus(api: PluginRuntimeApi): boolean {
+    const cfg = readConfig(api);
+    const parts = [`state=${state}`, `mode=${mode}`];
+
+    if (mode === 'order') {
+      parts.push(
+        `activeOrder=${activeOrder ? `${activeOrder.quantityRemaining}/${activeOrder.quantityTotal}x "${activeOrder.itemName}"` : 'none'}`,
+        `queueDepth=${getOrderQueue(characterKey()).length}`,
       );
-      api.sendCommand('score');
-      scoreTimer = setTimeout(() => onScoreTimeout(api), cfg.scoreResponseTimeoutMs);
-      return true;
+    } else {
+      parts.push(`craftType=${activeCraftTypeRow?.label ?? cfg.activeCraftType}`, `skill=${trackedSkillLevel ?? '?'}`);
     }
+    parts.push(`item=${activeRecipe?.outputName ?? '?'}`);
 
-    if (trimmed === 'crafthelper stop') {
-      if (state === 'idle') {
-        writeInfo(api, 'Not running.');
-        return true;
-      }
-      stopRequested = true;
-      writeInfo(api, 'Stop requested — finishing current step, then going idle.');
-      return true;
-    }
-
-    // crafthelper status
-    const parts = [
-      `state=${state}`,
-      `craftType=${activeCraftTypeRow?.label ?? cfg.activeCraftType}`,
-      `skill=${trackedSkillLevel ?? '?'}`,
-      `trinket=${activeRecipe?.outputName ?? '?'}`,
-    ];
     if (session) {
       parts.push(
         `attempts=${session.craftAttempts}`,
@@ -721,6 +950,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
         `noLoss=${session.failedNoLoss}`,
         `skillGains=${session.skillGains}`,
       );
+    }
+    if (orderSession) {
+      parts.push(`inSpec=${orderSession.inSpecRouted}`, `offSpec=${orderSession.offSpecRouted}`);
     }
     if (state === 'error_stopped' && stopReason) parts.push(`reason=${stopReason}`);
     writeInfo(api, parts.join('  '));
@@ -731,9 +963,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.2.0',
+      version: '0.3.0',
       description:
-        "Automates tier-3 crafting skill-up training: pulls raw materials from the vault, crafts the highest tier your current skill qualifies for, and stores finished trinkets. Ships seeded with Spellcrafting; other craft skills can be added via config once their command syntax is known. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start / stop / status.",
+        "Automates tier-3 crafting: skill-up training (pulls raw materials, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting and example Tailoring order recipes. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
     },
 
     configSchema: {
@@ -744,6 +976,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
         commandPacingDelayMs: 150,
         pullConfirmTimeoutMs: 200,
         scoreResponseTimeoutMs: 1000,
+        loreResponseTimeoutMs: 2000,
+        orderHoldingContainer: 'orders',
+        qualityContainerMap: '',
         debug: false,
         hudSlot: 'hud.bottomStrip',
       },
@@ -791,6 +1026,28 @@ export function createCraftingHelperPlugin(): IPluginModule {
           label: 'Score response timeout (ms)',
           min: 0,
           description: 'How long to wait after `score` for the matching craft-rank line before aborting start.',
+        },
+        {
+          key: 'loreResponseTimeoutMs',
+          type: 'number',
+          label: 'Lore response timeout (ms)',
+          min: 0,
+          description: 'How long to wait after `lore` for the item\'s Condition line before aborting (order mode only).',
+        },
+        {
+          key: 'orderHoldingContainer',
+          type: 'string',
+          label: 'Order holding container',
+          description: 'Where finished, in-spec order items are stored, ready for manual hand-off.',
+          placeholder: 'orders',
+        },
+        {
+          key: 'qualityContainerMap',
+          type: 'textarea',
+          label: 'Quality → container map',
+          description:
+            'One row per quality range for items that don\'t match the active order\'s spec: "<range or single value> | <container>". Unmapped qualities default to vault.',
+          placeholder: '90-94 | common',
         },
         {
           key: 'debug',
