@@ -12,6 +12,12 @@ import {
   DEFAULT_CRAFT_TYPES_CONFIG,
   DEFAULT_TIER_TABLE_CONFIG,
   type CraftTierRow,
+  parseQualitySpec,
+  qualityMatchesSpec,
+  matchItemCondition,
+  parseQualityContainerMap,
+  containerForQuality,
+  ORDER_ITEM_RECIPES,
 } from './crafting-helper.plugin';
 
 const SCORE_BLOCK = [
@@ -153,6 +159,111 @@ describe('buildHudContent', () => {
   it('shows level/trinket/phase while active', () => {
     const content = buildHudContent({ state: 'crafting', everRun: true, ...base });
     expect(content?.value).toBe('Lv 948 · diamond gemstone · crafting');
+  });
+});
+
+describe('parseQualitySpec', () => {
+  it('parses an "at least" spec', () => {
+    expect(parseQualitySpec('97+')).toEqual({ kind: 'atLeast', min: 97 });
+  });
+
+  it('parses an exact spec', () => {
+    expect(parseQualitySpec('99')).toEqual({ kind: 'exact', value: 99 });
+  });
+
+  it('parses a range spec', () => {
+    expect(parseQualitySpec('95-98')).toEqual({ kind: 'range', min: 95, max: 98 });
+  });
+
+  it('rejects an inverted range', () => {
+    expect(parseQualitySpec('98-95')).toBeNull();
+  });
+
+  it('rejects garbage input', () => {
+    expect(parseQualitySpec('high quality')).toBeNull();
+    expect(parseQualitySpec('')).toBeNull();
+  });
+});
+
+describe('qualityMatchesSpec', () => {
+  it('matches "at least" at and above the minimum', () => {
+    const spec = { kind: 'atLeast' as const, min: 97 };
+    expect(qualityMatchesSpec(97, spec)).toBe(true);
+    expect(qualityMatchesSpec(100, spec)).toBe(true);
+    expect(qualityMatchesSpec(96, spec)).toBe(false);
+  });
+
+  it('matches "exact" only at the value', () => {
+    const spec = { kind: 'exact' as const, value: 99 };
+    expect(qualityMatchesSpec(99, spec)).toBe(true);
+    expect(qualityMatchesSpec(98, spec)).toBe(false);
+    expect(qualityMatchesSpec(100, spec)).toBe(false);
+  });
+
+  it('matches "range" inclusive at both ends', () => {
+    const spec = { kind: 'range' as const, min: 95, max: 98 };
+    expect(qualityMatchesSpec(95, spec)).toBe(true);
+    expect(qualityMatchesSpec(98, spec)).toBe(true);
+    expect(qualityMatchesSpec(94, spec)).toBe(false);
+    expect(qualityMatchesSpec(99, spec)).toBe(false);
+  });
+});
+
+describe('matchItemCondition', () => {
+  it('extracts the quality percentage', () => {
+    expect(matchItemCondition('Condition: flawless (97%)')).toBe(97);
+  });
+
+  it('returns null for unrelated text', () => {
+    expect(matchItemCondition('You were successful.')).toBeNull();
+  });
+});
+
+describe('parseQualityContainerMap / containerForQuality', () => {
+  it('parses range rows and single-value rows', () => {
+    const rows = parseQualityContainerMap('90-94 | common\n98 | rare');
+    expect(rows).toEqual([
+      { min: 90, max: 94, container: 'common' },
+      { min: 98, max: 98, container: 'rare' },
+    ]);
+  });
+
+  it('ignores blank lines and comments', () => {
+    expect(parseQualityContainerMap('# comment\n\n90-94 | common')).toHaveLength(1);
+  });
+
+  it('returns [] for non-string input', () => {
+    expect(parseQualityContainerMap(undefined)).toEqual([]);
+  });
+
+  it('routes a quality within a mapped range to its container', () => {
+    const rows = parseQualityContainerMap('90-94 | common\n95-97 | uncommon');
+    expect(containerForQuality(92, rows)).toBe('common');
+    expect(containerForQuality(96, rows)).toBe('uncommon');
+  });
+
+  it('falls back to vault for an unmapped quality', () => {
+    const rows = parseQualityContainerMap('90-94 | common');
+    expect(containerForQuality(99, rows)).toBe('vault');
+  });
+});
+
+describe('ORDER_ITEM_RECIPES', () => {
+  it('includes the seeded spellcrafting and tailoring examples', () => {
+    expect(ORDER_ITEM_RECIPES['diamond of pain']).toEqual({
+      craftTypeId: 'spellcrafting',
+      components: [
+        { material: 'diamond gemstone', qty: 1 },
+        { material: 'pain essence', qty: 1 },
+      ],
+    });
+    expect(ORDER_ITEM_RECIPES['bull elephant leather tunic']).toEqual({
+      craftTypeId: 'tailoring',
+      components: [
+        { material: 'silksteel thread', qty: 4 },
+        { material: 'bull elephant leather square', qty: 4 },
+      ],
+    });
   });
 });
 

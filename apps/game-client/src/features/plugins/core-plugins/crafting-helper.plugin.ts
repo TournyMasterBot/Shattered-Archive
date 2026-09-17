@@ -118,6 +118,109 @@ export function tierForSkill(craftTypeId: string, skillLevel: number, rows: Craf
   return best;
 }
 
+// ── Order mode: recipes, quality parsing/routing ─────────────────────────
+
+export interface RecipeComponent {
+  material: string;
+  qty: number;
+}
+
+export interface OrderItemRecipe {
+  craftTypeId: string;
+  components: RecipeComponent[];
+}
+
+// Hardcoded, not config — this data rarely changes and the user does not
+// want to maintain an override surface for it. Add new order items here.
+export const ORDER_ITEM_RECIPES: Record<string, OrderItemRecipe> = {
+  'diamond of pain': {
+    craftTypeId: 'spellcrafting',
+    components: [
+      { material: 'diamond gemstone', qty: 1 },
+      { material: 'pain essence', qty: 1 },
+    ],
+  },
+  'silksteel cloth helmet': {
+    craftTypeId: 'tailoring',
+    components: [
+      { material: 'silksteel thread', qty: 1 },
+      { material: 'silksteel square', qty: 1 },
+    ],
+  },
+  'bull elephant leather tunic': {
+    craftTypeId: 'tailoring',
+    components: [
+      { material: 'silksteel thread', qty: 4 },
+      { material: 'bull elephant leather square', qty: 4 },
+    ],
+  },
+};
+
+export type QualitySpec =
+  | { kind: 'atLeast'; min: number }
+  | { kind: 'exact'; value: number }
+  | { kind: 'range'; min: number; max: number };
+
+export function parseQualitySpec(raw: string): QualitySpec | null {
+  const trimmed = raw.trim();
+
+  const atLeast = trimmed.match(/^(\d+)\+$/);
+  if (atLeast) return { kind: 'atLeast', min: parseInt(atLeast[1], 10) };
+
+  const range = trimmed.match(/^(\d+)-(\d+)$/);
+  if (range) {
+    const min = parseInt(range[1], 10);
+    const max = parseInt(range[2], 10);
+    return min <= max ? { kind: 'range', min, max } : null;
+  }
+
+  const exact = trimmed.match(/^(\d+)$/);
+  if (exact) return { kind: 'exact', value: parseInt(exact[1], 10) };
+
+  return null;
+}
+
+export function qualityMatchesSpec(quality: number, spec: QualitySpec): boolean {
+  if (spec.kind === 'atLeast') return quality >= spec.min;
+  if (spec.kind === 'exact') return quality === spec.value;
+  return quality >= spec.min && quality <= spec.max;
+}
+
+export interface QualityContainerRow {
+  min: number;
+  max: number;
+  container: string;
+}
+
+export function parseQualityContainerMap(raw: unknown): QualityContainerRow[] {
+  const rows: QualityContainerRow[] = [];
+  for (const line of splitConfigLines(raw)) {
+    const parts = line.split('|').map((p) => p.trim());
+    if (parts.length < 2) continue;
+    const [rangeStr, container] = parts;
+    if (!container) continue;
+
+    const range = rangeStr.match(/^(\d+)-(\d+)$/);
+    if (range) {
+      rows.push({ min: parseInt(range[1], 10), max: parseInt(range[2], 10), container });
+      continue;
+    }
+    const single = rangeStr.match(/^(\d+)$/);
+    if (single) {
+      const v = parseInt(single[1], 10);
+      rows.push({ min: v, max: v, container });
+    }
+  }
+  return rows;
+}
+
+export function containerForQuality(quality: number, rows: QualityContainerRow[]): string {
+  for (const row of rows) {
+    if (quality >= row.min && quality <= row.max) return row.container;
+  }
+  return 'vault';
+}
+
 // ── Line matchers (applied per-line, after stripAnsi + split('\n') + trim —
 // sidesteps the `$`-anchor/trailing-\n gotcha entirely) ───────────────────
 
@@ -156,6 +259,13 @@ export function matchSkillImproved(line: string): number | null {
 
 export function matchVaultFailure(line: string): boolean {
   return line.includes(VAULT_FAILURE_TEXT);
+}
+
+const CONDITION_RE = /Condition:\s*[\w\s]+\(\s*(\d+)%\s*\)/;
+
+export function matchItemCondition(line: string): number | null {
+  const m = line.match(CONDITION_RE);
+  return m ? parseInt(m[1], 10) : null;
 }
 
 // ── HUD content ───────────────────────────────────────────────────────
