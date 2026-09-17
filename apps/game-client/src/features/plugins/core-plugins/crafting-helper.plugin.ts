@@ -210,7 +210,6 @@ interface EngineConfig {
   activeCraftType: string;
   commandPacingDelayMs: number;
   pullConfirmTimeoutMs: number;
-  craftResponseTimeoutMs: number;
   scoreResponseTimeoutMs: number;
   debug: boolean;
   hudSlot: HudSlotId | 'none';
@@ -231,10 +230,9 @@ function readConfig(api: PluginRuntimeApi): EngineConfig {
       typeof cfg.activeCraftType === 'string' && cfg.activeCraftType.trim()
         ? cfg.activeCraftType.trim().toLowerCase()
         : 'spellcrafting',
-    commandPacingDelayMs: numOr(cfg.commandPacingDelayMs, 800),
-    pullConfirmTimeoutMs: numOr(cfg.pullConfirmTimeoutMs, 2500),
-    craftResponseTimeoutMs: numOr(cfg.craftResponseTimeoutMs, 5000),
-    scoreResponseTimeoutMs: numOr(cfg.scoreResponseTimeoutMs, 5000),
+    commandPacingDelayMs: numOr(cfg.commandPacingDelayMs, 150),
+    pullConfirmTimeoutMs: numOr(cfg.pullConfirmTimeoutMs, 200),
+    scoreResponseTimeoutMs: numOr(cfg.scoreResponseTimeoutMs, 1000),
     debug: cfg.debug === true,
     hudSlot: hudSlot === 'hud.bottomStrip' || hudSlot === 'hud.rightColumn' || hudSlot === 'none'
       ? hudSlot
@@ -262,16 +260,14 @@ export function createCraftingHelperPlugin(): IPluginModule {
 
   let scoreTimer: ReturnType<typeof setTimeout> | null = null;
   let pullTimer: ReturnType<typeof setTimeout> | null = null;
-  let craftTimer: ReturnType<typeof setTimeout> | null = null;
   let pacingTimer: ReturnType<typeof setTimeout> | null = null;
   let lastPublishedSlot: HudSlotId | null = null;
 
   function clearAllTimers() {
     if (scoreTimer) clearTimeout(scoreTimer);
     if (pullTimer) clearTimeout(pullTimer);
-    if (craftTimer) clearTimeout(craftTimer);
     if (pacingTimer) clearTimeout(pacingTimer);
-    scoreTimer = pullTimer = craftTimer = pacingTimer = null;
+    scoreTimer = pullTimer = pacingTimer = null;
   }
 
   function publishHud(api: PluginRuntimeApi, cfg: EngineConfig) {
@@ -375,17 +371,10 @@ export function createCraftingHelperPlugin(): IPluginModule {
     state = 'crafting';
     publishHud(api, cfg);
     api.sendCommand(`craft ${activeCraftTypeRow.verb} '${activeRecipe.trinket}'`);
-    craftTimer = setTimeout(() => onCraftTimeout(api), cfg.craftResponseTimeoutMs);
-  }
-
-  function onCraftTimeout(api: PluginRuntimeApi) {
-    craftTimer = null;
-    const cfg = readConfig(api);
-    enterError(
-      api,
-      cfg,
-      `No success/failure line seen within ${cfg.craftResponseTimeoutMs}ms after crafting — stopped to avoid looping on unrecognized text.`,
-    );
+    // No timeout here on purpose: higher-tier crafts can take a while to
+    // resolve, and one of the three known outcome lines always eventually
+    // arrives — there's no "silence means success" ambiguity like the pull
+    // step has, so waiting indefinitely is correct, not a stall risk.
   }
 
   function handleRawData(api: PluginRuntimeApi, rawText: string) {
@@ -447,12 +436,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
       }
     }
 
-    if (outcome === null) return; // keep waiting; craftTimer covers a real stall
+    if (outcome === null) return; // keep waiting — no timeout on the craft step, see sendCraft()
 
-    if (craftTimer) {
-      clearTimeout(craftTimer);
-      craftTimer = null;
-    }
     if (session) session.craftAttempts += 1;
 
     if (outcome === 'success') {
@@ -585,7 +570,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.1.0',
+      version: '0.2.0',
       description:
         "Automates tier-3 crafting skill-up training: pulls raw materials from the vault, crafts the highest tier your current skill qualifies for, and stores finished trinkets. Ships seeded with Spellcrafting; other craft skills can be added via config once their command syntax is known. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start / stop / status.",
     },
@@ -595,10 +580,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
         craftTypes: DEFAULT_CRAFT_TYPES_CONFIG,
         tierTable: DEFAULT_TIER_TABLE_CONFIG,
         activeCraftType: 'spellcrafting',
-        commandPacingDelayMs: 800,
-        pullConfirmTimeoutMs: 2500,
-        craftResponseTimeoutMs: 5000,
-        scoreResponseTimeoutMs: 5000,
+        commandPacingDelayMs: 150,
+        pullConfirmTimeoutMs: 200,
+        scoreResponseTimeoutMs: 1000,
         debug: false,
         hudSlot: 'hud.bottomStrip',
       },
@@ -639,13 +623,6 @@ export function createCraftingHelperPlugin(): IPluginModule {
           label: 'Pull confirm timeout (ms)',
           min: 0,
           description: 'How long to wait after `get` for a vault-failure message before assuming the pull succeeded.',
-        },
-        {
-          key: 'craftResponseTimeoutMs',
-          type: 'number',
-          label: 'Craft response timeout (ms)',
-          min: 0,
-          description: 'How long to wait after `craft` for a success/failure line before stopping with an error.',
         },
         {
           key: 'scoreResponseTimeoutMs',

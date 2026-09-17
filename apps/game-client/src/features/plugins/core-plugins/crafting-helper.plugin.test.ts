@@ -205,7 +205,6 @@ function defaultConfig(overrides: Record<string, unknown> = {}) {
     activeCraftType: 'spellcrafting',
     commandPacingDelayMs: 100,
     pullConfirmTimeoutMs: 200,
-    craftResponseTimeoutMs: 300,
     scoreResponseTimeoutMs: 200,
     debug: false,
     hudSlot: 'hud.bottomStrip',
@@ -301,20 +300,22 @@ describe('crafting-helper state machine', () => {
     expect(mock.terminalWrites.some((w) => w.includes('uncut diamond stone'))).toBe(true);
   });
 
-  it('stops with an error when no outcome line arrives within the craft timeout', () => {
+  it('waits indefinitely for a craft outcome — no timeout, since higher-tier crafts can take a while', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
     plugin.onAlias!(mock.api, 'crafthelper start');
     mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
     jest.advanceTimersByTime(200); // now crafting
-
-    mock.feedLine('The troll swings at you.'); // unrelated text
-    jest.advanceTimersByTime(300); // craftResponseTimeoutMs
     const sentSoFar = [...mock.sent];
 
-    jest.advanceTimersByTime(5000);
+    mock.feedLine('The troll swings at you.'); // unrelated text, no outcome yet
+    jest.advanceTimersByTime(60_000); // a long wait — must not error or send anything
     expect(mock.sent).toEqual(sentSoFar);
+
+    // The outcome eventually arrives, however late, and the loop continues normally.
+    mock.feedLine('You were successful.');
+    expect(mock.sent).toContain("put 1 'diamond gemstone' vault");
   });
 
   it('stops with an error on start if the score line never arrives', () => {
