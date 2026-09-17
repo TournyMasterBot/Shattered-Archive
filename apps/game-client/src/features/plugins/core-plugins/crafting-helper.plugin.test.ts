@@ -51,21 +51,43 @@ describe('tierForSkill', () => {
 });
 
 describe('parseTierTableConfig', () => {
-  it('parses the default table into 8 spellcrafting rows', () => {
-    const rows = parseTierTableConfig(DEFAULT_TIER_TABLE_CONFIG);
+  it('parses the default table into 8 spellcrafting rows, each single-component at qty 1', () => {
+    const rows = parseTierTableConfig(DEFAULT_TIER_TABLE_CONFIG).filter((r) => r.craftTypeId === 'spellcrafting');
     expect(rows).toHaveLength(8);
-    expect(rows.every((r) => r.craftTypeId === 'spellcrafting')).toBe(true);
-    expect(rows.every((r) => r.materialQty === 1)).toBe(true);
+    expect(rows.every((r) => r.components.length === 1 && r.components[0].qty === 1)).toBe(true);
+  });
+
+  it('parses the default table into 27 sharp-weapons and 27 blunt-weapons multi-component rows', () => {
+    const rows = parseTierTableConfig(DEFAULT_TIER_TABLE_CONFIG);
+    const sharp = rows.filter((r) => r.craftTypeId === 'sharp-weapons');
+    const blunt = rows.filter((r) => r.craftTypeId === 'blunt-weapons');
+    expect(sharp).toHaveLength(27);
+    expect(blunt).toHaveLength(27);
+    expect(sharp.every((r) => r.components.length === 3 && r.components.every((c) => c.qty === 2))).toBe(true);
+    expect(blunt.every((r) => r.components.length === 3 && r.components.every((c) => c.qty === 2))).toBe(true);
   });
 
   it('ignores blank lines and comments', () => {
-    const rows = parseTierTableConfig('# comment\n\nspellcrafting | 1 | obsidian gemstone | uncut obsidian stone\n');
+    const rows = parseTierTableConfig('# comment\n\nspellcrafting | 1 | obsidian gemstone | uncut obsidian stone:1\n');
     expect(rows).toHaveLength(1);
   });
 
-  it('parses an explicit qty when present', () => {
-    const rows = parseTierTableConfig('armor | 1 | iron shield | iron ingot | 3');
-    expect(rows[0].materialQty).toBe(3);
+  it('parses a single-component row with an explicit qty', () => {
+    const rows = parseTierTableConfig('armor | 1 | iron shield | iron ingot:3');
+    expect(rows[0].components).toEqual([{ material: 'iron ingot', qty: 3 }]);
+  });
+
+  it('parses a multi-component row', () => {
+    const rows = parseTierTableConfig('blunt-weapons | 1 | round bronze trinket | bronze bar:2, cedar board:2, deer leather square:2');
+    expect(rows[0].components).toEqual([
+      { material: 'bronze bar', qty: 2 },
+      { material: 'cedar board', qty: 2 },
+      { material: 'deer leather square', qty: 2 },
+    ]);
+  });
+
+  it('skips a row whose component list is empty or malformed', () => {
+    expect(parseTierTableConfig('armor | 1 | iron shield | not-a-component-list')).toEqual([]);
   });
 
   it('returns [] for non-string input', () => {
@@ -75,9 +97,13 @@ describe('parseTierTableConfig', () => {
 });
 
 describe('parseCraftTypesConfig', () => {
-  it('parses the default craft-types row', () => {
+  it('parses the default craft-types rows', () => {
     const rows = parseCraftTypesConfig(DEFAULT_CRAFT_TYPES_CONFIG);
-    expect(rows).toEqual([{ id: 'spellcrafting', label: 'Spellcrafting', verb: 'spellcraft', keyword: 'Spellcrafter' }]);
+    expect(rows).toEqual([
+      { id: 'spellcrafting', label: 'Spellcrafting', verb: 'spellcraft', keyword: 'Spellcrafter' },
+      { id: 'sharp-weapons', label: 'Sharp Weapons', verb: 'sharpweapon', keyword: 'Weaponsmith (Sharp)' },
+      { id: 'blunt-weapons', label: 'Blunt Weapons', verb: 'bluntweapon', keyword: 'Weaponsmith (Blunt)' },
+    ]);
   });
 
   it('ignores malformed rows with too few fields', () => {
@@ -583,6 +609,39 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
     expect(plugin.onAlias!(mock.api, 'look')).toBeUndefined();
+  });
+
+  it('blunt weapons (shipped default): pulls all 3 components at the lowest tier before crafting', () => {
+    const mock = createMockApi(defaultConfig({ activeCraftType: 'blunt-weapons' }));
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, 'crafthelper start');
+    mock.feedLine('Craftskill: 1     Craft Rank: Novice Weaponsmith (Blunt)');
+    expect(mock.sent).toEqual(['score', "get 2 'bronze bar' vault"]);
+
+    jest.advanceTimersByTime(200);
+    expect(mock.sent).toContain("get 2 'cedar board' vault");
+    jest.advanceTimersByTime(200);
+    expect(mock.sent).toContain("get 2 'deer leather square' vault");
+    jest.advanceTimersByTime(200);
+    expect(mock.sent[mock.sent.length - 1]).toBe("craft bluntweapon 'round bronze trinket'");
+  });
+
+  it('sharp weapons (shipped default): escalates to the next material tier at its threshold', () => {
+    const mock = createMockApi(defaultConfig({ activeCraftType: 'sharp-weapons' }));
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, 'crafthelper start');
+    // Skill 74 is exactly the threshold for "sharp bronze trinket" (the highest
+    // bronze-tier row) — confirms the score line for Sharp doesn't collide with
+    // the shared "Weaponsmith" substring in a Blunt score line.
+    mock.feedLine('Craftskill: 74     Craft Rank: Apprentice Weaponsmith (Sharp)');
+    jest.advanceTimersByTime(200); // bar
+    jest.advanceTimersByTime(200); // board
+    jest.advanceTimersByTime(200); // leather square
+    expect(mock.sent[mock.sent.length - 1]).toBe("craft sharpweapon 'sharp bronze trinket'");
   });
 
   it('order add validates the item and quality spec before queueing', () => {

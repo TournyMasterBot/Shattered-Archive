@@ -7,8 +7,9 @@ import { getTrackedSkillLevel, setTrackedSkillLevel, getOrderQueue, addOrder, re
  * Crafting Helper — automates tier-3 crafting skill-up training.
  *
  * Config-driven across craft skills (verb, score-rank keyword, and tier
- * table are all data, not code) — ships seeded with Spellcrafting only.
- * A character trains one craft skill at a time via `activeCraftType`.
+ * table are all data, not code) — ships seeded with Spellcrafting, Sharp
+ * Weapons, and Blunt Weapons. A character trains one craft skill at a
+ * time via `activeCraftType`.
  *
  * Aliases (type in the command bar) — prefixed with "crafthelper", not
  * "craft", so they never compete with the game's own `craft` command:
@@ -26,12 +27,16 @@ export interface CraftTypeRow {
   keyword: string;
 }
 
+export interface RecipeComponent {
+  material: string;
+  qty: number;
+}
+
 export interface CraftTierRow {
   craftTypeId: string;
   skillThreshold: number;
   trinket: string;
-  material: string;
-  materialQty: number;
+  components: RecipeComponent[];
 }
 
 export type EngineState =
@@ -58,19 +63,70 @@ export interface SessionStats {
 
 export const DEFAULT_CRAFT_TYPES_CONFIG = [
   '# <id> | <label> | <command verb> | <score rank keyword>',
-  'spellcrafting | Spellcrafting | spellcraft | Spellcrafter',
+  'spellcrafting | Spellcrafting | spellcraft  | Spellcrafter',
+  'sharp-weapons | Sharp Weapons | sharpweapon | Weaponsmith (Sharp)',
+  'blunt-weapons | Blunt Weapons | bluntweapon | Weaponsmith (Blunt)',
 ].join('\n');
 
+// Weapon tiers (Sharp/Blunt) share the same 9 materials, 3 variants each
+// (highest-to-lowest skill within a material), and the same descending
+// threshold ladder (962 down to 1, step 37) — verified against a full
+// in-game craft list, not guessed. Every component is qty 2.
+const WEAPON_TIER_MATERIALS: Array<{ threshold: number; material: string; components: string }> = [
+  { threshold: 962, material: 'netherium', components: 'netherium bar:2, ironwood board:2, elephant leather square:2' },
+  { threshold: 925, material: 'netherium', components: 'netherium bar:2, ironwood board:2, elephant leather square:2' },
+  { threshold: 888, material: 'netherium', components: 'netherium bar:2, ironwood board:2, elephant leather square:2' },
+  { threshold: 851, material: 'asterite', components: 'asterite bar:2, stonewood board:2, shark leather square:2' },
+  { threshold: 814, material: 'asterite', components: 'asterite bar:2, stonewood board:2, shark leather square:2' },
+  { threshold: 777, material: 'asterite', components: 'asterite bar:2, stonewood board:2, shark leather square:2' },
+  { threshold: 740, material: 'adamantium', components: 'adamantium bar:2, hickory board:2, whale leather square:2' },
+  { threshold: 703, material: 'adamantium', components: 'adamantium bar:2, hickory board:2, whale leather square:2' },
+  { threshold: 666, material: 'adamantium', components: 'adamantium bar:2, hickory board:2, whale leather square:2' },
+  { threshold: 629, material: 'mithril', components: 'mithril bar:2, maple board:2, bear leather square:2' },
+  { threshold: 592, material: 'mithril', components: 'mithril bar:2, maple board:2, bear leather square:2' },
+  { threshold: 555, material: 'mithril', components: 'mithril bar:2, maple board:2, bear leather square:2' },
+  { threshold: 518, material: 'fine alloy', components: 'fine alloy bar:2, oak board:2, bull moose leather square:2' },
+  { threshold: 481, material: 'fine alloy', components: 'fine alloy bar:2, oak board:2, bull moose leather square:2' },
+  { threshold: 444, material: 'fine alloy', components: 'fine alloy bar:2, oak board:2, bull moose leather square:2' },
+  { threshold: 407, material: 'alloy', components: 'alloy bar:2, elm board:2, moose leather square:2' },
+  { threshold: 370, material: 'alloy', components: 'alloy bar:2, elm board:2, moose leather square:2' },
+  { threshold: 333, material: 'alloy', components: 'alloy bar:2, elm board:2, moose leather square:2' },
+  { threshold: 296, material: 'steel', components: 'steel bar:2, pine board:2, bull leather square:2' },
+  { threshold: 259, material: 'steel', components: 'steel bar:2, pine board:2, bull leather square:2' },
+  { threshold: 222, material: 'steel', components: 'steel bar:2, pine board:2, bull leather square:2' },
+  { threshold: 185, material: 'iron', components: 'iron bar:2, fir board:2, cow leather square:2' },
+  { threshold: 148, material: 'iron', components: 'iron bar:2, fir board:2, cow leather square:2' },
+  { threshold: 111, material: 'iron', components: 'iron bar:2, fir board:2, cow leather square:2' },
+  { threshold: 74, material: 'bronze', components: 'bronze bar:2, cedar board:2, deer leather square:2' },
+  { threshold: 37, material: 'bronze', components: 'bronze bar:2, cedar board:2, deer leather square:2' },
+  { threshold: 1, material: 'bronze', components: 'bronze bar:2, cedar board:2, deer leather square:2' },
+];
+
+const BLUNT_VARIANTS = ['spiked', 'studded', 'round'];
+const SHARP_VARIANTS = ['sharp', 'dull', 'long'];
+
+function weaponTierRows(craftTypeId: string, variants: string[]): string {
+  // Each material tier has 3 rows (one per variant, in the same threshold/
+  // material order as WEAPON_TIER_MATERIALS) — variants[i % 3] picks the
+  // right name for that row.
+  return WEAPON_TIER_MATERIALS.map(({ threshold, material, components }, i) => {
+    const variant = variants[i % 3];
+    return `${craftTypeId} | ${threshold} | ${variant} ${material} trinket | ${components}`;
+  }).join('\n');
+}
+
 export const DEFAULT_TIER_TABLE_CONFIG = [
-  '# <craftTypeId> | <skill threshold> | <trinket> | <raw material> | <qty, optional, default 1>',
-  'spellcrafting | 1   | obsidian gemstone | uncut obsidian stone',
-  'spellcrafting | 121 | moonstone         | uncut moonstone',
-  'spellcrafting | 241 | opal gemstone     | uncut opal stone',
-  'spellcrafting | 361 | amethyst gemstone | uncut amethyst stone',
-  'spellcrafting | 481 | emerald gemstone  | uncut emerald stone',
-  'spellcrafting | 601 | sapphire gemstone | uncut sapphire stone',
-  'spellcrafting | 721 | ruby gemstone     | uncut ruby stone',
-  'spellcrafting | 841 | diamond gemstone  | uncut diamond stone',
+  '# <craftTypeId> | <skill threshold> | <trinket> | <components as name:qty, name:qty, ...>',
+  'spellcrafting | 1   | obsidian gemstone | uncut obsidian stone:1',
+  'spellcrafting | 121 | moonstone         | uncut moonstone:1',
+  'spellcrafting | 241 | opal gemstone     | uncut opal stone:1',
+  'spellcrafting | 361 | amethyst gemstone | uncut amethyst stone:1',
+  'spellcrafting | 481 | emerald gemstone  | uncut emerald stone:1',
+  'spellcrafting | 601 | sapphire gemstone | uncut sapphire stone:1',
+  'spellcrafting | 721 | ruby gemstone     | uncut ruby stone:1',
+  'spellcrafting | 841 | diamond gemstone  | uncut diamond stone:1',
+  weaponTierRows('sharp-weapons', SHARP_VARIANTS),
+  weaponTierRows('blunt-weapons', BLUNT_VARIANTS),
 ].join('\n');
 
 function splitConfigLines(raw: unknown): string[] {
@@ -79,6 +135,22 @@ function splitConfigLines(raw: unknown): string[] {
     .split('\n')
     .map((l) => l.trim())
     .filter((l) => l && !l.startsWith('#'));
+}
+
+/** Parses "name:qty, name:qty, ..." into components; skips malformed pieces. */
+function parseComponentList(raw: string): RecipeComponent[] {
+  const components: RecipeComponent[] = [];
+  for (const piece of raw.split(',')) {
+    const trimmed = piece.trim();
+    if (!trimmed) continue;
+    const idx = trimmed.lastIndexOf(':');
+    if (idx === -1) continue;
+    const material = trimmed.slice(0, idx).trim();
+    const qty = parseInt(trimmed.slice(idx + 1).trim(), 10);
+    if (!material || !Number.isFinite(qty) || qty <= 0) continue;
+    components.push({ material, qty });
+  }
+  return components;
 }
 
 export function parseCraftTypesConfig(raw: unknown): CraftTypeRow[] {
@@ -98,12 +170,12 @@ export function parseTierTableConfig(raw: unknown): CraftTierRow[] {
   for (const line of splitConfigLines(raw)) {
     const parts = line.split('|').map((p) => p.trim());
     if (parts.length < 4) continue;
-    const [craftTypeId, thresholdStr, trinket, material, qtyStr] = parts;
+    const [craftTypeId, thresholdStr, trinket, componentsStr] = parts;
     const skillThreshold = parseInt(thresholdStr, 10);
-    if (!craftTypeId || !trinket || !material || !Number.isFinite(skillThreshold)) continue;
-    const parsedQty = qtyStr ? parseInt(qtyStr, 10) : 1;
-    const materialQty = Number.isFinite(parsedQty) && parsedQty > 0 ? parsedQty : 1;
-    rows.push({ craftTypeId: craftTypeId.toLowerCase(), skillThreshold, trinket, material, materialQty });
+    if (!craftTypeId || !trinket || !componentsStr || !Number.isFinite(skillThreshold)) continue;
+    const components = parseComponentList(componentsStr);
+    if (components.length === 0) continue;
+    rows.push({ craftTypeId: craftTypeId.toLowerCase(), skillThreshold, trinket, components });
   }
   return rows;
 }
@@ -125,15 +197,10 @@ export interface ResolvedRecipe {
 }
 
 function tierRowToRecipe(row: CraftTierRow): ResolvedRecipe {
-  return { outputName: row.trinket, components: [{ material: row.material, qty: row.materialQty }] };
+  return { outputName: row.trinket, components: row.components };
 }
 
 // ── Order mode: recipes, quality parsing/routing ─────────────────────────
-
-export interface RecipeComponent {
-  material: string;
-  qty: number;
-}
 
 export interface OrderItemRecipe {
   craftTypeId: string;
@@ -978,9 +1045,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.3.0',
+      version: '0.4.0',
       description:
-        "Automates tier-3 crafting: skill-up training (pulls raw materials, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting and example Tailoring order recipes. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
+        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, and Blunt Weapons tier tables, plus example Tailoring order recipes. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
     },
 
     configSchema: {
@@ -1011,8 +1078,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
           type: 'textarea',
           label: 'Tier table',
           description:
-            'One row per trinket: "<craftTypeId> | <skill threshold> | <trinket name> | <raw material name> | <qty, optional>". The highest tier you currently qualify for is always used.',
-          placeholder: 'spellcrafting | 1 | obsidian gemstone | uncut obsidian stone',
+            'One row per trinket: "<craftTypeId> | <skill threshold> | <trinket name> | <components as name:qty, name:qty, ...>". The highest tier you currently qualify for is always used.',
+          placeholder: 'spellcrafting | 1 | obsidian gemstone | uncut obsidian stone:1',
         },
         {
           key: 'activeCraftType',
