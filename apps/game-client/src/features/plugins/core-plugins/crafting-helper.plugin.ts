@@ -10,10 +10,11 @@ import { getTrackedSkillLevel, setTrackedSkillLevel } from './crafting-helper-st
  * table are all data, not code) — ships seeded with Spellcrafting only.
  * A character trains one craft skill at a time via `activeCraftType`.
  *
- * Aliases (type in the command bar):
- *   craft train start   — begin the pull/craft/store loop for the active craft type
- *   craft train stop    — finish the current step, then go idle
- *   craft train status  — print current state/skill/session stats
+ * Aliases (type in the command bar) — prefixed with "crafthelper", not
+ * "craft", so they never compete with the game's own `craft` command:
+ *   crafthelper start   — begin the pull/craft/store loop for the active craft type
+ *   crafthelper stop    — finish the current step, then go idle
+ *   crafthelper status  — print current state/skill/session stats
  */
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -503,13 +504,13 @@ export function createCraftingHelperPlugin(): IPluginModule {
 
   function onAlias(api: PluginRuntimeApi, input: string): boolean | undefined {
     const trimmed = input.trim().toLowerCase();
-    if (trimmed !== 'craft train start' && trimmed !== 'craft train stop' && trimmed !== 'craft train status') {
+    if (trimmed !== 'crafthelper start' && trimmed !== 'crafthelper stop' && trimmed !== 'crafthelper status') {
       return undefined;
     }
 
     const cfg = readConfig(api);
 
-    if (trimmed === 'craft train start') {
+    if (trimmed === 'crafthelper start') {
       if (state !== 'idle') {
         writeInfo(api, `Already running (state: ${state}).`);
         return true;
@@ -549,7 +550,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
       return true;
     }
 
-    if (trimmed === 'craft train stop') {
+    if (trimmed === 'crafthelper stop') {
       if (state === 'idle') {
         writeInfo(api, 'Not running.');
         return true;
@@ -559,7 +560,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
       return true;
     }
 
-    // craft train status
+    // crafthelper status
     const parts = [
       `state=${state}`,
       `craftType=${activeCraftTypeRow?.label ?? cfg.activeCraftType}`,
@@ -586,7 +587,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
       name: 'Crafting Helper',
       version: '0.1.0',
       description:
-        "Automates tier-3 crafting skill-up training: pulls raw materials from the vault, crafts the highest tier your current skill qualifies for, and stores finished trinkets. Ships seeded with Spellcrafting; other craft skills can be added via config once their command syntax is known. Run this while standing wherever your vault and crafting station both are. Commands: craft train start / stop / status.",
+        "Automates tier-3 crafting skill-up training: pulls raw materials from the vault, crafts the highest tier your current skill qualifies for, and stores finished trinkets. Ships seeded with Spellcrafting; other craft skills can be added via config once their command syntax is known. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start / stop / status.",
     },
 
     configSchema: {
