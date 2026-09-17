@@ -411,6 +411,55 @@ describe('crafting-helper state machine', () => {
     ]);
   });
 
+  it('"destroyed" on a multi-component order item puts back every component before re-pulling all of them', () => {
+    const mock = createMockApi(defaultConfig({ craftTypes: TAILORING_CRAFT_TYPES_CONFIG }));
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
+    plugin.onAlias!(mock.api, 'crafthelper order start');
+    jest.advanceTimersByTime(200); // pull silksteel thread
+    jest.advanceTimersByTime(200); // pull silksteel square
+    // now crafting
+    const sentSoFar = mock.sent.length;
+
+    mock.feedLine('You failed and destroyed some materials in the process.');
+    jest.advanceTimersByTime(100); // put back thread
+    jest.advanceTimersByTime(100); // put back square
+    expect(mock.sent.slice(sentSoFar)).toEqual([
+      "put 1 'silksteel thread' vault",
+      "put 1 'silksteel square' vault",
+    ]);
+
+    jest.advanceTimersByTime(100); // then re-pull both, fresh
+    expect(mock.sent.slice(sentSoFar)).toEqual([
+      "put 1 'silksteel thread' vault",
+      "put 1 'silksteel square' vault",
+      "get 1 'silksteel thread' vault",
+    ]);
+  });
+
+  it('a vault failure partway through a multi-component order pull leaves the order queued untouched', () => {
+    const mock = createMockApi(defaultConfig({ craftTypes: TAILORING_CRAFT_TYPES_CONFIG }));
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
+    const orderId = getOrderQueue('__unknown__')[0].id;
+    plugin.onAlias!(mock.api, 'crafthelper order start');
+    jest.advanceTimersByTime(200); // pull silksteel thread succeeds
+
+    mock.feedLine('I see nothing like that in the vault.'); // fails on the SECOND component
+    const sentSoFar = [...mock.sent];
+    jest.advanceTimersByTime(5000);
+    expect(mock.sent).toEqual(sentSoFar); // nothing further sent
+    expect(mock.terminalWrites.some((w) => w.includes('silksteel square'))).toBe(true);
+
+    const queue = getOrderQueue('__unknown__');
+    expect(queue).toHaveLength(1);
+    expect(queue[0]).toMatchObject({ id: orderId, quantityRemaining: 1, quantityTotal: 1 });
+  });
+
   it('stops with an error on vault failure during a pull, sending no further commands', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
@@ -603,7 +652,7 @@ describe('crafting-helper state machine', () => {
     expect(mock.sent).toContain("lore 'diamond of pain'");
 
     mock.feedLine('Condition: flawless (98%)');
-    expect(mock.sent).toContain("put 1 'diamond of pain' 'orders'");
+    expect(mock.sent).toContain("put 1 'diamond of pain' orders");
     expect(getOrderQueue('__unknown__')[0].quantityRemaining).toBe(1);
 
     jest.advanceTimersByTime(100); // commandPacingDelayMs — refill, same order
@@ -624,7 +673,7 @@ describe('crafting-helper state machine', () => {
     mock.feedLine('You were successful.');
 
     mock.feedLine('Condition: scuffed (92%)');
-    expect(mock.sent).toContain("put 1 'diamond of pain' 'common'");
+    expect(mock.sent).toContain("put 1 'diamond of pain' common");
     expect(getOrderQueue('__unknown__')[0].quantityRemaining).toBe(1); // unchanged — didn't count
 
     jest.advanceTimersByTime(100);
@@ -685,7 +734,7 @@ describe('crafting-helper state machine', () => {
 
     mock.feedLine('You were successful.');
     mock.feedLine('Condition: flawless (98%)'); // would have matched the removed order's spec, but it's gone
-    expect(mock.sent).toContain("put 1 'diamond of pain' 'vault'"); // no active order to route to -> default container
+    expect(mock.sent).toContain("put 1 'diamond of pain' vault"); // no active order to route to -> default container
 
     jest.advanceTimersByTime(100);
     expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'silksteel thread' vault"); // advanced to the remaining order

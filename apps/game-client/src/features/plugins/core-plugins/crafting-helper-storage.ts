@@ -141,7 +141,7 @@ function persistOrders(characterKey: string) {
 
 export function getOrderQueue(characterKey: string): StoredCraftOrder[] {
   ensureOrdersLoaded(characterKey);
-  return orderQueues.get(characterKey) ?? [];
+  return [...(orderQueues.get(characterKey) ?? [])];
 }
 
 export function addOrder(characterKey: string, order: StoredCraftOrder): void {

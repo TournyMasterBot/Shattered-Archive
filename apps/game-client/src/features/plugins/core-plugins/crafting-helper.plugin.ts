@@ -271,7 +271,7 @@ export function matchVaultFailure(line: string): boolean {
   return line.includes(VAULT_FAILURE_TEXT);
 }
 
-const CONDITION_RE = /Condition:\s*[\w\s]+\(\s*(\d+)%\s*\)/;
+const CONDITION_RE = /Condition:\s*[^(]+\(\s*(\d+)%\s*\)/;
 
 export function matchItemCondition(line: string): number | null {
   const m = line.match(CONDITION_RE);
@@ -485,7 +485,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
 
     if (inSpec && order) {
       if (orderSession) orderSession.inSpecRouted += 1;
-      api.sendCommand(`put 1 '${outputName}' '${cfg.orderHoldingContainer}'`);
+      api.sendCommand(`put 1 '${outputName}' ${cfg.orderHoldingContainer}`);
       const remaining = order.quantityRemaining - 1;
       if (remaining <= 0) {
         removeOrder(characterKey(), order.id);
@@ -499,7 +499,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     } else {
       if (orderSession) orderSession.offSpecRouted += 1;
       const container = containerForQuality(quality, cfg.qualityContainerMap);
-      api.sendCommand(`put 1 '${outputName}' '${container}'`);
+      api.sendCommand(`put 1 '${outputName}' ${container}`);
       if (activeOrderRemoved) {
         activeOrderRemoved = false;
         pacingTimer = setTimeout(() => advanceOrderQueue(api), cfg.commandPacingDelayMs);
@@ -558,6 +558,11 @@ export function createCraftingHelperPlugin(): IPluginModule {
     const cfg = readConfig(api);
     if (stopRequested) {
       goIdle(api, cfg);
+      return;
+    }
+    if (mode === 'order' && activeOrderRemoved) {
+      activeOrderRemoved = false;
+      advanceOrderQueue(api);
       return;
     }
 
@@ -704,7 +709,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
       const improved = matchSkillImproved(line);
       if (improved != null) {
         trackedSkillLevel = improved;
-        setTrackedSkillLevel(characterKey(), cfg.activeCraftType, improved);
+        setTrackedSkillLevel(characterKey(), activeCraftTypeRow?.id ?? cfg.activeCraftType, improved);
         if (session) session.skillGains += 1;
         publishHud(api, cfg);
       }
@@ -830,19 +835,25 @@ export function createCraftingHelperPlugin(): IPluginModule {
 
   function handleOrderAdd(api: PluginRuntimeApi, match: RegExpMatchArray): boolean {
     const qty = parseInt(match[1], 10);
-    const itemName = match[2];
+    const itemName = match[2].toLowerCase();
     const qualitySpec = parseQualitySpec(match[3]);
 
     if (!Number.isFinite(qty) || qty <= 0) {
       writeError(api, `Invalid quantity "${match[1]}".`);
       return true;
     }
-    if (!ORDER_ITEM_RECIPES[itemName]) {
+    const orderRecipe = ORDER_ITEM_RECIPES[itemName];
+    if (!orderRecipe) {
       writeError(api, `Unknown order item "${itemName}" — no recipe for it.`);
       return true;
     }
     if (!qualitySpec) {
       writeError(api, `Invalid quality spec "${match[3]}" — use "97+", "99", or "95-98".`);
+      return true;
+    }
+    const cfg = readConfig(api);
+    if (!cfg.craftTypes.find((t) => t.id === orderRecipe.craftTypeId)) {
+      writeError(api, `Craft type "${orderRecipe.craftTypeId}" for "${itemName}" isn't configured — check the Craft types config.`);
       return true;
     }
 
@@ -921,6 +932,10 @@ export function createCraftingHelperPlugin(): IPluginModule {
   function handleStop(api: PluginRuntimeApi): boolean {
     if (state === 'idle') {
       writeInfo(api, 'Not running.');
+      return true;
+    }
+    if (state === 'error_stopped') {
+      goIdle(api, readConfig(api));
       return true;
     }
     stopRequested = true;
