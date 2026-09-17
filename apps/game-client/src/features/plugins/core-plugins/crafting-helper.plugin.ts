@@ -8,8 +8,8 @@ import { getTrackedSkillLevel, setTrackedSkillLevel, getOrderQueue, addOrder, re
  *
  * Config-driven across craft skills (verb, score-rank keyword, and tier
  * table are all data, not code) — ships seeded with Spellcrafting, Sharp
- * Weapons, and Blunt Weapons. A character trains one craft skill at a
- * time via `activeCraftType`.
+ * Weapons, Blunt Weapons, and Armor Crafting tier tables. A character
+ * trains one craft skill at a time via `activeCraftType`.
  *
  * Aliases (type in the command bar) — prefixed with "crafthelper", not
  * "craft", so they never compete with the game's own `craft` command:
@@ -63,16 +63,17 @@ export interface SessionStats {
 
 export const DEFAULT_CRAFT_TYPES_CONFIG = [
   '# <id> | <label> | <command verb> | <score rank keyword>',
-  'spellcrafting | Spellcrafting | spellcraft  | Spellcrafter',
-  'sharp-weapons | Sharp Weapons | sharpweapon | Weaponsmith (Sharp)',
-  'blunt-weapons | Blunt Weapons | bluntweapon | Weaponsmith (Blunt)',
+  'spellcrafting  | Spellcrafting  | spellcraft  | Spellcrafter',
+  'sharp-weapons  | Sharp Weapons  | sharpweapon | Weaponsmith (Sharp)',
+  'blunt-weapons  | Blunt Weapons  | bluntweapon | Weaponsmith (Blunt)',
+  'armor-crafting | Armor Crafting | armorcraft  | Armorcrafter',
 ].join('\n');
 
-// Weapon tiers (Sharp/Blunt) share the same 9 materials, 3 variants each
-// (highest-to-lowest skill within a material), and the same descending
-// threshold ladder (962 down to 1, step 37) — verified against a full
-// in-game craft list, not guessed. Every component is qty 2.
-const WEAPON_TIER_MATERIALS: Array<{ threshold: number; material: string; components: string }> = [
+// Sharp/Blunt Weapons and Armor Crafting all share the same 9 materials,
+// 3 variants each (highest-to-lowest skill within a material), and the same
+// descending threshold ladder (962 down to 1, step 37) — verified against a
+// full in-game craft list per skill, not guessed. Every component is qty 2.
+const SHARED_TIER_MATERIALS: Array<{ threshold: number; material: string; components: string }> = [
   { threshold: 962, material: 'netherium', components: 'netherium bar:2, ironwood board:2, elephant leather square:2' },
   { threshold: 925, material: 'netherium', components: 'netherium bar:2, ironwood board:2, elephant leather square:2' },
   { threshold: 888, material: 'netherium', components: 'netherium bar:2, ironwood board:2, elephant leather square:2' },
@@ -104,14 +105,24 @@ const WEAPON_TIER_MATERIALS: Array<{ threshold: number; material: string; compon
 
 const BLUNT_VARIANTS = ['spiked', 'studded', 'round'];
 const SHARP_VARIANTS = ['sharp', 'dull', 'long'];
+const ARMOR_VARIANTS = ['plate', 'chain', 'studs'];
 
-function weaponTierRows(craftTypeId: string, variants: string[]): string {
+// Weapon trinkets name as "<variant> <material> trinket" (e.g. "spiked
+// netherium trinket"); armor trinkets reverse that to "<material> <variant>
+// trinket" (e.g. "netherium plate trinket", confirmed by the "bronze studs
+// trinket" example) — same materials/thresholds/components, different word
+// order, so the naming is a callback rather than a baked-in assumption.
+function craftTierRows(
+  craftTypeId: string,
+  variants: string[],
+  trinketName: (variant: string, material: string) => string,
+): string {
   // Each material tier has 3 rows (one per variant, in the same threshold/
-  // material order as WEAPON_TIER_MATERIALS) — variants[i % 3] picks the
+  // material order as SHARED_TIER_MATERIALS) — variants[i % 3] picks the
   // right name for that row.
-  return WEAPON_TIER_MATERIALS.map(({ threshold, material, components }, i) => {
+  return SHARED_TIER_MATERIALS.map(({ threshold, material, components }, i) => {
     const variant = variants[i % 3];
-    return `${craftTypeId} | ${threshold} | ${variant} ${material} trinket | ${components}`;
+    return `${craftTypeId} | ${threshold} | ${trinketName(variant, material)} | ${components}`;
   }).join('\n');
 }
 
@@ -125,8 +136,9 @@ export const DEFAULT_TIER_TABLE_CONFIG = [
   'spellcrafting | 601 | sapphire gemstone | uncut sapphire stone:1',
   'spellcrafting | 721 | ruby gemstone     | uncut ruby stone:1',
   'spellcrafting | 841 | diamond gemstone  | uncut diamond stone:1',
-  weaponTierRows('sharp-weapons', SHARP_VARIANTS),
-  weaponTierRows('blunt-weapons', BLUNT_VARIANTS),
+  craftTierRows('sharp-weapons', SHARP_VARIANTS, (v, m) => `${v} ${m} trinket`),
+  craftTierRows('blunt-weapons', BLUNT_VARIANTS, (v, m) => `${v} ${m} trinket`),
+  craftTierRows('armor-crafting', ARMOR_VARIANTS, (v, m) => `${m} ${v} trinket`),
 ].join('\n');
 
 function splitConfigLines(raw: unknown): string[] {
@@ -1047,7 +1059,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
       name: 'Crafting Helper',
       version: '0.4.0',
       description:
-        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, and Blunt Weapons tier tables, plus example Tailoring order recipes. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
+        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, and Armor Crafting tier tables, plus example Tailoring order recipes. Tailoring's score-rank keyword isn't confirmed yet, so it's not selectable for skill-up training. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
     },
 
     configSchema: {

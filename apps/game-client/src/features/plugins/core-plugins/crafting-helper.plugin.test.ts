@@ -57,14 +57,17 @@ describe('parseTierTableConfig', () => {
     expect(rows.every((r) => r.components.length === 1 && r.components[0].qty === 1)).toBe(true);
   });
 
-  it('parses the default table into 27 sharp-weapons and 27 blunt-weapons multi-component rows', () => {
+  it('parses the default table into 27 rows each for sharp-weapons, blunt-weapons, and armor-crafting', () => {
     const rows = parseTierTableConfig(DEFAULT_TIER_TABLE_CONFIG);
     const sharp = rows.filter((r) => r.craftTypeId === 'sharp-weapons');
     const blunt = rows.filter((r) => r.craftTypeId === 'blunt-weapons');
+    const armor = rows.filter((r) => r.craftTypeId === 'armor-crafting');
     expect(sharp).toHaveLength(27);
     expect(blunt).toHaveLength(27);
-    expect(sharp.every((r) => r.components.length === 3 && r.components.every((c) => c.qty === 2))).toBe(true);
-    expect(blunt.every((r) => r.components.length === 3 && r.components.every((c) => c.qty === 2))).toBe(true);
+    expect(armor).toHaveLength(27);
+    for (const group of [sharp, blunt, armor]) {
+      expect(group.every((r) => r.components.length === 3 && r.components.every((c) => c.qty === 2))).toBe(true);
+    }
   });
 
   it('ignores blank lines and comments', () => {
@@ -103,6 +106,7 @@ describe('parseCraftTypesConfig', () => {
       { id: 'spellcrafting', label: 'Spellcrafting', verb: 'spellcraft', keyword: 'Spellcrafter' },
       { id: 'sharp-weapons', label: 'Sharp Weapons', verb: 'sharpweapon', keyword: 'Weaponsmith (Sharp)' },
       { id: 'blunt-weapons', label: 'Blunt Weapons', verb: 'bluntweapon', keyword: 'Weaponsmith (Blunt)' },
+      { id: 'armor-crafting', label: 'Armor Crafting', verb: 'armorcraft', keyword: 'Armorcrafter' },
     ]);
   });
 
@@ -642,6 +646,23 @@ describe('crafting-helper state machine', () => {
     jest.advanceTimersByTime(200); // board
     jest.advanceTimersByTime(200); // leather square
     expect(mock.sent[mock.sent.length - 1]).toBe("craft sharpweapon 'sharp bronze trinket'");
+  });
+
+  it('armor crafting (shipped default): pulls all 3 components at the top tier before crafting', () => {
+    const mock = createMockApi(defaultConfig({ activeCraftType: 'armor-crafting' }));
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, 'crafthelper start');
+    mock.feedLine('Craftskill: 1001    Craft Rank: Legendary Grand Master Armorcrafter');
+    expect(mock.sent).toEqual(['score', "get 2 'netherium bar' vault"]);
+
+    jest.advanceTimersByTime(200);
+    expect(mock.sent).toContain("get 2 'ironwood board' vault");
+    jest.advanceTimersByTime(200);
+    expect(mock.sent).toContain("get 2 'elephant leather square' vault");
+    jest.advanceTimersByTime(200);
+    expect(mock.sent[mock.sent.length - 1]).toBe("craft armorcraft 'netherium plate trinket'");
   });
 
   it('order add validates the item and quality spec before queueing', () => {
