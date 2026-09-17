@@ -17,12 +17,18 @@
 
 .tickBadge {
   flex-shrink: 0;
+  // Fixed so the last couple of seconds (single digit) don't narrow the
+  // badge and shift every gauge after it — the same fixed-width-column
+  // trick already used for .gaugeLabel/.value below.
+  min-width: 2.6rem;
+  text-align: center;
   padding: 2px 6px;
   border-radius: 999px;
   background: #3a2b1a;
   color: #ffdf7a;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
 }
 
 .gauge {

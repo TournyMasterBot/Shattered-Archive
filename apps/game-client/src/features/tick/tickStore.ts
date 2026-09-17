@@ -1,8 +1,9 @@
 // apps\game-client\src\features\tick\tickStore.ts
 import { useSyncExternalStore } from 'react';
-import { ListenEvent } from '../event-emitter/event-dispatcher';
+import { DispatchEvent, ListenEvent } from '../event-emitter/event-dispatcher';
 
 const DEFAULT_TICK_DURATION = 41;
+const TICK_WARNING_THRESHOLD_SEC = 5;
 
 export type TickSnapshot = {
   timeOfDay: string;
@@ -72,6 +73,19 @@ function createStore(): TickStore {
     publishIfChanged(nextTime: string, nextRemaining: number) {
       const prev = store.snapshot;
       if (prev.timeOfDay === nextTime && prev.remaining === nextRemaining) return;
+
+      // Countdown crossed into the warning threshold (once per tick cycle —
+      // the interval only calls this when the whole-second value actually
+      // changes, so this can't re-fire while remaining sits at the
+      // threshold). A fresh game:tick resets remaining back up to
+      // durationSec, well above the threshold, so this won't fire again
+      // until the next real crossing.
+      if (nextRemaining === TICK_WARNING_THRESHOLD_SEC && prev.remaining !== TICK_WARNING_THRESHOLD_SEC) {
+        DispatchEvent('shatteredarchive:write-terminal', {
+          rawText: `\r\n[91mTick in ${TICK_WARNING_THRESHOLD_SEC} seconds![0m\r\n`,
+          fromUserScript: true,
+        });
+      }
 
       store.state.timeOfDay = nextTime;
       store.state.remaining = nextRemaining;
