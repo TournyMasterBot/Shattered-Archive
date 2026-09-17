@@ -67,3 +67,96 @@ describe('crafting-helper-storage persistence', () => {
     expect(getTrackedSkillLevel('grondak', 'spellcrafting')).toBeNull();
   });
 });
+
+describe('crafting-helper-storage order queue', () => {
+  it('adds orders in FIFO order and lists them back', () => {
+    const { addOrder, getOrderQueue } = freshStorage();
+    addOrder('grondak', {
+      id: 'order-1',
+      itemName: 'diamond of pain',
+      quantityRemaining: 6,
+      quantityTotal: 6,
+      qualitySpec: { kind: 'atLeast', min: 97 },
+      createdAt: 1,
+    });
+    addOrder('grondak', {
+      id: 'order-2',
+      itemName: 'silksteel cloth helmet',
+      quantityRemaining: 2,
+      quantityTotal: 2,
+      qualitySpec: { kind: 'exact', value: 99 },
+      createdAt: 2,
+    });
+
+    const queue = getOrderQueue('grondak');
+    expect(queue.map((o) => o.id)).toEqual(['order-1', 'order-2']);
+  });
+
+  it('removes an order by id and reports whether it found one', () => {
+    const { addOrder, removeOrder, getOrderQueue } = freshStorage();
+    addOrder('grondak', {
+      id: 'order-1',
+      itemName: 'diamond of pain',
+      quantityRemaining: 6,
+      quantityTotal: 6,
+      qualitySpec: { kind: 'atLeast', min: 97 },
+      createdAt: 1,
+    });
+
+    expect(removeOrder('grondak', 'not-there')).toBe(false);
+    expect(removeOrder('grondak', 'order-1')).toBe(true);
+    expect(getOrderQueue('grondak')).toEqual([]);
+  });
+
+  it('updates fields on an existing order in place', () => {
+    const { addOrder, updateOrder, getOrderQueue } = freshStorage();
+    addOrder('grondak', {
+      id: 'order-1',
+      itemName: 'diamond of pain',
+      quantityRemaining: 6,
+      quantityTotal: 6,
+      qualitySpec: { kind: 'atLeast', min: 97 },
+      createdAt: 1,
+    });
+
+    updateOrder('grondak', 'order-1', { quantityRemaining: 5 });
+    expect(getOrderQueue('grondak')[0].quantityRemaining).toBe(5);
+  });
+
+  it('isolates order queues per character', () => {
+    const { addOrder, getOrderQueue } = freshStorage();
+    addOrder('grondak', {
+      id: 'order-1',
+      itemName: 'diamond of pain',
+      quantityRemaining: 6,
+      quantityTotal: 6,
+      qualitySpec: { kind: 'atLeast', min: 97 },
+      createdAt: 1,
+    });
+    expect(getOrderQueue('riaghan')).toEqual([]);
+  });
+
+  it('round-trips the queue through a fresh module instance, debounced', () => {
+    const first = freshStorage();
+    first.addOrder('grondak', {
+      id: 'order-1',
+      itemName: 'diamond of pain',
+      quantityRemaining: 6,
+      quantityTotal: 6,
+      qualitySpec: { kind: 'atLeast', min: 97 },
+      createdAt: 1,
+    });
+    jest.advanceTimersByTime(500);
+
+    const second = freshStorage();
+    expect(second.getOrderQueue('grondak')).toHaveLength(1);
+    expect(second.getOrderQueue('grondak')[0].itemName).toBe('diamond of pain');
+  });
+
+  it('falls back to an empty queue on corrupt localStorage rather than throwing', () => {
+    window.localStorage.setItem('shatteredarchive.plugins.crafting-helper.orders.grondak', '{not valid json');
+    const { getOrderQueue } = freshStorage();
+    expect(() => getOrderQueue('grondak')).not.toThrow();
+    expect(getOrderQueue('grondak')).toEqual([]);
+  });
+});
