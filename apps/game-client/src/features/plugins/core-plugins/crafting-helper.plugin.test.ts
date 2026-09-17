@@ -135,7 +135,7 @@ describe('matchVaultFailure', () => {
 });
 
 describe('buildHudContent', () => {
-  const base = { trackedSkillLevel: 948, activeTrinket: 'diamond gemstone', stopReason: null };
+  const base = { trackedSkillLevel: 948, activeItemName: 'diamond gemstone', stopReason: null };
 
   it('returns null when never started', () => {
     expect(buildHudContent({ state: 'idle', everRun: false, ...base })).toBeNull();
@@ -380,7 +380,7 @@ describe('crafting-helper state machine', () => {
     expect(newCommands).toEqual(["craft spellcraft 'diamond gemstone'"]);
   });
 
-  it('"destroyed" triggers a fresh pull, not a re-craft', () => {
+  it('"destroyed" puts back the material before re-pulling, since the message is not reliable', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
@@ -390,10 +390,14 @@ describe('crafting-helper state machine', () => {
     const sentSoFar = mock.sent.length;
 
     mock.feedLine('You failed and destroyed some materials in the process.');
-    jest.advanceTimersByTime(100);
+    jest.advanceTimersByTime(100); // commandPacingDelayMs — put-back
+    expect(mock.sent.slice(sentSoFar)).toEqual(["put 1 'uncut diamond stone' vault"]);
 
-    const newCommands = mock.sent.slice(sentSoFar);
-    expect(newCommands).toEqual(["get 1 'uncut diamond stone' vault"]);
+    jest.advanceTimersByTime(100); // commandPacingDelayMs — then a fresh pull
+    expect(mock.sent.slice(sentSoFar)).toEqual([
+      "put 1 'uncut diamond stone' vault",
+      "get 1 'uncut diamond stone' vault",
+    ]);
   });
 
   it('stops with an error on vault failure during a pull, sending no further commands', () => {
@@ -456,7 +460,8 @@ describe('crafting-helper state machine', () => {
 
     // Only once that material cycle actually ends (a fresh pull) does the new tier apply.
     mock.feedLine('You failed and destroyed some materials in the process.');
-    jest.advanceTimersByTime(100);
+    jest.advanceTimersByTime(100); // put-back
+    jest.advanceTimersByTime(100); // then pull
     expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'uncut moonstone' vault");
   });
 

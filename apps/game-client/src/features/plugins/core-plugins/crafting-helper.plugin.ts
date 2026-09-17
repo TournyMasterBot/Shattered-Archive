@@ -37,7 +37,7 @@ export interface CraftTierRow {
 export type EngineState =
   | 'idle'
   | 'awaiting_score'
-  | 'pulling_material'
+  | 'pulling_components'
   | 'crafting'
   | 'storing_trinket'
   | 'error_stopped';
@@ -116,6 +116,15 @@ export function tierForSkill(craftTypeId: string, skillLevel: number, rows: Craf
     if (!best || row.skillThreshold > best.skillThreshold) best = row;
   }
   return best;
+}
+
+export interface ResolvedRecipe {
+  outputName: string;
+  components: RecipeComponent[];
+}
+
+function tierRowToRecipe(row: CraftTierRow): ResolvedRecipe {
+  return { outputName: row.trinket, components: [{ material: row.material, qty: row.materialQty }] };
 }
 
 // ── Order mode: recipes, quality parsing/routing ─────────────────────────
@@ -274,8 +283,8 @@ function phaseLabel(state: EngineState): string {
   switch (state) {
     case 'awaiting_score':
       return 'checking score';
-    case 'pulling_material':
-      return 'pulling material';
+    case 'pulling_components':
+      return 'pulling components';
     case 'crafting':
       return 'crafting';
     case 'storing_trinket':
@@ -289,10 +298,10 @@ export function buildHudContent(input: {
   state: EngineState;
   everRun: boolean;
   trackedSkillLevel: number | null;
-  activeTrinket: string | null;
+  activeItemName: string | null;
   stopReason: string | null;
 }): HudWidgetContent | null {
-  const { state, everRun, trackedSkillLevel, activeTrinket, stopReason } = input;
+  const { state, everRun, trackedSkillLevel, activeItemName, stopReason } = input;
 
   // Never started: don't occupy a slot for a plugin that hasn't run yet.
   if (!everRun && state === 'idle') return null;
@@ -307,7 +316,7 @@ export function buildHudContent(input: {
 
   return {
     label: 'Crafting Helper',
-    value: `Lv ${trackedSkillLevel ?? '?'} · ${activeTrinket ?? '?'} · ${phaseLabel(state)}`,
+    value: `Lv ${trackedSkillLevel ?? '?'} · ${activeItemName ?? '?'} · ${phaseLabel(state)}`,
     variant: 'default',
   };
 }
@@ -365,7 +374,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
   let stopReason: string | null = null;
   let trackedSkillLevel: number | null = null;
   let activeCraftTypeRow: CraftTypeRow | null = null;
-  let activeRecipe: CraftTierRow | null = null;
+  let activeRecipe: ResolvedRecipe | null = null;
+  let pullIndex = 0;
   let session: SessionStats | null = null;
 
   let scoreTimer: ReturnType<typeof setTimeout> | null = null;
@@ -394,7 +404,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
       state,
       everRun,
       trackedSkillLevel,
-      activeTrinket: activeRecipe?.trinket ?? null,
+      activeItemName: activeRecipe?.outputName ?? null,
       stopReason,
     });
 
@@ -411,20 +421,21 @@ export function createCraftingHelperPlugin(): IPluginModule {
   }
 
   // ── resolveNextRecipe — improve-mode seam ───────────────────────────
-  // Order mode (future) needs a second implementation here: pick the next
-  // open order's exact item (its own multi-stage recipe) instead of
-  // auto-escalating to the highest qualified tier.
-  function resolveNextRecipe(cfg: EngineConfig): CraftTierRow | null {
+  // Order mode (Task 4) adds a second branch here: pick the active order's
+  // exact item instead of auto-escalating to the highest qualified tier.
+  function resolveNextRecipe(cfg: EngineConfig): ResolvedRecipe | null {
     if (trackedSkillLevel == null) return null;
-    return tierForSkill(cfg.activeCraftType, trackedSkillLevel, cfg.tierTable);
+    const row = tierForSkill(cfg.activeCraftType, trackedSkillLevel, cfg.tierTable);
+    return row ? tierRowToRecipe(row) : null;
   }
 
   // ── handleCraftSuccess — improve-mode seam ──────────────────────────
-  // Order mode (future) needs a second implementation here: lore the item,
-  // parse its quality %, and route it to an order or a quality→container
-  // map instead of unconditionally storing to vault.
-  function handleCraftSuccess(api: PluginRuntimeApi, recipe: CraftTierRow) {
-    api.sendCommand(`put 1 '${recipe.trinket}' vault`);
+  // Order mode (Task 4) adds a second branch here: lore the item, parse its
+  // quality %, and route it to an order or a quality→container map instead
+  // of unconditionally storing to vault.
+  function handleCraftSuccess(api: PluginRuntimeApi, cfg: EngineConfig, recipe: ResolvedRecipe) {
+    api.sendCommand(`put 1 '${recipe.outputName}' vault`);
+    pacingTimer = setTimeout(() => beginPullCycle(api), cfg.commandPacingDelayMs);
   }
 
   function goIdle(api: PluginRuntimeApi, cfg: EngineConfig) {
@@ -457,9 +468,23 @@ export function createCraftingHelperPlugin(): IPluginModule {
     }
 
     activeRecipe = recipe;
-    state = 'pulling_material';
+    pullIndex = 0;
+    pullComponent(api, cfg);
+  }
+
+  function pullComponent(api: PluginRuntimeApi, cfg: EngineConfig) {
+    if (!activeRecipe) {
+      enterError(api, cfg, 'Internal error: no active recipe.');
+      return;
+    }
+    if (pullIndex >= activeRecipe.components.length) {
+      sendCraft(api, cfg);
+      return;
+    }
+    state = 'pulling_components';
     publishHud(api, cfg);
-    api.sendCommand(`get ${recipe.materialQty} '${recipe.material}' vault`);
+    const component = activeRecipe.components[pullIndex];
+    api.sendCommand(`get ${component.qty} '${component.material}' vault`);
     pullTimer = setTimeout(() => onPullTimeout(api), cfg.pullConfirmTimeoutMs);
   }
 
@@ -470,7 +495,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
       goIdle(api, cfg);
       return;
     }
-    sendCraft(api, cfg);
+    pullIndex += 1;
+    pullComponent(api, cfg);
   }
 
   function sendCraft(api: PluginRuntimeApi, cfg: EngineConfig) {
@@ -480,17 +506,42 @@ export function createCraftingHelperPlugin(): IPluginModule {
     }
     state = 'crafting';
     publishHud(api, cfg);
-    api.sendCommand(`craft ${activeCraftTypeRow.verb} '${activeRecipe.trinket}'`);
+    api.sendCommand(`craft ${activeCraftTypeRow.verb} '${activeRecipe.outputName}'`);
     // No timeout here on purpose: higher-tier crafts can take a while to
     // resolve, and one of the three known outcome lines always eventually
     // arrives — there's no "silence means success" ambiguity like the pull
     // step has, so waiting indefinitely is correct, not a stall risk.
   }
 
+  function beginDestroyedRecovery(api: PluginRuntimeApi, cfg: EngineConfig, components: RecipeComponent[]) {
+    // The "destroyed" message is not reliable — it doesn't always mean every
+    // (or any) pulled component was actually lost. Rather than guess which
+    // survived, put everything back (a `put` on something not held is
+    // assumed to no-op harmlessly, same assumption already made for a
+    // successful craft's `put`) and re-pull the full recipe fresh.
+    putBackComponent(api, cfg, components, 0);
+  }
+
+  function putBackComponent(api: PluginRuntimeApi, cfg: EngineConfig, components: RecipeComponent[], index: number) {
+    if (stopRequested) {
+      goIdle(api, cfg);
+      return;
+    }
+    if (index >= components.length) {
+      pacingTimer = setTimeout(() => beginPullCycle(api), cfg.commandPacingDelayMs);
+      return;
+    }
+    pacingTimer = setTimeout(() => {
+      const component = components[index];
+      api.sendCommand(`put ${component.qty} '${component.material}' vault`);
+      putBackComponent(api, cfg, components, index + 1);
+    }, cfg.commandPacingDelayMs);
+  }
+
   function handleRawData(api: PluginRuntimeApi, rawText: string) {
     // Every line of game output flows through here — bail immediately unless
     // we're mid-cycle, so idle/stopped/storing sit at effectively zero cost.
-    if (state !== 'awaiting_score' && state !== 'pulling_material' && state !== 'crafting') return;
+    if (state !== 'awaiting_score' && state !== 'pulling_components' && state !== 'crafting') return;
 
     const cfg = readConfig(api);
     const plain = stripAnsi(rawText).replace(/\r/g, '');
@@ -510,7 +561,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
       return;
     }
 
-    if (state === 'pulling_material') {
+    if (state === 'pulling_components') {
       for (const rawLine of plain.split('\n')) {
         const line = rawLine.trim();
         if (!line) continue;
@@ -519,7 +570,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
             clearTimeout(pullTimer);
             pullTimer = null;
           }
-          enterError(api, cfg, `Vault is out of "${activeRecipe?.material}" — restock needed.`);
+          const missing = activeRecipe?.components[pullIndex]?.material;
+          enterError(api, cfg, `Vault is out of "${missing}" — restock needed.`);
           return;
         }
       }
@@ -554,11 +606,10 @@ export function createCraftingHelperPlugin(): IPluginModule {
       if (session) session.successes += 1;
       state = 'storing_trinket';
       publishHud(api, cfg);
-      handleCraftSuccess(api, activeRecipe!);
-      pacingTimer = setTimeout(() => beginPullCycle(api), cfg.commandPacingDelayMs);
+      handleCraftSuccess(api, cfg, activeRecipe!);
     } else if (outcome === 'failed_destroyed') {
       if (session) session.failedDestroyed += 1;
-      pacingTimer = setTimeout(() => beginPullCycle(api), cfg.commandPacingDelayMs);
+      beginDestroyedRecovery(api, cfg, activeRecipe!.components);
     } else {
       if (session) session.failedNoLoss += 1;
       if (stopRequested) {
@@ -660,7 +711,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
       `state=${state}`,
       `craftType=${activeCraftTypeRow?.label ?? cfg.activeCraftType}`,
       `skill=${trackedSkillLevel ?? '?'}`,
-      `trinket=${activeRecipe?.trinket ?? '?'}`,
+      `trinket=${activeRecipe?.outputName ?? '?'}`,
     ];
     if (session) {
       parts.push(
