@@ -186,3 +186,41 @@ describe('PluginRuntimeApi.setHudWidget', () => {
     expect(getHudWidget('hud.rightColumn')).toEqual({ ownerId: 'plugin-a', content: { value: 'from A' } });
   });
 });
+
+describe('PluginHost.tryExecuteAlias', () => {
+  // Regression: normalizePluginModule's returned object omitted `onAlias`
+  // entirely, so every enabled plugin's alias commands (brew's `brew <name>`,
+  // questbot's `pq start`, etc.) were silently unreachable — tryExecuteAlias
+  // reads onAlias off the normalized module stored at enable time, not the
+  // raw one passed to registerModule.
+  it('reaches an enabled plugin\'s onAlias and lets it consume a command', () => {
+    const host = new PluginHost();
+    let received: string | null = null;
+
+    host.setConnection('alias-conn');
+    host.registerModule({
+      manifest: { id: 'alias-plugin', name: 'Alias Plugin', version: '1.0.0' },
+      onAlias: (_api, input: string) => {
+        if (input.trim().toLowerCase() !== 'ping') return undefined;
+        received = input;
+        return true;
+      },
+    } as IPluginModule);
+    host.enable('alias-plugin');
+
+    expect(host.tryExecuteAlias('ping')).toBe(true);
+    expect(received).toBe('ping');
+  });
+
+  it('returns false, leaving the command unconsumed, when no enabled plugin matches', () => {
+    const host = new PluginHost();
+    host.setConnection('alias-conn-2');
+    host.registerModule({
+      manifest: { id: 'alias-plugin-2', name: 'Alias Plugin 2', version: '1.0.0' },
+      onAlias: () => undefined,
+    } as IPluginModule);
+    host.enable('alias-plugin-2');
+
+    expect(host.tryExecuteAlias('anything else')).toBe(false);
+  });
+});
