@@ -2,6 +2,7 @@
 import { OPPONENT_BUCKETS } from './opponent-buckets';
 import { OPPONENT_GATES } from './opponent-gates';
 import { OpponentStatusDetail } from './opponent-types';
+import { stripAnsi } from '../autoleveling/autoleveling-text';
 
 export function ProbeOpponentConditionLine(lineText: string): OpponentStatusDetail | null {
   // Fast gate: avoid any allocations unless we see likely keywords.
@@ -14,7 +15,11 @@ export function ProbeOpponentConditionLine(lineText: string): OpponentStatusDeta
   }
   if (!gated) return null;
 
-  const clean = lineText; //.replace(ANSI_CSI_RE, '').trim();
+  // Mob names are often colored (e.g. "\x1b[0;36mmerman\x1b[0m"); stripping
+  // ANSI here keeps those raw escape bytes out of the extracted label,
+  // which otherwise render as a garbled replacement glyph + literal
+  // "[0;36m" in the UI instead of just "merman".
+  const clean = stripAnsi(lineText).trim();
   if (!clean) return null;
 
   for (let i = 0; i < OPPONENT_BUCKETS.length; i++) {
