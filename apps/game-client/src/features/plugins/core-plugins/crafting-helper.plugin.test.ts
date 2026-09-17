@@ -296,6 +296,44 @@ describe('ORDER_ITEM_RECIPES', () => {
       ],
     });
   });
+
+  it('includes all 3 arcanium armor sets, 6 slots each, at armor-crafting', () => {
+    const sets = ['platemail', 'chainmail', 'studded leather'];
+    const slots = ['helmet', 'boots', 'gloves', 'sleeves', 'tunic'];
+    for (const set of sets) {
+      for (const slot of slots) {
+        expect(ORDER_ITEM_RECIPES[`arcanium ${set} ${slot}`]?.craftTypeId).toBe('armor-crafting');
+      }
+    }
+    // Platemail/chainmail use "leggings" for the 2-leg-piece slot; studded leather uses "pants".
+    expect(ORDER_ITEM_RECIPES['arcanium platemail leggings']).toBeDefined();
+    expect(ORDER_ITEM_RECIPES['arcanium chainmail leggings']).toBeDefined();
+    expect(ORDER_ITEM_RECIPES['arcanium studded leather pants']).toBeDefined();
+  });
+
+  it('scales arcanium armor components by slot quantity (1/2/4 bar+leather)', () => {
+    expect(ORDER_ITEM_RECIPES['arcanium chainmail helmet']).toEqual({
+      craftTypeId: 'armor-crafting',
+      components: [
+        { material: 'arcanium bar', qty: 1 },
+        { material: 'bull elephant leather square', qty: 1 },
+      ],
+    });
+    expect(ORDER_ITEM_RECIPES['arcanium chainmail sleeves']).toEqual({
+      craftTypeId: 'armor-crafting',
+      components: [
+        { material: 'arcanium bar', qty: 2 },
+        { material: 'bull elephant leather square', qty: 2 },
+      ],
+    });
+    expect(ORDER_ITEM_RECIPES['arcanium studded leather tunic']).toEqual({
+      craftTypeId: 'armor-crafting',
+      components: [
+        { material: 'arcanium bar', qty: 4 },
+        { material: 'bull elephant leather square', qty: 4 },
+      ],
+    });
+  });
 });
 
 // ── State-machine integration tests ──────────────────────────────────────
@@ -716,6 +754,21 @@ describe('crafting-helper state machine', () => {
       "get 1 'silksteel square' vault",
       "craft tailor 'silksteel cloth helmet'",
     ]);
+  });
+
+  it('order mode fulfills an arcanium armor order using the shipped armor-crafting craft type', () => {
+    const mock = createMockApi(defaultConfig()); // armor-crafting is a shipped default craftTypes row
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'arcanium chainmail sleeves' 90+");
+    plugin.onAlias!(mock.api, 'crafthelper order start');
+
+    expect(mock.sent).toEqual(["get 2 'arcanium bar' vault"]);
+    jest.advanceTimersByTime(200);
+    expect(mock.sent).toEqual(["get 2 'arcanium bar' vault", "get 2 'bull elephant leather square' vault"]);
+    jest.advanceTimersByTime(200);
+    expect(mock.sent[mock.sent.length - 1]).toBe("craft armorcraft 'arcanium chainmail sleeves'");
   });
 
   it('an in-spec item is stored in the holding container, decrements the order, and refills it', () => {

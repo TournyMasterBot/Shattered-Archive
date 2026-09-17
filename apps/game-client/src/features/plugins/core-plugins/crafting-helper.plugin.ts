@@ -219,6 +219,26 @@ export interface OrderItemRecipe {
   components: RecipeComponent[];
 }
 
+// Every arcanium armor piece uses the same 2 components (arcanium bar +
+// bull elephant leather square) at the same quantity, driven by slot —
+// helmet/boots/gloves:1, leggings/pants/sleeves:2, tunic:4 — confirmed
+// identical across Chainmail and Studded Leather; Platemail's helmet is
+// confirmed and the rest of its slots are inferred from that pattern
+// (not yet independently confirmed in-game).
+function arcaniumArmorSet(setName: string, slotQty: Record<string, number>): Record<string, OrderItemRecipe> {
+  const recipes: Record<string, OrderItemRecipe> = {};
+  for (const [slot, qty] of Object.entries(slotQty)) {
+    recipes[`arcanium ${setName} ${slot}`] = {
+      craftTypeId: 'armor-crafting',
+      components: [
+        { material: 'arcanium bar', qty },
+        { material: 'bull elephant leather square', qty },
+      ],
+    };
+  }
+  return recipes;
+}
+
 // Hardcoded, not config — this data rarely changes and the user does not
 // want to maintain an override surface for it. Add new order items here.
 export const ORDER_ITEM_RECIPES: Record<string, OrderItemRecipe> = {
@@ -243,6 +263,9 @@ export const ORDER_ITEM_RECIPES: Record<string, OrderItemRecipe> = {
       { material: 'bull elephant leather square', qty: 4 },
     ],
   },
+  ...arcaniumArmorSet('platemail', { helmet: 1, boots: 1, leggings: 2, gloves: 1, sleeves: 2, tunic: 4 }),
+  ...arcaniumArmorSet('chainmail', { boots: 1, leggings: 2, gloves: 1, sleeves: 2, tunic: 4, helmet: 1 }),
+  ...arcaniumArmorSet('studded leather', { boots: 1, pants: 2, gloves: 1, sleeves: 2, tunic: 4, helmet: 1 }),
 };
 
 export type QualitySpec =
