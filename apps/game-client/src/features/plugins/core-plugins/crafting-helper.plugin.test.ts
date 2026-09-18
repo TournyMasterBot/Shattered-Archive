@@ -132,6 +132,7 @@ describe('parseCraftTypesConfig', () => {
       { id: 'sharp-weapons', label: 'Sharp Weapons', verb: 'sharpweapon', keyword: 'Weaponsmith (Sharp)' },
       { id: 'blunt-weapons', label: 'Blunt Weapons', verb: 'bluntweapon', keyword: 'Weaponsmith (Blunt)' },
       { id: 'armor-crafting', label: 'Armor Crafting', verb: 'armorcraft', keyword: 'Armorcrafter' },
+      { id: 'tailoring', label: 'Tailoring', verb: 'tailor', keyword: 'Tailor' },
     ]);
   });
 
@@ -462,7 +463,6 @@ function defaultConfig(overrides: Record<string, unknown> = {}) {
   };
 }
 
-const TAILORING_CRAFT_TYPES_CONFIG = `${DEFAULT_CRAFT_TYPES_CONFIG}\ntailoring | Tailoring | tailor | Tailor`;
 
 describe('crafting-helper state machine', () => {
   beforeEach(() => {
@@ -550,7 +550,7 @@ describe('crafting-helper state machine', () => {
   });
 
   it('"destroyed" on a multi-component order item puts back every component before re-pulling all of them', () => {
-    const mock = createMockApi(defaultConfig({ craftTypes: TAILORING_CRAFT_TYPES_CONFIG }));
+    const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
@@ -578,7 +578,7 @@ describe('crafting-helper state machine', () => {
   });
 
   it('a vault failure partway through a multi-component order pull leaves the order queued untouched', () => {
-    const mock = createMockApi(defaultConfig({ craftTypes: TAILORING_CRAFT_TYPES_CONFIG }));
+    const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
@@ -695,7 +695,7 @@ describe('crafting-helper state machine', () => {
   });
 
   it('fails cleanly with no commands sent when activeCraftType is not in craftTypes', () => {
-    const mock = createMockApi(defaultConfig({ activeCraftType: 'tailoring' }));
+    const mock = createMockApi(defaultConfig({ activeCraftType: 'jewelcrafting' }));
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
@@ -808,7 +808,7 @@ describe('crafting-helper state machine', () => {
   });
 
   it('order mode pulls every named component, in order, before crafting', () => {
-    const mock = createMockApi(defaultConfig({ craftTypes: TAILORING_CRAFT_TYPES_CONFIG }));
+    const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
@@ -884,7 +884,7 @@ describe('crafting-helper state machine', () => {
   });
 
   it('completing an order dequeues it and auto-advances to the next queued order', () => {
-    const mock = createMockApi(defaultConfig({ craftTypes: TAILORING_CRAFT_TYPES_CONFIG }));
+    const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
@@ -919,7 +919,7 @@ describe('crafting-helper state machine', () => {
   });
 
   it('order remove drops a queued order; removing the active order lets the in-flight attempt finish, then advances', () => {
-    const mock = createMockApi(defaultConfig({ craftTypes: TAILORING_CRAFT_TYPES_CONFIG }));
+    const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 

@@ -67,6 +67,7 @@ export const DEFAULT_CRAFT_TYPES_CONFIG = [
   'sharp-weapons  | Sharp Weapons  | sharpweapon | Weaponsmith (Sharp)',
   'blunt-weapons  | Blunt Weapons  | bluntweapon | Weaponsmith (Blunt)',
   'armor-crafting | Armor Crafting | armorcraft  | Armorcrafter',
+  'tailoring      | Tailoring      | tailor      | Tailor',
 ].join('\n');
 
 // Sharp/Blunt Weapons and Armor Crafting all share the same 9 materials,
@@ -1144,9 +1145,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.5.0',
+      version: '0.6.0',
       description:
-        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, and Armor Crafting tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. Tailoring's score-rank keyword isn't confirmed yet, so it's not selectable for skill-up training and its order items can't be crafted via `order add` until a Tailoring row is added to the Craft types config. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
+        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, and Armor Crafting tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. Tailoring has no tier-table (skill-up training) data yet — only its order items are available. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
     },
 
     configSchema: {
