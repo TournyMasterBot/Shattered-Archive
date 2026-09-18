@@ -691,6 +691,30 @@ describe('crafting-helper state machine', () => {
     expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'uncut moonstone' vault");
   });
 
+  it('regression: a skill-up line arriving after state has already advanced past "crafting" still updates the HUD', () => {
+    // Live bug: "Your crafting skill has improved. (949)" arrived in a
+    // payload after `success` had already advanced state to a fresh
+    // pulling_components cycle. That state's scanner only checked for
+    // vault-failure text, so the skill-up was silently dropped and the
+    // HUD stayed on the old level even though tracking should have moved.
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, 'crafthelper start');
+    mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
+    jest.advanceTimersByTime(200); // pull confirm -> craft sent
+
+    mock.feedLine('You were successful.');
+    jest.advanceTimersByTime(100); // put, then a fresh pull cycle begins
+    expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'uncut diamond stone' vault");
+
+    // The skill-up notice lands late, in its own payload, while we're now
+    // sitting in pulling_components for the next cycle.
+    mock.feedLine('Your crafting skill has improved. (949)');
+
+    expect(mock.hudWrites[mock.hudWrites.length - 1].content?.value).toContain('Lv 949');
+  });
+
   it('stop lets the in-flight put finish, then goes idle instead of pulling again', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
