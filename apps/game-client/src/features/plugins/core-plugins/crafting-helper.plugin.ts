@@ -149,14 +149,24 @@ function splitConfigLines(raw: unknown): string[] {
     .filter((l) => l && !l.startsWith('#'));
 }
 
-/** Parses "name:qty, name:qty, ..." into components; skips malformed pieces. */
+/**
+ * Parses "name:qty, name:qty, ..." into components; skips malformed pieces.
+ * A piece with no ":qty" is accepted as backward-compat with the pre-multi-
+ * component tier-table format (bare material name, implicit qty 1) — older
+ * saved configs still contain rows in that shape, and silently dropping
+ * them here emptied every tier's component list (live bug: "Skill level
+ * 948 has no matching tier" for every level, not just an edge case).
+ */
 function parseComponentList(raw: string): RecipeComponent[] {
   const components: RecipeComponent[] = [];
   for (const piece of raw.split(',')) {
     const trimmed = piece.trim();
     if (!trimmed) continue;
     const idx = trimmed.lastIndexOf(':');
-    if (idx === -1) continue;
+    if (idx === -1) {
+      components.push({ material: trimmed, qty: 1 });
+      continue;
+    }
     const material = trimmed.slice(0, idx).trim();
     const qty = parseInt(trimmed.slice(idx + 1).trim(), 10);
     if (!material || !Number.isFinite(qty) || qty <= 0) continue;
@@ -239,6 +249,73 @@ function arcaniumArmorSet(setName: string, slotQty: Record<string, number>): Rec
   return recipes;
 }
 
+// Tailoring order items: 10 tiers, each pairing a cloth material with the
+// leather material of the same tier, 2 armor types per tier (cloth and
+// leather), 6 slots each. Confirmed by the user: a cloth item is named
+// "<material> <slot>" and needs "<material> thread" + "<material> cloth
+// square"; a leather item is named "<leather material> leather <slot>" and
+// needs the *same-tier cloth material's* thread + "<leather material>
+// leather square" (e.g. "whale leather sleeves" needs 2 seamist threads +
+// 2 whale leather squares). Slot quantities: helmet/gloves/boots:1,
+// sleeves/leggings:2, shirt:4 — same per-slot pattern as armor crafting.
+const TAILORING_SLOT_QTY: Record<string, number> = {
+  helmet: 1,
+  gloves: 1,
+  boots: 1,
+  sleeves: 2,
+  leggings: 2,
+  shirt: 4,
+};
+
+const TAILORING_TIERS: Array<{ cloth: string; leather: string }> = [
+  { cloth: 'wool', leather: 'deer' },
+  { cloth: 'linen', leather: 'cow' },
+  { cloth: 'brocade', leather: 'bull' },
+  { cloth: 'silk', leather: 'moose' },
+  { cloth: 'gossamer', leather: 'bull moose' },
+  { cloth: 'sylvan', leather: 'bear' },
+  { cloth: 'seamist', leather: 'whale' },
+  { cloth: 'nightshade', leather: 'shark' },
+  { cloth: 'wyvernskin', leather: 'elephant' },
+  { cloth: 'silksteel', leather: 'bull elephant' },
+];
+
+function clothArmorSet(material: string): Record<string, OrderItemRecipe> {
+  const recipes: Record<string, OrderItemRecipe> = {};
+  for (const [slot, qty] of Object.entries(TAILORING_SLOT_QTY)) {
+    recipes[`${material} ${slot}`] = {
+      craftTypeId: 'tailoring',
+      components: [
+        { material: `${material} thread`, qty },
+        { material: `${material} cloth square`, qty },
+      ],
+    };
+  }
+  return recipes;
+}
+
+function leatherArmorSet(clothMaterial: string, leatherMaterial: string): Record<string, OrderItemRecipe> {
+  const recipes: Record<string, OrderItemRecipe> = {};
+  for (const [slot, qty] of Object.entries(TAILORING_SLOT_QTY)) {
+    recipes[`${leatherMaterial} leather ${slot}`] = {
+      craftTypeId: 'tailoring',
+      components: [
+        { material: `${clothMaterial} thread`, qty },
+        { material: `${leatherMaterial} leather square`, qty },
+      ],
+    };
+  }
+  return recipes;
+}
+
+function tailoringSets(): Record<string, OrderItemRecipe> {
+  let recipes: Record<string, OrderItemRecipe> = {};
+  for (const { cloth, leather } of TAILORING_TIERS) {
+    recipes = { ...recipes, ...clothArmorSet(cloth), ...leatherArmorSet(cloth, leather) };
+  }
+  return recipes;
+}
+
 // Hardcoded, not config — this data rarely changes and the user does not
 // want to maintain an override surface for it. Add new order items here.
 export const ORDER_ITEM_RECIPES: Record<string, OrderItemRecipe> = {
@@ -249,20 +326,7 @@ export const ORDER_ITEM_RECIPES: Record<string, OrderItemRecipe> = {
       { material: 'pain essence', qty: 1 },
     ],
   },
-  'silksteel cloth helmet': {
-    craftTypeId: 'tailoring',
-    components: [
-      { material: 'silksteel thread', qty: 1 },
-      { material: 'silksteel square', qty: 1 },
-    ],
-  },
-  'bull elephant leather tunic': {
-    craftTypeId: 'tailoring',
-    components: [
-      { material: 'silksteel thread', qty: 4 },
-      { material: 'bull elephant leather square', qty: 4 },
-    ],
-  },
+  ...tailoringSets(),
   ...arcaniumArmorSet('platemail', { helmet: 1, boots: 1, leggings: 2, gloves: 1, sleeves: 2, tunic: 4 }),
   ...arcaniumArmorSet('chainmail', { boots: 1, leggings: 2, gloves: 1, sleeves: 2, tunic: 4, helmet: 1 }),
   ...arcaniumArmorSet('studded leather', { boots: 1, pants: 2, gloves: 1, sleeves: 2, tunic: 4, helmet: 1 }),
@@ -1080,9 +1144,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.4.0',
+      version: '0.5.0',
       description:
-        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, and Armor Crafting tier tables, plus example Tailoring order recipes. Tailoring's score-rank keyword isn't confirmed yet, so it's not selectable for skill-up training. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
+        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, and Armor Crafting tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. Tailoring's score-rank keyword isn't confirmed yet, so it's not selectable for skill-up training and its order items can't be crafted via `order add` until a Tailoring row is added to the Craft types config. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
     },
 
     configSchema: {

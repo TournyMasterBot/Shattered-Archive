@@ -48,6 +48,26 @@ describe('tierForSkill', () => {
   it('returns null for an unknown craft type', () => {
     expect(tierForSkill('tailoring', 500, rows)).toBeNull();
   });
+
+  it('regression: resolves a tier from a pre-multi-component saved config (bare material names, no ":qty")', () => {
+    // Reproduces a live bug: a saved config from before the multi-component
+    // tier-table format existed still has rows shaped like the old
+    // single-material format. Every row used to be silently dropped
+    // (component list came back empty), so no skill level matched any
+    // tier — "Skill level 948 has no matching tier" at any level.
+    const legacyRows = parseTierTableConfig(
+      [
+        'spellcrafting | 1   | obsidian gemstone | uncut obsidian stone',
+        'spellcrafting | 841 | diamond gemstone  | uncut diamond stone',
+      ].join('\n'),
+    );
+    expect(tierForSkill('spellcrafting', 948, legacyRows)).toEqual({
+      craftTypeId: 'spellcrafting',
+      skillThreshold: 841,
+      trinket: 'diamond gemstone',
+      components: [{ material: 'uncut diamond stone', qty: 1 }],
+    });
+  });
 });
 
 describe('parseTierTableConfig', () => {
@@ -89,8 +109,13 @@ describe('parseTierTableConfig', () => {
     ]);
   });
 
-  it('skips a row whose component list is empty or malformed', () => {
-    expect(parseTierTableConfig('armor | 1 | iron shield | not-a-component-list')).toEqual([]);
+  it('accepts a legacy bare-material component (no ":qty") as qty 1 — backward compat with pre-multi-component saved configs', () => {
+    const rows = parseTierTableConfig('armor | 1 | iron shield | iron ingot');
+    expect(rows[0].components).toEqual([{ material: 'iron ingot', qty: 1 }]);
+  });
+
+  it('skips a row whose component field is blank', () => {
+    expect(parseTierTableConfig('armor | 1 | iron shield |   ')).toEqual([]);
   });
 
   it('returns [] for non-string input', () => {
@@ -280,7 +305,7 @@ describe('parseQualityContainerMap / containerForQuality', () => {
 });
 
 describe('ORDER_ITEM_RECIPES', () => {
-  it('includes the seeded spellcrafting and tailoring examples', () => {
+  it('includes diamond of pain at spellcrafting', () => {
     expect(ORDER_ITEM_RECIPES['diamond of pain']).toEqual({
       craftTypeId: 'spellcrafting',
       components: [
@@ -288,13 +313,58 @@ describe('ORDER_ITEM_RECIPES', () => {
         { material: 'pain essence', qty: 1 },
       ],
     });
-    expect(ORDER_ITEM_RECIPES['bull elephant leather tunic']).toEqual({
+  });
+
+  it('builds a cloth tailoring item as "<material> <slot>" using material thread + material cloth square', () => {
+    expect(ORDER_ITEM_RECIPES['silk helmet']).toEqual({
+      craftTypeId: 'tailoring',
+      components: [
+        { material: 'silk thread', qty: 1 },
+        { material: 'silk cloth square', qty: 1 },
+      ],
+    });
+    expect(ORDER_ITEM_RECIPES['silksteel shirt']).toEqual({
       craftTypeId: 'tailoring',
       components: [
         { material: 'silksteel thread', qty: 4 },
-        { material: 'bull elephant leather square', qty: 4 },
+        { material: 'silksteel cloth square', qty: 4 },
       ],
     });
+  });
+
+  it('builds a leather tailoring item as "<leather material> leather <slot>" using the same-tier cloth thread + leather material square', () => {
+    expect(ORDER_ITEM_RECIPES['whale leather sleeves']).toEqual({
+      craftTypeId: 'tailoring',
+      components: [
+        { material: 'seamist thread', qty: 2 },
+        { material: 'whale leather square', qty: 2 },
+      ],
+    });
+    expect(ORDER_ITEM_RECIPES['bull moose leather leggings']).toEqual({
+      craftTypeId: 'tailoring',
+      components: [
+        { material: 'gossamer thread', qty: 2 },
+        { material: 'bull moose leather square', qty: 2 },
+      ],
+    });
+  });
+
+  it('covers all 10 tailoring tiers, both types, all 6 slots', () => {
+    const clothMaterials = [
+      'wool', 'linen', 'brocade', 'silk', 'gossamer', 'sylvan', 'seamist', 'nightshade', 'wyvernskin', 'silksteel',
+    ];
+    const leatherMaterials = ['deer', 'cow', 'bull', 'moose', 'bull moose', 'bear', 'whale', 'shark', 'elephant', 'bull elephant'];
+    const slots = ['helmet', 'gloves', 'boots', 'sleeves', 'leggings', 'shirt'];
+    for (const material of clothMaterials) {
+      for (const slot of slots) {
+        expect(ORDER_ITEM_RECIPES[`${material} ${slot}`]?.craftTypeId).toBe('tailoring');
+      }
+    }
+    for (const material of leatherMaterials) {
+      for (const slot of slots) {
+        expect(ORDER_ITEM_RECIPES[`${material} leather ${slot}`]?.craftTypeId).toBe('tailoring');
+      }
+    }
   });
 
   it('includes all 3 arcanium armor sets, 6 slots each, at armor-crafting', () => {
@@ -484,10 +554,10 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel helmet' 90+");
     plugin.onAlias!(mock.api, 'crafthelper order start');
     jest.advanceTimersByTime(200); // pull silksteel thread
-    jest.advanceTimersByTime(200); // pull silksteel square
+    jest.advanceTimersByTime(200); // pull silksteel cloth square
     // now crafting
     const sentSoFar = mock.sent.length;
 
@@ -496,13 +566,13 @@ describe('crafting-helper state machine', () => {
     jest.advanceTimersByTime(100); // put back square
     expect(mock.sent.slice(sentSoFar)).toEqual([
       "put 1 'silksteel thread' vault",
-      "put 1 'silksteel square' vault",
+      "put 1 'silksteel cloth square' vault",
     ]);
 
     jest.advanceTimersByTime(100); // then re-pull both, fresh
     expect(mock.sent.slice(sentSoFar)).toEqual([
       "put 1 'silksteel thread' vault",
-      "put 1 'silksteel square' vault",
+      "put 1 'silksteel cloth square' vault",
       "get 1 'silksteel thread' vault",
     ]);
   });
@@ -512,7 +582,7 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel helmet' 90+");
     const orderId = getOrderQueue('__unknown__')[0].id;
     plugin.onAlias!(mock.api, 'crafthelper order start');
     jest.advanceTimersByTime(200); // pull silksteel thread succeeds
@@ -521,7 +591,7 @@ describe('crafting-helper state machine', () => {
     const sentSoFar = [...mock.sent];
     jest.advanceTimersByTime(5000);
     expect(mock.sent).toEqual(sentSoFar); // nothing further sent
-    expect(mock.terminalWrites.some((w) => w.includes('silksteel square'))).toBe(true);
+    expect(mock.terminalWrites.some((w) => w.includes('silksteel cloth square'))).toBe(true);
 
     const queue = getOrderQueue('__unknown__');
     expect(queue).toHaveLength(1);
@@ -742,17 +812,17 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel helmet' 90+");
     plugin.onAlias!(mock.api, 'crafthelper order start');
 
     expect(mock.sent).toEqual(["get 1 'silksteel thread' vault"]);
     jest.advanceTimersByTime(200); // pullConfirmTimeoutMs
-    expect(mock.sent).toEqual(["get 1 'silksteel thread' vault", "get 1 'silksteel square' vault"]);
+    expect(mock.sent).toEqual(["get 1 'silksteel thread' vault", "get 1 'silksteel cloth square' vault"]);
     jest.advanceTimersByTime(200);
     expect(mock.sent).toEqual([
       "get 1 'silksteel thread' vault",
-      "get 1 'silksteel square' vault",
-      "craft tailor 'silksteel cloth helmet'",
+      "get 1 'silksteel cloth square' vault",
+      "craft tailor 'silksteel helmet'",
     ]);
   });
 
@@ -819,7 +889,7 @@ describe('crafting-helper state machine', () => {
     plugin.onEnable!(mock.api);
 
     plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond of pain' 97+");
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel helmet' 90+");
     plugin.onAlias!(mock.api, 'crafthelper order start');
     jest.advanceTimersByTime(200);
     jest.advanceTimersByTime(200);
@@ -854,7 +924,7 @@ describe('crafting-helper state machine', () => {
     plugin.onEnable!(mock.api);
 
     plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond of pain' 97+");
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel helmet' 90+");
     const firstOrderId = getOrderQueue('__unknown__')[0].id;
 
     plugin.onAlias!(mock.api, 'crafthelper order start');
