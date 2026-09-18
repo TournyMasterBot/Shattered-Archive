@@ -46,7 +46,7 @@ describe('tierForSkill', () => {
   });
 
   it('returns null for an unknown craft type', () => {
-    expect(tierForSkill('tailoring', 500, rows)).toBeNull();
+    expect(tierForSkill('jewelcrafting', 500, rows)).toBeNull();
   });
 
   it('regression: resolves a tier from a pre-multi-component saved config (bare material names, no ":qty")', () => {
@@ -88,6 +88,34 @@ describe('parseTierTableConfig', () => {
     for (const group of [sharp, blunt, armor]) {
       expect(group.every((r) => r.components.length === 3 && r.components.every((c) => c.qty === 2))).toBe(true);
     }
+  });
+
+  it('parses the default table into 18 tailoring rows: 9 doll trinkets + 9 leather saddle trinkets', () => {
+    const rows = parseTierTableConfig(DEFAULT_TIER_TABLE_CONFIG).filter((r) => r.craftTypeId === 'tailoring');
+    expect(rows).toHaveLength(18);
+
+    const doll = rows.filter((r) => r.trinket.endsWith('doll trinket'));
+    const saddle = rows.filter((r) => r.trinket.endsWith('leather saddle trinket'));
+    expect(doll).toHaveLength(9);
+    expect(saddle).toHaveLength(9);
+    expect(doll.every((r) => r.components.length === 2 && r.components.every((c) => c.qty === 3))).toBe(true);
+    expect(saddle.every((r) => r.components.length === 3 && r.components.every((c) => c.qty === 2))).toBe(true);
+
+    expect(tierForSkill('tailoring', 1, rows)?.trinket).toBe('woolen doll trinket');
+    expect(tierForSkill('tailoring', 56, rows)?.trinket).toBe('deer leather saddle trinket');
+    expect(tierForSkill('tailoring', 943, rows)).toEqual({
+      craftTypeId: 'tailoring',
+      skillThreshold: 943,
+      trinket: 'elephant leather saddle trinket',
+      components: [
+        { material: 'wyvernskin cloth square', qty: 2 },
+        { material: 'spool of wyvernskin thread', qty: 2 },
+        { material: 'elephant leather square', qty: 2 },
+      ],
+    });
+    // Tier 9 (silksteel/bull elephant) is intentionally absent — the source
+    // craft list was cut off before reaching it, so 943 is the ceiling.
+    expect(tierForSkill('tailoring', 1001, rows)?.trinket).toBe('elephant leather saddle trinket');
   });
 
   it('ignores blank lines and comments', () => {
@@ -316,18 +344,18 @@ describe('ORDER_ITEM_RECIPES', () => {
     });
   });
 
-  it('builds a cloth tailoring item as "<material> <slot>" using material thread + material cloth square', () => {
+  it('builds a cloth tailoring item as "<material> <slot>" using spool of material thread + material cloth square', () => {
     expect(ORDER_ITEM_RECIPES['silk helmet']).toEqual({
       craftTypeId: 'tailoring',
       components: [
-        { material: 'silk thread', qty: 1 },
+        { material: 'spool of silk thread', qty: 1 },
         { material: 'silk cloth square', qty: 1 },
       ],
     });
     expect(ORDER_ITEM_RECIPES['silksteel shirt']).toEqual({
       craftTypeId: 'tailoring',
       components: [
-        { material: 'silksteel thread', qty: 4 },
+        { material: 'spool of silksteel thread', qty: 4 },
         { material: 'silksteel cloth square', qty: 4 },
       ],
     });
@@ -337,14 +365,14 @@ describe('ORDER_ITEM_RECIPES', () => {
     expect(ORDER_ITEM_RECIPES['whale leather sleeves']).toEqual({
       craftTypeId: 'tailoring',
       components: [
-        { material: 'seamist thread', qty: 2 },
+        { material: 'spool of seamist thread', qty: 2 },
         { material: 'whale leather square', qty: 2 },
       ],
     });
     expect(ORDER_ITEM_RECIPES['bull moose leather leggings']).toEqual({
       craftTypeId: 'tailoring',
       components: [
-        { material: 'gossamer thread', qty: 2 },
+        { material: 'spool of gossamer thread', qty: 2 },
         { material: 'bull moose leather square', qty: 2 },
       ],
     });
@@ -352,7 +380,7 @@ describe('ORDER_ITEM_RECIPES', () => {
 
   it('covers all 10 tailoring tiers, both types, all 6 slots', () => {
     const clothMaterials = [
-      'wool', 'linen', 'brocade', 'silk', 'gossamer', 'sylvan', 'seamist', 'nightshade', 'wyvernskin', 'silksteel',
+      'woolen', 'linen', 'brocade', 'silk', 'gossamer', 'sylvan', 'seamist', 'nightshade', 'wyvernskin', 'silksteel',
     ];
     const leatherMaterials = ['deer', 'cow', 'bull', 'moose', 'bull moose', 'bear', 'whale', 'shark', 'elephant', 'bull elephant'];
     const slots = ['helmet', 'gloves', 'boots', 'sleeves', 'leggings', 'shirt'];
@@ -556,7 +584,7 @@ describe('crafting-helper state machine', () => {
 
     plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel helmet' 90+");
     plugin.onAlias!(mock.api, 'crafthelper order start');
-    jest.advanceTimersByTime(200); // pull silksteel thread
+    jest.advanceTimersByTime(200); // pull spool of silksteel thread
     jest.advanceTimersByTime(200); // pull silksteel cloth square
     // now crafting
     const sentSoFar = mock.sent.length;
@@ -565,15 +593,15 @@ describe('crafting-helper state machine', () => {
     jest.advanceTimersByTime(100); // put back thread
     jest.advanceTimersByTime(100); // put back square
     expect(mock.sent.slice(sentSoFar)).toEqual([
-      "put 1 'silksteel thread' vault",
+      "put 1 'spool of silksteel thread' vault",
       "put 1 'silksteel cloth square' vault",
     ]);
 
     jest.advanceTimersByTime(100); // then re-pull both, fresh
     expect(mock.sent.slice(sentSoFar)).toEqual([
-      "put 1 'silksteel thread' vault",
+      "put 1 'spool of silksteel thread' vault",
       "put 1 'silksteel cloth square' vault",
-      "get 1 'silksteel thread' vault",
+      "get 1 'spool of silksteel thread' vault",
     ]);
   });
 
@@ -585,7 +613,7 @@ describe('crafting-helper state machine', () => {
     plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel helmet' 90+");
     const orderId = getOrderQueue('__unknown__')[0].id;
     plugin.onAlias!(mock.api, 'crafthelper order start');
-    jest.advanceTimersByTime(200); // pull silksteel thread succeeds
+    jest.advanceTimersByTime(200); // pull spool of silksteel thread succeeds
 
     mock.feedLine('I see nothing like that in the vault.'); // fails on the SECOND component
     const sentSoFar = [...mock.sent];
@@ -815,12 +843,12 @@ describe('crafting-helper state machine', () => {
     plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel helmet' 90+");
     plugin.onAlias!(mock.api, 'crafthelper order start');
 
-    expect(mock.sent).toEqual(["get 1 'silksteel thread' vault"]);
+    expect(mock.sent).toEqual(["get 1 'spool of silksteel thread' vault"]);
     jest.advanceTimersByTime(200); // pullConfirmTimeoutMs
-    expect(mock.sent).toEqual(["get 1 'silksteel thread' vault", "get 1 'silksteel cloth square' vault"]);
+    expect(mock.sent).toEqual(["get 1 'spool of silksteel thread' vault", "get 1 'silksteel cloth square' vault"]);
     jest.advanceTimersByTime(200);
     expect(mock.sent).toEqual([
-      "get 1 'silksteel thread' vault",
+      "get 1 'spool of silksteel thread' vault",
       "get 1 'silksteel cloth square' vault",
       "craft tailor 'silksteel helmet'",
     ]);
@@ -898,7 +926,7 @@ describe('crafting-helper state machine', () => {
 
     expect(getOrderQueue('__unknown__')).toHaveLength(1); // completed order removed
     jest.advanceTimersByTime(100);
-    expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'silksteel thread' vault"); // next order started
+    expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'spool of silksteel thread' vault"); // next order started
   });
 
   it('a quality line that never arrives stops the plugin rather than guessing where to route the item', () => {
@@ -940,7 +968,7 @@ describe('crafting-helper state machine', () => {
     expect(mock.sent).toContain("put 1 'diamond of pain' vault"); // no active order to route to -> default container
 
     jest.advanceTimersByTime(100);
-    expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'silksteel thread' vault"); // advanced to the remaining order
+    expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'spool of silksteel thread' vault"); // advanced to the remaining order
   });
 
   it('order status reports the active order and queue', () => {
