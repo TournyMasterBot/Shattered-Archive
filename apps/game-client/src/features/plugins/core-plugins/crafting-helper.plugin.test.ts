@@ -641,6 +641,27 @@ describe('crafting-helper state machine', () => {
     expect(mock.terminalWrites.some((w) => w.includes('uncut diamond stone'))).toBe(true);
   });
 
+  it('regression: a vault failure that arrives after the pull timeout (already crafting) still stops with a restock message', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, 'crafthelper start');
+    mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
+    jest.advanceTimersByTime(200); // pullConfirmTimeoutMs elapses -> craft sent
+    expect(mock.sent[mock.sent.length - 1]).toBe("craft spellcraft 'diamond gemstone'");
+
+    mock.feedLine('I see nothing like that in the vault.'); // late failure for the get
+    const sentSoFar = [...mock.sent];
+    jest.advanceTimersByTime(5000);
+    expect(mock.sent).toEqual(sentSoFar); // no further get/craft
+    expect(mock.terminalWrites.some((w) => w.includes('restock needed'))).toBe(true);
+
+    // And a stray outcome afterward must not resurrect the loop.
+    mock.feedLine('You failed but did not lose any materials.');
+    jest.advanceTimersByTime(5000);
+    expect(mock.sent).toEqual(sentSoFar);
+  });
+
   it('waits indefinitely for a craft outcome — no timeout, since higher-tier crafts can take a while', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();

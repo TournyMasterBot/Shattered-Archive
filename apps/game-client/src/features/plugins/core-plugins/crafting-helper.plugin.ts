@@ -931,6 +931,16 @@ export function createCraftingHelperPlugin(): IPluginModule {
       const line = rawLine.trim();
       if (!line) continue;
 
+      // A `get` that failed can be reported after pullConfirmTimeoutMs has
+      // already elapsed (the pull step assumes silence means success), by
+      // which point the craft command is out and we're in 'crafting'. That
+      // late failure must still stop the script, not be ignored.
+      if (matchVaultFailure(line)) {
+        const needs = activeRecipe?.components.map((c) => `${c.material}:${c.qty}`).join(', ');
+        enterError(api, cfg, `Vault ran out of components for "${activeRecipe?.outputName}" (needs ${needs}) — restock needed.`);
+        return;
+      }
+
       if (outcome === null) {
         const m = matchCraftOutcome(line);
         if (m) outcome = m;
@@ -1195,7 +1205,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.7.1',
+      version: '0.7.2',
       description:
         "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. Tailoring's tier table caps at 943 skill (elephant leather saddle trinket) — its top tier (silksteel/bull elephant) is missing from the source craft list. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
     },
