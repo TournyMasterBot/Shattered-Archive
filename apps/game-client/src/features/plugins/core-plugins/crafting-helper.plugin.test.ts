@@ -626,7 +626,8 @@ describe('crafting-helper state machine', () => {
     mock.feedLine('I see nothing like that in the vault.'); // fails on the SECOND component
     const sentSoFar = [...mock.sent];
     jest.advanceTimersByTime(5000);
-    expect(mock.sent).toEqual(sentSoFar); // nothing further sent
+    // Only the already-pulled first component goes back; nothing further is pulled or crafted.
+    expect(mock.sent).toEqual([...sentSoFar, "put 1 'spool of silksteel thread' vault"]);
     expect(mock.terminalWrites.some((w) => w.includes('silksteel cloth square'))).toBe(true);
 
     const queue = getOrderQueue('__unknown__');
@@ -661,13 +662,14 @@ describe('crafting-helper state machine', () => {
     mock.feedLine('I see nothing like that in the vault.'); // late failure for the get
     const sentSoFar = [...mock.sent];
     jest.advanceTimersByTime(5000);
-    expect(mock.sent).toEqual(sentSoFar); // no further get/craft
+    const expected = [...sentSoFar, "put 1 'uncut diamond stone' vault"]; // materials returned, no further get/craft
+    expect(mock.sent).toEqual(expected);
     expect(mock.terminalWrites.some((w) => w.includes('restock needed'))).toBe(true);
 
     // And a stray outcome afterward must not resurrect the loop.
     mock.feedLine('You failed but did not lose any materials.');
     jest.advanceTimersByTime(5000);
-    expect(mock.sent).toEqual(sentSoFar);
+    expect(mock.sent).toEqual(expected);
   });
 
   it('stops the trainer when crafting is interrupted, and can be restarted afterward', () => {
@@ -682,11 +684,57 @@ describe('crafting-helper state machine', () => {
     mock.feedLine('You stop crafting.');
     const sentSoFar = [...mock.sent];
     jest.advanceTimersByTime(5000);
-    expect(mock.sent).toEqual(sentSoFar); // nothing further sent
+    expect(mock.sent).toEqual([...sentSoFar, "put 1 'uncut diamond stone' vault"]); // materials returned, nothing else
     expect(mock.terminalWrites.some((w) => w.includes('interrupted'))).toBe(true);
 
     plugin.onAlias!(mock.api, 'crafthelper start'); // idle again, so start is accepted
     expect(mock.sent[mock.sent.length - 1]).toBe('score');
+  });
+
+  it('returns pulled materials to the vault when a requested stop takes effect after a no-loss failure', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, 'crafthelper start');
+    mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
+    jest.advanceTimersByTime(200); // craft sent, material in hand
+
+    plugin.onAlias!(mock.api, 'crafthelper stop');
+    mock.feedLine('You failed but did not lose any materials.');
+    jest.advanceTimersByTime(5000);
+
+    expect(mock.sent[mock.sent.length - 1]).toBe("put 1 'uncut diamond stone' vault");
+    expect(mock.sent.filter((c) => c.startsWith('craft ')).length).toBe(1); // no re-craft
+  });
+
+  it('does not send any put on stop when nothing is held (e.g. stopped between cycles)', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, 'crafthelper start');
+    mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
+    jest.advanceTimersByTime(200); // craft sent
+
+    plugin.onAlias!(mock.api, 'crafthelper stop');
+    mock.feedLine('You were successful.'); // consumed; trinket stored, then stop at next checkpoint
+    jest.advanceTimersByTime(5000);
+
+    expect(mock.sent.filter((c) => c.startsWith('put '))).toEqual(["put 1 'diamond gemstone' vault"]);
+  });
+
+  it('refuses to start again while materials are still being returned', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, 'crafthelper start');
+    mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
+    jest.advanceTimersByTime(200);
+    mock.feedLine('You stop crafting.'); // release timer now pending
+
+    const before = mock.sent.length;
+    plugin.onAlias!(mock.api, 'crafthelper start');
+    expect(mock.sent.length).toBe(before); // no `score`
+    expect(mock.terminalWrites.some((w) => w.includes('Still returning materials'))).toBe(true);
   });
 
   it('waits indefinitely for a craft outcome — no timeout, since higher-tier crafts can take a while', () => {

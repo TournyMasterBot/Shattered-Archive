@@ -611,6 +611,10 @@ export function createCraftingHelperPlugin(): IPluginModule {
   let scoreTimer: ReturnType<typeof setTimeout> | null = null;
   let pullTimer: ReturnType<typeof setTimeout> | null = null;
   let pacingTimer: ReturnType<typeof setTimeout> | null = null;
+  let releaseTimer: ReturnType<typeof setTimeout> | null = null;
+  // Components pulled from the vault that a craft hasn't consumed yet — if
+  // the run stops, these go back into the vault.
+  let materialsHeld: RecipeComponent[] | null = null;
   let lastPublishedSlot: HudSlotId | null = null;
 
   function clearAllTimers() {
@@ -618,7 +622,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
     if (pullTimer) clearTimeout(pullTimer);
     if (pacingTimer) clearTimeout(pacingTimer);
     if (qualityTimer) clearTimeout(qualityTimer);
-    scoreTimer = pullTimer = pacingTimer = qualityTimer = null;
+    if (releaseTimer) clearTimeout(releaseTimer);
+    scoreTimer = pullTimer = pacingTimer = qualityTimer = releaseTimer = null;
   }
 
   function publishHud(api: PluginRuntimeApi, cfg: EngineConfig) {
@@ -750,12 +755,33 @@ export function createCraftingHelperPlugin(): IPluginModule {
     beginPullCycle(api);
   }
 
+  // Best-effort: a `put` for something not actually held is assumed to
+  // no-op harmlessly (same assumption as the destroyed-outcome put-back).
+  function releaseMaterials(api: PluginRuntimeApi, cfg: EngineConfig) {
+    const held = materialsHeld;
+    materialsHeld = null;
+    if (!held || held.length === 0) return;
+    writeInfo(api, 'Returning pulled materials to the vault.');
+    const step = (i: number) => {
+      if (i >= held.length) {
+        releaseTimer = null;
+        return;
+      }
+      releaseTimer = setTimeout(() => {
+        api.sendCommand(`put ${held[i].qty} '${held[i].material}' vault`);
+        step(i + 1);
+      }, cfg.commandPacingDelayMs);
+    };
+    step(0);
+  }
+
   function goIdle(api: PluginRuntimeApi, cfg: EngineConfig) {
     stopRequested = false;
     state = 'idle';
     activeRecipe = null;
     publishHud(api, cfg);
     writeInfo(api, 'Stopped.');
+    releaseMaterials(api, cfg);
   }
 
   function enterError(api: PluginRuntimeApi, cfg: EngineConfig, reason: string) {
@@ -764,6 +790,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     stopReason = reason;
     publishHud(api, cfg);
     writeError(api, reason);
+    releaseMaterials(api, cfg);
   }
 
   function beginPullCycle(api: PluginRuntimeApi) {
@@ -800,6 +827,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     }
     state = 'pulling_components';
     publishHud(api, cfg);
+    materialsHeld = activeRecipe.components.slice(0, pullIndex + 1);
     const component = activeRecipe.components[pullIndex];
     api.sendCommand(`get ${component.qty} '${component.material}' vault`);
     pullTimer = setTimeout(() => onPullTimeout(api), cfg.pullConfirmTimeoutMs);
@@ -836,6 +864,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     // survived, put everything back (a `put` on something not held is
     // assumed to no-op harmlessly, same assumption already made for a
     // successful craft's `put`) and re-pull the full recipe fresh.
+    materialsHeld = null;
     putBackComponent(api, cfg, components, 0);
   }
 
@@ -919,6 +948,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
             pullTimer = null;
           }
           const missing = activeRecipe?.components[pullIndex]?.material;
+          materialsHeld = activeRecipe ? activeRecipe.components.slice(0, pullIndex) : null; // the failed one was never pulled
           enterError(api, cfg, `Vault is out of "${missing}" — restock needed.`);
           return;
         }
@@ -982,6 +1012,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     if (outcome === 'success') {
       if (session) session.successes += 1;
       state = 'storing_trinket';
+      materialsHeld = null; // consumed by the craft
       publishHud(api, cfg);
       handleCraftSuccess(api, cfg, activeRecipe!);
     } else if (outcome === 'failed_destroyed') {
@@ -1047,6 +1078,10 @@ export function createCraftingHelperPlugin(): IPluginModule {
 
   function handleImproveStart(api: PluginRuntimeApi): boolean {
     const cfg = readConfig(api);
+    if (releaseTimer) {
+      writeInfo(api, 'Still returning materials to the vault — try again in a moment.');
+      return true;
+    }
     if (state !== 'idle') {
       writeInfo(api, `Already running (state: ${state}).`);
       return true;
@@ -1152,6 +1187,10 @@ export function createCraftingHelperPlugin(): IPluginModule {
   }
 
   function handleOrderStart(api: PluginRuntimeApi): boolean {
+    if (releaseTimer) {
+      writeInfo(api, 'Still returning materials to the vault — try again in a moment.');
+      return true;
+    }
     if (state !== 'idle') {
       writeInfo(api, `Already running (state: ${state}).`);
       return true;
@@ -1233,7 +1272,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.7.4',
+      version: '0.8.0',
       description:
         "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. Tailoring's tier table caps at 943 skill (elephant leather saddle trinket) — its top tier (silksteel/bull elephant) is missing from the source craft list. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
     },
