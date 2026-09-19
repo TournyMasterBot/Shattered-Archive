@@ -914,3 +914,33 @@ the route/rest-start-end-of-round commands apply via the existing pause→edit�
   if-available/else-raw-fallback `useGameCommand.ts` itself uses. 2 new tests (rest routes
   through the processor and NOT the raw event when wired; a buff explicitly does NOT). Updated
   RestStep.tsx's field hints to say so. 380/380 tests + tsc green.
+
+- 2026-09-14T00:00:00Z step 13 continued (not checked) — docs-refresh sub-task, done in
+  isolation from the live play-test (no code changes). Audited `.annotated`/`.ai-context` for
+  every dir this plan (+ the concurrent picker-fix plan) touched: `features/autoleveling/`,
+  `components/wizard/`, `components/`, `hooks/`, `pages/`. Most entries were already current
+  (kept fresh incrementally during earlier steps) but found and fixed real gaps: (1) three files
+  with real behavior changes had NO index entry at all — `components/AutoLevelingModal.tsx`
+  (added, flagged as dead-but-undeleted code per the MainContainer change below),
+  `pages/MainContainer.tsx` (added — `pages/.annotated` had never had any entries; noted the
+  wizard-only ternary/flag removal), `hooks/useAutoLeveling.ts` (added — the two new `EngineDeps`
+  wired this session, `getLearnedCooldown`/`onAbilityCooldownLearned` and
+  `sendThroughCommandProcessor`); (2) two existing entries had gone stale mid-session — the
+  `AutoLevelWeightConfig`/`WizardDraft` field lists in `autoleveling-types.ts`'s and
+  `useWizardDraft.ts`'s own `.annotated` entries still listed a `weightEnabled`/`enabled` field
+  that a LATER same-day log entry (15:10) removed from the actual type — fixed both to match
+  current source, confirmed via grep against the real `.ts` files rather than trusting the prose.
+  Refreshed `features/autoleveling/.ai-context` (was generic Jul-14 boilerplate never touched
+  since project bootstrap) with a paragraph on the round-based gating mechanisms this plan added
+  (vitals/once/round-boundary/rest/weight) and where their config comes from.
+  **`.flows` regeneration is NOT done** — `document_flows`/`annotate` are `shattered-archive` MCP
+  tools; the `shattered_mcp` container itself is reachable (confirmed via `qdigest.sh --status`)
+  but no MCP server is connected to this session (no repo `.mcp.json`; a global settings.json
+  permission entry for `mcp__shattered-archive__*` tools is stale from a past session that had
+  one connected) — `ToolSearch` finds nothing under that prefix. Also flagged, not fixed:
+  `.claude/hooks/method-annotate-queue.js` exists on disk but is NOT registered in this repo's
+  `.claude/settings.json` PostToolUse hooks (only `edit-ledger.js` is) — so in-file `@ai-method`
+  blocks on host-edited files from this whole plan were never queued for passive re-annotation
+  either; both are session/repo-config gaps, not something resolvable by writing prose by hand.
+  User to either run `/document-flows` + method re-annotation via a Continue session that has the
+  MCP server connected, or wire it into this repo's own Claude Code config.
