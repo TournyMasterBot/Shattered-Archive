@@ -762,10 +762,13 @@ export function createCraftingHelperPlugin(): IPluginModule {
   function onQualityTimeout(api: PluginRuntimeApi) {
     qualityTimer = null;
     const cfg = readConfig(api);
+    // The craft succeeded, so don't leave the item in inventory: with no
+    // quality reading there's no better home than the default (vault).
+    if (activeRecipe) api.sendCommand(`put 1 '${activeRecipe.outputName}' vault`);
     enterError(
       api,
       cfg,
-      `Couldn't verify quality of "${activeRecipe?.outputName}" within ${cfg.loreResponseTimeoutMs}ms — stopped rather than guess where to route it.`,
+      `Couldn't verify quality of "${activeRecipe?.outputName}" within ${cfg.loreResponseTimeoutMs}ms — stopped rather than guess where to route it; put it in the vault.`,
     );
   }
 
@@ -947,10 +950,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
   }
 
   function putBackComponent(api: PluginRuntimeApi, cfg: EngineConfig, components: RecipeComponent[], index: number) {
-    if (stopRequested) {
-      goIdle(api, cfg);
-      return;
-    }
+    // Deliberately no stopRequested check here: a requested stop must still
+    // finish returning the materials — beginPullCycle (reached once they're
+    // all put back) is what turns the stop into idle.
     if (index >= components.length) {
       pacingTimer = setTimeout(() => beginPullCycle(api), cfg.commandPacingDelayMs);
       return;
@@ -1351,7 +1353,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.10.0',
+      version: '0.10.1',
       description:
         "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. All five craft skills' training tiers are complete (the last trinket in each carries skill to the 1001 cap). The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
     },

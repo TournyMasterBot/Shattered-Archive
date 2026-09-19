@@ -769,6 +769,30 @@ describe('crafting-helper state machine', () => {
     expect(mock.sent.filter((c) => c.startsWith('craft ')).length).toBe(1); // no re-craft
   });
 
+  it('a requested stop still returns all the materials when the craft that was in flight comes back destroyed', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem leeching' 90+");
+    plugin.onAlias!(mock.api, 'crafthelper order start');
+    jest.advanceTimersByTime(200); // gemstone pulled
+    jest.advanceTimersByTime(200); // essence pulled
+    jest.advanceTimersByTime(200); // ferrite crystal pulled -> craft sent
+    expect(mock.sent[mock.sent.length - 1]).toBe("craft spellcraft 'diamond gem leeching'");
+
+    plugin.onAlias!(mock.api, 'crafthelper order stop');
+    mock.feedLine('You failed and destroyed some materials in the process.');
+    jest.advanceTimersByTime(5000);
+
+    expect(mock.sent.filter((c) => c.startsWith('put '))).toEqual([
+      "put 1 'diamond gemstone' vault",
+      "put 1 'essence of moons' vault",
+      "put 1 'ferrite crystal' vault",
+    ]);
+    expect(mock.sent.filter((c) => c.startsWith('get ')).length).toBe(3); // no re-pull
+    expect(mock.terminalWrites.some((w) => w.includes('Stopped'))).toBe(true);
+  });
+
   it('does not send any put on stop when nothing is held (e.g. stopped between cycles)', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
@@ -1179,7 +1203,8 @@ describe('crafting-helper state machine', () => {
     const sentSoFar = [...mock.sent];
 
     jest.advanceTimersByTime(2000); // loreResponseTimeoutMs default
-    expect(mock.sent).toEqual(sentSoFar); // no further `put`/`get` sent
+    // The made item goes to the vault rather than staying in inventory; nothing else is sent.
+    expect(mock.sent).toEqual([...sentSoFar, "put 1 'diamond gem pain' vault"]);
     expect(mock.terminalWrites.some((w) => w.includes("verify quality"))).toBe(true);
   });
 
