@@ -253,6 +253,22 @@ describe('buildHudContent', () => {
     const content = buildHudContent({ state: 'crafting', everRun: true, ...base });
     expect(content?.value).toBe('Lv 948 · diamond gemstone · crafting');
   });
+
+  it('leads with the activity when given', () => {
+    const content = buildHudContent({ state: 'crafting', everRun: true, ...base, activity: 'improving Spellcrafting' });
+    expect(content?.value).toBe('improving Spellcrafting · Lv 948 · diamond gemstone · crafting');
+  });
+
+  it('omits the level when unknown', () => {
+    const content = buildHudContent({
+      state: 'crafting',
+      everRun: true,
+      ...base,
+      trackedSkillLevel: null,
+      activity: 'working on order order-abc',
+    });
+    expect(content?.value).toBe('working on order order-abc · diamond gemstone · crafting');
+  });
 });
 
 describe('parseQualitySpec', () => {
@@ -785,6 +801,30 @@ describe('crafting-helper state machine', () => {
     jest.advanceTimersByTime(100); // put-back
     jest.advanceTimersByTime(100); // then pull
     expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'uncut moonstone' vault");
+  });
+
+  it('HUD says "improving <craft>" in improve mode', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, 'crafthelper start');
+    mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
+    jest.advanceTimersByTime(200);
+    expect(mock.hudWrites[mock.hudWrites.length - 1].content?.value).toBe(
+      'improving Spellcrafting · Lv 948 · diamond gemstone · crafting',
+    );
+  });
+
+  it('HUD says "working on order <id>" in order mode, without a stale skill level', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel helmet' 90+");
+    const orderId = getOrderQueue('__unknown__')[0].id;
+    plugin.onAlias!(mock.api, 'crafthelper order start');
+    expect(mock.hudWrites[mock.hudWrites.length - 1].content?.value).toBe(
+      `working on order ${orderId} · silksteel helmet · pulling components`,
+    );
   });
 
   it('regression: a skill-up line right after the success line (state already storing_trinket) updates the HUD', () => {

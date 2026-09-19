@@ -515,8 +515,10 @@ export function buildHudContent(input: {
   trackedSkillLevel: number | null;
   activeItemName: string | null;
   stopReason: string | null;
+  /** e.g. "improving Spellcrafting" or "working on order <id>". */
+  activity?: string | null;
 }): HudWidgetContent | null {
-  const { state, everRun, trackedSkillLevel, activeItemName, stopReason } = input;
+  const { state, everRun, trackedSkillLevel, activeItemName, stopReason, activity } = input;
 
   // Never started: don't occupy a slot for a plugin that hasn't run yet.
   if (!everRun && state === 'idle') return null;
@@ -529,11 +531,14 @@ export function buildHudContent(input: {
     return { label: 'Crafting Helper', value: 'Stopped', variant: 'default' };
   }
 
-  return {
-    label: 'Crafting Helper',
-    value: `Lv ${trackedSkillLevel ?? '?'} · ${activeItemName ?? '?'} · ${phaseLabel(state)}`,
-    variant: 'default',
-  };
+  const parts = [
+    activity,
+    trackedSkillLevel != null ? `Lv ${trackedSkillLevel}` : null,
+    activeItemName,
+    phaseLabel(state),
+  ].filter((p): p is string => !!p);
+
+  return { label: 'Crafting Helper', value: parts.join(' · '), variant: 'default' };
 }
 
 // ── Config reading ────────────────────────────────────────────────────
@@ -642,6 +647,12 @@ export function createCraftingHelperPlugin(): IPluginModule {
       trackedSkillLevel,
       activeItemName: activeRecipe?.outputName ?? null,
       stopReason,
+      activity:
+        mode === 'order'
+          ? activeOrder
+            ? `working on order ${activeOrder.id}`
+            : 'working on orders'
+          : `improving ${activeCraftTypeRow?.label ?? cfg.activeCraftType}`,
     });
 
     api.setHudWidget(targetSlot, content);
@@ -1202,6 +1213,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     }
 
     mode = 'order';
+    trackedSkillLevel = null; // any level from an earlier improve run may belong to a different craft
     stopRequested = false;
     stopReason = null;
     everRun = true;
@@ -1272,7 +1284,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.8.0',
+      version: '0.8.1',
       description:
         "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. Tailoring's tier table caps at 943 skill (elephant leather saddle trinket) — its top tier (silksteel/bull elephant) is missing from the source craft list. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
     },
