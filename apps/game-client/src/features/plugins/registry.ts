@@ -18,6 +18,7 @@ import { createWarlockAlphabetPlugin } from './core-plugins/warlock-alphabet.plu
 import { createQuestBotPlugin } from './core-plugins/questbot.plugin';
 import { createVoiceDictationPlugin } from './core-plugins/voice-dictation.plugin';
 import { createTextToSpeechPlugin } from './core-plugins/text-to-speech.plugin';
+import { createTickWarningPlugin } from './core-plugins/tick-warning.plugin';
 
 export interface CorePluginDefinition {
   id: PluginId;
@@ -115,6 +116,11 @@ export const CORE_PLUGINS: CorePluginDefinition[] = [
     id: 'text-to-speech',
     manifest: createTextToSpeechPlugin().manifest,
     create: createTextToSpeechPlugin,
+  },
+  {
+    id: 'tick-warning',
+    manifest: createTickWarningPlugin().manifest,
+    create: createTickWarningPlugin,
   },
 ];
 
