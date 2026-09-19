@@ -367,6 +367,30 @@ describe('ORDER_ITEM_RECIPES', () => {
     });
   });
 
+  it('builds spellcrafting gems from a cut gemstone plus an essence', () => {
+    expect(ORDER_ITEM_RECIPES['opal gem inertia']).toEqual({
+      craftTypeId: 'spellcrafting',
+      components: [
+        { material: 'opal gemstone', qty: 1 },
+        { material: 'essence of inertia', qty: 1 },
+      ],
+    });
+    // "mind" is the item suffix, but the essence is "essence of the mind".
+    expect(ORDER_ITEM_RECIPES['opal gem mind']?.components[1].material).toBe('essence of the mind');
+    expect(ORDER_ITEM_RECIPES['diamond gem muscle']?.components[0].material).toBe('diamond gemstone');
+  });
+
+  it('covers all 8 basic essences for 7 gemstone tiers (moonstone excluded until its naming is confirmed)', () => {
+    const tiers = ['obsidian', 'opal', 'amethyst', 'emerald', 'sapphire', 'ruby', 'diamond'];
+    const suffixes = ['inertia', 'life', 'moons', 'growth', 'age', 'mind', 'wind', 'muscle'];
+    for (const tier of tiers) {
+      for (const suffix of suffixes) {
+        expect(ORDER_ITEM_RECIPES[`${tier} gem ${suffix}`]?.craftTypeId).toBe('spellcrafting');
+      }
+    }
+    expect(Object.keys(ORDER_ITEM_RECIPES).filter((k) => k.startsWith('moonstone'))).toEqual([]);
+  });
+
   it('builds a cloth tailoring item as "<material> <slot>" using spool of material thread + material cloth square', () => {
     expect(ORDER_ITEM_RECIPES['silk helmet']).toEqual({
       craftTypeId: 'tailoring',
@@ -800,6 +824,21 @@ describe('crafting-helper state machine', () => {
     jest.advanceTimersByTime(100); // put-back
     jest.advanceTimersByTime(100); // then pull
     expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'uncut moonstone' vault");
+  });
+
+  it('fulfills a spellcrafting gem order: gemstone, essence, then craft by the gem name', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'opal gem mind' 90+");
+    plugin.onAlias!(mock.api, 'crafthelper order start');
+    jest.advanceTimersByTime(200);
+    jest.advanceTimersByTime(200);
+    expect(mock.sent).toEqual([
+      "get 1 'opal gemstone' vault",
+      "get 1 'essence of the mind' vault",
+      "craft spellcraft 'opal gem mind'",
+    ]);
   });
 
   it('HUD says "improving <craft>" in improve mode', () => {

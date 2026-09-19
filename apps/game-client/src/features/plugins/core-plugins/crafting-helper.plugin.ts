@@ -357,6 +357,43 @@ function tailoringSets(): Record<string, OrderItemRecipe> {
   return recipes;
 }
 
+// Spellcrafting order gems: a cut gemstone (the same item a training tier
+// produces) + one essence, 1 each. Confirmed for opal from a real in-game
+// craft list ("opal gem inertia" = opal gemstone + essence of inertia, etc.);
+// the user stated the essences are shared across gemstone tiers, so the
+// other tiers below are extrapolated from that pattern. Moonstone is left
+// out — its gem-name form ("moonstone gem X"?) isn't confirmed, and its
+// gemstone item is just "moonstone", not "moonstone gemstone". Diamond has
+// extra special gems that aren't listed here yet.
+const SPELL_GEM_ESSENCES: Array<{ suffix: string; essence: string }> = [
+  { suffix: 'inertia', essence: 'essence of inertia' },
+  { suffix: 'life', essence: 'essence of life' },
+  { suffix: 'moons', essence: 'essence of moons' },
+  { suffix: 'growth', essence: 'essence of growth' },
+  { suffix: 'age', essence: 'essence of age' },
+  { suffix: 'mind', essence: 'essence of the mind' },
+  { suffix: 'wind', essence: 'essence of wind' },
+  { suffix: 'muscle', essence: 'essence of muscle' },
+];
+
+const SPELL_GEM_TIERS = ['obsidian', 'opal', 'amethyst', 'emerald', 'sapphire', 'ruby', 'diamond'];
+
+function spellGemSets(): Record<string, OrderItemRecipe> {
+  const recipes: Record<string, OrderItemRecipe> = {};
+  for (const tier of SPELL_GEM_TIERS) {
+    for (const { suffix, essence } of SPELL_GEM_ESSENCES) {
+      recipes[`${tier} gem ${suffix}`] = {
+        craftTypeId: 'spellcrafting',
+        components: [
+          { material: `${tier} gemstone`, qty: 1 },
+          { material: essence, qty: 1 },
+        ],
+      };
+    }
+  }
+  return recipes;
+}
+
 // Hardcoded, not config — this data rarely changes and the user does not
 // want to maintain an override surface for it. Add new order items here.
 export const ORDER_ITEM_RECIPES: Record<string, OrderItemRecipe> = {
@@ -367,6 +404,7 @@ export const ORDER_ITEM_RECIPES: Record<string, OrderItemRecipe> = {
       { material: 'pain essence', qty: 1 },
     ],
   },
+  ...spellGemSets(),
   ...tailoringSets(),
   ...arcaniumArmorSet('platemail', { helmet: 1, boots: 1, leggings: 2, gloves: 1, sleeves: 2, tunic: 4 }),
   ...arcaniumArmorSet('chainmail', { boots: 1, leggings: 2, gloves: 1, sleeves: 2, tunic: 4, helmet: 1 }),
@@ -1284,7 +1322,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.8.2',
+      version: '0.9.0',
       description:
         "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. All five craft skills' training tiers are complete (the last trinket in each carries skill to the 1001 cap). The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
     },
