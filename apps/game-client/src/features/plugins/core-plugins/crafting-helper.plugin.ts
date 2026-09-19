@@ -133,10 +133,10 @@ function craftTierRows(
 // (2 components, qty 3 each) that unlocks first, and a "<leather> leather
 // saddle trinket" (3 components, qty 2 each — the same tier's cloth thread
 // + cloth square, plus its own leather square) that unlocks ~55 skill
-// points later. Tier index 9 (silksteel/bull elephant) is NOT included —
-// the paste this was transcribed from was cut off before reaching it, and
-// per this plugin's data-entry discipline that tier is left out rather
-// than guessed. Real in-game item names use "spool of <material> thread",
+// points later. The elephant leather saddle trinket (943) is the last
+// training trinket — it carries skill to the 1001 cap; silksteel/bull
+// elephant (tier index 9) only exists as order-item materials, not a
+// training tier. Real in-game item names use "spool of <material> thread",
 // not "<material> thread" — this also corrected the order-item recipes
 // below, which had guessed the shorter form before this list existed.
 const TAILORING_TRINKET_TIERS: Array<{ dollThreshold: number; saddleThreshold: number; cloth: string; leather: string }> = [
@@ -1284,9 +1284,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.8.1',
+      version: '0.8.2',
       description:
-        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. Tailoring's tier table caps at 943 skill (elephant leather saddle trinket) — its top tier (silksteel/bull elephant) is missing from the source craft list. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
+        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. All five craft skills' training tiers are complete (the last trinket in each carries skill to the 1001 cap). The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
     },
 
     configSchema: {

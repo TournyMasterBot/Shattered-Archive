@@ -114,8 +114,7 @@ describe('parseTierTableConfig', () => {
         { material: 'elephant leather square', qty: 2 },
       ],
     });
-    // Tier 9 (silksteel/bull elephant) is intentionally absent — the source
-    // craft list was cut off before reaching it, so 943 is the ceiling.
+    // The elephant leather saddle trinket is the last training trinket, all the way to the 1001 cap.
     expect(tierForSkill('tailoring', 1001, rows)?.trinket).toBe('elephant leather saddle trinket');
   });
 
