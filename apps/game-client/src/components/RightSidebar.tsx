@@ -13,6 +13,7 @@ import {
   type OpponentStatusDetail,
 } from '../features/combat/opponent-types';
 import { ListenDomEvent, ListenEvent } from '../features/event-emitter/event-dispatcher';
+import { ansiToHtml } from '@shatteredarchive/utils-client/ansi-to-html';
 
 /* ---------------- Status block (tick + vitals + enemy + ancillary) ---------------- */
 
@@ -337,6 +338,14 @@ const StatusBlock: React.FC = () => {
     if (!isEnemyActive && damageChunk) setDamageChunk(null);
   }, [isEnemyActive, damageChunk]);
 
+  // The opponent probe deliberately keeps the label's raw ANSI (see
+  // ProbeOpponentConditionLine) so a mob's color-coded name renders the same way here
+  // as it does in the terminal, instead of showing as plain text.
+  const enemyLabelHtml = useMemo(
+    () => (isEnemyActive ? ansiToHtml(enemyUi.label) : ''),
+    [isEnemyActive, enemyUi.label],
+  );
+
   return (
     <div className={styles.statusBlock}>
       {/* TOP ROW: always visible so the config manager never disappears */}
@@ -493,7 +502,7 @@ const StatusBlock: React.FC = () => {
 
         {hud.opponent && (
           <div className={enemyRowClass}>
-            <span className={styles.barLabel}>{isEnemyActive ? enemyUi.label : ''}</span>
+            <span className={styles.barLabel} dangerouslySetInnerHTML={{ __html: enemyLabelHtml }} />
 
             <div className={`${styles.barTrack} ${styles.enemyTrack}`}>
               <div className={styles.barFill} style={{ width: `${isEnemyActive ? enemyUi.pct : 0}%` }} />

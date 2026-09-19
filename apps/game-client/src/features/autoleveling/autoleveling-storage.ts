@@ -5,12 +5,14 @@
  * -----------------------------------
  * Intent:
  * - Persist config per connectionId using a versioned key prefix.
- * - Hard-gate to v2 only. If stored data isn't v2, return fallback.
+ * - Hard-gate to v3. A stored v2 config (the old modal's shape) is migrated
+ *   forward once on load; anything else falls back to the default.
  * - Coerce missing fields from fallback conservatively.
  */
 
 import type { AutoLevelConfig } from './autoleveling-types';
 import { createDefaultAutoLevelConfig } from './autoleveling-defaults';
+import { migrateAutoLevelConfigV2ToV3 } from './autoleveling-normalize';
 
 /* ----------------------------- debug helpers ------------------------------ */
 
@@ -50,7 +52,8 @@ function swarn(...args: any[]) {
 
 /* ------------------------------------------------------------------------- */
 
-const KEY_PREFIX = 'autoleveling-config-v2:';
+const KEY_PREFIX = 'autoleveling-config-v3:';
+const KEY_PREFIX_V2 = 'autoleveling-config-v2:';
 
 function keyFor(connectionId: string): string {
   return `${KEY_PREFIX}${connectionId || 'default'}`;
@@ -66,26 +69,30 @@ function coerceConfig(raw: unknown, fallback: AutoLevelConfig): AutoLevelConfig 
     return fallback;
   }
 
-  // HARD gate: v2 only. Breaking change is intentional.
-  if ((raw as any).version !== 2) {
-    sdbg('coerceConfig: version mismatch -> fallback', { got: (raw as any).version });
+  // HARD gate: v3. A stored v2 blob (old modal) is migrated forward; anything
+  // else falls back to the default.
+  let src = raw as Record<string, any>;
+  if (src.version === 2) {
+    sdbg('coerceConfig: migrating v2 -> v3');
+    src = migrateAutoLevelConfigV2ToV3(src) as unknown as Record<string, any>;
+  } else if (src.version !== 3) {
+    sdbg('coerceConfig: version mismatch -> fallback', { got: src.version });
     return fallback;
   }
 
-  // Keep it conservative: fill missing fields from fallback, but do not attempt v1 migration here.
+  // Keep it conservative: fill missing fields from fallback.
   const next: AutoLevelConfig = {
     ...fallback,
-    ...(raw as any),
+    ...src,
+    criticalBuffs: Array.isArray(src.criticalBuffs) ? src.criticalBuffs : fallback.criticalBuffs,
     init: {
       ...fallback.init,
-      ...(isObject((raw as any).init) ? ((raw as any).init as any) : {}),
-      targets: Array.isArray((raw as any)?.init?.targets)
-        ? ((raw as any).init.targets as any[])
-        : fallback.init.targets,
+      ...(isObject(src.init) ? src.init : {}),
+      targets: Array.isArray(src.init?.targets) ? src.init.targets : fallback.init.targets,
     },
     steps: {
       ...fallback.steps,
-      ...(isObject((raw as any).steps) ? ((raw as any).steps as any) : {}),
+      ...(isObject(src.steps) ? src.steps : {}),
     },
   };
 
@@ -103,15 +110,25 @@ export function loadAutoLevelConfig(connectionId: string, fallback?: AutoLevelCo
 
   try {
     const k = keyFor(connectionId);
-    const raw = localStorage.getItem(k);
+    let raw = localStorage.getItem(k);
+    let migratedFromV2 = false;
+
     if (!raw) {
-      sdbg('load: miss -> fallback', { key: k });
-      return fb;
+      // One-time forward migration from the old modal's v2 key.
+      raw = localStorage.getItem(`${KEY_PREFIX_V2}${connectionId || 'default'}`);
+      if (!raw) {
+        sdbg('load: miss -> fallback', { key: k });
+        return fb;
+      }
+      migratedFromV2 = true;
+      sdbg('load: v3 miss, found v2 -> migrating', { key: k });
     }
 
     const parsed = JSON.parse(raw) as unknown;
     sdbg('load: hit', { key: k, bytes: raw.length });
-    return coerceConfig(parsed, fb);
+    const config = coerceConfig(parsed, fb);
+    if (migratedFromV2) saveAutoLevelConfig(connectionId, config); // persist under v3
+    return config;
   } catch (e) {
     swarn('load: error -> fallback', e);
     return fb;

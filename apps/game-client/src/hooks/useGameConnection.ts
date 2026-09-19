@@ -150,6 +150,10 @@ export function useGameConnection(): UseGameConnectionResult {
     const msg: ClientMessage = { type: 'data', data };
     try {
       ws.send(JSON.stringify(msg));
+      // The single physical send point, for every source (typed, aliased, or
+      // programmatic via shatteredarchive:send-command) — the one place a
+      // "command was sent" signal can fire exactly once per real send.
+      DispatchEvent('shatteredarchive:command-sent', { text: data });
     } catch {
       // ignore
     }

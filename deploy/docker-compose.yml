@@ -239,17 +239,20 @@ services:
       # deliberately-plain, operator-hand-edited file (see questions-store.ts) — it needs
       # a real host path to edit with a text editor. auth-server-secrets stays a named
       # volume: the encryption key must NOT be casually host-editable/visible.
-      # HAZARD on a machine that also runs the experimental stack: this bind mount is the
-      # SAME host directory that compose file uses, while the encryption key below comes
-      # from a PROJECT-SCOPED volume (shatteredarchive-prod_auth-server-secrets vs
-      # shatteredarchive_auth-server-secrets). Run both stacks on one host and whichever
-      # starts second reads data encrypted under the other's key, fails the AES-GCM auth
-      # tag and LOCKS the store ("unable to authenticate data ... store LOCKED"). Nothing
-      # is lost — read() locks and throws, write() refuses while locked, so the files are
-      # never rewritten — but login stays down until the intruding stack is stopped.
-      # Cannot happen on a real production host, where only this stack exists.
-      # deploy/scripts/deploy-auth-stack.sh refuses --prod when it detects the collision.
       - ../apps/auth-server/data:/repo/apps/auth-server/data
+      # FORMERLY the same host path as the experimental stack's encrypted-store mount, which
+      # was a real hazard (2026-09-13 incident): both stacks shared this ONE directory for
+      # accounts/keys/devices/service-keys while each read its encryption key from its own
+      # PROJECT-SCOPED volume (shatteredarchive-prod_auth-server-secrets vs
+      # shatteredarchive_auth-server-secrets) — whichever stack started/wrote SECOND silently
+      # re-encrypted the shared files under its own key, and the other stack's next read failed
+      # the AES-GCM auth tag and PERMANENTLY locked ("unable to authenticate data ... store
+      # LOCKED"), recoverable only by stopping the intruder AND restarting the locked stack's
+      # own process (the lock is in-memory, not on disk — nothing was ever lost or corrupted).
+      # Fixed by giving the encrypted stores their OWN stack-specific path (SECURE_DATA_DIR,
+      # below) while dsl-questions.json/audit.log stay on the shared path above, preserving the
+      # hand-editable design this comment used to describe. See config.ts's secureDataDir doc.
+      - ../apps/auth-server/data/prod-secure:/repo/apps/auth-server/secure-data
       - auth-server-secrets:/repo/apps/auth-server/secrets
       # Public keys published by consuming services, mounted READ-ONLY: this server only
       # ever reads them, and the consumer that owns a key is the only thing that should
@@ -260,6 +263,9 @@ services:
       PORT: "62000"
       LOG_LEVEL: "info"
       DATA_DIR: "/repo/apps/auth-server/data"
+      # Own encrypted-store directory, separate from the experimental stack's — see the volume
+      # comment above.
+      SECURE_DATA_DIR: "/repo/apps/auth-server/secure-data"
       # Mounted-file secret (auth-server-secrets, above) — self-generated on first boot,
       # persists across recreation. See crypto-primitives.ts's loadDataKey() precedence.
       DATA_ENCRYPTION_KEY_FILE: "/repo/apps/auth-server/secrets/encryption.key"

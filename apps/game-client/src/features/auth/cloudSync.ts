@@ -11,6 +11,7 @@ import type { AnyUserScript } from '../userScripts/types';
 import type { GlobalScriptBucket } from '../userScripts/globalScriptsStore';
 import type { InstalledPluginRecord } from '../../hooks/usePlugins';
 import type { LibraryNote, UserNote, LibraryBook } from '../library/library-types';
+import type { UserRecord } from '../autoleveling/autoleveling-user-data';
 
 export type CloudSyncResult<T> =
   | { kind: 'ok'; data: T }
@@ -74,6 +75,18 @@ export function saveGlobalScripts(buckets: GlobalScriptBucket[]): Promise<CloudS
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(buckets),
+  });
+}
+
+export function loadAutolevelUserData(): Promise<CloudSyncResult<UserRecord[]>> {
+  return authedRequest('/api/user-content/autoleveling');
+}
+
+export function saveAutolevelUserData(records: UserRecord[]): Promise<CloudSyncResult<{ count: number }>> {
+  return authedRequest('/api/user-content/autoleveling', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(records),
   });
 }
 

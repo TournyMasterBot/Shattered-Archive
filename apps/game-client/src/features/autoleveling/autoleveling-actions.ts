@@ -18,37 +18,6 @@
 
 import type { AutoLevelAction } from './autoleveling-types';
 
-/* ----------------------------- debug helpers ------------------------------ */
-
-const ACTIONS_LOG_PREFIX = '[autoleveling][actions]';
-
-function isAutoLevelingDebugEnabled(): boolean {
-  try {
-    if (typeof window !== 'undefined' && (window as any).__AUTOLEVELING_DEBUG__ === true) return true;
-
-    const v = typeof localStorage !== 'undefined' ? localStorage.getItem('autoleveling.debug') : null;
-    if (v === '1' || v === 'true') return true;
-    if (v === '0' || v === 'false') return false;
-
-    try {
-      const dev = typeof import.meta !== 'undefined' && !!(import.meta as any).env?.DEV;
-      return dev;
-    } catch {
-      return false;
-    }
-  } catch {
-    return false;
-  }
-}
-
-function adbg(...args: any[]) {
-  if (!isAutoLevelingDebugEnabled()) return;
-  // eslint-disable-next-line no-console
-  console.debug(ACTIONS_LOG_PREFIX, ...args);
-}
-
-/* ------------------------------------------------------------------------- */
-
 function toLines(text: string): string[] {
   return (text ?? '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
 }
@@ -74,6 +43,34 @@ export function parseActionsFromEditor(text: string): AutoLevelAction[] {
         kind: 'wait_fighting',
         value,
         timeoutMs: Number.isFinite(timeoutMs as any) ? Math.max(0, Math.floor(timeoutMs as any)) : undefined,
+      });
+      continue;
+    }
+
+    if (trimmed.toLowerCase().startsWith('cooldown ')) {
+      const rest = trimmed.slice('cooldown '.length).trim();
+      const sp = rest.indexOf(' ');
+      const secRaw = sp >= 0 ? rest.slice(0, sp) : rest;
+      const cmd = sp >= 0 ? rest.slice(sp + 1).trim() : '';
+      const sec = Number(secRaw);
+      out.push({
+        kind: 'send_cooldown',
+        cmd,
+        cooldownSec: Number.isFinite(sec) ? Math.max(0, sec) : 0,
+      });
+      continue;
+    }
+
+    if (trimmed.toLowerCase().startsWith('every_ticks ')) {
+      const rest = trimmed.slice('every_ticks '.length).trim();
+      const sp = rest.indexOf(' ');
+      const nRaw = sp >= 0 ? rest.slice(0, sp) : rest;
+      const cmd = sp >= 0 ? rest.slice(sp + 1).trim() : '';
+      const n = Number(nRaw);
+      out.push({
+        kind: 'send_every_ticks',
+        cmd,
+        everyTicks: Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0,
       });
       continue;
     }
@@ -165,6 +162,8 @@ export function serializeActionsToEditor(actions: AutoLevelAction[]): string {
 
   for (const a of actions ?? []) {
     if (a.kind === 'send') lines.push(a.cmd ?? '');
+    else if (a.kind === 'send_cooldown') lines.push(`cooldown ${a.cooldownSec} ${a.cmd ?? ''}`);
+    else if (a.kind === 'send_every_ticks') lines.push(`every_ticks ${a.everyTicks} ${a.cmd ?? ''}`);
     else if (a.kind === 'wait_fighting') {
       const base = `wait_fighting ${a.value ? 'true' : 'false'}`;
       lines.push(a.timeoutMs != null ? `${base} ${a.timeoutMs}` : base);
