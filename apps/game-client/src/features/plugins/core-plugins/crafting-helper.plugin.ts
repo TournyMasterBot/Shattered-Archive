@@ -361,8 +361,8 @@ function tailoringSets(): Record<string, OrderItemRecipe> {
 // produces) + one essence, 1 each. Confirmed for opal from a real in-game
 // craft list ("opal gem inertia" = opal gemstone + essence of inertia, etc.);
 // the user stated the essences are shared across gemstone tiers, so the
-// other tiers below are extrapolated from that pattern. Moonstone is left
-// out — its gem-name form ("moonstone gem X"?) isn't confirmed, and its
+// other tiers below are extrapolated from that pattern. Moonstone is
+// confirmed ("moonstone gem growth" = moonstone + essence of growth); its
 // gemstone item is just "moonstone", not "moonstone gemstone". Diamond has
 // extra special gems that aren't listed here yet.
 const SPELL_GEM_ESSENCES: Array<{ suffix: string; essence: string }> = [
@@ -376,16 +376,25 @@ const SPELL_GEM_ESSENCES: Array<{ suffix: string; essence: string }> = [
   { suffix: 'muscle', essence: 'essence of muscle' },
 ];
 
-const SPELL_GEM_TIERS = ['obsidian', 'opal', 'amethyst', 'emerald', 'sapphire', 'ruby', 'diamond'];
+const SPELL_GEM_TIERS: Array<{ tier: string; gemstone: string }> = [
+  { tier: 'obsidian', gemstone: 'obsidian gemstone' },
+  { tier: 'moonstone', gemstone: 'moonstone' },
+  { tier: 'opal', gemstone: 'opal gemstone' },
+  { tier: 'amethyst', gemstone: 'amethyst gemstone' },
+  { tier: 'emerald', gemstone: 'emerald gemstone' },
+  { tier: 'sapphire', gemstone: 'sapphire gemstone' },
+  { tier: 'ruby', gemstone: 'ruby gemstone' },
+  { tier: 'diamond', gemstone: 'diamond gemstone' },
+];
 
 function spellGemSets(): Record<string, OrderItemRecipe> {
   const recipes: Record<string, OrderItemRecipe> = {};
-  for (const tier of SPELL_GEM_TIERS) {
+  for (const { tier, gemstone } of SPELL_GEM_TIERS) {
     for (const { suffix, essence } of SPELL_GEM_ESSENCES) {
       recipes[`${tier} gem ${suffix}`] = {
         craftTypeId: 'spellcrafting',
         components: [
-          { material: `${tier} gemstone`, qty: 1 },
+          { material: gemstone, qty: 1 },
           { material: essence, qty: 1 },
         ],
       };
@@ -1322,7 +1331,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.9.0',
+      version: '0.9.1',
       description:
         "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. All five craft skills' training tiers are complete (the last trinket in each carries skill to the 1001 cap). The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
     },

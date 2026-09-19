@@ -380,15 +380,24 @@ describe('ORDER_ITEM_RECIPES', () => {
     expect(ORDER_ITEM_RECIPES['diamond gem muscle']?.components[0].material).toBe('diamond gemstone');
   });
 
-  it('covers all 8 basic essences for 7 gemstone tiers (moonstone excluded until its naming is confirmed)', () => {
-    const tiers = ['obsidian', 'opal', 'amethyst', 'emerald', 'sapphire', 'ruby', 'diamond'];
+  it('builds moonstone gems from plain "moonstone" (no "gemstone" suffix)', () => {
+    expect(ORDER_ITEM_RECIPES['moonstone gem growth']).toEqual({
+      craftTypeId: 'spellcrafting',
+      components: [
+        { material: 'moonstone', qty: 1 },
+        { material: 'essence of growth', qty: 1 },
+      ],
+    });
+  });
+
+  it('covers all 8 basic essences for all 8 gemstone tiers', () => {
+    const tiers = ['obsidian', 'moonstone', 'opal', 'amethyst', 'emerald', 'sapphire', 'ruby', 'diamond'];
     const suffixes = ['inertia', 'life', 'moons', 'growth', 'age', 'mind', 'wind', 'muscle'];
     for (const tier of tiers) {
       for (const suffix of suffixes) {
         expect(ORDER_ITEM_RECIPES[`${tier} gem ${suffix}`]?.craftTypeId).toBe('spellcrafting');
       }
     }
-    expect(Object.keys(ORDER_ITEM_RECIPES).filter((k) => k.startsWith('moonstone'))).toEqual([]);
   });
 
   it('builds a cloth tailoring item as "<material> <slot>" using spool of material thread + material cloth square', () => {
