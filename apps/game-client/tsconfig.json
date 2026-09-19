@@ -16,6 +16,6 @@
   },
   "include": [
     "src",
-    "public/client-status-page.tsx"  
+    "public/client-status-page.tsx"
   ]
 }

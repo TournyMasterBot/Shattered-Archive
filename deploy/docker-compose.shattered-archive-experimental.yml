@@ -528,6 +528,10 @@ services:
       # a real host path to edit with a text editor. auth-server-secrets stays a named
       # volume: the encryption key must NOT be casually host-editable/visible.
       - ../apps/auth-server/data:/repo/apps/auth-server/data
+      # STACK-SPECIFIC path for the encrypted stores (accounts/keys/devices/service-keys) —
+      # see SECURE_DATA_DIR below and the prod compose's comment for why this can no longer
+      # share ../apps/auth-server/data with the prod-replica stack.
+      - ../apps/auth-server/data/dev-secure:/repo/apps/auth-server/secure-data
       - auth-server-secrets:/repo/apps/auth-server/secrets
       # Public keys published by consuming services, READ-ONLY here — see the prod compose.
       - sa-service-pubkeys:/repo/apps/auth-server/service-public-keys:ro
@@ -571,6 +575,9 @@ services:
       SERVICE_PUBLIC_KEY_DIR: "/repo/apps/auth-server/service-public-keys"
       LOG_LEVEL: "debug"
       DATA_DIR: "/repo/apps/auth-server/data"
+      # Own encrypted-store directory, separate from the prod-replica stack's — see the volume
+      # comment above and the prod compose's note on why the two stacks must never share this.
+      SECURE_DATA_DIR: "/repo/apps/auth-server/secure-data"
       # Mounted-file secret (auth-server-secrets, above) — self-generated on first boot,
       # persists across recreation. See crypto-primitives.ts's loadDataKey() precedence.
       DATA_ENCRYPTION_KEY_FILE: "/repo/apps/auth-server/secrets/encryption.key"

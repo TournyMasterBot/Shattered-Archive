@@ -108,6 +108,21 @@ and a full autoleveling scripted-path run with no regression.
 - `routed-gmcp-events.ts:2-26` (`ROUTED_WINDOW_EVENTS`) bridges `game:room-data` and
   `shatteredarchive:movement-succeeded` to `window` — this is the user-scripting-facing surface the
   backward-compatibility constraint above protects.
+- **Combat engagement already has its own outcome-tracking (added since this plan was first
+  written) — a separate mechanism from movement, but with the SAME timing flaw.**
+  `autoleveling-engine.ts`'s `engageTarget` (`:1827-1890`) sends a `kill <keyword>` and calls
+  `waitForEngageOutcome(attemptTimeout, gmcpGraceMs)` (`:1851-1871`), which resolves on either the
+  real DSL MUD failure text `"They aren't here."` (corpus-confirmed: 2,755 occurrences across 123
+  game-log files) or `isFighting` flipping true — so it is NOT missing negative-finding/combat-start
+  detection. What it IS missing: `attemptTimeout` (`:1851`, `Math.min(Math.max(3000,
+  cfg.idleTimeoutMs || 30000), 10000)`) is a flat 3-10s window with no notion of how many other
+  commands are still in flight ahead of the kill command — exactly the absolute-from-send-time
+  design Step 2's corpus research proved costs a 44.7% false-timeout rate for movement before the
+  head-of-queue-relative fix. A kill command sent right after a lag-inducing burst can time out and
+  get abandoned while still honestly pending server-side, matching the user's "engine tends to skip
+  over the room when lagged" complaint for the combat case. No corpus research has measured
+  kill-command server latency the way movement was measured (Step 6 below is UNVERIFIED-LIVE
+  because of this, same caveat pattern as movement's own Step 5).
 
 ### Empirical re-verification, 2026-08-14 (18-file corpus sweep, Jan–Aug 2026, quote-verified)
 
@@ -267,7 +282,7 @@ timeout. 35,362 real movement inputs corpus-wide (not 7,559).
 
 ## Steps
 
-### [ ] 1. Shared movement classifier + centralize the "command sent" signal
+### [x] 1. Shared movement classifier + centralize the "command sent" signal
 - Do: New `apps/game-client/src/features/movement/classifyMovement.ts` — one function replacing
   both `useCompassBlock.ts`'s `normalizeExit` and `autoleveling-engine.ts`'s
   `isMovementCommand`/`MOVE_DIRS`, matching the corpus-verified token set. Trace and confirm the
@@ -288,7 +303,7 @@ timeout. 35,362 real movement inputs corpus-wide (not 7,559).
   single command and a compass-block click; typing `n;n;n` produces three separate `command-sent`
   events, not one.
 
-### [ ] 2. Shared movement tracker primitive
+### [x] 2. Shared movement tracker primitive
 - Do: New `apps/game-client/src/features/movement/movementTracker.ts` — a FIFO queue of pending
   moves. Enqueues an entry when a `command-sent` line classifies as movement (Step 1's classifier).
   Resolves the **oldest** pending entry, in order, on whichever comes first: (a) `game:room-data`
@@ -345,7 +360,7 @@ timeout. 35,362 real movement inputs corpus-wide (not 7,559).
   single-move cases above — this is exactly the gap the corpus-wide FIFO simulation caught, so this
   test case is load-bearing, not decorative).
 
-### [ ] 3. Migrate `useCompassBlock.ts` onto the tracker
+### [x] 3. Migrate `useCompassBlock.ts` onto the tracker
 - Do: Replace `pendingMoveRef`/the manual `game:room-data` listener/the manual `movement-succeeded`
   dispatch with a call into `movementTracker` from `move()`. Preserve the hook's external
   `hasExit`/`move` API exactly — `CompassBlock.tsx`/`CompassBlockMobile.tsx` should need zero
@@ -354,7 +369,7 @@ timeout. 35,362 real movement inputs corpus-wide (not 7,559).
 - Verify: `pnpm --filter game-client build` clean; existing compass-block consumers untouched (grep
   confirms no import changes needed in `CompassBlock.tsx`/`CompassBlockMobile.tsx`).
 
-### [ ] 4. Migrate `autoleveling-engine.ts` onto the tracker
+### [x] 4. Migrate `autoleveling-engine.ts` onto the tracker
 - Do: Remove the independently-duplicated `boundOnMovementSucceeded`/direct `game:room-data`
   listener/timeout-only `waitForMovement` internals; have the engine's movement steps go through the
   same `movementTracker` (either by calling it directly, or by listening to its re-dispatched
@@ -367,7 +382,30 @@ timeout. 35,362 real movement inputs corpus-wide (not 7,559).
   (`:440-540+`) to confirm nothing else was silently relying on the old direct `game:room-data`
   wiring.
 
-### [ ] 5. Real-play verification against the live merc-mud instance
+### [x] 5. Queue-depth-aware `engageTarget` attempt timeout
+- Do: Apply Step 2's head-of-queue-relative timeout finding to combat engagement, not just movement
+  — same root cause (an absolute-from-send-time deadline blind to real server-side pacing), same
+  fix shape, deliberately not a new timing scheme. Expose from `movementTracker` (or a small sibling
+  primitive, if movement's resolution semantics — room diffing — don't generalize cleanly to a
+  non-movement send) a general "how many sends are currently unresolved" count that
+  `engageTarget` (`:1827-1890`) can read at the moment it sends the kill command (`:1866`). When
+  that count is > 0, extend `attemptTimeout`'s effective deadline so it's measured from whenever the
+  pipeline actually catches up to this command rather than from the original send instant — so a
+  kill command queued behind a lag-inducing burst isn't abandoned (tries the next keyword, or gives
+  up on the encounter) while still honestly pending. Don't change behavior for the common case (queue
+  empty at send time): today's fixed 3-10s window stays exactly as-is then.
+- Files: apps/game-client/src/features/autoleveling/autoleveling-engine.ts (`engageTarget`,
+  `waitForEngageOutcome`), apps/game-client/src/features/movement/movementTracker.ts (expose the
+  queue-depth read, if that's where it ends up living).
+- Verify: unit test simulating a kill command sent immediately after N queued movement sends —
+  `attemptTimeout` does not fire while the pipeline is still honestly working through the backlog;
+  a kill sent with an empty queue keeps today's existing timeout behavior unchanged (regression
+  guard). Flag as UNVERIFIED LIVE like Step 6 below — no corpus research measures kill-command
+  server latency the way movement was measured, so the increment/threshold here is a reasoned
+  extension of Step 2's finding, not itself corpus-proven; Step 6's live pass must include a
+  deliberately-lagged attack and report back what's observed before this is trusted further.
+
+### [ ] 6. Real-play verification against the live merc-mud instance
 - Do: Deploy game-client to the dev/test stack (same recipe as the cartography plan's Constraints:
   `docker compose -f deploy/docker-compose.shattered-archive-experimental.yml build --no-cache
   game-client && ... up -d`, reachable at `game-client.shatteredarchive.dev`, backed by the
@@ -383,10 +421,15 @@ timeout. 35,362 real movement inputs corpus-wide (not 7,559).
   run one of autoleveling's existing scripted paths end-to-end (a short real training path) and
   confirm no regression — it still walks/fights/identifies normally; (e) deliberately get blinded (or
   find a genuinely dark room) and confirm the `"darkness"` sentinel doesn't falsely resolve whatever
-  move was pending at the time.
+  move was pending at the time; (f) deliberately induce lag right before an attack (send a burst of
+  several movement commands, then immediately let autoleveling attack, or manually trigger `kill`)
+  and confirm the encounter isn't abandoned/keyword-skipped while the attempt is still honestly
+  pending — Step 5's actual target case.
 - Files: none (verification only — record the actual steps + observed results in the Progress log).
-- Verify: all five checks above pass against the real, live instance; timing evidence recorded for
-  (b) showing the fix (not the timeout) is what resolved the failure.
+- Verify: all six checks above pass against the real, live instance; timing evidence recorded for
+  (b) showing the fix (not the timeout) is what resolved the failure; (f)'s observed behavior
+  (does the lagged attack get abandoned or does it wait correctly) reported back either way, since
+  Step 5's design is unverified until this runs.
 
 ## Progress log
 
@@ -461,3 +504,167 @@ timeout. 35,362 real movement inputs corpus-wide (not 7,559).
   resolution outcome) that the earlier passes' language didn't capture, because they never actually
   ran the algorithm against real burst depths — a good reminder that resolution-condition-only checks
   are not a substitute for simulating the real queue.
+
+- 2026-09-12T20:05:00Z plan extended (user ask) — while investigating a separate "auto-leveling
+  attacks the wrong mob" report, confirmed `engageTarget` (autoleveling-engine.ts, added since this
+  plan was first written) already does negative-finding/combat-start detection for attacks — so the
+  user's "engine should notice attack results" framing was already true for that part. What's
+  actually missing is the SAME flaw this plan already proved and fixed for movement: `engageTarget`'s
+  `attemptTimeout` is a flat, absolute-from-send-time window with no queue-depth awareness, so a kill
+  command sent right after a lag-inducing burst can time out and get abandoned while still honestly
+  pending — the combat-side analog of this plan's own CRITICAL #3 finding. Added Context bullet
+  documenting the current `engageTarget`/`waitForEngageOutcome` line numbers and the specific gap.
+  Inserted **new Step 5** (queue-depth-aware `engageTarget` timeout, reusing Step 2's head-of-queue-
+  relative principle rather than inventing new timing logic) ahead of the live-verification step,
+  which is renumbered **Step 6** and gained a 6th checklist item (a deliberately-lagged attack).
+  Explicitly flagged Step 5 as UNVERIFIED LIVE, same caveat class as this plan's own Step 5-now-6 —
+  no corpus research measures kill-command server latency the way movement was measured, so this is
+  a reasoned extension of a proven finding, not itself corpus-proven. Not yet implemented.
+
+- 2026-09-12T20:45:00Z step 1 done — checked `[x]`. New
+  `apps/game-client/src/features/movement/classifyMovement.ts`: `MOVE_DIRS` is now exactly the
+  10 corpus-verified tokens (dropped the dead `up`/`down` full-word entries from
+  autoleveling-engine's old copy, exactly as flagged — real corpus never sent them as a bare
+  command); `classifyMovement()` replaces `isMovementCommand` (autoleveling-engine.ts, 3 call
+  sites migrated); `normalizeExit`/`exitsToSet`/`DIR_TO_COMMAND` replace useCompassBlock.ts's own
+  copies (kept the long-form ("north") tolerance there — that's a distinct concern from
+  classifying an outbound SEND, which never uses long form). `useCompassBlock.ts` re-exports
+  `CompassDirection` from the new module so its 4 existing consumers (CompassBlock.tsx,
+  CompassBlockMobile.tsx, useRightPaneHud.ts, useLayoutShell.ts) needed zero changes. Traced the
+  `sendRaw` chain: confirmed `useGameConnection.ts`'s exported `sendRaw` is a thin wrapper over
+  `sendTelnetData` (:315-320), so it IS the same physical send point regardless of caller.
+  Centralized `shatteredarchive:command-sent`: moved the dispatch from
+  `useGameCommand.ts`'s `sendLineRef.current` into `sendTelnetData` itself
+  (`useGameConnection.ts`), right after a successful `ws.send()` — the one place every path
+  (typed pre-alias, typed-then-`executeAlias`-resent, programmatic `shatteredarchive:send-command`)
+  actually funnels through. Confirmed by reading `userScriptRuntime.ts`'s `executeAlias` (:815-934)
+  and `runtimeSingleton.ts`'s constructor (no custom `sendCommand` override passed, so it's the
+  default `DispatchEvent('shatteredarchive:send-command', {cmd})`) — EVERY real send, alias-
+  rewritten or not, ends up at `sendTelnetData`, so the new single-dispatch-point claim is
+  verified, not assumed. Also confirmed the `;`-split mechanics precisely (was previously
+  unconfirmed): typed input splits via `accessibility-command.ts`'s `splitKeepEmpty` (blank
+  segments preserved, matching the Constraints' `n;;s` requirement) into `OutboundQueue` jobs;
+  each drained job is independently alias-checked via `executeAlias`, which does its OWN
+  `aliasSplitChar` split (a no-op here since each job is already a single segment) before
+  falling through to `this.sendCommand(rawPart)` when nothing matches. 11 new tests
+  (`classifyMovement.test.ts` — every real token classified, case-insensitivity, the dropped
+  up/down forms rejected, non-movement/blank rejected, `normalizeExit`/`exitsToSet` short/long/
+  invalid forms); 347/347 total tests + tsc clean. No test added for the `command-sent`
+  relocation itself — neither hook has existing test coverage (no WebSocket/hook test harness
+  precedent in this repo) and the change is a pure relocation, not new logic; Step 5's live
+  verification is the right place to confirm it end-to-end (a debug listener showing exactly one
+  `command-sent` per physical send, both typed and programmatic).
+
+- 2026-09-12T21:10:00Z step 2 done — checked `[x]`. New
+  `apps/game-client/src/features/movement/movementTracker.ts` — a class-backed singleton
+  (`movementTracker`) with an idempotent `bind()`/unbind lifecycle. Listens to
+  `shatteredarchive:command-sent` (enqueue on a `classifyMovement` hit), `game:room-data`
+  (`{room,sector,exits}` diff via a dedicated `sameRoom()` comparing exits as a joined ordered
+  list — darkness resolves nothing and never updates `lastRoom`), and `shatteredarchive:raw-data`
+  (fixed failure substrings + the line-anchored `/^The .+ is closed\.$/` door regex). Timeout is
+  HEAD-OF-QUEUE-RELATIVE exactly as specified: a single `headSince` timestamp (not per-entry) is
+  armed whenever the queue transitions from empty to non-empty or a resolve leaves a new front
+  entry, checked by a 100ms `setInterval` poll against the 1200ms window — this is the actual
+  mechanism CRITICAL #3 needed, not per-entry absolute deadlines.
+  **Decisions recorded, as the plan asked:** (1) `'ambiguous-repeat'` maps onto
+  `movement-succeeded` (the plan's own leaning — the move usually did happen, and a real failure
+  would separately be caught by `onRawLine`'s failure-text check). (2) A timeout ALSO maps onto
+  `movement-failed` (not explicitly pre-decided by the plan, but the same class of decision) —
+  `reasonLine: '(timeout)'` distinguishes it from an explicit server failure line for any
+  consumer that wants to tell the two apart; treating "nothing confirmed within the window" as a
+  failure is the conservative default so a caller doesn't hang forever waiting for a resolution
+  that may never come. **Deliberately NOT wired into the live app yet** (no `bind()` call from
+  any app entry point) — Steps 3/4 migrate `useCompassBlock.ts`/`autoleveling-engine.ts` onto
+  this tracker; binding it now, before their own independent `movement-attempt` dispatches are
+  removed, would double-fire that event for every real move until then. 10 new tests
+  (`movementTracker.test.ts`, `jest.useFakeTimers()` — this module's 1200ms timeout and the
+  deep-burst pacing case both need precise fast-forwardable time, unlike autoleveling-engine's
+  own real-timer test style): FIFO resolution order, darkness resolves nothing without breaking
+  order, same-room-different-exits still resolves success, an exact repeat resolves immediately
+  as succeeded, an "Alas" line resolves without waiting for the timeout, the templated
+  door-closed regex fires, the "is closed inside chat" false-positive trap does NOT fire, a
+  non-movement send is never enqueued, a genuine 1200ms-with-no-signal case times out, and the
+  corpus's own load-bearing case — 10 moves enqueued in the same tick, each resolved ~500ms apart
+  by simulated server pacing — produces ZERO timeouts (this is the exact scenario that broke the
+  original absolute-timeout design in the corpus research). 357/357 total tests + tsc clean.
+
+- 2026-09-12T21:35:00Z steps 3+4 done — checked `[x]` both. **`useCompassBlock.ts`**: removed
+  `pendingMoveRef`/`pendingTimerRef` and the 1200ms absolute-timeout `move()` logic entirely, and
+  the separate `shatteredarchive:movement-attempt` listener it used to keep `pendingMoveRef` in
+  sync — `move(dir)` now just dispatches `shatteredarchive:send-command`; the shared
+  `movementTracker` (bound once at app scope, see below) picks it up automatically off the
+  resulting `command-sent` signal and dispatches `movement-succeeded`/`-failed` itself. The
+  `game:room-data` effect is now display-only (updates `exitSet`/`roomDataStore`, no pending-move
+  bookkeeping). External API (`hasExit`, `move`) unchanged — confirmed zero changes needed in
+  `CompassBlock.tsx`/`CompassBlockMobile.tsx`. **Bind point**: added
+  `React.useEffect(() => movementTracker.bind(), [])` to `MainContainer.tsx` (alongside the
+  existing app-lifetime `useGameConnection()`/plugin-registration calls) — deliberately NOT tied
+  to `useCompassBlock`'s own mount lifecycle, since the compass panel isn't guaranteed to stay
+  mounted for the whole session and autoleveling's own movement gating must keep working
+  regardless. **`autoleveling-engine.ts`**: removed the direct `game:room-data` listener that
+  synthesized `{cmd: this.moveWait?.cmd, dir: this.moveWait?.dir, ts: now()+100, room: payload}`
+  on every arrival (Bug 2 itself — this is what made ANY room_data "succeed" the current wait,
+  never diffing anything) and replaced it with two listeners on the tracker's own
+  `shatteredarchive:movement-succeeded`/`-failed`, both feeding a new
+  `boundOnMovementResolved(outcome, ev)` (generalizes the old `boundOnMovementSucceeded`, same
+  cmd/dir/ts matching against `moveWait` via `extractEventMoveKey`). `sendCommand` no longer
+  dispatches `movement-attempt` itself (the tracker does, off `command-sent`) — was a straight
+  removal, `classifyMovement` stayed needed there for nothing once that line was gone, confirmed
+  via grep it's still used elsewhere (`waitForMovement`'s `expectedDir` computation, the round
+  loop's own move classification). **Deliberate behavior change, flagged prominently per the
+  plan's "record it" standard**: a `movement-failed` whose `reasonLine` is exactly the tracker's
+  own `'(timeout)'` marker now resolves as an ordinary **non-fatal** `'failed'` (logged, round
+  continues) — previously ANY movement timeout was fatal (`this.stopping = true`, aborts the
+  entire run). This is intentional: under the OLD absolute-timeout design a timeout was mostly a
+  false positive (44.7% per the corpus), so treating it as catastrophic sort-of made sense as an
+  escape hatch; under the NEW head-of-queue-relative tracker, its own fast ~1200ms timeout firing
+  is a corpus-confirmed **normal, non-bug occurrence** (~5.4% of moves — "genuine multi-second
+  stalls, combat interrupting movement, real disconnects"), so aborting the whole run over one
+  slow hop would now be overly aggressive. `waitForMovement`'s own `idleTimeoutMs`-based timer
+  stays as a much-larger BACKSTOP, still fatal, but now reserved for "the tracker itself never
+  resolved at all" (not bound, a dropped listener) rather than being the primary detection path.
+  **`extractEventMoveKey`'s stale-ts guard: kept as-is, NOT simplified** — considered removing it
+  now that the tracker guarantees strict FIFO + the cmd/dir exact-match already guards against
+  cross-move confusion, but found no strong evidence it's provably redundant (a manually-typed
+  move interleaving with the engine's own moves in the shared queue is now genuinely possible,
+  and the guard costs nothing) — matches the plan's own "don't remove safety margin without a
+  clear reason" instruction. Also widened `MovementResult`'s `succeeded.room` type from a stale
+  `string` to the real `RoomSnapshot` shape (`{room,sector,exits}`) it was always actually
+  receiving. Updated the two pre-existing "engine round order" tests to emit
+  `shatteredarchive:movement-succeeded` instead of the old bare `game:room-data` (which no longer
+  resolves anything by itself, by design). 3 new tests covering the migration's real behavior
+  changes: an explicit `movement-failed` is non-fatal and the round still completes through
+  move.post/reset; a `(timeout)`-flagged one is ALSO non-fatal (the deliberate change above); the
+  backstop timer still fires (fatal) when nothing resolves at all. 360/360 total tests + tsc
+  clean.
+
+- 2026-09-12T21:50:00Z step 5 done — checked `[x]`. `waitForEngageOutcome` reused
+  `movementTracker.pendingCount()` (already existed as a test/debug seam from Step 2 — no sibling
+  primitive needed, movement's own resolution semantics don't need to generalize since this is
+  purely a queue-DEPTH read, not a room diff) rather than building anything new. Implementation:
+  the original single `setTimeout(t)` stays exactly as the entry point (zero behavior change for
+  the common queue-empty case — verified by a regression test), but when it fires it now checks
+  `pendingCount() > 0` first; if backed up, it accumulates `backedUpMs` and reschedules a 250ms
+  recheck instead of resolving, so that time is excluded from the attempt's own elapsed budget.
+  Once the queue drains, the attempt gets the REMAINDER of its own window (not an immediate
+  fire) — matching "measured from whenever the pipeline actually catches up" literally, via a
+  time-exclusion rather than a second timer scheme. Success/not_here resolution (GMCP `isFighting`
+  / "They aren't here", both handled elsewhere) is completely untouched and still resolves
+  instantly regardless of queue depth — only the give-up path is deferred. 3 new tests: a
+  regression guard (queue empty throughout → identical timing to before); the deferred-then-fires
+  behavior (spied `pendingCount()` returning 2, confirmed NOT resolved well past the original
+  deadline, then set to 0 and confirmed it fires after exactly the remaining window); and a
+  same-tick success signal resolving immediately even with `pendingCount()` spied at 5 (proving
+  the two paths are independent). Used `jest.spyOn(movementTracker, 'pendingCount')` rather than
+  driving the real tracker's own event/timer lifecycle — decouples this unit test from
+  `movementTracker`'s own internal timing (already covered by its own 10-test suite), avoiding a
+  real risk this session caught while designing the test: the tracker's OWN 1200ms head-timeout
+  would otherwise race with and confound the attemptTimeout's much longer window inside the same
+  fake-timer advance. 363/363 total tests + tsc clean. Flagged (per the plan's own instruction)
+  as UNVERIFIED LIVE — the 250ms recheck interval and the decision to exclude 100% of backed-up
+  time (rather than some partial credit) are reasoned choices, not corpus-proven; Step 6's live
+  pass must include a deliberately-lagged attack and report back before this is trusted further.
+  All of Steps 1-5 (everything not requiring a live DSL session) are now done; Step 6 is the only
+  remaining step and needs the user driving a real session — it should also confirm Step 4's
+  behavior change (a single slow movement hop no longer aborts the whole run) feels right in
+  practice, not just in tests.

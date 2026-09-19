@@ -1,1 +1,4 @@
 File Index
+
+/MainContainer.tsx
+Purpose: Top-level layout orchestrator — mounts MainMenuBar/LayoutShell/FocusBarVitals plus every modal (Connect/Library/Account/Equipment/Plugins/Contribute/ScriptingHelp), owns the per-connection plugin host lifecycle (create on connect, diff-sync installed, shutdown on disconnect), and wires `useAutoLeveling(connectionId, isConnected)` through to `AutoLevelingWizard`. 2026-09-13 (live-playtest fix): removed the `localStorage['autoleveling.wizard']` opt-out flag and its `AutoLevelingWizard`/`AutoLevelingModal` ternary — the wizard is now unconditionally the only auto-leveling UI rendered here, no fallback path exists to silently land a stale-flag browser back on the old modal (see AutoLevelingModal.tsx's entry in components/.annotated).

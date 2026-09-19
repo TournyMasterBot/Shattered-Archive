@@ -4,6 +4,22 @@ import path from 'path';
 export interface AuthServerConfig {
   port: number;
   dataDir: string;
+  /**
+   * Directory for the AES-256-GCM encrypted stores (accounts/keys/devices/service-keys) only —
+   * QuestionsStore and AuditLog stay on `dataDir` since those are deliberately plain,
+   * operator-hand-editable files at a stable host path (see docker-compose.yml's comment on the
+   * auth-server volume mounts).
+   *
+   * Defaults to `dataDir` so a single-stack deployment (the only shape a real production host
+   * ever runs) needs no config change. Exists because two LOCAL stacks (prod-replica +
+   * experimental) once bind-mounted the SAME `dataDir` while each read its encryption key from
+   * its own project-scoped volume — whichever stack wrote last silently re-encrypted the shared
+   * files under its own key, and the other stack's next read failed the AES-GCM auth tag and
+   * PERMANENTLY locked (`encrypted-file-store.ts`'s `locked` flag never clears without a
+   * restart). Setting SECURE_DATA_DIR to a stack-specific bind-mounted path in each compose file
+   * fixes this at the root: the two stacks no longer share any encrypted file at all.
+   */
+  secureDataDir: string;
   /** LOCAL DEV / test only — 64 hex chars. See DATA_ENCRYPTION_KEY_FILE for the deploy path. */
   dataEncryptionKey?: string;
   /** Deploy path to a mounted key file (self-generated on first boot if absent). */
@@ -97,6 +113,7 @@ export function getAuthServerConfig(env: NodeJS.ProcessEnv = process.env): AuthS
   return {
     port,
     dataDir: path.resolve(env.DATA_DIR ?? './data'),
+    secureDataDir: path.resolve(env.SECURE_DATA_DIR ?? env.DATA_DIR ?? './data'),
     dataEncryptionKey: env.DATA_ENCRYPTION_KEY || undefined,
     dataEncryptionKeyFile: env.DATA_ENCRYPTION_KEY_FILE || undefined,
     smtpHost: env.SMTP_HOST || undefined,

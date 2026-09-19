@@ -27,6 +27,29 @@ class AnsiToHtmlConverter implements IAnsiToHtmlConverter {
       newline: true, // treat \n as <br/>
       escapeXML: true, // escape HTML entities in the input
       stream: false,
+      // ansi-to-html's own built-in 16-color palette doesn't match xterm.js's (used by
+      // the main terminal, see hooks/useTerminal.ts) — same ANSI code rendering as a
+      // visibly different color depending on which widget shows it. xterm.js doesn't
+      // override its 0-15 palette, so this is its actual default (the "Tango" scheme),
+      // confirmed against the installed @xterm/xterm build.
+      colors: {
+        0: '#2e3436',
+        1: '#cc0000',
+        2: '#4e9a06',
+        3: '#c4a000',
+        4: '#3465a4',
+        5: '#75507b',
+        6: '#06989a',
+        7: '#d3d7cf',
+        8: '#555753',
+        9: '#ef2929',
+        10: '#8ae234',
+        11: '#fce94f',
+        12: '#729fcf',
+        13: '#ad7fa8',
+        14: '#34e2e2',
+        15: '#eeeeec',
+      },
     });
   }
 
