@@ -858,7 +858,15 @@ export function createCraftingHelperPlugin(): IPluginModule {
   function handleRawData(api: PluginRuntimeApi, rawText: string) {
     // Every line of game output flows through here — bail immediately unless
     // we're mid-cycle, so idle/stopped/storing sit at effectively zero cost.
-    if (state !== 'awaiting_score' && state !== 'pulling_components' && state !== 'crafting' && state !== 'checking_quality') return;
+    if (
+      state !== 'awaiting_score' &&
+      state !== 'pulling_components' &&
+      state !== 'crafting' &&
+      state !== 'storing_trinket' &&
+      state !== 'checking_quality'
+    ) {
+      return;
+    }
 
     const cfg = readConfig(api);
     const plain = stripAnsi(rawText).replace(/\r/g, '');
@@ -895,6 +903,11 @@ export function createCraftingHelperPlugin(): IPluginModule {
         publishHud(api, cfg);
       }
     }
+
+    // The skill-up line follows the success line, typically in the next
+    // payload — by then a success has already moved state to
+    // storing_trinket, so that state must be let through to the scan above.
+    if (state === 'storing_trinket') return;
 
     if (state === 'pulling_components') {
       for (const rawLine of plain.split('\n')) {
@@ -1220,7 +1233,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.7.3',
+      version: '0.7.4',
       description:
         "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. Tailoring's tier table caps at 943 skill (elephant leather saddle trinket) — its top tier (silksteel/bull elephant) is missing from the source craft list. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
     },

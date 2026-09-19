@@ -739,6 +739,22 @@ describe('crafting-helper state machine', () => {
     expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'uncut moonstone' vault");
   });
 
+  it('regression: a skill-up line right after the success line (state already storing_trinket) updates the HUD', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, 'crafthelper start');
+    mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
+    jest.advanceTimersByTime(200); // craft sent
+
+    mock.feedLine('You were successful.');
+    mock.feedLine('Your crafting skill has improved. (949)'); // no timers advanced: still storing_trinket
+
+    expect(mock.hudWrites[mock.hudWrites.length - 1].content?.value).toContain('Lv 949');
+    jest.advanceTimersByTime(100);
+    expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'uncut diamond stone' vault"); // loop unaffected
+  });
+
   it('regression: a skill-up line arriving after state has already advanced past "crafting" still updates the HUD', () => {
     // Live bug: "Your crafting skill has improved. (949)" arrived in a
     // payload after `success` had already advanced state to a fresh
