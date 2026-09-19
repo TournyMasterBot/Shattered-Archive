@@ -9,6 +9,7 @@ import {
   matchCraftOutcome,
   matchSkillImproved,
   matchVaultFailure,
+  matchCraftInterrupted,
   buildHudContent,
   DEFAULT_CRAFT_TYPES_CONFIG,
   DEFAULT_TIER_TABLE_CONFIG,
@@ -206,6 +207,13 @@ describe('matchSkillImproved', () => {
 
   it('returns null when absent', () => {
     expect(matchSkillImproved('You were successful.')).toBeNull();
+  });
+});
+
+describe('matchCraftInterrupted', () => {
+  it('matches the interrupt line', () => {
+    expect(matchCraftInterrupted('You stop crafting.')).toBe(true);
+    expect(matchCraftInterrupted('You were successful.')).toBe(false);
   });
 });
 
@@ -660,6 +668,25 @@ describe('crafting-helper state machine', () => {
     mock.feedLine('You failed but did not lose any materials.');
     jest.advanceTimersByTime(5000);
     expect(mock.sent).toEqual(sentSoFar);
+  });
+
+  it('stops the trainer when crafting is interrupted, and can be restarted afterward', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, 'crafthelper start');
+    mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
+    jest.advanceTimersByTime(200); // craft sent
+    expect(mock.sent[mock.sent.length - 1]).toBe("craft spellcraft 'diamond gemstone'");
+
+    mock.feedLine('You stop crafting.');
+    const sentSoFar = [...mock.sent];
+    jest.advanceTimersByTime(5000);
+    expect(mock.sent).toEqual(sentSoFar); // nothing further sent
+    expect(mock.terminalWrites.some((w) => w.includes('interrupted'))).toBe(true);
+
+    plugin.onAlias!(mock.api, 'crafthelper start'); // idle again, so start is accepted
+    expect(mock.sent[mock.sent.length - 1]).toBe('score');
   });
 
   it('waits indefinitely for a craft outcome — no timeout, since higher-tier crafts can take a while', () => {

@@ -460,6 +460,7 @@ const OUTCOME_SUCCESS = 'You were successful.';
 const OUTCOME_DESTROYED = 'You failed and destroyed some materials in the process.';
 const OUTCOME_NO_LOSS = 'You failed but did not lose any materials.';
 const VAULT_FAILURE_TEXT = 'I see nothing like that in the vault.';
+const CRAFT_INTERRUPTED_TEXT = 'You stop crafting.';
 const SKILL_IMPROVED_RE = /Your crafting skill has improved\.\s*\((\d+)\)/;
 
 export function matchCraftOutcome(line: string): CraftOutcome {
@@ -476,6 +477,10 @@ export function matchSkillImproved(line: string): number | null {
 
 export function matchVaultFailure(line: string): boolean {
   return line.includes(VAULT_FAILURE_TEXT);
+}
+
+export function matchCraftInterrupted(line: string): boolean {
+  return line.includes(CRAFT_INTERRUPTED_TEXT);
 }
 
 const CONDITION_RE = /Condition:\s*[^(]+\(\s*(\d+)%\s*\)/;
@@ -931,6 +936,16 @@ export function createCraftingHelperPlugin(): IPluginModule {
       const line = rawLine.trim();
       if (!line) continue;
 
+      // Something (a command, movement, being attacked) interrupted the
+      // craft in progress — no outcome line will ever arrive, so stop
+      // cleanly rather than wait forever or blindly re-craft.
+      if (matchCraftInterrupted(line)) {
+        clearAllTimers();
+        writeInfo(api, 'Crafting was interrupted ("You stop crafting.") — stopping. Run `crafthelper start` to resume.');
+        goIdle(api, cfg);
+        return;
+      }
+
       // A `get` that failed can be reported after pullConfirmTimeoutMs has
       // already elapsed (the pull step assumes silence means success), by
       // which point the craft command is out and we're in 'crafting'. That
@@ -1205,7 +1220,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.7.2',
+      version: '0.7.3',
       description:
         "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. Tailoring's tier table caps at 943 skill (elephant leather saddle trinket) — its top tier (silksteel/bull elephant) is missing from the source craft list. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
     },
