@@ -363,8 +363,9 @@ function tailoringSets(): Record<string, OrderItemRecipe> {
 // the user stated the essences are shared across gemstone tiers, so the
 // other tiers below are extrapolated from that pattern. Moonstone is
 // confirmed ("moonstone gem growth" = moonstone + essence of growth); its
-// gemstone item is just "moonstone", not "moonstone gemstone". Diamond has
-// extra special gems that aren't listed here yet.
+// gemstone item is just "moonstone", not "moonstone gemstone". Diamond also
+// has special gems (confirmed from a real craft list) whose extra components
+// are not always a plain essence — see DIAMOND_SPECIAL_GEMS.
 const SPELL_GEM_ESSENCES: Array<{ suffix: string; essence: string }> = [
   { suffix: 'inertia', essence: 'essence of inertia' },
   { suffix: 'life', essence: 'essence of life' },
@@ -374,6 +375,26 @@ const SPELL_GEM_ESSENCES: Array<{ suffix: string; essence: string }> = [
   { suffix: 'mind', essence: 'essence of the mind' },
   { suffix: 'wind', essence: 'essence of wind' },
   { suffix: 'muscle', essence: 'essence of muscle' },
+];
+
+// Diamond-only gems, each = diamond gemstone + these components (qty 1 each).
+// Note the exceptions: distortion uses a shard, and leeching needs three
+// components (essence of moons + a ferrite crystal). "the magi" is the
+// literal item-name suffix.
+const DIAMOND_SPECIAL_GEMS: Array<{ suffix: string; extras: string[] }> = [
+  { suffix: 'distortion', extras: ['shard of distortion'] },
+  { suffix: 'leeching', extras: ['essence of moons', 'ferrite crystal'] },
+  { suffix: 'confusion', extras: ['essence of confusion'] },
+  { suffix: 'venom', extras: ['essence of venom'] },
+  { suffix: 'energy', extras: ['essence of energy'] },
+  { suffix: 'execution', extras: ['essence of execution'] },
+  { suffix: 'steel', extras: ['essence of steel'] },
+  { suffix: 'blood', extras: ['essence of blood'] },
+  { suffix: 'frost', extras: ['essence of frost'] },
+  { suffix: 'flame', extras: ['essence of flame'] },
+  { suffix: 'the magi', extras: ['essence of the magi'] },
+  { suffix: 'pain', extras: ['essence of pain'] },
+  { suffix: 'sight', extras: ['essence of sight'] },
 ];
 
 const SPELL_GEM_TIERS: Array<{ tier: string; gemstone: string }> = [
@@ -400,19 +421,18 @@ function spellGemSets(): Record<string, OrderItemRecipe> {
       };
     }
   }
+  for (const { suffix, extras } of DIAMOND_SPECIAL_GEMS) {
+    recipes[`diamond gem ${suffix}`] = {
+      craftTypeId: 'spellcrafting',
+      components: [{ material: 'diamond gemstone', qty: 1 }, ...extras.map((material) => ({ material, qty: 1 }))],
+    };
+  }
   return recipes;
 }
 
 // Hardcoded, not config — this data rarely changes and the user does not
 // want to maintain an override surface for it. Add new order items here.
 export const ORDER_ITEM_RECIPES: Record<string, OrderItemRecipe> = {
-  'diamond of pain': {
-    craftTypeId: 'spellcrafting',
-    components: [
-      { material: 'diamond gemstone', qty: 1 },
-      { material: 'pain essence', qty: 1 },
-    ],
-  },
   ...spellGemSets(),
   ...tailoringSets(),
   ...arcaniumArmorSet('platemail', { helmet: 1, boots: 1, leggings: 2, gloves: 1, sleeves: 2, tunic: 4 }),
@@ -1331,7 +1351,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.9.1',
+      version: '0.10.0',
       description:
         "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. All five craft skills' training tiers are complete (the last trinket in each carries skill to the 1001 cap). The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status.",
     },

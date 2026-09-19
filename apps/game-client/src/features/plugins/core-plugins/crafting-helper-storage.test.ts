@@ -73,7 +73,7 @@ describe('crafting-helper-storage order queue', () => {
     const { addOrder, getOrderQueue } = freshStorage();
     addOrder('grondak', {
       id: 'order-1',
-      itemName: 'diamond of pain',
+      itemName: 'diamond gem pain',
       quantityRemaining: 6,
       quantityTotal: 6,
       qualitySpec: { kind: 'atLeast', min: 97 },
@@ -96,7 +96,7 @@ describe('crafting-helper-storage order queue', () => {
     const { addOrder, removeOrder, getOrderQueue } = freshStorage();
     addOrder('grondak', {
       id: 'order-1',
-      itemName: 'diamond of pain',
+      itemName: 'diamond gem pain',
       quantityRemaining: 6,
       quantityTotal: 6,
       qualitySpec: { kind: 'atLeast', min: 97 },
@@ -112,7 +112,7 @@ describe('crafting-helper-storage order queue', () => {
     const { addOrder, updateOrder, getOrderQueue } = freshStorage();
     addOrder('grondak', {
       id: 'order-1',
-      itemName: 'diamond of pain',
+      itemName: 'diamond gem pain',
       quantityRemaining: 6,
       quantityTotal: 6,
       qualitySpec: { kind: 'atLeast', min: 97 },
@@ -127,7 +127,7 @@ describe('crafting-helper-storage order queue', () => {
     const { addOrder, getOrderQueue } = freshStorage();
     addOrder('grondak', {
       id: 'order-1',
-      itemName: 'diamond of pain',
+      itemName: 'diamond gem pain',
       quantityRemaining: 6,
       quantityTotal: 6,
       qualitySpec: { kind: 'atLeast', min: 97 },
@@ -140,7 +140,7 @@ describe('crafting-helper-storage order queue', () => {
     const first = freshStorage();
     first.addOrder('grondak', {
       id: 'order-1',
-      itemName: 'diamond of pain',
+      itemName: 'diamond gem pain',
       quantityRemaining: 6,
       quantityTotal: 6,
       qualitySpec: { kind: 'atLeast', min: 97 },
@@ -150,7 +150,7 @@ describe('crafting-helper-storage order queue', () => {
 
     const second = freshStorage();
     expect(second.getOrderQueue('grondak')).toHaveLength(1);
-    expect(second.getOrderQueue('grondak')[0].itemName).toBe('diamond of pain');
+    expect(second.getOrderQueue('grondak')[0].itemName).toBe('diamond gem pain');
   });
 
   it('falls back to an empty queue on corrupt localStorage rather than throwing', () => {

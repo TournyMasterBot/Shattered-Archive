@@ -357,14 +357,28 @@ describe('parseQualityContainerMap / containerForQuality', () => {
 });
 
 describe('ORDER_ITEM_RECIPES', () => {
-  it('includes diamond of pain at spellcrafting', () => {
-    expect(ORDER_ITEM_RECIPES['diamond of pain']).toEqual({
-      craftTypeId: 'spellcrafting',
-      components: [
-        { material: 'diamond gemstone', qty: 1 },
-        { material: 'pain essence', qty: 1 },
-      ],
-    });
+  it('builds the diamond special gems, including the non-essence and multi-component ones', () => {
+    expect(ORDER_ITEM_RECIPES['diamond gem pain']?.components).toEqual([
+      { material: 'diamond gemstone', qty: 1 },
+      { material: 'essence of pain', qty: 1 },
+    ]);
+    expect(ORDER_ITEM_RECIPES['diamond gem distortion']?.components).toEqual([
+      { material: 'diamond gemstone', qty: 1 },
+      { material: 'shard of distortion', qty: 1 },
+    ]);
+    expect(ORDER_ITEM_RECIPES['diamond gem leeching']?.components).toEqual([
+      { material: 'diamond gemstone', qty: 1 },
+      { material: 'essence of moons', qty: 1 },
+      { material: 'ferrite crystal', qty: 1 },
+    ]);
+    expect(ORDER_ITEM_RECIPES['diamond gem the magi']?.components[1].material).toBe('essence of the magi');
+    for (const s of ['confusion', 'venom', 'energy', 'execution', 'steel', 'blood', 'frost', 'flame', 'sight']) {
+      expect(ORDER_ITEM_RECIPES[`diamond gem ${s}`]?.components[1].material).toBe(`essence of ${s}`);
+    }
+  });
+
+  it('no longer has the old guessed "diamond of pain" recipe', () => {
+    expect(ORDER_ITEM_RECIPES['diamond of pain']).toBeUndefined();
   });
 
   it('builds spellcrafting gems from a cut gemstone plus an essence', () => {
@@ -1029,11 +1043,11 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, "crafthelper order add 6 'diamond of pain' 97+");
+    plugin.onAlias!(mock.api, "crafthelper order add 6 'diamond gem pain' 97+");
     expect(mock.terminalWrites.some((w) => w.includes('Queued order'))).toBe(true);
     expect(getOrderQueue('__unknown__')).toHaveLength(1);
     expect(getOrderQueue('__unknown__')[0]).toMatchObject({
-      itemName: 'diamond of pain',
+      itemName: 'diamond gem pain',
       quantityRemaining: 6,
       quantityTotal: 6,
       qualitySpec: { kind: 'atLeast', min: 97 },
@@ -1043,7 +1057,7 @@ describe('crafting-helper state machine', () => {
     expect(mock.terminalWrites.some((w) => w.includes('Unknown order item'))).toBe(true);
     expect(getOrderQueue('__unknown__')).toHaveLength(1); // second add rejected, not queued
 
-    plugin.onAlias!(mock.api, "crafthelper order add 3 'diamond of pain' not-a-spec");
+    plugin.onAlias!(mock.api, "crafthelper order add 3 'diamond gem pain' not-a-spec");
     expect(mock.terminalWrites.some((w) => w.includes('Invalid quality spec'))).toBe(true);
     expect(getOrderQueue('__unknown__')).toHaveLength(1);
   });
@@ -1097,16 +1111,16 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, "crafthelper order add 2 'diamond of pain' 97+");
+    plugin.onAlias!(mock.api, "crafthelper order add 2 'diamond gem pain' 97+");
     plugin.onAlias!(mock.api, 'crafthelper order start');
     jest.advanceTimersByTime(200); // pull diamond gemstone
-    jest.advanceTimersByTime(200); // pull pain essence
+    jest.advanceTimersByTime(200); // pull essence of pain
     // now crafting
     mock.feedLine('You were successful.');
-    expect(mock.sent).toContain("lore 'diamond of pain'");
+    expect(mock.sent).toContain("lore 'diamond gem pain'");
 
     mock.feedLine('Condition: flawless (98%)');
-    expect(mock.sent).toContain("put 1 'diamond of pain' orders");
+    expect(mock.sent).toContain("put 1 'diamond gem pain' orders");
     expect(getOrderQueue('__unknown__')[0].quantityRemaining).toBe(1);
 
     jest.advanceTimersByTime(100); // commandPacingDelayMs — refill, same order
@@ -1120,14 +1134,14 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond of pain' 97+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
     plugin.onAlias!(mock.api, 'crafthelper order start');
     jest.advanceTimersByTime(200);
     jest.advanceTimersByTime(200);
     mock.feedLine('You were successful.');
 
     mock.feedLine('Condition: scuffed (92%)');
-    expect(mock.sent).toContain("put 1 'diamond of pain' common");
+    expect(mock.sent).toContain("put 1 'diamond gem pain' common");
     expect(getOrderQueue('__unknown__')[0].quantityRemaining).toBe(1); // unchanged — didn't count
 
     jest.advanceTimersByTime(100);
@@ -1139,7 +1153,7 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond of pain' 97+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
     plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel helmet' 90+");
     plugin.onAlias!(mock.api, 'crafthelper order start');
     jest.advanceTimersByTime(200);
@@ -1157,7 +1171,7 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond of pain' 97+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
     plugin.onAlias!(mock.api, 'crafthelper order start');
     jest.advanceTimersByTime(200);
     jest.advanceTimersByTime(200);
@@ -1174,7 +1188,7 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond of pain' 97+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
     plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel helmet' 90+");
     const firstOrderId = getOrderQueue('__unknown__')[0].id;
 
@@ -1188,7 +1202,7 @@ describe('crafting-helper state machine', () => {
 
     mock.feedLine('You were successful.');
     mock.feedLine('Condition: flawless (98%)'); // would have matched the removed order's spec, but it's gone
-    expect(mock.sent).toContain("put 1 'diamond of pain' vault"); // no active order to route to -> default container
+    expect(mock.sent).toContain("put 1 'diamond gem pain' vault"); // no active order to route to -> default container
 
     jest.advanceTimersByTime(100);
     expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'spool of silksteel thread' vault"); // advanced to the remaining order
@@ -1199,12 +1213,12 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, "crafthelper order add 6 'diamond of pain' 97+");
+    plugin.onAlias!(mock.api, "crafthelper order add 6 'diamond gem pain' 97+");
     plugin.onAlias!(mock.api, 'crafthelper order start');
     mock.terminalWrites.length = 0;
 
     plugin.onAlias!(mock.api, 'crafthelper order status');
-    expect(mock.terminalWrites.some((w) => w.includes('diamond of pain'))).toBe(true);
+    expect(mock.terminalWrites.some((w) => w.includes('diamond gem pain'))).toBe(true);
   });
 
   it('order stop lets the in-flight step finish, then goes idle', () => {
@@ -1212,7 +1226,7 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond of pain' 97+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
     plugin.onAlias!(mock.api, 'crafthelper order start');
     jest.advanceTimersByTime(200);
     jest.advanceTimersByTime(200);
