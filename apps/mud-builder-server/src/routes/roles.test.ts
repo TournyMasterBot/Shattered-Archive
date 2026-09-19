@@ -142,23 +142,29 @@ describe('role routes', () => {
       }
     });
 
-    it('reports localTier "user" (default), globalRole, and accountId for an account actor with no grant', async () => {
+    it('reports localTier "user" (default), globalRole, accountId, and username for an account actor with no grant', async () => {
       const { server, base, fakeServer, token } = await startAppWithAccountActor(dir, 'acct1', 'newbuilder', 'user');
       try {
         const res = await fetch(`${base}/api/roles/me`, { headers: { Authorization: `Bearer ${token}` } });
-        expect(await res.json()).toEqual({ kind: 'account', localTier: 'user', globalRole: 'user', accountId: 'acct1' });
+        expect(await res.json()).toEqual({
+          kind: 'account',
+          localTier: 'user',
+          globalRole: 'user',
+          accountId: 'acct1',
+          username: 'newbuilder',
+        });
       } finally {
         await new Promise((r) => server.close(r));
         await new Promise((r) => fakeServer.close(r));
       }
     });
 
-    it('reports null localTier/globalRole/accountId for the master key', async () => {
+    it('reports null localTier/globalRole/accountId/username for the master key', async () => {
       const { server, base } = await startTestApp(dir);
       try {
         const master = readMasterKey(dir);
         const res = await fetch(`${base}/api/roles/me`, { headers: { Authorization: `Bearer ${master}` } });
-        expect(await res.json()).toEqual({ kind: 'master', localTier: null, globalRole: null, accountId: null });
+        expect(await res.json()).toEqual({ kind: 'master', localTier: null, globalRole: null, accountId: null, username: null });
       } finally {
         await new Promise((r) => server.close(r));
       }

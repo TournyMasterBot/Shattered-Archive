@@ -50,16 +50,22 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Run Jest (root) with coverage
+      - name: Run Jest per app (chained)
         env:
           CI: "true"
-          # The whole workspace runs in ONE --runInBand process, and its cumulative heap
-          # already reached node's ~4GB default locally (see the root test scripts, which
-          # carry the same bump via cross-env). This step invokes jest directly rather than
-          # through those scripts, so without this it inherits the default ceiling — while
-          # ALSO paying for --coverage instrumentation, which the local run does not.
+          # Each app gets its own jest process, chained one after another, so only one
+          # package's ts-jest TypeScript LanguageService is ever resident at a time. Running
+          # the whole workspace in ONE --runInBand process meant every locally-configured
+          # package's LanguageService stayed alive simultaneously for the whole run, and that
+          # cumulative heap exceeded even this 8GB ceiling once the workspace grew large enough
+          # (2026-09-19 OOM investigation). Kept as headroom even though per-app peak memory
+          # should now sit far below it.
           NODE_OPTIONS: --max-old-space-size=8192
-        run: pnpm exec jest --config ./jest.config.cjs --runInBand --coverage --coverageReporters=json --coverageReporters=json-summary
+        run: node scripts/run-jest-chained.cjs
+
+      - name: Merge per-app coverage into coverage-final.json
+        if: always()
+        run: node scripts/merge-coverage-final.cjs
 
       - name: Split coverage-final.json into per-workspace summaries
         if: always()
