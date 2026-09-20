@@ -12,7 +12,10 @@
   flex-direction: column;
   gap: 4px;
   overflow: hidden;
-  padding: 2rem 8px 8px;
+  // 1.5rem top: same reasoning as CompactLayoutShell.module.scss's
+  // .leftColumn — the embedded terminal title needs ~1.5x its own font-size
+  // of clearance (_BorderedPanel.scss), no more.
+  padding: 1.5rem 8px 8px;
   box-sizing: border-box;
 }
 

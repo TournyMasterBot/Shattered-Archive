@@ -1,5 +1,5 @@
 // apps\game-client\src\hooks\usePlugins.ts
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PluginId } from '@shatteredarchive/types-client';
 import { findCorePlugin } from '../features/plugins/registry';
 import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
@@ -226,13 +226,30 @@ export function usePlugins(_connectionId?: string | null) {
     };
   }, []);
 
-  // Persist immediately with the computed "next" value (no effect-race)
+  // Persist whenever `plugins` changes, in a useEffect — NOT inside the
+  // setPlugins updater below. saveToStorage synchronously DispatchEvents
+  // PLUGINS_UPDATED_EVENT, which every OTHER mounted usePlugins() instance
+  // (e.g. MainContainer's, alongside PluginsModal's own) synchronously
+  // handles by calling its own setPlugins. Doing that from inside a state
+  // updater function means it runs during THIS component's render/update
+  // processing, so React sees it as "a different component's setState
+  // called while rendering PluginsModal" and warns
+  // (react.dev/link/setstate-in-render) — confirmed live via the browser
+  // console. A useEffect runs strictly after commit, outside anyone's
+  // render phase, which is the correct place for a cross-component side
+  // effect like this. Skips the very first run (mount) — that `plugins`
+  // value just came FROM storage, so re-saving it is a redundant echo.
+  const isFirstPluginsPersistRun = useRef(true);
+  useEffect(() => {
+    if (isFirstPluginsPersistRun.current) {
+      isFirstPluginsPersistRun.current = false;
+      return;
+    }
+    saveToStorage(plugins);
+  }, [plugins]);
+
   const setPluginsPersist = useCallback((updater: (prev: InstalledPluginRecord[]) => InstalledPluginRecord[]) => {
-    setPlugins((prev) => {
-      const next = updater(prev);
-      saveToStorage(next);
-      return next;
-    });
+    setPlugins(updater);
   }, []);
 
   /* -------------------------------------------

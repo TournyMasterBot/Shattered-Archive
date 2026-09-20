@@ -105,6 +105,17 @@ export const MainContainer: React.FC = () => {
     const el = document.createElement('div');
     el.style.width = '100%';
     el.style.height = '100%';
+    // Every shell's terminal slot (.terminalBody, .playAreaTerminalShell) is
+    // `display: flex` on purpose — Terminal.tsx's own root divs size
+    // themselves via `flex: 1; min-height: 0`, which only takes effect when
+    // their DIRECT parent is a flex container. Without this, terminalHost is
+    // a plain block box: Terminal's flex rules go inert, its height
+    // collapses to content/default instead of filling the slot, and the
+    // slot's own flex-allocated space is left showing as empty background
+    // behind it (caught live: a real gap below the terminal in compact mode).
+    el.style.display = 'flex';
+    el.style.minHeight = '0';
+    el.style.minWidth = '0';
     return el;
   });
   const [terminalSlot, setTerminalSlot] = React.useState<HTMLDivElement | null>(null);

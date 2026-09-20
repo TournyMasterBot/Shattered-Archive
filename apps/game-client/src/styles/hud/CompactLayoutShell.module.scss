@@ -20,8 +20,12 @@
   // edge via top: -1.5em at font-size: 1rem (_BorderedPanel.scss) — both
   // expressed in relative units, so this is sized in rem too rather than
   // racing a fixed pixel value against a value that scales with root
-  // font size (e.g. an accessibility zoom setting).
-  padding: 2rem 8px 8px;
+  // font size (e.g. an accessibility zoom setting). 1.5rem is that mixin's
+  // own stated minimum (its comment: "at least ~1.5x this element's own
+  // font-size") — was 2rem, which left ~8px of visible dead space above
+  // the panel with no title clipped by it either way (confirmed live with
+  // a populated title at 1.5rem before landing this).
+  padding: 1.5rem 8px 8px;
   box-sizing: border-box;
 }
 

@@ -144,6 +144,13 @@ background it yourself, it orphans the vite child and breaks their `pnpm run dev
   CAUGHT the Step 7 portal-container identity bug (see that step's progress-log entry) — the
   marker was silently gone after the first live switch under the buggy version; a unit test with
   mocked shells never exercises a real container-identity change, so this could only be caught live.
+- `terminal-fill-check.mjs` — measures `getBoundingClientRect()` of the terminal SLOT vs. the
+  actual `#play-area-terminal-root` xterm box, across all three shells (default, slate-amber
+  desktop, slate-amber narrow), asserting a ~0px gap. CAUGHT a real user-reported bug (see the
+  final progress-log entry) that every earlier live check missed by only checking content
+  PRESENCE, never SIZE — `terminalHost` needs `display: flex` for `Terminal.tsx`'s own `flex: 1`
+  sizing to take effect, same as every shell's own slot already provided. The template to reach
+  for whenever a wrapper/portal div is inserted into an existing flex layout.
 All screenshots land in that tool's gitignored `output/tests/<script-name>/` — throwaway
 verification output, never committed. Re-run/extend one of these rather than writing a new script
 from scratch when more visual verification is needed.
@@ -852,3 +859,82 @@ this one or start it early.
   markers/unmerged paths (none). Per the standing git-actions rule this step does NOT commit,
   merge-finalize, or push anything — the working tree is left exactly as edited, for the user to
   review and commit/PR themselves whenever they choose.
+- 2026-09-20T09:00:00Z real bug found by the user in a live browser, post-plan-completion: the
+  terminal didn't fill its panel in slate-amber (compact) — a visible gap of black background
+  between the actual xterm content and the HP/Mana/MOVE row below it. Root cause: `Terminal.tsx`'s
+  own root divs (`playAreaTerminalWrapper`/`playAreaTerminal`) size themselves via `flex: 1;
+  min-height: 0`, which only takes effect when their DIRECT parent is `display: flex` — true of
+  every shell's own terminal slot (`.terminalBody`, `.playAreaTerminalShell`, both `display:
+  flex` on purpose) before Step 7's portal hoist, but NOT true of `terminalHost`
+  (`MainContainer.tsx`'s permanent portal container), which was only ever given `width/height:
+  100%`, not `display: flex`. So Terminal's flex rules went inert one level deeper than before:
+  its rendered height collapsed to auto/content-size while the slot's own black background still
+  correctly filled the full flex-allocated space around it — a real, user-visible gap that none
+  of Step 7's verification caught, because every check that mattered (marker text present, room
+  name present) only asked "is the content there," never "is it the right SIZE." Fixed by adding
+  `display: flex; min-height: 0; min-width: 0` to `terminalHost`'s inline styles, restoring the
+  same flex-container role every shell's own slot already played. Verified with a new script,
+  `terminal-fill-check.mjs` (compares `getBoundingClientRect()` of the slot vs.
+  `#play-area-terminal-root` across all three shells — default, slate-amber desktop, slate-amber
+  narrow): 0px gap in all three after the fix. Also re-ran `theme-live-switch-durability.mjs`
+  (still green) and the full suite (517/517, `tsc --noEmit` clean) — this was a pure sizing fix,
+  no behavior a unit test would exercise. Lesson for next time a portal/wrapper div is inserted
+  into an existing flex layout: verifying content PRESENCE live is not the same as verifying
+  SIZE/layout live — a dimension-comparison check like this one is now the template for that.
+- 2026-09-20T09:30:00Z separate, smaller bug fixed in `usePlugins.ts` (NOT part of this plan —
+  `usePlugins.ts`/`PluginsModal.tsx`/`people.plugin.ts` were never touched by the theme-engine
+  work): a live dev-console report showed "Cannot update a component (MainContainer) while
+  rendering a different component (PluginsModal)" plus a duplicated plugin onEnable log.
+  Root cause: `setPluginsPersist` called `saveToStorage()` (which synchronously DispatchEvents
+  `PLUGINS_UPDATED_EVENT`) INSIDE the `setPlugins` state-updater function — since PluginsModal and
+  MainContainer each mount their own independent `usePlugins()` instance and both listen for that
+  event, toggling a plugin synchronously triggered a cross-component setState during
+  PluginsModal's own render/update processing. Fixed by moving the persistence side effect into
+  its own `useEffect` keyed on `plugins`, which runs strictly after commit. Verified live (new
+  script, `plugins-modal-render-warning-check.mjs`, also not part of this plan's tooling list):
+  zero render-phase warnings across 3 toggles, exactly one onEnable log per genuine enable.
+  Logged here only as a pointer — full detail is in the conversation, not repeated in this plan's
+  Context section, since it's unrelated to HUD theming.
+- 2026-09-20T09:45:00Z follow-up from a user-annotated screenshot after the terminal-fill fix:
+  the top gap above the terminal panel (menu bar to `.terminalPanel`'s top edge) read as too
+  large now that the bigger middle-gap bug no longer dominated the picture — a genuine, if
+  smaller, pre-existing issue (not something today's fixes introduced; `.leftColumn`'s CSS was
+  never touched before this). Measured live (`terminal-panel-spacing-check.mjs`, new): the full
+  36px gap traced entirely to `.leftColumn`'s (`CompactLayoutShell.module.scss`) and `.shell`'s
+  (`CompactLayoutShellNarrow.module.scss`) `padding-top: 2rem` — reserved for the embedded
+  terminal-panel title's `top: -1.5em` clearance (`_BorderedPanel.scss`), whose own comment
+  states only "~1.5x this element's own font-size" (i.e. `1.5rem` = 24px) is actually required.
+  2rem carried ~8px of unneeded slack. Tightened both to `1.5rem`. Verified live with the title
+  actually POPULATED (`terminal-title-clip-check.mjs`, new — a real risk the earlier
+  disconnected-only screenshots couldn't have shown either way): title fully visible, 23px of its
+  own clearance above the panel edge, not clipped, in both the desktop and narrow shells. Also
+  re-confirmed the terminal still fills its slot exactly (0px gap, `terminal-fill-check.mjs`) and
+  the bottom of the terminal was ALREADY correct (0-1px, just the panel's own 1px border) — the
+  "bottom gap" half of the user's annotation didn't correspond to an actual measurable gap.
+  Full suite still 517/517.
+- 2026-09-20T10:15:00Z the "bottom gap" WAS real after all — the user pointed it out again
+  specifically in the narrow shell after confirming the top-padding fix looked right. Traced
+  it properly this time (3 new scripts): `terminal-corner-rounding-check.mjs` used
+  `elementFromPoint()` at points geometrically outside an 8px-radius corner and got a FALSE
+  POSITIVE ("square") on 3 of 4 corners — hit-testing on a rounded+clipped box doesn't
+  necessarily follow its own border-radius, so that test wasn't proof of anything visual, just a
+  dead end (left in the tool folder as a documented negative result). The real technique:
+  `terminal-corner-zoom-hires.mjs` (4x device-scale, tight crop) showed the corners ARE correctly
+  rounded — the actual issue is a color seam, not a shape one. xterm's row-fit leaves a small
+  leftover strip at the bottom (a fixed row pixel-height essentially never divides the container
+  height evenly — normal for any terminal), and `.sa-hud-terminal-panel` was sharing
+  `background: var(--sa-panel-bg)` (`#111113`, a dark slate gray) with every OTHER slate-amber
+  panel (vitals-row, chat-pane, etc.) in `slateAmber.theme.scss`. For those other panels that's
+  correct — they have real visible chrome. But the terminal panel's content is ALWAYS pure black
+  (xterm's own `.xterm-viewport` sets `background-color: rgb(0,0,0)` on itself, independent of
+  any theme), so that leftover strip showed the slate-gray panel chrome instead of matching
+  black — a visible seam right where "the terminal should touch its rounded corner." Split
+  `.sa-hud-terminal-panel` out of the shared panel-background selector group with its own
+  `background: #000` (border-color/radius still shared). Verified: full suite 517/517, a real
+  build, and the 4x zoom screenshots re-taken post-fix — seam gone, corners read as a single
+  continuous black shape in both desktop and narrow. `terminal-panel-spacing-check.mjs`,
+  `terminal-corner-rounding-check.mjs`, `terminal-internal-overflow-check.mjs`,
+  `terminal-corner-zoom-hires.mjs`, and `terminal-narrow-bottom-corner-check.mjs` all stay in the
+  tool folder as reusable diagnostics for this class of "does X actually touch Y" visual claim —
+  the corner-rounding one specifically documents WHY elementFromPoint isn't reliable for that
+  question, so it doesn't get reached for again as a first instinct next time.

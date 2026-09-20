@@ -17,13 +17,28 @@
     background: #0c0c0d;
   }
 
-  .sa-hud-terminal-panel,
   .sa-hud-vitals-row,
   .sa-hud-room-row,
   .sa-hud-chat-pane,
   .sa-hud-affects-panel,
   .sa-hud-widget-slot {
     background: var(--sa-panel-bg);
+    border-color: var(--sa-panel-border);
+    border-radius: 8px;
+  }
+
+  // The terminal's own content is always pure black — xterm's viewport sets
+  // background-color: rgb(0,0,0) on itself, independent of any theme — so
+  // sharing --sa-panel-bg here like every other panel left a visible seam
+  // wherever xterm's row-fit doesn't perfectly consume the panel's full
+  // height (it essentially never does exactly: a fixed row pixel-height
+  // rarely divides the container height evenly, so there's always a small
+  // leftover strip). That strip showed the panel's slate-gray chrome
+  // instead of matching black, reading as "the terminal doesn't touch its
+  // own rounded bottom edge" — caught live from a user screenshot, in both
+  // the desktop and narrow layouts.
+  .sa-hud-terminal-panel {
+    background: #000;
     border-color: var(--sa-panel-border);
     border-radius: 8px;
   }
