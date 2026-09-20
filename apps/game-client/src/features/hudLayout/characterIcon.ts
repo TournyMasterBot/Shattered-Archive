@@ -8,7 +8,9 @@
 // classes with no distinctive icon of their own. Keys are the exact
 // race/class names from this game's `race list` / `class list` commands,
 // looked up case-insensitively — extend these two maps directly if a
-// value is missing or you'd rather have a different icon.
+// value is missing or you'd rather have a different icon. A value may be a
+// single emoji or a short pair (e.g. Armsman's sword and shield) when one
+// glyph can't carry the concept; callers just interpolate the string.
 
 const CLASS_ICONS: Record<string, string> = {
   mage: '🧙',
@@ -52,7 +54,7 @@ const CLASS_ICONS: Record<string, string> = {
   battlemage: '🪄',
   nightshade: '☠️',
   skald: '📯',
-  armsman: '🪖',
+  armsman: '🗡️🛡️',
   dragonslayer: '⚔️',
   pirate: '🏴‍☠️',
   defiler: '🥀',

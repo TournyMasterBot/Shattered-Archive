@@ -24,4 +24,10 @@ describe('getCharacterIcon', () => {
   it('returns null when both are missing', () => {
     expect(getCharacterIcon({})).toBeNull();
   });
+
+  it('gives Armsman a sword-and-shield pair — an icon may be more than one emoji', () => {
+    // dagger (U+1F5E1) + shield (U+1F6E1), each with the emoji variation selector,
+    // matching how Thief and Paladin already spell them individually.
+    expect(getCharacterIcon({ className: 'Armsman' })).toBe('\u{1F5E1}️\u{1F6E1}️');
+  });
 });
