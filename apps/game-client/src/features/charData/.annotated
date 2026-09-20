@@ -2,3 +2,9 @@ File Index
 
 /charDataStore.ts
 Purpose: Caches the most recent character vitals/ancillary snapshot so useCharData can seed itself on a fresh mount (e.g. a live HUD theme switch) instead of starting blank.
+
+/levelProgressStore.ts
+Purpose: Tracks progress through the current level for the compact HUD's EXP gauge. Level comes from login_data (game:character-login, once per login; seeded from the window.__SA_EVENT_SNAPSHOTS__ snapshot for late subscribers) and is bumped by event:level-up; tnl (exp REMAINING) comes from every game:char-data. GMCP does not send the level's exp SPAN, so span = highest tnl seen since the last level-up and fill = 1 - tnl/span — logging in mid-level therefore starts the bar empty (server-sent span would fix it). A re-sent login_data for the same character+level does NOT reset progress. Module-level singleton that keeps listening with no subscribers, so a live theme switch/remount keeps the high-water mark. Hidden at MAX_LEVEL (51) or until level and tnl are both known.
+
+/levelProgressStore.test.ts
+Purpose: Pins the fill math, the hidden-at-51/unknown-level rules, span reset + level bump on level-up, login re-send vs. real relog handling, late-subscriber seeding, survival across unsubscribe, and snapshot stability (useSyncExternalStore).
