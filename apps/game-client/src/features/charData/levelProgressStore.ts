@@ -1,0 +1,147 @@
+// apps/game-client/src/features/charData/levelProgressStore.ts
+// Tracks how far through the current level the character is, for the compact
+// HUD's EXP bar.
+//
+// GMCP gives us the level (login_data, once per login) and `tnl` — exp REMAINING
+// to the next level (char_data, every prompt) — but not the exp SPAN of the
+// level, so a fill fraction can't be computed exactly. Instead the span is the
+// highest tnl seen since the last level-up (fill = 1 - tnl/span). Known limit:
+// logging in mid-level starts the bar empty and it only fills from that point,
+// so it under-reports until the next level. The exact fix is for the server to
+// send the span in char_data.
+//
+// Like tickStore/charDataStore this is a module-level singleton that keeps
+// listening with no subscribers: a live theme switch unmounts and remounts the
+// HUD, and a layout that never renders the bar must not miss a level-up.
+import { ListenEvent } from '../event-emitter/event-dispatcher';
+
+export const MAX_LEVEL = 51;
+
+export type LevelProgress = {
+  /** Show the bar: level and tnl known, and not already at the max level. */
+  visible: boolean;
+  /** 0..100 */
+  pct: number;
+  level: number | null;
+  /** Exp remaining to the next level. */
+  tnl: number | null;
+};
+
+type State = {
+  name: string | null;
+  level: number | null;
+  tnl: number | null;
+  span: number;
+};
+
+export function computeLevelProgress(level: number | null, tnl: number | null, span: number): LevelProgress {
+  const visible = level != null && tnl != null && level < MAX_LEVEL;
+  const raw = span > 0 && tnl != null ? ((span - tnl) / span) * 100 : 0;
+  return { visible, pct: Math.max(0, Math.min(100, raw)), level, tnl };
+}
+
+const initialState = (): State => ({ name: null, level: null, tnl: null, span: 0 });
+
+let state: State = initialState();
+let snapshot: LevelProgress = computeLevelProgress(null, null, 0);
+const listeners = new Set<() => void>();
+let disposers: Array<() => void> = [];
+let started = false;
+
+function publish(): void {
+  const next = computeLevelProgress(state.level, state.tnl, state.span);
+  if (
+    next.visible === snapshot.visible &&
+    next.pct === snapshot.pct &&
+    next.level === snapshot.level &&
+    next.tnl === snapshot.tnl
+  ) {
+    return;
+  }
+  snapshot = next;
+  listeners.forEach((fn) => fn());
+}
+
+const finiteNumber = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+
+function applyLogin(data: any): void {
+  const name = typeof data?.name === 'string' ? data.name : null;
+  const level = finiteNumber(data?.level);
+
+  // Same character and nothing new about the level: keep our progress — this
+  // covers a re-send of login_data and a reconnect at the same level.
+  if (name === state.name && (level === null || level === state.level)) return;
+
+  state = { name, level, tnl: null, span: 0 };
+  publish();
+}
+
+function start(): void {
+  if (started) return;
+  started = true;
+
+  // A subscriber that arrives after login_data (e.g. after a layout switch)
+  // still gets the level from the same snapshot useCharacterLogin reads.
+  try {
+    const snap = (window as any).__SA_EVENT_SNAPSHOTS__?.['game:character-login'];
+    if (snap) applyLogin(snap);
+  } catch {
+    // ignore
+  }
+
+  disposers = [
+    ListenEvent<any>('game:character-login', applyLogin, { key: 'levelProgressStore::game:character-login' }),
+
+    ListenEvent<any>(
+      'game:char-data',
+      (data) => {
+        const tnl = finiteNumber(data?.tnl);
+        if (tnl === null) return;
+        state.tnl = tnl;
+        state.span = Math.max(state.span, tnl);
+        publish();
+      },
+      { key: 'levelProgressStore::game:char-data' },
+    ),
+
+    ListenEvent<any>(
+      'event:level-up',
+      () => {
+        // The next char_data's tnl defines the new level's span. Never invent a
+        // level we were never told.
+        state.span = 0;
+        if (state.level !== null) state.level += 1;
+        publish();
+      },
+      { key: 'levelProgressStore::event:level-up' },
+    ),
+  ];
+}
+
+export function getLevelProgress(): LevelProgress {
+  return snapshot;
+}
+
+export function subscribeLevelProgress(fn: () => void): () => void {
+  start();
+  listeners.add(fn);
+  return () => {
+    listeners.delete(fn);
+  };
+}
+
+/** Test-only: drop listeners and state so cases can't leak into each other. */
+export function __resetForTests(): void {
+  disposers.forEach((dispose) => {
+    try {
+      dispose();
+    } catch {
+      // ignore
+    }
+  });
+  disposers = [];
+  started = false;
+  listeners.clear();
+  state = initialState();
+  snapshot = computeLevelProgress(null, null, 0);
+}
