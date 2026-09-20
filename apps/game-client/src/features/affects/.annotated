@@ -1,0 +1,4 @@
+File Index
+
+/affectsStore.ts
+Purpose: Caches the most recent active-affects list so useAffectsBlock (and useSanctuaryActive, which reuses this same cache) can seed itself on a fresh mount instead of starting empty.

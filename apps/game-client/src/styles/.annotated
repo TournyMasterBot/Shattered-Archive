@@ -1,7 +1,7 @@
 File Index
 
 /_BorderedPanel.scss
-Purpose: Shared `borderedPanelTitle` mixin — a bordered panel with its title embedded in the top border line (classic box-drawing TUI look). Used by the compact HUD's terminal panel (styles/hud/CompactLayoutShell.module.scss). The title's background is `var(--sa-panel-bg, $bg-color)` so a theme setting `--sa-panel-bg` (see public/themes/slate-amber.css) repaints it in sync with the panel's own background without the caller duplicating the color.
+Purpose: Shared `borderedPanelTitle` mixin — a bordered panel with its title embedded in the top border line (classic box-drawing TUI look). Used by the compact HUD's terminal panel (styles/hud/CompactLayoutShell.module.scss). The title's background is `var(--sa-panel-bg, $bg-color)` so a theme setting `--sa-panel-bg` (see styles/hud/themes/slateAmber.theme.scss) repaints it in sync with the panel's own background without the caller duplicating the color.
 
 /hud/
 Purpose: CSS modules for the compact HUD layout's React components (apps/game-client/src/components/hud/) — see styles/hud/.annotated for the per-file index.

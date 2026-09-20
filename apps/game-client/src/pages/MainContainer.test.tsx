@@ -2,7 +2,7 @@
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { MainContainer } from './MainContainer';
-import { setHudLayout } from '../features/hudLayout/hudLayoutStore';
+import { setHudThemeId } from '../features/hudLayout/hudThemeStore';
 
 // ---------------------------------------------------------------------------
 // MainContainer pulls in a lot of app wiring — a WebSocket connection, plugin
@@ -14,14 +14,19 @@ import { setHudLayout } from '../features/hudLayout/hudLayoutStore';
 // they're all closed (`isOpen=false`) so they return null quickly.
 // ---------------------------------------------------------------------------
 
-jest.mock('../components/LayoutShell', () => ({
+jest.mock('../components/hud/DefaultThemeShell', () => ({
   __esModule: true,
-  LayoutShell: () => <div>classic-shell</div>,
+  default: () => <div>classic-shell</div>,
 }));
 
 jest.mock('../components/hud/CompactLayoutShell', () => ({
   __esModule: true,
   default: () => <div>compact-shell</div>,
+}));
+
+jest.mock('../components/hud/CompactLayoutShellNarrow', () => ({
+  __esModule: true,
+  default: () => <div>compact-shell-narrow</div>,
 }));
 
 jest.mock('../hooks/useVisualViewportHeight', () => ({
@@ -132,6 +137,19 @@ jest.mock('../hooks/useTerminal', () => ({
   }),
 }));
 
+// Terminal is now hoisted into an always-rendered portal (terminalHost is
+// created unconditionally, not gated on any shell actually mounting a slot —
+// see MainContainer.tsx), so it renders for real here even though the mocked
+// shells below never call terminalSlotRef. The real Terminal.tsx calls
+// `new ResizeObserver(...)` directly (not through useTerminal, so the mock
+// above doesn't cover it), which jsdom doesn't implement — mock the
+// component itself rather than polyfilling a browser API this suite has no
+// other reason to need.
+jest.mock('../components/Terminal', () => ({
+  __esModule: true,
+  default: () => <div>terminal-stub</div>,
+}));
+
 jest.mock('../features/userScripts/runtimeSingleton', () => ({
   RuntimeSingleton: {
     Instance: {
@@ -229,21 +247,27 @@ describe('MainContainer — shell selection', () => {
     setViewportWidth(1440);
   });
 
-  it('renders the classic shell by default', () => {
+  it('renders the classic shell by default', async () => {
     render(<MainContainer />);
-    expect(screen.getByText('classic-shell')).toBeInTheDocument();
+    expect(await screen.findByText('classic-shell')).toBeInTheDocument();
   });
 
-  it('renders the compact shell when the setting is on and the viewport is desktop-width', () => {
-    setHudLayout('compact');
+  it('renders the slate-amber shell when the theme is selected and the viewport is desktop-width', async () => {
+    setHudThemeId('slate-amber');
     render(<MainContainer />);
-    expect(screen.getByText('compact-shell')).toBeInTheDocument();
+    expect(await screen.findByText('compact-shell')).toBeInTheDocument();
   });
 
-  it('falls back to the classic shell on a mobile-width viewport even if compact is selected', () => {
-    setHudLayout('compact');
+  it('renders slate-amber\'s OWN narrow shell on a mobile-width viewport, not a fallback to classic', async () => {
+    setHudThemeId('slate-amber');
     setViewportWidth(600);
     render(<MainContainer />);
-    expect(screen.getByText('classic-shell')).toBeInTheDocument();
+    expect(await screen.findByText('compact-shell-narrow')).toBeInTheDocument();
+  });
+
+  it('falls back to the classic shell on a mobile-width viewport for the default theme', async () => {
+    setViewportWidth(600);
+    render(<MainContainer />);
+    expect(await screen.findByText('classic-shell')).toBeInTheDocument();
   });
 });

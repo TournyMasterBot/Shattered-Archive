@@ -2450,3 +2450,71 @@ git commit -m "test(hud): end-to-end widget slot verification"
 - [ ] Run: `pnpm --filter @shatteredarchive/game-client test`
 - [ ] Expected: PASS, no regressions anywhere in `apps/game-client`
 - [ ] Manual pass in a real browser covering: classic layout unchanged with the feature off; compact layout on, both resizers, both themes, the terminal title, exits row, widget slots empty and occupied, and the 900px mobile fallback (Task 14, Step 6, repeated once everything is merged together)
+
+---
+
+## Rework note — 2026-09-20
+
+This plan (and its spec, `2026-09-14-custom-hud-layout-design.md`) describes the
+original implementation as submitted in community PR #151
+(`hex337/Shattered-Archive:Feature/custom-hud-layout`). TournyMasterBot's review
+of that PR came back CHANGES_REQUESTED; hex337 gave an explicit go-ahead to take
+the branch over rather than iterate on it in place. That rework happened on
+`feature/hud-theme-engine`, tracked in its own plan document,
+`.ai-plans/20260920-0005-hud-theme-engine.md` — that doc's "Current State"
+section and Progress log are the authoritative, detailed history; this note is
+a summary pointer, not a replacement for it. The tasks above are left
+unedited/unchecked as a historical record of the original design — they do not
+reflect what actually shipped. Don't resume checking them off.
+
+What changed, at a level someone reading only this file needs to know:
+
+- **The core review finding**: representing "layout" and "theme" as two
+  independent settings (§4.4 above) doesn't hold up once a theme's *shape*
+  diverges, not just its skin — collapsed into one theme registry
+  (`features/hudLayout/themeRegistry.ts`'s `THEME_REGISTRY` +
+  `resolveActiveTheme`), one store (`hudThemeStore.ts`, one `HudThemeId`), one
+  selector in `GraphicsSettingsModal.tsx`. See the design spec's §4.4 for the
+  full replacement description — don't rely on this plan's Task list for the
+  settings shape, it describes the pre-rework two-store split.
+- **The review's biggest flagged issue** — two regex scanners
+  (score-sheet identity, world-time period) running unconditionally on every
+  line of server text in `userScriptRuntime.ts`'s hot path, for every user
+  regardless of theme — fixed by moving both into a new opt-in core plugin
+  (`features/plugins/core-plugins/world-time-and-identity.plugin.ts`), gated
+  behind a cheap substring pre-check, auto-enabled only when `slate-amber`
+  activates (via `themeRegistry.ts`'s `onActivate` hook) and independently
+  toggleable off. `userScriptRuntime.ts`'s hot path has zero trace of either
+  scan now.
+- **An unrelated merge conflict surfaced and resolved**: PR #152 landed on
+  `release/dev` first with its own fix for the same opponent-name ANSI
+  rendering PR #151 had independently touched — reconciled in favor of
+  `release/dev`'s approach (raw label + `ansiToHtml`), applied consistently to
+  `CompactVitalsRow.tsx` too (a gap in both original PRs).
+- **Slate & Amber ships as real SCSS**, not the `<link>`-swap CSS loader this
+  plan's tasks describe — `styles/hud/themes/slateAmber.theme.scss`, rules
+  nested under `:root[data-hud-theme='slate-amber']`, confirmed via a real
+  production build to code-split into the theme's own lazy chunk.
+- **Slate & Amber gained its own narrow-viewport shell**
+  (`CompactLayoutShellNarrow.tsx`) instead of falling back to classic below
+  900px, styled with the theme's own colors.
+- **Biggest addition beyond this plan's original scope**: theme switching is
+  now fully **live** — no reload required. `hudThemeId` is reactive state
+  (an event `hudThemeStore.ts` dispatches on every change), `<Terminal/>` is
+  hoisted into a portal target that never itself changes identity (a real bug
+  in the first attempt at this was caught live via Playwright and fixed —
+  see the theme-engine plan's Step 7 log), and five hooks
+  (`useCharData`, `useAffectsBlock`, `useSanctuaryActive`, `useRoomHeader`,
+  `useOpponentStatus`) now seed from small module-level caches so a live
+  switch shows last-known state immediately instead of flashing blank.
+- **Verification grew well past this plan's per-task Jest tests**: alongside
+  the full suite (517/517 as of the rework's completion, up from whatever
+  count this plan's tasks produced), a set of reusable Playwright scripts
+  under `Shattered-AI/tools/browser-test/` (`theme-registry-check.mjs`,
+  `theme-slate-amber-full.mjs`, `theme-live-switch-durability.mjs`, and
+  others) verify real dev-server behavior end-to-end — this caught two real
+  bugs unit tests alone could not have (a plugin/event dedup-key collision,
+  and the terminal portal-identity bug above).
+
+Read the theme-engine plan doc for anything not covered here — file paths,
+exact reasoning, and the full step-by-step decision trail all live there.

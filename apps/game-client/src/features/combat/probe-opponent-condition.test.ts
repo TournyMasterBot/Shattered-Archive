@@ -8,11 +8,13 @@ describe('ProbeOpponentConditionLine', () => {
     expect(result?.statusText).toBe('100%');
   });
 
-  it('strips ANSI color codes out of a colored mob name (the merman bug)', () => {
+  it('preserves raw ANSI color codes in a colored mob name (the merman bug)', () => {
+    // Deliberately NOT stripped: RightSidebar/CompactVitalsRow render this
+    // label through ansiToHtml so the mob's color survives into the UI
+    // instead of being discarded here. The trailing " is" verb-strip still
+    // works correctly with an ANSI reset code immediately before it.
     const result = ProbeOpponentConditionLine('A \x1b[0;36mmerman\x1b[0m is in excellent condition.');
-    expect(result?.label).toBe('A merman');
-    expect(result?.label).not.toContain('\x1b');
-    expect(result?.label).not.toContain('[0;36m');
+    expect(result?.label).toBe('A \x1b[0;36mmerman\x1b[0m');
   });
 
   it('trims a trailing "has" verb', () => {

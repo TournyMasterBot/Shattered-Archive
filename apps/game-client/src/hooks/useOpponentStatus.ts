@@ -1,8 +1,16 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { ListenEvent } from '../features/event-emitter/event-dispatcher';
 import { formatOpponentStatusText, type OpponentStatusDetail, type EnemyUiState } from '../features/combat/opponent-types';
+import { getEnemyUiSnapshot, setEnemyUiSnapshot } from '../features/combat/opponentStatusStore';
 
 const ENEMY_STALE_MS = 5000;
+
+const DEFAULT_ENEMY_UI: EnemyUiState = {
+  lastSeenTs: 0,
+  label: 'Enemy',
+  pct: 0,
+  statusText: '',
+};
 
 type DamageChunk = { leftPct: number; widthPct: number; key: number };
 
@@ -12,12 +20,9 @@ export function useOpponentStatus(): {
   damageChunk: DamageChunk | null;
 } {
   const instanceId = useId();
-  const [enemyUi, setEnemyUi] = useState<EnemyUiState>({
-    lastSeenTs: 0,
-    label: 'Enemy',
-    pct: 0,
-    statusText: '',
-  });
+  // Seed from opponentStatusStore so a remount — a live theme switch, e.g.
+  // — doesn't blank a fight that's still within its staleness window.
+  const [enemyUi, setEnemyUi] = useState<EnemyUiState>(() => getEnemyUiSnapshot() ?? DEFAULT_ENEMY_UI);
 
   const [damageChunk, setDamageChunk] = useState<DamageChunk | null>(null);
   const chunkTimerRef = useRef<number | null>(null);
@@ -51,12 +56,14 @@ export function useOpponentStatus(): {
             }
           }
 
-          return {
+          const next: EnemyUiState = {
             lastSeenTs: d.ts || Date.now(),
             label: d.label?.trim() || prev.label || 'Enemy',
             pct: nextPct,
             statusText: formatOpponentStatusText(d.pct, d.minPct, d.maxPct),
           };
+          setEnemyUiSnapshot(next);
+          return next;
         });
       },
       { key: `useOpponentStatus::event:fighting:opponent::${instanceId}` },

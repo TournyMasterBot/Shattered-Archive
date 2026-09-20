@@ -234,7 +234,8 @@
   border-radius: 4px;
   padding: 8px 10px;
 
-  input {
+  input,
+  select {
     background: #131313;
     border: 1px solid #333;
     border-radius: 3px;
@@ -245,6 +246,15 @@
 
     &:focus {
       border-color: #4a7ad8;
+    }
+  }
+
+  select {
+    cursor: pointer;
+
+    option {
+      background: #131313;
+      color: #e0e0e0;
     }
   }
 }

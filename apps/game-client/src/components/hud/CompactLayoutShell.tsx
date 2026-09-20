@@ -1,37 +1,29 @@
 import React from 'react';
 import styles from '../../styles/hud/CompactLayoutShell.module.scss';
+// Side-effect import: this theme's rules are gated behind
+// :root[data-hud-theme='slate-amber'] (set by themeRegistry.ts's loadStyles),
+// so bundling it here has no visual effect unless this shell is actually the
+// active theme — but it DOES tie the CSS to the same lazy-loaded chunk as
+// this component, matching Step 2's code-splitting for everything else.
+import '../../styles/hud/themes/slateAmber.theme.scss';
 import { useCompactLayoutSizing } from '../../hooks/useCompactLayoutSizing';
 import { useCharacterIdentity } from '../../hooks/useCharacterIdentity';
 import { CompactVitalsRow } from './CompactVitalsRow';
 import { CompactRoomRow } from './CompactRoomRow';
 import { CompactWidgetSlot } from './CompactWidgetSlot';
-import Terminal from '../Terminal';
 import CommandInput from '../CommandInput';
 import { ChatPane } from '../ChatPane';
 import AffectsBlock from '../AffectsBlock';
-import { AutoLevelMode, AutoLevelRunState } from '../../features/autoleveling/autoleveling-types';
-import { getHudLayout, type HudLayoutMode } from '../../features/hudLayout/hudLayoutStore';
-import { getHudTheme, type HudTheme } from '../../features/hudLayout/hudThemeStore';
 import { getCharacterIcon } from '../../features/hudLayout/characterIcon';
+import type { HudShellBaseProps } from './LayoutShellProps';
 
-const HUD_LAYOUT_LABELS: Record<HudLayoutMode, string> = {
-  classic: 'Classic',
-  compact: 'Compact',
-};
+// This shell IS the slate-amber theme's shell — it never represents any
+// other theme, so its label is a fixed constant, not a lookup. The registry
+// (features/hudLayout/themeRegistry.ts) is the single source of truth for
+// which theme is active; this component doesn't need to know.
+const FOOTER_LABEL = 'Slate & Amber';
 
-const HUD_THEME_LABELS: Record<HudTheme, string> = {
-  default: 'Default',
-  'slate-amber': 'Slate & Amber',
-};
-
-export interface CompactLayoutShellProps {
-  isConnected: boolean;
-  sendRaw: (data: string) => void;
-  onOpenAutoLeveling?: () => void;
-  autoLevelMode?: AutoLevelMode;
-  autoLevelRunState?: AutoLevelRunState;
-  onSightseeRescan?: () => void;
-}
+export type CompactLayoutShellProps = HudShellBaseProps;
 
 export const CompactLayoutShell: React.FC<CompactLayoutShellProps> = ({
   isConnected,
@@ -40,13 +32,11 @@ export const CompactLayoutShell: React.FC<CompactLayoutShellProps> = ({
   autoLevelMode,
   autoLevelRunState,
   onSightseeRescan,
+  terminalSlotRef,
 }) => {
   const { layoutVars, handleVerticalResizeMouseDown, handleChatResizeMouseDown, chatPaneRef } = useCompactLayoutSizing();
   const { characterName, raceName, className } = useCharacterIdentity();
   const characterIcon = getCharacterIcon({ raceName, className });
-  const [footerLabel] = React.useState(
-    () => `${HUD_LAYOUT_LABELS[getHudLayout()]} · ${HUD_THEME_LABELS[getHudTheme()]}`,
-  );
 
   return (
     <div className={`${styles.shell} sa-hud-shell`} style={layoutVars}>
@@ -57,9 +47,7 @@ export const CompactLayoutShell: React.FC<CompactLayoutShellProps> = ({
               {characterIcon ? `${characterIcon} ${characterName}` : characterName}
             </span>
           )}
-          <div className={styles.terminalBody}>
-            <Terminal />
-          </div>
+          <div className={styles.terminalBody} ref={terminalSlotRef} />
         </div>
 
         <div className={`${styles.subWindow} sa-hud-sub-window`}>
@@ -74,7 +62,7 @@ export const CompactLayoutShell: React.FC<CompactLayoutShellProps> = ({
             autoLevelRunState={autoLevelRunState}
             onSightseeRescan={onSightseeRescan}
           />
-          <div className={`${styles.footerRow} sa-hud-footer-row`}>{footerLabel}</div>
+          <div className={`${styles.footerRow} sa-hud-footer-row`}>{FOOTER_LABEL}</div>
         </div>
       </div>
 

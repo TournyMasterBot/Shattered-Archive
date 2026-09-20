@@ -183,24 +183,40 @@ flex-growing regions, not used as a default. If a specific element turns
 out not to work fluidly during implementation, fall back to a fixed size
 for that element specifically rather than redesigning the whole approach.
 
-### 4.4 Settings / toggles — layout and theme are independent
+### 4.4 Settings / toggles — one theme registry, not two independent settings
 
-Two small stores, same pattern as `userStyleOverrideStore.ts`, and two
-separate controls (not one combined toggle — confirmed in review):
+**Reworked 2026-09-20** (see `docs/superpowers/plans/2026-09-14-custom-hud-layout.md`'s
+dated Rework note for the full history): the "layout" and "theme" split
+described below was the original design, but review found no way to keep
+representing them as two independent settings once a theme's *shape* (not
+just its skin) genuinely diverges — a theme like `slate-amber` isn't
+"compact layout plus a color skin," it's a distinct shell component with its
+own narrow-viewport variant, own plugin auto-enable behavior, and its own
+CSS bundle. Two orthogonal toggles can't express "this theme also changes
+which component renders." What shipped instead:
 
-- `features/hudLayout/hudLayoutStore.ts` — `getHudLayout()` /
-  `setHudLayout('classic' | 'compact')`, localStorage-backed, defaults to
-  `'classic'` (today's behavior, unchanged for everyone who doesn't opt in).
-  `MainContainer.tsx` reads it once (a `useState` seeded from the store) and
-  picks `CompactLayoutShell` vs `LayoutShell`.
-- `features/hudLayout/hudThemeStore.ts` — `getHudTheme()` /
-  `setHudTheme('default' | 'slate-amber')`, independent of the layout
-  choice, defaults to `'default'` (baseline CSS-Modules styling, no theme
-  CSS loaded).
-- Both get their own row in a new "Layout" section in
-  `GraphicsSettingsModal.tsx` (already the home for visual-presentation
-  settings) — the theme selector is only meaningful (and only shown) when
-  compact layout is on, since it's the only layout a theme targets today.
+- One store, `features/hudLayout/hudThemeStore.ts` — `getHudThemeId()` /
+  `setHudThemeId(id: HudThemeId)`, localStorage-backed
+  (`shatteredArchive.hudTheme.id.v1`), defaults to `'default'` (today's
+  classic layout, unchanged for everyone who doesn't opt in). The old
+  `hudLayoutStore.ts` does not exist.
+- One registry, `features/hudLayout/themeRegistry.ts` —
+  `THEME_REGISTRY: Record<HudThemeId, ThemeDefinition>` plus
+  `resolveActiveTheme(themeId, viewportWidth)`, the pure function
+  `MainContainer.tsx` calls every render to pick the lazy-loaded
+  `ShellComponent` (and, below its `narrowBreakpoint`, its own
+  `NarrowShellComponent` if it defines one). Each `ThemeDefinition` bundles
+  everything that theme needs: its shell component(s), `loadStyles`
+  (applies its visual skin), and an optional `onActivate` (lets a theme
+  auto-enable a core plugin it depends on — `slate-amber` auto-enables
+  `world-time-and-identity` this way). Adding a theme means adding one
+  registry entry, not touching `MainContainer.tsx`.
+- One row in `GraphicsSettingsModal.tsx`'s "Layout" nav tab — a single
+  "Theme" `<select>` (Default / Slate & Amber), not two dropdowns. As of
+  2026-09-20 this also applies **live** — `setHudThemeId` dispatches an
+  event `MainContainer.tsx` listens for, so switching themes re-renders in
+  place with no reload, instead of the reload-required v1 this section
+  originally assumed.
 
 ### 4.5 Theme CSS
 
@@ -382,7 +398,10 @@ From the grill-me pass:
   used as a general default (§4.3b).
 - Layout and theme are **independent** settings, not one combined toggle —
   compact layout gets its own plain-CSS-Modules baseline; the theme is a
-  from-outside skin on top (§4.3, §4.4).
+  from-outside skin on top (§4.3, §4.4). **Superseded 2026-09-20** — see
+  §4.4's rework note; this decision didn't survive contact with a theme that
+  needed to diverge in shape, not just skin, and was replaced by one theme
+  registry.
 - `HudWidgetContent` stays narrow for v1 (`label?`, `value`, `variant?`,
   plain text only) — widen later from a real second use case, not
   speculatively now (§4.6).

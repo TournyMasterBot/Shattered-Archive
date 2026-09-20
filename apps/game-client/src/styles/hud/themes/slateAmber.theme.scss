@@ -1,0 +1,71 @@
+// The Slate & Amber theme. Gated entirely behind :root[data-hud-theme='slate-amber']
+// (set by features/hudLayout/themeRegistry.ts's loadStyles when this theme is
+// active) so importing this file has zero effect unless that attribute is
+// present — safe as a plain global-scope import, no CSS Modules needed.
+//
+// Targets the stable `sa-hud-*` literal classes + data-* attributes CompactLayoutShell
+// and its children render alongside their own CSS-Modules classes (never the
+// Vite-hashed module classes themselves, which aren't stable across builds).
+:root[data-hud-theme='slate-amber'] {
+  // Tokens — reused as-is by the narrow-viewport variant so it never re-derives the palette.
+  --sa-accent: #e0a94a;
+  --sa-accent-glow: rgba(224, 169, 74, 0.45);
+  --sa-panel-bg: #111113;
+  --sa-panel-border: #232323;
+
+  .sa-hud-shell {
+    background: #0c0c0d;
+  }
+
+  .sa-hud-terminal-panel,
+  .sa-hud-vitals-row,
+  .sa-hud-room-row,
+  .sa-hud-chat-pane,
+  .sa-hud-affects-panel,
+  .sa-hud-widget-slot {
+    background: var(--sa-panel-bg);
+    border-color: var(--sa-panel-border);
+    border-radius: 8px;
+  }
+
+  .sa-hud-terminal-title {
+    color: var(--sa-accent);
+    text-shadow: 0 0 6px var(--sa-accent-glow);
+  }
+
+  .sa-hud-vitals-fill-move {
+    background: var(--sa-accent);
+    box-shadow: 0 0 6px 1px var(--sa-accent-glow);
+  }
+
+  .sa-hud-vitals-fill-hp[data-hp-warning='true'] {
+    box-shadow: 0 0 6px 1px rgba(220, 60, 60, 0.5);
+  }
+
+  .sa-hud-room-exit[data-available='true'] {
+    color: var(--sa-accent);
+    text-shadow: 0 0 5px var(--sa-accent-glow);
+  }
+
+  #game-command-input:focus {
+    border-color: var(--sa-accent) !important;
+    box-shadow: 0 0 8px var(--sa-accent-glow) !important;
+  }
+
+  .sa-hud-widget-slot[data-variant='warning'] {
+    color: #e0c04a;
+  }
+
+  .sa-hud-widget-slot[data-variant='critical'] {
+    color: #e05a4a;
+  }
+
+  // Narrow-viewport variant only (CompactLayoutShellNarrow's Chat/Affects
+  // tab strip) — this class only ever renders below the theme's narrow
+  // breakpoint, so no media query is needed here to scope it further.
+  .sa-hud-narrow-tab[data-active='true'] {
+    border-color: var(--sa-accent) !important;
+    color: var(--sa-accent);
+    box-shadow: 0 0 5px var(--sa-accent-glow);
+  }
+}

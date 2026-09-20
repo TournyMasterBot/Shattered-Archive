@@ -30,7 +30,6 @@ jest.mock('../../hooks/useLayoutShell', () => ({
 jest.mock('../../hooks/useOpponentStatus', () => ({
   useOpponentStatus: () => ({ enemyUi: { lastSeenTs: 0, label: '', pct: 0, statusText: '' }, isEnemyActive: false, damageChunk: null }),
 }));
-jest.mock('../Terminal', () => ({ __esModule: true, default: () => <div /> }));
 jest.mock('../ChatPane', () => ({ ChatPane: () => <div /> }));
 jest.mock('../AffectsBlock', () => ({ __esModule: true, default: () => <div /> }));
 jest.mock('../CommandInput', () => ({ __esModule: true, default: () => <div /> }));
@@ -48,7 +47,7 @@ describe('widget slot end-to-end (plugin -> registry -> CompactLayoutShell)', ()
     });
     pluginHost.enable('autoleveling-stand-in');
 
-    render(<CompactLayoutShell isConnected sendRaw={jest.fn()} />);
+    render(<CompactLayoutShell isConnected sendRaw={jest.fn()} terminalSlotRef={jest.fn()} />);
     expect(screen.queryByText('A rabid wolf')).toBeNull();
 
     // setHudWidget -> publishHudWidget dispatches a native window CustomEvent

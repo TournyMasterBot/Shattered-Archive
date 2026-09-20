@@ -1,9 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import styles from '../styles/GraphicsSettingsModal.module.scss';
 import { DispatchEvent, ListenDomEvent } from '../features/event-emitter/event-dispatcher';
-import { getHudLayout, setHudLayout, type HudLayoutMode } from '../features/hudLayout/hudLayoutStore';
-import { getHudTheme, setHudTheme, type HudTheme } from '../features/hudLayout/hudThemeStore';
-import { applyHudTheme } from '../features/hudLayout/hudThemeLoader';
+import { getHudThemeId, setHudThemeId, type HudThemeId } from '../features/hudLayout/hudThemeStore';
 
 export interface GraphicsSettingsModalProps {
   isOpen: boolean;
@@ -95,8 +93,7 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
   const [config, setConfig] = useState<GraphicsConfig>(() => loadConfig());
   const [draft, setDraft] = useState<GraphicsConfig>(() => loadConfig());
 
-  const [hudLayout, setHudLayoutState] = useState<HudLayoutMode>(() => getHudLayout());
-  const [hudTheme, setHudThemeState] = useState<HudTheme>(() => getHudTheme());
+  const [hudThemeId, setHudThemeIdState] = useState<HudThemeId>(() => getHudThemeId());
 
   // Track viewport size (same pattern as your ScriptSandbox)
   useEffect(() => {
@@ -125,8 +122,7 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
       setConfig(current);
       setDraft(current);
       setActiveNav('rendering');
-      setHudLayoutState(getHudLayout());
-      setHudThemeState(getHudTheme());
+      setHudThemeIdState(getHudThemeId());
     }
   }, [isOpen]);
 
@@ -285,40 +281,21 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
             {activeNav === 'layout' && (
               <div className={styles.section}>
                 <label className={styles.field}>
-                  <div className={styles.fieldLabel}>HUD layout</div>
+                  <div className={styles.fieldLabel}>Theme</div>
                   <select
-                    aria-label="HUD layout"
-                    value={hudLayout}
+                    aria-label="Theme"
+                    value={hudThemeId}
                     onChange={(e) => {
-                      const next = e.target.value as HudLayoutMode;
-                      setHudLayoutState(next);
-                      setHudLayout(next);
+                      const next = e.target.value as HudThemeId;
+                      setHudThemeIdState(next);
+                      setHudThemeId(next);
                     }}
                   >
-                    <option value="classic">Classic</option>
-                    <option value="compact">Compact</option>
+                    <option value="default">Default</option>
+                    <option value="slate-amber">Slate &amp; Amber</option>
                   </select>
-                  <div className={styles.hint}>Takes effect after reloading the page.</div>
+                  <div className={styles.hint}>Applies immediately — no reload needed.</div>
                 </label>
-
-                {hudLayout === 'compact' && (
-                  <label className={styles.field}>
-                    <div className={styles.fieldLabel}>HUD theme</div>
-                    <select
-                      aria-label="HUD theme"
-                      value={hudTheme}
-                      onChange={(e) => {
-                        const next = e.target.value as HudTheme;
-                        setHudThemeState(next);
-                        setHudTheme(next);
-                        applyHudTheme(next);
-                      }}
-                    >
-                      <option value="default">Default</option>
-                      <option value="slate-amber">Slate &amp; Amber</option>
-                    </select>
-                  </label>
-                )}
               </div>
             )}
           </div>

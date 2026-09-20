@@ -11,7 +11,6 @@ jest.mock('./CompactRoomRow', () => ({ CompactRoomRow: () => <div>room-row</div>
 jest.mock('./CompactWidgetSlot', () => ({
   CompactWidgetSlot: ({ slotId }: { slotId: string }) => <div>widget-slot:{slotId}</div>,
 }));
-jest.mock('../Terminal', () => ({ __esModule: true, default: () => <div>terminal</div> }));
 jest.mock('../ChatPane', () => ({ ChatPane: () => <div>chat-pane</div> }));
 jest.mock('../AffectsBlock', () => ({ __esModule: true, default: () => <div>affects-block</div> }));
 jest.mock('../CommandInput', () => ({
@@ -20,12 +19,11 @@ jest.mock('../CommandInput', () => ({
 }));
 
 describe('CompactLayoutShell', () => {
-  const baseProps = { isConnected: true, sendRaw: jest.fn() };
+  const baseProps = { isConnected: true, sendRaw: jest.fn(), terminalSlotRef: jest.fn() };
 
-  it('renders the terminal, vitals row, room row, both widget slots, chat, and affects', () => {
+  it('renders a terminal slot, vitals row, room row, both widget slots, chat, and affects', () => {
     render(<CompactLayoutShell {...baseProps} />);
 
-    expect(screen.getByText('terminal')).toBeInTheDocument();
     expect(screen.getByText('vitals-row')).toBeInTheDocument();
     expect(screen.getByText('room-row')).toBeInTheDocument();
     expect(screen.getByText('widget-slot:hud.bottomStrip')).toBeInTheDocument();

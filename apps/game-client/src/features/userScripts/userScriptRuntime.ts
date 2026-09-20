@@ -39,10 +39,13 @@ const affectDataPhrase = 'affect_data ';
 const loginDataPhrase = 'login_data ';
 
 // ---- Identity snapshot ---------------------------------------------------
-// characterName comes from GMCP login_data. raceName/className have no GMCP
-// equivalent — they're scraped from the plain-text `score`/`sc` output (see
-// SCORE_RACE_LINE_RE / SCORE_CLASS_LINE_RE below), so they only populate
-// once the player has run that command this session.
+// characterName comes from GMCP login_data, set below. raceName/className
+// have no GMCP equivalent — they're scraped from the plain-text `score`/`sc`
+// output, but that scan (and the analogous world-time-of-day one) is a
+// per-line regex, which does not belong in this shared hot path: moved to
+// features/plugins/core-plugins/world-time-and-identity.plugin.ts, an
+// opt-in plugin that writes to these SAME globals/events, so consumers
+// (useCharacterIdentity, useWorldTimePeriod) needed no changes.
 
 type IdentitySnapshot = {
   characterName?: string;
@@ -63,78 +66,6 @@ function setIdentitySnapshot(patch: Partial<IdentitySnapshot>) {
   const next: IdentitySnapshot = { ...cur, ...patch, updatedAt: Date.now() };
   w.__SA_IDENTITY__ = next;
   DispatchEvent('shatteredarchive:identity-updated', next);
-}
-
-// Matches the `score`/`sc` command's two-column layout, e.g.:
-//   LEVEL: 42          Race : Topaz dragon      Played: 3887 hours
-//   YEARS: 211         Class: Dragon            Log In: Tue Sep 15 ...
-const SCORE_RACE_LINE_RE = /^LEVEL\s*:\s*\d+\s+Race\s*:\s*(.+?)\s{2,}Played/i;
-const SCORE_CLASS_LINE_RE = /^YEARS\s*:\s*\d+\s+Class\s*:\s*(.+?)\s{2,}Log In/i;
-
-// Scans (already ANSI-stripped) lines of incoming server text for the score
-// sheet's Race/Class row and patches the identity snapshot when found.
-function scanForScoreSheetIdentity(plainText: string): void {
-  for (const rawLine of plainText.split('\n')) {
-    const line = rawLine.trim();
-    if (!line) continue;
-
-    const raceMatch = line.match(SCORE_RACE_LINE_RE);
-    if (raceMatch) {
-      setIdentitySnapshot({ raceName: raceMatch[1].trim() });
-      continue;
-    }
-
-    const classMatch = line.match(SCORE_CLASS_LINE_RE);
-    if (classMatch) {
-      setIdentitySnapshot({ className: classMatch[1].trim() });
-    }
-  }
-}
-
-// ---- World time-of-day snapshot ------------------------------------------
-// The classic ROM/Merc "sunlight" period (Dawn / Day Time / Dusk / Night
-// Time) has no GMCP field either. It's scraped from the player's own
-// customizable prompt string, so the surrounding format can't be relied
-// on — only that the period sits between two `|` characters, which held
-// across both formats observed so far:
-//   <9:00pm|1964|...|Common|Night Time|0||||1845|1906|The Crystal Heart>
-//   <1964/1964hp 700/700m 368/368mv 946 tnl> |Day Time|6:00pm| [E]
-type WorldTimeSnapshot = {
-  period?: string;
-  updatedAt?: number;
-};
-
-function getWorldTimeSnapshot(): WorldTimeSnapshot {
-  const w = window as any;
-  w.__SA_WORLD_TIME__ = w.__SA_WORLD_TIME__ || {};
-  return w.__SA_WORLD_TIME__ as WorldTimeSnapshot;
-}
-
-function setWorldTimeSnapshot(patch: Partial<WorldTimeSnapshot>) {
-  const w = window as any;
-  const cur = getWorldTimeSnapshot();
-  const next: WorldTimeSnapshot = { ...cur, ...patch, updatedAt: Date.now() };
-  w.__SA_WORLD_TIME__ = next;
-  DispatchEvent('shatteredarchive:world-time-updated', next);
-}
-
-const PROMPT_PERIOD_RE = /\|(Dawn|Day Time|Dusk|Night Time)\|/;
-
-// Scans (already ANSI-stripped) lines of incoming server text for a
-// pipe-delimited time-of-day field and patches the world-time snapshot
-// when found. Deliberately format-agnostic beyond "pipe-delimited" — the
-// player's prompt string is user-configurable (see the two formats noted
-// above), so this can't assume any fixed surrounding structure.
-function scanForWorldTimePeriod(plainText: string): void {
-  for (const rawLine of plainText.split('\n')) {
-    const line = rawLine.trim();
-    if (!line) continue;
-
-    const match = line.match(PROMPT_PERIOD_RE);
-    if (match) {
-      setWorldTimeSnapshot({ period: match[1] });
-    }
-  }
 }
 
 function toCleanString(v: unknown): string {
@@ -701,9 +632,6 @@ export class UserScriptRuntime {
     const specialEventType = await this.processForSpecialLines(rawText);
 
     const plain = stripAnsi(rawText);
-
-    scanForScoreSheetIdentity(plain);
-    scanForWorldTimePeriod(plain);
 
     const omitRaw = shouldOmitLine('shatteredarchive:raw-data', plain);
     const omitSpecial = specialEventType ? shouldOmitLine(specialEventType, plain) : false;

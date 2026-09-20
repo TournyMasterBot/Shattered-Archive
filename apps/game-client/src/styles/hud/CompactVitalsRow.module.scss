@@ -1,5 +1,5 @@
 // Wraps the gauges row + status row + enemy row as one themed unit — the
-// theme CSS targets .sa-hud-vitals-row (see public/themes/slate-amber.css)
+// theme CSS targets .sa-hud-vitals-row (see styles/hud/themes/slateAmber.theme.scss)
 // for a single continuous panel background/border around all three.
 .card {
   display: flex;

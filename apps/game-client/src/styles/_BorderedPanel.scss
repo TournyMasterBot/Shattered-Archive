@@ -25,9 +25,9 @@
     left: 12px;
     padding: 0 6px;
     // Falls back to the caller's $bg-color, but a theme that sets
-    // --sa-panel-bg (see public/themes/slate-amber.css's :root block)
-    // repaints this to stay in sync with the panel's own background
-    // without the caller needing to duplicate anything.
+    // --sa-panel-bg (see styles/hud/themes/slateAmber.theme.scss's
+    // :root[data-hud-theme] block) repaints this to stay in sync with the
+    // panel's own background without the caller needing to duplicate anything.
     background: var(--sa-panel-bg, $bg-color);
     font-size: 1rem;
     font-weight: 700;

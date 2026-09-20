@@ -4,10 +4,16 @@ File Index
 Purpose: CSS module for the compact HUD shell (terminal panel + subwindow on the left, resizer, chat pane + affects/widget-slot column on the right). `.terminalPanel` uses the shared `borderedPanelTitle` mixin (styles/_BorderedPanel.scss) for the embedded title; the title itself must render OUTSIDE any clipped/overflow:hidden region on that panel, so `.terminalBody` (not `.terminalPanel`) carries `overflow: hidden` and wraps only `<Terminal />`.
 
 /CompactVitalsRow.module.scss
-Purpose: CSS module for the compact HP/Mana/MOVE/enemy gauge row. `.fill` carries the baseline default gauge color; the `sa-hud-vitals-fill-hp`/`-mp`/`-move`/`-enemy` global classes (applied alongside `.fill` in CompactVitalsRow.tsx) layer per-gauge default colors on top and are the hook a theme (e.g. public/themes/slate-amber.css) overrides. `.gaugeLabel` is fixed-width for the three short unit labels; `.enemyLabel` is the separate ellipsis-truncating variant for the arbitrary-length enemy name.
+Purpose: CSS module for the compact HP/Mana/MOVE/enemy gauge row. `.fill` carries the baseline default gauge color; the `sa-hud-vitals-fill-hp`/`-mp`/`-move`/`-enemy` global classes (applied alongside `.fill` in CompactVitalsRow.tsx) layer per-gauge default colors on top and are the hook a theme (e.g. themes/slateAmber.theme.scss) overrides. `.gaugeLabel` is fixed-width for the three short unit labels; `.enemyLabel` is the separate ellipsis-truncating variant for the arbitrary-length enemy name.
 
 /CompactRoomRow.module.scss
 Purpose: CSS module for the compact room-name + bracketed-exits row (`.roomName` ellipsis-truncates a long room name; `.exitBtn` renders each available compass direction as a clickable button).
 
 /CompactWidgetSlot.module.scss
 Purpose: CSS module for the plugin-fillable widget slot (hud.bottomStrip / hud.rightColumn) — a simple label/value pair, styled further by theme CSS via the `sa-hud-widget-slot` class and `data-variant` attribute.
+
+/CompactLayoutShellNarrow.module.scss
+Purpose: CSS module for slate-amber's narrow-viewport shell — single-column `.shell` (no leftColumn/rightColumn split, no resizer), a `.tabStrip`/`.tabButton` pair for the Chat/Affects switch (styled plain here; the amber active-state comes from theme CSS via the `sa-hud-narrow-tab` global class + `data-active`), then `.tabContent` holding whichever of `.chatPane`/`.affectsAndSlot` is active. Reuses the shared `borderedPanelTitle` mixin for `.terminalPanel` same as the desktop module.
+
+/themes/slateAmber.theme.scss
+Purpose: The 'slate-amber' theme's visual skin — a global (non-Modules) side-effect import, imported directly by BOTH CompactLayoutShell.tsx (desktop) and CompactLayoutShellNarrow.tsx (narrow) so it bundles into whichever chunk actually loads, not just one. Every rule is nested under `:root[data-hud-theme='slate-amber']` (set by features/hudLayout/themeRegistry.ts's loadStyles), so importing it has zero effect unless that attribute is present — includes `.sa-hud-narrow-tab[data-active='true']` for the narrow shell's tab strip, un-media-queried since that class only ever renders inside the narrow-only component. Replaces the former public/themes/slate-amber.css + features/hudLayout/hudThemeLoader.ts `<link>`-swap mechanism (both retired) — raw `.css` in public/ is reserved for user/plugin-authored overrides (UserStyleOverrideModal/applyPluginBaseCss), not built-in theme styling.

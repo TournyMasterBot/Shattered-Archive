@@ -1,0 +1,4 @@
+File Index
+
+/charDataStore.ts
+Purpose: Caches the most recent character vitals/ancillary snapshot so useCharData can seed itself on a fresh mount (e.g. a live HUD theme switch) instead of starting blank.
