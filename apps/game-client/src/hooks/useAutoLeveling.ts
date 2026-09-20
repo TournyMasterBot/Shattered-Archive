@@ -17,7 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { AutoLevelConfig, AutoLevelRunState } from '../features/autoleveling/autoleveling-types';
+import type { AutoLevelConfig, AutoLevelRunState, AutoLevelXpProgress } from '../features/autoleveling/autoleveling-types';
 import { createDefaultAutoLevelConfig } from '../features/autoleveling/autoleveling-defaults';
 import {
   loadAutoLevelConfig,
@@ -25,7 +25,9 @@ import {
   saveAutoLevelConfig,
 } from '../features/autoleveling/autoleveling-storage';
 import { AutoLevelingEngine } from '../features/autoleveling/autoleveling-engine';
-import { ListenEvent } from '../features/event-emitter/event-dispatcher';
+import { bumpLearnedCooldown, getLearnedCooldown } from '../features/autoleveling/autoleveling-user-data';
+import { ListenEvent, DispatchEvent } from '../features/event-emitter/event-dispatcher';
+import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
 
 /* ----------------------------- debug helpers ------------------------------ */
 
@@ -59,7 +61,6 @@ function isAutoLevelingDebugEnabled(): boolean {
 // @ai-hash: 301a8ba5
 // ── END AI-METHOD ──
 function hdbg(...args: any[]) {
-  return;
   if (!isAutoLevelingDebugEnabled()) return;
   // eslint-disable-next-line no-console
   console.debug(HOOK_LOG_PREFIX, ...args);
@@ -153,6 +154,10 @@ export function useAutoLeveling(connectionId: string, isConnectedInitial = false
     hdbg('runState updated', runState);
   }, [runState]);*/
 
+  // Last kill's XP/tnl estimate — kept separate from runState so it isn't wiped by the
+  // next status transition (see AutoLevelXpProgress doc comment).
+  const [xpProgress, setXpProgress] = useState<AutoLevelXpProgress | null>(null);
+
   const engineRef = useRef<AutoLevelingEngine | null>(null);
 
   // (Re)create engine when connection changes
@@ -164,6 +169,26 @@ export function useAutoLeveling(connectionId: string, isConnectedInitial = false
       setRunState: (s) => {
         hdbg('engine setRunState', s);
         setRunState(s);
+      },
+      setXpProgress: (p) => {
+        hdbg('engine setXpProgress', p);
+        setXpProgress(p);
+      },
+      onAbilityCooldownLearned: (cmd, cooldownSec) => {
+        hdbg('engine onAbilityCooldownLearned', { cmd, cooldownSec });
+        void bumpLearnedCooldown(cmd, cooldownSec);
+      },
+      getLearnedCooldown: (cmd) => getLearnedCooldown(cmd),
+      sendThroughCommandProcessor: (cmd) => {
+        hdbg('engine sendThroughCommandProcessor', { cmd });
+        // Same fallback useGameCommand.ts uses for a typed line: prefer the alias/script
+        // runtime (so a user's own rest macro actually expands) and fall back to the plain
+        // wire-send event the engine already uses everywhere else if it's ever unavailable.
+        if (RuntimeSingleton.Runtime) {
+          RuntimeSingleton.Runtime.executeAlias(cmd);
+        } else {
+          DispatchEvent('shatteredarchive:send-command', { cmd });
+        }
       },
     });
 
@@ -208,6 +233,7 @@ export function useAutoLeveling(connectionId: string, isConnectedInitial = false
       return;
     }
 
+    setXpProgress(null); // clear last run's estimate — it's not this run's yet
     await eng.start();
   }, [runState.status, socketReady]);
 
@@ -361,6 +387,7 @@ export function useAutoLeveling(connectionId: string, isConnectedInitial = false
     setConfig,
 
     runState,
+    xpProgress,
     socketReady,
 
     start,

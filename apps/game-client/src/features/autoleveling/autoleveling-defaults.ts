@@ -15,7 +15,7 @@ import type { AutoLevelConfig } from './autoleveling-types';
  * Kept as a constant so other modules can reference it without importing the full config.
  * NOTE: Must match the version returned by createDefaultAutoLevelConfig().
  */
-export const AUTOLEVELING_CONFIG_VERSION = 2;
+export const AUTOLEVELING_CONFIG_VERSION = 3;
 
 export function createDefaultAutoLevelConfig(): AutoLevelConfig {
   return {
@@ -31,6 +31,19 @@ export function createDefaultAutoLevelConfig(): AutoLevelConfig {
     postFightSettleMs: 2_000,
     fleePk: false,
 
+    criticalBuffs: [],
+
+    rest: {
+      startOfRound: [],
+      endOfRound: [],
+      duringRound: [],
+    },
+
+    weight: {
+      atOrAbovePct: 90,
+      commands: [],
+    },
+
     init: {
       continentName: null,
       areaName: null,
@@ -43,8 +56,6 @@ export function createDefaultAutoLevelConfig(): AutoLevelConfig {
     },
 
     steps: {
-      trainingPath: null, // currently unused; see autoleveling-types.ts comment
-
       start: { pre: [], exec: [], post: [] },
       move: { pre: [], exec: [], post: [] },
 

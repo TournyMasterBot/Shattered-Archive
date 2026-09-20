@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import styles from '../../styles/hud/CompactVitalsRow.module.scss';
 import { useStatusBlockViewModel } from '../../hooks/useLayoutShell';
 import { useOpponentStatus } from '../../hooks/useOpponentStatus';
 import { useSanctuaryActive } from '../../hooks/useSanctuaryActive';
 import { computeStatusPieces } from '../../hooks/useCharData';
+import { ansiToHtml } from '@shatteredarchive/utils-client/ansi-to-html';
 
 export const CompactVitalsRow: React.FC = () => {
   const { remaining, vitals, hpPct, mpPct, staPct, ancillary } = useStatusBlockViewModel();
@@ -11,6 +12,14 @@ export const CompactVitalsRow: React.FC = () => {
   const { hasSanctuary } = useSanctuaryActive();
 
   const statusPieces = computeStatusPieces(ancillary);
+
+  // Mirrors RightSidebar's classic-layout treatment: the opponent probe
+  // deliberately keeps the label's raw ANSI so a mob's color-coded name
+  // renders the same way here as it does in the terminal.
+  const enemyLabelHtml = useMemo(
+    () => (isEnemyActive ? ansiToHtml(enemyUi.label) : ''),
+    [isEnemyActive, enemyUi.label],
+  );
 
   return (
     <div className={`${styles.card} sa-hud-vitals-row`}>
@@ -66,7 +75,7 @@ export const CompactVitalsRow: React.FC = () => {
 
       {isEnemyActive && (
         <div className={`${styles.enemyRow} sa-hud-vitals-enemy-row`}>
-          <span className={styles.enemyLabel}>{enemyUi.label}</span>
+          <span className={styles.enemyLabel} dangerouslySetInnerHTML={{ __html: enemyLabelHtml }} />
           <div className={styles.track}>
             <div className={`${styles.fill} sa-hud-vitals-fill-enemy`} style={{ width: `${enemyUi.pct}%` }} />
           </div>

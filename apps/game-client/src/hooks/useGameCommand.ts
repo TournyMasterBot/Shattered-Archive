@@ -4,7 +4,6 @@ import type React from 'react';
 import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
 import { preprocessOutgoingCommand } from '../features/accessibility/accessibility-command';
 import { OutboundQueue } from '../features/commands/outbound-queue';
-import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 
 interface UseGameCommandOptions {
   sendRaw: (data: string) => void;
@@ -51,14 +50,9 @@ export function useGameCommand(options: UseGameCommandOptions): UseGameCommandRe
     sendLineRef.current = (line: string) => {
       if (!isConnected) return;
 
-      try {
-        DispatchEvent('shatteredarchive:command-sent', {
-          text: line,
-        });
-      } catch {
-        // ignore
-      }
-
+      // `shatteredarchive:command-sent` now fires from sendTelnetData itself (the one
+      // physical send point every path funnels through) — dispatching it here too would
+      // double-fire it for a typed line and still miss a line an alias rewrites/expands.
       if (RuntimeSingleton.Runtime) {
         RuntimeSingleton.Runtime.executeAlias(line);
       } else {

@@ -7,7 +7,9 @@
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 vite build",
     "preview": "vite preview",
     "test": "jest --config ../../jest.config.cjs --runInBand --passWithNoTests --testPathPatterns apps/game-client",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css,scss,html}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx,css,scss,html}\"",
+    "extract:autoleveling-content": "node scripts/extract-autoleveling-content.mjs",
+    "extract:autoleveling-classes": "node scripts/extract-autoleveling-classes.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",

@@ -1,3 +1,5 @@
+import path from 'path';
+
 import { getAuthServerConfig, parseOriginServices } from './config.js';
 
 /**
@@ -104,5 +106,35 @@ describe('getAuthServerConfig device settings', () => {
   it('surfaces parse warnings for startup logging', () => {
     const config = getAuthServerConfig({ DEVICE_ORIGIN_SERVICES: 'nonsense' } as NodeJS.ProcessEnv);
     expect(config.deviceConfigWarnings).toHaveLength(1);
+  });
+});
+
+/**
+ * The encrypted-store directory must default to dataDir (so a normal single-stack deployment —
+ * the only shape a real production host ever runs — needs no config change) but must be
+ * independently overridable, since that override is the actual fix for two LOCAL stacks
+ * (prod-replica + experimental) once silently clobbering each other's encrypted files by
+ * sharing one dataDir under two different encryption keys — see config.ts's doc comment.
+ */
+describe('getAuthServerConfig secureDataDir', () => {
+  it('defaults to dataDir when SECURE_DATA_DIR is unset', () => {
+    const config = getAuthServerConfig({ DATA_DIR: '/tmp/auth-data' } as NodeJS.ProcessEnv);
+    expect(config.secureDataDir).toBe(config.dataDir);
+    expect(config.secureDataDir).toBe(path.resolve('/tmp/auth-data'));
+  });
+
+  it('uses SECURE_DATA_DIR when set, independent of dataDir', () => {
+    const config = getAuthServerConfig({
+      DATA_DIR: '/tmp/auth-data',
+      SECURE_DATA_DIR: '/tmp/auth-data-secure',
+    } as NodeJS.ProcessEnv);
+    expect(config.dataDir).toBe(path.resolve('/tmp/auth-data'));
+    expect(config.secureDataDir).toBe(path.resolve('/tmp/auth-data-secure'));
+  });
+
+  it('falls back to ./data for both when nothing is set', () => {
+    const config = getAuthServerConfig({} as NodeJS.ProcessEnv);
+    expect(config.dataDir).toBe(path.resolve('./data'));
+    expect(config.secureDataDir).toBe(path.resolve('./data'));
   });
 });

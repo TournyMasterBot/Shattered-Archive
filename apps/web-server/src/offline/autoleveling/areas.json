@@ -1,0 +1,2705 @@
+{
+  "areas": [
+    {
+      "slug": "new-mudschool",
+      "areaName": "New Mudschool",
+      "continent": "Limbo",
+      "areaId": "NewMudschool",
+      "levelRange": [
+        1,
+        5
+      ],
+      "startRoom": "A Sloped Hall",
+      "speedwalkToStart": "u",
+      "requiredActions": [],
+      "dirs": [
+        "n",
+        "n",
+        "n",
+        "e",
+        "e",
+        "open southeast",
+        "se",
+        "open northwest",
+        "nw",
+        "n",
+        "w",
+        "w",
+        "w",
+        "s",
+        "w",
+        "open southwest",
+        "sw",
+        "open northeast",
+        "ne",
+        "n",
+        "n",
+        "open west",
+        "w",
+        "open east",
+        "e",
+        "e",
+        "e",
+        "e",
+        "e",
+        "open east",
+        "e",
+        "open west",
+        "w",
+        "n",
+        "w",
+        "w",
+        "w",
+        "w",
+        "n",
+        "e",
+        "e",
+        "open north",
+        "n",
+        "open south",
+        "s",
+        "e",
+        "e",
+        "open northeast",
+        "ne",
+        "nw",
+        "enter hole",
+        "look",
+        "d",
+        "se",
+        "se",
+        "nw",
+        "ne",
+        "nw",
+        "ne",
+        "nw",
+        "sw",
+        "nw",
+        "sw",
+        "se",
+        "sw",
+        "se",
+        "sw",
+        "ne",
+        "se",
+        "ne",
+        "nw",
+        "d",
+        "open north",
+        "n",
+        "open south",
+        "s",
+        "open northeast",
+        "ne",
+        "open southwest",
+        "sw",
+        "open east",
+        "e",
+        "open west",
+        "w",
+        "open southeast",
+        "se",
+        "open northwest",
+        "nw",
+        "open south",
+        "s",
+        "open north",
+        "n",
+        "open southwest",
+        "sw",
+        "open northeast",
+        "ne",
+        "open west",
+        "w",
+        "open east",
+        "e",
+        "open northwest",
+        "nw",
+        "open southeast",
+        "se",
+        "u",
+        "u",
+        "nw",
+        "nw",
+        "open northwest",
+        "nw",
+        "get key corpse",
+        "unlock northeast",
+        "open northeast",
+        "ne",
+        "enter hole",
+        "look",
+        "n",
+        "w",
+        "s",
+        "s",
+        "s"
+      ],
+      "notes": "This direction starts from recall, you can go up. Most cities also have an 'up' to get to mud school.",
+      "isExcellentLevelingArea": false,
+      "recommendedTargets": [
+        {
+          "lookName": "a gully dwarf",
+          "engageName": "dwarf"
+        },
+        {
+          "lookName": "a topiary",
+          "engageName": "topiary"
+        },
+        {
+          "lookName": "the pit snake",
+          "engageName": "snake"
+        },
+        {
+          "lookName": "a tinker gnome mage",
+          "engageName": "mage"
+        },
+        {
+          "lookName": "an orc",
+          "engageName": "orc"
+        },
+        {
+          "lookName": "a gray wolf cub",
+          "engageName": "wolf"
+        },
+        {
+          "lookName": "a nymph",
+          "engageName": "nymph"
+        },
+        {
+          "lookName": "a boar",
+          "engageName": "boar"
+        },
+        {
+          "lookName": "a rabbit",
+          "engageName": "rabbit"
+        },
+        {
+          "lookName": "a brown bear",
+          "engageName": "bear"
+        },
+        {
+          "lookName": "a lizard",
+          "engageName": "lizard"
+        },
+        {
+          "lookName": "a small kobold",
+          "engageName": "kobald"
+        },
+        {
+          "lookName": "A human crusader",
+          "engageName": "crusader"
+        },
+        {
+          "lookName": "a snow weasel",
+          "engageName": "weasel"
+        },
+        {
+          "lookName": "a human bard",
+          "engageName": "bard"
+        },
+        {
+          "lookName": "a dwarf warrior",
+          "engageName": "warrior"
+        },
+        {
+          "lookName": "a red fox",
+          "engageName": "fox"
+        },
+        {
+          "lookName": "an elf cleric",
+          "engageName": "cleric"
+        },
+        {
+          "lookName": "a goblin thief",
+          "engageName": "thief"
+        },
+        {
+          "lookName": "Shaenus Sha'falas",
+          "engageName": "ranger"
+        },
+        {
+          "lookName": "a beast",
+          "engageName": "beast"
+        },
+        {
+          "lookName": "a snail",
+          "engageName": "snail"
+        },
+        {
+          "lookName": "a giant ogre",
+          "engageName": "ogre"
+        },
+        {
+          "lookName": "a kender",
+          "engageName": "kender"
+        }
+      ]
+    },
+    {
+      "slug": "sinkhole",
+      "areaName": "Sinkhole",
+      "continent": "Althainia",
+      "areaId": "Sinkhole",
+      "levelRange": [
+        1,
+        51
+      ],
+      "startRoom": "",
+      "speedwalkToStart": "w;s;s;w;w;w;w;nw;n;n;w;w;w;w;s;s;sw;w;w;w;w;w;w;w;w;w;u;w;w;d;n;n;n;w;w;n;n;ne",
+      "requiredActions": [],
+      "dirs": [
+        "e",
+        "d",
+        "e",
+        "s",
+        "d",
+        "n",
+        "sw",
+        "se",
+        "ne",
+        "nw",
+        "s",
+        "d",
+        "n",
+        "sw",
+        "se",
+        "ne",
+        "nw",
+        "s",
+        "d",
+        "ne",
+        "w",
+        "se",
+        "d",
+        "e",
+        "d",
+        "d",
+        "u",
+        "u",
+        "w",
+        "u",
+        "u",
+        "u",
+        "u",
+        "n",
+        "w",
+        "u",
+        "w"
+      ],
+      "notes": "",
+      "isExcellentLevelingArea": false,
+      "recommendedTargets": [
+        {
+          "lookName": "An impish creature gnashes its teeth together as it looks at you and grins.",
+          "engageName": "cackling gremlin",
+          "level": 40
+        }
+      ]
+    },
+    {
+      "slug": "crystal-fields",
+      "areaName": "Crystal Fields",
+      "continent": "Arkania",
+      "areaId": "CrystalFields",
+      "levelRange": [
+        6,
+        15
+      ],
+      "startRoom": "The Arkania Highroad",
+      "speedwalkToStart": "e;e;e;e;e;e;e;e;e;e;e;e;e;e;e;e;e;e;e;e;e;e;d;e;e;e;e;e;e;e;e;e;e;e",
+      "requiredActions": [],
+      "dirs": [
+        "e",
+        "e",
+        "e",
+        "e",
+        "n",
+        "n",
+        "n",
+        "n",
+        "se",
+        "w",
+        "u",
+        "nw",
+        "w",
+        "w",
+        "n",
+        "n",
+        "e",
+        "s",
+        "n",
+        "e",
+        "s",
+        "s",
+        "se",
+        "ne",
+        "n",
+        "n",
+        "e",
+        "s",
+        "n",
+        "e",
+        "s",
+        "s",
+        "w",
+        "w",
+        "sw",
+        "sw",
+        "w",
+        "w",
+        "s",
+        "e",
+        "w",
+        "s",
+        "e",
+        "e",
+        "n",
+        "n",
+        "ne",
+        "se",
+        "e",
+        "e",
+        "s",
+        "w",
+        "e",
+        "s",
+        "w",
+        "w",
+        "n",
+        "n",
+        "nw",
+        "d",
+        "w",
+        "w",
+        "w",
+        "w",
+        "w"
+      ],
+      "notes": "",
+      "isExcellentLevelingArea": true,
+      "recommendedTargets": [
+        {
+          "lookName": "a crystal gopher",
+          "engageName": "a crystal gopher",
+          "level": 10
+        },
+        {
+          "lookName": "a crystal scarecrow",
+          "engageName": "a crystal scarecrow",
+          "level": 10
+        }
+      ]
+    },
+    {
+      "slug": "bloodshackle-fortress",
+      "areaName": "Bloodshackle Fortress",
+      "continent": "Arkania",
+      "areaId": "BloodshackleFortress",
+      "levelRange": [
+        10,
+        25
+      ],
+      "startRoom": "",
+      "speedwalkToStart": "ne;n;ne;nw;n;ne;e;s;s",
+      "requiredActions": [],
+      "dirs": [
+        "w",
+        "w",
+        "n",
+        "s",
+        "e",
+        "e",
+        "e",
+        "e",
+        "n",
+        "s",
+        "s",
+        "w",
+        "w",
+        "w",
+        "w",
+        "s",
+        "open west",
+        "west",
+        "n",
+        "n",
+        "s",
+        "s",
+        "e",
+        "e",
+        "e",
+        "e",
+        "e",
+        "w",
+        "w",
+        "s",
+        "w",
+        "w",
+        "w",
+        "w",
+        "n",
+        "n",
+        "n",
+        "n",
+        "u",
+        "s",
+        "s",
+        "s",
+        "s",
+        "e",
+        "e",
+        "e",
+        "e",
+        "e",
+        "e",
+        "e",
+        "e",
+        "n",
+        "n",
+        "n",
+        "n",
+        "d",
+        "s",
+        "s",
+        "s",
+        "s",
+        "w",
+        "w",
+        "w",
+        "w",
+        "d",
+        "w",
+        "w",
+        "w",
+        "w",
+        "open north",
+        "open south",
+        "north",
+        "n",
+        "n",
+        "e",
+        "w",
+        "s",
+        "s",
+        "s",
+        "s",
+        "s",
+        "s",
+        "n",
+        "n",
+        "n",
+        "e",
+        "open north",
+        "open south",
+        "north",
+        "n",
+        "e",
+        "s",
+        "w",
+        "s",
+        "s",
+        "s",
+        "s",
+        "e",
+        "w",
+        "n",
+        "n",
+        "n",
+        "e",
+        "e",
+        "open north",
+        "open south",
+        "north",
+        "n",
+        "n",
+        "w",
+        "e",
+        "s",
+        "s",
+        "s",
+        "s",
+        "s",
+        "w",
+        "n",
+        "e",
+        "n",
+        "e",
+        "e",
+        "open north",
+        "open south",
+        "north",
+        "n",
+        "e",
+        "s",
+        "w",
+        "s",
+        "s",
+        "s",
+        "s",
+        "e",
+        "w",
+        "n",
+        "n",
+        "n",
+        "e",
+        "e",
+        "open north",
+        "open south",
+        "north",
+        "n",
+        "n",
+        "w",
+        "e",
+        "s",
+        "s",
+        "s",
+        "s",
+        "s",
+        "w",
+        "n",
+        "e",
+        "n",
+        "e",
+        "open north",
+        "open south",
+        "north",
+        "n",
+        "n",
+        "s",
+        "s",
+        "s",
+        "s",
+        "s",
+        "s",
+        "w",
+        "e",
+        "n",
+        "n",
+        "n",
+        "w",
+        "w",
+        "w",
+        "w",
+        "u",
+        "n",
+        "n",
+        "n"
+      ],
+      "notes": "",
+      "isExcellentLevelingArea": true,
+      "recommendedTargets": [
+        {
+          "lookName": "a small finch",
+          "engageName": "a small finch",
+          "level": 1
+        },
+        {
+          "lookName": "A young, brown mule stands here ready to serve.",
+          "engageName": "young mule",
+          "level": 3
+        },
+        {
+          "lookName": "A huge beast of burden is here, ready to serve.",
+          "engageName": "beast burden",
+          "level": 5
+        },
+        {
+          "lookName": "A spotted gray gelding stands here, waiting to serve.",
+          "engageName": "spotted gray gelding",
+          "level": 7
+        },
+        {
+          "lookName": "A gleaming brindle stallion is here, fitted for riding.",
+          "engageName": "brindle stallion",
+          "level": 9
+        },
+        {
+          "lookName": "a viscious pitbull",
+          "engageName": "a viscious pitbull",
+          "level": 10
+        },
+        {
+          "lookName": "A viscious pitbull is here.",
+          "engageName": "viscious pitbull",
+          "level": 10
+        },
+        {
+          "lookName": "An enslaved young human is here.",
+          "engageName": "enslaved young human",
+          "level": 12
+        },
+        {
+          "lookName": "An old human slave is here.",
+          "engageName": "old human slave",
+          "level": 12
+        },
+        {
+          "lookName": "an old human slave",
+          "engageName": "an old human slave",
+          "level": 12
+        },
+        {
+          "lookName": "A filthy slave is here, glad to be unloaded from the ship.",
+          "engageName": "filthy slave",
+          "level": 13
+        },
+        {
+          "lookName": "A half elven slave is here.",
+          "engageName": "half elf slave",
+          "level": 13
+        },
+        {
+          "lookName": "a filthy slave",
+          "engageName": "a filthy slave",
+          "level": 13
+        },
+        {
+          "lookName": "a half elf slave",
+          "engageName": "a half elf slave",
+          "level": 13
+        },
+        {
+          "lookName": "a stout hill dwarf slave",
+          "engageName": "a stout hill dwarf slave",
+          "level": 14
+        },
+        {
+          "lookName": "a strapping human slave",
+          "engageName": "a strapping human slave",
+          "level": 14
+        },
+        {
+          "lookName": "A stout hill dwarf slave is here.",
+          "engageName": "stout hill dwarf slave",
+          "level": 14
+        },
+        {
+          "lookName": "A strapping human slave is here.",
+          "engageName": "strapping human slave",
+          "level": 14
+        },
+        {
+          "lookName": "A bowman slaver is here keeping an eye out for troublesome slaves.",
+          "engageName": "Bloodshackle bowman",
+          "level": 15
+        },
+        {
+          "lookName": "An enslaved hobgoblin is here.",
+          "engageName": "enslaved hobgoblin",
+          "level": 15
+        },
+        {
+          "lookName": "A swashbuckling pirate slaver is here.",
+          "engageName": "pirate slaver",
+          "level": 15
+        },
+        {
+          "lookName": "a Bloodshackle bowman",
+          "engageName": "a Bloodshackle bowman",
+          "level": 15
+        },
+        {
+          "lookName": "an enslaved hobgoblin",
+          "engageName": "an enslaved hobgoblin",
+          "level": 15
+        },
+        {
+          "lookName": "a pirate slaver",
+          "engageName": "a pirate slaver",
+          "level": 15
+        },
+        {
+          "lookName": "a slave book keeper",
+          "engageName": "a slave book keeper",
+          "level": 15
+        },
+        {
+          "lookName": "a tinker gnome slave",
+          "engageName": "a tinker gnome slave",
+          "level": 15
+        },
+        {
+          "lookName": "A half elf with a book records slaves coming in and being traded.",
+          "engageName": "slave book keeper",
+          "level": 15
+        },
+        {
+          "lookName": "A tinker gnome slave is here.",
+          "engageName": "tinker gnome slave",
+          "level": 15
+        },
+        {
+          "lookName": "A heavily chained half-ogre slave is here.",
+          "engageName": "heavily chained half ogre slave",
+          "level": 16
+        },
+        {
+          "lookName": "A muzzled kobold slave is here.",
+          "engageName": "muzzled kobold slave",
+          "level": 16
+        },
+        {
+          "lookName": "a heavily chained half_ogre slave",
+          "engageName": "a heavily chained half_ogre slave",
+          "level": 16
+        },
+        {
+          "lookName": "a muzzled kobold slave",
+          "engageName": "a muzzled kobold slave",
+          "level": 16
+        },
+        {
+          "lookName": "An enslaved mage is here.",
+          "engageName": "enslaved mage",
+          "level": 17
+        },
+        {
+          "lookName": "an enslaved mage",
+          "engageName": "an enslaved mage",
+          "level": 17
+        },
+        {
+          "lookName": "a sea elf slave",
+          "engageName": "a sea elf slave",
+          "level": 17
+        },
+        {
+          "lookName": "A sea elf slave is here.",
+          "engageName": "sea elf slave",
+          "level": 17
+        },
+        {
+          "lookName": "An enslaved tribal cannibal is here.",
+          "engageName": "enslaved tribal cannibal",
+          "level": 18
+        },
+        {
+          "lookName": "an enslaved tribal cannibal",
+          "engageName": "an enslaved tribal cannibal",
+          "level": 18
+        },
+        {
+          "lookName": "a wealthy slave merchant",
+          "engageName": "a wealthy slave merchant",
+          "level": 18
+        },
+        {
+          "lookName": "An enslaved wild elf is here.",
+          "engageName": "enslaved wild elf",
+          "level": 19
+        },
+        {
+          "lookName": "an enslaved wild elf",
+          "engageName": "an enslaved wild elf",
+          "level": 19
+        },
+        {
+          "lookName": "a slave servant",
+          "engageName": "a slave servant",
+          "level": 19
+        },
+        {
+          "lookName": "A slave is here with a fan in hand to keep you cool.",
+          "engageName": "slave servant",
+          "level": 19
+        },
+        {
+          "lookName": "A Bloodshackle elite guard is here.",
+          "engageName": "Bloodshackle elite guard",
+          "level": 20
+        },
+        {
+          "lookName": "A Bloodshackle prison guard is here.",
+          "engageName": "Bloodshackle prison guard",
+          "level": 20
+        },
+        {
+          "lookName": "A slaver wearing a yellow sash is here.",
+          "engageName": "Bloodshackle slaver",
+          "level": 20
+        },
+        {
+          "lookName": "A felar slave is here.",
+          "engageName": "felar slave",
+          "level": 20
+        },
+        {
+          "lookName": "An attendant is here, acting on behalf of their master.",
+          "engageName": "attendant",
+          "level": 20
+        },
+        {
+          "lookName": "a Bloodshackle elite guard",
+          "engageName": "a Bloodshackle elite guard",
+          "level": 20
+        },
+        {
+          "lookName": "a Bloodshackle prison guard",
+          "engageName": "a Bloodshackle prison guard",
+          "level": 20
+        },
+        {
+          "lookName": "a Bloodshackle slaver yellow",
+          "engageName": "a Bloodshackle slaver yellow",
+          "level": 20
+        },
+        {
+          "lookName": "a felar slave",
+          "engageName": "a felar slave",
+          "level": 20
+        },
+        {
+          "lookName": "an attendant",
+          "engageName": "an attendant",
+          "level": 20
+        },
+        {
+          "lookName": "a wealthy slave owner",
+          "engageName": "a wealthy slave owner",
+          "level": 20
+        },
+        {
+          "lookName": "a well off farmer",
+          "engageName": "a well off farmer",
+          "level": 20
+        },
+        {
+          "lookName": "bloodshackle brute",
+          "engageName": "bloodshackle brute",
+          "level": 20
+        },
+        {
+          "lookName": "A wealthy slave owner is here.",
+          "engageName": "wealthy slave owner",
+          "level": 20
+        },
+        {
+          "lookName": "A well off farmer is here.",
+          "engageName": "well off farmer",
+          "level": 20
+        },
+        {
+          "lookName": "A hulking Bloodshackle brute is here.",
+          "engageName": "bloodshackle brute",
+          "level": 20
+        },
+        {
+          "lookName": "A slaver wearing a red sash is here.",
+          "engageName": "Bloodshackle slaver",
+          "level": 21
+        },
+        {
+          "lookName": "a Bloodshackle slaver red",
+          "engageName": "a Bloodshackle slaver red",
+          "level": 21
+        },
+        {
+          "lookName": "a wemic slave",
+          "engageName": "a wemic slave",
+          "level": 21
+        },
+        {
+          "lookName": "A wemic slave is here.",
+          "engageName": "wemic slave",
+          "level": 21
+        },
+        {
+          "lookName": "A slaver is here wearing a green sash.",
+          "engageName": "Bloodshackle slaver",
+          "level": 22
+        },
+        {
+          "lookName": "An enslaved mul thief is here.",
+          "engageName": "enslaved mul thief",
+          "level": 22
+        },
+        {
+          "lookName": "a Bloodshackle slaver green",
+          "engageName": "a Bloodshackle slaver green",
+          "level": 22
+        },
+        {
+          "lookName": "an enslaved mul thief",
+          "engageName": "an enslaved mul thief",
+          "level": 22
+        },
+        {
+          "lookName": "A slaver is here wearing a blue sash.",
+          "engageName": "Bloodshackle slaver",
+          "level": 23
+        },
+        {
+          "lookName": "An angry ogre slave is here thrashing about.",
+          "engageName": "angry ogre slave",
+          "level": 23
+        },
+        {
+          "lookName": "a Bloodshackle slaver blue",
+          "engageName": "a Bloodshackle slaver blue",
+          "level": 23
+        },
+        {
+          "lookName": "an angry ogre slave",
+          "engageName": "an angry ogre slave",
+          "level": 23
+        },
+        {
+          "lookName": "A slaver is here wearing a white sash.",
+          "engageName": "Bloodshackle slaver",
+          "level": 24
+        },
+        {
+          "lookName": "An enslaved gladiator is here.",
+          "engageName": "enslaved gladiator",
+          "level": 24
+        },
+        {
+          "lookName": "a Bloodshackle slaver white",
+          "engageName": "a Bloodshackle slaver white",
+          "level": 24
+        },
+        {
+          "lookName": "an enslaved gladiator",
+          "engageName": "an enslaved gladiator",
+          "level": 24
+        },
+        {
+          "lookName": "An ogre crippler is here waiting to snap the bones of roudy slaves.",
+          "engageName": "Bloodshackle crippler",
+          "level": 25
+        },
+        {
+          "lookName": "A giant ogre slave is here.",
+          "engageName": "giant ogre slave",
+          "level": 25
+        },
+        {
+          "lookName": "a Bloodshackle crippler",
+          "engageName": "a Bloodshackle crippler",
+          "level": 25
+        },
+        {
+          "lookName": "a Bloodshackle taskmaster",
+          "engageName": "a Bloodshackle taskmaster",
+          "level": 25
+        },
+        {
+          "lookName": "a giant ogre slave",
+          "engageName": "a giant ogre slave",
+          "level": 25
+        },
+        {
+          "lookName": "a shaman slave",
+          "engageName": "a shaman slave",
+          "level": 25
+        },
+        {
+          "lookName": "a shopkeeper",
+          "engageName": "a shopkeeper",
+          "level": 55
+        },
+        {
+          "lookName": "a shopkeeper 2",
+          "engageName": "a shopkeeper 2",
+          "level": 55
+        },
+        {
+          "lookName": "the Bloodshackle stablemaster",
+          "engageName": "the Bloodshackle stablemaster",
+          "level": 55
+        },
+        {
+          "lookName": "An old shopkeeper is here.",
+          "engageName": "shopkeeper",
+          "level": 55
+        },
+        {
+          "lookName": "The Bloodshackle stablemaster is here.",
+          "engageName": "Bloodshackle stablemaster",
+          "level": 55
+        }
+      ]
+    },
+    {
+      "slug": "centaur-village",
+      "areaName": "Centaur Village",
+      "continent": "Arkania",
+      "areaId": "CentaurVillage",
+      "levelRange": [
+        10,
+        20
+      ],
+      "startRoom": "The Arkania Highroad",
+      "speedwalkToStart": "s",
+      "requiredActions": [],
+      "dirs": [
+        "n",
+        "n",
+        "w",
+        "e",
+        "e",
+        "n",
+        "w",
+        "w",
+        "n",
+        "n",
+        "n",
+        "n",
+        "open north",
+        "north",
+        "n",
+        "n",
+        "n",
+        "s",
+        "s",
+        "s",
+        "s",
+        "s",
+        "e",
+        "open east",
+        "east",
+        "w",
+        "w",
+        "w",
+        "s",
+        "e",
+        "s",
+        "s",
+        "e",
+        "e",
+        "s",
+        "w",
+        "s",
+        "s"
+      ],
+      "notes": "",
+      "isExcellentLevelingArea": true,
+      "recommendedTargets": [
+        {
+          "lookName": "A small prickly weed shoots up from the ground.",
+          "engageName": "small prickly weed",
+          "level": 12
+        },
+        {
+          "lookName": "A pale skinned, slender centaur artist mixes paints and considers a painting.",
+          "engageName": "pale skinned slender centaur artist",
+          "level": 13
+        },
+        {
+          "lookName": "The king of the horseflies buzzes merrily.",
+          "engageName": "king horseflies",
+          "level": 13
+        },
+        {
+          "lookName": "A grim centaur looks very unamused.",
+          "engageName": "grim centaur",
+          "level": 14
+        },
+        {
+          "lookName": "A pretty centaur filly giggles with her friends.",
+          "engageName": "centaur filly",
+          "level": 15
+        },
+        {
+          "lookName": "A centaur ranger eyes you warily.",
+          "engageName": "centaur ranger",
+          "level": 15
+        },
+        {
+          "lookName": "A female centaur rests here, slumbering away.",
+          "engageName": "female centaur",
+          "level": 15
+        },
+        {
+          "lookName": "An ornery centaur warrior glares at you as he flexes his bow.",
+          "engageName": "ornery centaur warrior",
+          "level": 16
+        },
+        {
+          "lookName": "A young centaur polo player runs past, sweating profusely.",
+          "engageName": "yonng centaur polo player",
+          "level": 17
+        },
+        {
+          "lookName": "A drunken centaur has passed out on a table.",
+          "engageName": "drunken centaur",
+          "level": 20
+        },
+        {
+          "lookName": "A large centaur cook stirs vegetables.",
+          "engageName": "large centaur cook",
+          "level": 20
+        },
+        {
+          "lookName": "A surly centaur bartender glares at you.",
+          "engageName": "surly centaur bartender",
+          "level": 20
+        }
+      ]
+    },
+    {
+      "slug": "temple-of-good",
+      "areaName": "Temple of Good",
+      "continent": "Tropica",
+      "areaId": "TempleOfGood",
+      "levelRange": [
+        10,
+        30
+      ],
+      "startRoom": "",
+      "speedwalkToStart": "se;se;s;s;s;sw;sw;w;sw;s;s;s;sw;w;w;w;n;n;d",
+      "requiredActions": [],
+      "dirs": [
+        "n",
+        "n",
+        "d",
+        "n",
+        "n",
+        "unlock north",
+        "open north",
+        "north",
+        "w",
+        "w",
+        "n",
+        "n",
+        "n",
+        "n",
+        "e",
+        "e",
+        "e",
+        "e",
+        "s",
+        "s",
+        "s",
+        "s",
+        "w",
+        "w",
+        "n",
+        "n",
+        "w",
+        "e",
+        "e",
+        "w",
+        "n",
+        "s",
+        "s",
+        "s",
+        "s",
+        "s",
+        "s",
+        "u",
+        "s",
+        "s"
+      ],
+      "notes": "",
+      "isExcellentLevelingArea": false,
+      "recommendedTargets": [
+        {
+          "lookName": "A small tiger cub pacing around looking for dinner",
+          "engageName": "small tiger cub",
+          "level": 15
+        },
+        {
+          "lookName": "A large tiger is here looking for its cubs",
+          "engageName": "larger tiger",
+          "level": 20
+        },
+        {
+          "lookName": "A follower of Austinian is wandering around here.",
+          "engageName": "follower Austinian",
+          "level": 29
+        },
+        {
+          "lookName": "A follower of Kadiya is walking around here.",
+          "engageName": "follower Kadiya",
+          "level": 29
+        },
+        {
+          "lookName": "A follower of Kantilles is wandering around here.",
+          "engageName": "follower Kantilles",
+          "level": 29
+        },
+        {
+          "lookName": "A follower of Nadrik is here.",
+          "engageName": "follower Nadrik",
+          "level": 29
+        },
+        {
+          "lookName": "A follower of Siccara is here.",
+          "engageName": "follower Siccara",
+          "level": 29
+        },
+        {
+          "lookName": "A follower of Taliena is walking around here.",
+          "engageName": "follower Taliena",
+          "level": 29
+        },
+        {
+          "lookName": "A elven guard is here, protecting the master",
+          "engageName": "Elven Guard",
+          "level": 30
+        },
+        {
+          "lookName": "A Priest with Long flowing robes is kneeling here",
+          "engageName": "Master Temple",
+          "level": 30
+        }
+      ]
+    },
+    {
+      "slug": "bastille",
+      "areaName": "Bastille",
+      "continent": "Arkania",
+      "areaId": "Bastille",
+      "levelRange": [
+        15,
+        20
+      ],
+      "startRoom": "Unknown",
+      "speedwalkToStart": "e;e;e;e;e;s;s;w",
+      "requiredActions": [],
+      "dirs": [
+        "w",
+        "w",
+        "open north",
+        "n",
+        "s",
+        "open south",
+        "s",
+        "w",
+        "w",
+        "w",
+        "s",
+        "ne",
+        "n",
+        "ne",
+        "unlock down",
+        "open down",
+        "d",
+        "unlock north",
+        "open north",
+        "n",
+        "unlock east",
+        "open east",
+        "e",
+        "w",
+        "unlock west",
+        "open west",
+        "w",
+        "e",
+        "unlock north",
+        "open north",
+        "n",
+        "s",
+        "s",
+        "e",
+        "unlock down",
+        "open down",
+        "d",
+        "u",
+        "w",
+        "u",
+        "sw",
+        "s",
+        "e",
+        "e",
+        "n",
+        "open northeast",
+        "ne",
+        "u",
+        "d",
+        "sw",
+        "unlock southeast",
+        "open southeast",
+        "se",
+        "u",
+        "d",
+        "nw",
+        "e",
+        "e",
+        "drop 10 cross",
+        "drop 10 halberd",
+        "drop 10 scourge"
+      ],
+      "notes": "",
+      "isExcellentLevelingArea": false,
+      "recommendedTargets": []
+    },
+    {
+      "slug": "within-the-great-tree",
+      "areaName": "Within The Great Tree",
+      "continent": "Arkania",
+      "areaId": "WithinTheGreatTree",
+      "levelRange": [
+        22,
+        33
+      ],
+      "startRoom": "The Great Tree",
+      "speedwalkToStart": "ne;n;ne;nw;n;ne;e;e;u",
+      "requiredActions": [],
+      "dirs": [
+        "u",
+        "u",
+        "nw",
+        "ne",
+        "se",
+        "u",
+        "sw",
+        "nw",
+        "ne",
+        "u",
+        "sw",
+        "w",
+        "sw",
+        "ne",
+        "nw",
+        "se",
+        "e",
+        "ne",
+        "se",
+        "e",
+        "ne",
+        "sw",
+        "se",
+        "nw",
+        "w",
+        "sw",
+        "nw",
+        "ne",
+        "d",
+        "sw",
+        "d",
+        "se",
+        "d",
+        "d"
+      ],
+      "notes": "",
+      "isExcellentLevelingArea": true,
+      "recommendedTargets": [
+        {
+          "lookName": "an Arkanian swallow",
+          "engageName": "an Arkanian swallow",
+          "level": 25
+        },
+        {
+          "lookName": "an oversized chipmunk",
+          "engageName": "an oversized chipmunk",
+          "level": 25
+        },
+        {
+          "lookName": "an enlarged squirrel",
+          "engageName": "an enlarged squirrel",
+          "level": 25
+        },
+        {
+          "lookName": "an enormous wren",
+          "engageName": "an enormous wren",
+          "level": 25
+        }
+      ]
+    },
+    {
+      "slug": "arena-of-the-bull-dancers",
+      "areaName": "Arena of the Bull Dancers",
+      "continent": "Althainia",
+      "areaId": "ArenaOfTheBullDancers",
+      "levelRange": [
+        25,
+        35
+      ],
+      "startRoom": "",
+      "speedwalkToStart": "w;s;s;w;w;w;w;nw;n;n;w;w;w;w;s;s;sw;w;w;w;w;w;w;w;w;w;u;w;w;d;n;n;n;w;w;w;w;s;s;sw;w;w;w;w;w;w;w;w;n;n;e;n;n;e",
+      "requiredActions": [],
+      "dirs": [
+        "e",
+        "e",
+        "e",
+        "e",
+        "e",
+        "e",
+        "e",
+        "e",
+        "u",
+        "n",
+        "n",
+        "n",
+        "n",
+        "n",
+        "sw",
+        "n",
+        "w",
+        "w",
+        "w",
+        "w",
+        "se",
+        "w",
+        "s",
+        "s",
+        "s",
+        "s",
+        "ne",
+        "s",
+        "e",
+        "e",
+        "e",
+        "e",
+        "d",
+        "w",
+        "w",
+        "w",
+        "w",
+        "w",
+        "w",
+        "w",
+        "w"
+      ],
+      "notes": "",
+      "isExcellentLevelingArea": true,
+      "recommendedTargets": [
+        {
+          "lookName": "A black bull snorts angrily!",
+          "engageName": "black bull",
+          "level": 25
+        },
+        {
+          "lookName": "A red bull ignores your presence.",
+          "engageName": "red bull",
+          "level": 25
+        },
+        {
+          "lookName": "A white bull watches you intently.",
+          "engageName": "white bull",
+          "level": 25
+        },
+        {
+          "lookName": "A young boy is here, hauling out dirty hay and dodging angry bulls.",
+          "engageName": "young boy",
+          "level": 26
+        },
+        {
+          "lookName": "A timid-looking attendant watches the bulls warily.",
+          "engageName": "bull tender",
+          "level": 28
+        },
+        {
+          "lookName": "A middle-aged man walks past.",
+          "engageName": "human spectator",
+          "level": 31
+        },
+        {
+          "lookName": "A tall, slender female dressed in a long robe is resting here.",
+          "engageName": "female bull dancer",
+          "level": 35
+        },
+        {
+          "lookName": "A muscular man dressed in a long robe is resting here.",
+          "engageName": "male bull dancer",
+          "level": 35
+        }
+      ]
+    },
+    {
+      "slug": "asylum",
+      "areaName": "Asylum",
+      "continent": "Althainia",
+      "areaId": "Asylum",
+      "levelRange": [
+        30,
+        35
+      ],
+      "startRoom": "City street",
+      "speedwalkToStart": "w",
+      "requiredActions": [],
+      "dirs": [
+        "e",
+        "u",
+        "u",
+        "open north",
+        "n",
+        "w",
+        "w",
+        "w",
+        "w",
+        "w",
+        "open north",
+        "n",
+        "open south",
+        "s",
+        "e",
+        "open north",
+        "n",
+        "open south",
+        "s",
+        "e",
+        "open north",
+        "n",
+        "open south",
+        "s",
+        "e",
+        "open north",
+        "n",
+        "open south",
+        "s",
+        "e",
+        "open north",
+        "n",
+        "open south",
+        "s",
+        "e",
+        "e",
+        "open north",
+        "n",
+        "open south",
+        "s",
+        "e",
+        "open north",
+        "n",
+        "open south",
+        "s",
+        "e",
+        "open north",
+        "n",
+        "open south",
+        "s",
+        "e",
+        "open north",
+        "n",
+        "open south",
+        "s",
+        "e",
+        "open north",
+        "n",
+        "open south",
+        "s",
+        "w",
+        "w",
+        "w",
+        "w",
+        "w",
+        "open north",
+        "n",
+        "d",
+        "open south",
+        "s",
+        "nw",
+        "nw",
+        "nw",
+        "open north",
+        "n",
+        "u",
+        "u",
+        "open west",
+        "w",
+        "open west",
+        "w",
+        "e",
+        "n",
+        "open east",
+        "e",
+        "open west",
+        "w",
+        "n",
+        "open west",
+        "w",
+        "e",
+        "n",
+        "s",
+        "s",
+        "s",
+        "open east",
+        "e",
+        "u",
+        "open north",
+        "n",
+        "n",
+        "n",
+        "e",
+        "open north",
+        "n",
+        "s",
+        "open east",
+        "e",
+        "open west",
+        "w",
+        "open south",
+        "s",
+        "open north",
+        "n",
+        "w",
+        "n",
+        "east",
+        "open north",
+        "n",
+        "open south",
+        "s",
+        "open east",
+        "e",
+        "open west",
+        "w",
+        "open south",
+        "s",
+        "open north",
+        "n",
+        "w",
+        "w",
+        "open north",
+        "n",
+        "open south",
+        "s",
+        "open west",
+        "w",
+        "open east",
+        "e",
+        "open south",
+        "s",
+        "open north",
+        "n",
+        "e",
+        "s",
+        "s",
+        "s",
+        "open south",
+        "s",
+        "d",
+        "d",
+        "open south",
+        "s",
+        "open south",
+        "s",
+        "d",
+        "d",
+        "open west",
+        "w"
+      ],
+      "notes": "",
+      "isExcellentLevelingArea": true,
+      "recommendedTargets": [
+        {
+          "lookName": "a dark elf cleric",
+          "engageName": "a dark elf cleric",
+          "level": 35
+        },
+        {
+          "lookName": "a dark elf janitor",
+          "engageName": "a dark elf janitor",
+          "level": 35
+        },
+        {
+          "lookName": "an insane female shalonesti elf",
+          "engageName": "an insane female shalonesti elf",
+          "level": 35
+        },
+        {
+          "lookName": "an insane female wild elf",
+          "engageName": "an insane female wild elf",
+          "level": 35
+        },
+        {
+          "lookName": "an insane half elf",
+          "engageName": "an insane half elf",
+          "level": 35
+        },
+        {
+          "lookName": "an insane male shalonesti elf",
+          "engageName": "an insane male shalonesti elf",
+          "level": 35
+        },
+        {
+          "lookName": "an insane sea elf",
+          "engageName": "an insane sea elf",
+          "level": 35
+        },
+        {
+          "lookName": "an office worker",
+          "engageName": "an office worker",
+          "level": 35
+        },
+        {
+          "lookName": "a dark elf assistant",
+          "engageName": "a dark elf assistant",
+          "level": 38
+        }
+      ]
+    },
+    {
+      "slug": "winterhaven-funeral-home",
+      "areaName": "Winterhaven Funeral Home",
+      "continent": "Arkania",
+      "areaId": "WinterhavenFuneralHome",
+      "levelRange": [
+        30,
+        40
+      ],
+      "startRoom": "",
+      "speedwalkToStart": "e;e;e;e;e;e;e;e;e;e;e;e;e;e;n;n;n;n;n;n;n;e;e;e;s;sw;se;sw;s",
+      "requiredActions": [],
+      "dirs": [
+        "e",
+        "s",
+        "sw",
+        "se",
+        "sw",
+        "s",
+        "open south",
+        "s",
+        "s",
+        "w",
+        "w",
+        "e",
+        "e",
+        "e",
+        "e",
+        "w",
+        "w",
+        "s",
+        "s",
+        "w",
+        "w",
+        "e",
+        "e",
+        "e",
+        "e",
+        "w",
+        "w",
+        "s",
+        "s",
+        "w",
+        "w",
+        "take all urn",
+        "e",
+        "e",
+        "e",
+        "e",
+        "w",
+        "w",
+        "unlock south",
+        "open south",
+        "s",
+        "s",
+        "d",
+        "n",
+        "w",
+        "e",
+        "e",
+        "w",
+        "n",
+        "w",
+        "e",
+        "e",
+        "w",
+        "n",
+        "w",
+        "e",
+        "e",
+        "w",
+        "n",
+        "w",
+        "e",
+        "e",
+        "w",
+        "open north",
+        "north",
+        "open down",
+        "down",
+        "s",
+        "e",
+        "e",
+        "e",
+        "s",
+        "s",
+        "w",
+        "w",
+        "w",
+        "w",
+        "w",
+        "w",
+        "n",
+        "n",
+        "e",
+        "e",
+        "e",
+        "n",
+        "up",
+        "s",
+        "s",
+        "s",
+        "s",
+        "s",
+        "up",
+        "n",
+        "n",
+        "n",
+        "n",
+        "n",
+        "n",
+        "n",
+        "n",
+        "n",
+        "ne",
+        "nw",
+        "ne",
+        "n",
+        "w"
+      ],
+      "notes": "",
+      "isExcellentLevelingArea": true,
+      "recommendedTargets": []
+    },
+    {
+      "slug": "amethyst-falls",
+      "areaName": "Amethyst Falls",
+      "continent": "Arkania",
+      "areaId": "AmethystFalls",
+      "levelRange": [
+        32,
+        36
+      ],
+      "startRoom": "",
+      "speedwalkToStart": "e;e;e;e;e;e;e;e;e;e;e;e;e;e;e;e;e;e;e;e;e;e;d;e;e;e;e;e;e;e;e;e;e;e;e;e;e;se;e;ne;ne;e;se;e;e;n",
+      "requiredActions": [],
+      "dirs": [
+        "n",
+        "e",
+        "e",
+        "n",
+        "nw",
+        "n",
+        "n",
+        "n",
+        "e",
+        "e",
+        "s",
+        "s",
+        "w",
+        "w",
+        "s",
+        "quaff breath",
+        "d",
+        "n",
+        "n",
+        "w",
+        "w",
+        "s",
+        "s",
+        "w",
+        "e",
+        "u",
+        "w",
+        "w",
+        "e",
+        "e",
+        "e",
+        "e",
+        "sw",
+        "w",
+        "w",
+        "s",
+        "e",
+        "e",
+        "n",
+        "w",
+        "n",
+        "quaff breath",
+        "d",
+        "e",
+        "nw",
+        "n",
+        "e",
+        "e",
+        "s",
+        "s",
+        "u",
+        "buy 2*breathe",
+        "se",
+        "s",
+        "w",
+        "w",
+        "s"
+      ],
+      "notes": "",
+      "isExcellentLevelingArea": true,
+      "recommendedTargets": [
+        {
+          "lookName": "A custodian is here.",
+          "engageName": "custodian",
+          "level": 1
+        },
+        {
+          "lookName": "A freshwater cave cucumber is here.",
+          "engageName": "freshwater cave cucumber",
+          "level": 32
+        },
+        {
+          "lookName": "An Amethyst Falls archaeologist is here.",
+          "engageName": "Amethyst Falls archaeologist",
+          "level": 32
+        },
+        {
+          "lookName": "A purple cave slug is here.",
+          "engageName": "purple cave slug",
+          "level": 32
+        },
+        {
+          "lookName": "A small mauve bottom feeder is here.",
+          "engageName": "small mauve bottom feeder",
+          "level": 32
+        },
+        {
+          "lookName": "An Amethyst Falls archaeologist",
+          "engageName": "archaeologist",
+          "level": 32
+        },
+        {
+          "lookName": "A small mauve bottom feeder",
+          "engageName": "bottom",
+          "level": 32
+        },
+        {
+          "lookName": "A freshwater cave cucumber",
+          "engageName": "cucumber",
+          "level": 32
+        },
+        {
+          "lookName": "It's not a puurple purple, but a puuuurple purple.",
+          "engageName": "slug",
+          "level": 32
+        },
+        {
+          "lookName": "A lost visitor is here.",
+          "engageName": "lost visitor",
+          "level": 33
+        },
+        {
+          "lookName": "An Amethyst Falls cave rat is here.",
+          "engageName": "Amethyst Falls cave rat",
+          "level": 33
+        },
+        {
+          "lookName": "An Amethyst Falls cave bat is here.",
+          "engageName": "Amethyst Falls cave bat",
+          "level": 34
+        },
+        {
+          "lookName": "An Amethyst Falls cave bat",
+          "engageName": "bat",
+          "level": 34
+        },
+        {
+          "lookName": "An Amethyst Falls cave frog",
+          "engageName": "frog",
+          "level": 34
+        },
+        {
+          "lookName": "A cave ant is here.",
+          "engageName": "cave ant",
+          "level": 35
+        },
+        {
+          "lookName": "An unacceptably large mosquito is here.",
+          "engageName": "unacceptably large mosquito",
+          "level": 35
+        },
+        {
+          "lookName": "A piece of amethyst coral is here.",
+          "engageName": "piece amethyst coral",
+          "level": 35
+        },
+        {
+          "lookName": "A cave ant",
+          "engageName": "ant",
+          "level": 35
+        },
+        {
+          "lookName": "A piece of amethyst coral",
+          "engageName": "coral",
+          "level": 35
+        },
+        {
+          "lookName": "An unacceptably large mosquito",
+          "engageName": "mosquito",
+          "level": 35
+        },
+        {
+          "lookName": "An Amethyst Falls cave spider is here.",
+          "engageName": "Amethyst Falls cave spider",
+          "level": 36
+        },
+        {
+          "lookName": "An Amethyst Falls deer is here.",
+          "engageName": "Amethyst Falls deer",
+          "level": 36
+        },
+        {
+          "lookName": "An Amethyst Falls fox is here, begging for scraps.",
+          "engageName": "Amethyst Falls fox",
+          "level": 36
+        },
+        {
+          "lookName": "An Amethyst Falls Historical Society vendor is here.",
+          "engageName": "Amethyst Falls Historical Society vendor",
+          "level": 36
+        },
+        {
+          "lookName": "An Amethyst Falls plains owl is here.",
+          "engageName": "Amethyst Falls plains owl",
+          "level": 36
+        },
+        {
+          "lookName": "An AFHS artist is here, painting portraits of tourists.",
+          "engageName": "artist",
+          "level": 36
+        },
+        {
+          "lookName": "A purple-fanged shrew is here.",
+          "engageName": "purple fanged shrew",
+          "level": 36
+        },
+        {
+          "lookName": "A purple-horned buffalo is here.",
+          "engageName": "purple horned buffalo",
+          "level": 36
+        },
+        {
+          "lookName": "A purple-striped bee is here.",
+          "engageName": "purple striped bee",
+          "level": 36
+        },
+        {
+          "lookName": "A short-haired Amethyst Falls plains cat is here.",
+          "engageName": "short haired Amethyst Falls plains cat",
+          "level": 36
+        },
+        {
+          "lookName": "A tourist is here.",
+          "engageName": "tourist",
+          "level": 36
+        },
+        {
+          "lookName": "A violet peacock is here.",
+          "engageName": "violet peacock",
+          "level": 36
+        },
+        {
+          "lookName": "A violet starfish is here.",
+          "engageName": "violet starfish",
+          "level": 36
+        },
+        {
+          "lookName": "A purple-striped bee",
+          "engageName": "bee",
+          "level": 36
+        },
+        {
+          "lookName": "A purple-horned buffalo",
+          "engageName": "buffalo",
+          "level": 36
+        },
+        {
+          "lookName": "A short-haired Amethyst Falls plains cat",
+          "engageName": "cat",
+          "level": 36
+        },
+        {
+          "lookName": "An Amethyst Falls deer",
+          "engageName": "deer",
+          "level": 36
+        },
+        {
+          "lookName": "An Amethyst Falls plains owl",
+          "engageName": "owl",
+          "level": 36
+        },
+        {
+          "lookName": "A violet peacock",
+          "engageName": "peacock",
+          "level": 36
+        },
+        {
+          "lookName": "(Hide) A purple-fanged shrew",
+          "engageName": "shrew",
+          "level": 36
+        },
+        {
+          "lookName": "(Hide) An Amethyst Falls cave spider",
+          "engageName": "spider",
+          "level": 36
+        },
+        {
+          "lookName": "A violet starfish",
+          "engageName": "starfish",
+          "level": 36
+        }
+      ]
+    },
+    {
+      "slug": "deeply-cratered-sinkhole",
+      "areaName": "Deeply Cratered Sinkhole",
+      "continent": "Althainia",
+      "areaId": "DeeplyCrateredSinkhole",
+      "levelRange": [
+        40,
+        40
+      ],
+      "startRoom": "",
+      "speedwalkToStart": "w;w;w;w;w;nw;w;nw;nw;w;w;w;w;s;s;s;s;s;s;e;e;se;ne;e;e;e;e;e;e;s;s;se;s;se;d;sw;sw;se;se;d",
+      "requiredActions": [],
+      "dirs": [
+        "e",
+        "d",
+        "e",
+        "s",
+        "d",
+        "n",
+        "sw",
+        "se",
+        "ne",
+        "nw",
+        "s",
+        "d",
+        "n",
+        "sw",
+        "se",
+        "ne",
+        "nw",
+        "s",
+        "d",
+        "ne",
+        "w",
+        "se",
+        "d",
+        "e",
+        "d",
+        "d",
+        "u",
+        "u",
+        "w",
+        "u",
+        "u",
+        "u",
+        "u",
+        "n",
+        "w",
+        "u",
+        "w"
+      ],
+      "notes": "The gremlins are immune to shocking weapons",
+      "isExcellentLevelingArea": true,
+      "recommendedTargets": [
+        {
+          "lookName": "An impish creature gnashes its teeth together as it looks at you and grins.",
+          "engageName": "cackling gremlin",
+          "level": 40
+        }
+      ]
+    },
+    {
+      "slug": "algoron-threadworks",
+      "areaName": "Algoron Threadworks",
+      "continent": "Shokono",
+      "areaId": "AlgoronThreadworks",
+      "levelRange": [
+        43,
+        51
+      ],
+      "startRoom": "",
+      "speedwalkToStart": "w;w;w;w;w;w;s;s;s;s;s;s;w;w;w;s;s;se;ne;e;e;se;e;se;e;e;e;se;se;e;e;ne;ne",
+      "requiredActions": [],
+      "dirs": [
+        "e",
+        "se",
+        "e",
+        "se",
+        "e",
+        "e",
+        "e",
+        "se",
+        "se",
+        "e",
+        "e",
+        "ne",
+        "ne",
+        "n",
+        "nw",
+        "n",
+        "n",
+        "n",
+        "n",
+        "ne",
+        "e",
+        "e",
+        "se",
+        "s",
+        "s",
+        "s",
+        "s",
+        "sw",
+        "s",
+        "sw",
+        "sw",
+        "w",
+        "w",
+        "nw",
+        "nw",
+        "w",
+        "w",
+        "w",
+        "nw",
+        "w",
+        "nw",
+        "w"
+      ],
+      "notes": "",
+      "isExcellentLevelingArea": true,
+      "recommendedTargets": []
+    },
+    {
+      "slug": "ancient-forest",
+      "areaName": "Ancient Forest",
+      "continent": "Arkania",
+      "areaId": "AncientForest",
+      "levelRange": [
+        43,
+        51
+      ],
+      "startRoom": "Lost in the fog",
+      "speedwalkToStart": "e",
+      "requiredActions": [
+        "c pass",
+        "c 'detect hidden"
+      ],
+      "dirs": [
+        "open west",
+        "west",
+        "west",
+        "north",
+        "west",
+        "west",
+        "west",
+        "northwest",
+        "east",
+        "east",
+        "east",
+        "north",
+        "west",
+        "west",
+        "west",
+        "northeast",
+        "east",
+        "east",
+        "east",
+        "north",
+        "west",
+        "west",
+        "west",
+        "northwest",
+        "north",
+        "northeast",
+        "east",
+        "east",
+        "southeast",
+        "west",
+        "west",
+        "west",
+        "south",
+        "east",
+        "east",
+        "east",
+        "east",
+        "east",
+        "northeast",
+        "northeast",
+        "east",
+        "southeast",
+        "west",
+        "west",
+        "southwest",
+        "east",
+        "east",
+        "east",
+        "east",
+        "southwest",
+        "southwest",
+        "west",
+        "northwest",
+        "west",
+        "east",
+        "east",
+        "east",
+        "north",
+        "west",
+        "west",
+        "west",
+        "west",
+        "west",
+        "west",
+        "south",
+        "south",
+        "south",
+        "south",
+        "south",
+        "east",
+        "south",
+        "east",
+        "open east",
+        "east"
+      ],
+      "notes": "",
+      "isExcellentLevelingArea": true,
+      "recommendedTargets": [
+        {
+          "lookName": "One of the giant-kin sits here playing cards with its fellows.",
+          "engageName": "firbolg",
+          "level": 48
+        },
+        {
+          "lookName": "A large furred creature tries to hide in the forest.",
+          "engageName": "sasquatch",
+          "level": 48
+        }
+      ]
+    },
+    {
+      "slug": "gahboom-factory",
+      "areaName": "Gahboom Factory",
+      "continent": "Arkania",
+      "areaId": "GahboomFactory",
+      "levelRange": [
+        43,
+        51
+      ],
+      "startRoom": "A Stone Slab Platform in Fling-fall Cavern",
+      "speedwalkToStart": "e;e;e;e;e;s;s;s;e;s;s;w;w;s;s;s;s;e;s;e;n;n;n;n;n;w;w;w;s;s;se;e;n;n;n;w;nw;n;e;e;e;u;n;n;d;d;n",
+      "requiredActions": [],
+      "dirs": [
+        "open north",
+        "n",
+        "n",
+        "se",
+        "se",
+        "e",
+        "nw",
+        "nw",
+        "e",
+        "e",
+        "s",
+        "s",
+        "e",
+        "w",
+        "n",
+        "n",
+        "w",
+        "w",
+        "se",
+        "se",
+        "w",
+        "nw",
+        "nw",
+        "s",
+        "s",
+        "pull flinger",
+        "open south",
+        "south",
+        "e",
+        "s",
+        "w",
+        "w",
+        "s",
+        "e",
+        "e",
+        "n",
+        "w",
+        "w",
+        "n",
+        "e",
+        "open north",
+        "quaff fly",
+        "north",
+        "d",
+        "open e",
+        "e",
+        "e",
+        "n",
+        "e",
+        "quaff fly",
+        "e",
+        "e",
+        "s",
+        "w",
+        "w",
+        "w",
+        "w",
+        "open w",
+        "w",
+        "d"
+      ],
+      "notes": "",
+      "isExcellentLevelingArea": true,
+      "recommendedTargets": [
+        {
+          "lookName": "a long haired dog is sleeping here.",
+          "engageName": "long haired dog",
+          "level": 9
+        },
+        {
+          "lookName": "A gnome with a large paint brush and a can of grease is here, keeping the gears lubricated.",
+          "engageName": "gnome greaser",
+          "level": 45
+        },
+        {
+          "lookName": "A hero of Gahboom hill is here protecting the people.",
+          "engageName": "hero Gahboom hill",
+          "level": 45
+        },
+        {
+          "lookName": "A snoring gnome is here.",
+          "engageName": "tired gnome",
+          "level": 45
+        },
+        {
+          "lookName": "A young blue gnome guard is here.",
+          "engageName": "young blue gnome guard",
+          "level": 45
+        },
+        {
+          "lookName": "A gnome factory worker is here.",
+          "engageName": "gnome factory worker",
+          "level": 46
+        },
+        {
+          "lookName": "Professor Albert 'Mercury' DeVino is here.",
+          "engageName": "gnome machinist",
+          "level": 47
+        },
+        {
+          "lookName": "A gnome repair man is here.",
+          "engageName": "gnome repair man",
+          "level": 47
+        },
+        {
+          "lookName": "A gnome is here, sketching out plans for new structures.",
+          "engageName": "gnome architect",
+          "level": 48
+        },
+        {
+          "lookName": "A tinker gnome inspector is here.",
+          "engageName": "tinker gnome inspector",
+          "level": 48
+        },
+        {
+          "lookName": "A gnome is here, visiting the observatory.",
+          "engageName": "gnome visitor",
+          "level": 49
+        },
+        {
+          "lookName": "A gnome apprentice is here, waiting for instruction.",
+          "engageName": "gnome astrologer s apprentice",
+          "level": 50
+        },
+        {
+          "lookName": "A gnome inventor is here scribbling on a chalk board hanging around his neck.",
+          "engageName": "gnome inventor",
+          "level": 50
+        },
+        {
+          "lookName": "A tinker gnome timekeeper is here, inspecting the clockwork gears.",
+          "engageName": "tinker gnome timekeeper",
+          "level": 50
+        },
+        {
+          "lookName": "A gnome astrologer is here, looking at the heavens.",
+          "engageName": "gnome astrologer",
+          "level": 51
+        },
+        {
+          "lookName": "A gnome student is here.",
+          "engageName": "gnome student",
+          "level": 51
+        },
+        {
+          "lookName": "A tinker gnome janitor is picking up trash here.",
+          "engageName": "tinker gnome janitor",
+          "level": 51
+        },
+        {
+          "lookName": "A gnome in a protective heat suit is studying here.",
+          "engageName": "gnome in protective heat suit",
+          "level": 52
+        },
+        {
+          "lookName": "A gnome philosophy instructor is here.",
+          "engageName": "gnome philosopher s assistant",
+          "level": 52
+        },
+        {
+          "lookName": "A gnome supervisor is here.",
+          "engageName": "gnome supervisor",
+          "level": 52
+        },
+        {
+          "lookName": "A reflection of yourself stares back at you.",
+          "engageName": "reflection yourself",
+          "level": 52
+        },
+        {
+          "lookName": "A tinker gnome scientist is here, mixing vials of liquid.",
+          "engageName": "tinker gnome scientist",
+          "level": 52
+        },
+        {
+          "lookName": "A gnome stone excavator is here.",
+          "engageName": "gnome stone excavator",
+          "level": 53
+        },
+        {
+          "lookName": "A gnomish wizard dressed in dark gray robes stands here, looking into a basin.",
+          "engageName": "gnome wizard",
+          "level": 53
+        },
+        {
+          "lookName": "A gnome gem hunter is here.",
+          "engageName": "gnome gem hunter",
+          "level": 54
+        },
+        {
+          "lookName": "Mister Conrad 'Copper' McDura is here.",
+          "engageName": "Mister Conrad Copper McDura",
+          "level": 55
+        },
+        {
+          "lookName": "The director of the observatory is here, managing operations.",
+          "engageName": "director observatory",
+          "level": 55
+        },
+        {
+          "lookName": "A gnome flinger, stationed at the end of the platform, is aimed for the opposite side.",
+          "engageName": "gnome flinger",
+          "level": 70
+        },
+        {
+          "lookName": "An enormous machine covered in plate upon plate of metal armor is here bellowing thick black smoke.",
+          "engageName": "great machine nothingness",
+          "level": 70
+        }
+      ]
+    },
+    {
+      "slug": "silversand-garrison",
+      "areaName": "Silversand Garrison",
+      "continent": "Althainia",
+      "areaId": "SilversandGarrison",
+      "levelRange": [
+        45,
+        51
+      ],
+      "startRoom": "",
+      "speedwalkToStart": "w;s;s;w;w;w;w;sw;s;s;s;w;sw;s;s;s;w;s;sw;e",
+      "requiredActions": [],
+      "dirs": [
+        "e",
+        "unlock north",
+        "open north",
+        "north",
+        "w",
+        "e",
+        "n",
+        "s",
+        "e",
+        "w",
+        "u",
+        "d",
+        "unlock down",
+        "open down",
+        "down",
+        "s",
+        "n",
+        "ne",
+        "sw",
+        "u",
+        "unlock s",
+        "open s",
+        "s",
+        "w"
+      ],
+      "notes": "",
+      "isExcellentLevelingArea": true,
+      "recommendedTargets": [
+        {
+          "lookName": "a Silversand soldier",
+          "engageName": "a Silversand soldier",
+          "level": 45
+        },
+        {
+          "lookName": "a Silversand Drill Instructor",
+          "engageName": "a Silversand Drill Instructor",
+          "level": 48
+        },
+        {
+          "lookName": "a Silversand general",
+          "engageName": "a Silversand general",
+          "level": 48
+        },
+        {
+          "lookName": "a Silversand guardian",
+          "engageName": "a Silversand guardian",
+          "level": 48
+        },
+        {
+          "lookName": "a Silversand longbowman",
+          "engageName": "a Silversand longbowman",
+          "level": 48
+        },
+        {
+          "lookName": "a Silversand sergeant",
+          "engageName": "a Silversand sergeant",
+          "level": 48
+        },
+        {
+          "lookName": "a geltex larva",
+          "engageName": "a geltex larva",
+          "level": 49
+        },
+        {
+          "lookName": "a chamber guardian",
+          "engageName": "a chamber guardian",
+          "level": 50
+        },
+        {
+          "lookName": "a Silversand demon",
+          "engageName": "a Silversand demon",
+          "level": 50
+        },
+        {
+          "lookName": "a Silversand sentinel",
+          "engageName": "a Silversand sentinel",
+          "level": 50
+        },
+        {
+          "lookName": "a Silversand gatekeeper",
+          "engageName": "a Silversand gatekeeper",
+          "level": 52
+        },
+        {
+          "lookName": "a Silversand acolyte",
+          "engageName": "a Silversand acolyte",
+          "level": 53
+        },
+        {
+          "lookName": "Athrodius",
+          "engageName": "Athrodius",
+          "level": 55
+        },
+        {
+          "lookName": "the Geltex Queen",
+          "engageName": "the Geltex Queen",
+          "level": 56
+        },
+        {
+          "lookName": "Gathathrex",
+          "engageName": "Gathathrex",
+          "level": 65
+        }
+      ]
+    }
+  ]
+}
