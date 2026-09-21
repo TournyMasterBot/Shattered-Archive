@@ -201,3 +201,93 @@ describe('levelProgressStore', () => {
     expect(getLevelProgress()).toBe(a);
   });
 });
+
+describe('levelProgressStore — exact exp-per-level from the level-progress plugin', () => {
+  const expPerLevel = (name: string | undefined, value: unknown) =>
+    DispatchEvent('shatteredarchive:exp-per-level', { name, expPerLevel: value });
+
+  let unsubscribe: () => void;
+
+  beforeEach(() => {
+    __resetForTests();
+    delete (window as any).__SA_EVENT_SNAPSHOTS__;
+    unsubscribe = subscribeLevelProgress(() => {});
+  });
+
+  afterEach(() => {
+    unsubscribe();
+    __resetForTests();
+  });
+
+  it('uses the exact span from the very first packet — a mid-level login no longer starts empty', () => {
+    login(49);
+    expPerLevel('Tester', 13000);
+    charData(4444);
+
+    expect(getLevelProgress().pct).toBeCloseTo(((13000 - 4444) / 13000) * 100, 5);
+  });
+
+  it('takes over from the high-water estimate when it arrives late', () => {
+    login(49);
+    charData(5000);
+    expect(getLevelProgress().pct).toBe(0); // estimate: span = the first tnl seen
+
+    expPerLevel('Tester', 13000);
+    expect(getLevelProgress().pct).toBeCloseTo(((13000 - 5000) / 13000) * 100, 5);
+  });
+
+  it('is order independent: the value can arrive before login_data', () => {
+    expPerLevel('Tester', 13000);
+    login(49);
+    charData(4444);
+
+    expect(getLevelProgress().pct).toBeCloseTo(65.8153846, 4);
+  });
+
+  it('ignores a value for a different character', () => {
+    login(49);
+    expPerLevel('SomeoneElse', 13000);
+    charData(5000);
+
+    expect(getLevelProgress().pct).toBe(0); // still the high-water estimate
+  });
+
+  it('null clears the exact span and falls back to the estimate', () => {
+    login(49);
+    expPerLevel('Tester', 13000);
+    charData(6500);
+    expect(getLevelProgress().pct).toBe(50);
+
+    expPerLevel('Tester', null);
+    expect(getLevelProgress().pct).toBe(0); // span is now the highest tnl seen (6500)
+  });
+
+  it('rejects junk values instead of using them', () => {
+    login(49);
+    charData(5000);
+    for (const junk of [0, -10, NaN, Infinity, 'lots', undefined]) expPerLevel('Tester', junk);
+
+    expect(getLevelProgress().pct).toBe(0);
+  });
+
+  it('keeps the exact span across a level-up (the span is constant per level)', () => {
+    login(49);
+    expPerLevel('Tester', 13000);
+    charData(100);
+    levelUp();
+    charData(12000);
+
+    expect(getLevelProgress()).toMatchObject({ level: 50 });
+    expect(getLevelProgress().pct).toBeCloseTo(((13000 - 12000) / 13000) * 100, 5);
+  });
+
+  it('a different character logging in does not inherit the previous exact span', () => {
+    login(49);
+    expPerLevel('Tester', 13000);
+
+    DispatchEvent('game:character-login', { name: 'Other', level: 30 });
+    charData(9000);
+
+    expect(getLevelProgress().pct).toBe(0);
+  });
+});

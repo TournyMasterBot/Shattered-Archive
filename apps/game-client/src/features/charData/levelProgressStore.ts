@@ -4,11 +4,16 @@
 //
 // GMCP gives us the level (login_data, once per login) and `tnl` — exp REMAINING
 // to the next level (char_data, every prompt) — but not the exp SPAN of the
-// level, so a fill fraction can't be computed exactly. Instead the span is the
-// highest tnl seen since the last level-up (fill = 1 - tnl/span). Known limit:
-// logging in mid-level starts the bar empty and it only fills from that point,
-// so it under-reports until the next level. The exact fix is for the server to
-// send the span in char_data.
+// level, so a fill fraction can't be computed exactly from GMCP alone.
+//
+// Exact path: the level-progress plugin learns exp-per-level once (from
+// `worth`) and announces it on `shatteredarchive:exp-per-level`; that value is
+// used as the span (fill = 1 - tnl/span) from the first packet.
+//
+// Fallback (plugin off, or value not learned yet): the span is the highest tnl
+// seen since the last level-up. Known limit of the fallback: logging in
+// mid-level starts the bar empty and it only fills from that point, so it
+// under-reports until the next level.
 //
 // Like tickStore/charDataStore this is a module-level singleton that keeps
 // listening with no subscribers: a live theme switch unmounts and remounts the
@@ -48,8 +53,19 @@ const listeners = new Set<() => void>();
 let disposers: Array<() => void> = [];
 let started = false;
 
+// Exact exp-per-level per character, announced by the level-progress plugin
+// (learned once from `worth`). Keyed by name so it doesn't matter whether it
+// arrives before or after login_data. When present it beats the high-water
+// estimate, which stays as the fallback (plugin off, or value not learned yet).
+const exactSpanByName = new Map<string, number>();
+
+function effectiveSpan(): number {
+  const exact = state.name !== null ? exactSpanByName.get(state.name) : undefined;
+  return exact ?? state.span;
+}
+
 function publish(): void {
-  const next = computeLevelProgress(state.level, state.tnl, state.span);
+  const next = computeLevelProgress(state.level, state.tnl, effectiveSpan());
   if (
     next.visible === snapshot.visible &&
     next.pct === snapshot.pct &&
@@ -105,6 +121,25 @@ function start(): void {
     ),
 
     ListenEvent<any>(
+      'shatteredarchive:exp-per-level',
+      (data) => {
+        const name = typeof data?.name === 'string' ? data.name : null;
+        if (name === null) return;
+
+        const value = data?.expPerLevel;
+        if (value === null) {
+          exactSpanByName.delete(name);
+        } else {
+          const n = finiteNumber(value);
+          if (n === null || n <= 0) return; // junk: keep whatever we had
+          exactSpanByName.set(name, n);
+        }
+        publish();
+      },
+      { key: 'levelProgressStore::shatteredarchive:exp-per-level' },
+    ),
+
+    ListenEvent<any>(
       'event:level-up',
       () => {
         // The next char_data's tnl defines the new level's span. Never invent a
@@ -142,6 +177,7 @@ export function __resetForTests(): void {
   disposers = [];
   started = false;
   listeners.clear();
+  exactSpanByName.clear();
   state = initialState();
   snapshot = computeLevelProgress(null, null, 0);
 }

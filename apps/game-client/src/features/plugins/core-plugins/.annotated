@@ -24,6 +24,12 @@ Purpose: Tracks and manages potion gourd inventory with scan, quaff, and drop co
 /highlighter.plugin.ts
 Purpose: Highlights player names in chat logs by organization color based on configurable regex rules.
 
+/level-progress.plugin.ts
+Purpose: Learns how much exp ONE level costs for the connected character — exp_per_level = (Exp Total + Exp to Level) / (level + 1), from a single `worth` command — saves it per character name in localStorage (shatteredarchive:exp-per-level:v1) and announces it on shatteredarchive:exp-per-level so the compact HUD EXP gauge is exact from the first packet (levelProgressStore falls back to its high-water estimate when this plugin is off). Deliberately NOT an always-on matcher: no text listener exists until a fetch is in flight — the raw-data subscription is created when `worth` is sent and disposed on capture or a 10s timeout; outside that window it only handles structured events (login, char_data numeric compare, connection close). At most ONE automatic fetch per session (missing value OR a stored value that looks stale because tnl > exp_per_level share that budget); the 'Re-fetch now' action is the explicit override. Refuses to store a value unless the division is a whole number. Skips max level and unknown level.
+
+/level-progress.plugin.test.ts
+Purpose: Pins the parser against a verbatim `worth` capture, the exp-per-level math and its whole-number guard, that NO raw-data listener exists outside the fetch window, once-per-session budget (incl. failed attempts and the new-session reset), timeout give-up, stored-value reuse, stale refetch, the manual action, and cleanup reverting the gauge to its estimate.
+
 /people.plugin.ts
 Purpose: Parses player data from game commands into a shared database for tracking and annotation.
 
