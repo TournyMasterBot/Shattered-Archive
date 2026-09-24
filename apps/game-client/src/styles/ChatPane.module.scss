@@ -56,6 +56,27 @@
   border-radius: 4px;
 }
 
+/* Compact layout opt-in (ChatPane's wrapPills prop): overflow becomes extra
+   rows instead of a horizontal scrollbar, so every pill is visible without
+   scrolling. A plain global class rather than a CSS-module one — it's a
+   simple boolean variant, not a per-gauge baseline/override split like
+   CompactVitalsRow's sa-hud-vitals-fill-* — and the literal name is a stable
+   hook for tests (the CSS-module mock used in jest resolves every module
+   class to undefined). */
+:global(.sa-chat-pills-wrap) {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  overflow-y: visible;
+}
+
+/* .chatTopBar itself must also switch to flex-start: with the default
+   flex-end, a wrapped (now taller) .chatPills would drag the gear button
+   down to align with its LAST row. flex-start keeps the gear pinned to the
+   first row, alongside the first row of pills. */
+:global(.sa-chat-top-bar-wrap) {
+  align-items: flex-start;
+}
+
 .chatPill {
   appearance: none;
   -webkit-appearance: none;
