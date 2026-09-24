@@ -11,3 +11,9 @@ export function setRoomData(payload: RoomDataPayload): void {
 export function getRoomData(): RoomDataPayload | null {
   return lastRoomData;
 }
+
+/** Test-only escape hatch — clears the cache between test cases so seeding
+ * assertions in one test can't leak into another (shared module state). */
+export function __resetForTests(): void {
+  lastRoomData = null;
+}

@@ -1,0 +1,47 @@
+.root {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+}
+
+.periodIcon {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+// No flex: 1 here on purpose — a growing room name pushed the exits (which
+// belong right beside it, for at-a-glance legibility) all the way to the
+// far edge of the row. Sized to its own content, with the default
+// flex-shrink: 1 still truncating it if the row itself runs out of room.
+.roomName {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #f0f0f0;
+}
+
+.roomSector {
+  flex-shrink: 0;
+  color: #9a9a9a;
+}
+
+.exits {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #9a9a9a;
+  flex-shrink: 0;
+}
+
+.exitBtn {
+  background: transparent;
+  border: none;
+  padding: 1px 3px;
+  font-size: 0.75rem;
+  color: #e0e0e0;
+  cursor: pointer;
+}

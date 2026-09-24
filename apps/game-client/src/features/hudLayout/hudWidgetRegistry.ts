@@ -1,0 +1,48 @@
+import type { HudSlotId, HudWidgetContent } from '@shatteredarchive/types-client';
+import { DispatchEvent } from '../event-emitter/event-dispatcher';
+
+export type { HudSlotId, HudWidgetContent };
+
+/**
+ * Runtime list of every HUD slot id. Lives here (not in
+ * @shatteredarchive/types-client, which is otherwise type-only/erased at
+ * build time) so a stale-or-missing dist/ in that package can't leave this
+ * undefined at runtime — see final review finding I4.
+ */
+export const ALL_HUD_SLOT_IDS: readonly HudSlotId[] = ['hud.bottomStrip', 'hud.rightColumn'] as const;
+
+export const HUD_WIDGET_UPDATED_EVENT = 'shatteredarchive:hud-widget-updated';
+
+export type HudWidgetOccupant = { ownerId: string; content: HudWidgetContent };
+
+// In-memory snapshot, same reason window.__SA_IDENTITY__ exists: a
+// CompactWidgetSlot that mounts AFTER the last publish (layout switched
+// mid-session, or a reload with compact already on) needs to read current
+// state immediately, not just wait for the next change to fire.
+const current = new Map<HudSlotId, HudWidgetOccupant>();
+
+export function getHudWidget(slotId: HudSlotId): HudWidgetOccupant | null {
+  return current.get(slotId) ?? null;
+}
+
+export function publishHudWidget(slotId: HudSlotId, ownerId: string, content: HudWidgetContent | null): void {
+  if (content === null) {
+    const occupant = current.get(slotId);
+    // A disabled/stale owner can't clobber someone else's widget.
+    if (!occupant || occupant.ownerId !== ownerId) return;
+    current.delete(slotId);
+  } else {
+    current.set(slotId, { ownerId, content });
+  }
+
+  DispatchEvent(HUD_WIDGET_UPDATED_EVENT, { slotId, ownerId, content });
+}
+
+/**
+ * Test-only escape hatch: clears all slots regardless of ownership. Real
+ * callers must go through publishHudWidget's ownership-checked clear —
+ * this exists only so tests can reset shared module state between cases.
+ */
+export function __resetForTests(): void {
+  current.clear();
+}

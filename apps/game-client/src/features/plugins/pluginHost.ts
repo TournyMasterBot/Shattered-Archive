@@ -1,6 +1,13 @@
 // apps/game-client/src/features/plugins/pluginHost.ts
-import type { IPluginModule, PluginId, PluginRuntimeApi } from '@shatteredarchive/types-client';
+import {
+  type HudSlotId,
+  type HudWidgetContent,
+  type IPluginModule,
+  type PluginId,
+  type PluginRuntimeApi,
+} from '@shatteredarchive/types-client';
 
+import { ALL_HUD_SLOT_IDS, publishHudWidget } from '../hudLayout/hudWidgetRegistry';
 import { applyPluginBaseCss, removePluginBaseCss } from './pluginCss';
 import { startPluginBundledScripts } from './pluginScriptRunner';
 import { normalizePluginModule } from './normalizePluginModule';
@@ -178,6 +185,10 @@ function makeDefaultApi(
       setPluginOmitRules(pluginId, rules);
     },
 
+    setHudWidget: (slotId: HudSlotId, content: HudWidgetContent | null) => {
+      publishHudWidget(slotId, pluginId, content);
+    },
+
     registerAction: (key: string, handler: () => void) => {
       actionHandlers.set(key, handler);
     },
@@ -328,6 +339,9 @@ export class PluginHost {
     if (c?.removeBaseCss) c.removeBaseCss();
 
     setPluginOmitRules(pluginId, []);
+    for (const slotId of ALL_HUD_SLOT_IDS) {
+      publishHudWidget(slotId, pluginId, null);
+    }
     s.cleanups.delete(pluginId);
     s.enabled.delete(pluginId);
   }

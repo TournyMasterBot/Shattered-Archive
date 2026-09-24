@@ -1,6 +1,7 @@
 import type { IPluginModule, PluginRuntimeApi } from '@shatteredarchive/types-client';
 
-import { PluginHost } from './pluginHost';
+import { PluginHost, pluginHost } from './pluginHost';
+import { getHudWidget } from '../hudLayout/hudWidgetRegistry';
 
 /**
  * Plugin modules are CLOSURES — `create()` mints fresh queues, timers and
@@ -121,5 +122,67 @@ describe('PluginHost.syncInstalled', () => {
 
     host.syncInstalled([{ id: 'text-to-speech', enabled: true }]);
     expect(tts.enableCount).toBe(2);
+  });
+});
+
+describe('PluginRuntimeApi.setHudWidget', () => {
+  it('publishes into the widget registry, owned by the plugin id', () => {
+    pluginHost.setConnection('test-conn');
+    let capturedApi: PluginRuntimeApi | null = null;
+
+    pluginHost.registerModule({
+      manifest: { id: 'test-plugin', name: 'Test', version: '1.0.0' },
+      onEnable: (api) => {
+        capturedApi = api;
+      },
+    } as IPluginModule);
+    pluginHost.enable('test-plugin');
+
+    capturedApi!.setHudWidget!('hud.rightColumn', { label: 'Enemy', value: 'A rabid wolf' });
+
+    expect(getHudWidget('hud.rightColumn')).toEqual({
+      ownerId: 'test-plugin',
+      content: { label: 'Enemy', value: 'A rabid wolf' },
+    });
+  });
+
+  it('clears every slot the plugin owns when the plugin is disabled', () => {
+    pluginHost.setConnection('test-conn-2');
+    let capturedApi: PluginRuntimeApi | null = null;
+
+    pluginHost.registerModule({
+      manifest: { id: 'test-plugin-2', name: 'Test 2', version: '1.0.0' },
+      onEnable: (api) => {
+        capturedApi = api;
+      },
+    } as IPluginModule);
+    pluginHost.enable('test-plugin-2');
+    capturedApi!.setHudWidget!('hud.bottomStrip', { value: 'x' });
+    expect(getHudWidget('hud.bottomStrip')).not.toBeNull();
+
+    pluginHost.disable('test-plugin-2');
+    expect(getHudWidget('hud.bottomStrip')).toBeNull();
+  });
+
+  it('disabling one plugin does not clear a slot owned by another plugin', () => {
+    pluginHost.setConnection('test-conn-3');
+    let apiA: PluginRuntimeApi | null = null;
+
+    pluginHost.registerModule({
+      manifest: { id: 'plugin-a', name: 'A', version: '1.0.0' },
+      onEnable: (api) => {
+        apiA = api;
+      },
+    } as IPluginModule);
+    pluginHost.registerModule({
+      manifest: { id: 'plugin-b', name: 'B', version: '1.0.0' },
+    } as IPluginModule);
+    pluginHost.enable('plugin-a');
+    pluginHost.enable('plugin-b');
+
+    apiA!.setHudWidget!('hud.rightColumn', { value: 'from A' });
+    pluginHost.disable('plugin-b'); // never touched this slot
+
+    expect(getHudWidget('hud.rightColumn')).toEqual({ ownerId: 'plugin-a', content: { value: 'from A' } });
   });
 });

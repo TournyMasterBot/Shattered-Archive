@@ -1,6 +1,7 @@
 // apps/game-client/src/hooks/useCharData.ts
 import { useEffect, useState } from 'react';
 import { ListenEvent } from '../features/event-emitter/event-dispatcher';
+import { getCharData, setCharData } from '../features/charData/charDataStore';
 
 export interface CharDataVitals {
   hp: number;
@@ -47,8 +48,10 @@ const defaultAncillary: CharDataAncillary = {
 // @ai-hash: c0d645ef
 // ── END AI-METHOD ──
 export function useCharData() {
-  const [vitals, setVitals] = useState<CharDataVitals>(defaultVitals);
-  const [ancillary, setAncillary] = useState<CharDataAncillary>(defaultAncillary);
+  // Seed from charDataStore so a remount — a live theme switch, e.g. —
+  // doesn't flash 0/0 vitals until the next game:char-data event.
+  const [vitals, setVitals] = useState<CharDataVitals>(() => getCharData()?.vitals ?? defaultVitals);
+  const [ancillary, setAncillary] = useState<CharDataAncillary>(() => getCharData()?.ancillary ?? defaultAncillary);
 
   useEffect(() => {
     const dispose = ListenEvent<any>(
@@ -75,16 +78,16 @@ export function useCharData() {
         const carryWeightPct =
           hasCarry && hasCarryMax ? Math.max(0, Math.min(100, (carryWeightRaw / canCarryWeightRaw) * 100)) : null;
 
-        setVitals({
+        const nextVitals: CharDataVitals = {
           hp,
           hpMax: maxHp,
           mp: mana,
           mpMax: maxMana,
           stamina: move,
           staminaMax: maxMove,
-        });
+        };
 
-        setAncillary({
+        const nextAncillary: CharDataAncillary = {
           carryWeight,
           carryWeightMax,
           carryWeightPct,
@@ -93,7 +96,11 @@ export function useCharData() {
           isRiding: !!d.is_riding,
           isFighting: !!d.is_fighting,
           language: typeof d.language === 'string' ? d.language : null,
-        });
+        };
+
+        setVitals(nextVitals);
+        setAncillary(nextAncillary);
+        setCharData({ vitals: nextVitals, ancillary: nextAncillary });
       },
       { key: 'vitalsAncillary::game:char-data' },
     );
@@ -108,4 +115,39 @@ export function useCharData() {
   }, []);
 
   return { vitals, ancillary };
+}
+
+export interface StatusPiece {
+  key: string;
+  text: string;
+  title: string;
+}
+
+// Extracted from RightSidebar.tsx's StatusBlock so both the classic and
+// compact layouts render the same status icons from the same rules.
+export function computeStatusPieces(ancillary: CharDataAncillary): StatusPiece[] {
+  const pieces: StatusPiece[] = [];
+
+  if (ancillary.carryWeight != null && ancillary.carryWeightMax != null && ancillary.carryWeightPct != null) {
+    const cw = ancillary.carryWeight.toFixed(0);
+    const cwm = ancillary.carryWeightMax.toFixed(0);
+    const cwp = ancillary.carryWeightPct.toFixed(0);
+
+    pieces.push({
+      key: 'carry',
+      text: `🧺 ${cw} / ${cwm} (${cwp}%)`,
+      title: `Carry weight: ${cw} / ${cwm} (${cwp}%)`,
+    });
+  }
+
+  if (ancillary.isQuiet) pieces.push({ key: 'quiet', text: '🔇', title: 'Quiet (deafened)' });
+  if (ancillary.isFlying) pieces.push({ key: 'flying', text: '🪽', title: 'Flying' });
+  if (ancillary.isRiding) pieces.push({ key: 'riding', text: '🐎', title: 'Riding' });
+  if (ancillary.isFighting) pieces.push({ key: 'fighting', text: '⚔️', title: 'Fighting' });
+
+  if (ancillary.language && ancillary.language.toLowerCase() !== 'common') {
+    pieces.push({ key: 'language', text: `💬 ${ancillary.language}`, title: `Language: ${ancillary.language}` });
+  }
+
+  return pieces;
 }

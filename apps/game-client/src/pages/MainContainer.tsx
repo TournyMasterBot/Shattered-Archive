@@ -1,19 +1,21 @@
 // apps\game-client\src\pages\MainContainer.tsx
 import React from 'react';
+import { createPortal } from 'react-dom';
 import styles from '../styles/MainContainer.module.scss';
 import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight';
+import Terminal from '../components/Terminal';
 
-import { BottomPane } from '../components/BottomPane';
 import { UserStyleOverrideModal } from '../components/UserStyleOverrideModal';
 import UserScriptSandboxModal from '../components/UserScriptSandboxModal';
 import ConnectModal from '../components/ConnectModal';
 import PluginsModal from '../components/PluginsModal';
 
-import { useLayoutSizing, useUserCssOverrides, useMainContainer } from '../hooks/useMainContainer';
+import { useUserCssOverrides, useMainContainer } from '../hooks/useMainContainer';
 import { usePlugins } from '../hooks/usePlugins';
 
 import { MainMenuBar } from '../components/MainMenuBar';
-import { LayoutShell } from '../components/LayoutShell';
+import { getHudThemeId, HUD_THEME_CHANGED_EVENT, type HudThemeId } from '../features/hudLayout/hudThemeStore';
+import { resolveActiveTheme } from '../features/hudLayout/themeRegistry';
 import { useGameConnection } from '../hooks/useGameConnection';
 import { useBeforeUnloadGuard } from '../hooks/useBeforeUnloadGuard';
 
@@ -52,6 +54,91 @@ export const MainContainer: React.FC = () => {
   const main = useMainContainer();
   const gameConn = useGameConnection();
 
+  const [hudThemeId, setHudThemeIdState] = React.useState<HudThemeId>(() => getHudThemeId());
+  const [viewportWidth, setViewportWidth] = React.useState(() =>
+    typeof window === 'undefined' ? 1024 : window.innerWidth,
+  );
+
+  React.useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Live theme switching: setHudThemeId (hudThemeStore.ts) dispatches this on
+  // every change, same-tab included (localStorage's native `storage` event
+  // never fires for a change made in the tab that called setItem, so that
+  // alone can't drive this).
+  React.useEffect(() => {
+    return ListenEvent<{ id: HudThemeId }>(HUD_THEME_CHANGED_EVENT, (payload) => {
+      if (payload?.id) setHudThemeIdState(payload.id);
+    });
+  }, []);
+
+  const { theme: activeTheme, ShellComponent: ActiveShell } = resolveActiveTheme(hudThemeId, viewportWidth);
+
+  /**
+   * Terminal hoisting: <Terminal/> is rendered ONCE below (outside the
+   * per-theme Suspense tree) into a container that is NEVER swapped, instead
+   * of each shell rendering its own <Terminal/>. A theme switch would
+   * otherwise unmount/remount Terminal — useTerminal.ts creates a BRAND NEW
+   * xterm.js instance on every mount (scrollback: 5000 lines, empty), so a
+   * live switch would silently wipe the visible session history.
+   *
+   * createPortal's container is part of React's identity check for the
+   * portal fiber: passing a DIFFERENT container on a later render — e.g. the
+   * new shell's own terminal-slot div after a theme switch — makes React
+   * unmount the old portal's subtree and mount a fresh one into the new
+   * container, exactly the remount this hoist exists to avoid (confirmed
+   * live via Playwright: the xterm scrollback was lost on switch when the
+   * portal target itself was the swapped div). So `terminalHost` here is a
+   * detached DOM node created ONCE (lazy useState initializer) and passed to
+   * createPortal for the app's entire lifetime — the portal target never
+   * changes, so Terminal never remounts. Getting it to the RIGHT visual spot
+   * is a separate, plain DOM operation: the effect below re-parents this
+   * same node with .appendChild() into whichever shell's slot is currently
+   * attached. appendChild on a node that already has a parent MOVES it
+   * (removes then reinserts), which preserves the live xterm canvas/state —
+   * it does not recreate anything.
+   */
+  const [terminalHost] = React.useState<HTMLDivElement>(() => {
+    const el = document.createElement('div');
+    el.style.width = '100%';
+    el.style.height = '100%';
+    // Every shell's terminal slot (.terminalBody, .playAreaTerminalShell) is
+    // `display: flex` on purpose — Terminal.tsx's own root divs size
+    // themselves via `flex: 1; min-height: 0`, which only takes effect when
+    // their DIRECT parent is a flex container. Without this, terminalHost is
+    // a plain block box: Terminal's flex rules go inert, its height
+    // collapses to content/default instead of filling the slot, and the
+    // slot's own flex-allocated space is left showing as empty background
+    // behind it (caught live: a real gap below the terminal in compact mode).
+    el.style.display = 'flex';
+    el.style.minHeight = '0';
+    el.style.minWidth = '0';
+    return el;
+  });
+  const [terminalSlot, setTerminalSlot] = React.useState<HTMLDivElement | null>(null);
+  const terminalSlotRef = React.useCallback((el: HTMLDivElement | null) => {
+    if (el) setTerminalSlot(el);
+  }, []);
+
+  React.useEffect(() => {
+    if (terminalSlot && terminalHost.parentElement !== terminalSlot) {
+      terminalSlot.appendChild(terminalHost);
+    }
+  }, [terminalSlot, terminalHost]);
+
+  // A theme's styles apply only while IT is the one actually rendering (not
+  // the theme that was selected but fell back away from at a narrow width —
+  // resolveActiveTheme already accounts for that, activeTheme is always the
+  // one whose styles belong on screen right now) — and get stripped back out
+  // the moment that stops being true, so "switching themes off returns to
+  // today's default shell exactly" (spec §6).
+  React.useEffect(() => {
+    activeTheme.loadStyles?.();
+  }, [activeTheme.id]);
+
   // Warn before closing/reloading the tab while a play-server connection is live.
   useBeforeUnloadGuard(gameConn.isConnected);
 
@@ -66,8 +153,6 @@ export const MainContainer: React.FC = () => {
   // panel, autoleveling's own listeners, etc. all rely on this being bound regardless of
   // what else is currently mounted/unmounted).
   React.useEffect(() => movementTracker.bind(), []);
-
-  const { layoutVars, handleVerticalResizeMouseDown, handleHorizontalResizeMouseDown } = useLayoutSizing();
 
   const {
     userCssApplied,
@@ -162,6 +247,14 @@ export const MainContainer: React.FC = () => {
     pluginHost.syncInstalled(plugins.installed);
   }, [connectionId, plugins.installed]);
 
+  // Theme→plugin auto-enable (e.g. slate-amber turning on
+  // world-time-and-identity). Declared AFTER the registration effect above
+  // on purpose — effects run in declaration order, and pluginHost.enable()
+  // silently no-ops if the plugin isn't registered yet.
+  React.useEffect(() => {
+    activeTheme.onActivate?.();
+  }, [connectionId, activeTheme.id]);
+
   /**
    * A plugin changing its OWN config (e.g. text-to-speech's floating mode bubble)
    * has to land in the same store the config modal writes, or the effect above
@@ -195,17 +288,19 @@ export const MainContainer: React.FC = () => {
 
       <FocusBarVitals />
 
-      <LayoutShell
-        layoutVars={layoutVars}
-        onVerticalResizeMouseDown={handleVerticalResizeMouseDown}
-        onHorizontalResizeMouseDown={handleHorizontalResizeMouseDown}
-        BottomPaneComponent={BottomPane}
-        isConnected={gameConn.isConnected}
-        sendRaw={gameConn.sendRaw}
-        autoLevelMode={auto.config.mode}
-        autoLevelRunState={auto.runState}
-        onSightseeRescan={auto.rescanRoom}
-      />
+      <React.Suspense fallback={null}>
+        <ActiveShell
+          isConnected={gameConn.isConnected}
+          sendRaw={gameConn.sendRaw}
+          onOpenAutoLeveling={handleOpenAutoLeveling}
+          autoLevelMode={auto.config.mode}
+          autoLevelRunState={auto.runState}
+          onSightseeRescan={auto.rescanRoom}
+          terminalSlotRef={terminalSlotRef}
+        />
+      </React.Suspense>
+
+      {createPortal(<Terminal />, terminalHost)}
 
       <UserStyleOverrideModal
         isOpen={isStyleModalOpen}
