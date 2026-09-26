@@ -1267,12 +1267,12 @@ describe('crafting-helper state machine', () => {
     expect(mock.sent).toEqual(["get 1 'silksteel thread' vault"]);
   });
 
-  it('order add expands an armor-crafting set ("arcanium chainmail", no "set" suffix) into one order per slot', () => {
+  it('order add expands an armor-crafting set ("arcanium chainmail set") into one order per slot', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'arcanium chainmail' 97+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'arcanium chainmail set' 97+");
 
     const queue = getOrderQueue('__unknown__');
     expect(queue).toHaveLength(6);
@@ -1288,13 +1288,31 @@ describe('crafting-helper state machine', () => {
     );
   });
 
-  it('order add also accepts "arcanium <set> set" (with the trailing word) as an alias', () => {
+  it('order add requires the trailing "set" word for an armor set — the bare set name is an unknown item', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'arcanium platemail' 97+");
+    expect(mock.terminalWrites.some((w) => w.includes('Unknown order item'))).toBe(true);
+    expect(getOrderQueue('__unknown__')).toHaveLength(0);
+
     plugin.onAlias!(mock.api, "crafthelper order add 1 'arcanium platemail set' 97+");
     expect(getOrderQueue('__unknown__')).toHaveLength(6);
+  });
+
+  it('defaults the order holding container to vault when unconfigured', () => {
+    const mock = createMockApi(defaultConfig()); // no orderHoldingContainer override
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
+    jest.advanceTimersByTime(200);
+    jest.advanceTimersByTime(200);
+    mock.feedLine('You were successful.');
+    mock.feedLine('Condition: flawless (98%)');
+
+    expect(mock.sent).toContain("put 1 'diamond gem pain' vault");
   });
 
   it('an in-spec item is stored in the holding container, decrements the order, and refills it', () => {

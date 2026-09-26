@@ -457,11 +457,13 @@ export const ORDER_ITEM_RECIPES: Record<string, OrderItemRecipe> = {
 
 // "Sets" — order one of each slot in a tailoring material or an armor-crafting
 // set with a single order-add call ("silksteel cloth set", "bull elephant
-// leather set", "arcanium chainmail") instead of naming all 6 slots
-// individually. Each key maps to the ordered list of its member item names —
-// already-defined keys in ORDER_ITEM_RECIPES above — and `order add` fans a
-// set out into one queued order per member, sharing the requested quantity
-// and quality spec.
+// leather set", "arcanium chainmail set") instead of naming all 6 slots
+// individually. The trailing "set" word is always required — unifying the
+// two families avoids a case where "arcanium chainmail" (no suffix) reads
+// ambiguously next to "silksteel cloth set" (suffix required). Each key maps
+// to the ordered list of its member item names — already-defined keys in
+// ORDER_ITEM_RECIPES above — and `order add` fans a set out into one queued
+// order per member, sharing the requested quantity and quality spec.
 function tailoringSetGroups(): Record<string, string[]> {
   const groups: Record<string, string[]> = {};
   for (const { cloth, leather } of TAILORING_TIERS) {
@@ -474,9 +476,7 @@ function tailoringSetGroups(): Record<string, string[]> {
 function armorSetGroups(): Record<string, string[]> {
   const groups: Record<string, string[]> = {};
   for (const { setName, slotQty } of ARCANIUM_ARMOR_SETS) {
-    const items = Object.keys(slotQty).map((slot) => `arcanium ${setName} ${slot}`);
-    groups[`arcanium ${setName}`] = items;
-    groups[`arcanium ${setName} set`] = items; // accept either phrasing
+    groups[`arcanium ${setName} set`] = Object.keys(slotQty).map((slot) => `arcanium ${setName} ${slot}`);
   }
   return groups;
 }
@@ -723,7 +723,7 @@ function readConfig(api: PluginRuntimeApi): EngineConfig {
     orderHoldingContainer:
       typeof cfg.orderHoldingContainer === 'string' && cfg.orderHoldingContainer.trim()
         ? cfg.orderHoldingContainer.trim()
-        : 'orders',
+        : 'vault',
     qualityContainerMap: parseQualityContainerMapMemo(cfg.qualityContainerMap),
     debug: cfg.debug === true,
     hudSlot: hudSlot === 'hud.bottomStrip' || hudSlot === 'hud.rightColumn' || hudSlot === 'none'
@@ -1293,7 +1293,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
         helpCmd("crafthelper order add 2 'silksteel cloth shirt' 95-98", 'queue 2, quality between 95 and 98'),
         helpCmd("crafthelper order add 1 'arcanium chainmail helmet' 99", 'queue 1, quality exactly 99'),
         helpCmd("crafthelper order add 2 'silksteel cloth set' 95+", 'queue 2 of each of the 6 cloth slots'),
-        helpCmd("crafthelper order add 2 'arcanium chainmail' 97+", 'queue 2 of each of the 6 chainmail slots'),
+        helpCmd("crafthelper order add 2 'arcanium chainmail set' 97+", 'queue 2 of each of the 6 chainmail slots'),
         helpCmd('crafthelper order list', 'list all queued orders'),
         helpCmd('crafthelper order remove <id>', 'remove a queued order by id'),
         helpCmd('crafthelper order start', 'start fulfilling the oldest queued order'),
@@ -1302,10 +1302,11 @@ export function createCraftingHelperPlugin(): IPluginModule {
         '',
         "Item names must match a known recipe (case-insensitive) — see the plugin's",
         'config panel description for the full list of covered crafts. A "set" name',
-        '(any tailoring material + "cloth set"/"leather set", or "arcanium <armor',
-        'set>") queues one order per slot at once, all sharing the same quantity and',
-        'quality spec. Adding your first order while idle with nothing else queued',
-        'starts fulfillment right away — no separate `order start` needed.',
+        '(any tailoring material or armor set + "cloth set" / "leather set" /',
+        '"<armor set> set" — always ending in the word "set") queues one order per',
+        'slot at once, all sharing the same quantity and quality spec. Adding your',
+        'first order while idle with nothing else queued starts fulfillment right',
+        'away — no separate `order start` needed.',
         '',
         "A finished item's quality decides where it's stored: a range covered by the",
         'Quality → container map always wins, even if the item also satisfies the',
@@ -1388,7 +1389,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
       return true;
     }
 
-    // A "set" name (e.g. "silksteel cloth set", "arcanium chainmail") fans
+    // A "set" name (e.g. "silksteel cloth set", "arcanium chainmail set") fans
     // out into one queued order per member item, sharing this add's quantity
     // and quality spec — see ORDER_SET_RECIPES.
     const setItems = ORDER_SET_RECIPES[itemName];
@@ -1560,9 +1561,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.14.0',
+      version: '0.14.2',
       description:
-        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. All five craft skills' training tiers are complete (the last trinket in each carries skill to the 1001 cap). Order items can also be queued as a \"set\" (one of each armor/cloth slot in a material, e.g. \"silksteel cloth set\" or \"arcanium chainmail\") in a single order-add call; adding an order while idle with nothing else queued starts fulfillment right away. Each completed order item logs its progress toward the order. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Type `crafthelper` (no arguments) for full in-game command help. Commands: crafthelper improve <craftType> start / improve stop/status, crafthelper order add/list/remove/start/stop/status.",
+        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. All five craft skills' training tiers are complete (the last trinket in each carries skill to the 1001 cap). Order items can also be queued as a \"set\" (one of each armor/cloth slot in a material, e.g. \"silksteel cloth set\" or \"arcanium chainmail set\" — always ending in the word \"set\") in a single order-add call; adding an order while idle with nothing else queued starts fulfillment right away. Each completed order item logs its progress toward the order. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Type `crafthelper` (no arguments) for full in-game command help. Commands: crafthelper improve <craftType> start / improve stop/status, crafthelper order add/list/remove/start/stop/status.",
     },
 
     configSchema: {
@@ -1573,7 +1574,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
         pullConfirmTimeoutMs: 200,
         scoreResponseTimeoutMs: 1000,
         loreResponseTimeoutMs: 2000,
-        orderHoldingContainer: 'orders',
+        orderHoldingContainer: 'vault',
         qualityContainerMap: '',
         debug: false,
         hudSlot: 'hud.bottomStrip',
@@ -1629,7 +1630,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
           label: 'Order holding container',
           description:
             'Where a finished, in-spec order item is stored, ready for manual hand-off — used when its quality isn\'t covered by the map below.',
-          placeholder: 'orders',
+          placeholder: 'vault',
         },
         {
           key: 'qualityContainerMap',
