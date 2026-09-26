@@ -438,14 +438,52 @@ function spellGemSets(): Record<string, OrderItemRecipe> {
   return recipes;
 }
 
+const ARCANIUM_ARMOR_SETS: Array<{ setName: string; slotQty: Record<string, number> }> = [
+  { setName: 'platemail', slotQty: { helmet: 1, boots: 1, leggings: 2, gloves: 1, sleeves: 2, tunic: 4 } },
+  { setName: 'chainmail', slotQty: { boots: 1, leggings: 2, gloves: 1, sleeves: 2, tunic: 4, helmet: 1 } },
+  { setName: 'studded leather', slotQty: { boots: 1, pants: 2, gloves: 1, sleeves: 2, tunic: 4, helmet: 1 } },
+];
+
 // Hardcoded, not config — this data rarely changes and the user does not
 // want to maintain an override surface for it. Add new order items here.
 export const ORDER_ITEM_RECIPES: Record<string, OrderItemRecipe> = {
   ...spellGemSets(),
   ...tailoringSets(),
-  ...arcaniumArmorSet('platemail', { helmet: 1, boots: 1, leggings: 2, gloves: 1, sleeves: 2, tunic: 4 }),
-  ...arcaniumArmorSet('chainmail', { boots: 1, leggings: 2, gloves: 1, sleeves: 2, tunic: 4, helmet: 1 }),
-  ...arcaniumArmorSet('studded leather', { boots: 1, pants: 2, gloves: 1, sleeves: 2, tunic: 4, helmet: 1 }),
+  ...ARCANIUM_ARMOR_SETS.reduce<Record<string, OrderItemRecipe>>(
+    (acc, { setName, slotQty }) => ({ ...acc, ...arcaniumArmorSet(setName, slotQty) }),
+    {},
+  ),
+};
+
+// "Sets" — order one of each slot in a tailoring material or an armor-crafting
+// set with a single order-add call ("silksteel cloth set", "bull elephant
+// leather set", "arcanium chainmail") instead of naming all 6 slots
+// individually. Each key maps to the ordered list of its member item names —
+// already-defined keys in ORDER_ITEM_RECIPES above — and `order add` fans a
+// set out into one queued order per member, sharing the requested quantity
+// and quality spec.
+function tailoringSetGroups(): Record<string, string[]> {
+  const groups: Record<string, string[]> = {};
+  for (const { cloth, leather } of TAILORING_TIERS) {
+    groups[`${cloth} cloth set`] = Object.keys(TAILORING_SLOT_QTY).map((slot) => `${cloth} cloth ${slot}`);
+    groups[`${leather} leather set`] = Object.keys(TAILORING_SLOT_QTY).map((slot) => `${leather} leather ${slot}`);
+  }
+  return groups;
+}
+
+function armorSetGroups(): Record<string, string[]> {
+  const groups: Record<string, string[]> = {};
+  for (const { setName, slotQty } of ARCANIUM_ARMOR_SETS) {
+    const items = Object.keys(slotQty).map((slot) => `arcanium ${setName} ${slot}`);
+    groups[`arcanium ${setName}`] = items;
+    groups[`arcanium ${setName} set`] = items; // accept either phrasing
+  }
+  return groups;
+}
+
+export const ORDER_SET_RECIPES: Record<string, string[]> = {
+  ...tailoringSetGroups(),
+  ...armorSetGroups(),
 };
 
 export type QualitySpec =
@@ -476,6 +514,12 @@ export function qualityMatchesSpec(quality: number, spec: QualitySpec): boolean 
   if (spec.kind === 'atLeast') return quality >= spec.min;
   if (spec.kind === 'exact') return quality === spec.value;
   return quality >= spec.min && quality <= spec.max;
+}
+
+export function formatQualitySpec(spec: QualitySpec): string {
+  if (spec.kind === 'atLeast') return `${spec.min}+`;
+  if (spec.kind === 'exact') return `${spec.value}`;
+  return `${spec.min}-${spec.max}`;
 }
 
 export interface QualityContainerRow {
@@ -826,11 +870,20 @@ export function createCraftingHelperPlugin(): IPluginModule {
     if (inSpec && order) {
       if (orderSession) orderSession.inSpecRouted += 1;
       const remaining = order.quantityRemaining - 1;
+      const done = order.quantityTotal - remaining;
       if (remaining <= 0) {
+        writeInfo(
+          api,
+          `Order ${order.id} complete: "${outputName}" @ ${quality}% (in spec) — ${order.quantityTotal}/${order.quantityTotal} done, routed to ${container}.`,
+        );
         removeOrder(characterKey(), order.id);
         activeOrder = null;
         pacingTimer = setTimeout(() => advanceOrderQueue(api), cfg.commandPacingDelayMs);
       } else {
+        writeInfo(
+          api,
+          `"${outputName}" @ ${quality}% (in spec) — order ${order.id}: ${done}/${order.quantityTotal} done, ${remaining} remaining, routed to ${container}.`,
+        );
         updateOrder(characterKey(), order.id, { quantityRemaining: remaining });
         activeOrder = { ...order, quantityRemaining: remaining };
         pacingTimer = setTimeout(() => beginPullCycle(api), cfg.commandPacingDelayMs);
@@ -838,9 +891,17 @@ export function createCraftingHelperPlugin(): IPluginModule {
     } else {
       if (orderSession) orderSession.offSpecRouted += 1;
       if (activeOrderRemoved) {
+        writeInfo(api, `"${outputName}" @ ${quality}% crafted — its order was removed mid-craft, routed to ${container}.`);
         activeOrderRemoved = false;
         pacingTimer = setTimeout(() => advanceOrderQueue(api), cfg.commandPacingDelayMs);
       } else {
+        if (order) {
+          const done = order.quantityTotal - order.quantityRemaining;
+          writeInfo(
+            api,
+            `"${outputName}" @ ${quality}% — off spec for order ${order.id} (needs ${formatQualitySpec(order.qualitySpec)}), routed to ${container}; order still at ${done}/${order.quantityTotal}.`,
+          );
+        }
         pacingTimer = setTimeout(() => beginPullCycle(api), cfg.commandPacingDelayMs);
       }
     }
@@ -1214,8 +1275,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
         '              trinket tier your skill qualifies for, crafts it, stores it in',
         '              the vault, and repeats — auto-escalating tiers as you level up.',
         '  {WOrder{x    — fulfills queued requests for finished items (gems, tailoring',
-        '              goods, armor pieces, ...): pulls every named component, crafts,',
-        '              checks quality via `lore`, and routes the result by your spec.',
+        '              goods, armor pieces, or full armor/cloth sets): pulls every named',
+        '              component, crafts, checks quality via `lore`, and routes the',
+        '              result by your spec.',
         'Stand wherever your vault and crafting station both are before starting either.',
         '',
         '{Y-- Improving a skill --{x',
@@ -1230,6 +1292,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
         helpCmd("crafthelper order add 6 'diamond gem pain' 97+", 'queue 6, quality 97 or higher'),
         helpCmd("crafthelper order add 2 'silksteel cloth shirt' 95-98", 'queue 2, quality between 95 and 98'),
         helpCmd("crafthelper order add 1 'arcanium chainmail helmet' 99", 'queue 1, quality exactly 99'),
+        helpCmd("crafthelper order add 2 'silksteel cloth set' 95+", 'queue 2 of each of the 6 cloth slots'),
+        helpCmd("crafthelper order add 2 'arcanium chainmail' 97+", 'queue 2 of each of the 6 chainmail slots'),
         helpCmd('crafthelper order list', 'list all queued orders'),
         helpCmd('crafthelper order remove <id>', 'remove a queued order by id'),
         helpCmd('crafthelper order start', 'start fulfilling the oldest queued order'),
@@ -1237,10 +1301,16 @@ export function createCraftingHelperPlugin(): IPluginModule {
         helpCmd('crafthelper order status', 'show the active order and queue depth'),
         '',
         "Item names must match a known recipe (case-insensitive) — see the plugin's",
-        'config panel description for the full list of covered crafts. A finished',
-        "item's quality decides where it's stored: a range covered by the Quality →",
-        'container map always wins, even if the item also satisfies the active order;',
-        "otherwise it's the order holding container (in spec) or vault (off spec).",
+        'config panel description for the full list of covered crafts. A "set" name',
+        '(any tailoring material + "cloth set"/"leather set", or "arcanium <armor',
+        'set>") queues one order per slot at once, all sharing the same quantity and',
+        'quality spec. Adding your first order while idle with nothing else queued',
+        'starts fulfillment right away — no separate `order start` needed.',
+        '',
+        "A finished item's quality decides where it's stored: a range covered by the",
+        'Quality → container map always wins, even if the item also satisfies the',
+        "active order; otherwise it's the order holding container (in spec) or vault",
+        '(off spec).',
         '{x',
       ].join('\n') + '\n',
     );
@@ -1313,31 +1383,67 @@ export function createCraftingHelperPlugin(): IPluginModule {
       writeError(api, `Invalid quantity "${match[1]}".`);
       return true;
     }
-    const orderRecipe = ORDER_ITEM_RECIPES[itemName];
-    if (!orderRecipe) {
-      writeError(api, `Unknown order item "${itemName}" — no recipe for it.`);
-      return true;
-    }
     if (!qualitySpec) {
       writeError(api, `Invalid quality spec "${match[3]}" — use "97+", "99", or "95-98".`);
       return true;
     }
-    const cfg = readConfig(api);
-    if (!cfg.craftTypes.find((t) => t.id === orderRecipe.craftTypeId)) {
-      writeError(api, `Craft type "${orderRecipe.craftTypeId}" for "${itemName}" isn't configured — check the Craft types config.`);
+
+    // A "set" name (e.g. "silksteel cloth set", "arcanium chainmail") fans
+    // out into one queued order per member item, sharing this add's quantity
+    // and quality spec — see ORDER_SET_RECIPES.
+    const setItems = ORDER_SET_RECIPES[itemName];
+    const memberNames = setItems ?? [itemName];
+    if (!setItems && !ORDER_ITEM_RECIPES[itemName]) {
+      writeError(api, `Unknown order item "${itemName}" — no recipe for it.`);
       return true;
     }
 
-    const order: StoredCraftOrder = {
-      id: `order-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
-      itemName,
-      quantityRemaining: qty,
-      quantityTotal: qty,
-      qualitySpec,
-      createdAt: Date.now(),
-    };
-    addOrder(characterKey(), order);
-    writeInfo(api, `Queued order ${order.id}: ${qty}x "${itemName}" @ ${match[3]}.`);
+    const cfg = readConfig(api);
+    const wasEmpty = getOrderQueue(characterKey()).length === 0;
+    const queuedIds: string[] = [];
+
+    memberNames.forEach((name, i) => {
+      const orderRecipe = ORDER_ITEM_RECIPES[name];
+      if (!orderRecipe) {
+        writeError(api, `Internal error: set member "${name}" has no recipe — skipped.`);
+        return;
+      }
+      if (!cfg.craftTypes.find((t) => t.id === orderRecipe.craftTypeId)) {
+        writeError(api, `Craft type "${orderRecipe.craftTypeId}" for "${name}" isn't configured — check the Craft types config.`);
+        return;
+      }
+      const order: StoredCraftOrder = {
+        id: `order-${Date.now().toString(36)}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+        itemName: name,
+        quantityRemaining: qty,
+        quantityTotal: qty,
+        qualitySpec,
+        createdAt: Date.now(),
+      };
+      addOrder(characterKey(), order);
+      queuedIds.push(order.id);
+    });
+
+    if (queuedIds.length === 0) {
+      writeError(api, `No valid items queued for "${itemName}".`);
+      return true;
+    }
+
+    if (setItems) {
+      writeInfo(
+        api,
+        `Queued set "${itemName}": ${qty}x each of ${queuedIds.length} item(s) @ ${match[3]} (orders ${queuedIds.join(', ')}).`,
+      );
+    } else {
+      writeInfo(api, `Queued order ${queuedIds[0]}: ${qty}x "${itemName}" @ ${match[3]}.`);
+    }
+
+    // Nothing else was queued or running — start fulfilling immediately
+    // instead of leaving the player to remember `order start`.
+    if (wasEmpty && state === 'idle') {
+      handleOrderStart(api);
+    }
+
     return true;
   }
 
@@ -1454,9 +1560,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.13.0',
+      version: '0.14.0',
       description:
-        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. All five craft skills' training tiers are complete (the last trinket in each carries skill to the 1001 cap). The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Type `crafthelper` (no arguments) for full in-game command help. Commands: crafthelper improve <craftType> start / improve stop/status, crafthelper order add/list/remove/start/stop/status.",
+        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. All five craft skills' training tiers are complete (the last trinket in each carries skill to the 1001 cap). Order items can also be queued as a \"set\" (one of each armor/cloth slot in a material, e.g. \"silksteel cloth set\" or \"arcanium chainmail\") in a single order-add call; adding an order while idle with nothing else queued starts fulfillment right away. Each completed order item logs its progress toward the order. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Type `crafthelper` (no arguments) for full in-game command help. Commands: crafthelper improve <craftType> start / improve stop/status, crafthelper order add/list/remove/start/stop/status.",
     },
 
     configSchema: {

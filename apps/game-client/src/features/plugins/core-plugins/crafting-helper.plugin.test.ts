@@ -20,7 +20,9 @@ import {
   parseQualityContainerMap,
   containerForQuality,
   matchQualityContainer,
+  formatQualitySpec,
   ORDER_ITEM_RECIPES,
+  ORDER_SET_RECIPES,
 } from './crafting-helper.plugin';
 
 const SCORE_BLOCK = [
@@ -315,6 +317,14 @@ describe('qualityMatchesSpec', () => {
     expect(qualityMatchesSpec(98, spec)).toBe(true);
     expect(qualityMatchesSpec(94, spec)).toBe(false);
     expect(qualityMatchesSpec(99, spec)).toBe(false);
+  });
+});
+
+describe('formatQualitySpec', () => {
+  it('formats each spec kind back to its typed syntax', () => {
+    expect(formatQualitySpec({ kind: 'atLeast', min: 97 })).toBe('97+');
+    expect(formatQualitySpec({ kind: 'exact', value: 99 })).toBe('99');
+    expect(formatQualitySpec({ kind: 'range', min: 95, max: 98 })).toBe('95-98');
   });
 });
 
@@ -616,7 +626,7 @@ describe('crafting-helper state machine', () => {
     expect(mock.terminalWrites[1]).toBe(help); // "crafthelper help" and bare "crafthelper" match
   });
 
-  it('every order-add example in the help text names a real recipe', () => {
+  it('every order-add example in the help text names a real recipe or set', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
@@ -625,7 +635,8 @@ describe('crafting-helper state machine', () => {
     const itemNames = [...mock.terminalWrites[0].matchAll(/order add \d+ '([^']+)'/g)].map((m) => m[1]);
     expect(itemNames.length).toBeGreaterThan(0);
     for (const name of itemNames) {
-      expect(ORDER_ITEM_RECIPES[name.toLowerCase()]).toBeDefined();
+      const lower = name.toLowerCase();
+      expect(ORDER_ITEM_RECIPES[lower] ?? ORDER_SET_RECIPES[lower]).toBeDefined();
     }
   });
 
@@ -1144,6 +1155,48 @@ describe('crafting-helper state machine', () => {
     expect(getOrderQueue('__unknown__')).toHaveLength(1);
   });
 
+  it('adding the first order while idle starts fulfillment automatically, no explicit "order start" needed', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
+    // No "crafthelper order start" call — the add itself should have kicked
+    // off the pull cycle for the queued order's first component.
+    expect(mock.sent).toEqual(["get 1 'silksteel thread' vault"]);
+    expect(mock.terminalWrites.some((w) => w.includes('Starting order fulfillment'))).toBe(true);
+  });
+
+  it('adding a second order while one is already active just queues it, without restarting', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
+    expect(mock.sent).toEqual(["get 1 'silksteel thread' vault"]);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 90+");
+    // Still mid pull-cycle on the first order — no second "score"/pull burst,
+    // and no "Already running" noise since the second add never asked to start.
+    expect(mock.sent).toEqual(["get 1 'silksteel thread' vault"]);
+    expect(getOrderQueue('__unknown__')).toHaveLength(2);
+  });
+
+  it('adding an order while improving a skill does not auto-start order fulfillment', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
+    mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
+    const sentBeforeAdd = [...mock.sent];
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 90+");
+    // Queued, but not started — improve mode is still running.
+    expect(mock.sent).toEqual(sentBeforeAdd);
+    expect(getOrderQueue('__unknown__')).toHaveLength(1);
+  });
+
   it('order start with an empty queue is a no-op', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
@@ -1186,6 +1239,62 @@ describe('crafting-helper state machine', () => {
     expect(mock.sent).toEqual(["get 2 'arcanium bar' vault", "get 2 'bull elephant leather square' vault"]);
     jest.advanceTimersByTime(200);
     expect(mock.sent[mock.sent.length - 1]).toBe("craft armorcraft 'arcanium chainmail sleeves'");
+  });
+
+  it('order add expands a tailoring cloth "set" into one queued order per slot', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 2 'silksteel cloth set' 95+");
+
+    const queue = getOrderQueue('__unknown__');
+    expect(queue).toHaveLength(6);
+    expect(new Set(queue.map((o) => o.itemName))).toEqual(
+      new Set([
+        'silksteel cloth helmet',
+        'silksteel cloth gloves',
+        'silksteel cloth boots',
+        'silksteel cloth sleeves',
+        'silksteel cloth leggings',
+        'silksteel cloth shirt',
+      ]),
+    );
+    expect(queue.every((o) => o.quantityRemaining === 2 && o.quantityTotal === 2)).toBe(true);
+    expect(queue.every((o) => o.qualitySpec.kind === 'atLeast' && o.qualitySpec.min === 95)).toBe(true);
+    expect(mock.terminalWrites.some((w) => w.includes('Queued set "silksteel cloth set"'))).toBe(true);
+    // Auto-starts too, same as a single-item add.
+    expect(mock.sent).toEqual(["get 1 'silksteel thread' vault"]);
+  });
+
+  it('order add expands an armor-crafting set ("arcanium chainmail", no "set" suffix) into one order per slot', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'arcanium chainmail' 97+");
+
+    const queue = getOrderQueue('__unknown__');
+    expect(queue).toHaveLength(6);
+    expect(new Set(queue.map((o) => o.itemName))).toEqual(
+      new Set([
+        'arcanium chainmail boots',
+        'arcanium chainmail leggings',
+        'arcanium chainmail gloves',
+        'arcanium chainmail sleeves',
+        'arcanium chainmail tunic',
+        'arcanium chainmail helmet',
+      ]),
+    );
+  });
+
+  it('order add also accepts "arcanium <set> set" (with the trailing word) as an alias', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'arcanium platemail set' 97+");
+    expect(getOrderQueue('__unknown__')).toHaveLength(6);
   });
 
   it('an in-spec item is stored in the holding container, decrements the order, and refills it', () => {
@@ -1290,6 +1399,49 @@ describe('crafting-helper state machine', () => {
     expect(getOrderQueue('__unknown__')).toHaveLength(1); // completed order removed
     jest.advanceTimersByTime(100);
     expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'silksteel thread' vault"); // next order started
+  });
+
+  it('writes a progress line after each order item completes, and a completion line when the order finishes', () => {
+    const mock = createMockApi(defaultConfig({ orderHoldingContainer: 'orders' }));
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 2 'diamond gem pain' 97+");
+    jest.advanceTimersByTime(200);
+    jest.advanceTimersByTime(200);
+    mock.feedLine('You were successful.');
+
+    mock.feedLine('Condition: flawless (98%)');
+    expect(
+      mock.terminalWrites.some(
+        (w) => w.includes('"diamond gem pain" @ 98% (in spec)') && w.includes('1/2 done') && w.includes('1 remaining'),
+      ),
+    ).toBe(true);
+
+    jest.advanceTimersByTime(100); // refill, same order
+    jest.advanceTimersByTime(200);
+    jest.advanceTimersByTime(200);
+    mock.feedLine('You were successful.');
+    mock.feedLine('Condition: flawless (99%)');
+    expect(mock.terminalWrites.some((w) => w.includes('Order') && w.includes('complete') && w.includes('2/2 done'))).toBe(true);
+  });
+
+  it('writes a progress line for an off-spec item too, noting it did not count toward the order', () => {
+    const mock = createMockApi(
+      defaultConfig({ orderHoldingContainer: 'orders', qualityContainerMap: '90-94 | common' }),
+    );
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
+    jest.advanceTimersByTime(200);
+    jest.advanceTimersByTime(200);
+    mock.feedLine('You were successful.');
+
+    mock.feedLine('Condition: scuffed (92%)');
+    expect(
+      mock.terminalWrites.some((w) => w.includes('off spec for order') && w.includes('needs 97+') && w.includes('0/1')),
+    ).toBe(true);
   });
 
   it('a quality line that never arrives stops the plugin rather than guessing where to route the item', () => {
