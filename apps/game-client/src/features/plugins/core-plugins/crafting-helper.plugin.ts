@@ -136,9 +136,10 @@ function craftTierRows(
 // points later. The elephant leather saddle trinket (943) is the last
 // training trinket — it carries skill to the 1001 cap; silksteel/bull
 // elephant (tier index 9) only exists as order-item materials, not a
-// training tier. Real in-game item names use "spool of <material> thread",
-// not "<material> thread" — this also corrected the order-item recipes
-// below, which had guessed the shorter form before this list existed.
+// training tier. The thread component is "<material> thread" — a craft
+// list once showed "a spool of <material> thread", but that's just the
+// list's descriptive text; the item you actually get/put is the bare
+// "<material> thread".
 const TAILORING_TRINKET_TIERS: Array<{ dollThreshold: number; saddleThreshold: number; cloth: string; leather: string }> = [
   { dollThreshold: 1, saddleThreshold: 56, cloth: 'woolen', leather: 'deer' },
   { dollThreshold: 111, saddleThreshold: 166, cloth: 'linen', leather: 'cow' },
@@ -154,9 +155,9 @@ const TAILORING_TRINKET_TIERS: Array<{ dollThreshold: number; saddleThreshold: n
 function tailoringTierRows(): string {
   const rows: string[] = [];
   for (const { dollThreshold, saddleThreshold, cloth, leather } of TAILORING_TRINKET_TIERS) {
-    rows.push(`tailoring | ${dollThreshold} | ${cloth} doll trinket | ${cloth} cloth square:3, spool of ${cloth} thread:3`);
+    rows.push(`tailoring | ${dollThreshold} | ${cloth} doll trinket | ${cloth} cloth square:3, ${cloth} thread:3`);
     rows.push(
-      `tailoring | ${saddleThreshold} | ${leather} leather saddle trinket | ${cloth} cloth square:2, spool of ${cloth} thread:2, ${leather} leather square:2`,
+      `tailoring | ${saddleThreshold} | ${leather} leather saddle trinket | ${cloth} cloth square:2, ${cloth} thread:2, ${leather} leather square:2`,
     );
   }
   return rows.join('\n');
@@ -289,16 +290,16 @@ function arcaniumArmorSet(setName: string, slotQty: Record<string, number>): Rec
 // Tailoring order items: 10 tiers, each pairing a cloth material with the
 // leather material of the same tier, 2 armor types per tier (cloth and
 // leather), 6 slots each. A cloth item is named "<material> cloth <slot>"
-// (e.g. "silksteel cloth shirt") and needs "spool of <material> thread" +
+// (e.g. "silksteel cloth shirt") and needs "<material> thread" +
 // "<material> cloth square"; a leather item is named "<leather material>
 // leather <slot>" and needs the *same-tier cloth material's* thread +
 // "<leather material> leather square" (e.g. "whale leather sleeves" needs
-// 2 spools of seamist thread + 2 whale leather squares). Naming corrected
-// twice against real usage: the "spool of" thread prefix and tier 0's
-// "woolen" (not "wool") came from a real in-game craft list; the cloth
-// item's "cloth" word (dropped in an earlier pass, matching the leather
-// side's "leather" word) came from a live "unknown order item" report for
-// "silksteel cloth shirt".
+// 2 seamist threads + 2 whale leather squares). Naming corrected against
+// real usage more than once: tier 0's "woolen" (not "wool") came from a
+// real in-game craft list; the cloth item's "cloth" word (dropped in an
+// earlier pass, matching the leather side's "leather" word) and dropping
+// the "spool of" thread prefix (a craft list's descriptive text, not the
+// actual get/put item name) both came from live reports.
 // Slot quantities: helmet/gloves/boots:1, sleeves/leggings:2, shirt:4 —
 // same per-slot pattern as armor crafting.
 const TAILORING_SLOT_QTY: Record<string, number> = {
@@ -329,7 +330,7 @@ function clothArmorSet(material: string): Record<string, OrderItemRecipe> {
     recipes[`${material} cloth ${slot}`] = {
       craftTypeId: 'tailoring',
       components: [
-        { material: `spool of ${material} thread`, qty },
+        { material: `${material} thread`, qty },
         { material: `${material} cloth square`, qty },
       ],
     };
@@ -343,7 +344,7 @@ function leatherArmorSet(clothMaterial: string, leatherMaterial: string): Record
     recipes[`${leatherMaterial} leather ${slot}`] = {
       craftTypeId: 'tailoring',
       components: [
-        { material: `spool of ${clothMaterial} thread`, qty },
+        { material: `${clothMaterial} thread`, qty },
         { material: `${leatherMaterial} leather square`, qty },
       ],
     };
@@ -1355,7 +1356,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.10.3',
+      version: '0.10.4',
       description:
         "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. All five craft skills' training tiers are complete (the last trinket in each carries skill to the 1001 cap). The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status. To queue an order: `crafthelper order add <qty> '<item name>' <quality-spec>`, e.g. `crafthelper order add 6 'diamond gem pain' 97+` (quality-spec: `97+` at least, `99` exact, or `95-98` a range; item name must match a known order recipe).",
     },

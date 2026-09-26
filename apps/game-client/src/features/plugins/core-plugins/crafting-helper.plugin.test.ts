@@ -110,7 +110,7 @@ describe('parseTierTableConfig', () => {
       trinket: 'elephant leather saddle trinket',
       components: [
         { material: 'wyvernskin cloth square', qty: 2 },
-        { material: 'spool of wyvernskin thread', qty: 2 },
+        { material: 'wyvernskin thread', qty: 2 },
         { material: 'elephant leather square', qty: 2 },
       ],
     });
@@ -414,18 +414,18 @@ describe('ORDER_ITEM_RECIPES', () => {
     }
   });
 
-  it('builds a cloth tailoring item as "<material> cloth <slot>" using spool of material thread + material cloth square', () => {
+  it('builds a cloth tailoring item as "<material> cloth <slot>" using material thread + material cloth square', () => {
     expect(ORDER_ITEM_RECIPES['silk cloth helmet']).toEqual({
       craftTypeId: 'tailoring',
       components: [
-        { material: 'spool of silk thread', qty: 1 },
+        { material: 'silk thread', qty: 1 },
         { material: 'silk cloth square', qty: 1 },
       ],
     });
     expect(ORDER_ITEM_RECIPES['silksteel cloth shirt']).toEqual({
       craftTypeId: 'tailoring',
       components: [
-        { material: 'spool of silksteel thread', qty: 4 },
+        { material: 'silksteel thread', qty: 4 },
         { material: 'silksteel cloth square', qty: 4 },
       ],
     });
@@ -435,14 +435,14 @@ describe('ORDER_ITEM_RECIPES', () => {
     expect(ORDER_ITEM_RECIPES['whale leather sleeves']).toEqual({
       craftTypeId: 'tailoring',
       components: [
-        { material: 'spool of seamist thread', qty: 2 },
+        { material: 'seamist thread', qty: 2 },
         { material: 'whale leather square', qty: 2 },
       ],
     });
     expect(ORDER_ITEM_RECIPES['bull moose leather leggings']).toEqual({
       craftTypeId: 'tailoring',
       components: [
-        { material: 'spool of gossamer thread', qty: 2 },
+        { material: 'gossamer thread', qty: 2 },
         { material: 'bull moose leather square', qty: 2 },
       ],
     });
@@ -654,7 +654,7 @@ describe('crafting-helper state machine', () => {
 
     plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
     plugin.onAlias!(mock.api, 'crafthelper order start');
-    jest.advanceTimersByTime(200); // pull spool of silksteel thread
+    jest.advanceTimersByTime(200); // pull silksteel thread
     jest.advanceTimersByTime(200); // pull silksteel cloth square
     // now crafting
     const sentSoFar = mock.sent.length;
@@ -663,15 +663,15 @@ describe('crafting-helper state machine', () => {
     jest.advanceTimersByTime(100); // put back thread
     jest.advanceTimersByTime(100); // put back square
     expect(mock.sent.slice(sentSoFar)).toEqual([
-      "put 1 'spool of silksteel thread' vault",
+      "put 1 'silksteel thread' vault",
       "put 1 'silksteel cloth square' vault",
     ]);
 
     jest.advanceTimersByTime(100); // then re-pull both, fresh
     expect(mock.sent.slice(sentSoFar)).toEqual([
-      "put 1 'spool of silksteel thread' vault",
+      "put 1 'silksteel thread' vault",
       "put 1 'silksteel cloth square' vault",
-      "get 1 'spool of silksteel thread' vault",
+      "get 1 'silksteel thread' vault",
     ]);
   });
 
@@ -683,13 +683,13 @@ describe('crafting-helper state machine', () => {
     plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
     const orderId = getOrderQueue('__unknown__')[0].id;
     plugin.onAlias!(mock.api, 'crafthelper order start');
-    jest.advanceTimersByTime(200); // pull spool of silksteel thread succeeds
+    jest.advanceTimersByTime(200); // pull silksteel thread succeeds
 
     mock.feedLine('I see nothing like that in the vault.'); // fails on the SECOND component
     const sentSoFar = [...mock.sent];
     jest.advanceTimersByTime(5000);
     // Only the already-pulled first component goes back; nothing further is pulled or crafted.
-    expect(mock.sent).toEqual([...sentSoFar, "put 1 'spool of silksteel thread' vault"]);
+    expect(mock.sent).toEqual([...sentSoFar, "put 1 'silksteel thread' vault"]);
     expect(mock.terminalWrites.some((w) => w.includes('silksteel cloth square'))).toBe(true);
 
     const queue = getOrderQueue('__unknown__');
@@ -1104,12 +1104,12 @@ describe('crafting-helper state machine', () => {
     plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
     plugin.onAlias!(mock.api, 'crafthelper order start');
 
-    expect(mock.sent).toEqual(["get 1 'spool of silksteel thread' vault"]);
+    expect(mock.sent).toEqual(["get 1 'silksteel thread' vault"]);
     jest.advanceTimersByTime(200); // pullConfirmTimeoutMs
-    expect(mock.sent).toEqual(["get 1 'spool of silksteel thread' vault", "get 1 'silksteel cloth square' vault"]);
+    expect(mock.sent).toEqual(["get 1 'silksteel thread' vault", "get 1 'silksteel cloth square' vault"]);
     jest.advanceTimersByTime(200);
     expect(mock.sent).toEqual([
-      "get 1 'spool of silksteel thread' vault",
+      "get 1 'silksteel thread' vault",
       "get 1 'silksteel cloth square' vault",
       "craft tailor 'silksteel cloth helmet'",
     ]);
@@ -1187,7 +1187,7 @@ describe('crafting-helper state machine', () => {
 
     expect(getOrderQueue('__unknown__')).toHaveLength(1); // completed order removed
     jest.advanceTimersByTime(100);
-    expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'spool of silksteel thread' vault"); // next order started
+    expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'silksteel thread' vault"); // next order started
   });
 
   it('a quality line that never arrives stops the plugin rather than guessing where to route the item', () => {
@@ -1230,7 +1230,7 @@ describe('crafting-helper state machine', () => {
     expect(mock.sent).toContain("put 1 'diamond gem pain' vault"); // no active order to route to -> default container
 
     jest.advanceTimersByTime(100);
-    expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'spool of silksteel thread' vault"); // advanced to the remaining order
+    expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'silksteel thread' vault"); // advanced to the remaining order
   });
 
   it('order status reports the active order and queue', () => {
