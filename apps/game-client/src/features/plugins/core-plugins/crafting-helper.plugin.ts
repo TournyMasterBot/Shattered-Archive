@@ -4,18 +4,23 @@ import { stripAnsi } from '../../autoleveling/autoleveling-text';
 import { getTrackedSkillLevel, setTrackedSkillLevel, getOrderQueue, addOrder, removeOrder, updateOrder, type StoredCraftOrder } from './crafting-helper-storage';
 
 /**
- * Crafting Helper — automates tier-3 crafting skill-up training.
+ * Crafting Helper — automates tier-3 crafting skill-up training and bulk
+ * order fulfillment.
  *
  * Config-driven across craft skills (verb, score-rank keyword, and tier
  * table are all data, not code) — ships seeded with Spellcrafting, Sharp
- * Weapons, Blunt Weapons, and Armor Crafting tier tables. A character
- * trains one craft skill at a time via `activeCraftType`.
+ * Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables. A
+ * character trains one craft skill at a time, named on the command line.
  *
  * Aliases (type in the command bar) — prefixed with "crafthelper", not
- * "craft", so they never compete with the game's own `craft` command:
- *   crafthelper start   — begin the pull/craft/store loop for the active craft type
- *   crafthelper stop    — finish the current step, then go idle
- *   crafthelper status  — print current state/skill/session stats
+ * "craft", so they never compete with the game's own `craft` command, and
+ * namespaced by mode so "start"/"stop"/"status" never mean two different
+ * things depending on context:
+ *   crafthelper improve <craftType> start  — begin training that craft type
+ *   crafthelper improve stop               — finish the current step, then go idle
+ *   crafthelper improve status             — print current state/skill/session stats
+ *   crafthelper order add/list/remove/start/stop/status — bulk order fulfillment
+ *   crafthelper / crafthelper help         — print full command help
  */
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -616,7 +621,6 @@ export function buildHudContent(input: {
 interface EngineConfig {
   craftTypes: CraftTypeRow[];
   tierTable: CraftTierRow[];
-  activeCraftType: string;
   commandPacingDelayMs: number;
   pullConfirmTimeoutMs: number;
   scoreResponseTimeoutMs: number;
@@ -632,16 +636,37 @@ function numOr(v: unknown, fallback: number): number {
   return Number.isFinite(n) && n >= 0 ? n : fallback;
 }
 
+/**
+ * Wraps a pure parser so an unchanged raw config string skips re-parsing.
+ * `getConfig()` is still read fresh on every call (never cached) — only the
+ * expensive regex-split-per-line work on an unchanged string is skipped.
+ * Cheap for the common case: every mid-cycle `handleRawData` call reads
+ * config, and craftTypes/tierTable/qualityContainerMap rarely change
+ * between one incoming line and the next.
+ */
+function memoizeLast<T>(fn: (raw: unknown) => T): (raw: unknown) => T {
+  let lastRaw: unknown;
+  let lastResult: T;
+  let hasCached = false;
+  return (raw: unknown) => {
+    if (hasCached && raw === lastRaw) return lastResult;
+    lastResult = fn(raw);
+    lastRaw = raw;
+    hasCached = true;
+    return lastResult;
+  };
+}
+
+const parseCraftTypesConfigMemo = memoizeLast(parseCraftTypesConfig);
+const parseTierTableConfigMemo = memoizeLast(parseTierTableConfig);
+const parseQualityContainerMapMemo = memoizeLast(parseQualityContainerMap);
+
 function readConfig(api: PluginRuntimeApi): EngineConfig {
   const cfg = api.getConfig();
   const hudSlot = cfg.hudSlot;
   return {
-    craftTypes: parseCraftTypesConfig(cfg.craftTypes),
-    tierTable: parseTierTableConfig(cfg.tierTable),
-    activeCraftType:
-      typeof cfg.activeCraftType === 'string' && cfg.activeCraftType.trim()
-        ? cfg.activeCraftType.trim().toLowerCase()
-        : 'spellcrafting',
+    craftTypes: parseCraftTypesConfigMemo(cfg.craftTypes),
+    tierTable: parseTierTableConfigMemo(cfg.tierTable),
     commandPacingDelayMs: numOr(cfg.commandPacingDelayMs, 150),
     pullConfirmTimeoutMs: numOr(cfg.pullConfirmTimeoutMs, 200),
     scoreResponseTimeoutMs: numOr(cfg.scoreResponseTimeoutMs, 1000),
@@ -650,7 +675,7 @@ function readConfig(api: PluginRuntimeApi): EngineConfig {
       typeof cfg.orderHoldingContainer === 'string' && cfg.orderHoldingContainer.trim()
         ? cfg.orderHoldingContainer.trim()
         : 'orders',
-    qualityContainerMap: parseQualityContainerMap(cfg.qualityContainerMap),
+    qualityContainerMap: parseQualityContainerMapMemo(cfg.qualityContainerMap),
     debug: cfg.debug === true,
     hudSlot: hudSlot === 'hud.bottomStrip' || hudSlot === 'hud.rightColumn' || hudSlot === 'none'
       ? hudSlot
@@ -722,7 +747,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
           ? activeOrder
             ? `working on order ${activeOrder.id}`
             : 'working on orders'
-          : `improving ${activeCraftTypeRow?.label ?? cfg.activeCraftType}`,
+          : `improving ${activeCraftTypeRow?.label ?? '?'}`,
     });
 
     api.setHudWidget(targetSlot, content);
@@ -744,8 +769,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
       const orderRecipe = ORDER_ITEM_RECIPES[activeOrder.itemName];
       return orderRecipe ? { outputName: activeOrder.itemName, components: orderRecipe.components } : null;
     }
-    if (trackedSkillLevel == null) return null;
-    const row = tierForSkill(cfg.activeCraftType, trackedSkillLevel, cfg.tierTable);
+    if (trackedSkillLevel == null || !activeCraftTypeRow) return null;
+    const row = tierForSkill(activeCraftTypeRow.id, trackedSkillLevel, cfg.tierTable);
     return row ? tierRowToRecipe(row) : null;
   }
 
@@ -991,7 +1016,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
           scoreTimer = null;
         }
         trackedSkillLevel = level;
-        setTrackedSkillLevel(characterKey(), cfg.activeCraftType, level);
+        if (activeCraftTypeRow) setTrackedSkillLevel(characterKey(), activeCraftTypeRow.id, level);
         publishHud(api, cfg);
         beginPullCycle(api);
       }
@@ -1010,7 +1035,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
       const improved = matchSkillImproved(line);
       if (improved != null) {
         trackedSkillLevel = improved;
-        setTrackedSkillLevel(characterKey(), activeCraftTypeRow?.id ?? cfg.activeCraftType, improved);
+        if (activeCraftTypeRow) setTrackedSkillLevel(characterKey(), activeCraftTypeRow.id, improved);
         if (session) session.skillGains += 1;
         publishHud(api, cfg);
       }
@@ -1144,9 +1169,10 @@ export function createCraftingHelperPlugin(): IPluginModule {
     const lower = trimmed.toLowerCase();
 
     if (lower === 'crafthelper' || lower === 'crafthelper help') return handleHelp(api);
-    if (lower === 'crafthelper start') return handleImproveStart(api);
-    if (lower === 'crafthelper stop') return handleStop(api);
-    if (lower === 'crafthelper status') return handleStatus(api);
+    const improveStartMatch = trimmed.match(/^crafthelper improve\s+(\S+)\s+start$/i);
+    if (improveStartMatch) return handleImproveStart(api, improveStartMatch[1]);
+    if (lower === 'crafthelper improve stop') return handleStop(api);
+    if (lower === 'crafthelper improve status') return handleStatus(api);
 
     const addMatch = trimmed.match(/^crafthelper order add\s+(\d+)\s+'([^']+)'\s+(\S+)$/i);
     if (addMatch) return handleOrderAdd(api, addMatch);
@@ -1182,10 +1208,12 @@ export function createCraftingHelperPlugin(): IPluginModule {
         'Stand wherever your vault and crafting station both are before starting either.',
         '',
         '{Y-- Improving a skill --{x',
-        helpCmd('crafthelper start', 'start training the active craft type'),
-        helpCmd('crafthelper stop', 'finish the current step, then stop'),
-        helpCmd('crafthelper status', 'show state, skill level, session stats'),
-        '  (Active craft type and its tier table are set in the plugin config.)',
+        helpCmd('crafthelper improve spellcraft start', 'start training Spellcrafting'),
+        helpCmd('crafthelper improve tailor start', 'start training Tailoring'),
+        helpCmd('crafthelper improve stop', 'finish the current step, then stop'),
+        helpCmd('crafthelper improve status', 'show state, skill level, session stats'),
+        '  (Craft type is either its verb, e.g. "spellcraft", or its config id, e.g.',
+        '  "spellcrafting" — see the Craft types config for every craft type.)',
         '',
         '{Y-- Managing orders --{x',
         helpCmd("crafthelper order add 6 'diamond gem pain' 97+", 'queue 6, quality 97 or higher'),
@@ -1205,7 +1233,17 @@ export function createCraftingHelperPlugin(): IPluginModule {
     return true;
   }
 
-  function handleImproveStart(api: PluginRuntimeApi): boolean {
+  /**
+   * Resolves a typed craft-type token against either its id or its verb,
+   * case-insensitively — `crafthelper improve spellcraft start` (the verb)
+   * reads more naturally than the id ("spellcrafting"), so both work.
+   */
+  function resolveCraftType(cfg: EngineConfig, token: string): CraftTypeRow | null {
+    const lower = token.toLowerCase();
+    return cfg.craftTypes.find((t) => t.id === lower || t.verb.toLowerCase() === lower) ?? null;
+  }
+
+  function handleImproveStart(api: PluginRuntimeApi, craftTypeToken: string): boolean {
     const cfg = readConfig(api);
     if (releaseTimer) {
       writeInfo(api, 'Still returning materials to the vault — try again in a moment.');
@@ -1216,9 +1254,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
       return true;
     }
 
-    const typeRow = cfg.craftTypes.find((t) => t.id === cfg.activeCraftType);
+    const typeRow = resolveCraftType(cfg, craftTypeToken);
     if (!typeRow) {
-      writeError(api, `Unknown active craft type "${cfg.activeCraftType}" — check the Craft types config.`);
+      writeError(api, `Unknown craft type "${craftTypeToken}" — check the Craft types config.`);
       return true;
     }
 
@@ -1239,7 +1277,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
 
     // Best-known value until `score` confirms it — score is always sent
     // and awaited before any craft command, so this is display-only.
-    trackedSkillLevel = getTrackedSkillLevel(characterKey(), cfg.activeCraftType);
+    trackedSkillLevel = getTrackedSkillLevel(characterKey(), typeRow.id);
 
     state = 'awaiting_score';
     publishHud(api, cfg);
@@ -1377,7 +1415,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
         `queueDepth=${getOrderQueue(characterKey()).length}`,
       );
     } else {
-      parts.push(`craftType=${activeCraftTypeRow?.label ?? cfg.activeCraftType}`, `skill=${trackedSkillLevel ?? '?'}`);
+      parts.push(`craftType=${activeCraftTypeRow?.label ?? '?'}`, `skill=${trackedSkillLevel ?? '?'}`);
     }
     parts.push(`item=${activeRecipe?.outputName ?? '?'}`);
 
@@ -1402,16 +1440,15 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.11.0',
+      version: '0.12.0',
       description:
-        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. All five craft skills' training tiers are complete (the last trinket in each carries skill to the 1001 cap). The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status. To queue an order: `crafthelper order add <qty> '<item name>' <quality-spec>`, e.g. `crafthelper order add 6 'diamond gem pain' 97+` (quality-spec: `97+` at least, `99` exact, or `95-98` a range; item name must match a known order recipe).",
+        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. All five craft skills' training tiers are complete (the last trinket in each carries skill to the 1001 cap). The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Type `crafthelper` (no arguments) for full in-game command help. Commands: crafthelper improve <craftType> start / improve stop/status, crafthelper order add/list/remove/start/stop/status.",
     },
 
     configSchema: {
       defaults: {
         craftTypes: DEFAULT_CRAFT_TYPES_CONFIG,
         tierTable: DEFAULT_TIER_TABLE_CONFIG,
-        activeCraftType: 'spellcrafting',
         commandPacingDelayMs: 150,
         pullConfirmTimeoutMs: 200,
         scoreResponseTimeoutMs: 1000,
@@ -1437,13 +1474,6 @@ export function createCraftingHelperPlugin(): IPluginModule {
           description:
             'One row per trinket: "<craftTypeId> | <skill threshold> | <trinket name> | <components as name:qty, name:qty, ...>". The highest tier you currently qualify for is always used.',
           placeholder: 'spellcrafting | 1 | obsidian gemstone | uncut obsidian stone:1',
-        },
-        {
-          key: 'activeCraftType',
-          type: 'string',
-          label: 'Active craft type',
-          description: 'Which "Craft types" row id is currently being trained.',
-          placeholder: 'spellcrafting',
         },
         {
           key: 'commandPacingDelayMs',

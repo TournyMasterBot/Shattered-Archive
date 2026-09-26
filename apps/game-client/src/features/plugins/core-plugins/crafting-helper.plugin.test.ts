@@ -551,7 +551,6 @@ function defaultConfig(overrides: Record<string, unknown> = {}) {
   return {
     craftTypes: DEFAULT_CRAFT_TYPES_CONFIG,
     tierTable: DEFAULT_TIER_TABLE_CONFIG,
-    activeCraftType: 'spellcrafting',
     commandPacingDelayMs: 100,
     pullConfirmTimeoutMs: 200,
     scoreResponseTimeoutMs: 200,
@@ -591,9 +590,9 @@ describe('crafting-helper state machine', () => {
 
     const help = mock.terminalWrites[0];
     expect(help).toContain('Crafting Helper');
-    expect(help).toContain('crafthelper start');
-    expect(help).toContain('crafthelper stop');
-    expect(help).toContain('crafthelper status');
+    expect(help).toContain('crafthelper improve spellcraft start');
+    expect(help).toContain('crafthelper improve stop');
+    expect(help).toContain('crafthelper improve status');
     expect(help).toContain('crafthelper order add');
     expect(help).toContain('crafthelper order list');
     expect(help).toContain('crafthelper order remove');
@@ -621,7 +620,7 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     expect(mock.sent).toEqual(['score']);
 
     mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
@@ -636,7 +635,7 @@ describe('crafting-helper state machine', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
     jest.advanceTimersByTime(200);
 
@@ -651,7 +650,7 @@ describe('crafting-helper state machine', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
     jest.advanceTimersByTime(200);
     const sentSoFar = mock.sent.length;
@@ -667,7 +666,7 @@ describe('crafting-helper state machine', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
     jest.advanceTimersByTime(200);
     const sentSoFar = mock.sent.length;
@@ -737,7 +736,7 @@ describe('crafting-helper state machine', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
 
     mock.feedLine('I see nothing like that in the vault.');
@@ -752,7 +751,7 @@ describe('crafting-helper state machine', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
     jest.advanceTimersByTime(200); // pullConfirmTimeoutMs elapses -> craft sent
     expect(mock.sent[mock.sent.length - 1]).toBe("craft spellcraft 'diamond gemstone'");
@@ -774,7 +773,7 @@ describe('crafting-helper state machine', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
     jest.advanceTimersByTime(200); // craft sent
     expect(mock.sent[mock.sent.length - 1]).toBe("craft spellcraft 'diamond gemstone'");
@@ -785,7 +784,7 @@ describe('crafting-helper state machine', () => {
     expect(mock.sent).toEqual([...sentSoFar, "put 1 'uncut diamond stone' vault"]); // materials returned, nothing else
     expect(mock.terminalWrites.some((w) => w.includes('interrupted'))).toBe(true);
 
-    plugin.onAlias!(mock.api, 'crafthelper start'); // idle again, so start is accepted
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start'); // idle again, so start is accepted
     expect(mock.sent[mock.sent.length - 1]).toBe('score');
   });
 
@@ -793,11 +792,11 @@ describe('crafting-helper state machine', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
     jest.advanceTimersByTime(200); // craft sent, material in hand
 
-    plugin.onAlias!(mock.api, 'crafthelper stop');
+    plugin.onAlias!(mock.api, 'crafthelper improve stop');
     mock.feedLine('You failed but did not lose any materials.');
     jest.advanceTimersByTime(5000);
 
@@ -833,11 +832,11 @@ describe('crafting-helper state machine', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
     jest.advanceTimersByTime(200); // craft sent
 
-    plugin.onAlias!(mock.api, 'crafthelper stop');
+    plugin.onAlias!(mock.api, 'crafthelper improve stop');
     mock.feedLine('You were successful.'); // consumed; trinket stored, then stop at next checkpoint
     jest.advanceTimersByTime(5000);
 
@@ -848,13 +847,13 @@ describe('crafting-helper state machine', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
     jest.advanceTimersByTime(200);
     mock.feedLine('You stop crafting.'); // release timer now pending
 
     const before = mock.sent.length;
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     expect(mock.sent.length).toBe(before); // no `score`
     expect(mock.terminalWrites.some((w) => w.includes('Still returning materials'))).toBe(true);
   });
@@ -863,7 +862,7 @@ describe('crafting-helper state machine', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
     jest.advanceTimersByTime(200); // now crafting
     const sentSoFar = [...mock.sent];
@@ -881,7 +880,7 @@ describe('crafting-helper state machine', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
 
     jest.advanceTimersByTime(200); // scoreResponseTimeoutMs
     expect(mock.sent).toEqual(['score']); // no get ever sent
@@ -891,7 +890,7 @@ describe('crafting-helper state machine', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     mock.feedLine('Craftskill: 120     Craft Rank: Journeyman Spellcrafter');
     jest.advanceTimersByTime(200);
     expect(mock.sent[mock.sent.length - 1]).toBe("craft spellcraft 'obsidian gemstone'");
@@ -928,7 +927,7 @@ describe('crafting-helper state machine', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
     jest.advanceTimersByTime(200);
     expect(mock.hudWrites[mock.hudWrites.length - 1].content?.value).toBe(
@@ -952,7 +951,7 @@ describe('crafting-helper state machine', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
     jest.advanceTimersByTime(200); // craft sent
 
@@ -973,7 +972,7 @@ describe('crafting-helper state machine', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
     jest.advanceTimersByTime(200); // pull confirm -> craft sent
 
@@ -992,11 +991,11 @@ describe('crafting-helper state machine', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
     jest.advanceTimersByTime(200);
 
-    plugin.onAlias!(mock.api, 'crafthelper stop');
+    plugin.onAlias!(mock.api, 'crafthelper improve stop');
     mock.feedLine('You were successful.');
     expect(mock.sent).toContain("put 1 'diamond gemstone' vault"); // in-flight step still completes
 
@@ -1010,23 +1009,32 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, 'crafthelper stop');
+    plugin.onAlias!(mock.api, 'crafthelper improve stop');
     expect(mock.sent).toEqual([]);
 
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     const afterFirstStart = [...mock.sent];
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     expect(mock.sent).toEqual(afterFirstStart);
   });
 
-  it('fails cleanly with no commands sent when activeCraftType is not in craftTypes', () => {
-    const mock = createMockApi(defaultConfig({ activeCraftType: 'jewelcrafting' }));
+  it('fails cleanly with no commands sent for an unknown craft type token', () => {
+    const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve jewelcrafting start');
     expect(mock.sent).toEqual([]);
-    expect(mock.terminalWrites.some((w) => w.includes('Unknown active craft type'))).toBe(true);
+    expect(mock.terminalWrites.some((w) => w.includes('Unknown craft type'))).toBe(true);
+  });
+
+  it('resolves a craft type by its verb as well as its config id', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start'); // verb, not id
+    expect(mock.sent).toEqual(['score']);
   });
 
   it('publishes a HUD widget and clears it on disable', () => {
@@ -1034,7 +1042,7 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     const cleanup = plugin.onEnable!(mock.api) as () => void;
 
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     expect(mock.hudWrites[mock.hudWrites.length - 1].content?.value).toContain('checking score');
 
     cleanup();
@@ -1049,11 +1057,11 @@ describe('crafting-helper state machine', () => {
   });
 
   it('blunt weapons (shipped default): pulls all 3 components at the lowest tier before crafting', () => {
-    const mock = createMockApi(defaultConfig({ activeCraftType: 'blunt-weapons' }));
+    const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve blunt-weapons start');
     mock.feedLine('Craftskill: 1     Craft Rank: Novice Weaponsmith (Blunt)');
     expect(mock.sent).toEqual(['score', "get 2 'bronze bar' vault"]);
 
@@ -1066,11 +1074,11 @@ describe('crafting-helper state machine', () => {
   });
 
   it('sharp weapons (shipped default): escalates to the next material tier at its threshold', () => {
-    const mock = createMockApi(defaultConfig({ activeCraftType: 'sharp-weapons' }));
+    const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve sharp-weapons start');
     // Skill 74 is exactly the threshold for "sharp bronze trinket" (the highest
     // bronze-tier row) — confirms the score line for Sharp doesn't collide with
     // the shared "Weaponsmith" substring in a Blunt score line.
@@ -1082,11 +1090,11 @@ describe('crafting-helper state machine', () => {
   });
 
   it('armor crafting (shipped default): pulls all 3 components at the top tier before crafting', () => {
-    const mock = createMockApi(defaultConfig({ activeCraftType: 'armor-crafting' }));
+    const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, 'crafthelper start');
+    plugin.onAlias!(mock.api, 'crafthelper improve armor-crafting start');
     mock.feedLine('Craftskill: 1001    Craft Rank: Legendary Grand Master Armorcrafter');
     expect(mock.sent).toEqual(['score', "get 2 'netherium bar' vault"]);
 
