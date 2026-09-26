@@ -14,22 +14,56 @@ import { MAX_LEVEL, getLevelProgress, subscribeLevelProgress } from '../../charD
  *
  *     exp_per_level = (exp total + exp to level) / (level + 1)
  *
- * It is constant for a character, so it is fetched ONCE, saved per character
- * name, and never asked for again.
+ * It is constant for a character UNTIL a reclass or retrain changes it — DSL
+ * has both (unlike vanilla ROM, which has neither): reclass keeps half your
+ * played hours, retrain is free and can be done live at a trainer with no
+ * relogin required. Confirmed with real numbers, not just mechanic existence
+ * — GameLog-DSL_2023-05-0{1,2,8}, an example character: level 1 Warrior (XP 3600,
+ * tnl 3600) and level 45→46 Warrior (XP 163330→167444, tnl 2270→1756) both
+ * give exp_per_level = 3600; a reclass to level 25 Ranger the same week gives
+ * exp_per_level = 1,000,000 — a 278x swing from the SAME character, one
+ * class-only change. No source access to DSL's own exp formula, so this
+ * plugin can only react to evidence, never derive the new constant without
+ * asking `worth` again. So a learned value is trusted until one of two things
+ * contradicts it:
  *
- * Deliberately NOT an always-on matcher: no text listener exists until a fetch
- * is in flight. The `worth` reply is only looked for between sending the
- * command and getting it (or a short timeout), then the raw-data subscription
- * is disposed. Outside that window the plugin only handles small structured
- * events (login, char_data, connection close) — numeric compares, no regexes.
+ *   - At login, the freshly reported level is BELOW the level we last
+ *     confirmed at (a retrain rewound levels), or the character's known class
+ *     (from the score-sheet identity scan, world-time-and-identity.plugin.ts
+ *     — GMCP has no class field) no longer matches what we confirmed with (a
+ *     reclass). Class isn't known synchronously at login (that scan rearms on
+ *     login and only refills on the next `score`/`sc`), so this half of the
+ *     check runs whenever a fresh class arrives, not just at login.
+ *   - Mid-session, a char_data tnl arrives LARGER than the confirmed
+ *     exp-per-level — impossible if the stored value were still correct, so
+ *     this is what actually catches a live retrain (no relogin to hook).
+ *
+ * Either one drops the stored value and hands back exactly one fresh
+ * auto-fetch attempt — the same per-session budget used for "never learned
+ * yet", not a separate counter, so a run of bad luck can't spam `worth`.
+ *
+ * `worth` isn't the only source: world-time-and-identity.plugin.ts's
+ * score-sheet scan ALSO reads level/XP/XP-To-Level (same command, same
+ * moment, same computeExpPerLevel formula) and announces them on
+ * shatteredarchive:score-sheet-exp every time the player runs `score`/`sc` on
+ * their own — free, no `worth` needed. That confirmation always wins over
+ * whatever was stored (it's a full re-derivation, not a staleness guess) and
+ * cancels a now-redundant in-flight auto-fetch.
+ *
+ * Deliberately NOT an always-on matcher for `worth`, though: no text listener
+ * exists until a fetch is in flight. The `worth` reply is only looked for
+ * between sending the command and getting it (or a short timeout), then the
+ * raw-data subscription is disposed. Outside that window the plugin only
+ * handles small structured events (login, char_data, identity updates,
+ * score-sheet exp, connection close) — numeric/string compares, no regexes.
  *
  * The result is announced on `shatteredarchive:exp-per-level`; the HUD store
  * uses it as the exact span and falls back to its high-water estimate when
- * this plugin is off or has not learned the value yet.
+ * this plugin is off, has not learned the value yet, or just distrusted it.
  */
 
-const STORAGE_KEY = 'shatteredarchive:exp-per-level:v1';
-const FETCH_TIMEOUT_MS = 10_000;
+const STORAGE_KEY = 'shatteredarchive:exp-per-level:v2';
+const FETCH_TIMEOUT_MS = 20_000;
 
 // Line-anchored so chat that merely quotes "Exp Total : 5" can't match.
 // Only ever executed while a fetch is in flight (see parseWorth's callers).
@@ -60,6 +94,9 @@ export function computeExpPerLevel(level: number, expTotal: number, tnl: number)
   return sum / divisor;
 }
 
+/** What's cached per character: the confirmed span plus the level/class it was confirmed at. */
+type StoredEntry = { expPerLevel: number; level: number; className: string | null };
+
 function readStore(): Record<string, unknown> {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
@@ -69,17 +106,31 @@ function readStore(): Record<string, unknown> {
   }
 }
 
-function readStored(name: string): number | null {
+function readStored(name: string): StoredEntry | null {
   const store = readStore();
   if (!Object.prototype.hasOwnProperty.call(store, name)) return null;
-  const v = store[name];
-  return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;
+  const v = store[name] as Partial<StoredEntry> | undefined;
+  if (
+    !v ||
+    typeof v.expPerLevel !== 'number' ||
+    !Number.isFinite(v.expPerLevel) ||
+    v.expPerLevel <= 0 ||
+    typeof v.level !== 'number' ||
+    !Number.isFinite(v.level)
+  ) {
+    return null;
+  }
+  return {
+    expPerLevel: v.expPerLevel,
+    level: v.level,
+    className: typeof v.className === 'string' ? v.className : null,
+  };
 }
 
-function writeStored(name: string, value: number): void {
+function writeStored(name: string, entry: StoredEntry): void {
   try {
     const store = readStore();
-    store[name] = value;
+    store[name] = entry;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
   } catch {
     // ignore (private mode / quota)
@@ -96,7 +147,7 @@ export function createLevelProgressPlugin(): IPluginModule {
       name: 'Level Progress',
       version: '0.1.0',
       description:
-        'Learns how much exp one level costs for your character (one `worth` command, once, saved per character) so the compact HUD EXP bar is exact from the first packet. Without it the bar falls back to an estimate.',
+        'Learns how much exp one level costs for your character (one `worth` command, saved per character) so the compact HUD EXP bar is exact from the first packet. Re-learns automatically after a retrain or reclass. Without it the bar falls back to an estimate. Two manual actions available if you need to reconcile who the client thinks you are: "Re-fetch now" (worth) and "Check score" (score — can re-establish name/level/class/race too).',
     },
 
     configSchema: {
@@ -105,9 +156,9 @@ export function createLevelProgressPlugin(): IPluginModule {
         {
           key: 'autoFetch',
           type: 'boolean',
-          label: 'Fetch automatically (once per session)',
+          label: 'Fetch automatically',
           description:
-            'When a character has no saved value, send `worth` once after login to learn it. Never repeats for a character that already has one. Turn off to fetch only with the button below.',
+            'When a character has no trusted saved value — including right after a retrain/reclass invalidates one — send `worth` once to (re)learn it. Turn off to fetch only with the button below.',
         },
       ],
       actions: [
@@ -115,6 +166,12 @@ export function createLevelProgressPlugin(): IPluginModule {
           key: 'refetch',
           label: 'Re-fetch now (worth)',
           description: 'Sends `worth` once and replaces the saved value — e.g. after a reclass.',
+        },
+        {
+          key: 'check-score',
+          label: 'Check score',
+          description:
+            'Sends `score` — with World Time & Identity also enabled, this can re-establish your name/level/class/race too, not just exp-per-level. Use this if the game ever failed to tell the client who you are.',
         },
       ],
     },
@@ -125,8 +182,9 @@ export function createLevelProgressPlugin(): IPluginModule {
       const offStore = subscribeLevelProgress(() => {});
 
       let name: string | null = null;
-      let stored: number | null = null;
-      let autoAttempted = false; // once per session, shared by "no value yet" and "looks stale"
+      let stored: StoredEntry | null = null;
+      let knownClassName: string | null = null;
+      let autoAttempted = false; // one shot; handed back by distrust() below
 
       let armed = false;
       let fetchName: string | null = null;
@@ -147,11 +205,36 @@ export function createLevelProgressPlugin(): IPluginModule {
         }
       };
 
-      const setCharacter = (next: string | null) => {
+      /** Drops the stored value, hands back one fresh auto-fetch attempt, and takes it. */
+      const distrust = (reason: string) => {
+        if (stored === null || name === null) return;
+        stored = null;
+        autoAttempted = false;
+        api.log(`Exp-per-level looks stale (${reason}) — re-learning it.`);
+        announce(name, null);
+        tryAutoFetch();
+      };
+
+      /** Compares the trusted value against what's known NOW; drops it if contradicted. */
+      const checkStillTrusted = (currentLevel: number | null) => {
+        if (stored === null || name === null) return;
+        if (currentLevel !== null && currentLevel < stored.level) {
+          distrust(`level ${currentLevel} is below the ${stored.level} it was learned at`);
+          return;
+        }
+        if (knownClassName !== null && stored.className !== null && knownClassName !== stored.className) {
+          distrust(`class is now ${knownClassName}, was ${stored.className}`);
+        }
+      };
+
+      const setCharacter = (next: string | null, loginLevel: number | null) => {
         if (next === name) return;
         name = next;
         stored = next ? readStored(next) : null;
-        if (next && stored !== null) announce(next, stored);
+        if (next && stored !== null) {
+          checkStillTrusted(loginLevel);
+          if (stored !== null) announce(next, stored.expPerLevel);
+        }
       };
 
       const finish = () => {
@@ -165,15 +248,16 @@ export function createLevelProgressPlugin(): IPluginModule {
             ? computeExpPerLevel(level, expTotal, tnl)
             : null;
 
-        if (value === null || forName === null || forName !== name) {
+        if (value === null || level === null || forName === null || forName !== name) {
           api.log(
             `Unexpected worth values (exp ${expTotal}, to level ${tnl}, level ${level}) — keeping the estimated bar.`,
           );
           return;
         }
 
-        writeStored(forName, value);
-        stored = value;
+        const entry: StoredEntry = { expPerLevel: value, level, className: knownClassName };
+        writeStored(forName, entry);
+        stored = entry;
         announce(forName, value);
       };
 
@@ -213,17 +297,85 @@ export function createLevelProgressPlugin(): IPluginModule {
         startFetch();
       };
 
-      // Pick up a character that logged in before this plugin was enabled.
+      // Pick up a character that logged in (and was already identified)
+      // before this plugin was enabled.
       try {
-        const snap = (window as any).__SA_EVENT_SNAPSHOTS__?.['game:character-login'];
-        if (typeof snap?.name === 'string') setCharacter(snap.name);
+        const identitySnap = (window as any).__SA_IDENTITY__;
+        if (typeof identitySnap?.className === 'string') knownClassName = identitySnap.className;
+
+        const loginSnap = (window as any).__SA_EVENT_SNAPSHOTS__?.['game:character-login'];
+        if (typeof loginSnap?.name === 'string') {
+          const lvl =
+            typeof loginSnap?.level === 'number' && Number.isFinite(loginSnap.level) ? loginSnap.level : null;
+          setCharacter(loginSnap.name, lvl);
+        }
       } catch {
         // ignore
       }
 
       const offLogin = api.onEvent('game:character-login', (payload) => {
         const next = (payload as any)?.name;
-        setCharacter(typeof next === 'string' ? next : null);
+        const lvl = (payload as any)?.level;
+        const parsedNext = typeof next === 'string' ? next : null;
+        // A real login (not the enable-time catch-up above): the new
+        // character's class is unknown until the score-sheet scan reports
+        // one, whatever the previous character's class happened to be.
+        if (parsedNext !== name) knownClassName = null;
+        setCharacter(parsedNext, typeof lvl === 'number' && Number.isFinite(lvl) ? lvl : null);
+      });
+
+      // The score-sheet identity scan (world-time-and-identity.plugin.ts) is
+      // this character's only source of class — no GMCP equivalent exists.
+      // It rearms on every login and only refills on the next `score`/`sc`,
+      // so this fires independently of (and normally after) login.
+      const offIdentity = api.onEvent('shatteredarchive:identity-updated', (payload) => {
+        const cn = (payload as any)?.className;
+        if (typeof cn !== 'string') return;
+        knownClassName = cn;
+        checkStillTrusted(getLevelProgress().level);
+      });
+
+      // A free, self-contained confirmation every time the player runs
+      // `score`/`sc` on their own — world-time-and-identity.plugin.ts reads
+      // level/XP/XP-To-Level off the SAME command, so there's no cross-source
+      // staleness the way there is between GMCP's tnl and a separately-tracked
+      // level. Treated exactly like a resolved `worth` fetch: it replaces
+      // whatever was stored (even a value that still looked trustworthy) and
+      // cancels a now-redundant in-flight auto-fetch.
+      const offScoreExp = api.onEvent('shatteredarchive:score-sheet-exp', (payload) => {
+        const p = payload as { characterName?: unknown; level?: unknown; xp?: unknown; xpToLevel?: unknown };
+        if (typeof p.characterName !== 'string') return;
+
+        if (name === null) {
+          // Self-heal: game:character-login was missed for this character
+          // (confirmed live 2026-09-26 — a mid-session character switch
+          // while GMCP happened to be disabled; re-enabling GMCP afterward
+          // does not retroactively resend login_data) — a single sc/score
+          // is enough to fully establish identity on its own, not just
+          // refresh an already-known one. No need to read/trust any old
+          // cached value here; it's overwritten below from this same
+          // complete reading regardless.
+          name = p.characterName;
+        } else if (p.characterName !== name) {
+          return; // a different character's reading — not for us
+        }
+        const forName = name;
+
+        if (typeof p.level !== 'number' || typeof p.xp !== 'number' || typeof p.xpToLevel !== 'number') return;
+
+        const value = computeExpPerLevel(p.level, p.xp, p.xpToLevel);
+        if (value === null) {
+          api.log(`Unexpected score values (xp ${p.xp}, to level ${p.xpToLevel}, level ${p.level}) — ignoring.`);
+          return;
+        }
+
+        if (armed) disarm(); // the score reply already answered what worth was waiting for
+        autoAttempted = true;
+
+        const entry: StoredEntry = { expPerLevel: value, level: p.level, className: knownClassName };
+        writeStored(forName, entry);
+        stored = entry;
+        announce(forName, value);
       });
 
       const offCharData = api.onEvent('game:char-data', (payload) => {
@@ -232,9 +384,11 @@ export function createLevelProgressPlugin(): IPluginModule {
 
         if (stored === null) {
           tryAutoFetch();
-        } else if (tnl > stored) {
-          // Impossible if `stored` were right: a level can't be more than one span away.
-          tryAutoFetch();
+        } else if (tnl > stored.expPerLevel) {
+          // Impossible if `stored` were still right: a level can't cost more
+          // exp than the value we confirmed it at. A live retrain (no
+          // relogin needed in DSL) is the expected cause.
+          distrust(`char_data tnl ${tnl} exceeds the confirmed ${stored.expPerLevel}`);
         }
       });
 
@@ -243,23 +397,41 @@ export function createLevelProgressPlugin(): IPluginModule {
         autoAttempted = false;
         name = null;
         stored = null;
+        knownClassName = null;
       });
 
+      // Deliberately NOT gated on canFetch(): the user may be pressing this
+      // specifically to try to reconcile who they are (e.g. after the exact
+      // self-heal scenario checkStillTrusted/offScoreExp above exist for —
+      // login_data missed entirely). Blocking the button with "log in
+      // first" is unhelpful right when they're trying to fix that. If
+      // identity genuinely isn't known, the reply still can't be attributed
+      // to anyone (worth's own text carries no name or level) and finish()
+      // reports that plainly once the reply arrives, rather than refusing
+      // to even try up front. "Check score" below is the button that can
+      // actually resolve an unknown identity on its own.
       api.registerAction('refetch', () => {
         if (armed) {
           api.log('Already waiting for a "worth" reply.');
           return;
         }
-        if (!canFetch()) {
-          api.log('Log in with a character below the max level first, then try again.');
-          return;
-        }
         startFetch();
+      });
+
+      // `score`'s own reply carries name/level/class/race/XP all at once —
+      // unlike `worth`, this alone can fully resolve an unknown identity
+      // (e.g. game:character-login was missed). Requires the World Time &
+      // Identity plugin also enabled to actually capture the reply; sent
+      // either way since this plugin has no way to check that.
+      api.registerAction('check-score', () => {
+        api.sendCommand('score');
       });
 
       return () => {
         disarm();
         offLogin();
+        offIdentity();
+        offScoreExp();
         offCharData();
         offClose();
         offStore();
