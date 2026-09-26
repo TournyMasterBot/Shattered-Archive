@@ -506,11 +506,16 @@ export function parseQualityContainerMap(raw: unknown): QualityContainerRow[] {
   return rows;
 }
 
-export function containerForQuality(quality: number, rows: QualityContainerRow[]): string {
+/** The mapped container for a quality, or null if no row covers it. */
+export function matchQualityContainer(quality: number, rows: QualityContainerRow[]): string | null {
   for (const row of rows) {
     if (quality >= row.min && quality <= row.max) return row.container;
   }
-  return 'vault';
+  return null;
+}
+
+export function containerForQuality(quality: number, rows: QualityContainerRow[]): string {
+  return matchQualityContainer(quality, rows) ?? 'vault';
 }
 
 // ── Line matchers (applied per-line, after stripAnsi + split('\n') + trim —
@@ -809,9 +814,17 @@ export function createCraftingHelperPlugin(): IPluginModule {
     const order = activeOrderRemoved ? null : activeOrder;
     const inSpec = order != null && qualityMatchesSpec(quality, order.qualitySpec);
 
+    // The quality map wins whenever it covers this quality, even for an item
+    // that also satisfies the active order — carving out a bracket (e.g.
+    // "flawless goes to orb") doesn't cost the order its credit, since
+    // whether this counts toward the order depends only on `inSpec` below,
+    // not on which container it physically lands in.
+    const mappedContainer = matchQualityContainer(quality, cfg.qualityContainerMap);
+    const container = mappedContainer ?? (inSpec ? cfg.orderHoldingContainer : 'vault');
+    api.sendCommand(`put 1 '${outputName}' ${container}`);
+
     if (inSpec && order) {
       if (orderSession) orderSession.inSpecRouted += 1;
-      api.sendCommand(`put 1 '${outputName}' ${cfg.orderHoldingContainer}`);
       const remaining = order.quantityRemaining - 1;
       if (remaining <= 0) {
         removeOrder(characterKey(), order.id);
@@ -824,8 +837,6 @@ export function createCraftingHelperPlugin(): IPluginModule {
       }
     } else {
       if (orderSession) orderSession.offSpecRouted += 1;
-      const container = containerForQuality(quality, cfg.qualityContainerMap);
-      api.sendCommand(`put 1 '${outputName}' ${container}`);
       if (activeOrderRemoved) {
         activeOrderRemoved = false;
         pacingTimer = setTimeout(() => advanceOrderQueue(api), cfg.commandPacingDelayMs);
@@ -1226,7 +1237,10 @@ export function createCraftingHelperPlugin(): IPluginModule {
         helpCmd('crafthelper order status', 'show the active order and queue depth'),
         '',
         "Item names must match a known recipe (case-insensitive) — see the plugin's",
-        'config panel description for the full list of covered crafts.',
+        'config panel description for the full list of covered crafts. A finished',
+        "item's quality decides where it's stored: a range covered by the Quality →",
+        'container map always wins, even if the item also satisfies the active order;',
+        "otherwise it's the order holding container (in spec) or vault (off spec).",
         '{x',
       ].join('\n') + '\n',
     );
@@ -1440,7 +1454,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.12.0',
+      version: '0.13.0',
       description:
         "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. All five craft skills' training tiers are complete (the last trinket in each carries skill to the 1001 cap). The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Type `crafthelper` (no arguments) for full in-game command help. Commands: crafthelper improve <craftType> start / improve stop/status, crafthelper order add/list/remove/start/stop/status.",
     },
@@ -1507,7 +1521,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
           key: 'orderHoldingContainer',
           type: 'string',
           label: 'Order holding container',
-          description: 'Where finished, in-spec order items are stored, ready for manual hand-off.',
+          description:
+            'Where a finished, in-spec order item is stored, ready for manual hand-off — used when its quality isn\'t covered by the map below.',
           placeholder: 'orders',
         },
         {
@@ -1515,7 +1530,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
           type: 'textarea',
           label: 'Quality → container map',
           description:
-            'One row per quality range for items that don\'t match the active order\'s spec: "<range or single value> | <container>". Unmapped qualities default to vault.',
+            'One row per quality range: "<range or single value> | <container>". A mapped quality always routes here, even for an item that also satisfies the active order — order credit still depends only on satisfying the spec, not on the container. Unmapped qualities go to the order holding container (in spec) or vault (off spec).',
           placeholder: '90-94 | common',
         },
         {

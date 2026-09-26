@@ -19,6 +19,7 @@ import {
   matchItemCondition,
   parseQualityContainerMap,
   containerForQuality,
+  matchQualityContainer,
   ORDER_ITEM_RECIPES,
 } from './crafting-helper.plugin';
 
@@ -353,6 +354,19 @@ describe('parseQualityContainerMap / containerForQuality', () => {
   it('falls back to vault for an unmapped quality', () => {
     const rows = parseQualityContainerMap('90-94 | common');
     expect(containerForQuality(99, rows)).toBe('vault');
+  });
+});
+
+describe('matchQualityContainer', () => {
+  it('returns the mapped container for a covered quality', () => {
+    const rows = parseQualityContainerMap('98-100 | orb\n95-97 | vault');
+    expect(matchQualityContainer(95, rows)).toBe('vault');
+    expect(matchQualityContainer(100, rows)).toBe('orb');
+  });
+
+  it('returns null (not a default) for an unmapped quality', () => {
+    const rows = parseQualityContainerMap('98-100 | orb');
+    expect(matchQualityContainer(50, rows)).toBeNull();
   });
 });
 
@@ -1214,6 +1228,50 @@ describe('crafting-helper state machine', () => {
 
     jest.advanceTimersByTime(100);
     expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'diamond gemstone' vault"); // tries again
+  });
+
+  it('a mapped quality wins over the order holding container even when the item is in-spec, and still counts toward the order', () => {
+    // Live report: order spec "90+" and a quality map with 95-97 -> vault,
+    // 98-100 -> orb. A 95% item satisfied the order (in spec) and went
+    // straight to the order holding container, never consulting the map —
+    // the map was fixed to always win for a quality it covers, while order
+    // credit still depends only on satisfying the spec, not the container.
+    const mock = createMockApi(
+      defaultConfig({ orderHoldingContainer: 'orders', qualityContainerMap: '98-100 | orb\n95-97 | vault' }),
+    );
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 2 'silksteel cloth helmet' 90+");
+    plugin.onAlias!(mock.api, 'crafthelper order start');
+    jest.advanceTimersByTime(200); // pull silksteel thread
+    jest.advanceTimersByTime(200); // pull silksteel cloth square
+    mock.feedLine('You were successful.');
+
+    mock.feedLine('Condition: excellent (95%)'); // satisfies 90+ AND falls in the 95-97 map row
+    expect(mock.sent).toContain("put 1 'silksteel cloth helmet' vault"); // mapped container wins, not "orders"
+    expect(mock.sent).not.toContain("put 1 'silksteel cloth helmet' orders");
+    expect(getOrderQueue('__unknown__')[0].quantityRemaining).toBe(1); // still counted toward the order
+
+    jest.advanceTimersByTime(100);
+    expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'silksteel thread' vault"); // same order continues
+  });
+
+  it('an unmapped in-spec quality still goes to the order holding container', () => {
+    const mock = createMockApi(
+      defaultConfig({ orderHoldingContainer: 'orders', qualityContainerMap: '98-100 | orb\n95-97 | vault' }),
+    );
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 90+");
+    plugin.onAlias!(mock.api, 'crafthelper order start');
+    jest.advanceTimersByTime(200);
+    jest.advanceTimersByTime(200);
+    mock.feedLine('You were successful.');
+
+    mock.feedLine('Condition: good (92%)'); // in spec, not covered by either map row
+    expect(mock.sent).toContain("put 1 'diamond gem pain' orders");
   });
 
   it('completing an order dequeues it and auto-advances to the next queued order', () => {
