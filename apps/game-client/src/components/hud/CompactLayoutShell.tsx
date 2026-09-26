@@ -70,7 +70,7 @@ export const CompactLayoutShell: React.FC<CompactLayoutShellProps> = ({
 
       <div className={`${styles.rightColumn} sa-hud-right-column`}>
         <div ref={chatPaneRef} className={`${styles.chatPane} sa-hud-chat-pane`}>
-          <ChatPane />
+          <ChatPane wrapPills />
         </div>
 
         <div className={styles.chatResizer} onMouseDown={handleChatResizeMouseDown} />

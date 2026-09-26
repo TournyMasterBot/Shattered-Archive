@@ -99,7 +99,7 @@ export const CompactLayoutShellNarrow: React.FC<HudShellBaseProps> = ({
       <div className={styles.tabContent}>
         {activeTab === 'chat' && (
           <div className={`${styles.chatPane} sa-hud-chat-pane`}>
-            <ChatPane />
+            <ChatPane wrapPills />
           </div>
         )}
 
