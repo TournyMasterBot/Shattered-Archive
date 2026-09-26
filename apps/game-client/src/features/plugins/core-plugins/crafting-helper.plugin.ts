@@ -1143,6 +1143,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     const trimmed = input.trim();
     const lower = trimmed.toLowerCase();
 
+    if (lower === 'crafthelper' || lower === 'crafthelper help') return handleHelp(api);
     if (lower === 'crafthelper start') return handleImproveStart(api);
     if (lower === 'crafthelper stop') return handleStop(api);
     if (lower === 'crafthelper status') return handleStatus(api);
@@ -1157,6 +1158,51 @@ export function createCraftingHelperPlugin(): IPluginModule {
     if (lower === 'crafthelper order status') return handleStatus(api);
 
     return undefined;
+  }
+
+  function helpCmd(cmd: string, desc: string): string {
+    const prefix = `  ${cmd}`;
+    // A command longer than the padding column wraps the description onto
+    // its own indented line instead of running the two together with no gap.
+    if (prefix.length >= 42) return `${prefix}\n${' '.repeat(44)}${desc}`;
+    return `${prefix.padEnd(44)}${desc}`;
+  }
+
+  function handleHelp(api: PluginRuntimeApi): boolean {
+    api.writeTerminal(
+      [
+        '{C=== Crafting Helper ==={x',
+        'Automates tier-3 crafting. Two modes, one loop underneath:',
+        '  {WImprove{x  — trains a craft skill: pulls the material(s) for the highest',
+        '              trinket tier your skill qualifies for, crafts it, stores it in',
+        '              the vault, and repeats — auto-escalating tiers as you level up.',
+        '  {WOrder{x    — fulfills queued requests for finished items (gems, tailoring',
+        '              goods, armor pieces, ...): pulls every named component, crafts,',
+        '              checks quality via `lore`, and routes the result by your spec.',
+        'Stand wherever your vault and crafting station both are before starting either.',
+        '',
+        '{Y-- Improving a skill --{x',
+        helpCmd('crafthelper start', 'start training the active craft type'),
+        helpCmd('crafthelper stop', 'finish the current step, then stop'),
+        helpCmd('crafthelper status', 'show state, skill level, session stats'),
+        '  (Active craft type and its tier table are set in the plugin config.)',
+        '',
+        '{Y-- Managing orders --{x',
+        helpCmd("crafthelper order add 6 'diamond gem pain' 97+", 'queue 6, quality 97 or higher'),
+        helpCmd("crafthelper order add 2 'silksteel cloth shirt' 95-98", 'queue 2, quality between 95 and 98'),
+        helpCmd("crafthelper order add 1 'arcanium chainmail helmet' 99", 'queue 1, quality exactly 99'),
+        helpCmd('crafthelper order list', 'list all queued orders'),
+        helpCmd('crafthelper order remove <id>', 'remove a queued order by id'),
+        helpCmd('crafthelper order start', 'start fulfilling the oldest queued order'),
+        helpCmd('crafthelper order stop', 'finish the current step, then stop'),
+        helpCmd('crafthelper order status', 'show the active order and queue depth'),
+        '',
+        "Item names must match a known recipe (case-insensitive) — see the plugin's",
+        'config panel description for the full list of covered crafts.',
+        '{x',
+      ].join('\n') + '\n',
+    );
+    return true;
   }
 
   function handleImproveStart(api: PluginRuntimeApi): boolean {
@@ -1356,7 +1402,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.10.4',
+      version: '0.11.0',
       description:
         "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. All five craft skills' training tiers are complete (the last trinket in each carries skill to the 1001 cap). The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Commands: crafthelper start/stop/status, crafthelper order add/list/remove/start/stop/status. To queue an order: `crafthelper order add <qty> '<item name>' <quality-spec>`, e.g. `crafthelper order add 6 'diamond gem pain' 97+` (quality-spec: `97+` at least, `99` exact, or `95-98` a range; item name must match a known order recipe).",
     },

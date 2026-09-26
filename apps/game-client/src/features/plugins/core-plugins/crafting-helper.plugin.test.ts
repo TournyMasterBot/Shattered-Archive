@@ -580,6 +580,42 @@ describe('crafting-helper state machine', () => {
     jest.useRealTimers();
   });
 
+  it('prints help text for the bare "crafthelper" command and for "crafthelper help"', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    expect(plugin.onAlias!(mock.api, 'crafthelper')).toBe(true);
+    expect(plugin.onAlias!(mock.api, 'crafthelper help')).toBe(true);
+    expect(mock.terminalWrites).toHaveLength(2);
+
+    const help = mock.terminalWrites[0];
+    expect(help).toContain('Crafting Helper');
+    expect(help).toContain('crafthelper start');
+    expect(help).toContain('crafthelper stop');
+    expect(help).toContain('crafthelper status');
+    expect(help).toContain('crafthelper order add');
+    expect(help).toContain('crafthelper order list');
+    expect(help).toContain('crafthelper order remove');
+    expect(help).toContain('crafthelper order start');
+    expect(help).toContain('crafthelper order stop');
+    expect(help).toContain('crafthelper order status');
+    expect(mock.terminalWrites[1]).toBe(help); // "crafthelper help" and bare "crafthelper" match
+  });
+
+  it('every order-add example in the help text names a real recipe', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, 'crafthelper');
+
+    const itemNames = [...mock.terminalWrites[0].matchAll(/order add \d+ '([^']+)'/g)].map((m) => m[1]);
+    expect(itemNames.length).toBeGreaterThan(0);
+    for (const name of itemNames) {
+      expect(ORDER_ITEM_RECIPES[name.toLowerCase()]).toBeDefined();
+    }
+  });
+
   it('runs the score → pull → craft happy path for a fresh character', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
