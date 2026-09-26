@@ -15,6 +15,16 @@
 // mid-level starts the bar empty and it only fills from that point, so it
 // under-reports until the next level.
 //
+// name/level normally come ONLY from game:character-login — but that event
+// can be missed entirely for a character (confirmed live 2026-09-26: a
+// mid-session character switch while GMCP was disabled means the server
+// never had a channel to send login_data through, and it does not
+// retroactively resend once GMCP is re-enabled). shatteredarchive:score-
+// sheet-exp (world-time-and-identity.plugin.ts's `sc`/`score` scan) gives
+// the same self-heal applyLogin does, from evidence in a score-sheet reply
+// instead — without it, the bar would stay permanently invisible
+// (visible requires a known level) for a character login never announced.
+//
 // Like tickStore/charDataStore this is a module-level singleton that keeps
 // listening with no subscribers: a live theme switch unmounts and remounts the
 // HUD, and a layout that never renders the bar must not miss a level-up.
@@ -137,6 +147,40 @@ function start(): void {
         publish();
       },
       { key: 'levelProgressStore::shatteredarchive:exp-per-level' },
+    ),
+
+    // Same self-heal as applyLogin, but triggered by evidence in a `score`/
+    // `sc` reply (world-time-and-identity.plugin.ts) instead of depending on
+    // game:character-login having fired at all — confirmed live 2026-09-26:
+    // a character switch while GMCP happened to be disabled means
+    // login_data never fires for the new character, even after GMCP is
+    // re-enabled later (`gmc`) — nothing else would ever tell this store a
+    // login happened.
+    ListenEvent<any>(
+      'shatteredarchive:score-sheet-exp',
+      (data) => {
+        const name = typeof data?.characterName === 'string' ? data.characterName : null;
+        const level = finiteNumber(data?.level);
+        if (name === null || level === null) return;
+
+        if (name !== state.name) {
+          const tnl = finiteNumber(data?.xpToLevel);
+          state = { name, level, tnl, span: tnl ?? 0 };
+          publish();
+          return;
+        }
+
+        if (level !== state.level) {
+          // The new level's true span is right here — seed it immediately
+          // instead of waiting for the next char_data tick to climb to it.
+          const tnl = finiteNumber(data?.xpToLevel);
+          state.level = level;
+          state.tnl = tnl;
+          state.span = tnl ?? 0;
+          publish();
+        }
+      },
+      { key: 'levelProgressStore::shatteredarchive:score-sheet-exp' },
     ),
 
     ListenEvent<any>(

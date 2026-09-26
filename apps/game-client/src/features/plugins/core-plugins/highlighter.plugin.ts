@@ -1,18 +1,34 @@
 // apps/game-client/src/features/plugins/core-plugins/highlighter.plugin.ts
 //
 // Colors player names by organization whenever they appear on configurable
-// trigger lines (e.g. who lists, farsight, scan, gossip).
+// trigger lines (e.g. who lists, farsight, scan) OR on a gossip/clan-gossip
+// chat line.
 //
 // Config textarea format (one rule per line):
 //   <regex pattern> | next    — color all following lines until blank/prompt
 //   <regex pattern> | line    — color names only on the matched line itself
 //
-// Defaults correspond to DSL_PNP_Highlighter.custom.lua trigger patterns.
+// Defaults correspond to DSL_PNP_Highlighter.custom.lua trigger patterns —
+// EXCEPT gossip, which used to be a `| line` rule here (and only ever
+// matched "clan gossips", never plain gossip) but is not something a
+// command arms: unlike who/farsight/scan, gossip is an unprompted broadcast
+// from another player, not a reply to anything the local player sent, so
+// there's no command to gate a scan on. Instead it rides the SAME detection
+// already running for the whole app regardless of whether this plugin is
+// enabled — shatteredarchive:chat-line (userScriptRuntime.ts's shared
+// chat-probe pass) + classifyStrictChatSubtype (the same classifier
+// runtimeSingleton.ts uses to route chat into the Chat pane) — rather than
+// this plugin re-testing every line against its own separate gossip regex.
+// The raw line still needs a registered omit pattern (GOSSIP_OMIT_PATTERN)
+// so the uncolored original doesn't also print — shouldOmitLine's checks
+// are pattern-based and run before shatteredarchive:chat-line is even
+// dispatched, so that part can't itself become event-driven.
 //
 // Status and team management is handled by the People plugin.
 
 import type { IPluginModule, PluginRuntimeApi } from '@shatteredarchive/types-client';
 import { stripAnsi } from '../../autoleveling/autoleveling-text';
+import { classifyStrictChatSubtype } from '../../chat/strict-chat-classifier';
 import { getPerson } from './peopleDb';
 
 // ── Organization → DSL color mapping ──────────────────────────────────
@@ -45,12 +61,22 @@ const DEFAULT_RULES = [
   '# Rules: <regex> | next  OR  <regex> | line',
   "# 'next' highlights all who-list lines that follow until a blank line or prompt.",
   "# 'line' highlights names within only the matched line.",
+  '# (Gossip/clan-gossip is handled separately, off the shared chat classifier —',
+  '#  not a rule here, so there is nothing to add or edit for it.)',
   '#',
   '^Players near you:$ | next',
   '^You quest out with your magic in search of others\\.$ | next',
   '^Looking around you see:$ | next',
-  "^[\\w']+ clan gossips '.*'$ | line",
 ].join('\n');
+
+// Omit-only — never user-edited. Broader than the old default rule it
+// replaces (that one only ever matched "clan gossips", never plain
+// "gossips"); needed purely to suppress the raw line before this plugin's
+// own shatteredarchive:chat-line-driven colorized replacement is written —
+// shouldOmitLine's checks are pattern-based, run before that event is even
+// dispatched, so the actual gossip/cgossip decision (classifyStrictChatSubtype)
+// can't drive this part.
+const GOSSIP_OMIT_PATTERN = "(^You (?:clan )?gossip '|\\bclan gossips '|\\bgossips ')";
 
 // ── Rule parsing ───────────────────────────────────────────────────────
 
@@ -150,7 +176,10 @@ export function createHighlighterPlugin(): IPluginModule {
   const SCAN_OMIT_RULES = [{ matchText: ', right here.' }, { matchText: ', nearby to the ' }];
 
   function buildOmitRules(currentRules: HighlightRule[], nextModeActive: boolean) {
-    const lineOmits = currentRules.filter((r) => r.kind === 'line').map((r) => ({ pattern: r.source }));
+    const lineOmits = [
+      { pattern: GOSSIP_OMIT_PATTERN },
+      ...currentRules.filter((r) => r.kind === 'line').map((r) => ({ pattern: r.source })),
+    ];
     if (!nextModeActive) return lineOmits;
     return [...lineOmits, WHO_LINE_OMIT, ...SCAN_OMIT_RULES];
   }
@@ -162,6 +191,7 @@ export function createHighlighterPlugin(): IPluginModule {
 
   function onEnable(api: PluginRuntimeApi): () => void {
     const cfg = api.getConfig();
+    const debug = cfg.debug === true;
     rules = parseRules(String(cfg.rules ?? DEFAULT_RULES));
     nextMode = false;
     api.registerOmitRules(buildOmitRules(rules, false));
@@ -173,12 +203,29 @@ export function createHighlighterPlugin(): IPluginModule {
       api.log('Highlight rules synced.');
     });
 
+    // Gossip/clan-gossip: rides the shared chat classifier instead of this
+    // plugin's own per-line regex loop below (see the file-header comment).
+    const offChat = api.onEvent('shatteredarchive:chat-line', (payload: any) => {
+      const rawText = String(payload?.rawText ?? payload?.text ?? '');
+      if (!rawText) return;
+
+      const subtype = classifyStrictChatSubtype(rawText);
+      if (subtype !== 'gossip' && subtype !== 'cgossip') return;
+
+      const plain = stripAnsi(rawText).replace(/\r/g, '').trim();
+      if (!plain) return;
+
+      const { result, changed } = colorizeText(plain);
+      if (debug && changed) api.log(`gossip colorized: "${plain}"`);
+      // Always write — the original is suppressed by GOSSIP_OMIT_PATTERN.
+      api.writeTerminal((changed ? result + '{x' : plain) + '\n');
+    });
+
     const off = api.onEvent('shatteredarchive:raw-data', (payload: any) => {
       const rawText = String(payload?.rawText ?? payload?.text ?? '');
       if (!rawText) return;
 
       const plain = stripAnsi(rawText).replace(/\r/g, '');
-      const debug = cfg.debug === true;
 
       for (const line of plain.split('\n')) {
         const t = line.trimEnd();
@@ -239,6 +286,7 @@ export function createHighlighterPlugin(): IPluginModule {
 
     return () => {
       off();
+      offChat();
       rules = [];
       nextMode = false;
       api.registerOmitRules([]);
@@ -251,7 +299,7 @@ export function createHighlighterPlugin(): IPluginModule {
       name: 'Highlighter',
       version: '0.1.0',
       description:
-        'Colors player names by organization on who lists, farsight, scan, and gossip lines. Requires the People plugin to be enabled.',
+        'Colors player names by organization on who lists, farsight, scan, and gossip/clan-gossip lines. Requires the People plugin to be enabled. Gossip detection rides the same chat classifier the Chat pane uses, not a configurable rule.',
     },
 
     configSchema: {

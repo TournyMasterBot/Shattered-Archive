@@ -291,3 +291,71 @@ describe('levelProgressStore — exact exp-per-level from the level-progress plu
     expect(getLevelProgress().pct).toBe(0);
   });
 });
+
+describe('levelProgressStore — self-heal from shatteredarchive:score-sheet-exp when login is missed', () => {
+  // Real numbers, GameLog-DSL_2026-09-26: a player quit "OldChar" and
+  // logged into "NewChar" within the same connection while GMCP happened to
+  // be disabled — login_data never fired for NewChar, ever, even after GMCP
+  // was re-enabled later. Nothing but a later `sc`/`score` ever tells this
+  // store a login happened at all.
+  const scoreSheetExp = (characterName: string | undefined, level: number, xpToLevel: number) =>
+    DispatchEvent('shatteredarchive:score-sheet-exp', { characterName, level, xp: 0, xpToLevel });
+
+  let unsubscribe: () => void;
+
+  beforeEach(() => {
+    __resetForTests();
+    delete (window as any).__SA_EVENT_SNAPSHOTS__;
+    unsubscribe = subscribeLevelProgress(() => {});
+  });
+
+  afterEach(() => {
+    unsubscribe();
+    __resetForTests();
+  });
+
+  it('becomes visible from a score-sheet-exp reading alone — no login_data ever needed', () => {
+    // Without this, `visible` would stay false forever (it requires a known
+    // level, and level otherwise comes ONLY from game:character-login).
+    scoreSheetExp('NewChar', 1, 1_000_000);
+
+    expect(getLevelProgress()).toMatchObject({ visible: true, level: 1, tnl: 1_000_000 });
+  });
+
+  it('does not inherit a previous character\'s stale level/span when identity was never established', () => {
+    // Simulates login_data having fired for an EARLIER character (OldChar)
+    // before the switch — the store must not keep reporting that state once
+    // a score sheet reveals a different character is now connected.
+    login(51);
+    charData(24872);
+    expect(getLevelProgress()).toMatchObject({ level: 51 });
+
+    scoreSheetExp('NewChar', 1, 1_000_000);
+
+    expect(getLevelProgress()).toMatchObject({ level: 1, tnl: 1_000_000, pct: 0 });
+  });
+
+  it('a later level learned this way seeds the new span immediately, not just on the next char_data tick', () => {
+    scoreSheetExp('NewChar', 1, 1_000_000);
+    charData(500_000); // halfway through level 1
+
+    scoreSheetExp('NewChar', 2, 2_000_000); // leveled up; the real new span is right here
+
+    expect(getLevelProgress()).toMatchObject({ level: 2, tnl: 2_000_000, pct: 0 });
+  });
+
+  it('does nothing when the character and level both already match', () => {
+    login(49);
+    charData(5000);
+    const before = getLevelProgress();
+
+    scoreSheetExp('Tester', 49, 5000);
+
+    expect(getLevelProgress()).toBe(before); // same object — publish() never re-ran
+  });
+
+  it('ignores a reading with no usable name or level', () => {
+    scoreSheetExp(undefined, 1, 1_000_000);
+    expect(getLevelProgress().visible).toBe(false);
+  });
+});

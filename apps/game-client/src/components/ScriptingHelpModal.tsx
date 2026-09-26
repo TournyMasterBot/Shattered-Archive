@@ -866,6 +866,12 @@ if (cmd) {
                 { id: 'plugin-questbot', label: 'Quest Bot' },
                 { id: 'plugin-text-to-speech', label: 'Text to Speech' },
                 { id: 'plugin-voice-dictation', label: 'Voice Dictation' },
+                { id: 'plugin-world-time-and-identity', label: 'World Time & Identity' },
+                { id: 'plugin-level-progress', label: 'Level Progress' },
+                { id: 'plugin-weapon-flag-squelch', label: 'Weapon Flag Squelch' },
+                { id: 'plugin-combat-compression', label: 'Combat Compression' },
+                { id: 'plugin-stun-highlight', label: 'Stun Highlight' },
+                { id: 'plugin-tick-warning', label: 'Tick Warning' },
               ].map(({ id, label }) => (
                 <button key={id} type="button" className={styles.pluginIndexLink} onClick={() => scrollToAnchor(id)}>
                   {label}
@@ -1272,7 +1278,12 @@ remove gourd 4       — remove entry 4 manually`}</pre>
                 <code>[25 H-Elf Mage] [Wargar] Name</code> automatically
               </li>
               <li>
-                Also parses <code>who craft</code> output to track crafters
+                Also parses <code>whocraft</code> output to track crafters
+              </li>
+              <li>
+                Only scans for a few seconds after you run a <code>who</code>/<code>whoc</code>/<code>whok</code>/
+                <code>whocraft</code>/<code>whois</code> command (or anything else starting with "who") — not reading
+                every line that comes in
               </li>
             </ul>
             <p>Commands available once the plugin is enabled:</p>
@@ -1315,10 +1326,10 @@ remove gourd 4       — remove entry 4 manually`}</pre>
               Highlighter
             </h4>
             <p>
-              Colors player names by organization as they appear in who lists, farsight output, scan results, and gossip
-              lines. Clan members are colored by their clan's color (e.g. Wargar → cyan, Slayers → yellow). Kingdom
-              members are shown with a cyan org prefix. Requires the <strong>People</strong> plugin to be enabled.
-              Replaces DSL_PNP_Highlighter and DSL_PNP_Highlighter.custom.
+              Colors player names by organization as they appear in who lists, farsight output, scan results, and
+              gossip/clan-gossip lines. Clan members are colored by their clan's color (e.g. Wargar → cyan, Slayers →
+              yellow). Kingdom members are shown with a cyan org prefix. Requires the <strong>People</strong> plugin to
+              be enabled. Replaces DSL_PNP_Highlighter and DSL_PNP_Highlighter.custom.
             </p>
             <ul className={styles.list}>
               <li>
@@ -1332,6 +1343,12 @@ remove gourd 4       — remove entry 4 manually`}</pre>
                 Use the <strong>Sync Rules</strong> button in the config modal to apply rule edits without restarting
                 the plugin
               </li>
+              <li>
+                Gossip and clan-gossip are <em>not</em> a configurable rule — nothing to edit for them here. They're
+                detected off the same chat classifier that powers the Chat pane, since gossip is an unprompted message
+                from another player rather than a reply to anything you typed; this also means plain gossip is colored
+                now, not just clan gossip
+              </li>
             </ul>
             <p>Config rule format (one per line):</p>
             <pre className={styles.code}>{`# pattern | next   — color all following who-list lines until blank/prompt
@@ -1339,8 +1356,7 @@ remove gourd 4       — remove entry 4 manually`}</pre>
 
 ^Players near you:$ | next
 ^You quest out with your magic in search of others\\.$ | next
-^Looking around you see:$ | next
-^[\\w']+ clan gossips '.*'$ | line`}</pre>
+^Looking around you see:$ | next`}</pre>
             <p>Status and team aliases (available once the plugin is enabled):</p>
             <div className={styles.table}>
               <div className={styles.tableRow}>
@@ -1649,6 +1665,24 @@ orange  = an orange`}</pre>
                 Enable <em>Auto-restart</em> to loop automatically when <code>You can now quest again.</code> appears
               </li>
               <li>
+                Set <em>Beeswax earplugs container</em> to retrieve/return beeswax earplugs before/after each cycle
+                (leave blank to skip)
+              </li>
+              <li>
+                <em>Gem pouch</em> and <em>Gem buy gold threshold</em> (default 600) control the post-turn-in gem
+                merchant step — set the threshold to <code>0</code> to always visit when a gem-merchant path is
+                configured for your home location
+              </li>
+              <li>
+                <em>Egg buy QP threshold</em> auto-runs <code>pq buy egg</code> at the quest master once your quest
+                points reach that value (0 or blank disables it); <em>Egg container</em> is where it's put
+                afterward, falling back to the gem pouch if left blank
+              </li>
+              <li>
+                <em>Refresh command</em> (default <code>cast refresh</code>) restores movement after recalling —
+                sent twice when your moves drop to a third or less of max
+              </li>
+              <li>
                 Combat via GMCP <code>is_fighting</code> stops the bot and starts a 30-second resume timer — typing{' '}
                 <code>flee</code> cancels the timer
               </li>
@@ -1932,6 +1966,17 @@ Jovar               — icewall_port start`}</pre>
                 after the engine has sat idle for a while
               </li>
               <li>
+                <em>Long-utterance keepalive</em>: Chrome/Edge stop speaking after about 15 seconds — on by
+                default, a silent pause/resume tick every 10s keeps a long utterance (e.g. a room description)
+                going as one flowing block instead of chopping it into pieces with gaps
+              </li>
+              <li>
+                <em>Silence after unspeakable commands</em>: briefly stops reading after you send a command whose
+                output is layout rather than words (a map grid, a table, ASCII art) — matched against your whole
+                input via <em>Commands that silence speech</em> (plain text or regex, one per line) for the{' '}
+                <em>Silence duration</em> that follows
+              </li>
+              <li>
                 <em>Announce your health changes</em> / <em>Announce enemy health changes</em>: speaks an alert
                 whenever your hp, or the current opponent's health bar, crosses into a new condition tier —
                 excellent, scratches, wounds, hurt, awful, same 7 boundaries for both — not on every point of
@@ -1949,63 +1994,70 @@ Jovar               — icewall_port start`}</pre>
                 is 12:30am.") — only matters when the tick toggle above is on
               </li>
               <li>
-                <em>Combat mode</em>: <strong>Off</strong> reads combat lines the same as anything else — no
-                special handling. <strong>Battle Focus</strong> is a "game caster" mode for your own fights:
-                instead of every blow, it calls out status effects (buffs AND debuffs), stuns/incapacitation,
-                disarms, deaths, and flees, and drops plain damage, avoidance, mundane movement, item-use lines,
-                named special-attack cast flavor ("rears back and throws a massive roundhouse punch!" — a blow,
+                <em>Speak exploration lines</em>: room names, descriptions, and contents — detected as a block that
+                opens on a recognized room name (from the GMCP room feed or the prompt, or the "[Exits: ...]" line)
+                and closes at the next prompt
+              </li>
+              <li>
+                <em>Speak battle lines</em>: combat run through a "game caster" pipeline rather than read blow by
+                blow — calls out afflictions landing on others, status effects, stuns/incapacitation, disarms,
+                deaths, and flees, and drops plain damage, avoidance, mundane movement, item-use lines, named
+                special-attack cast flavor ("rears back and throws a massive roundhouse punch!" — a blow,
                 reskinned, not a debuff), and weapon-flag procs as noise (reuses <strong>Combat Compression</strong>
-                's full pattern list plus <strong>Weapon Flag Squelch</strong>'s patterns, regardless of those
-                plugins' own toggles). Condition/health-tier lines are dropped here rather than spoken — that's
-                "Announce self/enemy health changes" above's job, which is deduped separately; speaking both was a
-                double announcement of the same tier change. A line that immediately repeats the same structural
-                shape (e.g. the same weapon proc landing again right after) is squelched once, then re-announced
-                once something else interrupts the streak. Unmatched lines are still spoken by default — surfacing
-                the unusual is the point, this isn't an allowlist. Only affects speech, not the terminal.
+                's and <strong>Weapon Flag Squelch</strong>'s patterns, regardless of those plugins' own toggles).
+                Condition/health-tier lines are left to "Announce self/enemy health changes" above instead. Also
+                gates the self-debuff announcements that arrive over the char-affects GMCP feed (see{' '}
+                <em>Announce when you're stunned</em> below).
+              </li>
+              <li>
+                <em>Speak communication lines</em>: anything the chat classifier recognizes as a channel — say,
+                tell, gtell, whisper, pray, yell, gossip/cgossip, OOC, clan/oclan, king/oking, ask-answer, radio,
+                newbie, quest, bloodbath, auction, grats, community — tested before every other category, so chat
+                arriving mid-room-render still reads as chat
+              </li>
+              <li>
+                <em>Speak incidental lines</em>: the catch-all — ambient room echoes, skill-improvement lines,
+                random stat-fluctuation flavor, level-ups, quest text, and anything else matching none of the
+                three categories above. Turning this off makes the reader an allowlist of only the categories
+                you've enabled; leaving it on means unusual one-off events still get spoken
+              </li>
+              <li>
+                <em>Arena caster (overrides the switches above)</em>: exclusive, not additive — while on, the four{' '}
+                <em>Speak …</em> switches above do nothing, because Arena is a room-gated pipeline that bypasses
+                the squelch/prompt/category/include-exclude chain outright.
+                <br />
+                <strong>Coliseum</strong> is spectator-only: ONLY lines broadcast from the five Coliseum rooms are
+                spoken, and there's no "you" since the listener is a spectator.
+                <br />
+                <strong>Bloodbath</strong> is participant-driven: gated on your current room instead of a
+                broadcast prefix, with room renders and ordinary command noise dropped, and "Bloodbath System:"
+                announcements (join window, elimination countdown, winner) always spoken regardless of room.
+                <br />
+                Both drop plain damage, avoidance, movement/item-use, named-attack cast flavor, weapon-flag procs,
+                and chat as noise, and speak what lands — afflictions, status effects, stuns/incapacitation,
+                disarms, deaths, and flees — about whichever fighter they happened to. Condition-tier lines are
+                spoken once per fighter and again only on a real change.
+              </li>
+              <li>
+                <em>Announce afflictions on others</em> / <em>Announce buffs on others</em>: in any mode that
+                speaks battle lines, plus Arena modes, turns a third-person debuff/buff/knockdown echo into a
+                short callout (e.g. "Grumbly is stunned." instead of the raw knockdown line). Deliberately limited
+                to effects that change the fight — lost rounds, degraded offense/defense for afflictions;
+                sanctuary, stone skin, haste, a magic shield, or charm breaking for buffs — not cosmetic or
+                per-round damage-tick effects. Reads WHO off the line only, so a groupmate is announced the same
+                way an enemy is; your own afflictions have their own toggle below.
               </li>
               <li>
                 <em>Announce when you're stunned</em>: speaks "Alert: You are stunned!" on a confirmed self-stun
                 (bash knockdown, trip) — reuses the same lines the <strong>Stun Highlight</strong> plugin
                 recolors, and still fires even if Stun Highlight is also enabled and squelching the original line.
-                Independent of Combat Mode above — but whenever Combat Mode is Battle Focus, this same toggle also
-                covers the game's own char-affects tracking (<code>game:affect-added</code>/
-                <code>game:affect-removed</code> — the same feed the Affects panel uses): a self debuff is
-                announced the moment it lands ("You are afflicted by weaken.") and again when it wears off, using
-                the modifier's sign to tell debuff from buff (inverted for <code>ac</code>, where a higher value is
-                worse under DSL/MERC convention). Stuns, charms, and other zero-modifier binary effects carry no
-                sign to read, so they're left to the text-pattern coverage above instead.
-              </li>
-              <li>
-                <em>Arena observer mode (Coliseum + Bloodbath)</em>: a "game caster" mode — narrates the
-                highlights/lowlights of a fight rather than every blow, covering both DSL arena types.
-                <br />
-                <strong>Coliseum</strong> is a spectator mode: ONLY lines broadcast from the five Coliseum rooms
-                (Eastern/Western/Northern/Southern Wall, The Center) are spoken — everything else, including your
-                own surroundings if you aren't one of the fighters, is silent, and there's no "you" since the
-                listener is a spectator.
-                <br />
-                <strong>Bloodbath</strong> is the opposite: you ARE a fighter, physically inside a single maze
-                room (every cell shares the literal name "The Bloodbath Arena"), so it's gated on your current
-                room instead of a broadcast prefix. Room-look renders (title/description/exits/who's-here
-                listings) and ordinary command noise (scan/group/affects output, "Ok.", "You failed.", etc.) are
-                dropped as UI clutter, not combat. "Bloodbath System:" announcements (join window, elimination
-                countdown, sponsor, winner) always speak regardless of room — they're the event's own narrator.
-                The recurring "You sure are BLEEDING!" nag is spoken once, not on every repeat.
-                <br />
-                Both types: plain damage, avoidance, mundane movement (incl. mounts), item-use lines (quaffing,
-                wielding, wearing, stopping use), named special-attack cast flavor ("rears back and throws a
-                massive roundhouse punch!" — a blow, reskinned, not a debuff), weapon-flag procs, and chat/speech
-                lines (say/tell/yell/gossip/OOC/whisper/etc., classified the same way{' '}
-                <strong>strict chat mode</strong> does) are all dropped as noise — a spectator doesn't need every
-                blow OR every OOC aside. Status effects (buffs AND debuffs), stuns/incapacitation, disarms, deaths,
-                and flees are spoken about whichever fighter they happened to. Health/condition-tier lines are
-                spoken once per fighter and only again on a real tier change. A line that immediately repeats the
-                same structural shape (e.g. the same weapon proc landing on the same target again right after) is
-                squelched once, then re-announced the next time something interrupts the streak. Unmatched lines
-                — rare finishing-move flavor text, anything without its own pattern — are still spoken by
-                default, since surfacing the unusual is the point. This replaces the normal play-area filtering
-                entirely (include/exclude patterns, prompt-skip, and Combat Mode are ignored while it's on) — it
-                isn't additive with those settings.
+                Also, whenever <em>Speak battle lines</em> is on, this same toggle covers the game's own
+                char-affects tracking (<code>game:affect-added</code>/<code>game:affect-removed</code> — the same
+                feed the Affects panel uses): a self debuff is announced the moment it lands ("You are afflicted
+                by weaken.") and again when it wears off, using the modifier's sign to tell debuff from buff
+                (inverted for <code>ac</code>, where a higher value is worse under DSL/MERC convention). Stuns,
+                charms, and other zero-modifier binary effects carry no sign to read, so they're left to the
+                text-pattern coverage above instead.
               </li>
             </ul>
             <div className={styles.callout}>
@@ -2067,6 +2119,230 @@ Jovar               — icewall_port start`}</pre>
             <div className={styles.callout}>
               Click a mic button to start, click it again to stop and transcribe.
             </div>
+
+            {/* ── World Time & Identity ── */}
+            <h4 id="plugin-world-time-and-identity" className={styles.pluginHeading}>
+              World Time & Identity
+            </h4>
+            <p>
+              Derives a Dawn/Day Time/Dusk/Night Time period from the game's tick clock, and reads your race, class,
+              level, and XP off the score sheet — powers the compact HUD's time-of-day icon and character glyph, and
+              gives the Level Progress plugin a free exp-per-level reading every time you check your score.
+              Auto-enabled by the Slate &amp; Amber theme; independently toggleable for the default theme.
+            </p>
+            <ul className={styles.list}>
+              <li>Nothing to configure — enable it from Plugins → Manage Plugins if you want the badges on the default theme</li>
+              <li>
+                The score-sheet scan only runs for a short window right after you type <code>sc</code> or{' '}
+                <code>score</code> — it isn't reading every line that comes in
+              </li>
+              <li>
+                Race/class have no GMCP equivalent, so they aren't known until you've run <code>sc</code>/
+                <code>score</code> at least once since your last login
+              </li>
+              <li>
+                If the game ever fails to tell the client you've logged in as a different character (e.g. GMCP got
+                disabled during a character switch), running <code>sc</code>/<code>score</code> fixes it on its
+                own — the score sheet's own name line is enough to notice the mismatch and refresh everything, name
+                included
+              </li>
+            </ul>
+
+            {/* ── Level Progress ── */}
+            <h4 id="plugin-level-progress" className={styles.pluginHeading}>
+              Level Progress
+            </h4>
+            <p>
+              Learns how much exp one level costs for your character so the compact HUD's EXP bar shows an exact
+              percentage from the first packet instead of an estimate. Re-learns automatically after a retrain or
+              reclass, since those change the exp cost.
+            </p>
+            <ul className={styles.list}>
+              <li>
+                Enable from <strong>Plugins → Manage Plugins</strong>
+              </li>
+              <li>
+                <em>Fetch automatically</em> — when no trusted value is saved (including right after a
+                retrain/reclass invalidates one), sends <code>worth</code> once to learn it. On by default.
+              </li>
+              <li>
+                If the <strong>World Time &amp; Identity</strong> plugin is also enabled, every <code>score</code>/
+                <code>sc</code> you run gives this plugin a free, independent reading too — no <code>worth</code>{' '}
+                needed
+              </li>
+              <li>Automatic fetching still won't fire before max level and your level are known — that restriction is only lifted for the Re-fetch now button below</li>
+              <li>
+                If the game ever fails to tell the client you've logged in as a different character, the EXP bar
+                would otherwise stay invisible forever — running <code>sc</code>/<code>score</code> yourself (with{' '}
+                <strong>World Time &amp; Identity</strong> enabled) fixes that on its own too
+              </li>
+            </ul>
+            <p>
+              Actions: <strong>Re-fetch now (worth)</strong> — sends <code>worth</code> once and replaces the saved
+              value, e.g. right after a reclass. Always sends, even before your level/identity is known — pressing it
+              yourself is treated as a deliberate try. <strong>Check score</strong> — sends <code>score</code>{' '}
+              unconditionally; unlike <code>worth</code>, its reply carries your name/level/class/race too, so with{' '}
+              <strong>World Time &amp; Identity</strong> also enabled this can fully re-establish who the client
+              thinks you are.
+            </p>
+
+            {/* ── Weapon Flag Squelch ── */}
+            <h4 id="plugin-weapon-flag-squelch" className={styles.pluginHeading}>
+              Weapon Flag Squelch
+            </h4>
+            <p>
+              Suppresses weapon-flag proc echo lines (Frost, Flaming, Shocking, Vampiric, Stunning, Mana Drain, Holy,
+              Unholy) from the terminal. Each distinct proc line has its own toggle, since a flag can produce more
+              than one distinct message. Poison lines are left visible by default.
+            </p>
+            <ul className={styles.list}>
+              <li>
+                Enable from <strong>Plugins → Manage Plugins</strong>
+              </li>
+              <li>
+                Every proc line below is individually toggleable — all default to squelched except{' '}
+                <strong>Poison</strong>, which defaults to visible (DSL2's own addition, no PNP equivalent)
+              </li>
+              <li>Sharp and Vorpal produce no echo at all in-game, so there's nothing to squelch for them</li>
+            </ul>
+            <div className={styles.table}>
+              <div className={styles.tableRow}>
+                <span className={styles.tableKey}>Frost (C)</span>
+                <span>"X freezes Y." / "cold touch ... surrounds you with ice" — squelched</span>
+              </div>
+              <div className={styles.tableRow}>
+                <span className={styles.tableKey}>Flaming (F)</span>
+                <span>"X is burned by Y." / "sears your flesh" — squelched</span>
+              </div>
+              <div className={styles.tableRow}>
+                <span className={styles.tableKey}>Shocking (L)</span>
+                <span>"struck by lightning from" / "shocked by a..." / "You are shocked by..." — squelched</span>
+              </div>
+              <div className={styles.tableRow}>
+                <span className={styles.tableKey}>Vampiric (H)</span>
+                <span>"draws life from" / "drawing your life away" (self) — squelched</span>
+              </div>
+              <div className={styles.tableRow}>
+                <span className={styles.tableKey}>Stunning (S)</span>
+                <span>"knocked to the ground by" — squelched</span>
+              </div>
+              <div className={styles.tableRow}>
+                <span className={styles.tableKey}>Mana Drain (M)</span>
+                <span>"drawing your energy away" (self) / "draws energy from" — squelched</span>
+              </div>
+              <div className={styles.tableRow}>
+                <span className={styles.tableKey}>Holy (O)</span>
+                <span>"surge of ...'s holy wrath" (self) / "flash of holy power erupts from" — squelched</span>
+              </div>
+              <div className={styles.tableRow}>
+                <span className={styles.tableKey}>Unholy (U)</span>
+                <span>"surge of ...'s unholy wrath" (self) — squelched</span>
+              </div>
+              <div className={styles.tableRow}>
+                <span className={styles.tableKey}>Poison (P)</span>
+                <span>
+                  "coats ... with deadly lifebane poison" / "poisoned by the venom on" / "shivers and suffers" —
+                  visible by default
+                </span>
+              </div>
+            </div>
+            <p>
+              Actions: <strong>Sync squelch rules</strong> — re-registers suppression rules from the current saved
+              config; use after toggling lines.
+            </p>
+
+            {/* ── Combat Compression ── */}
+            <h4 id="plugin-combat-compression" className={styles.pluginHeading}>
+              Combat Compression
+            </h4>
+            <p>
+              Suppresses selected classes of combat-log lines — Damage, Avoidance, Condition, Death, Flee/Rescue,
+              Disarm, Ambient, Item Use, Status, Incapacitation, Attack Flavor, and UI Noise — to reduce scroll
+              volume during fights. Every line is individually toggleable, not just per category.
+            </p>
+            <ul className={styles.list}>
+              <li>
+                Enable from <strong>Plugins → Manage Plugins</strong>
+              </li>
+              <li>
+                Squelched by default: all <strong>Avoidance</strong> lines, the Disarm "tries to disarm... but
+                fails" line, the "PANIC! You couldn't escape!" line, all <strong>Item Use</strong> lines, all{' '}
+                <strong>Attack Flavor</strong> lines, and all <strong>UI Noise</strong> lines — none of these carry
+                information beyond "nothing happened," or they duplicate a state-change line that follows
+              </li>
+              <li>
+                Visible by default: <strong>Damage</strong>, <strong>Condition</strong>, <strong>Death</strong>, the
+                rest of <strong>Flee/Rescue</strong>, the Disarm weapon/shield/other-success lines,{' '}
+                <strong>Ambient</strong>, <strong>Status</strong>, and <strong>Incapacitation</strong> — real state
+                changes most players want mid-fight
+              </li>
+              <li>
+                <strong>Text to Speech</strong>'s Battle Focus / Arena caster options reuse this plugin's verified
+                pattern list directly, regardless of this plugin's own toggles
+              </li>
+            </ul>
+            <p>
+              Actions: <strong>Sync squelch rules</strong> — re-registers suppression rules from the current saved
+              config; use after toggling lines.
+            </p>
+
+            {/* ── Stun Highlight ── */}
+            <h4 id="plugin-stun-highlight" className={styles.pluginHeading}>
+              Stun Highlight
+            </h4>
+            <p>
+              Squelches the original text of selected stun/knockdown lines and re-emits them recolored, so they
+              stand out from normal combat scroll — red for a stun that actually landed on you, yellow for the
+              attacker tripping over their own missed bash. Each line is independently toggleable.
+            </p>
+            <ul className={styles.list}>
+              <li>
+                Enable from <strong>Plugins → Manage Plugins</strong>
+              </li>
+              <li>
+                <strong>Red</strong> (all default on): "You are sent flying by the impact!" (self), "X is sent
+                flying by the impact!" (other-target), "X trips you and you go down!"
+              </li>
+              <li>
+                <strong>Yellow</strong> (all default on): "...bash, causing him/her to fall flat on his/her face."
+                — the attacker's own missed bash tripping them up, not a stun on you
+              </li>
+              <li>Matching is a literal substring match against each line, not a regex</li>
+            </ul>
+            <p>
+              Actions: <strong>Sync highlight rules</strong> — re-registers suppression rules from the current saved
+              config; use after toggling lines.
+            </p>
+
+            {/* ── Tick Warning ── */}
+            <h4 id="plugin-tick-warning" className={styles.pluginHeading}>
+              Tick Warning
+            </h4>
+            <p>
+              Writes a colored warning into the terminal a few seconds before the next game tick. Defaults to "Tick
+              in 5 seconds!" in light red; threshold, message, and color are all configurable.
+            </p>
+            <ul className={styles.list}>
+              <li>
+                Enable from <strong>Plugins → Manage Plugins</strong>
+              </li>
+              <li>
+                <em>Warn at (seconds before tick)</em>: 1–40 whole seconds before the tick (the tick length is
+                fixed at 41 seconds, same as the HUD countdown badge). Takes effect from the next tick
+              </li>
+              <li>
+                <em>Warning message</em>: <code>{'{seconds}'}</code> is replaced with the threshold; DSL color codes
+                are allowed, and a blank message uses the default
+              </li>
+              <li>
+                <em>Warning color</em>: DSL color applied to the whole message
+              </li>
+              <li>
+                Keeps its own one-shot timer, re-armed on every <code>game:tick</code> event, rather than reading
+                the HUD's tick store — so it fires even when no HUD component showing the countdown is mounted, and
+                fires at the same instant the countdown badge would show the same number of seconds remaining
+              </li>
+            </ul>
 
             {/* ── Scripts vs Plugins ── */}
             <h4 className={styles.subHeading}>Scripts vs plugins</h4>
