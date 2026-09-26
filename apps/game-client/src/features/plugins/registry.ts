@@ -20,6 +20,7 @@ import { createVoiceDictationPlugin } from './core-plugins/voice-dictation.plugi
 import { createTextToSpeechPlugin } from './core-plugins/text-to-speech.plugin';
 import { createTickWarningPlugin } from './core-plugins/tick-warning.plugin';
 import { createWorldTimeAndIdentityPlugin } from './core-plugins/world-time-and-identity.plugin';
+import { createLevelProgressPlugin } from './core-plugins/level-progress.plugin';
 
 export interface CorePluginDefinition {
   id: PluginId;
@@ -127,6 +128,11 @@ export const CORE_PLUGINS: CorePluginDefinition[] = [
     id: 'world-time-and-identity',
     manifest: createWorldTimeAndIdentityPlugin().manifest,
     create: createWorldTimeAndIdentityPlugin,
+  },
+  {
+    id: 'level-progress',
+    manifest: createLevelProgressPlugin().manifest,
+    create: createLevelProgressPlugin,
   },
 ];
 
