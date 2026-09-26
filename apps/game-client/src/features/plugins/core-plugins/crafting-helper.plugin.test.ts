@@ -414,15 +414,15 @@ describe('ORDER_ITEM_RECIPES', () => {
     }
   });
 
-  it('builds a cloth tailoring item as "<material> <slot>" using spool of material thread + material cloth square', () => {
-    expect(ORDER_ITEM_RECIPES['silk helmet']).toEqual({
+  it('builds a cloth tailoring item as "<material> cloth <slot>" using spool of material thread + material cloth square', () => {
+    expect(ORDER_ITEM_RECIPES['silk cloth helmet']).toEqual({
       craftTypeId: 'tailoring',
       components: [
         { material: 'spool of silk thread', qty: 1 },
         { material: 'silk cloth square', qty: 1 },
       ],
     });
-    expect(ORDER_ITEM_RECIPES['silksteel shirt']).toEqual({
+    expect(ORDER_ITEM_RECIPES['silksteel cloth shirt']).toEqual({
       craftTypeId: 'tailoring',
       components: [
         { material: 'spool of silksteel thread', qty: 4 },
@@ -456,7 +456,7 @@ describe('ORDER_ITEM_RECIPES', () => {
     const slots = ['helmet', 'gloves', 'boots', 'sleeves', 'leggings', 'shirt'];
     for (const material of clothMaterials) {
       for (const slot of slots) {
-        expect(ORDER_ITEM_RECIPES[`${material} ${slot}`]?.craftTypeId).toBe('tailoring');
+        expect(ORDER_ITEM_RECIPES[`${material} cloth ${slot}`]?.craftTypeId).toBe('tailoring');
       }
     }
     for (const material of leatherMaterials) {
@@ -652,7 +652,7 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel helmet' 90+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
     plugin.onAlias!(mock.api, 'crafthelper order start');
     jest.advanceTimersByTime(200); // pull spool of silksteel thread
     jest.advanceTimersByTime(200); // pull silksteel cloth square
@@ -680,7 +680,7 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel helmet' 90+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
     const orderId = getOrderQueue('__unknown__')[0].id;
     plugin.onAlias!(mock.api, 'crafthelper order start');
     jest.advanceTimersByTime(200); // pull spool of silksteel thread succeeds
@@ -904,11 +904,11 @@ describe('crafting-helper state machine', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel helmet' 90+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
     const orderId = getOrderQueue('__unknown__')[0].id;
     plugin.onAlias!(mock.api, 'crafthelper order start');
     expect(mock.hudWrites[mock.hudWrites.length - 1].content?.value).toBe(
-      `working on order ${orderId} · silksteel helmet · pulling components`,
+      `working on order ${orderId} · silksteel cloth helmet · pulling components`,
     );
   });
 
@@ -1101,7 +1101,7 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel helmet' 90+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
     plugin.onAlias!(mock.api, 'crafthelper order start');
 
     expect(mock.sent).toEqual(["get 1 'spool of silksteel thread' vault"]);
@@ -1111,7 +1111,7 @@ describe('crafting-helper state machine', () => {
     expect(mock.sent).toEqual([
       "get 1 'spool of silksteel thread' vault",
       "get 1 'silksteel cloth square' vault",
-      "craft tailor 'silksteel helmet'",
+      "craft tailor 'silksteel cloth helmet'",
     ]);
   });
 
@@ -1178,7 +1178,7 @@ describe('crafting-helper state machine', () => {
     plugin.onEnable!(mock.api);
 
     plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel helmet' 90+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
     plugin.onAlias!(mock.api, 'crafthelper order start');
     jest.advanceTimersByTime(200);
     jest.advanceTimersByTime(200);
@@ -1214,7 +1214,7 @@ describe('crafting-helper state machine', () => {
     plugin.onEnable!(mock.api);
 
     plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel helmet' 90+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
     const firstOrderId = getOrderQueue('__unknown__')[0].id;
 
     plugin.onAlias!(mock.api, 'crafthelper order start');
