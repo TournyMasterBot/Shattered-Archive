@@ -160,3 +160,57 @@ describe('crafting-helper-storage order queue', () => {
     expect(getOrderQueue('grondak')).toEqual([]);
   });
 });
+
+describe('crafting-helper-storage completed order history', () => {
+  function record(overrides: Partial<import('./crafting-helper-storage').CompletedCraftOrder> = {}) {
+    return {
+      id: 'order-1',
+      itemName: 'diamond gem pain',
+      quantityTotal: 6,
+      qualitySpec: { kind: 'atLeast' as const, min: 97 },
+      materialsUsed: { 'diamond gemstone': 6, 'essence of pain': 6 },
+      createdAt: 1,
+      completedAt: 2,
+      ...overrides,
+    };
+  }
+
+  it('adds a completed order and lists it back', () => {
+    const { addCompletedOrder, getCompletedOrders } = freshStorage();
+    addCompletedOrder('grondak', record());
+    expect(getCompletedOrders('grondak')).toEqual([record()]);
+  });
+
+  it('isolates completed-order history per character', () => {
+    const { addCompletedOrder, getCompletedOrders } = freshStorage();
+    addCompletedOrder('grondak', record());
+    expect(getCompletedOrders('riaghan')).toEqual([]);
+  });
+
+  it('keeps only the most recent 50 entries', () => {
+    const { addCompletedOrder, getCompletedOrders } = freshStorage();
+    for (let i = 0; i < 55; i++) {
+      addCompletedOrder('grondak', record({ id: `order-${i}` }));
+    }
+    const history = getCompletedOrders('grondak');
+    expect(history).toHaveLength(50);
+    expect(history[0].id).toBe('order-5'); // oldest 5 trimmed
+    expect(history[49].id).toBe('order-54');
+  });
+
+  it('round-trips completed-order history through a fresh module instance, debounced', () => {
+    const first = freshStorage();
+    first.addCompletedOrder('grondak', record());
+    jest.advanceTimersByTime(500);
+
+    const second = freshStorage();
+    expect(second.getCompletedOrders('grondak')).toEqual([record()]);
+  });
+
+  it('falls back to an empty history on corrupt localStorage rather than throwing', () => {
+    window.localStorage.setItem('shatteredarchive.plugins.crafting-helper.orderHistory.grondak', '{not valid json');
+    const { getCompletedOrders } = freshStorage();
+    expect(() => getCompletedOrders('grondak')).not.toThrow();
+    expect(getCompletedOrders('grondak')).toEqual([]);
+  });
+});

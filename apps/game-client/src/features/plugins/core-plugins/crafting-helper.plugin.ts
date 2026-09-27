@@ -1,7 +1,18 @@
 // apps/game-client/src/features/plugins/core-plugins/crafting-helper.plugin.ts
 import type { IPluginModule, PluginRuntimeApi, HudSlotId, HudWidgetContent } from '@shatteredarchive/types-client';
 import { stripAnsi } from '../../autoleveling/autoleveling-text';
-import { getTrackedSkillLevel, setTrackedSkillLevel, getOrderQueue, addOrder, removeOrder, updateOrder, type StoredCraftOrder } from './crafting-helper-storage';
+import {
+  getTrackedSkillLevel,
+  setTrackedSkillLevel,
+  getOrderQueue,
+  addOrder,
+  removeOrder,
+  updateOrder,
+  getCompletedOrders,
+  addCompletedOrder,
+  type StoredCraftOrder,
+  type CompletedCraftOrder,
+} from './crafting-helper-storage';
 
 /**
  * Crafting Helper — automates tier-3 crafting skill-up training and bulk
@@ -19,7 +30,7 @@ import { getTrackedSkillLevel, setTrackedSkillLevel, getOrderQueue, addOrder, re
  *   crafthelper improve <craftType> start  — begin training that craft type
  *   crafthelper improve stop               — finish the current step, then go idle
  *   crafthelper improve status             — print current state/skill/session stats
- *   crafthelper order add/list/remove/start/stop/status — bulk order fulfillment
+ *   crafthelper order add/list/remove/start/stop/status/history — bulk order fulfillment
  *   crafthelper / crafthelper help         — print full command help
  */
 
@@ -522,6 +533,12 @@ export function formatQualitySpec(spec: QualitySpec): string {
   return `${spec.min}-${spec.max}`;
 }
 
+export function formatMaterialsUsed(materials: Record<string, number>): string {
+  const entries = Object.entries(materials);
+  if (entries.length === 0) return 'none recorded';
+  return entries.map(([material, qty]) => `${material} x${qty}`).join(', ');
+}
+
 export interface QualityContainerRow {
   min: number;
   max: number;
@@ -836,6 +853,23 @@ export function createCraftingHelperPlugin(): IPluginModule {
     qualityTimer = setTimeout(() => onQualityTimeout(api), cfg.loreResponseTimeoutMs);
   }
 
+  // Order mode only — tallies raw-material spend against the active order,
+  // for later cost lookup (`crafthelper order history`). A "destroyed"
+  // outcome is counted as a full loss of every pulled component, per
+  // explicit instruction: don't try to guess partial loss, just assume all
+  // of it. That's an accounting assumption only — independent of
+  // beginDestroyedRecovery's own, unrelated decision to put everything back
+  // and re-pull, since the "destroyed" message itself isn't reliable.
+  function recordMaterialsUsed(components: RecipeComponent[]) {
+    if (mode !== 'order' || !activeOrder) return;
+    const tally: Record<string, number> = { ...(activeOrder.materialsUsed ?? {}) };
+    for (const c of components) {
+      tally[c.material] = (tally[c.material] ?? 0) + c.qty;
+    }
+    activeOrder = { ...activeOrder, materialsUsed: tally };
+    updateOrder(characterKey(), activeOrder.id, { materialsUsed: tally });
+  }
+
   function onQualityTimeout(api: PluginRuntimeApi) {
     qualityTimer = null;
     const cfg = readConfig(api);
@@ -872,10 +906,21 @@ export function createCraftingHelperPlugin(): IPluginModule {
       const remaining = order.quantityRemaining - 1;
       const done = order.quantityTotal - remaining;
       if (remaining <= 0) {
+        const materialsUsed = order.materialsUsed ?? {};
         writeInfo(
           api,
           `Order ${order.id} complete: "${outputName}" @ ${quality}% (in spec) — ${order.quantityTotal}/${order.quantityTotal} done, routed to ${container}.`,
         );
+        writeInfo(api, `Order ${order.id} materials used: ${formatMaterialsUsed(materialsUsed)}.`);
+        addCompletedOrder(characterKey(), {
+          id: order.id,
+          itemName: order.itemName,
+          quantityTotal: order.quantityTotal,
+          qualitySpec: order.qualitySpec,
+          materialsUsed,
+          createdAt: order.createdAt,
+          completedAt: Date.now(),
+        });
         removeOrder(characterKey(), order.id);
         activeOrder = null;
         pacingTimer = setTimeout(() => advanceOrderQueue(api), cfg.commandPacingDelayMs);
@@ -1191,12 +1236,14 @@ export function createCraftingHelperPlugin(): IPluginModule {
 
     if (outcome === 'success') {
       if (session) session.successes += 1;
+      recordMaterialsUsed(activeRecipe!.components);
       state = 'storing_trinket';
       materialsHeld = null; // consumed by the craft
       publishHud(api, cfg);
       handleCraftSuccess(api, cfg, activeRecipe!);
     } else if (outcome === 'failed_destroyed') {
       if (session) session.failedDestroyed += 1;
+      recordMaterialsUsed(activeRecipe!.components);
       beginDestroyedRecovery(api, cfg, activeRecipe!.components);
     } else {
       if (session) session.failedNoLoss += 1;
@@ -1254,6 +1301,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
     if (lower === 'crafthelper order start') return handleOrderStart(api);
     if (lower === 'crafthelper order stop') return handleStop(api);
     if (lower === 'crafthelper order status') return handleStatus(api);
+    if (lower === 'crafthelper order history') return handleOrderHistory(api);
+    const historyMatch = trimmed.match(/^crafthelper order history\s+(\S+)$/i);
+    if (historyMatch) return handleOrderHistory(api, historyMatch[1]);
 
     return undefined;
   }
@@ -1299,6 +1349,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
         helpCmd('crafthelper order start', 'start fulfilling the oldest queued order'),
         helpCmd('crafthelper order stop', 'finish the current step, then stop'),
         helpCmd('crafthelper order status', 'show the active order and queue depth'),
+        helpCmd('crafthelper order history', 'list completed orders and materials used'),
+        helpCmd('crafthelper order history <id>', 'show one completed order in full'),
         '',
         "Item names must match a known recipe (case-insensitive) — see the plugin's",
         'config panel description for the full list of covered crafts. A "set" name',
@@ -1307,6 +1359,11 @@ export function createCraftingHelperPlugin(): IPluginModule {
         'slot at once, all sharing the same quantity and quality spec. Adding your',
         'first order while idle with nothing else queued starts fulfillment right',
         'away — no separate `order start` needed.',
+        '',
+        'Every raw material pulled toward an order is tallied against it (a',
+        '"destroyed" craft counts as a full loss of everything pulled for that',
+        'attempt) and summarized when the order completes — see `order history`',
+        'to look it up again later.',
         '',
         "A finished item's quality decides where it's stored: a range covered by the",
         'Quality → container map always wins, even if the item also satisfies the',
@@ -1420,6 +1477,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
         quantityTotal: qty,
         qualitySpec,
         createdAt: Date.now(),
+        materialsUsed: {},
       };
       addOrder(characterKey(), order);
       queuedIds.push(order.id);
@@ -1458,6 +1516,34 @@ export function createCraftingHelperPlugin(): IPluginModule {
       const activeTag = i === 0 && mode === 'order' && state !== 'idle' ? ' [active]' : '';
       writeInfo(api, `${o.id}: ${o.quantityRemaining}/${o.quantityTotal}x "${o.itemName}"${activeTag}`);
     });
+    return true;
+  }
+
+  function handleOrderHistory(api: PluginRuntimeApi, orderId?: string): boolean {
+    const history = getCompletedOrders(characterKey());
+    if (history.length === 0) {
+      writeInfo(api, 'No completed orders yet.');
+      return true;
+    }
+    if (orderId) {
+      const record = history.find((r) => r.id === orderId);
+      if (!record) {
+        writeError(api, `No completed order with id "${orderId}".`);
+        return true;
+      }
+      writeInfo(
+        api,
+        `${record.id}: ${record.quantityTotal}x "${record.itemName}" @ ${formatQualitySpec(record.qualitySpec)} — completed ${new Date(record.completedAt).toLocaleString()}.`,
+      );
+      writeInfo(api, `Materials used: ${formatMaterialsUsed(record.materialsUsed)}.`);
+      return true;
+    }
+    for (const record of history) {
+      writeInfo(
+        api,
+        `${record.id}: ${record.quantityTotal}x "${record.itemName}" @ ${formatQualitySpec(record.qualitySpec)} — ${formatMaterialsUsed(record.materialsUsed)}`,
+      );
+    }
     return true;
   }
 
@@ -1561,9 +1647,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.14.2',
+      version: '0.15.0',
       description:
-        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. All five craft skills' training tiers are complete (the last trinket in each carries skill to the 1001 cap). Order items can also be queued as a \"set\" (one of each armor/cloth slot in a material, e.g. \"silksteel cloth set\" or \"arcanium chainmail set\" — always ending in the word \"set\") in a single order-add call; adding an order while idle with nothing else queued starts fulfillment right away. Each completed order item logs its progress toward the order. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Type `crafthelper` (no arguments) for full in-game command help. Commands: crafthelper improve <craftType> start / improve stop/status, crafthelper order add/list/remove/start/stop/status.",
+        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. All five craft skills' training tiers are complete (the last trinket in each carries skill to the 1001 cap). Order items can also be queued as a \"set\" (one of each armor/cloth slot in a material, e.g. \"silksteel cloth set\" or \"arcanium chainmail set\" — always ending in the word \"set\") in a single order-add call; adding an order while idle with nothing else queued starts fulfillment right away. Each completed order item logs its progress toward the order, and every raw material pulled toward it is tallied (a `destroyed` craft counts as a full loss) and summarized when the order finishes, kept for later lookup via `order history`. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Type `crafthelper` (no arguments) for full in-game command help. Commands: crafthelper improve <craftType> start / improve stop/status, crafthelper order add/list/remove/start/stop/status/history.",
     },
 
     configSchema: {

@@ -97,6 +97,10 @@ export interface StoredCraftOrder {
   quantityTotal: number;
   qualitySpec: StoredQualitySpec;
   createdAt: number; // ms epoch
+  // Running tally of raw materials consumed toward this order so far, keyed
+  // by material name. Optional because orders queued before this field
+  // existed may already be sitting in a character's persisted queue.
+  materialsUsed?: Record<string, number>;
 }
 
 const orderQueues: Map<string, StoredCraftOrder[]> = new Map();
@@ -172,4 +176,77 @@ export function updateOrder(characterKey: string, orderId: string, patch: Partia
   next[idx] = { ...next[idx], ...patch };
   orderQueues.set(characterKey, next);
   persistOrders(characterKey);
+}
+
+// ── Completed order history ───────────────────────────────────────────────
+// One localStorage entry per character — a capped, oldest-first log of
+// finished orders kept for later lookup (`crafthelper order history`) and,
+// eventually, cost analysis. Same lazy-load + debounced-persist shape as the
+// order queue above.
+
+export interface CompletedCraftOrder {
+  id: string;
+  itemName: string;
+  quantityTotal: number;
+  qualitySpec: StoredQualitySpec;
+  materialsUsed: Record<string, number>;
+  createdAt: number; // ms epoch — when the order was originally queued
+  completedAt: number; // ms epoch
+}
+
+// A lookup convenience, not a full audit log — unbounded growth isn't worth
+// it, so only the most recent entries are kept.
+const MAX_COMPLETED_ORDERS = 50;
+
+const completedOrders: Map<string, CompletedCraftOrder[]> = new Map();
+const completedOrdersLoaded: Set<string> = new Set();
+const completedOrdersPersistTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
+
+function completedOrdersStorageKey(characterKey: string): string {
+  return `shatteredarchive.plugins.crafting-helper.orderHistory.${characterKey}`;
+}
+
+function ensureCompletedOrdersLoaded(characterKey: string) {
+  if (completedOrdersLoaded.has(characterKey)) return;
+  completedOrdersLoaded.add(characterKey);
+  try {
+    if (typeof window === 'undefined') return;
+    const raw = window.localStorage.getItem(completedOrdersStorageKey(characterKey));
+    if (!raw) return;
+    const arr = JSON.parse(raw);
+    if (Array.isArray(arr)) completedOrders.set(characterKey, arr as CompletedCraftOrder[]);
+  } catch {
+    // ignore corrupt storage
+  }
+}
+
+function persistCompletedOrders(characterKey: string) {
+  const existing = completedOrdersPersistTimers.get(characterKey);
+  if (existing) clearTimeout(existing);
+  completedOrdersPersistTimers.set(
+    characterKey,
+    setTimeout(() => {
+      completedOrdersPersistTimers.delete(characterKey);
+      try {
+        if (typeof window === 'undefined') return;
+        const list = completedOrders.get(characterKey) ?? [];
+        window.localStorage.setItem(completedOrdersStorageKey(characterKey), JSON.stringify(list));
+      } catch {
+        // ignore
+      }
+    }, PERSIST_DELAY_MS),
+  );
+}
+
+export function getCompletedOrders(characterKey: string): CompletedCraftOrder[] {
+  ensureCompletedOrdersLoaded(characterKey);
+  return [...(completedOrders.get(characterKey) ?? [])];
+}
+
+export function addCompletedOrder(characterKey: string, record: CompletedCraftOrder): void {
+  ensureCompletedOrdersLoaded(characterKey);
+  const list = [...(completedOrders.get(characterKey) ?? []), record];
+  const trimmed = list.length > MAX_COMPLETED_ORDERS ? list.slice(list.length - MAX_COMPLETED_ORDERS) : list;
+  completedOrders.set(characterKey, trimmed);
+  persistCompletedOrders(characterKey);
 }

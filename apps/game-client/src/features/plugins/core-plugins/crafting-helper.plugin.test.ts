@@ -1,5 +1,5 @@
 import type { HudWidgetContent, PluginRuntimeApi } from '@shatteredarchive/types-client';
-import { getOrderQueue, removeOrder } from './crafting-helper-storage';
+import { getOrderQueue, removeOrder, getCompletedOrders } from './crafting-helper-storage';
 import {
   createCraftingHelperPlugin,
   tierForSkill,
@@ -21,6 +21,7 @@ import {
   containerForQuality,
   matchQualityContainer,
   formatQualitySpec,
+  formatMaterialsUsed,
   ORDER_ITEM_RECIPES,
   ORDER_SET_RECIPES,
 } from './crafting-helper.plugin';
@@ -325,6 +326,18 @@ describe('formatQualitySpec', () => {
     expect(formatQualitySpec({ kind: 'atLeast', min: 97 })).toBe('97+');
     expect(formatQualitySpec({ kind: 'exact', value: 99 })).toBe('99');
     expect(formatQualitySpec({ kind: 'range', min: 95, max: 98 })).toBe('95-98');
+  });
+});
+
+describe('formatMaterialsUsed', () => {
+  it('joins each material and its quantity', () => {
+    expect(formatMaterialsUsed({ 'diamond gemstone': 2, 'essence of pain': 2 })).toBe(
+      'diamond gemstone x2, essence of pain x2',
+    );
+  });
+
+  it('reports "none recorded" for an empty tally', () => {
+    expect(formatMaterialsUsed({})).toBe('none recorded');
   });
 });
 
@@ -733,6 +746,122 @@ describe('crafting-helper state machine', () => {
       "put 1 'silksteel cloth square' vault",
       "get 1 'silksteel thread' vault",
     ]);
+  });
+
+  it('tallies materials used against the order on a successful craft', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 2 'diamond gem pain' 97+");
+    jest.advanceTimersByTime(200); // pull diamond gemstone
+    jest.advanceTimersByTime(200); // pull essence of pain
+    mock.feedLine('You were successful.');
+    mock.feedLine('Condition: flawless (98%)'); // in spec, order not yet complete (1/2)
+
+    expect(getOrderQueue('__unknown__')[0].materialsUsed).toEqual({
+      'diamond gemstone': 1,
+      'essence of pain': 1,
+    });
+  });
+
+  it('assumes a full material loss on a "destroyed" outcome, independent of the put-back-and-repull it triggers', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
+    jest.advanceTimersByTime(200); // pull silksteel thread
+    jest.advanceTimersByTime(200); // pull silksteel cloth square
+
+    mock.feedLine('You failed and destroyed some materials in the process.');
+    expect(getOrderQueue('__unknown__')[0].materialsUsed).toEqual({
+      'silksteel thread': 1,
+      'silksteel cloth square': 1,
+    });
+  });
+
+  it('does not tally anything on a "no loss" outcome', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
+    jest.advanceTimersByTime(200);
+    jest.advanceTimersByTime(200);
+
+    mock.feedLine('You failed but did not lose any materials.');
+    expect(getOrderQueue('__unknown__')[0].materialsUsed).toEqual({});
+  });
+
+  it('summarizes materials used and stores a lookup-able history record when an order completes', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
+    const orderId = getOrderQueue('__unknown__')[0].id;
+    jest.advanceTimersByTime(200);
+    jest.advanceTimersByTime(200);
+    mock.feedLine('You failed and destroyed some materials in the process.'); // 1 lost attempt, tallied
+    jest.advanceTimersByTime(100); // put back gemstone
+    jest.advanceTimersByTime(100); // put back essence
+    jest.advanceTimersByTime(100); // trigger re-pull cycle: "get" gemstone sent
+    jest.advanceTimersByTime(200); // gemstone pull confirmed: "get" essence sent
+    jest.advanceTimersByTime(200); // essence pull confirmed: craft sent
+    mock.feedLine('You were successful.'); // then the successful attempt
+    mock.feedLine('Condition: flawless (99%)'); // completes the order
+
+    expect(
+      mock.terminalWrites.some(
+        (w) =>
+          w.includes(`Order ${orderId} materials used:`) &&
+          w.includes('diamond gemstone x2') &&
+          w.includes('essence of pain x2'),
+      ),
+    ).toBe(true);
+    expect(getOrderQueue('__unknown__')).toHaveLength(0);
+
+    // getCompletedOrders is a module-level singleton shared across every test
+    // in this file (like the order queue above) — look up this test's record
+    // by id rather than asserting on the whole list's length. Storage-level
+    // isolation (including the empty-history case) is covered with a truly
+    // fresh module instance in crafting-helper-storage.test.ts.
+    const record = getCompletedOrders('__unknown__').find((r) => r.id === orderId);
+    expect(record).toMatchObject({
+      id: orderId,
+      itemName: 'diamond gem pain',
+      quantityTotal: 1,
+      materialsUsed: { 'diamond gemstone': 2, 'essence of pain': 2 },
+    });
+  });
+
+  it('"order history" lists completed orders, and "order history <id>" shows one in full', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
+    const orderId = getOrderQueue('__unknown__')[0].id;
+    jest.advanceTimersByTime(200);
+    jest.advanceTimersByTime(200);
+    mock.feedLine('You were successful.');
+    mock.feedLine('Condition: flawless (99%)');
+
+    plugin.onAlias!(mock.api, 'crafthelper order history');
+    expect(
+      mock.terminalWrites.some(
+        (w) => w.includes(orderId) && w.includes('diamond gem pain') && w.includes('diamond gemstone x1'),
+      ),
+    ).toBe(true);
+
+    plugin.onAlias!(mock.api, `crafthelper order history ${orderId}`);
+    expect(mock.terminalWrites.some((w) => w.includes('Materials used:') && w.includes('essence of pain x1'))).toBe(
+      true,
+    );
+
+    plugin.onAlias!(mock.api, 'crafthelper order history not-a-real-id');
+    expect(mock.terminalWrites.some((w) => w.includes('No completed order with id "not-a-real-id"'))).toBe(true);
   });
 
   it('a vault failure partway through a multi-component order pull leaves the order queued untouched', () => {
