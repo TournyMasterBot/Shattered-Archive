@@ -22,6 +22,9 @@ import {
   matchQualityContainer,
   formatQualitySpec,
   formatMaterialsUsed,
+  slugifyItemName,
+  qualitySpecToken,
+  makeOrderId,
   ORDER_ITEM_RECIPES,
   ORDER_SET_RECIPES,
 } from './crafting-helper.plugin';
@@ -341,6 +344,42 @@ describe('formatMaterialsUsed', () => {
   });
 });
 
+describe('slugifyItemName', () => {
+  it('lowercases and hyphenates', () => {
+    expect(slugifyItemName('Diamond Gem Pain')).toBe('diamond-gem-pain');
+  });
+
+  it('strips characters that are not letters or digits', () => {
+    expect(slugifyItemName("silksteel cloth helmet's edge")).toBe('silksteel-cloth-helmet-s-edge');
+  });
+
+  it('has no leading or trailing hyphens', () => {
+    expect(slugifyItemName('  arcanium chainmail set  ')).toBe('arcanium-chainmail-set');
+  });
+});
+
+describe('qualitySpecToken', () => {
+  it('renders each spec kind as a word token, no symbols', () => {
+    expect(qualitySpecToken({ kind: 'atLeast', min: 97 })).toBe('gte97');
+    expect(qualitySpecToken({ kind: 'exact', value: 99 })).toBe('eq99');
+    expect(qualitySpecToken({ kind: 'range', min: 95, max: 98 })).toBe('95to98');
+  });
+});
+
+describe('makeOrderId', () => {
+  it('builds a readable id from the item name and quality spec', () => {
+    const id = makeOrderId('diamond gem pain', { kind: 'atLeast', min: 97 });
+    expect(id).toMatch(/^diamond-gem-pain-gte97-[a-z0-9]{4}$/);
+  });
+
+  it('produces different ids for repeated calls (random suffix)', () => {
+    const spec = { kind: 'exact' as const, value: 99 };
+    const a = makeOrderId('diamond gem pain', spec);
+    const b = makeOrderId('diamond gem pain', spec);
+    expect(a).not.toBe(b);
+  });
+});
+
 describe('matchItemCondition', () => {
   it('extracts the quality percentage', () => {
     expect(matchItemCondition('Condition: flawless (97%)')).toBe(97);
@@ -616,6 +655,14 @@ describe('crafting-helper state machine', () => {
     jest.useRealTimers();
   });
 
+  it('keeps the manifest description terse and points to `crafthelper help` for the rest', () => {
+    const { manifest } = createCraftingHelperPlugin();
+    const description = manifest.description ?? '';
+    expect(description.length).toBeLessThan(400); // terse, not a duplicate of the help text
+    expect(description).toContain('crafthelper help');
+    expect(description).not.toContain('crafthelper order add'); // no command syntax duplicated here
+  });
+
   it('prints help text for the bare "crafthelper" command and for "crafthelper help"', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
@@ -627,6 +674,7 @@ describe('crafting-helper state machine', () => {
 
     const help = mock.terminalWrites[0];
     expect(help).toContain('Crafting Helper');
+    expect(help).toContain(plugin.manifest.version); // help header shows the current plugin version
     expect(help).toContain('crafthelper improve spellcraft start');
     expect(help).toContain('crafthelper improve stop');
     expect(help).toContain('crafthelper improve status');
@@ -637,6 +685,22 @@ describe('crafting-helper state machine', () => {
     expect(help).toContain('crafthelper order stop');
     expect(help).toContain('crafthelper order status');
     expect(mock.terminalWrites[1]).toBe(help); // "crafthelper help" and bare "crafthelper" match
+  });
+
+  it('"crh" works as a shorthand for "crafthelper" on every command', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    expect(plugin.onAlias!(mock.api, 'crh')).toBe(true);
+    expect(plugin.onAlias!(mock.api, 'crafthelper')).toBe(true);
+    expect(mock.terminalWrites[0]).toBe(mock.terminalWrites[1]); // identical help output either way
+
+    expect(plugin.onAlias!(mock.api, "crh order add 1 'diamond gem pain' 97+")).toBe(true);
+    expect(getOrderQueue('__unknown__')).toHaveLength(1);
+
+    // A bare "crh" mid-word must not be mistaken for the prefix.
+    expect(plugin.onAlias!(mock.api, 'crhblah')).toBeUndefined();
   });
 
   it('every order-add example in the help text names a real recipe or set', () => {
@@ -937,9 +1001,46 @@ describe('crafting-helper state machine', () => {
     jest.advanceTimersByTime(5000);
     expect(mock.sent).toEqual([...sentSoFar, "put 1 'uncut diamond stone' vault"]); // materials returned, nothing else
     expect(mock.terminalWrites.some((w) => w.includes('interrupted'))).toBe(true);
+    // The resume hint names the actual mode/craft-type-specific command, not
+    // a bare "crafthelper start" that doesn't exist.
+    expect(mock.terminalWrites.some((w) => w.includes('crafthelper improve spellcraft start` to resume'))).toBe(true);
 
     plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start'); // idle again, so start is accepted
     expect(mock.sent[mock.sent.length - 1]).toBe('score');
+  });
+
+  it('the interrupted-craft resume hint points at "order start" when order mode was running', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
+    jest.advanceTimersByTime(200);
+    jest.advanceTimersByTime(200);
+
+    mock.feedLine('You stop crafting.');
+    expect(mock.terminalWrites.some((w) => w.includes('crafthelper order start` to resume'))).toBe(true);
+  });
+
+  it('reports "already running" with the current mode and its exact stop command', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
+    plugin.onAlias!(mock.api, 'crafthelper improve tailor start');
+    expect(
+      mock.terminalWrites.some((w) => w.includes('Already running in improve mode') && w.includes('crafthelper improve stop')),
+    ).toBe(true);
+
+    plugin.onAlias!(mock.api, 'crafthelper improve stop');
+    mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter'); // finish the in-flight step cleanly
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+"); // auto-starts (idle, empty queue)
+    plugin.onAlias!(mock.api, 'crafthelper order start');
+    expect(
+      mock.terminalWrites.some((w) => w.includes('Already running in order mode') && w.includes('crafthelper order stop')),
+    ).toBe(true);
   });
 
   it('returns pulled materials to the vault when a requested stop takes effect after a no-loss failure', () => {
@@ -1172,14 +1273,37 @@ describe('crafting-helper state machine', () => {
     expect(mock.sent).toEqual(afterFirstStart);
   });
 
-  it('fails cleanly with no commands sent for an unknown craft type token', () => {
+  it('fails cleanly with no commands sent for an unknown craft type token, listing the valid ones (likely a typo)', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
 
     plugin.onAlias!(mock.api, 'crafthelper improve jewelcrafting start');
     expect(mock.sent).toEqual([]);
-    expect(mock.terminalWrites.some((w) => w.includes('Unknown craft type'))).toBe(true);
+    expect(
+      mock.terminalWrites.some(
+        (w) =>
+          w.includes('Unknown craft type "jewelcrafting"') &&
+          w.includes('"spellcrafting" (spellcraft)') &&
+          w.includes('"tailoring" (tailor)'),
+      ),
+    ).toBe(true);
+  });
+
+  it('names the craft type when a skill level has no matching tier', () => {
+    const mock = createMockApi(defaultConfig({ tierTable: '' })); // no tiers at all configured
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
+    mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
+
+    expect(mock.sent).toEqual(['score']); // no get/craft ever sent
+    expect(
+      mock.terminalWrites.some(
+        (w) => w.includes('Skill level 948 has no matching tier') && w.includes('"Spellcrafting"') && w.includes('Tier table config'),
+      ),
+    ).toBe(true);
   });
 
   it('resolves a craft type by its verb as well as its config id', () => {
@@ -1282,6 +1406,26 @@ describe('crafting-helper state machine', () => {
     plugin.onAlias!(mock.api, "crafthelper order add 3 'diamond gem pain' not-a-spec");
     expect(mock.terminalWrites.some((w) => w.includes('Invalid quality spec'))).toBe(true);
     expect(getOrderQueue('__unknown__')).toHaveLength(1);
+  });
+
+  it('lists the valid craft types when an order item needs one that is not configured', () => {
+    const tailoringLessCraftTypes = DEFAULT_CRAFT_TYPES_CONFIG.split('\n')
+      .filter((line) => !line.includes('tailoring'))
+      .join('\n');
+    const mock = createMockApi(defaultConfig({ craftTypes: tailoringLessCraftTypes }));
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
+    expect(
+      mock.terminalWrites.some(
+        (w) =>
+          w.includes('Craft type "tailoring"') &&
+          w.includes("isn't configured") &&
+          w.includes('"spellcrafting" (spellcraft)'),
+      ),
+    ).toBe(true);
+    expect(getOrderQueue('__unknown__')).toHaveLength(0);
   });
 
   it('adding the first order while idle starts fulfillment automatically, no explicit "order start" needed', () => {

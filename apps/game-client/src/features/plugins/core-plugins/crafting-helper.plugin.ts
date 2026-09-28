@@ -23,16 +23,25 @@ import {
  * Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables. A
  * character trains one craft skill at a time, named on the command line.
  *
- * Aliases (type in the command bar) — prefixed with "crafthelper", not
- * "craft", so they never compete with the game's own `craft` command, and
- * namespaced by mode so "start"/"stop"/"status" never mean two different
- * things depending on context:
+ * Aliases (type in the command bar) — prefixed with "crafthelper" (or its
+ * shorthand "crh"), not "craft", so they never compete with the game's own
+ * `craft` command, and namespaced by mode so "start"/"stop"/"status" never
+ * mean two different things depending on context:
  *   crafthelper improve <craftType> start  — begin training that craft type
  *   crafthelper improve stop               — finish the current step, then go idle
  *   crafthelper improve status             — print current state/skill/session stats
  *   crafthelper order add/list/remove/start/stop/status/history — bulk order fulfillment
  *   crafthelper / crafthelper help         — print full command help
+ *
+ * Full command syntax, examples, and behavior notes live in the in-game
+ * `crafthelper help` output (see handleHelp below) — kept there, and only
+ * there, so this doc comment and the manifest description don't drift out
+ * of sync with it.
  */
+
+// Single source of truth for the version shown in both the manifest and the
+// in-game help header — bump this, not two separate literals.
+const PLUGIN_VERSION = '0.16.0';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -539,6 +548,31 @@ export function formatMaterialsUsed(materials: Record<string, number>): string {
   return entries.map(([material, qty]) => `${material} x${qty}`).join(', ');
 }
 
+/** Lowercase, hyphenated, alphanumeric-only — for building a readable order id. */
+export function slugifyItemName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * A quality spec as a word token instead of symbols (+/-), so an order id
+ * built from it stays plain text: "gte" (greater than or equal), "eq"
+ * (exact), or "<min>to<max>" (range).
+ */
+export function qualitySpecToken(spec: QualitySpec): string {
+  if (spec.kind === 'atLeast') return `gte${spec.min}`;
+  if (spec.kind === 'exact') return `eq${spec.value}`;
+  return `${spec.min}to${spec.max}`;
+}
+
+/** A readable, human-scannable order id: "<item>-<quality>-<random>". */
+export function makeOrderId(itemName: string, qualitySpec: QualitySpec): string {
+  const suffix = Math.random().toString(36).slice(2, 6);
+  return `${slugifyItemName(itemName)}-${qualitySpecToken(qualitySpec)}-${suffix}`;
+}
+
 export interface QualityContainerRow {
   min: number;
   max: number;
@@ -967,12 +1001,20 @@ export function createCraftingHelperPlugin(): IPluginModule {
     const next = queue[0];
     const orderRecipe = ORDER_ITEM_RECIPES[next.itemName];
     if (!orderRecipe) {
-      enterError(api, cfg, `Order item "${next.itemName}" has no known recipe.`);
+      enterError(
+        api,
+        cfg,
+        `Order ${next.id} ("${next.itemName}") no longer has a known recipe — remove it with \`crafthelper order remove ${next.id}\` and re-add it under a valid name.`,
+      );
       return;
     }
     const typeRow = cfg.craftTypes.find((t) => t.id === orderRecipe.craftTypeId);
     if (!typeRow) {
-      enterError(api, cfg, `Unknown craft type "${orderRecipe.craftTypeId}" for order item "${next.itemName}".`);
+      enterError(
+        api,
+        cfg,
+        `Craft type "${orderRecipe.craftTypeId}" for order ${next.id} ("${next.itemName}") isn't configured — valid craft types: ${craftTypeOptionsText(cfg)}.`,
+      );
       return;
     }
     activeOrder = next;
@@ -1033,7 +1075,11 @@ export function createCraftingHelperPlugin(): IPluginModule {
 
     const recipe = resolveNextRecipe(cfg);
     if (!recipe) {
-      enterError(api, cfg, `Skill level ${trackedSkillLevel} has no matching tier in the tier table.`);
+      enterError(
+        api,
+        cfg,
+        `Skill level ${trackedSkillLevel} has no matching tier for "${activeCraftTypeRow?.label ?? activeCraftTypeRow?.id ?? '?'}" in the Tier table config — check that it has a row at or below this skill level.`,
+      );
       return;
     }
 
@@ -1209,7 +1255,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
       // cleanly rather than wait forever or blindly re-craft.
       if (matchCraftInterrupted(line)) {
         clearAllTimers();
-        writeInfo(api, 'Crafting was interrupted ("You stop crafting.") — stopping. Run `crafthelper start` to resume.');
+        const resumeCmd =
+          mode === 'order' ? 'crafthelper order start' : `crafthelper improve ${activeCraftTypeRow?.verb ?? activeCraftTypeRow?.id ?? '<craftType>'} start`;
+        writeInfo(api, `Crafting was interrupted ("You stop crafting.") — stopping. Run \`${resumeCmd}\` to resume.`);
         goIdle(api, cfg);
         return;
       }
@@ -1284,7 +1332,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
   }
 
   function onAlias(api: PluginRuntimeApi, input: string): boolean | undefined {
-    const trimmed = input.trim();
+    // "crh" is shorthand for "crafthelper" — normalize the leading token
+    // once so every match below only has to know about the one prefix.
+    const trimmed = input.trim().replace(/^crh(?=\s|$)/i, 'crafthelper');
     const lower = trimmed.toLowerCase();
 
     if (lower === 'crafthelper' || lower === 'crafthelper help') return handleHelp(api);
@@ -1319,7 +1369,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
   function handleHelp(api: PluginRuntimeApi): boolean {
     api.writeTerminal(
       [
-        '{C=== Crafting Helper ==={x',
+        `{C=== Crafting Helper v${PLUGIN_VERSION} ==={x`,
         'Automates tier-3 crafting. Two modes, one loop underneath:',
         '  {WImprove{x  — trains a craft skill: pulls the material(s) for the highest',
         '              trinket tier your skill qualifies for, crafts it, stores it in',
@@ -1329,6 +1379,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
         '              component, crafts, checks quality via `lore`, and routes the',
         '              result by your spec.',
         'Stand wherever your vault and crafting station both are before starting either.',
+        'Every command below also works with "crh" in place of "crafthelper".',
         '',
         '{Y-- Improving a skill --{x',
         helpCmd('crafthelper improve spellcraft start', 'start training Spellcrafting'),
@@ -1352,13 +1403,17 @@ export function createCraftingHelperPlugin(): IPluginModule {
         helpCmd('crafthelper order history', 'list completed orders and materials used'),
         helpCmd('crafthelper order history <id>', 'show one completed order in full'),
         '',
-        "Item names must match a known recipe (case-insensitive) — see the plugin's",
-        'config panel description for the full list of covered crafts. A "set" name',
-        '(any tailoring material or armor set + "cloth set" / "leather set" /',
-        '"<armor set> set" — always ending in the word "set") queues one order per',
-        'slot at once, all sharing the same quantity and quality spec. Adding your',
-        'first order while idle with nothing else queued starts fulfillment right',
-        'away — no separate `order start` needed.',
+        'Item names must match a known recipe (case-insensitive) — an unrecognized',
+        'name is reported back so you can check spelling. A "set" name (any',
+        'tailoring material or armor set + "cloth set" / "leather set" / "<armor',
+        'set> set" — always ending in the word "set") queues one order per slot at',
+        'once, all sharing the same quantity and quality spec. Adding your first',
+        'order while idle with nothing else queued starts fulfillment right away —',
+        'no separate `order start` needed.',
+        '',
+        'A queued order\'s id is generated from its item name and quality spec',
+        '(e.g. "diamond-gem-pain-gte97-a1b2") so `order list`/`order remove <id>`/',
+        '`order history <id>` are easy to read and match up at a glance.',
         '',
         'Every raw material pulled toward an order is tallied against it (a',
         '"destroyed" craft counts as a full loss of everything pulled for that',
@@ -1385,6 +1440,20 @@ export function createCraftingHelperPlugin(): IPluginModule {
     return cfg.craftTypes.find((t) => t.id === lower || t.verb.toLowerCase() === lower) ?? null;
   }
 
+  // Lists every configured craft type as "id (verb)" — used to turn a typo'd
+  // craft type into an immediately-actionable error instead of a dead end.
+  function craftTypeOptionsText(cfg: EngineConfig): string {
+    if (cfg.craftTypes.length === 0) return 'none configured — check the Craft types config';
+    return cfg.craftTypes.map((t) => `"${t.id}" (${t.verb})`).join(', ');
+  }
+
+  // A single, mode-aware phrasing for "something is already running" —
+  // names the mode and the exact stop command instead of a bare state enum.
+  function alreadyRunningMessage(): string {
+    const stopCmd = mode === 'order' ? 'crafthelper order stop' : 'crafthelper improve stop';
+    return `Already running in ${mode} mode (state: ${state}) — run \`${stopCmd}\` first.`;
+  }
+
   function handleImproveStart(api: PluginRuntimeApi, craftTypeToken: string): boolean {
     const cfg = readConfig(api);
     if (releaseTimer) {
@@ -1392,13 +1461,13 @@ export function createCraftingHelperPlugin(): IPluginModule {
       return true;
     }
     if (state !== 'idle') {
-      writeInfo(api, `Already running (state: ${state}).`);
+      writeInfo(api, alreadyRunningMessage());
       return true;
     }
 
     const typeRow = resolveCraftType(cfg, craftTypeToken);
     if (!typeRow) {
-      writeError(api, `Unknown craft type "${craftTypeToken}" — check the Craft types config.`);
+      writeError(api, `Unknown craft type "${craftTypeToken}" — valid craft types: ${craftTypeOptionsText(cfg)}.`);
       return true;
     }
 
@@ -1438,11 +1507,11 @@ export function createCraftingHelperPlugin(): IPluginModule {
     const qualitySpec = parseQualitySpec(match[3]);
 
     if (!Number.isFinite(qty) || qty <= 0) {
-      writeError(api, `Invalid quantity "${match[1]}".`);
+      writeError(api, `Invalid quantity "${match[1]}" — must be a whole number greater than 0.`);
       return true;
     }
     if (!qualitySpec) {
-      writeError(api, `Invalid quality spec "${match[3]}" — use "97+", "99", or "95-98".`);
+      writeError(api, `Invalid quality spec "${match[3]}" — use "97+" (at least), "99" (exact), or "95-98" (range).`);
       return true;
     }
 
@@ -1452,7 +1521,10 @@ export function createCraftingHelperPlugin(): IPluginModule {
     const setItems = ORDER_SET_RECIPES[itemName];
     const memberNames = setItems ?? [itemName];
     if (!setItems && !ORDER_ITEM_RECIPES[itemName]) {
-      writeError(api, `Unknown order item "${itemName}" — no recipe for it.`);
+      writeError(
+        api,
+        `Unknown order item "${itemName}" — no recipe for it. Check spelling, or see \`crafthelper help\` for examples.`,
+      );
       return true;
     }
 
@@ -1460,18 +1532,21 @@ export function createCraftingHelperPlugin(): IPluginModule {
     const wasEmpty = getOrderQueue(characterKey()).length === 0;
     const queuedIds: string[] = [];
 
-    memberNames.forEach((name, i) => {
+    memberNames.forEach((name) => {
       const orderRecipe = ORDER_ITEM_RECIPES[name];
       if (!orderRecipe) {
         writeError(api, `Internal error: set member "${name}" has no recipe — skipped.`);
         return;
       }
       if (!cfg.craftTypes.find((t) => t.id === orderRecipe.craftTypeId)) {
-        writeError(api, `Craft type "${orderRecipe.craftTypeId}" for "${name}" isn't configured — check the Craft types config.`);
+        writeError(
+          api,
+          `Craft type "${orderRecipe.craftTypeId}" for "${name}" isn't configured — valid craft types: ${craftTypeOptionsText(cfg)}.`,
+        );
         return;
       }
       const order: StoredCraftOrder = {
-        id: `order-${Date.now().toString(36)}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+        id: makeOrderId(name, qualitySpec),
         itemName: name,
         quantityRemaining: qty,
         quantityTotal: qty,
@@ -1528,7 +1603,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     if (orderId) {
       const record = history.find((r) => r.id === orderId);
       if (!record) {
-        writeError(api, `No completed order with id "${orderId}".`);
+        writeError(api, `No completed order with id "${orderId}" — run \`crafthelper order history\` to see valid ids.`);
         return true;
       }
       writeInfo(
@@ -1550,7 +1625,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
   function handleOrderRemove(api: PluginRuntimeApi, orderId: string): boolean {
     const removed = removeOrder(characterKey(), orderId);
     if (!removed) {
-      writeError(api, `No queued order with id "${orderId}".`);
+      writeError(api, `No queued order with id "${orderId}" — run \`crafthelper order list\` to see valid ids.`);
       return true;
     }
     if (activeOrder?.id === orderId) {
@@ -1566,7 +1641,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
       return true;
     }
     if (state !== 'idle') {
-      writeInfo(api, `Already running (state: ${state}).`);
+      writeInfo(api, alreadyRunningMessage());
       return true;
     }
     const queue = getOrderQueue(characterKey());
@@ -1647,9 +1722,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
     manifest: {
       id: 'crafting-helper',
       name: 'Crafting Helper',
-      version: '0.15.0',
+      version: PLUGIN_VERSION,
       description:
-        "Automates tier-3 crafting: skill-up training (pulls every named component, crafts the highest tier your skill qualifies for, stores finished trinkets) and order fulfillment (crafts multi-component items toward queued orders, checking quality via `lore` and routing by spec). Ships seeded with Spellcrafting, Sharp Weapons, Blunt Weapons, Armor Crafting, and Tailoring tier tables, plus real Tailoring, Armor Crafting, and Spellcrafting order recipes. All five craft skills' training tiers are complete (the last trinket in each carries skill to the 1001 cap). Order items can also be queued as a \"set\" (one of each armor/cloth slot in a material, e.g. \"silksteel cloth set\" or \"arcanium chainmail set\" — always ending in the word \"set\") in a single order-add call; adding an order while idle with nothing else queued starts fulfillment right away. Each completed order item logs its progress toward the order, and every raw material pulled toward it is tallied (a `destroyed` craft counts as a full loss) and summarized when the order finishes, kept for later lookup via `order history`. The `lore` quality-line pattern is unverified against a real log capture — watch for a stall on first live use. Run this while standing wherever your vault and crafting station both are. Type `crafthelper` (no arguments) for full in-game command help. Commands: crafthelper improve <craftType> start / improve stop/status, crafthelper order add/list/remove/start/stop/status/history.",
+        'Automates tier-3 crafting: skill-up training (auto-escalating trinket tiers as your skill rises) and bulk order fulfillment (multi-component items, checked by quality and tracked to completion). Run `crafthelper help` (or `crh help`) in-game for full command syntax, examples, and behavior notes.',
     },
 
     configSchema: {
