@@ -15,5 +15,8 @@ Purpose: HUD compact layout support — mirrors useMainContainer.ts's useLayoutS
 /useCharacterIdentity.ts
 Purpose: HUD compact layout support — provides the current character name via window.__SA_IDENTITY__ snapshot and shatteredarchive:identity-updated event subscription. Generates unique listener keys per instance via useId() to support multiple simultaneous consumers (CompactLayoutShell and CompactRoomRow) without event-listener stomping; each hook instance independently seeds from snapshot on mount and updates on event dispatch.
 
+/useLevelProgress.ts
+Purpose: HUD compact layout support — React binding (useSyncExternalStore) over features/charData/levelProgressStore for the EXP gauge in CompactVitalsRow; all state lives in the store so it survives layout switches.
+
 /useOpponentStatus.ts
 Purpose: HUD compact layout support — extracted verbatim from RightSidebar.tsx's StatusBlock (2026-09-14): tracks the enemy/opponent combat bar via 'event:fighting:opponent' (200ms staleness ticker, ENEMY_STALE_MS=5000, damage-chunk pulse cleared after 4500ms). Consumed by classic StatusBlock and (later) CompactVitalsRow, so — matching useCharacterIdentity's fix for the same class of bug — its ListenEvent key is suffixed with useId() per instance rather than the single static key StatusBlock used inline, so two simultaneous consumers don't evict each other's listener via the shared event registry. 2026-09-20 (live HUD theme switching): seeds `enemyUi` from features/combat/opponentStatusStore.ts's cache on mount and writes every update back to it, so remounting this hook (a live theme swap) doesn't reset to "no enemy" — isEnemyActive stays correctly derived from lastSeenTs vs. the live clock either way, so a stale cache still reads as inactive.

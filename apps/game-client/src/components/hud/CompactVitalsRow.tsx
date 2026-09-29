@@ -3,6 +3,7 @@ import styles from '../../styles/hud/CompactVitalsRow.module.scss';
 import { useStatusBlockViewModel } from '../../hooks/useLayoutShell';
 import { useOpponentStatus } from '../../hooks/useOpponentStatus';
 import { useSanctuaryActive } from '../../hooks/useSanctuaryActive';
+import { useLevelProgress } from '../../hooks/useLevelProgress';
 import { computeStatusPieces } from '../../hooks/useCharData';
 import { ansiToHtml } from '@shatteredarchive/utils-client/ansi-to-html';
 
@@ -10,6 +11,7 @@ export const CompactVitalsRow: React.FC = () => {
   const { remaining, vitals, hpPct, mpPct, staPct, ancillary } = useStatusBlockViewModel();
   const { enemyUi, isEnemyActive } = useOpponentStatus();
   const { hasSanctuary } = useSanctuaryActive();
+  const levelProgress = useLevelProgress();
 
   const statusPieces = computeStatusPieces(ancillary);
 
@@ -61,6 +63,20 @@ export const CompactVitalsRow: React.FC = () => {
             {vitals.stamina} / {vitals.staminaMax}
           </span>
         </div>
+
+        {/* Hidden at max level, or until level (login_data) and tnl (char_data) are both known. */}
+        {levelProgress.visible && (
+          <div
+            className={`${styles.gauge} sa-hud-vitals-exp-gauge`}
+            title={`Level ${levelProgress.level} — ${levelProgress.tnl?.toLocaleString('en-US')} exp to next level`}
+          >
+            <span className={styles.gaugeLabel}>EXP</span>
+            <div className={styles.track}>
+              <div className={`${styles.fill} sa-hud-vitals-fill-exp`} style={{ width: `${levelProgress.pct}%` }} />
+            </div>
+            <span className={styles.value}>{Math.round(levelProgress.pct)}%</span>
+          </div>
+        )}
       </div>
 
       {statusPieces.length > 0 && (

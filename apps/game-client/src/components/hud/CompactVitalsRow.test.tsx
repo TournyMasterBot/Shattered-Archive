@@ -44,10 +44,18 @@ jest.mock('../../hooks/useSanctuaryActive', () => ({
   }),
 }));
 
+const HIDDEN_LEVEL_PROGRESS = { visible: false, pct: 0, level: null, tnl: null };
+let mockLevelProgress: { visible: boolean; pct: number; level: number | null; tnl: number | null } =
+  HIDDEN_LEVEL_PROGRESS;
+jest.mock('../../hooks/useLevelProgress', () => ({
+  useLevelProgress: () => mockLevelProgress,
+}));
+
 describe('CompactVitalsRow', () => {
   beforeEach(() => {
     mockAncillary = BASE_ANCILLARY;
     mockHasSanctuary = false;
+    mockLevelProgress = HIDDEN_LEVEL_PROGRESS;
   });
 
   it('shows legible X / Y text for HP, Mana, and Move', () => {
@@ -98,5 +106,41 @@ describe('CompactVitalsRow', () => {
     render(<CompactVitalsRow />);
     const hpFill = document.querySelector('.sa-hud-vitals-fill-hp');
     expect(hpFill?.parentElement).toHaveAttribute('data-sanctuary', 'true');
+  });
+
+  describe('EXP (leveling) gauge', () => {
+    it('is not rendered when level progress is hidden (max level or data not known yet)', () => {
+      render(<CompactVitalsRow />);
+      expect(screen.queryByText('EXP')).toBeNull();
+      expect(document.querySelector('.sa-hud-vitals-fill-exp')).toBeNull();
+    });
+
+    it('renders next to the other gauges with the percent filled', () => {
+      mockLevelProgress = { visible: true, pct: 62.4, level: 42, tnl: 1234 };
+      render(<CompactVitalsRow />);
+
+      expect(screen.getByText('EXP')).toBeInTheDocument();
+      expect(screen.getByText('62%')).toBeInTheDocument();
+
+      const fill = document.querySelector('.sa-hud-vitals-fill-exp') as HTMLElement;
+      expect(fill).not.toBeNull();
+      expect(fill.style.width).toBe('62.4%');
+    });
+
+    it('puts the exact exp-to-level and level in a tooltip', () => {
+      mockLevelProgress = { visible: true, pct: 10, level: 42, tnl: 1234567 };
+      render(<CompactVitalsRow />);
+
+      expect(screen.getByTitle('Level 42 — 1,234,567 exp to next level')).toBeInTheDocument();
+    });
+
+    it('does not disturb the existing HP / Mana / MOVE gauges', () => {
+      mockLevelProgress = { visible: true, pct: 10, level: 42, tnl: 500 };
+      render(<CompactVitalsRow />);
+
+      expect(screen.getByText('402 / 402')).toBeInTheDocument();
+      expect(screen.getByText('233 / 233')).toBeInTheDocument();
+      expect(screen.getByText('140 / 140')).toBeInTheDocument();
+    });
   });
 });

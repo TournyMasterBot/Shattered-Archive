@@ -108,6 +108,12 @@
   background: #c94a4a;
 }
 
+// Leveling progress (only rendered below max level) — a violet so it reads as
+// its own thing next to the red/blue/yellow vitals.
+:global(.sa-hud-vitals-fill-exp) {
+  background: #8e6bd6;
+}
+
 .value {
   // Widened alongside the row's font-size bump so wider digits at the
   // new size still fit without the gauge jittering (see .card above).
