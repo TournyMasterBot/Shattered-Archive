@@ -41,7 +41,7 @@ import {
 
 // Single source of truth for the version shown in both the manifest and the
 // in-game help header — bump this, not two separate literals.
-const PLUGIN_VERSION = '0.16.0';
+const PLUGIN_VERSION = '1.0.0';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
