@@ -13,7 +13,6 @@ import {
   buildHudContent,
   DEFAULT_CRAFT_TYPES_CONFIG,
   DEFAULT_TIER_TABLE_CONFIG,
-  type CraftTierRow,
   parseQualitySpec,
   qualityMatchesSpec,
   matchItemCondition,

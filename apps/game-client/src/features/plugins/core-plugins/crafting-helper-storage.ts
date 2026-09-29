@@ -17,7 +17,7 @@ export interface SkillEntry {
 // — a flat Map, same shape as peopleDb.ts's single-level Map, rather than
 // nested maps, since every read/write already knows both parts of the key.
 
-let db: Map<string, SkillEntry> = new Map();
+const db: Map<string, SkillEntry> = new Map();
 let loaded = false;
 
 function compositeKey(characterKey: string, craftTypeId: string): string {

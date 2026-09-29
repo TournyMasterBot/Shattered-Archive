@@ -11,7 +11,6 @@ import {
   getCompletedOrders,
   addCompletedOrder,
   type StoredCraftOrder,
-  type CompletedCraftOrder,
 } from './crafting-helper-storage';
 
 /**
@@ -1688,7 +1687,6 @@ export function createCraftingHelperPlugin(): IPluginModule {
   }
 
   function handleStatus(api: PluginRuntimeApi): boolean {
-    const cfg = readConfig(api);
     const parts = [`state=${state}`, `mode=${mode}`];
 
     if (mode === 'order') {
