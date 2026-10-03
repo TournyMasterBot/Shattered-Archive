@@ -1021,6 +1021,54 @@ describe('crafting-helper state machine', () => {
     expect(mock.terminalWrites.some((w) => w.includes('crafthelper order start` to resume'))).toBe(true);
   });
 
+  it('stops cleanly with an error if no recognized outcome arrives within craftResponseTimeoutMs', () => {
+    const mock = createMockApi(defaultConfig({ craftResponseTimeoutMs: 500 }));
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
+    mock.feedLine('Craftskill: 1     Craft Rank: Apprentice Spellcrafter');
+    jest.advanceTimersByTime(200); // pull-confirm timeout — assume the `get` succeeded
+    mock.sent.length = 0;
+    mock.terminalWrites.length = 0;
+
+    jest.advanceTimersByTime(500);
+
+    expect(mock.terminalWrites.join('\n')).toMatch(/craft/i);
+    expect(mock.terminalWrites.join('\n')).toContain('500ms');
+    expect(plugin.onAlias!(mock.api, 'crafthelper improve status')).toBe(true);
+    expect(mock.terminalWrites.at(-1)).toContain('state=error_stopped');
+  });
+
+  it('does not fire the craft-response timeout once a recognized outcome line arrives first', () => {
+    const mock = createMockApi(defaultConfig({ craftResponseTimeoutMs: 500 }));
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
+    mock.feedLine('Craftskill: 1     Craft Rank: Apprentice Spellcrafter');
+    jest.advanceTimersByTime(200);
+
+    mock.feedLine('You were successful.');
+    jest.advanceTimersByTime(500); // if the craft timer weren't cleared, this would also fire it
+
+    expect(plugin.onAlias!(mock.api, 'crafthelper improve status')).toBe(true);
+    expect(mock.terminalWrites.at(-1)).not.toContain('error_stopped');
+  });
+
+  it('goes cleanly idle, not error_stopped, if stop was requested while waiting on the craft-response timeout', () => {
+    const mock = createMockApi(defaultConfig({ craftResponseTimeoutMs: 500 }));
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
+    mock.feedLine('Craftskill: 1     Craft Rank: Apprentice Spellcrafter');
+    jest.advanceTimersByTime(200);
+
+    plugin.onAlias!(mock.api, 'crafthelper improve stop');
+    jest.advanceTimersByTime(500);
+
+    expect(plugin.onAlias!(mock.api, 'crafthelper improve status')).toBe(true);
+    expect(mock.terminalWrites.at(-1)).toContain('state=idle');
+  });
+
   it('reports "already running" with the current mode and its exact stop command', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
@@ -1112,8 +1160,8 @@ describe('crafting-helper state machine', () => {
     expect(mock.terminalWrites.some((w) => w.includes('Still returning materials'))).toBe(true);
   });
 
-  it('waits indefinitely for a craft outcome — no timeout, since higher-tier crafts can take a while', () => {
-    const mock = createMockApi(defaultConfig());
+  it('waits for a craft outcome up to the configured timeout, ignoring unrelated text', () => {
+    const mock = createMockApi(defaultConfig({ craftResponseTimeoutMs: 120_000 }));
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
     plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
@@ -1125,7 +1173,7 @@ describe('crafting-helper state machine', () => {
     jest.advanceTimersByTime(60_000); // a long wait — must not error or send anything
     expect(mock.sent).toEqual(sentSoFar);
 
-    // The outcome eventually arrives, however late, and the loop continues normally.
+    // The outcome eventually arrives, and the loop continues normally.
     mock.feedLine('You were successful.');
     expect(mock.sent).toContain("put 1 'diamond gemstone' vault");
   });

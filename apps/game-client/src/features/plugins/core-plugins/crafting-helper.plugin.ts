@@ -724,6 +724,7 @@ interface EngineConfig {
   pullConfirmTimeoutMs: number;
   scoreResponseTimeoutMs: number;
   loreResponseTimeoutMs: number;
+  craftResponseTimeoutMs: number;
   orderHoldingContainer: string;
   qualityContainerMap: QualityContainerRow[];
   debug: boolean;
@@ -770,6 +771,7 @@ function readConfig(api: PluginRuntimeApi): EngineConfig {
     pullConfirmTimeoutMs: numOr(cfg.pullConfirmTimeoutMs, 200),
     scoreResponseTimeoutMs: numOr(cfg.scoreResponseTimeoutMs, 1000),
     loreResponseTimeoutMs: numOr(cfg.loreResponseTimeoutMs, 2000),
+    craftResponseTimeoutMs: numOr(cfg.craftResponseTimeoutMs, 60000),
     orderHoldingContainer:
       typeof cfg.orderHoldingContainer === 'string' && cfg.orderHoldingContainer.trim()
         ? cfg.orderHoldingContainer.trim()
@@ -811,6 +813,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
   let pullTimer: ReturnType<typeof setTimeout> | null = null;
   let pacingTimer: ReturnType<typeof setTimeout> | null = null;
   let releaseTimer: ReturnType<typeof setTimeout> | null = null;
+  let craftTimer: ReturnType<typeof setTimeout> | null = null;
   // Components pulled from the vault that a craft hasn't consumed yet — if
   // the run stops, these go back into the vault.
   let materialsHeld: RecipeComponent[] | null = null;
@@ -822,7 +825,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
     if (pacingTimer) clearTimeout(pacingTimer);
     if (qualityTimer) clearTimeout(qualityTimer);
     if (releaseTimer) clearTimeout(releaseTimer);
-    scoreTimer = pullTimer = pacingTimer = qualityTimer = releaseTimer = null;
+    if (craftTimer) clearTimeout(craftTimer);
+    scoreTimer = pullTimer = pacingTimer = qualityTimer = releaseTimer = craftTimer = null;
   }
 
   function publishHud(api: PluginRuntimeApi, cfg: EngineConfig) {
@@ -1123,10 +1127,28 @@ export function createCraftingHelperPlugin(): IPluginModule {
     state = 'crafting';
     publishHud(api, cfg);
     api.sendCommand(`craft ${activeCraftTypeRow.verb} '${activeRecipe.outputName}'`);
-    // No timeout here on purpose: higher-tier crafts can take a while to
-    // resolve, and one of the three known outcome lines always eventually
-    // arrives — there's no "silence means success" ambiguity like the pull
-    // step has, so waiting indefinitely is correct, not a stall risk.
+    // Bounded safety net: one of the three known outcome lines almost always
+    // arrives quickly, but an unrecognized server message must not hang the
+    // engine forever (review finding 1.1) — craftResponseTimeoutMs is long
+    // (default 60s) precisely because higher-tier crafts can take a while.
+    craftTimer = setTimeout(() => onCraftTimeout(api), cfg.craftResponseTimeoutMs);
+  }
+
+  function onCraftTimeout(api: PluginRuntimeApi) {
+    craftTimer = null;
+    const cfg = readConfig(api);
+    // Same stopRequested check sibling timeouts need (review 3.3) — a stop
+    // that races this timeout must land in a clean idle, not an alarming
+    // error_stopped.
+    if (stopRequested) {
+      goIdle(api, cfg);
+      return;
+    }
+    enterError(
+      api,
+      cfg,
+      `No recognized outcome for "${activeRecipe?.outputName}" within ${cfg.craftResponseTimeoutMs}ms — stopped rather than wait forever on unmatched text.`,
+    );
   }
 
   function beginDestroyedRecovery(api: PluginRuntimeApi, cfg: EngineConfig, components: RecipeComponent[]) {
@@ -1277,7 +1299,12 @@ export function createCraftingHelperPlugin(): IPluginModule {
       }
     }
 
-    if (outcome === null) return; // keep waiting — no timeout on the craft step, see sendCraft()
+    if (outcome === null) return; // keep waiting for the craft-response timeout, or a recognized line
+
+    if (craftTimer) {
+      clearTimeout(craftTimer);
+      craftTimer = null;
+    }
 
     if (session) session.craftAttempts += 1;
 
@@ -1378,6 +1405,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
         '              component, crafts, checks quality via `lore`, and routes the',
         '              result by your spec.',
         'Stand wherever your vault and crafting station both are before starting either.',
+        'If a craft never gets a recognized response within the Craft response',
+        'timeout (default 60s, configurable), the run stops with a clear error',
+        'instead of hanging indefinitely.',
         'Every command below also works with "crh" in place of "crafthelper".',
         '',
         '{Y-- Improving a skill --{x',
@@ -1733,6 +1763,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
         pullConfirmTimeoutMs: 200,
         scoreResponseTimeoutMs: 1000,
         loreResponseTimeoutMs: 2000,
+        craftResponseTimeoutMs: 60000,
         orderHoldingContainer: 'vault',
         qualityContainerMap: '',
         debug: false,
@@ -1782,6 +1813,14 @@ export function createCraftingHelperPlugin(): IPluginModule {
           label: 'Lore response timeout (ms)',
           min: 0,
           description: 'How long to wait after `lore` for the item\'s Condition line before aborting (order mode only).',
+        },
+        {
+          key: 'craftResponseTimeoutMs',
+          type: 'number',
+          label: 'Craft response timeout (ms)',
+          min: 0,
+          description:
+            'How long to wait after `craft` for a recognized outcome line before stopping — a safety net in case the server ever sends unrecognized text (default 60s; higher tiers can take a while, so keep this generous).',
         },
         {
           key: 'orderHoldingContainer',
