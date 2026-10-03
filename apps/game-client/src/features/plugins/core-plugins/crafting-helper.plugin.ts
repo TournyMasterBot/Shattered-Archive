@@ -941,6 +941,10 @@ export function createCraftingHelperPlugin(): IPluginModule {
     // The craft succeeded, so don't leave the item in inventory: with no
     // quality reading there's no better home than the default (vault).
     if (activeRecipe) api.sendCommand(`put 1 '${activeRecipe.outputName}' vault`);
+    if (stopRequested) {
+      goIdle(api, cfg);
+      return;
+    }
     enterError(
       api,
       cfg,
@@ -1291,9 +1295,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
 
     // state === 'crafting'
     let outcome: CraftOutcome = null;
-    for (const rawLine of plain.split('\n')) {
-      const line = rawLine.trim();
-      if (!line) continue;
+    for (const line of lines) {
+      if (outcome !== null) continue; // success/failure already seen this payload — a later interrupted/vault-failure line here is stale noise, not a new event (review 3.2)
 
       // Something (a command, movement, being attacked) interrupted the
       // craft in progress — no outcome line will ever arrive, so stop
@@ -1317,10 +1320,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
         return;
       }
 
-      if (outcome === null) {
-        const m = matchCraftOutcome(line);
-        if (m) outcome = m;
-      }
+      const m = matchCraftOutcome(line);
+      if (m) outcome = m;
     }
 
     if (outcome === null) return; // keep waiting for the craft-response timeout, or a recognized line
@@ -1356,6 +1357,10 @@ export function createCraftingHelperPlugin(): IPluginModule {
   function onScoreTimeout(api: PluginRuntimeApi) {
     scoreTimer = null;
     const cfg = readConfig(api);
+    if (stopRequested) {
+      goIdle(api, cfg);
+      return;
+    }
     enterError(
       api,
       cfg,

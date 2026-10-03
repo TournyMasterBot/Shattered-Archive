@@ -1986,4 +1986,51 @@ describe('crafting-helper state machine', () => {
     plugin.onAlias!(mock.api, 'crafthelper order list');
     expect(mock.terminalWrites.join('\n')).not.toContain('[active]'); // the real active order is gone from storage; nothing left in queue is it
   });
+
+  it('does not let a late interrupted/vault-failure line in the same payload discard an already-detected success (review 3.2)', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
+    mock.feedLine('Craftskill: 1     Craft Rank: Apprentice Spellcrafter');
+    jest.advanceTimersByTime(200);
+
+    mock.sent.length = 0;
+    mock.feedRaw('You were successful.\r\nYou stop crafting.\r\n');
+
+    // A real success must still result in a `put`, not an error_stopped.
+    expect(mock.sent.some((c) => c.startsWith('put'))).toBe(true);
+    expect(plugin.onAlias!(mock.api, 'crafthelper improve status')).toBe(true);
+    expect(mock.terminalWrites.at(-1)).not.toContain('error_stopped');
+  });
+
+  it('goes cleanly idle, not error_stopped, if stop was requested while awaiting a score-rank line (review 3.3)', () => {
+    const mock = createMockApi(defaultConfig({ scoreResponseTimeoutMs: 500 }));
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
+
+    plugin.onAlias!(mock.api, 'crafthelper improve stop');
+    jest.advanceTimersByTime(500);
+
+    expect(plugin.onAlias!(mock.api, 'crafthelper improve status')).toBe(true);
+    expect(mock.terminalWrites.at(-1)).toContain('state=idle');
+  });
+
+  it('goes cleanly idle, not error_stopped, if stop was requested while awaiting a quality (lore) line (review 3.3)', () => {
+    const mock = createMockApi(defaultConfig({ loreResponseTimeoutMs: 500 }));
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
+    plugin.onAlias!(mock.api, 'crafthelper order start');
+    jest.advanceTimersByTime(200); // pull-confirm, both components
+    jest.advanceTimersByTime(200);
+    mock.feedLine('You were successful.'); // -> checking_quality
+
+    plugin.onAlias!(mock.api, 'crafthelper order stop');
+    jest.advanceTimersByTime(500);
+
+    expect(plugin.onAlias!(mock.api, 'crafthelper order status')).toBe(true);
+    expect(mock.terminalWrites.at(-1)).toContain('state=idle');
+  });
 });
