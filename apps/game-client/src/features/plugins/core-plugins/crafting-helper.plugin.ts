@@ -642,10 +642,11 @@ export function containerForQuality(quality: number, rows: QualityContainerRow[]
 
 const SCORE_LINE_RE = /^Craftskill:\s*(\d+)\s+Craft Rank:\s*(.+)$/i;
 
-export function findCraftSkillLevel(strippedText: string, keyword: string): number | null {
+export function findCraftSkillLevel(input: string | string[], keyword: string): number | null {
   const kw = keyword.trim().toLowerCase();
   if (!kw) return null;
-  for (const rawLine of strippedText.split('\n')) {
+  const lines = Array.isArray(input) ? input : input.split('\n');
+  for (const rawLine of lines) {
     const line = rawLine.trim();
     const m = line.match(SCORE_LINE_RE);
     if (m && m[2].trim().toLowerCase().includes(kw)) {
@@ -1216,9 +1217,10 @@ export function createCraftingHelperPlugin(): IPluginModule {
 
     const cfg = readConfig(api);
     const plain = stripAnsi(rawText).replace(/\r/g, '');
+    const lines = plain.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
 
     if (state === 'awaiting_score') {
-      const level = findCraftSkillLevel(plain, activeCraftTypeRow?.keyword ?? '');
+      const level = findCraftSkillLevel(lines, activeCraftTypeRow?.keyword ?? '');
       if (level != null) {
         if (scoreTimer) {
           clearTimeout(scoreTimer);
@@ -1238,9 +1240,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     // cycle, where only vault-failure was being scanned for, so the skill-up
     // was silently dropped and the HUD stayed on the old level. Scan every
     // payload for it regardless of which mid-cycle state we're in.
-    for (const rawLine of plain.split('\n')) {
-      const line = rawLine.trim();
-      if (!line) continue;
+    for (const line of lines) {
       const improved = matchSkillImproved(line);
       if (improved != null) {
         trackedSkillLevel = improved;
@@ -1256,9 +1256,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     if (state === 'storing_trinket') return;
 
     if (state === 'pulling_components') {
-      for (const rawLine of plain.split('\n')) {
-        const line = rawLine.trim();
-        if (!line) continue;
+      for (const line of lines) {
         if (matchVaultFailure(line)) {
           if (pullTimer) {
             clearTimeout(pullTimer);
@@ -1274,9 +1272,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     }
 
     if (state === 'checking_quality') {
-      for (const rawLine of plain.split('\n')) {
-        const line = rawLine.trim();
-        if (!line) continue;
+      for (const line of lines) {
         const quality = matchItemCondition(line);
         if (quality != null) {
           if (qualityTimer) {
