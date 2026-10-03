@@ -445,6 +445,11 @@ describe('parseQualityContainerMap / containerForQuality', () => {
     const rows = parseQualityContainerMap('90-94 | common');
     expect(containerForQuality(99, rows)).toBe('vault');
   });
+
+  it('drops a row where min > max instead of accepting a dead range (review 3.1)', () => {
+    const rows = parseQualityContainerMap('98-95|rare-vault');
+    expect(rows).toHaveLength(0);
+  });
 });
 
 describe('matchQualityContainer', () => {
@@ -1946,5 +1951,39 @@ describe('crafting-helper state machine', () => {
 
     expect(mock.terminalWrites.join('\n')).toContain('identity');
     expect(getOrderQueue('__unknown__')).toHaveLength(0);
+  });
+
+  it('clears activeOrder on stop so order status reports none instead of a stale order (review 3.4)', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
+    plugin.onAlias!(mock.api, 'crafthelper order start');
+
+    plugin.onAlias!(mock.api, 'crafthelper order stop');
+    // Let the in-flight step finish so stopRequested is actually honored.
+    jest.advanceTimersByTime(5000);
+
+    expect(plugin.onAlias!(mock.api, 'crafthelper order status')).toBe(true);
+    expect(mock.terminalWrites.at(-1)).toContain('activeOrder=none');
+  });
+
+  it('only tags the truly in-flight order as [active], not whatever is now at queue[0] (review 3.5)', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'opal gemstone' 97+");
+    plugin.onAlias!(mock.api, 'crafthelper order start'); // starts fulfilling the first order
+
+    // Task 5 (sequenced before this task) changes this file's default test
+    // identity from '__unknown__' to 'testchar' — read from that bucket.
+    const queueBeforeRemove = getOrderQueue('testchar');
+    const activeId = queueBeforeRemove[0].id;
+    plugin.onAlias!(mock.api, `crafthelper order remove ${activeId}`); // splices it out while still in-flight
+
+    mock.terminalWrites.length = 0;
+    plugin.onAlias!(mock.api, 'crafthelper order list');
+    expect(mock.terminalWrites.join('\n')).not.toContain('[active]'); // the real active order is gone from storage; nothing left in queue is it
   });
 });

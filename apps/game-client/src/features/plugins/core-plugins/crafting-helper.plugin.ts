@@ -613,7 +613,9 @@ export function parseQualityContainerMap(raw: unknown): QualityContainerRow[] {
 
     const range = rangeStr.match(/^(\d+)-(\d+)$/);
     if (range) {
-      rows.push({ min: parseInt(range[1], 10), max: parseInt(range[2], 10), container });
+      const min = parseInt(range[1], 10);
+      const max = parseInt(range[2], 10);
+      if (min <= max) rows.push({ min, max, container });
       continue;
     }
     const single = rangeStr.match(/^(\d+)$/);
@@ -1076,6 +1078,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     stopRequested = false;
     state = 'idle';
     activeRecipe = null;
+    activeOrder = null;
     publishHud(api, cfg);
     writeInfo(api, 'Stopped.');
     releaseMaterials(api, cfg);
@@ -1651,8 +1654,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
       writeInfo(api, 'No orders queued.');
       return true;
     }
-    queue.forEach((o, i) => {
-      const activeTag = i === 0 && mode === 'order' && state !== 'idle' ? ' [active]' : '';
+    queue.forEach((o) => {
+      const activeTag = o.id === activeOrder?.id && mode === 'order' && state !== 'idle' ? ' [active]' : '';
       writeInfo(api, `${o.id}: ${o.quantityRemaining}/${o.quantityTotal}x "${o.itemName}"${activeTag}`);
     });
     return true;
