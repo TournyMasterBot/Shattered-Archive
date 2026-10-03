@@ -159,6 +159,17 @@ describe('crafting-helper-storage order queue', () => {
     expect(() => getOrderQueue('grondak')).not.toThrow();
     expect(getOrderQueue('grondak')).toEqual([]);
   });
+
+  it('returns a deep-enough copy that mutating a returned order does not corrupt what is persisted (Review Focus #5)', () => {
+    const { addOrder, getOrderQueue } = freshStorage();
+    addOrder('alice', { id: 'o1', itemName: 'diamond gem pain', quantityRemaining: 1, quantityTotal: 1, qualitySpec: { kind: 'atLeast', min: 97 }, createdAt: Date.now() });
+
+    const first = getOrderQueue('alice');
+    first[0].quantityRemaining = 999; // mutate the returned object directly
+
+    const second = getOrderQueue('alice');
+    expect(second[0].quantityRemaining).toBe(1); // unaffected by the mutation above
+  });
 });
 
 describe('crafting-helper-storage completed order history', () => {
@@ -212,5 +223,16 @@ describe('crafting-helper-storage completed order history', () => {
     const { getCompletedOrders } = freshStorage();
     expect(() => getCompletedOrders('grondak')).not.toThrow();
     expect(getCompletedOrders('grondak')).toEqual([]);
+  });
+
+  it('returns a deep-enough copy that mutating a returned completed order does not corrupt what is persisted (Review Focus #5)', () => {
+    const { addCompletedOrder, getCompletedOrders } = freshStorage();
+    addCompletedOrder('alice', record());
+
+    const first = getCompletedOrders('alice');
+    first[0].quantityTotal = 999; // mutate the returned object directly
+
+    const second = getCompletedOrders('alice');
+    expect(second[0].quantityTotal).toBe(6); // unaffected by the mutation above
   });
 });

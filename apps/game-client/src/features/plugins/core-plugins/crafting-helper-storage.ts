@@ -79,11 +79,91 @@ export function setTrackedSkillLevel(characterKey: string, craftTypeId: string, 
   persist();
 }
 
+// ── Shared per-character list-store helper ────────────────────────────────
+// Order queue and completed-order history are both "one localStorage array
+// per character, lazy-loaded on first access, debounce-persisted" — this
+// factory shares that load/persist logic while giving each caller its own
+// isolated Map/Set/timer state (review 3.7). `list()` returns a copy of
+// each item, not just of the outer array, so a caller mutating a returned
+// object can never corrupt what's persisted (review 3.8).
+function createPerCharacterListStore<T extends object>(storageKeyPrefix: string, maxEntries?: number) {
+  const store: Map<string, T[]> = new Map();
+  const loadedKeys: Set<string> = new Set();
+  const persistTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
+
+  function storageKey(characterKey: string): string {
+    return `${storageKeyPrefix}.${characterKey}`;
+  }
+
+  function ensureLoaded(characterKey: string) {
+    if (loadedKeys.has(characterKey)) return;
+    loadedKeys.add(characterKey);
+    try {
+      if (typeof window === 'undefined') return;
+      const raw = window.localStorage.getItem(storageKey(characterKey));
+      if (!raw) return;
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) store.set(characterKey, arr as T[]);
+    } catch {
+      // ignore corrupt storage
+    }
+  }
+
+  function persist(characterKey: string) {
+    const existing = persistTimers.get(characterKey);
+    if (existing) clearTimeout(existing);
+    persistTimers.set(
+      characterKey,
+      setTimeout(() => {
+        persistTimers.delete(characterKey);
+        try {
+          if (typeof window === 'undefined') return;
+          const list = store.get(characterKey) ?? [];
+          window.localStorage.setItem(storageKey(characterKey), JSON.stringify(list));
+        } catch {
+          // ignore
+        }
+      }, PERSIST_DELAY_MS),
+    );
+  }
+
+  return {
+    list(characterKey: string): T[] {
+      ensureLoaded(characterKey);
+      return (store.get(characterKey) ?? []).map((item) => ({ ...item }));
+    },
+    append(characterKey: string, item: T): void {
+      ensureLoaded(characterKey);
+      const next = [...(store.get(characterKey) ?? []), item];
+      const trimmed = maxEntries && next.length > maxEntries ? next.slice(next.length - maxEntries) : next;
+      store.set(characterKey, trimmed);
+      persist(characterKey);
+    },
+    removeWhere(characterKey: string, predicate: (item: T) => boolean): boolean {
+      ensureLoaded(characterKey);
+      const queue = store.get(characterKey) ?? [];
+      const idx = queue.findIndex(predicate);
+      if (idx === -1) return false;
+      const next = [...queue];
+      next.splice(idx, 1);
+      store.set(characterKey, next);
+      persist(characterKey);
+      return true;
+    },
+    updateWhere(characterKey: string, predicate: (item: T) => boolean, patch: Partial<T>): void {
+      ensureLoaded(characterKey);
+      const queue = store.get(characterKey) ?? [];
+      const idx = queue.findIndex(predicate);
+      if (idx === -1) return;
+      const next = [...queue];
+      next[idx] = { ...next[idx], ...patch };
+      store.set(characterKey, next);
+      persist(characterKey);
+    },
+  };
+}
+
 // ── Order queue store ────────────────────────────────────────────────────
-// One localStorage entry per character (not a shared keyed map like skill
-// levels above) since each entry is itself an ordered array — the FIFO
-// order among a character's orders IS the array order, so there's nothing
-// to key by beyond the character.
 
 export type StoredQualitySpec =
   | { kind: 'atLeast'; min: number }
@@ -97,92 +177,31 @@ export interface StoredCraftOrder {
   quantityTotal: number;
   qualitySpec: StoredQualitySpec;
   createdAt: number; // ms epoch
-  // Running tally of raw materials consumed toward this order so far, keyed
-  // by material name. Optional because orders queued before this field
-  // existed may already be sitting in a character's persisted queue.
   materialsUsed?: Record<string, number>;
 }
 
-const orderQueues: Map<string, StoredCraftOrder[]> = new Map();
-const ordersLoaded: Set<string> = new Set();
-const orderPersistTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
-
-function orderStorageKey(characterKey: string): string {
-  return `shatteredarchive.plugins.crafting-helper.orders.${characterKey}`;
-}
-
-function ensureOrdersLoaded(characterKey: string) {
-  if (ordersLoaded.has(characterKey)) return;
-  ordersLoaded.add(characterKey);
-  try {
-    if (typeof window === 'undefined') return;
-    const raw = window.localStorage.getItem(orderStorageKey(characterKey));
-    if (!raw) return;
-    const arr = JSON.parse(raw);
-    if (Array.isArray(arr)) orderQueues.set(characterKey, arr as StoredCraftOrder[]);
-  } catch {
-    // ignore corrupt storage
-  }
-}
-
-function persistOrders(characterKey: string) {
-  const existing = orderPersistTimers.get(characterKey);
-  if (existing) clearTimeout(existing);
-  orderPersistTimers.set(
-    characterKey,
-    setTimeout(() => {
-      orderPersistTimers.delete(characterKey);
-      try {
-        if (typeof window === 'undefined') return;
-        const queue = orderQueues.get(characterKey) ?? [];
-        window.localStorage.setItem(orderStorageKey(characterKey), JSON.stringify(queue));
-      } catch {
-        // ignore
-      }
-    }, PERSIST_DELAY_MS),
-  );
-}
+const orderQueueStore = createPerCharacterListStore<StoredCraftOrder>('shatteredarchive.plugins.crafting-helper.orders');
 
 export function getOrderQueue(characterKey: string): StoredCraftOrder[] {
-  ensureOrdersLoaded(characterKey);
-  return [...(orderQueues.get(characterKey) ?? [])];
+  return orderQueueStore.list(characterKey);
 }
 
 export function addOrder(characterKey: string, order: StoredCraftOrder): void {
-  ensureOrdersLoaded(characterKey);
-  const queue = [...(orderQueues.get(characterKey) ?? []), order];
-  orderQueues.set(characterKey, queue);
-  persistOrders(characterKey);
+  orderQueueStore.append(characterKey, order);
 }
 
 export function removeOrder(characterKey: string, orderId: string): boolean {
-  ensureOrdersLoaded(characterKey);
-  const queue = orderQueues.get(characterKey) ?? [];
-  const idx = queue.findIndex((o) => o.id === orderId);
-  if (idx === -1) return false;
-  const next = [...queue];
-  next.splice(idx, 1);
-  orderQueues.set(characterKey, next);
-  persistOrders(characterKey);
-  return true;
+  return orderQueueStore.removeWhere(characterKey, (o) => o.id === orderId);
 }
 
 export function updateOrder(characterKey: string, orderId: string, patch: Partial<StoredCraftOrder>): void {
-  ensureOrdersLoaded(characterKey);
-  const queue = orderQueues.get(characterKey) ?? [];
-  const idx = queue.findIndex((o) => o.id === orderId);
-  if (idx === -1) return;
-  const next = [...queue];
-  next[idx] = { ...next[idx], ...patch };
-  orderQueues.set(characterKey, next);
-  persistOrders(characterKey);
+  orderQueueStore.updateWhere(characterKey, (o) => o.id === orderId, patch);
 }
 
 // ── Completed order history ───────────────────────────────────────────────
-// One localStorage entry per character — a capped, oldest-first log of
-// finished orders kept for later lookup (`crafthelper order history`) and,
-// eventually, cost analysis. Same lazy-load + debounced-persist shape as the
-// order queue above.
+// A lookup convenience, not a full audit log — unbounded growth isn't worth
+// it, so only the most recent entries are kept.
+const MAX_COMPLETED_ORDERS = 50;
 
 export interface CompletedCraftOrder {
   id: string;
@@ -194,59 +213,15 @@ export interface CompletedCraftOrder {
   completedAt: number; // ms epoch
 }
 
-// A lookup convenience, not a full audit log — unbounded growth isn't worth
-// it, so only the most recent entries are kept.
-const MAX_COMPLETED_ORDERS = 50;
-
-const completedOrders: Map<string, CompletedCraftOrder[]> = new Map();
-const completedOrdersLoaded: Set<string> = new Set();
-const completedOrdersPersistTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
-
-function completedOrdersStorageKey(characterKey: string): string {
-  return `shatteredarchive.plugins.crafting-helper.orderHistory.${characterKey}`;
-}
-
-function ensureCompletedOrdersLoaded(characterKey: string) {
-  if (completedOrdersLoaded.has(characterKey)) return;
-  completedOrdersLoaded.add(characterKey);
-  try {
-    if (typeof window === 'undefined') return;
-    const raw = window.localStorage.getItem(completedOrdersStorageKey(characterKey));
-    if (!raw) return;
-    const arr = JSON.parse(raw);
-    if (Array.isArray(arr)) completedOrders.set(characterKey, arr as CompletedCraftOrder[]);
-  } catch {
-    // ignore corrupt storage
-  }
-}
-
-function persistCompletedOrders(characterKey: string) {
-  const existing = completedOrdersPersistTimers.get(characterKey);
-  if (existing) clearTimeout(existing);
-  completedOrdersPersistTimers.set(
-    characterKey,
-    setTimeout(() => {
-      completedOrdersPersistTimers.delete(characterKey);
-      try {
-        if (typeof window === 'undefined') return;
-        const list = completedOrders.get(characterKey) ?? [];
-        window.localStorage.setItem(completedOrdersStorageKey(characterKey), JSON.stringify(list));
-      } catch {
-        // ignore
-      }
-    }, PERSIST_DELAY_MS),
-  );
-}
+const completedOrdersStore = createPerCharacterListStore<CompletedCraftOrder>(
+  'shatteredarchive.plugins.crafting-helper.orderHistory',
+  MAX_COMPLETED_ORDERS,
+);
 
 export function getCompletedOrders(characterKey: string): CompletedCraftOrder[] {
-  ensureCompletedOrdersLoaded(characterKey);
-  return [...(completedOrders.get(characterKey) ?? [])];
+  return completedOrdersStore.list(characterKey);
 }
 
 export function addCompletedOrder(characterKey: string, record: CompletedCraftOrder): void {
-  ensureCompletedOrdersLoaded(characterKey);
-  const list = [...(completedOrders.get(characterKey) ?? []), record];
-  const trimmed = list.length > MAX_COMPLETED_ORDERS ? list.slice(list.length - MAX_COMPLETED_ORDERS) : list;
-  completedOrders.set(characterKey, trimmed);
-  persistCompletedOrders(characterKey);
+  completedOrdersStore.append(characterKey, record);
 }
