@@ -635,10 +635,6 @@ export function matchQualityContainer(quality: number, rows: QualityContainerRow
   return null;
 }
 
-export function containerForQuality(quality: number, rows: QualityContainerRow[]): string {
-  return matchQualityContainer(quality, rows) ?? 'vault';
-}
-
 // ── Line matchers (applied per-line, after stripAnsi + split('\n') + trim —
 // sidesteps the `$`-anchor/trailing-\n gotcha entirely) ───────────────────
 

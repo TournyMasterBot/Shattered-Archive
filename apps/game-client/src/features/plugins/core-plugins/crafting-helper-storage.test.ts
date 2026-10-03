@@ -66,6 +66,17 @@ describe('crafting-helper-storage persistence', () => {
     expect(() => getTrackedSkillLevel('grondak', 'spellcrafting')).not.toThrow();
     expect(getTrackedSkillLevel('grondak', 'spellcrafting')).toBeNull();
   });
+
+  it('trims the oldest entries once the skill-levels store exceeds its cap', () => {
+    const { setTrackedSkillLevel, getTrackedSkillLevel } = freshStorage();
+    for (let i = 0; i < 510; i++) {
+      setTrackedSkillLevel(`char${i}`, 'spellcrafting', i);
+    }
+    // The earliest-written entries (oldest updatedAt) should have been evicted.
+    expect(getTrackedSkillLevel('char0', 'spellcrafting')).toBeNull();
+    // Recently-written entries survive.
+    expect(getTrackedSkillLevel('char509', 'spellcrafting')).toBe(509);
+  });
 });
 
 describe('crafting-helper-storage order queue', () => {

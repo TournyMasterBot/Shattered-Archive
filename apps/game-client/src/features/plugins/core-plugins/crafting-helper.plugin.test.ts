@@ -17,7 +17,6 @@ import {
   qualityMatchesSpec,
   matchItemCondition,
   parseQualityContainerMap,
-  containerForQuality,
   matchQualityContainer,
   formatQualitySpec,
   formatMaterialsUsed,
@@ -418,7 +417,7 @@ describe('matchItemCondition', () => {
   });
 });
 
-describe('parseQualityContainerMap / containerForQuality', () => {
+describe('parseQualityContainerMap', () => {
   it('parses range rows and single-value rows', () => {
     const rows = parseQualityContainerMap('90-94 | common\n98 | rare');
     expect(rows).toEqual([
@@ -433,17 +432,6 @@ describe('parseQualityContainerMap / containerForQuality', () => {
 
   it('returns [] for non-string input', () => {
     expect(parseQualityContainerMap(undefined)).toEqual([]);
-  });
-
-  it('routes a quality within a mapped range to its container', () => {
-    const rows = parseQualityContainerMap('90-94 | common\n95-97 | uncommon');
-    expect(containerForQuality(92, rows)).toBe('common');
-    expect(containerForQuality(96, rows)).toBe('uncommon');
-  });
-
-  it('falls back to vault for an unmapped quality', () => {
-    const rows = parseQualityContainerMap('90-94 | common');
-    expect(containerForQuality(99, rows)).toBe('vault');
   });
 
   it('drops a row where min > max instead of accepting a dead range (review 3.1)', () => {

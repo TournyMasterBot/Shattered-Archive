@@ -6,6 +6,13 @@
 // debounced-persist pattern.
 
 const DB_STORAGE_KEY = 'shatteredarchive.plugins.crafting-helper.skillLevels';
+// Cap on retained skill-level entries. Cardinality here is naturally small
+// (characters × craft types), but mirrors peopleDb.ts's cap in this same
+// directory for the same reason: bound the per-persist JSON cost rather
+// than assume growth never happens (review 3.7). Evicts by oldest
+// updatedAt first.
+const MAX_SKILL_ENTRIES = 500;
+const TRIM_SKILL_ENTRIES_TO = 400;
 
 export interface SkillEntry {
   level: number;
@@ -22,6 +29,13 @@ let loaded = false;
 
 function compositeKey(characterKey: string, craftTypeId: string): string {
   return `${characterKey}::${craftTypeId}`;
+}
+
+function trimSkillEntriesIfNeeded(): void {
+  if (db.size <= MAX_SKILL_ENTRIES) return;
+  const byUpdatedAsc = [...db.entries()].sort((a, b) => a[1].updatedAt - b[1].updatedAt);
+  const toRemove = byUpdatedAsc.slice(0, db.size - TRIM_SKILL_ENTRIES_TO);
+  for (const [key] of toRemove) db.delete(key);
 }
 
 function ensureLoaded() {
@@ -76,6 +90,7 @@ export function getTrackedSkillLevel(characterKey: string, craftTypeId: string):
 export function setTrackedSkillLevel(characterKey: string, craftTypeId: string, level: number): void {
   ensureLoaded();
   db.set(compositeKey(characterKey, craftTypeId), { level, updatedAt: Date.now() });
+  trimSkillEntriesIfNeeded();
   persist();
 }
 
