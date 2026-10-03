@@ -795,7 +795,7 @@ function readConfig(api: PluginRuntimeApi): EngineConfig {
     pullConfirmTimeoutMs: numOr(cfg.pullConfirmTimeoutMs, 200),
     scoreResponseTimeoutMs: numOr(cfg.scoreResponseTimeoutMs, 1000),
     loreResponseTimeoutMs: numOr(cfg.loreResponseTimeoutMs, 2000),
-    craftResponseTimeoutMs: numOr(cfg.craftResponseTimeoutMs, 60000),
+    craftResponseTimeoutMs: numOr(cfg.craftResponseTimeoutMs, 180000),
     orderHoldingContainer:
       typeof cfg.orderHoldingContainer === 'string' && cfg.orderHoldingContainer.trim()
         ? cfg.orderHoldingContainer.trim()
@@ -1159,7 +1159,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
     // Bounded safety net: one of the three known outcome lines almost always
     // arrives quickly, but an unrecognized server message must not hang the
     // engine forever (review finding 1.1) — craftResponseTimeoutMs is long
-    // (default 60s) precisely because higher-tier crafts can take a while.
+    // (default 180s) because a craft can legitimately take up to ~2.5 ticks
+    // (reported live: over 150s) to resolve on higher tiers.
     craftTimer = setTimeout(() => onCraftTimeout(api), cfg.craftResponseTimeoutMs);
   }
 
@@ -1431,7 +1432,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
         '              result by your spec.',
         'Stand wherever your vault and crafting station both are before starting either.',
         'If a craft never gets a recognized response within the Craft response',
-        'timeout (default 60s, configurable), the run stops with a clear error',
+        'timeout (default 180s, configurable), the run stops with a clear error',
         'instead of hanging indefinitely.',
         'Every command below also works with "crh" in place of "crafthelper".',
         '',
@@ -1809,7 +1810,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
         pullConfirmTimeoutMs: 200,
         scoreResponseTimeoutMs: 1000,
         loreResponseTimeoutMs: 2000,
-        craftResponseTimeoutMs: 60000,
+        craftResponseTimeoutMs: 180000,
         orderHoldingContainer: 'vault',
         qualityContainerMap: '',
         debug: false,
@@ -1866,7 +1867,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
           label: 'Craft response timeout (ms)',
           min: 0,
           description:
-            'How long to wait after `craft` for a recognized outcome line before stopping — a safety net in case the server ever sends unrecognized text (default 60s; higher tiers can take a while, so keep this generous).',
+            'How long to wait after `craft` for a recognized outcome line before stopping — a safety net in case the server ever sends unrecognized text (default 180s; a craft can take up to ~2.5 ticks on higher tiers, so keep this generous).',
         },
         {
           key: 'orderHoldingContainer',
