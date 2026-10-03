@@ -1961,18 +1961,29 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
     plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
-    plugin.onAlias!(mock.api, "crafthelper order add 1 'opal gemstone' 97+");
+    plugin.onAlias!(mock.api, "crafthelper order add 1 'opal gem inertia' 97+");
     plugin.onAlias!(mock.api, 'crafthelper order start'); // starts fulfilling the first order
 
-    // Task 5 (sequenced before this task) changes this file's default test
-    // identity from '__unknown__' to 'testchar' — read from that bucket.
+    // Default test identity is 'testchar' — read from that bucket.
     const queueBeforeRemove = getOrderQueue('testchar');
+    expect(queueBeforeRemove).toHaveLength(2);
     const activeId = queueBeforeRemove[0].id;
+    const otherId = queueBeforeRemove[1].id;
+
+    // Positive case: while the order genuinely in flight, it's the one
+    // tagged [active] — not just "whatever is at queue[0]".
+    mock.terminalWrites.length = 0;
+    plugin.onAlias!(mock.api, 'crafthelper order list');
+    const activeLineBeforeRemove = mock.terminalWrites.find((w) => w.includes(`${activeId}:`));
+    const otherLineBeforeRemove = mock.terminalWrites.find((w) => w.includes(`${otherId}:`));
+    expect(activeLineBeforeRemove).toContain('[active]');
+    expect(otherLineBeforeRemove).not.toContain('[active]');
+
     plugin.onAlias!(mock.api, `crafthelper order remove ${activeId}`); // splices it out while still in-flight
 
     mock.terminalWrites.length = 0;
     plugin.onAlias!(mock.api, 'crafthelper order list');
-    expect(mock.terminalWrites.join('\n')).not.toContain('[active]'); // the real active order is gone from storage; nothing left in queue is it
+    expect(mock.terminalWrites.join('\n')).not.toContain('[active]'); // the real active order is gone from storage; the surviving order (now at queue[0]) is not it
   });
 
   it('does not let a late interrupted/vault-failure line in the same payload discard an already-detected success (review 3.2)', () => {

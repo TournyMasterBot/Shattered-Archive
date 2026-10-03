@@ -226,7 +226,7 @@ describe('PluginHost.tryExecuteAlias', () => {
 });
 
 describe('PluginHost.invokePluginAction', () => {
-  it('returns true and calls the handler when one is registered', () => {
+  it('returns "ok" and calls the handler when one is registered', () => {
     const host = new PluginHost();
     const handler = jest.fn();
     const module: IPluginModule = {
@@ -244,11 +244,11 @@ describe('PluginHost.invokePluginAction', () => {
 
     const result = host.invokePluginAction('action-probe', 'sync');
 
-    expect(result).toBe(true);
+    expect(result).toBe('ok');
     expect(handler).toHaveBeenCalledTimes(1);
   });
 
-  it('returns false and does not throw when no handler is registered for the key', () => {
+  it('returns "no-handler" and does not throw when no handler is registered for the key', () => {
     const host = new PluginHost();
     const module: IPluginModule = {
       manifest: { id: 'action-probe-2', name: 'Action Probe 2', version: '1.0.0' },
@@ -264,11 +264,38 @@ describe('PluginHost.invokePluginAction', () => {
 
     const result = host.invokePluginAction('action-probe-2', 'nonexistent-key');
 
-    expect(result).toBe(false);
+    expect(result).toBe('no-handler');
   });
 
-  it('returns false when the plugin was never enabled', () => {
+  it('returns "no-handler" when the plugin was never enabled', () => {
     const host = new PluginHost();
-    expect(host.invokePluginAction('never-enabled', 'sync')).toBe(false);
+    expect(host.invokePluginAction('never-enabled', 'sync')).toBe('no-handler');
+  });
+
+  it('returns "error" (distinct from "no-handler") and does not throw when a registered handler throws', () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const host = new PluginHost();
+    const module: IPluginModule = {
+      manifest: { id: 'action-probe-3', name: 'Action Probe 3', version: '1.0.0' },
+      configSchema: { defaults: {}, fields: [] },
+      onEnable(api: PluginRuntimeApi) {
+        api.registerAction('sync', () => {
+          throw new Error('boom');
+        });
+        return () => {};
+      },
+    } as IPluginModule;
+
+    host.setConnection('dsl-mud');
+    host.registerModule(module);
+    host.syncInstalled([{ id: 'action-probe-3', enabled: true }]);
+
+    const result = host.invokePluginAction('action-probe-3', 'sync');
+
+    expect(result).toBe('error');
+    expect(result).not.toBe('no-handler');
+    expect(consoleErrorSpy).toHaveBeenCalledWith('[Plugin]', 'Action error', expect.any(Error));
+
+    consoleErrorSpy.mockRestore();
   });
 });

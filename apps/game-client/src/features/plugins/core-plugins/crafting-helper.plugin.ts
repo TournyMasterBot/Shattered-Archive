@@ -1292,7 +1292,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     // state === 'crafting'
     let outcome: CraftOutcome = null;
     for (const line of lines) {
-      if (outcome !== null) continue; // success/failure already seen this payload — a later interrupted/vault-failure line here is stale noise, not a new event (review 3.2)
+      if (outcome !== null) break; // success/failure already seen this payload — a later interrupted/vault-failure line here is stale noise, not a new event (review 3.2)
 
       // Something (a command, movement, being attacked) interrupted the
       // craft in progress — no outcome line will ever arrive, so stop

@@ -192,6 +192,9 @@ export interface StoredCraftOrder {
   quantityTotal: number;
   qualitySpec: StoredQualitySpec;
   createdAt: number; // ms epoch
+  // Running tally of raw materials consumed toward this order so far, keyed
+  // by material name. Optional because orders queued before this field
+  // existed may already be sitting in a character's persisted queue.
   materialsUsed?: Record<string, number>;
 }
 
