@@ -28,6 +28,7 @@ import {
   ORDER_SET_RECIPES,
   getOrderItemRecipe,
   getOrderSetRecipe,
+  sanitizeItemName,
 } from './crafting-helper.plugin';
 
 const SCORE_BLOCK = [
@@ -174,6 +175,32 @@ describe('parseCraftTypesConfig', () => {
 
   it('ignores malformed rows with too few fields', () => {
     expect(parseCraftTypesConfig('spellcrafting | Spellcrafting')).toEqual([]);
+  });
+});
+
+describe('sanitizeItemName', () => {
+  it('strips single quotes so a config-sourced name cannot break the single-quoted command syntax', () => {
+    expect(sanitizeItemName("ogre's tooth")).toBe('ogres tooth');
+    expect(sanitizeItemName('plain name')).toBe('plain name');
+  });
+});
+
+describe('parseComponentList / parseTierTableConfig sanitize names at parse time', () => {
+  it('strips single quotes from a component material name', () => {
+    const rows = parseTierTableConfig("spellcrafting | 1 | obsidian gemstone | ogre's tooth stone:1");
+    expect(rows[0].components[0].material).toBe('ogres tooth stone');
+  });
+
+  it('strips single quotes from a trinket name', () => {
+    const rows = parseTierTableConfig("spellcrafting | 1 | ogre's tooth gem | uncut obsidian stone:1");
+    expect(rows[0].trinket).toBe('ogres tooth gem');
+  });
+});
+
+describe('parseCraftTypesConfig sanitizes the craft verb (Review Focus #3)', () => {
+  it('strips single quotes from the verb so it cannot break an unquoted command token', () => {
+    const rows = parseCraftTypesConfig("spellcrafting | Spellcrafting | spell's craft | Spellcrafter");
+    expect(rows[0].verb).toBe("spells craft");
   });
 });
 

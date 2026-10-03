@@ -212,6 +212,17 @@ function splitConfigLines(raw: unknown): string[] {
 }
 
 /**
+ * Strips characters that would break the single-quoted MUD command syntax
+ * these names get interpolated into (`get 1 'name' vault`, `craft verb
+ * 'name'`, etc.). Tier-table and craft-types rows are user-edited free
+ * text, so an embedded apostrophe is plausible ("ogre's tooth") and must
+ * not reach a command string unescaped (review finding 1.3).
+ */
+export function sanitizeItemName(name: string): string {
+  return name.replace(/'/g, '');
+}
+
+/**
  * Parses "name:qty, name:qty, ..." into components; skips malformed pieces.
  * A piece with no ":qty" is accepted as backward-compat with the pre-multi-
  * component tier-table format (bare material name, implicit qty 1) — older
@@ -226,10 +237,10 @@ function parseComponentList(raw: string): RecipeComponent[] {
     if (!trimmed) continue;
     const idx = trimmed.lastIndexOf(':');
     if (idx === -1) {
-      components.push({ material: trimmed, qty: 1 });
+      components.push({ material: sanitizeItemName(trimmed), qty: 1 });
       continue;
     }
-    const material = trimmed.slice(0, idx).trim();
+    const material = sanitizeItemName(trimmed.slice(0, idx).trim());
     const qty = parseInt(trimmed.slice(idx + 1).trim(), 10);
     if (!material || !Number.isFinite(qty) || qty <= 0) continue;
     components.push({ material, qty });
@@ -244,7 +255,7 @@ export function parseCraftTypesConfig(raw: unknown): CraftTypeRow[] {
     if (parts.length < 4) continue;
     const [id, label, verb, keyword] = parts;
     if (!id || !label || !verb || !keyword) continue;
-    rows.push({ id: id.toLowerCase(), label, verb, keyword });
+    rows.push({ id: id.toLowerCase(), label: sanitizeItemName(label), verb: sanitizeItemName(verb), keyword: sanitizeItemName(keyword) });
   }
   return rows;
 }
@@ -259,7 +270,7 @@ export function parseTierTableConfig(raw: unknown): CraftTierRow[] {
     if (!craftTypeId || !trinket || !componentsStr || !Number.isFinite(skillThreshold)) continue;
     const components = parseComponentList(componentsStr);
     if (components.length === 0) continue;
-    rows.push({ craftTypeId: craftTypeId.toLowerCase(), skillThreshold, trinket, components });
+    rows.push({ craftTypeId: craftTypeId.toLowerCase(), skillThreshold, trinket: sanitizeItemName(trinket), components });
   }
   return rows;
 }
