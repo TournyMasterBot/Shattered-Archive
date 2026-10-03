@@ -1518,6 +1518,13 @@ export function createCraftingHelperPlugin(): IPluginModule {
       writeInfo(api, alreadyRunningMessage());
       return true;
     }
+    if (characterKey() === '__unknown__') {
+      writeError(
+        api,
+        'Character identity not yet known (no login data seen this session) — wait for the game to finish connecting, then retry. Storage is keyed by character, so starting now risks writing under the wrong name.',
+      );
+      return true;
+    }
 
     const typeRow = resolveCraftType(cfg, craftTypeToken);
     if (!typeRow) {
@@ -1556,6 +1563,13 @@ export function createCraftingHelperPlugin(): IPluginModule {
   }
 
   function handleOrderAdd(api: PluginRuntimeApi, match: RegExpMatchArray): boolean {
+    if (characterKey() === '__unknown__') {
+      writeError(
+        api,
+        'Character identity not yet known (no login data seen this session) — wait for the game to finish connecting, then retry. Storage is keyed by character, so queuing now risks writing under the wrong name.',
+      );
+      return true;
+    }
     const qty = parseInt(match[1], 10);
     const itemName = match[2].toLowerCase();
     const qualitySpec = parseQualitySpec(match[3]);
@@ -1696,6 +1710,13 @@ export function createCraftingHelperPlugin(): IPluginModule {
     }
     if (state !== 'idle') {
       writeInfo(api, alreadyRunningMessage());
+      return true;
+    }
+    if (characterKey() === '__unknown__') {
+      writeError(
+        api,
+        'Character identity not yet known (no login data seen this session) — wait for the game to finish connecting, then retry. Storage is keyed by character, so starting now risks writing under the wrong name.',
+      );
       return true;
     }
     const queue = getOrderQueue(characterKey());

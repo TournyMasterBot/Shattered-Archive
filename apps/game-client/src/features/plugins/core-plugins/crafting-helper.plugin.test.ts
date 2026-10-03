@@ -682,14 +682,17 @@ describe('crafting-helper state machine', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     window.localStorage.clear();
+    (window as unknown as { __SA_IDENTITY__?: { characterName?: string } }).__SA_IDENTITY__ = {
+      characterName: 'testchar',
+    };
     // The order queue is a module-level singleton keyed by character (see
     // crafting-helper-storage.ts) — localStorage.clear() alone doesn't reset
     // its in-memory state between tests in this file (unlike
     // crafting-helper-storage.test.ts, this file uses a static top-level
     // import of the plugin factory, so it can't use jest.resetModules() per
     // test without also losing that binding). Drain leftovers explicitly so
-    // each order-mode test starts from an empty queue for '__unknown__'.
-    for (const o of getOrderQueue('__unknown__')) removeOrder('__unknown__', o.id);
+    // each order-mode test starts from an empty queue for 'testchar'.
+    for (const o of getOrderQueue('testchar')) removeOrder('testchar', o.id);
   });
 
   afterEach(() => {
@@ -738,7 +741,7 @@ describe('crafting-helper state machine', () => {
     expect(mock.terminalWrites[0]).toBe(mock.terminalWrites[1]); // identical help output either way
 
     expect(plugin.onAlias!(mock.api, "crh order add 1 'diamond gem pain' 97+")).toBe(true);
-    expect(getOrderQueue('__unknown__')).toHaveLength(1);
+    expect(getOrderQueue('testchar')).toHaveLength(1);
 
     // A bare "crh" mid-word must not be mistaken for the prefix.
     expect(plugin.onAlias!(mock.api, 'crhblah')).toBeUndefined();
@@ -874,7 +877,7 @@ describe('crafting-helper state machine', () => {
     mock.feedLine('You were successful.');
     mock.feedLine('Condition: flawless (98%)'); // in spec, order not yet complete (1/2)
 
-    expect(getOrderQueue('__unknown__')[0].materialsUsed).toEqual({
+    expect(getOrderQueue('testchar')[0].materialsUsed).toEqual({
       'diamond gemstone': 1,
       'essence of pain': 1,
     });
@@ -890,7 +893,7 @@ describe('crafting-helper state machine', () => {
     jest.advanceTimersByTime(200); // pull silksteel cloth square
 
     mock.feedLine('You failed and destroyed some materials in the process.');
-    expect(getOrderQueue('__unknown__')[0].materialsUsed).toEqual({
+    expect(getOrderQueue('testchar')[0].materialsUsed).toEqual({
       'silksteel thread': 1,
       'silksteel cloth square': 1,
     });
@@ -906,7 +909,7 @@ describe('crafting-helper state machine', () => {
     jest.advanceTimersByTime(200);
 
     mock.feedLine('You failed but did not lose any materials.');
-    expect(getOrderQueue('__unknown__')[0].materialsUsed).toEqual({});
+    expect(getOrderQueue('testchar')[0].materialsUsed).toEqual({});
   });
 
   it('summarizes materials used and stores a lookup-able history record when an order completes', () => {
@@ -915,7 +918,7 @@ describe('crafting-helper state machine', () => {
     plugin.onEnable!(mock.api);
 
     plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
-    const orderId = getOrderQueue('__unknown__')[0].id;
+    const orderId = getOrderQueue('testchar')[0].id;
     jest.advanceTimersByTime(200);
     jest.advanceTimersByTime(200);
     mock.feedLine('You failed and destroyed some materials in the process.'); // 1 lost attempt, tallied
@@ -935,14 +938,14 @@ describe('crafting-helper state machine', () => {
           w.includes('essence of pain x2'),
       ),
     ).toBe(true);
-    expect(getOrderQueue('__unknown__')).toHaveLength(0);
+    expect(getOrderQueue('testchar')).toHaveLength(0);
 
     // getCompletedOrders is a module-level singleton shared across every test
     // in this file (like the order queue above) — look up this test's record
     // by id rather than asserting on the whole list's length. Storage-level
     // isolation (including the empty-history case) is covered with a truly
     // fresh module instance in crafting-helper-storage.test.ts.
-    const record = getCompletedOrders('__unknown__').find((r) => r.id === orderId);
+    const record = getCompletedOrders('testchar').find((r) => r.id === orderId);
     expect(record).toMatchObject({
       id: orderId,
       itemName: 'diamond gem pain',
@@ -957,7 +960,7 @@ describe('crafting-helper state machine', () => {
     plugin.onEnable!(mock.api);
 
     plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
-    const orderId = getOrderQueue('__unknown__')[0].id;
+    const orderId = getOrderQueue('testchar')[0].id;
     jest.advanceTimersByTime(200);
     jest.advanceTimersByTime(200);
     mock.feedLine('You were successful.');
@@ -985,7 +988,7 @@ describe('crafting-helper state machine', () => {
     plugin.onEnable!(mock.api);
 
     plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
-    const orderId = getOrderQueue('__unknown__')[0].id;
+    const orderId = getOrderQueue('testchar')[0].id;
     plugin.onAlias!(mock.api, 'crafthelper order start');
     jest.advanceTimersByTime(200); // pull silksteel thread succeeds
 
@@ -996,7 +999,7 @@ describe('crafting-helper state machine', () => {
     expect(mock.sent).toEqual([...sentSoFar, "put 1 'silksteel thread' vault"]);
     expect(mock.terminalWrites.some((w) => w.includes('silksteel cloth square'))).toBe(true);
 
-    const queue = getOrderQueue('__unknown__');
+    const queue = getOrderQueue('testchar');
     expect(queue).toHaveLength(1);
     expect(queue[0]).toMatchObject({ id: orderId, quantityRemaining: 1, quantityTotal: 1 });
   });
@@ -1294,7 +1297,7 @@ describe('crafting-helper state machine', () => {
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
     plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
-    const orderId = getOrderQueue('__unknown__')[0].id;
+    const orderId = getOrderQueue('testchar')[0].id;
     plugin.onAlias!(mock.api, 'crafthelper order start');
     expect(mock.hudWrites[mock.hudWrites.length - 1].content?.value).toBe(
       `working on order ${orderId} · silksteel cloth helmet · pulling components`,
@@ -1490,8 +1493,8 @@ describe('crafting-helper state machine', () => {
 
     plugin.onAlias!(mock.api, "crafthelper order add 6 'diamond gem pain' 97+");
     expect(mock.terminalWrites.some((w) => w.includes('Queued order'))).toBe(true);
-    expect(getOrderQueue('__unknown__')).toHaveLength(1);
-    expect(getOrderQueue('__unknown__')[0]).toMatchObject({
+    expect(getOrderQueue('testchar')).toHaveLength(1);
+    expect(getOrderQueue('testchar')[0]).toMatchObject({
       itemName: 'diamond gem pain',
       quantityRemaining: 6,
       quantityTotal: 6,
@@ -1500,11 +1503,11 @@ describe('crafting-helper state machine', () => {
 
     plugin.onAlias!(mock.api, "crafthelper order add 3 'not a real item' 99");
     expect(mock.terminalWrites.some((w) => w.includes('Unknown order item'))).toBe(true);
-    expect(getOrderQueue('__unknown__')).toHaveLength(1); // second add rejected, not queued
+    expect(getOrderQueue('testchar')).toHaveLength(1); // second add rejected, not queued
 
     plugin.onAlias!(mock.api, "crafthelper order add 3 'diamond gem pain' not-a-spec");
     expect(mock.terminalWrites.some((w) => w.includes('Invalid quality spec'))).toBe(true);
-    expect(getOrderQueue('__unknown__')).toHaveLength(1);
+    expect(getOrderQueue('testchar')).toHaveLength(1);
   });
 
   it('lists the valid craft types when an order item needs one that is not configured', () => {
@@ -1524,7 +1527,7 @@ describe('crafting-helper state machine', () => {
           w.includes('"spellcrafting" (spellcraft)'),
       ),
     ).toBe(true);
-    expect(getOrderQueue('__unknown__')).toHaveLength(0);
+    expect(getOrderQueue('testchar')).toHaveLength(0);
   });
 
   it('adding the first order while idle starts fulfillment automatically, no explicit "order start" needed', () => {
@@ -1551,7 +1554,7 @@ describe('crafting-helper state machine', () => {
     // Still mid pull-cycle on the first order — no second "score"/pull burst,
     // and no "Already running" noise since the second add never asked to start.
     expect(mock.sent).toEqual(["get 1 'silksteel thread' vault"]);
-    expect(getOrderQueue('__unknown__')).toHaveLength(2);
+    expect(getOrderQueue('testchar')).toHaveLength(2);
   });
 
   it('adding an order while improving a skill does not auto-start order fulfillment', () => {
@@ -1566,7 +1569,7 @@ describe('crafting-helper state machine', () => {
     plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 90+");
     // Queued, but not started — improve mode is still running.
     expect(mock.sent).toEqual(sentBeforeAdd);
-    expect(getOrderQueue('__unknown__')).toHaveLength(1);
+    expect(getOrderQueue('testchar')).toHaveLength(1);
   });
 
   it('order start with an empty queue is a no-op', () => {
@@ -1620,7 +1623,7 @@ describe('crafting-helper state machine', () => {
 
     plugin.onAlias!(mock.api, "crafthelper order add 2 'silksteel cloth set' 95+");
 
-    const queue = getOrderQueue('__unknown__');
+    const queue = getOrderQueue('testchar');
     expect(queue).toHaveLength(6);
     expect(new Set(queue.map((o) => o.itemName))).toEqual(
       new Set([
@@ -1646,7 +1649,7 @@ describe('crafting-helper state machine', () => {
 
     plugin.onAlias!(mock.api, "crafthelper order add 1 'arcanium chainmail set' 97+");
 
-    const queue = getOrderQueue('__unknown__');
+    const queue = getOrderQueue('testchar');
     expect(queue).toHaveLength(6);
     expect(new Set(queue.map((o) => o.itemName))).toEqual(
       new Set([
@@ -1667,10 +1670,10 @@ describe('crafting-helper state machine', () => {
 
     plugin.onAlias!(mock.api, "crafthelper order add 1 'arcanium platemail' 97+");
     expect(mock.terminalWrites.some((w) => w.includes('Unknown order item'))).toBe(true);
-    expect(getOrderQueue('__unknown__')).toHaveLength(0);
+    expect(getOrderQueue('testchar')).toHaveLength(0);
 
     plugin.onAlias!(mock.api, "crafthelper order add 1 'arcanium platemail set' 97+");
-    expect(getOrderQueue('__unknown__')).toHaveLength(6);
+    expect(getOrderQueue('testchar')).toHaveLength(6);
   });
 
   it('defaults the order holding container to vault when unconfigured', () => {
@@ -1702,7 +1705,7 @@ describe('crafting-helper state machine', () => {
 
     mock.feedLine('Condition: flawless (98%)');
     expect(mock.sent).toContain("put 1 'diamond gem pain' orders");
-    expect(getOrderQueue('__unknown__')[0].quantityRemaining).toBe(1);
+    expect(getOrderQueue('testchar')[0].quantityRemaining).toBe(1);
 
     jest.advanceTimersByTime(100); // commandPacingDelayMs — refill, same order
     expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'diamond gemstone' vault");
@@ -1723,7 +1726,7 @@ describe('crafting-helper state machine', () => {
 
     mock.feedLine('Condition: scuffed (92%)');
     expect(mock.sent).toContain("put 1 'diamond gem pain' common");
-    expect(getOrderQueue('__unknown__')[0].quantityRemaining).toBe(1); // unchanged — didn't count
+    expect(getOrderQueue('testchar')[0].quantityRemaining).toBe(1); // unchanged — didn't count
 
     jest.advanceTimersByTime(100);
     expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'diamond gemstone' vault"); // tries again
@@ -1750,7 +1753,7 @@ describe('crafting-helper state machine', () => {
     mock.feedLine('Condition: excellent (95%)'); // satisfies 90+ AND falls in the 95-97 map row
     expect(mock.sent).toContain("put 1 'silksteel cloth helmet' vault"); // mapped container wins, not "orders"
     expect(mock.sent).not.toContain("put 1 'silksteel cloth helmet' orders");
-    expect(getOrderQueue('__unknown__')[0].quantityRemaining).toBe(1); // still counted toward the order
+    expect(getOrderQueue('testchar')[0].quantityRemaining).toBe(1); // still counted toward the order
 
     jest.advanceTimersByTime(100);
     expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'silksteel thread' vault"); // same order continues
@@ -1786,7 +1789,7 @@ describe('crafting-helper state machine', () => {
     mock.feedLine('You were successful.');
     mock.feedLine('Condition: flawless (98%)');
 
-    expect(getOrderQueue('__unknown__')).toHaveLength(1); // completed order removed
+    expect(getOrderQueue('testchar')).toHaveLength(1); // completed order removed
     jest.advanceTimersByTime(100);
     expect(mock.sent[mock.sent.length - 1]).toBe("get 1 'silksteel thread' vault"); // next order started
   });
@@ -1859,7 +1862,7 @@ describe('crafting-helper state machine', () => {
 
     plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+");
     plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
-    const firstOrderId = getOrderQueue('__unknown__')[0].id;
+    const firstOrderId = getOrderQueue('testchar')[0].id;
 
     plugin.onAlias!(mock.api, 'crafthelper order start');
     jest.advanceTimersByTime(200);
@@ -1867,7 +1870,7 @@ describe('crafting-helper state machine', () => {
     // now crafting the active (first) order
 
     plugin.onAlias!(mock.api, `crafthelper order remove ${firstOrderId}`);
-    expect(getOrderQueue('__unknown__')).toHaveLength(1);
+    expect(getOrderQueue('testchar')).toHaveLength(1);
 
     mock.feedLine('You were successful.');
     mock.feedLine('Condition: flawless (98%)'); // would have matched the removed order's spec, but it's gone
@@ -1907,5 +1910,41 @@ describe('crafting-helper state machine', () => {
 
     jest.advanceTimersByTime(200);
     expect(mock.sent).toEqual(sentSoFar); // no further get/craft issued
+  });
+
+  it('refuses to start improve mode when character identity is not yet known', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    delete (window as unknown as { __SA_IDENTITY__?: unknown }).__SA_IDENTITY__;
+
+    expect(plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start')).toBe(true);
+
+    expect(mock.terminalWrites.join('\n')).toContain('identity');
+    expect(plugin.onAlias!(mock.api, 'crafthelper improve status')).toBe(true);
+    expect(mock.terminalWrites.at(-1)).toContain('state=idle');
+  });
+
+  it('refuses to start order mode when character identity is not yet known', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    delete (window as unknown as { __SA_IDENTITY__?: unknown }).__SA_IDENTITY__;
+
+    expect(plugin.onAlias!(mock.api, 'crafthelper order start')).toBe(true);
+
+    expect(mock.terminalWrites.join('\n')).toContain('identity');
+  });
+
+  it('refuses to queue an order when character identity is not yet known', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    delete (window as unknown as { __SA_IDENTITY__?: unknown }).__SA_IDENTITY__;
+
+    expect(plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+")).toBe(true);
+
+    expect(mock.terminalWrites.join('\n')).toContain('identity');
+    expect(getOrderQueue('__unknown__')).toHaveLength(0);
   });
 });
