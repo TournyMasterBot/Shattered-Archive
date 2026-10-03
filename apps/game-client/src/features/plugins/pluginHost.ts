@@ -433,16 +433,17 @@ export class PluginHost {
    * Invoke a named action registered by an enabled plugin.
    * Called from the configure modal action buttons.
    */
-  invokePluginAction(pluginId: PluginId, actionKey: string): void {
-    if (!this.state) return;
+  invokePluginAction(pluginId: PluginId, actionKey: string): boolean {
+    if (!this.state) return false;
     const c = this.state.cleanups.get(pluginId);
     const handler = c?.actionHandlers?.get(actionKey);
-    if (handler) {
-      try {
-        handler();
-      } catch (err) {
-        c?.api?.error('Action error', err);
-      }
+    if (!handler) return false;
+    try {
+      handler();
+      return true;
+    } catch (err) {
+      c?.api?.error('Action error', err);
+      return false;
     }
   }
 }

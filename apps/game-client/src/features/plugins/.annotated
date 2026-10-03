@@ -3,14 +3,17 @@ File Index
 /normalizePluginModule.ts
 Purpose: Normalizes plugin module structure and validates data types for consistent plugin handling.
 
+/normalizePluginModule.test.ts
+Purpose: Pins the actions-array passthrough (valid array kept, non-array dropped to undefined, absent stays undefined) and onAlias passthrough.
+
 /pluginCss.ts
 Purpose: Manages dynamic CSS styling for plugins with unique identifiers.
 
 /pluginHost.ts
-Purpose: Manages plugin lifecycle, execution, and communication within the game client. Registration and syncInstalled are instance-preserving: a running plugin is never re-created just because the installed list changed. api.log/api.error stamp exactly one `[plugin:<id>]` prefix on each terminal line — plugins must not repeat their own id in the message. api.setHudWidget (optional on PluginRuntimeApi) publishes into the hudWidgetRegistry under the plugin's id; disable() clears every ALL_HUD_SLOT_IDS slot for that plugin unconditionally (the registry's ownership check makes it a no-op for slots it doesn't own).
+Purpose: Manages plugin lifecycle, execution, and communication within the game client. Registration and syncInstalled are instance-preserving: a running plugin is never re-created just because the installed list changed. api.log/api.error stamp exactly one `[plugin:<id>]` prefix on each terminal line — plugins must not repeat their own id in the message. api.setHudWidget (optional on PluginRuntimeApi) publishes into the hudWidgetRegistry under the plugin's id; disable() clears every ALL_HUD_SLOT_IDS slot for that plugin unconditionally (the registry's ownership check makes it a no-op for slots it doesn't own). invokePluginAction returns boolean (true = a handler was found and ran without throwing) so callers (PluginConfigModal) can show honest feedback instead of always flashing success.
 
 /pluginHost.test.ts
-Purpose: Pins that a running plugin instance survives installed-list churn and re-registration — plugin modules are closures, so a silent rebuild loses in-flight state (this is what broke text-to-speech). Also covers api.setHudWidget: publish is owner-attributed, disable clears only the disabling plugin's own slots.
+Purpose: Pins that a running plugin instance survives installed-list churn and re-registration — plugin modules are closures, so a silent rebuild loses in-flight state (this is what broke text-to-speech). Also covers api.setHudWidget: publish is owner-attributed, disable clears only the disabling plugin's own slots. invokePluginAction: returns true only when a registered handler actually ran, false with no throw when no handler/plugin is found.
 
 /pluginConfigPersist.ts
 Purpose: One-way event a running plugin uses to persist a config change it made ITSELF (a floating toggle button, not the config modal) — api.updateConfig is in-memory only and syncInstalled re-applies the saved userConfig over it, so an unpersisted self-toggle silently reverts. Sends a PATCH, never the whole runtime config (that would promote every default into an explicit saved value); MainContainer merges it onto the install record.

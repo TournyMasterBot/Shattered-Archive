@@ -224,3 +224,51 @@ describe('PluginHost.tryExecuteAlias', () => {
     expect(host.tryExecuteAlias('anything else')).toBe(false);
   });
 });
+
+describe('PluginHost.invokePluginAction', () => {
+  it('returns true and calls the handler when one is registered', () => {
+    const host = new PluginHost();
+    const handler = jest.fn();
+    const module: IPluginModule = {
+      manifest: { id: 'action-probe', name: 'Action Probe', version: '1.0.0' },
+      configSchema: { defaults: {}, fields: [] },
+      onEnable(api: PluginRuntimeApi) {
+        api.registerAction('sync', handler);
+        return () => {};
+      },
+    } as IPluginModule;
+
+    host.setConnection('dsl-mud');
+    host.registerModule(module);
+    host.syncInstalled([{ id: 'action-probe', enabled: true }]);
+
+    const result = host.invokePluginAction('action-probe', 'sync');
+
+    expect(result).toBe(true);
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns false and does not throw when no handler is registered for the key', () => {
+    const host = new PluginHost();
+    const module: IPluginModule = {
+      manifest: { id: 'action-probe-2', name: 'Action Probe 2', version: '1.0.0' },
+      configSchema: { defaults: {}, fields: [] },
+      onEnable() {
+        return () => {};
+      },
+    } as IPluginModule;
+
+    host.setConnection('dsl-mud');
+    host.registerModule(module);
+    host.syncInstalled([{ id: 'action-probe-2', enabled: true }]);
+
+    const result = host.invokePluginAction('action-probe-2', 'nonexistent-key');
+
+    expect(result).toBe(false);
+  });
+
+  it('returns false when the plugin was never enabled', () => {
+    const host = new PluginHost();
+    expect(host.invokePluginAction('never-enabled', 'sync')).toBe(false);
+  });
+});

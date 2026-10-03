@@ -43,7 +43,7 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
   // hooks must be unconditional / always in the same order
   const firstInputRef = React.useRef<HTMLInputElement | null>(null);
   const shouldCloseRef = React.useRef(false);
-  const [actionFeedback, setActionFeedback] = React.useState<Record<string, 'idle' | 'done'>>({});
+  const [actionFeedback, setActionFeedback] = React.useState<Record<string, 'idle' | 'done' | 'error'>>({});
   const actionTimers = React.useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   // Only build plugin + schema when open (avoids unnecessary create() calls)
@@ -295,16 +295,16 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
                         Object.entries(draft).filter(([, v]) => v !== undefined),
                       ) as Record<string, unknown>;
                       pluginHost.updateEnabledPluginConfig(pluginId, cleaned);
-                      pluginHost.invokePluginAction(pluginId, action.key);
+                      const ran = pluginHost.invokePluginAction(pluginId, action.key);
 
-                      setActionFeedback((prev) => ({ ...prev, [action.key]: 'done' }));
+                      setActionFeedback((prev) => ({ ...prev, [action.key]: ran ? 'done' : 'error' }));
                       clearTimeout(actionTimers.current[action.key]);
                       actionTimers.current[action.key] = setTimeout(() => {
                         setActionFeedback((prev) => ({ ...prev, [action.key]: 'idle' }));
                       }, 1500);
                     }}
                   >
-                    {state === 'done' ? '✓ Synced' : action.label}
+                    {state === 'done' ? '✓ Synced' : state === 'error' ? 'No handler' : action.label}
                   </button>
                   {action.description && <span className={styles.actionDesc}>{action.description}</span>}
                 </div>
