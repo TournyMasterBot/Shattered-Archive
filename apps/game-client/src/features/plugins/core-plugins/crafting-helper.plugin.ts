@@ -505,6 +505,20 @@ export const ORDER_SET_RECIPES: Record<string, string[]> = {
   ...armorSetGroups(),
 };
 
+// Plain-object bracket lookups on a player-typed key are exploitable: e.g.
+// `order add 1 'constructor' 99+` resolves ORDER_SET_RECIPES['constructor']
+// to Object's constructor function (truthy), bypassing the "unknown item"
+// check downstream. hasOwnProperty.call rejects every inherited property
+// name (constructor, __proto__, toString, hasOwnProperty, valueOf, ...),
+// not just the one in the live repro (review finding 1.2).
+export function getOrderItemRecipe(name: string): OrderItemRecipe | undefined {
+  return Object.prototype.hasOwnProperty.call(ORDER_ITEM_RECIPES, name) ? ORDER_ITEM_RECIPES[name] : undefined;
+}
+
+export function getOrderSetRecipe(name: string): string[] | undefined {
+  return Object.prototype.hasOwnProperty.call(ORDER_SET_RECIPES, name) ? ORDER_SET_RECIPES[name] : undefined;
+}
+
 export type QualitySpec =
   | { kind: 'atLeast'; min: number }
   | { kind: 'exact'; value: number }
@@ -869,7 +883,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
   function resolveNextRecipe(cfg: EngineConfig): ResolvedRecipe | null {
     if (mode === 'order') {
       if (!activeOrder) return null;
-      const orderRecipe = ORDER_ITEM_RECIPES[activeOrder.itemName];
+      const orderRecipe = getOrderItemRecipe(activeOrder.itemName);
       return orderRecipe ? { outputName: activeOrder.itemName, components: orderRecipe.components } : null;
     }
     if (trackedSkillLevel == null || !activeCraftTypeRow) return null;
@@ -1002,7 +1016,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
       return;
     }
     const next = queue[0];
-    const orderRecipe = ORDER_ITEM_RECIPES[next.itemName];
+    const orderRecipe = getOrderItemRecipe(next.itemName);
     if (!orderRecipe) {
       enterError(
         api,
@@ -1547,9 +1561,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
     // A "set" name (e.g. "silksteel cloth set", "arcanium chainmail set") fans
     // out into one queued order per member item, sharing this add's quantity
     // and quality spec — see ORDER_SET_RECIPES.
-    const setItems = ORDER_SET_RECIPES[itemName];
+    const setItems = getOrderSetRecipe(itemName);
     const memberNames = setItems ?? [itemName];
-    if (!setItems && !ORDER_ITEM_RECIPES[itemName]) {
+    if (!setItems && !getOrderItemRecipe(itemName)) {
       writeError(
         api,
         `Unknown order item "${itemName}" — no recipe for it. Check spelling, or see \`crafthelper help\` for examples.`,
@@ -1562,7 +1576,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     const queuedIds: string[] = [];
 
     memberNames.forEach((name) => {
-      const orderRecipe = ORDER_ITEM_RECIPES[name];
+      const orderRecipe = getOrderItemRecipe(name);
       if (!orderRecipe) {
         writeError(api, `Internal error: set member "${name}" has no recipe — skipped.`);
         return;

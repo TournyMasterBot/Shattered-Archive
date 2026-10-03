@@ -26,6 +26,8 @@ import {
   makeOrderId,
   ORDER_ITEM_RECIPES,
   ORDER_SET_RECIPES,
+  getOrderItemRecipe,
+  getOrderSetRecipe,
 } from './crafting-helper.plugin';
 
 const SCORE_BLOCK = [
@@ -635,6 +637,19 @@ function defaultConfig(overrides: Record<string, unknown> = {}) {
   };
 }
 
+describe('getOrderItemRecipe / getOrderSetRecipe (prototype-pollution guard)', () => {
+  it('returns undefined for every inherited Object.prototype property name, not just "constructor"', () => {
+    for (const poison of ['constructor', '__proto__', 'toString', 'hasOwnProperty', 'valueOf']) {
+      expect(getOrderItemRecipe(poison)).toBeUndefined();
+      expect(getOrderSetRecipe(poison)).toBeUndefined();
+    }
+  });
+
+  it('still returns real recipes for real names', () => {
+    expect(getOrderItemRecipe('diamond gem pain')).toBeDefined();
+    expect(getOrderSetRecipe('silksteel cloth set')).toBeDefined();
+  });
+});
 
 describe('crafting-helper state machine', () => {
   beforeEach(() => {
@@ -700,6 +715,16 @@ describe('crafting-helper state machine', () => {
 
     // A bare "crh" mid-word must not be mistaken for the prefix.
     expect(plugin.onAlias!(mock.api, 'crhblah')).toBeUndefined();
+  });
+
+  it('rejects "order add 1 \'constructor\' 99+" as an unknown item instead of crashing on recipe.components', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+
+    expect(plugin.onAlias!(mock.api, "crafthelper order add 1 'constructor' 99+")).toBe(true);
+
+    expect(mock.terminalWrites.join('\n')).toContain('Unknown order item');
   });
 
   it('every order-add example in the help text names a real recipe or set', () => {
