@@ -10,6 +10,7 @@ import {
   matchSkillImproved,
   matchVaultFailure,
   matchCraftInterrupted,
+  matchCopyoverRecovery,
   buildHudContent,
   DEFAULT_CRAFT_TYPES_CONFIG,
   DEFAULT_TIER_TABLE_CONFIG,
@@ -257,6 +258,13 @@ describe('matchVaultFailure', () => {
 
   it('is false otherwise', () => {
     expect(matchVaultFailure('You get 1 uncut diamond stone.')).toBe(false);
+  });
+});
+
+describe('matchCopyoverRecovery', () => {
+  it('matches the copyover-recovery line', () => {
+    expect(matchCopyoverRecovery('Copyover recovery complete.')).toBe(true);
+    expect(matchCopyoverRecovery('You were successful.')).toBe(false);
   });
 });
 
@@ -1067,6 +1075,46 @@ describe('crafting-helper state machine', () => {
 
     mock.feedLine('You stop crafting.');
     expect(mock.terminalWrites.some((w) => w.includes('crafthelper order start` to resume'))).toBe(true);
+  });
+
+  it('recrafts the same item after a copyover interrupts the craft, with a fresh timeout window', () => {
+    const mock = createMockApi(defaultConfig({ craftResponseTimeoutMs: 500 }));
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
+    mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
+    jest.advanceTimersByTime(200); // craft sent
+    expect(mock.sent[mock.sent.length - 1]).toBe("craft spellcraft 'diamond gemstone'");
+
+    jest.advanceTimersByTime(400); // most of the way through the craft-response timeout
+    mock.feedLine('Copyover recovery complete.');
+    expect(mock.sent[mock.sent.length - 1]).toBe("craft spellcraft 'diamond gemstone'"); // resent
+    expect(mock.terminalWrites.some((w) => w.includes('Copyover') && w.includes('diamond gemstone'))).toBe(true);
+
+    // The old timer window doesn't carry over — a fresh 500ms starts now.
+    jest.advanceTimersByTime(400);
+    expect(plugin.onAlias!(mock.api, 'crafthelper improve status')).toBe(true);
+    expect(mock.terminalWrites.at(-1)).not.toContain('error_stopped'); // still waiting, not timed out yet
+
+    jest.advanceTimersByTime(200);
+    expect(plugin.onAlias!(mock.api, 'crafthelper improve status')).toBe(true);
+    expect(mock.terminalWrites.at(-1)).toContain('state=error_stopped'); // now the fresh window has elapsed
+  });
+
+  it('goes cleanly idle on copyover recovery if a stop was already requested, without re-crafting', () => {
+    const mock = createMockApi(defaultConfig());
+    const plugin = createCraftingHelperPlugin();
+    plugin.onEnable!(mock.api);
+    plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
+    mock.feedLine('Craftskill: 948     Craft Rank: Grand Master Spellcrafter');
+    jest.advanceTimersByTime(200); // craft sent
+
+    plugin.onAlias!(mock.api, 'crafthelper improve stop');
+    mock.feedLine('Copyover recovery complete.');
+
+    expect(mock.sent.filter((c) => c.startsWith('craft ')).length).toBe(1); // no re-craft
+    expect(plugin.onAlias!(mock.api, 'crafthelper improve status')).toBe(true);
+    expect(mock.terminalWrites.at(-1)).toContain('state=idle');
   });
 
   it('stops cleanly with an error if no recognized outcome arrives within craftResponseTimeoutMs', () => {

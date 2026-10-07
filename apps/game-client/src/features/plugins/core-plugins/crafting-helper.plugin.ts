@@ -659,6 +659,7 @@ const OUTCOME_DESTROYED = 'You failed and destroyed some materials in the proces
 const OUTCOME_NO_LOSS = 'You failed but did not lose any materials.';
 const VAULT_FAILURE_TEXT = 'I see nothing like that in the vault.';
 const CRAFT_INTERRUPTED_TEXT = 'You stop crafting.';
+const COPYOVER_RECOVERY_TEXT = 'Copyover recovery complete.';
 const SKILL_IMPROVED_RE = /Your crafting skill has improved\.\s*\((\d+)\)/;
 
 export function matchCraftOutcome(line: string): CraftOutcome {
@@ -679,6 +680,10 @@ export function matchVaultFailure(line: string): boolean {
 
 export function matchCraftInterrupted(line: string): boolean {
   return line.includes(CRAFT_INTERRUPTED_TEXT);
+}
+
+export function matchCopyoverRecovery(line: string): boolean {
+  return line.includes(COPYOVER_RECOVERY_TEXT);
 }
 
 const CONDITION_RE = /Condition:\s*[^(]+\(\s*(\d+)%\s*\)/;
@@ -1294,6 +1299,24 @@ export function createCraftingHelperPlugin(): IPluginModule {
     let outcome: CraftOutcome = null;
     for (const line of lines) {
       if (outcome !== null) break; // success/failure already seen this payload — a later interrupted/vault-failure line here is stale noise, not a new event (review 3.2)
+
+      // A copyover (server hot-restart) silently drops whatever craft command
+      // was in flight — no outcome line will ever arrive for it. Unlike an
+      // interruption, this isn't the player's doing, so just redo the same
+      // craft rather than stopping and asking them to resume manually.
+      if (matchCopyoverRecovery(line)) {
+        if (craftTimer) {
+          clearTimeout(craftTimer);
+          craftTimer = null;
+        }
+        if (stopRequested) {
+          goIdle(api, cfg);
+          return;
+        }
+        writeInfo(api, `Copyover detected — recrafting "${activeRecipe?.outputName}".`);
+        sendCraft(api, cfg);
+        return;
+      }
 
       // Something (a command, movement, being attacked) interrupted the
       // craft in progress — no outcome line will ever arrive, so stop
