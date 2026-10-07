@@ -33,6 +33,7 @@ export function normalizePluginModule(mod: IPluginModule): IPluginModule {
             ? (mod.configSchema.defaults as Record<string, unknown>)
             : undefined,
         fields: Array.isArray(mod.configSchema.fields) ? mod.configSchema.fields : [],
+        actions: Array.isArray(mod.configSchema.actions) ? mod.configSchema.actions : undefined,
       }
     : {
         defaults: {},
@@ -46,6 +47,11 @@ export function normalizePluginModule(mod: IPluginModule): IPluginModule {
     onEnable: mod.onEnable,
     onDisable: mod.onDisable,
     onEvent: mod.onEvent,
+    // Previously dropped here — every plugin's alias commands (brew's
+    // `brew <name>`, questbot's `pq start`, crafting-helper's `crafthelper
+    // start`, etc.) were silently unreachable via tryExecuteAlias, which
+    // reads onAlias off this normalized module, not the raw one.
+    onAlias: mod.onAlias,
     exportPlugin: mod.exportPlugin,
   };
 }

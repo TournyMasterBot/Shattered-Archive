@@ -12,6 +12,18 @@ Purpose: Colorize log lines based on configurable rules without trigger scripts.
 /combat-compression.plugin.ts
 Purpose: Squelches selected combat-log line classes (Damage/Avoidance/Condition/Death/Flee/Rescue/Disarm/Ambient/Item Use/Status/Incapacitation/Attack Flavor/UI Noise) via patterns verified against the real server log corpus (incl. Coliseum- and Bloodbath-arena mining passes); exports PATTERNS and the damage-verb DAMAGE_LINE_PATTERN for reuse (e.g. text-to-speech's combat compression and Arena Observer Mode).
 
+/crafting-helper.plugin.ts
+Purpose: Automates tier-3 crafting via two modes behind one config-driven state machine — Improve (auto-escalating skill-up training across all 5 craft skills) and Order (fulfills queued multi-component item/armor-set requests at a target quality, checked via `lore` and tracked to completion with per-order material-spend history). Commands via `crafthelper`/`crh` aliases; full syntax lives in `crafthelper help`, not the (deliberately terse) plugin manifest description.
+
+/crafting-helper.plugin.test.ts
+Purpose: State-machine integration tests (score → pull → craft → outcome branches, tier escalation, order-mode recipe/set resolution, quality routing, materials tracking, every in-game command) plus pure-function unit tests for the tier/recipe/quality-spec parsers and the order-id/materials-summary formatters.
+
+/crafting-helper-storage.ts
+Purpose: Per-character persisted storage for tracked craft-skill levels, the queued-order list, and completed-order history — lazy-loaded from and debounce-persisted to localStorage, mirroring peopleDb.ts's pattern in this same directory via a shared per-character list-store helper.
+
+/crafting-helper-storage.test.ts
+Purpose: Round-trip get/set, debounce-coalescing, per-character isolation, size-cap trimming, and corrupt-storage fallback for the skill-level store, order queue, and completed-order history.
+
 /disarm.plugin.ts
 Purpose: Automatically re-wields disarmed weapons by mapping item names to aliases.
 
