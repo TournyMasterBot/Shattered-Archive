@@ -1,6 +1,7 @@
 import type { IPluginModule, PluginRuntimeApi } from '@shatteredarchive/types-client';
 
 import { PluginHost, pluginHost } from './pluginHost';
+import { CORE_PLUGINS } from './registry';
 import { getHudWidget } from '../hudLayout/hudWidgetRegistry';
 
 /**
@@ -193,7 +194,7 @@ describe('PluginHost.tryExecuteAlias', () => {
   // questbot's `pq start`, etc.) were silently unreachable — tryExecuteAlias
   // reads onAlias off the normalized module stored at enable time, not the
   // raw one passed to registerModule.
-  it('reaches an enabled plugin\'s onAlias and lets it consume a command', () => {
+  it("reaches an enabled plugin's onAlias and lets it consume a command", () => {
     const host = new PluginHost();
     let received: string | null = null;
 
@@ -297,5 +298,45 @@ describe('PluginHost.invokePluginAction', () => {
     expect(consoleErrorSpy).toHaveBeenCalledWith('[Plugin]', 'Action error', expect.any(Error));
 
     consoleErrorSpy.mockRestore();
+  });
+});
+
+// HOST-1: the toy "alias-plugin" test above passed while every REAL plugin's aliases were dead (the
+// normalizer dropped onAlias). This runs the real registry through the real host.
+describe('PluginHost.tryExecuteAlias — every core plugin that defines onAlias is reachable', () => {
+  const aliasPluginIds = CORE_PLUGINS.filter((def) => typeof def.create().onAlias === 'function').map((def) => def.id);
+
+  it('covers the plugins known to define an alias handler (a rename or removal must be deliberate)', () => {
+    expect(aliasPluginIds).toEqual(
+      expect.arrayContaining([
+        'crafting-helper',
+        'brew',
+        'questbot',
+        'people',
+        'gourd',
+        'enchant',
+        'warlock-alphabet',
+        'text-to-speech',
+        'world-time-and-identity',
+      ]),
+    );
+  });
+
+  it.each(aliasPluginIds)('%s: tryExecuteAlias hands typed input to its onAlias', (id) => {
+    const def = CORE_PLUGINS.find((d) => d.id === id)!;
+    const mod = def.create();
+    // The real onEnable would start timers / speech / network; only alias dispatch is under test.
+    mod.onEnable = () => () => {};
+    const onAlias = jest.fn().mockReturnValue(true);
+    mod.onAlias = onAlias;
+
+    const host = new PluginHost();
+    host.setConnection('core-alias-conn');
+    host.registerModule(mod);
+    host.syncInstalled([{ id, enabled: true }]);
+
+    expect(host.tryExecuteAlias('zz unmatched input')).toBe(true);
+    expect(onAlias).toHaveBeenCalledWith(expect.anything(), 'zz unmatched input');
+    host.shutdown();
   });
 });

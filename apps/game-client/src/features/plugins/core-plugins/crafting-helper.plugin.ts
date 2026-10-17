@@ -10,7 +10,12 @@ import {
   updateOrder,
   getCompletedOrders,
   addCompletedOrder,
+  MAX_QUEUED_ORDERS,
+  countOrders,
+  takeDroppedOrderCount,
+  onStorageWriteError,
   type StoredCraftOrder,
+  type StoredQualitySpec,
 } from './crafting-helper-storage';
 
 /**
@@ -164,7 +169,12 @@ function craftTierRows(
 // list once showed "a spool of <material> thread", but that's just the
 // list's descriptive text; the item you actually get/put is the bare
 // "<material> thread".
-const TAILORING_TRINKET_TIERS: Array<{ dollThreshold: number; saddleThreshold: number; cloth: string; leather: string }> = [
+const TAILORING_TRINKET_TIERS: Array<{
+  dollThreshold: number;
+  saddleThreshold: number;
+  cloth: string;
+  leather: string;
+}> = [
   { dollThreshold: 1, saddleThreshold: 56, cloth: 'woolen', leather: 'deer' },
   { dollThreshold: 111, saddleThreshold: 166, cloth: 'linen', leather: 'cow' },
   { dollThreshold: 222, saddleThreshold: 277, cloth: 'brocade', leather: 'bull' },
@@ -212,14 +222,69 @@ function splitConfigLines(raw: unknown): string[] {
 }
 
 /**
- * Strips characters that would break the single-quoted MUD command syntax
- * these names get interpolated into (`get 1 'name' vault`, `craft verb
- * 'name'`, etc.). Tier-table and craft-types rows are user-edited free
- * text, so an embedded apostrophe is plausible ("ogre's tooth") and must
- * not reach a command string unescaped (review finding 1.3).
+ * Makes a config-sourced string safe to interpolate into a MUD command
+ * (`get 1 'name' vault`, `craft verb 'name'`, `put 1 'item' container`).
+ * Strips apostrophes (an embedded "ogre's tooth" would break the quoting) and
+ * every control character — the client forwards a command verbatim and the MUD
+ * input reader treats \r and \n as command terminators, so `vault\rquit` would
+ * otherwise become two commands. Runs of whitespace collapse to one space.
  */
+export function sanitizeCommandArg(value: string): string {
+  return value
+    .replace(/[\x00-\x1f\x7f']/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Item / material / verb names parsed from the tier-table and craft-types config. */
 export function sanitizeItemName(name: string): string {
-  return name.replace(/'/g, '');
+  return sanitizeCommandArg(name);
+}
+
+/** A container argument: bare when it is one word (the existing wire format), single-quoted otherwise. */
+export function containerArg(container: string): string {
+  return /\s/.test(container) ? `'${container}'` : container;
+}
+
+// ── Saved-table upgrade guard ─────────────────────────────────────────
+// Saving the config modal copies every default into the user's saved config,
+// so a recipe fix shipped later would never reach anyone who has saved once.
+// A saved table that is byte-for-byte (modulo comments/whitespace) a shipped
+// default is treated as "unmodified" and replaced by the current default.
+// When a default table changes, add the OLD table's fingerprint here so
+// existing saves upgrade. (Fixing this at the source — the modal persisting
+// only non-default keys — is tracked in .ai-bug/.)
+export const LEGACY_DEFAULT_TABLE_FINGERPRINTS: { craftTypes: readonly string[]; tierTable: readonly string[] } = {
+  craftTypes: [],
+  tierTable: [],
+};
+
+/** FNV-1a (32-bit) over the table with comment lines, blank lines and whitespace runs removed. */
+export function tableFingerprint(raw: string): string {
+  const normalized = raw
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith('#'))
+    .map((l) => l.replace(/\s+/g, ' '))
+    .join('\n');
+  let h = 0x811c9dc5;
+  for (let i = 0; i < normalized.length; i++) {
+    h ^= normalized.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, '0');
+}
+
+/** The table to parse: the current default when the saved one is an unmodified shipped default, else the saved one. */
+export function resolveTableConfig(
+  stored: unknown,
+  currentDefault: string,
+  legacyFingerprints: readonly string[],
+): unknown {
+  if (typeof stored !== 'string') return stored;
+  const fp = tableFingerprint(stored);
+  if (fp === tableFingerprint(currentDefault) || legacyFingerprints.includes(fp)) return currentDefault;
+  return stored;
 }
 
 /**
@@ -255,7 +320,12 @@ export function parseCraftTypesConfig(raw: unknown): CraftTypeRow[] {
     if (parts.length < 4) continue;
     const [id, label, verb, keyword] = parts;
     if (!id || !label || !verb || !keyword) continue;
-    rows.push({ id: id.toLowerCase(), label: sanitizeItemName(label), verb: sanitizeItemName(verb), keyword: sanitizeItemName(keyword) });
+    rows.push({
+      id: id.toLowerCase(),
+      label: sanitizeItemName(label),
+      verb: sanitizeItemName(verb),
+      keyword: sanitizeItemName(keyword),
+    });
   }
   return rows;
 }
@@ -270,7 +340,12 @@ export function parseTierTableConfig(raw: unknown): CraftTierRow[] {
     if (!craftTypeId || !trinket || !componentsStr || !Number.isFinite(skillThreshold)) continue;
     const components = parseComponentList(componentsStr);
     if (components.length === 0) continue;
-    rows.push({ craftTypeId: craftTypeId.toLowerCase(), skillThreshold, trinket: sanitizeItemName(trinket), components });
+    rows.push({
+      craftTypeId: craftTypeId.toLowerCase(),
+      skillThreshold,
+      trinket: sanitizeItemName(trinket),
+      components,
+    });
   }
   return rows;
 }
@@ -521,7 +596,7 @@ export const ORDER_SET_RECIPES: Record<string, string[]> = {
 // to Object's constructor function (truthy), bypassing the "unknown item"
 // check downstream. hasOwnProperty.call rejects every inherited property
 // name (constructor, __proto__, toString, hasOwnProperty, valueOf, ...),
-// not just the one in the live repro (review finding 1.2).
+// not just the one in the live repro.
 export function getOrderItemRecipe(name: string): OrderItemRecipe | undefined {
   return Object.prototype.hasOwnProperty.call(ORDER_ITEM_RECIPES, name) ? ORDER_ITEM_RECIPES[name] : undefined;
 }
@@ -530,26 +605,35 @@ export function getOrderSetRecipe(name: string): string[] | undefined {
   return Object.prototype.hasOwnProperty.call(ORDER_SET_RECIPES, name) ? ORDER_SET_RECIPES[name] : undefined;
 }
 
-export type QualitySpec =
-  | { kind: 'atLeast'; min: number }
-  | { kind: 'exact'; value: number }
-  | { kind: 'range'; min: number; max: number };
+export type QualitySpec = StoredQualitySpec;
+
+// Item condition is a percentage — across the whole player-log corpus a lore
+// "Condition: ... (N%)" never exceeds 100 — so a spec above that can never be met.
+const MAX_QUALITY = 100;
+// Largest quantity one `order add` may request.
+const MAX_ORDER_QTY = 500;
 
 export function parseQualitySpec(raw: string): QualitySpec | null {
   const trimmed = raw.trim();
 
   const atLeast = trimmed.match(/^(\d+)\+$/);
-  if (atLeast) return { kind: 'atLeast', min: parseInt(atLeast[1], 10) };
+  if (atLeast) {
+    const min = parseInt(atLeast[1], 10);
+    return min <= MAX_QUALITY ? { kind: 'atLeast', min } : null;
+  }
 
   const range = trimmed.match(/^(\d+)-(\d+)$/);
   if (range) {
     const min = parseInt(range[1], 10);
     const max = parseInt(range[2], 10);
-    return min <= max ? { kind: 'range', min, max } : null;
+    return min <= max && max <= MAX_QUALITY ? { kind: 'range', min, max } : null;
   }
 
   const exact = trimmed.match(/^(\d+)$/);
-  if (exact) return { kind: 'exact', value: parseInt(exact[1], 10) };
+  if (exact) {
+    const value = parseInt(exact[1], 10);
+    return value <= MAX_QUALITY ? { kind: 'exact', value } : null;
+  }
 
   return null;
 }
@@ -608,7 +692,8 @@ export function parseQualityContainerMap(raw: unknown): QualityContainerRow[] {
   for (const line of splitConfigLines(raw)) {
     const parts = line.split('|').map((p) => p.trim());
     if (parts.length < 2) continue;
-    const [rangeStr, container] = parts;
+    const [rangeStr, rawContainer] = parts;
+    const container = sanitizeCommandArg(rawContainer);
     if (!container) continue;
 
     const range = rangeStr.match(/^(\d+)-(\d+)$/);
@@ -660,37 +745,81 @@ const OUTCOME_NO_LOSS = 'You failed but did not lose any materials.';
 const VAULT_FAILURE_TEXT = 'I see nothing like that in the vault.';
 const CRAFT_INTERRUPTED_TEXT = 'You stop crafting.';
 const COPYOVER_RECOVERY_TEXT = 'Copyover recovery complete.';
-const SKILL_IMPROVED_RE = /Your crafting skill has improved\.\s*\((\d+)\)/;
+// Every matcher below accepts a WHOLE line only. The stream the plugin reads
+// also carries other players' say/channel text (`Name says, "..."`,
+// `Name grats '...'`, `Name OOC: '...'`, `You OOC: '...'`), and a substring
+// match would treat anything a player types as authoritative game output.
+// Verified against the player-log corpus: the copyover and vault-failure lines
+// are always whole lines (103 / 59 occurrences, never prefixed, never inside
+// speech), while all four real occurrences of the skill-up text are inside
+// player chat — i.e. the spoof is not hypothetical.
+const SKILL_IMPROVED_RE = /^Your crafting skill has improved\.\s*\((\d+)\)$/;
+// Lore output prints either `Condition: good (90%)` or, for small items,
+// `Size: tiny   Condition: good (90%)` on one line (3200 of 5315 corpus lines
+// carry the Size prefix) — nothing else may precede it.
+const CONDITION_RE = /^(?:Size:\s*[^:()]{1,24}?\s+)?Condition:\s*[^(]+\(\s*(\d+)%\s*\)$/;
+// A successful vault pull prints e.g. "You get a silksteel cloth helmet from the mystic vault."
+const PULL_SUCCESS_RE = /^You get .+ from .*vault\.$/;
+
+const isSystemLine = (line: string, text: string): boolean => line.trim() === text;
 
 export function matchCraftOutcome(line: string): CraftOutcome {
-  if (line.includes(OUTCOME_SUCCESS)) return 'success';
-  if (line.includes(OUTCOME_DESTROYED)) return 'failed_destroyed';
-  if (line.includes(OUTCOME_NO_LOSS)) return 'failed_no_loss';
+  if (isSystemLine(line, OUTCOME_SUCCESS)) return 'success';
+  if (isSystemLine(line, OUTCOME_DESTROYED)) return 'failed_destroyed';
+  if (isSystemLine(line, OUTCOME_NO_LOSS)) return 'failed_no_loss';
   return null;
 }
 
 export function matchSkillImproved(line: string): number | null {
-  const m = line.match(SKILL_IMPROVED_RE);
+  const m = line.trim().match(SKILL_IMPROVED_RE);
   return m ? parseInt(m[1], 10) : null;
 }
 
 export function matchVaultFailure(line: string): boolean {
-  return line.includes(VAULT_FAILURE_TEXT);
+  return isSystemLine(line, VAULT_FAILURE_TEXT);
+}
+
+export function matchPullSuccess(line: string): boolean {
+  return PULL_SUCCESS_RE.test(line.trim());
+}
+
+// `You put a traveler's diary in the mystic vault.` — the only put reply shape in the player-log corpus.
+const PUT_SUCCESS_RE = /^You put .+ in .+\.$/;
+// A put of something not held (corpus: 9 of 24 first replies in one session).
+const PUT_FAILURE_TEXT = 'You do not have that item.';
+
+export function matchPutSuccess(line: string): boolean {
+  return PUT_SUCCESS_RE.test(line.trim());
+}
+
+export function matchPutFailure(line: string): boolean {
+  return isSystemLine(line, PUT_FAILURE_TEXT);
 }
 
 export function matchCraftInterrupted(line: string): boolean {
-  return line.includes(CRAFT_INTERRUPTED_TEXT);
+  return isSystemLine(line, CRAFT_INTERRUPTED_TEXT);
 }
 
 export function matchCopyoverRecovery(line: string): boolean {
-  return line.includes(COPYOVER_RECOVERY_TEXT);
+  return isSystemLine(line, COPYOVER_RECOVERY_TEXT);
 }
 
-const CONDITION_RE = /Condition:\s*[^(]+\(\s*(\d+)%\s*\)/;
-
 export function matchItemCondition(line: string): number | null {
-  const m = line.match(CONDITION_RE);
-  return m ? parseInt(m[1], 10) : null;
+  const m = line.trim().match(CONDITION_RE);
+  if (!m) return null;
+  const pct = parseInt(m[1], 10);
+  // Condition is a percentage; the corpus never exceeds 100.
+  return pct <= MAX_QUALITY ? pct : null;
+}
+
+// A genuine skill-up raises the tracked level by one. Anything that lands far
+// above (or at/below) the tracked level is not a skill-up of this character.
+const SKILL_CAP = 1001;
+const MAX_SKILL_STEP = 5;
+export function isPlausibleSkillUp(newLevel: number, tracked: number | null): boolean {
+  if (!Number.isInteger(newLevel) || newLevel < 1 || newLevel > SKILL_CAP) return false;
+  if (tracked == null) return true;
+  return newLevel > tracked && newLevel - tracked <= MAX_SKILL_STEP;
 }
 
 // ── HUD content ───────────────────────────────────────────────────────
@@ -758,12 +887,31 @@ interface EngineConfig {
   qualityContainerMap: QualityContainerRow[];
   debug: boolean;
   hudSlot: HudSlotId | 'none';
+  /** `order add` on an empty queue starts fulfilling immediately (default on). */
+  autoStartOnOrderAdd: boolean;
+  /** Stop after this many failed crafts in a row. */
+  maxConsecutiveFailures: number;
+  /** Stop an order once its crafts exceed quantity × this many attempts. */
+  maxAttemptsPerItem: number;
+  /** Stop when more than this many commands go out within COMMAND_WINDOW_MS. */
+  maxCommandsPerWindow: number;
 }
 
-function numOr(v: unknown, fallback: number): number {
+/**
+ * A finite number inside [min, max], else the fallback. Unlike a bare
+ * `Number(v)`, this rejects the values that turn a timeout into a footgun:
+ * '' and null (both coerce to 0), 0 itself, negatives, and anything past the
+ * 2^31-1 ms `setTimeout` ceiling (browsers fire those after ~1 ms).
+ */
+export function numIn(v: unknown, fallback: number, min: number, max: number): number {
+  if (v === null || v === undefined || typeof v === 'boolean') return fallback;
+  if (typeof v === 'string' && v.trim() === '') return fallback;
   const n = Number(v);
-  return Number.isFinite(n) && n >= 0 ? n : fallback;
+  return Number.isFinite(n) && n >= min && n <= max ? Math.trunc(n) : fallback;
 }
+
+const ONE_HOUR_MS = 3_600_000;
+export const COMMAND_WINDOW_MS = 10_000;
 
 /**
  * Wraps a pure parser so an unchanged raw config string skips re-parsing.
@@ -786,8 +934,14 @@ function memoizeLast<T>(fn: (raw: unknown) => T): (raw: unknown) => T {
   };
 }
 
-const parseCraftTypesConfigMemo = memoizeLast(parseCraftTypesConfig);
-const parseTierTableConfigMemo = memoizeLast(parseTierTableConfig);
+const parseCraftTypesConfigMemo = memoizeLast((raw) =>
+  parseCraftTypesConfig(
+    resolveTableConfig(raw, DEFAULT_CRAFT_TYPES_CONFIG, LEGACY_DEFAULT_TABLE_FINGERPRINTS.craftTypes),
+  ),
+);
+const parseTierTableConfigMemo = memoizeLast((raw) =>
+  parseTierTableConfig(resolveTableConfig(raw, DEFAULT_TIER_TABLE_CONFIG, LEGACY_DEFAULT_TABLE_FINGERPRINTS.tierTable)),
+);
 const parseQualityContainerMapMemo = memoizeLast(parseQualityContainerMap);
 
 function readConfig(api: PluginRuntimeApi): EngineConfig {
@@ -796,20 +950,23 @@ function readConfig(api: PluginRuntimeApi): EngineConfig {
   return {
     craftTypes: parseCraftTypesConfigMemo(cfg.craftTypes),
     tierTable: parseTierTableConfigMemo(cfg.tierTable),
-    commandPacingDelayMs: numOr(cfg.commandPacingDelayMs, 150),
-    pullConfirmTimeoutMs: numOr(cfg.pullConfirmTimeoutMs, 200),
-    scoreResponseTimeoutMs: numOr(cfg.scoreResponseTimeoutMs, 1000),
-    loreResponseTimeoutMs: numOr(cfg.loreResponseTimeoutMs, 2000),
-    craftResponseTimeoutMs: numOr(cfg.craftResponseTimeoutMs, 180000),
+    commandPacingDelayMs: numIn(cfg.commandPacingDelayMs, 150, 50, 5_000),
+    pullConfirmTimeoutMs: numIn(cfg.pullConfirmTimeoutMs, 200, 50, 10_000),
+    scoreResponseTimeoutMs: numIn(cfg.scoreResponseTimeoutMs, 1000, 100, 60_000),
+    loreResponseTimeoutMs: numIn(cfg.loreResponseTimeoutMs, 2000, 100, 60_000),
+    craftResponseTimeoutMs: numIn(cfg.craftResponseTimeoutMs, 180_000, 100, ONE_HOUR_MS),
     orderHoldingContainer:
-      typeof cfg.orderHoldingContainer === 'string' && cfg.orderHoldingContainer.trim()
-        ? cfg.orderHoldingContainer.trim()
-        : 'vault',
+      (typeof cfg.orderHoldingContainer === 'string' && sanitizeCommandArg(cfg.orderHoldingContainer)) || 'vault',
     qualityContainerMap: parseQualityContainerMapMemo(cfg.qualityContainerMap),
     debug: cfg.debug === true,
-    hudSlot: hudSlot === 'hud.bottomStrip' || hudSlot === 'hud.rightColumn' || hudSlot === 'none'
-      ? hudSlot
-      : 'hud.bottomStrip',
+    hudSlot:
+      hudSlot === 'hud.bottomStrip' || hudSlot === 'hud.rightColumn' || hudSlot === 'none'
+        ? hudSlot
+        : 'hud.bottomStrip',
+    autoStartOnOrderAdd: cfg.autoStartOnOrderAdd !== false,
+    maxConsecutiveFailures: numIn(cfg.maxConsecutiveFailures, 15, 1, 10_000),
+    maxAttemptsPerItem: numIn(cfg.maxAttemptsPerItem, 100, 1, 10_000),
+    maxCommandsPerWindow: numIn(cfg.maxCommandsPerWindow, 120, 20, 1_000),
   };
 }
 
@@ -835,27 +992,140 @@ export function createCraftingHelperPlugin(): IPluginModule {
   let activeOrder: StoredCraftOrder | null = null;
   let activeOrderRemoved = false;
   let orderSession: { inSpecRouted: number; offSpecRouted: number } | null = null;
-  let qualityTimer: ReturnType<typeof setTimeout> | null = null;
   let session: SessionStats | null = null;
 
-  let scoreTimer: ReturnType<typeof setTimeout> | null = null;
-  let pullTimer: ReturnType<typeof setTimeout> | null = null;
-  let pacingTimer: ReturnType<typeof setTimeout> | null = null;
-  let releaseTimer: ReturnType<typeof setTimeout> | null = null;
-  let craftTimer: ReturnType<typeof setTimeout> | null = null;
   // Components pulled from the vault that a craft hasn't consumed yet — if
   // the run stops, these go back into the vault.
   let materialsHeld: RecipeComponent[] | null = null;
   let lastPublishedSlot: HudSlotId | null = null;
 
+  // ── Timers ────────────────────────────────────────────────────────────
+  // One handle per slot, and a slot is never overwritten while live: a
+  // duplicate or spoofed outcome line used to schedule a second timer on top
+  // of the first, orphaning it where no clearTimeout could reach it (an
+  // orphaned craft watchdog later aborted a healthy run). `epoch` is bumped by
+  // clearAllTimers, so a callback that was already queued when the run was
+  // reset or errored is a no-op instead of acting on the next run's state.
+  type TimerSlot = 'score' | 'pull' | 'pacing' | 'quality' | 'release' | 'craft' | 'put';
+  const timers: Partial<Record<TimerSlot, ReturnType<typeof setTimeout>>> = {};
+  let epoch = 0;
+
+  function clearSlot(slot: TimerSlot) {
+    const handle = timers[slot];
+    if (handle !== undefined) {
+      clearTimeout(handle);
+      delete timers[slot];
+    }
+  }
+
+  function hasTimer(slot: TimerSlot): boolean {
+    return timers[slot] !== undefined;
+  }
+
+  function schedule(slot: TimerSlot, ms: number, fn: () => void) {
+    // A run stopped by the command-rate limit must not re-arm anything from the
+    // callback that tripped it.
+    if (rateLimitTripped) return;
+    clearSlot(slot);
+    const armedIn = epoch;
+    timers[slot] = setTimeout(() => {
+      delete timers[slot];
+      if (armedIn === epoch) fn();
+    }, ms);
+  }
+
   function clearAllTimers() {
-    if (scoreTimer) clearTimeout(scoreTimer);
-    if (pullTimer) clearTimeout(pullTimer);
-    if (pacingTimer) clearTimeout(pacingTimer);
-    if (qualityTimer) clearTimeout(qualityTimer);
-    if (releaseTimer) clearTimeout(releaseTimer);
-    if (craftTimer) clearTimeout(craftTimer);
-    scoreTimer = pullTimer = pacingTimer = qualityTimer = releaseTimer = craftTimer = null;
+    epoch += 1;
+    (Object.keys(timers) as TimerSlot[]).forEach(clearSlot);
+  }
+
+  // ── Re-entrancy guards, brakes ─────────────────────────────────────────
+  // True only between sending `craft` and consuming its first outcome line. A
+  // second outcome / interrupt / copyover line while false (pacing gap, destroyed
+  // put-back chain) belongs to no craft in flight and is ignored.
+  let outcomePending = false;
+  // Same for the `lore` reply in order mode.
+  let qualityPending = false;
+  // Order mode: the crafted item's `put` is out and its reply has not arrived. The order is credited
+  // only once the server confirms the put; a refusal or silence credits nothing and stops the run.
+  interface PendingPut {
+    outputName: string;
+    quality: number;
+    container: string;
+    inSpec: boolean;
+  }
+  let pendingPut: PendingPut | null = null;
+  // Copyover recraft allowance: one resend per craft attempt.
+  const MAX_COPYOVER_RECRAFTS_PER_ATTEMPT = 1;
+  let recraftsThisAttempt = 0;
+  let consecutiveFailures = 0;
+  let orderAttempts = 0;
+  // Successful vault pulls seen this pull cycle ("You get ... from the vault.").
+  let confirmedPulls = 0;
+  // Sliding window of command send times for the rate limit; once tripped, sends are dropped until the next start.
+  let sentTimes: number[] = [];
+  let rateLimitTripped = false;
+  // The character the active run belongs to. Storage writes made by the engine use this, not the
+  // live identity, so a character switch mid-run can never write under the new character's name.
+  let runKey: string | null = null;
+  const runCharacter = () => runKey ?? characterKey();
+
+  /** The single place the plugin sends a command: rate limit + optional debug trace. */
+  function send(api: PluginRuntimeApi, cmd: string) {
+    if (rateLimitTripped) return;
+    const cfg = readConfig(api);
+    const now = Date.now();
+    sentTimes = sentTimes.filter((t) => now - t < COMMAND_WINDOW_MS);
+    if (sentTimes.length >= cfg.maxCommandsPerWindow) {
+      rateLimitTripped = true;
+      enterError(
+        api,
+        cfg,
+        `Command rate limit hit (${cfg.maxCommandsPerWindow} commands in ${COMMAND_WINDOW_MS / 1000}s) — stopped to avoid flooding the MUD. Pulled materials may still be in your inventory.`,
+      );
+      return;
+    }
+    sentTimes.push(now);
+    if (cfg.debug) api.log(`send: ${cmd}`);
+    api.sendCommand(cmd);
+  }
+
+  /**
+   * Abandons the run without sending anything (the connection may be gone and
+   * the host may be tearing the plugin down) and reports what is still held.
+   */
+  function resetEngine(api: PluginRuntimeApi, reason: string, publish = true) {
+    const held = materialsHeld;
+    const wasActive = state !== 'idle' || (held?.length ?? 0) > 0;
+    clearAllTimers();
+    state = 'idle';
+    mode = 'improve';
+    stopRequested = false;
+    stopReason = null;
+    activeRecipe = null;
+    activeOrder = null;
+    activeOrderRemoved = false;
+    materialsHeld = null;
+    session = null;
+    orderSession = null;
+    pullIndex = 0;
+    runKey = null;
+    outcomePending = false;
+    qualityPending = false;
+    pendingPut = null;
+    recraftsThisAttempt = 0;
+    consecutiveFailures = 0;
+    orderAttempts = 0;
+    confirmedPulls = 0;
+    sentTimes = [];
+    rateLimitTripped = false;
+    if (wasActive) {
+      const list = held?.length
+        ? ` Still in your inventory: ${held.map((c) => `${c.qty}x ${c.material}`).join(', ')}.`
+        : '';
+      writeInfo(api, `${reason}.${list}`);
+    }
+    if (publish) publishHud(api, readConfig(api));
   }
 
   function publishHud(api: PluginRuntimeApi, cfg: EngineConfig) {
@@ -909,14 +1179,15 @@ export function createCraftingHelperPlugin(): IPluginModule {
   // ── handleCraftSuccess — improve-mode / order-mode seam ──────────────
   function handleCraftSuccess(api: PluginRuntimeApi, cfg: EngineConfig, recipe: ResolvedRecipe) {
     if (mode === 'improve') {
-      api.sendCommand(`put 1 '${recipe.outputName}' vault`);
-      pacingTimer = setTimeout(() => beginPullCycle(api), cfg.commandPacingDelayMs);
+      send(api, `put 1 '${recipe.outputName}' vault`);
+      schedule('pacing', cfg.commandPacingDelayMs, () => beginPullCycle(api));
       return;
     }
     state = 'checking_quality';
     publishHud(api, cfg);
-    api.sendCommand(`lore '${recipe.outputName}'`);
-    qualityTimer = setTimeout(() => onQualityTimeout(api), cfg.loreResponseTimeoutMs);
+    qualityPending = true;
+    send(api, `lore '${recipe.outputName}'`);
+    schedule('quality', cfg.loreResponseTimeoutMs, () => onQualityTimeout(api));
   }
 
   // Order mode only — tallies raw-material spend against the active order,
@@ -933,15 +1204,15 @@ export function createCraftingHelperPlugin(): IPluginModule {
       tally[c.material] = (tally[c.material] ?? 0) + c.qty;
     }
     activeOrder = { ...activeOrder, materialsUsed: tally };
-    updateOrder(characterKey(), activeOrder.id, { materialsUsed: tally });
+    updateOrder(runCharacter(), activeOrder.id, { materialsUsed: tally });
   }
 
   function onQualityTimeout(api: PluginRuntimeApi) {
-    qualityTimer = null;
+    qualityPending = false;
     const cfg = readConfig(api);
     // The craft succeeded, so don't leave the item in inventory: with no
     // quality reading there's no better home than the default (vault).
-    if (activeRecipe) api.sendCommand(`put 1 '${activeRecipe.outputName}' vault`);
+    if (activeRecipe) send(api, `put 1 '${activeRecipe.outputName}' vault`);
     if (stopRequested) {
       goIdle(api, cfg);
       return;
@@ -954,6 +1225,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
   }
 
   function resolveOrderQuality(api: PluginRuntimeApi, cfg: EngineConfig, quality: number) {
+    qualityPending = false;
     if (!activeRecipe) {
       enterError(api, cfg, 'Internal error: no active recipe.');
       return;
@@ -969,7 +1241,45 @@ export function createCraftingHelperPlugin(): IPluginModule {
     // not on which container it physically lands in.
     const mappedContainer = matchQualityContainer(quality, cfg.qualityContainerMap);
     const container = mappedContainer ?? (inSpec ? cfg.orderHoldingContainer : 'vault');
-    api.sendCommand(`put 1 '${outputName}' ${container}`);
+    send(api, `put 1 '${outputName}' ${containerArg(container)}`);
+    if (rateLimitTripped) return; // the send tripped the limit and already stopped the run: credit nothing
+
+    // Credit and routing wait for the server's reply to the put (see creditOrderPut).
+    pendingPut = { outputName, quality, container, inSpec };
+    state = 'storing_trinket';
+    publishHud(api, cfg);
+    schedule('put', cfg.loreResponseTimeoutMs, () => onPutTimeout(api));
+  }
+
+  function onPutTimeout(api: PluginRuntimeApi) {
+    const p = pendingPut;
+    pendingPut = null;
+    const cfg = readConfig(api);
+    if (stopRequested) {
+      goIdle(api, cfg);
+      return;
+    }
+    enterError(
+      api,
+      cfg,
+      `No confirmation that "${p?.outputName}" was stored in ${p?.container} within ${cfg.loreResponseTimeoutMs}ms — order not credited; check your inventory, then run \`crafthelper order stop\` and \`crafthelper order start\` to continue.`,
+    );
+  }
+
+  function onPutRefused(api: PluginRuntimeApi, cfg: EngineConfig) {
+    const p = pendingPut;
+    pendingPut = null;
+    enterError(
+      api,
+      cfg,
+      `The server refused to store "${p?.outputName}" in ${p?.container} ("${PUT_FAILURE_TEXT}") — order not credited; check your inventory, then run \`crafthelper order stop\` and \`crafthelper order start\` to continue.`,
+    );
+  }
+
+  /** The put was confirmed: credit the order (if the item met its spec) and move to the next craft. */
+  function creditOrderPut(api: PluginRuntimeApi, cfg: EngineConfig, p: PendingPut) {
+    const { outputName, quality, container, inSpec } = p;
+    const order = activeOrderRemoved ? null : activeOrder;
 
     if (inSpec && order) {
       if (orderSession) orderSession.inSpecRouted += 1;
@@ -982,7 +1292,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
           `Order ${order.id} complete: "${outputName}" @ ${quality}% (in spec) — ${order.quantityTotal}/${order.quantityTotal} done, routed to ${container}.`,
         );
         writeInfo(api, `Order ${order.id} materials used: ${formatMaterialsUsed(materialsUsed)}.`);
-        addCompletedOrder(characterKey(), {
+        addCompletedOrder(runCharacter(), {
           id: order.id,
           itemName: order.itemName,
           quantityTotal: order.quantityTotal,
@@ -991,24 +1301,27 @@ export function createCraftingHelperPlugin(): IPluginModule {
           createdAt: order.createdAt,
           completedAt: Date.now(),
         });
-        removeOrder(characterKey(), order.id);
+        removeOrder(runCharacter(), order.id);
         activeOrder = null;
-        pacingTimer = setTimeout(() => advanceOrderQueue(api), cfg.commandPacingDelayMs);
+        schedule('pacing', cfg.commandPacingDelayMs, () => advanceOrderQueue(api));
       } else {
         writeInfo(
           api,
           `"${outputName}" @ ${quality}% (in spec) — order ${order.id}: ${done}/${order.quantityTotal} done, ${remaining} remaining, routed to ${container}.`,
         );
-        updateOrder(characterKey(), order.id, { quantityRemaining: remaining });
+        updateOrder(runCharacter(), order.id, { quantityRemaining: remaining });
         activeOrder = { ...order, quantityRemaining: remaining };
-        pacingTimer = setTimeout(() => beginPullCycle(api), cfg.commandPacingDelayMs);
+        schedule('pacing', cfg.commandPacingDelayMs, () => beginPullCycle(api));
       }
     } else {
       if (orderSession) orderSession.offSpecRouted += 1;
       if (activeOrderRemoved) {
-        writeInfo(api, `"${outputName}" @ ${quality}% crafted — its order was removed mid-craft, routed to ${container}.`);
+        writeInfo(
+          api,
+          `"${outputName}" @ ${quality}% crafted — its order was removed mid-craft, routed to ${container}.`,
+        );
         activeOrderRemoved = false;
-        pacingTimer = setTimeout(() => advanceOrderQueue(api), cfg.commandPacingDelayMs);
+        schedule('pacing', cfg.commandPacingDelayMs, () => advanceOrderQueue(api));
       } else {
         if (order) {
           const done = order.quantityTotal - order.quantityRemaining;
@@ -1017,7 +1330,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
             `"${outputName}" @ ${quality}% — off spec for order ${order.id} (needs ${formatQualitySpec(order.qualitySpec)}), routed to ${container}; order still at ${done}/${order.quantityTotal}.`,
           );
         }
-        pacingTimer = setTimeout(() => beginPullCycle(api), cfg.commandPacingDelayMs);
+        schedule('pacing', cfg.commandPacingDelayMs, () => beginPullCycle(api));
       }
     }
   }
@@ -1028,7 +1341,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
       goIdle(api, cfg);
       return;
     }
-    const queue = getOrderQueue(characterKey());
+    const queue = getOrderQueue(runCharacter());
     if (queue.length === 0) {
       mode = 'improve';
       goIdle(api, cfg);
@@ -1056,6 +1369,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     activeOrder = next;
     activeOrderRemoved = false;
     activeCraftTypeRow = typeRow;
+    orderAttempts = 0;
     beginPullCycle(api);
   }
 
@@ -1067,14 +1381,11 @@ export function createCraftingHelperPlugin(): IPluginModule {
     if (!held || held.length === 0) return;
     writeInfo(api, 'Returning pulled materials to the vault.');
     const step = (i: number) => {
-      if (i >= held.length) {
-        releaseTimer = null;
-        return;
-      }
-      releaseTimer = setTimeout(() => {
-        api.sendCommand(`put ${held[i].qty} '${held[i].material}' vault`);
+      if (i >= held.length) return;
+      schedule('release', cfg.commandPacingDelayMs, () => {
+        send(api, `put ${held[i].qty} '${held[i].material}' vault`);
         step(i + 1);
-      }, cfg.commandPacingDelayMs);
+      });
     };
     step(0);
   }
@@ -1084,6 +1395,16 @@ export function createCraftingHelperPlugin(): IPluginModule {
     state = 'idle';
     activeRecipe = null;
     activeOrder = null;
+    outcomePending = false;
+    qualityPending = false;
+    pendingPut = null;
+    runKey = null;
+    consecutiveFailures = 0;
+    orderAttempts = 0;
+    recraftsThisAttempt = 0;
+    // The run is over, so the rate-limit window starts clean and the put-backs below may be sent.
+    rateLimitTripped = false;
+    sentTimes = [];
     publishHud(api, cfg);
     writeInfo(api, 'Stopped.');
     releaseMaterials(api, cfg);
@@ -1093,6 +1414,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
     clearAllTimers();
     state = 'error_stopped';
     stopReason = reason;
+    outcomePending = false;
+    qualityPending = false;
+    pendingPut = null;
     publishHud(api, cfg);
     writeError(api, reason);
     releaseMaterials(api, cfg);
@@ -1109,6 +1433,10 @@ export function createCraftingHelperPlugin(): IPluginModule {
       advanceOrderQueue(api);
       return;
     }
+    if (orderBudgetExhausted(cfg)) {
+      enterError(api, cfg, orderBudgetMessage());
+      return;
+    }
 
     const recipe = resolveNextRecipe(cfg);
     if (!recipe) {
@@ -1122,6 +1450,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
 
     activeRecipe = recipe;
     pullIndex = 0;
+    confirmedPulls = 0;
     pullComponent(api, cfg);
   }
 
@@ -1138,12 +1467,11 @@ export function createCraftingHelperPlugin(): IPluginModule {
     publishHud(api, cfg);
     materialsHeld = activeRecipe.components.slice(0, pullIndex + 1);
     const component = activeRecipe.components[pullIndex];
-    api.sendCommand(`get ${component.qty} '${component.material}' vault`);
-    pullTimer = setTimeout(() => onPullTimeout(api), cfg.pullConfirmTimeoutMs);
+    send(api, `get ${component.qty} '${component.material}' vault`);
+    schedule('pull', cfg.pullConfirmTimeoutMs, () => onPullTimeout(api));
   }
 
   function onPullTimeout(api: PluginRuntimeApi) {
-    pullTimer = null;
     const cfg = readConfig(api);
     if (stopRequested) {
       goIdle(api, cfg);
@@ -1153,26 +1481,28 @@ export function createCraftingHelperPlugin(): IPluginModule {
     pullComponent(api, cfg);
   }
 
-  function sendCraft(api: PluginRuntimeApi, cfg: EngineConfig) {
+  /** `recraft` re-sends the craft of the SAME attempt (after a copyover); it does not reset the recraft allowance. */
+  function sendCraft(api: PluginRuntimeApi, cfg: EngineConfig, recraft = false) {
     if (!activeCraftTypeRow || !activeRecipe) {
       enterError(api, cfg, 'Internal error: no active craft type/recipe.');
       return;
     }
     state = 'crafting';
+    outcomePending = true;
+    if (!recraft) recraftsThisAttempt = 0;
     publishHud(api, cfg);
-    api.sendCommand(`craft ${activeCraftTypeRow.verb} '${activeRecipe.outputName}'`);
+    send(api, `craft ${activeCraftTypeRow.verb} '${activeRecipe.outputName}'`);
     // Bounded safety net: one of the three known outcome lines almost always
     // arrives quickly, but an unrecognized server message must not hang the
-    // engine forever (review finding 1.1) — craftResponseTimeoutMs is long
+    // engine forever — craftResponseTimeoutMs is long
     // (default 180s) because a craft can legitimately take up to ~2.5 ticks
     // (reported live: over 150s) to resolve on higher tiers.
-    craftTimer = setTimeout(() => onCraftTimeout(api), cfg.craftResponseTimeoutMs);
+    schedule('craft', cfg.craftResponseTimeoutMs, () => onCraftTimeout(api));
   }
 
   function onCraftTimeout(api: PluginRuntimeApi) {
-    craftTimer = null;
     const cfg = readConfig(api);
-    // Same stopRequested check sibling timeouts need (review 3.3) — a stop
+    // Same stopRequested check sibling timeouts need — a stop
     // that races this timeout must land in a clean idle, not an alarming
     // error_stopped.
     if (stopRequested) {
@@ -1201,14 +1531,14 @@ export function createCraftingHelperPlugin(): IPluginModule {
     // finish returning the materials — beginPullCycle (reached once they're
     // all put back) is what turns the stop into idle.
     if (index >= components.length) {
-      pacingTimer = setTimeout(() => beginPullCycle(api), cfg.commandPacingDelayMs);
+      schedule('pacing', cfg.commandPacingDelayMs, () => beginPullCycle(api));
       return;
     }
-    pacingTimer = setTimeout(() => {
+    schedule('pacing', cfg.commandPacingDelayMs, () => {
       const component = components[index];
-      api.sendCommand(`put ${component.qty} '${component.material}' vault`);
+      send(api, `put ${component.qty} '${component.material}' vault`);
       putBackComponent(api, cfg, components, index + 1);
-    }, cfg.commandPacingDelayMs);
+    });
   }
 
   function handleRawData(api: PluginRuntimeApi, rawText: string) {
@@ -1224,19 +1554,27 @@ export function createCraftingHelperPlugin(): IPluginModule {
       return;
     }
 
+    // A run belongs to the character that started it: if the identity changed
+    // under it (relog / switch on the same connection), abandon it rather than
+    // write progress under the new character's name or send commands there.
+    if (runKey && characterKey() !== runKey) {
+      resetEngine(api, 'Character changed mid-run — run abandoned');
+      return;
+    }
+
     const cfg = readConfig(api);
     const plain = stripAnsi(rawText).replace(/\r/g, '');
-    const lines = plain.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
+    const lines = plain
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
 
     if (state === 'awaiting_score') {
       const level = findCraftSkillLevel(lines, activeCraftTypeRow?.keyword ?? '');
       if (level != null) {
-        if (scoreTimer) {
-          clearTimeout(scoreTimer);
-          scoreTimer = null;
-        }
+        clearSlot('score');
         trackedSkillLevel = level;
-        if (activeCraftTypeRow) setTrackedSkillLevel(characterKey(), activeCraftTypeRow.id, level);
+        if (activeCraftTypeRow) setTrackedSkillLevel(runCharacter(), activeCraftTypeRow.id, level);
         publishHud(api, cfg);
         beginPullCycle(api);
       }
@@ -1251,29 +1589,71 @@ export function createCraftingHelperPlugin(): IPluginModule {
     // payload for it regardless of which mid-cycle state we're in.
     for (const line of lines) {
       const improved = matchSkillImproved(line);
-      if (improved != null) {
-        trackedSkillLevel = improved;
-        if (activeCraftTypeRow) setTrackedSkillLevel(characterKey(), activeCraftTypeRow.id, improved);
-        if (session) session.skillGains += 1;
-        publishHud(api, cfg);
+      if (improved == null) continue;
+      // The level picks which tier's materials get pulled and crafted, so it must be a
+      // genuine +1..+5 step from the tracked level, never a value that merely looks right.
+      if (!isPlausibleSkillUp(improved, trackedSkillLevel)) {
+        if (cfg.debug) api.log(`ignored implausible skill-up ${improved} (tracked ${trackedSkillLevel})`);
+        continue;
       }
+      trackedSkillLevel = improved;
+      if (activeCraftTypeRow) setTrackedSkillLevel(runCharacter(), activeCraftTypeRow.id, improved);
+      if (session) session.skillGains += 1;
+      publishHud(api, cfg);
     }
 
     // The skill-up line follows the success line, typically in the next
     // payload — by then a success has already moved state to
     // storing_trinket, so that state must be let through to the scan above.
-    if (state === 'storing_trinket') return;
+    if (state === 'storing_trinket') {
+      if (!pendingPut) return;
+      for (const line of lines) {
+        if (matchPutFailure(line)) {
+          clearSlot('put');
+          onPutRefused(api, cfg);
+          return;
+        }
+        if (matchPutSuccess(line)) {
+          clearSlot('put');
+          const confirmed = pendingPut;
+          pendingPut = null;
+          creditOrderPut(api, cfg, confirmed);
+          return;
+        }
+      }
+      return;
+    }
 
     if (state === 'pulling_components') {
       for (const line of lines) {
+        if (matchPullSuccess(line)) {
+          // Replies come back in the order the gets were sent, so the first pull that has no
+          // success line yet is the one a vault-failure line belongs to.
+          confirmedPulls = Math.min(confirmedPulls + 1, pullIndex + 1);
+          continue;
+        }
         if (matchVaultFailure(line)) {
-          if (pullTimer) {
-            clearTimeout(pullTimer);
-            pullTimer = null;
-          }
-          const missing = activeRecipe?.components[pullIndex]?.material;
-          materialsHeld = activeRecipe ? activeRecipe.components.slice(0, pullIndex) : null; // the failed one was never pulled
-          enterError(api, cfg, `Vault is out of "${missing}" — restock needed.`);
+          clearSlot('pull');
+          const components = activeRecipe?.components ?? [];
+          // The reply can arrive after pullConfirmTimeoutMs (vault replies took 86-379 ms, median ~190, in the
+          // player-log corpus), by which time the next get is already out. Candidates: every pull without a
+          // success line yet.
+          const firstUnconfirmed = Math.min(confirmedPulls, pullIndex);
+          const candidates = components.slice(firstUnconfirmed, pullIndex + 1);
+          const exact = candidates.length === 1;
+          // A `put` for something not held is assumed to no-op harmlessly, so when the reply is ambiguous
+          // put back everything that was asked for rather than guess.
+          materialsHeld = exact
+            ? components.slice(0, pullIndex + 1).filter((_, i) => i !== firstUnconfirmed)
+            : components.slice(0, pullIndex + 1);
+          const names = candidates.map((c) => `"${c.material}"`);
+          enterError(
+            api,
+            cfg,
+            exact
+              ? `Vault is out of ${names[0]} — restock needed.`
+              : `Vault is out of one of ${names.join(', ')} — restock needed (the reply came too late to tell which).`,
+          );
           return;
         }
       }
@@ -1281,13 +1661,11 @@ export function createCraftingHelperPlugin(): IPluginModule {
     }
 
     if (state === 'checking_quality') {
+      if (!qualityPending) return; // the lore reply was already consumed; this is a duplicate / stray line
       for (const line of lines) {
         const quality = matchItemCondition(line);
         if (quality != null) {
-          if (qualityTimer) {
-            clearTimeout(qualityTimer);
-            qualityTimer = null;
-          }
+          clearSlot('quality');
           resolveOrderQuality(api, cfg, quality);
           return;
         }
@@ -1296,25 +1674,29 @@ export function createCraftingHelperPlugin(): IPluginModule {
     }
 
     // state === 'crafting'
+    // No craft in flight (pacing gap after an outcome, destroyed put-back chain): a second outcome,
+    // interrupt or copyover line belongs to nothing and must not start another cycle.
+    if (!outcomePending) return;
     let outcome: CraftOutcome = null;
     for (const line of lines) {
-      if (outcome !== null) break; // success/failure already seen this payload — a later interrupted/vault-failure line here is stale noise, not a new event (review 3.2)
+      if (outcome !== null) break; // success/failure already seen this payload — a later interrupted/vault-failure line here is stale noise, not a new event
 
       // A copyover (server hot-restart) silently drops whatever craft command
       // was in flight — no outcome line will ever arrive for it. Unlike an
       // interruption, this isn't the player's doing, so just redo the same
-      // craft rather than stopping and asking them to resume manually.
+      // craft rather than stopping and asking them to resume manually. Only
+      // the whole system line counts, and only once per craft attempt: a
+      // repeated line must not stack another `craft` on the one already out.
       if (matchCopyoverRecovery(line)) {
-        if (craftTimer) {
-          clearTimeout(craftTimer);
-          craftTimer = null;
-        }
+        if (recraftsThisAttempt >= MAX_COPYOVER_RECRAFTS_PER_ATTEMPT) continue;
+        clearSlot('craft');
         if (stopRequested) {
           goIdle(api, cfg);
           return;
         }
+        recraftsThisAttempt += 1;
         writeInfo(api, `Copyover detected — recrafting "${activeRecipe?.outputName}".`);
-        sendCraft(api, cfg);
+        sendCraft(api, cfg, true);
         return;
       }
 
@@ -1324,7 +1706,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
       if (matchCraftInterrupted(line)) {
         clearAllTimers();
         const resumeCmd =
-          mode === 'order' ? 'crafthelper order start' : `crafthelper improve ${activeCraftTypeRow?.verb ?? activeCraftTypeRow?.id ?? '<craftType>'} start`;
+          mode === 'order'
+            ? 'crafthelper order start'
+            : `crafthelper improve ${activeCraftTypeRow?.verb ?? activeCraftTypeRow?.id ?? '<craftType>'} start`;
         writeInfo(api, `Crafting was interrupted ("You stop crafting.") — stopping. Run \`${resumeCmd}\` to resume.`);
         goIdle(api, cfg);
         return;
@@ -1336,7 +1720,11 @@ export function createCraftingHelperPlugin(): IPluginModule {
       // late failure must still stop the script, not be ignored.
       if (matchVaultFailure(line)) {
         const needs = activeRecipe?.components.map((c) => `${c.material}:${c.qty}`).join(', ');
-        enterError(api, cfg, `Vault ran out of components for "${activeRecipe?.outputName}" (needs ${needs}) — restock needed.`);
+        enterError(
+          api,
+          cfg,
+          `Vault ran out of components for "${activeRecipe?.outputName}" (needs ${needs}) — restock needed.`,
+        );
         return;
       }
 
@@ -1346,14 +1734,14 @@ export function createCraftingHelperPlugin(): IPluginModule {
 
     if (outcome === null) return; // keep waiting for the craft-response timeout, or a recognized line
 
-    if (craftTimer) {
-      clearTimeout(craftTimer);
-      craftTimer = null;
-    }
+    clearSlot('craft');
+    outcomePending = false; // consumed: until the next `craft` is sent, further outcome lines are ignored
 
     if (session) session.craftAttempts += 1;
+    orderAttempts += 1;
 
     if (outcome === 'success') {
+      consecutiveFailures = 0;
       if (session) session.successes += 1;
       recordMaterialsUsed(activeRecipe!.components);
       state = 'storing_trinket';
@@ -1363,19 +1751,47 @@ export function createCraftingHelperPlugin(): IPluginModule {
     } else if (outcome === 'failed_destroyed') {
       if (session) session.failedDestroyed += 1;
       recordMaterialsUsed(activeRecipe!.components);
+      consecutiveFailures += 1;
+      if (consecutiveFailures >= cfg.maxConsecutiveFailures) {
+        enterError(api, cfg, failureBreakerMessage(consecutiveFailures));
+        return;
+      }
       beginDestroyedRecovery(api, cfg, activeRecipe!.components);
     } else {
       if (session) session.failedNoLoss += 1;
+      consecutiveFailures += 1;
       if (stopRequested) {
         goIdle(api, cfg);
         return;
       }
-      pacingTimer = setTimeout(() => sendCraft(api, cfg), cfg.commandPacingDelayMs);
+      if (consecutiveFailures >= cfg.maxConsecutiveFailures) {
+        enterError(api, cfg, failureBreakerMessage(consecutiveFailures));
+        return;
+      }
+      if (orderBudgetExhausted(cfg)) {
+        enterError(api, cfg, orderBudgetMessage());
+        return;
+      }
+      schedule('pacing', cfg.commandPacingDelayMs, () => sendCraft(api, cfg));
     }
   }
 
+  function failureBreakerMessage(failures: number): string {
+    return `${failures} failed crafts in a row — stopped to protect vault materials. Check the tier / quality settings, then start again.`;
+  }
+
+  /** Order mode: the order has used its whole attempt allowance (quantity × maxAttemptsPerItem). */
+  function orderBudgetExhausted(cfg: EngineConfig): boolean {
+    return (
+      mode === 'order' && activeOrder != null && orderAttempts >= activeOrder.quantityTotal * cfg.maxAttemptsPerItem
+    );
+  }
+
+  function orderBudgetMessage(): string {
+    return `Order ${activeOrder?.id}: too many attempts (${orderAttempts}) for ${activeOrder?.quantityTotal}x "${activeOrder?.itemName}" — stopped to protect vault materials. Check the quality spec, then \`crafthelper order start\` to continue.`;
+  }
+
   function onScoreTimeout(api: PluginRuntimeApi) {
-    scoreTimer = null;
     const cfg = readConfig(api);
     if (stopRequested) {
       goIdle(api, cfg);
@@ -1396,9 +1812,36 @@ export function createCraftingHelperPlugin(): IPluginModule {
       handleRawData(api, rawText);
     });
 
+    // A closed connection or a different character ends the run: its timers would otherwise keep
+    // firing `put`/`get`/`craft` into whatever session is attached next (a login prompt, another
+    // character). Nothing is sent — the socket may be gone — held materials are only reported.
+    const offClose = api.onEvent('game:remote-server:close', () => {
+      if (state !== 'idle') resetEngine(api, 'Connection closed — run abandoned');
+    });
+    const offLogin = api.onEvent('game:character-login', () => {
+      if (state !== 'idle') resetEngine(api, 'A character logged in — run abandoned');
+    });
+
+    // A failed localStorage write used to be swallowed: progress then silently reverted on reload and an
+    // already-finished order was crafted again. Say so once.
+    let storageErrorShown = false;
+    const offStorageError = onStorageWriteError(() => {
+      if (storageErrorShown) return;
+      storageErrorShown = true;
+      writeError(
+        api,
+        'Could not save crafting progress to browser storage (full or blocked) — it is held in memory only and will be lost on reload.',
+      );
+    });
+
     return () => {
       off();
-      clearAllTimers();
+      offClose();
+      offLogin();
+      offStorageError();
+      // The host re-enables this same closure, so the engine must come back idle, not stuck mid-run.
+      // Report only: nothing is sent while the plugin is being torn down.
+      resetEngine(api, 'Crafting Helper disabled', false);
       if (lastPublishedSlot && api.setHudWidget) {
         api.setHudWidget(lastPublishedSlot, null);
         lastPublishedSlot = null;
@@ -1487,9 +1930,9 @@ export function createCraftingHelperPlugin(): IPluginModule {
         'set> set" — always ending in the word "set") queues one order per slot at',
         'once, all sharing the same quantity and quality spec. Adding your first',
         'order while idle with nothing else queued starts fulfillment right away —',
-        'no separate `order start` needed.',
+        'no separate `order start` needed (switch that off in the plugin settings).',
         '',
-        'A queued order\'s id is generated from its item name and quality spec',
+        "A queued order's id is generated from its item name and quality spec",
         '(e.g. "diamond-gem-pain-gte97-a1b2") so `order list`/`order remove <id>`/',
         '`order history <id>` are easy to read and match up at a glance.',
         '',
@@ -1502,6 +1945,14 @@ export function createCraftingHelperPlugin(): IPluginModule {
         'Quality → container map always wins, even if the item also satisfies the',
         "active order; otherwise it's the order holding container (in spec) or vault",
         '(off spec).',
+        '',
+        'Safety limits (defaults, adjustable in the plugin settings): a run stops',
+        'itself after 15 failed crafts in a row, when an order has used 100 attempts',
+        'per item, or if it would send more than 120 commands in 10 seconds. Quality',
+        "is 0-100 and one order is 1-500 items. Only the game's own system lines",
+        'drive a run: the same words typed by another player in chat are ignored.',
+        'An order item counts only once the game confirms it was stored; if the game',
+        'refuses the put or stays silent, the run stops and nothing is credited.',
         '{x',
       ].join('\n') + '\n',
     );
@@ -1532,9 +1983,23 @@ export function createCraftingHelperPlugin(): IPluginModule {
     return `Already running in ${mode} mode (state: ${state}) — run \`${stopCmd}\` first.`;
   }
 
+  /** Fresh counters / guards for a new run, bound to the character that starts it. */
+  function beginRun() {
+    runKey = characterKey();
+    outcomePending = false;
+    qualityPending = false;
+    pendingPut = null;
+    recraftsThisAttempt = 0;
+    consecutiveFailures = 0;
+    orderAttempts = 0;
+    confirmedPulls = 0;
+    sentTimes = [];
+    rateLimitTripped = false;
+  }
+
   function handleImproveStart(api: PluginRuntimeApi, craftTypeToken: string): boolean {
     const cfg = readConfig(api);
-    if (releaseTimer) {
+    if (hasTimer('release')) {
       writeInfo(api, 'Still returning materials to the vault — try again in a moment.');
       return true;
     }
@@ -1561,6 +2026,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     stopRequested = false;
     stopReason = null;
     everRun = true;
+    beginRun();
     session = {
       startedAt: Date.now(),
       craftAttempts: 0,
@@ -1581,8 +2047,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
       api,
       `Starting ${typeRow.label} training — make sure your character is parked wherever your vault and crafting station both are.`,
     );
-    api.sendCommand('score');
-    scoreTimer = setTimeout(() => onScoreTimeout(api), cfg.scoreResponseTimeoutMs);
+    send(api, 'score');
+    schedule('score', cfg.scoreResponseTimeoutMs, () => onScoreTimeout(api));
     return true;
   }
 
@@ -1598,8 +2064,8 @@ export function createCraftingHelperPlugin(): IPluginModule {
     const itemName = match[2].toLowerCase();
     const qualitySpec = parseQualitySpec(match[3]);
 
-    if (!Number.isFinite(qty) || qty <= 0) {
-      writeError(api, `Invalid quantity "${match[1]}" — must be a whole number greater than 0.`);
+    if (!Number.isSafeInteger(qty) || qty < 1 || qty > MAX_ORDER_QTY) {
+      writeError(api, `Invalid quantity "${match[1]}" — must be a whole number from 1 to ${MAX_ORDER_QTY}.`);
       return true;
     }
     if (!qualitySpec) {
@@ -1621,7 +2087,15 @@ export function createCraftingHelperPlugin(): IPluginModule {
     }
 
     const cfg = readConfig(api);
-    const wasEmpty = getOrderQueue(characterKey()).length === 0;
+    const queuedAlready = countOrders(characterKey());
+    if (queuedAlready + memberNames.length > MAX_QUEUED_ORDERS) {
+      writeError(
+        api,
+        `The order queue is full (${queuedAlready}/${MAX_QUEUED_ORDERS}) — remove or finish some orders first (\`crafthelper order list\`).`,
+      );
+      return true;
+    }
+    const wasEmpty = queuedAlready === 0;
     const queuedIds: string[] = [];
 
     memberNames.forEach((name) => {
@@ -1646,7 +2120,10 @@ export function createCraftingHelperPlugin(): IPluginModule {
         createdAt: Date.now(),
         materialsUsed: {},
       };
-      addOrder(characterKey(), order);
+      if (!addOrder(characterKey(), order)) {
+        writeError(api, `Could not queue "${name}" — the order queue is full or the order was rejected as malformed.`);
+        return;
+      }
       queuedIds.push(order.id);
     });
 
@@ -1665,15 +2142,28 @@ export function createCraftingHelperPlugin(): IPluginModule {
     }
 
     // Nothing else was queued or running — start fulfilling immediately
-    // instead of leaving the player to remember `order start`.
-    if (wasEmpty && state === 'idle') {
+    // instead of leaving the player to remember `order start`. Turn it off with
+    // the "Start orders as soon as one is added" setting.
+    if (cfg.autoStartOnOrderAdd && wasEmpty && state === 'idle') {
       handleOrderStart(api);
     }
 
     return true;
   }
 
+  /** Tells the player when saved orders were unreadable and dropped, instead of letting them vanish silently. */
+  function reportDroppedOrders(api: PluginRuntimeApi) {
+    const dropped = takeDroppedOrderCount(characterKey());
+    if (dropped > 0) {
+      writeError(
+        api,
+        `Ignored ${dropped} saved order(s) that could not be read (corrupt or from an incompatible version).`,
+      );
+    }
+  }
+
   function handleOrderList(api: PluginRuntimeApi): boolean {
+    reportDroppedOrders(api);
     const queue = getOrderQueue(characterKey());
     if (queue.length === 0) {
       writeInfo(api, 'No orders queued.');
@@ -1695,7 +2185,10 @@ export function createCraftingHelperPlugin(): IPluginModule {
     if (orderId) {
       const record = history.find((r) => r.id === orderId);
       if (!record) {
-        writeError(api, `No completed order with id "${orderId}" — run \`crafthelper order history\` to see valid ids.`);
+        writeError(
+          api,
+          `No completed order with id "${orderId}" — run \`crafthelper order history\` to see valid ids.`,
+        );
         return true;
       }
       writeInfo(
@@ -1728,7 +2221,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
   }
 
   function handleOrderStart(api: PluginRuntimeApi): boolean {
-    if (releaseTimer) {
+    if (hasTimer('release')) {
       writeInfo(api, 'Still returning materials to the vault — try again in a moment.');
       return true;
     }
@@ -1743,6 +2236,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
       );
       return true;
     }
+    reportDroppedOrders(api);
     const queue = getOrderQueue(characterKey());
     if (queue.length === 0) {
       writeInfo(api, 'No orders queued.');
@@ -1754,6 +2248,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     stopRequested = false;
     stopReason = null;
     everRun = true;
+    beginRun();
     session = {
       startedAt: Date.now(),
       craftAttempts: 0,
@@ -1792,7 +2287,7 @@ export function createCraftingHelperPlugin(): IPluginModule {
     if (mode === 'order') {
       parts.push(
         `activeOrder=${activeOrder ? `${activeOrder.quantityRemaining}/${activeOrder.quantityTotal}x "${activeOrder.itemName}"` : 'none'}`,
-        `queueDepth=${getOrderQueue(characterKey()).length}`,
+        `queueDepth=${countOrders(characterKey())}`,
       );
     } else {
       parts.push(`craftType=${activeCraftTypeRow?.label ?? '?'}`, `skill=${trackedSkillLevel ?? '?'}`);
@@ -1838,6 +2333,10 @@ export function createCraftingHelperPlugin(): IPluginModule {
         qualityContainerMap: '',
         debug: false,
         hudSlot: 'hud.bottomStrip',
+        autoStartOnOrderAdd: true,
+        maxConsecutiveFailures: 15,
+        maxAttemptsPerItem: 100,
+        maxCommandsPerWindow: 120,
       },
       fields: [
         {
@@ -1860,44 +2359,53 @@ export function createCraftingHelperPlugin(): IPluginModule {
           key: 'commandPacingDelayMs',
           type: 'number',
           label: 'Command pacing delay (ms)',
-          min: 0,
-          description: 'Delay between sequential commands (after a put, and between repeat craft attempts).',
+          min: 50,
+          max: 5000,
+          description:
+            'Delay between sequential commands (after a put, and between repeat craft attempts). 50-5000; out-of-range values use the default.',
         },
         {
           key: 'pullConfirmTimeoutMs',
           type: 'number',
           label: 'Pull confirm timeout (ms)',
-          min: 0,
-          description: 'How long to wait after `get` for a vault-failure message before assuming the pull succeeded.',
+          min: 50,
+          max: 10000,
+          description:
+            'How long to wait after `get` for a vault-failure message before assuming the pull succeeded. 50-10000.',
         },
         {
           key: 'scoreResponseTimeoutMs',
           type: 'number',
           label: 'Score response timeout (ms)',
-          min: 0,
-          description: 'How long to wait after `score` for the matching craft-rank line before aborting start.',
+          min: 100,
+          max: 60000,
+          description:
+            'How long to wait after `score` for the matching craft-rank line before aborting start. 100-60000.',
         },
         {
           key: 'loreResponseTimeoutMs',
           type: 'number',
           label: 'Lore response timeout (ms)',
-          min: 0,
-          description: 'How long to wait after `lore` for the item\'s Condition line before aborting (order mode only).',
+          min: 100,
+          max: 60000,
+          description:
+            "How long to wait after `lore` for the item's Condition line, and then for the game to confirm the item was stored, before aborting (order mode only). 100-60000.",
         },
         {
           key: 'craftResponseTimeoutMs',
           type: 'number',
           label: 'Craft response timeout (ms)',
-          min: 0,
+          min: 100,
+          max: ONE_HOUR_MS,
           description:
-            'How long to wait after `craft` for a recognized outcome line before stopping — a safety net in case the server ever sends unrecognized text (default 180s; a craft can take up to ~2.5 ticks on higher tiers, so keep this generous).',
+            'How long to wait after `craft` for a recognized outcome line before stopping — a safety net in case the server ever sends unrecognized text (default 180s; a craft can take up to ~2.5 ticks on higher tiers, so keep this generous). 0 or empty does not mean "never": out-of-range values use the default.',
         },
         {
           key: 'orderHoldingContainer',
           type: 'string',
           label: 'Order holding container',
           description:
-            'Where a finished, in-spec order item is stored, ready for manual hand-off — used when its quality isn\'t covered by the map below.',
+            "Where a finished, in-spec order item is stored, ready for manual hand-off — used when its quality isn't covered by the map below.",
           placeholder: 'vault',
         },
         {
@@ -1909,9 +2417,44 @@ export function createCraftingHelperPlugin(): IPluginModule {
           placeholder: '90-94 | common',
         },
         {
+          key: 'autoStartOnOrderAdd',
+          type: 'boolean',
+          label: 'Start orders as soon as one is added',
+          description:
+            'When on (default), `crafthelper order add` on an empty queue begins fulfilling it immediately. Turn off to queue orders and start them yourself with `crafthelper order start`.',
+        },
+        {
+          key: 'maxConsecutiveFailures',
+          type: 'number',
+          label: 'Stop after N failed crafts in a row',
+          min: 1,
+          max: 10000,
+          description:
+            'Safety brake: a run that fails this many times in a row stops instead of burning more vault materials (default 15).',
+        },
+        {
+          key: 'maxAttemptsPerItem',
+          type: 'number',
+          label: 'Order attempt limit (per item)',
+          min: 1,
+          max: 10000,
+          description:
+            'Safety brake: an order stops once its crafts reach quantity x this number (default 100) — catches a quality spec that can never be met.',
+        },
+        {
+          key: 'maxCommandsPerWindow',
+          type: 'number',
+          label: 'Command rate limit (per 10 s)',
+          min: 20,
+          max: 1000,
+          description:
+            'Safety brake: the plugin stops itself if it would send more than this many commands in 10 seconds (default 120).',
+        },
+        {
           key: 'debug',
           type: 'boolean',
           label: 'Debug logging',
+          description: 'Log every command the plugin sends (and any skill-up line it ignores) to the plugin log.',
         },
         {
           key: 'hudSlot',

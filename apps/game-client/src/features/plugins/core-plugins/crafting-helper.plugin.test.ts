@@ -1,5 +1,5 @@
-import type { HudWidgetContent, PluginRuntimeApi } from '@shatteredarchive/types-client';
 import { getOrderQueue, removeOrder, getCompletedOrders } from './crafting-helper-storage';
+import { createMockApi, defaultConfig } from './crafting-helper.test-harness';
 import {
   createCraftingHelperPlugin,
   tierForSkill,
@@ -138,7 +138,9 @@ describe('parseTierTableConfig', () => {
   });
 
   it('parses a multi-component row', () => {
-    const rows = parseTierTableConfig('blunt-weapons | 1 | round bronze trinket | bronze bar:2, cedar board:2, deer leather square:2');
+    const rows = parseTierTableConfig(
+      'blunt-weapons | 1 | round bronze trinket | bronze bar:2, cedar board:2, deer leather square:2',
+    );
     expect(rows[0].components).toEqual([
       { material: 'bronze bar', qty: 2 },
       { material: 'cedar board', qty: 2 },
@@ -197,10 +199,10 @@ describe('parseComponentList / parseTierTableConfig sanitize names at parse time
   });
 });
 
-describe('parseCraftTypesConfig sanitizes the craft verb (Review Focus #3)', () => {
+describe('parseCraftTypesConfig sanitizes the craft verb', () => {
   it('strips single quotes from the verb so it cannot break an unquoted command token', () => {
     const rows = parseCraftTypesConfig("spellcrafting | Spellcrafting | spell's craft | Spellcrafter");
-    expect(rows[0].verb).toBe("spells craft");
+    expect(rows[0].verb).toBe('spells craft');
   });
 });
 
@@ -442,7 +444,7 @@ describe('parseQualityContainerMap', () => {
     expect(parseQualityContainerMap(undefined)).toEqual([]);
   });
 
-  it('drops a row where min > max instead of accepting a dead range (review 3.1)', () => {
+  it('drops a row where min > max instead of accepting a dead range', () => {
     const rows = parseQualityContainerMap('98-95|rare-vault');
     expect(rows).toHaveLength(0);
   });
@@ -555,9 +557,29 @@ describe('ORDER_ITEM_RECIPES', () => {
 
   it('covers all 10 tailoring tiers, both types, all 6 slots', () => {
     const clothMaterials = [
-      'woolen', 'linen', 'brocade', 'silk', 'gossamer', 'sylvan', 'seamist', 'nightshade', 'wyvernskin', 'silksteel',
+      'woolen',
+      'linen',
+      'brocade',
+      'silk',
+      'gossamer',
+      'sylvan',
+      'seamist',
+      'nightshade',
+      'wyvernskin',
+      'silksteel',
     ];
-    const leatherMaterials = ['deer', 'cow', 'bull', 'moose', 'bull moose', 'bear', 'whale', 'shark', 'elephant', 'bull elephant'];
+    const leatherMaterials = [
+      'deer',
+      'cow',
+      'bull',
+      'moose',
+      'bull moose',
+      'bear',
+      'whale',
+      'shark',
+      'elephant',
+      'bull elephant',
+    ];
     const slots = ['helmet', 'gloves', 'boots', 'sleeves', 'leggings', 'shirt'];
     for (const material of clothMaterials) {
       for (const slot of slots) {
@@ -612,58 +634,8 @@ describe('ORDER_ITEM_RECIPES', () => {
 
 // ── State-machine integration tests ──────────────────────────────────────
 
-function createMockApi(config: Record<string, unknown>) {
-  const sent: string[] = [];
-  const terminalWrites: string[] = [];
-  const hudWrites: Array<{ slotId: string; content: HudWidgetContent | null }> = [];
-  let rawDataHandler: ((payload: unknown) => void) | null = null;
-
-  const api: PluginRuntimeApi = {
-    connectionId: 'test-conn',
-    pluginId: 'crafting-helper',
-    sendCommand: (cmd: string) => sent.push(cmd),
-    log: () => {},
-    error: () => {},
-    onEvent: (eventName: string, handler: (payload: unknown) => void) => {
-      if (eventName === 'shatteredarchive:raw-data') rawDataHandler = handler;
-      return () => {
-        if (eventName === 'shatteredarchive:raw-data') rawDataHandler = null;
-      };
-    },
-    httpGetJson: async () => ({}),
-    getConfig: () => config,
-    setConfig: () => {},
-    updateConfig: (patch: Record<string, unknown>) => Object.assign(config, patch),
-    writeTerminal: (dslText: string) => terminalWrites.push(dslText),
-    registerAction: () => {},
-    registerOmitRules: () => {},
-    setHudWidget: (slotId, content) => {
-      hudWrites.push({ slotId, content });
-    },
-  };
-
-  return {
-    api,
-    sent,
-    terminalWrites,
-    hudWrites,
-    feedLine: (line: string) => rawDataHandler?.({ rawText: `${line}\r\n` }),
-    feedRaw: (rawText: string) => rawDataHandler?.({ rawText }),
-  };
-}
-
-function defaultConfig(overrides: Record<string, unknown> = {}) {
-  return {
-    craftTypes: DEFAULT_CRAFT_TYPES_CONFIG,
-    tierTable: DEFAULT_TIER_TABLE_CONFIG,
-    commandPacingDelayMs: 100,
-    pullConfirmTimeoutMs: 200,
-    scoreResponseTimeoutMs: 200,
-    debug: false,
-    hudSlot: 'hud.bottomStrip',
-    ...overrides,
-  };
-}
+// createMockApi / defaultConfig live in crafting-helper.test-harness.ts so the
+// hardening suite (crafting-helper.hardening.test.ts) drives the same mock.
 
 describe('getOrderItemRecipe / getOrderSetRecipe (prototype-pollution guard)', () => {
   it('returns undefined for every inherited Object.prototype property name, not just "constructor"', () => {
@@ -877,6 +849,7 @@ describe('crafting-helper state machine', () => {
     jest.advanceTimersByTime(200); // pull essence of pain
     mock.feedLine('You were successful.');
     mock.feedLine('Condition: flawless (98%)'); // in spec, order not yet complete (1/2)
+    mock.feedLine('You put a thing in the mystic vault.'); // the server confirms the put
 
     expect(getOrderQueue('testchar')[0].materialsUsed).toEqual({
       'diamond gemstone': 1,
@@ -930,6 +903,7 @@ describe('crafting-helper state machine', () => {
     jest.advanceTimersByTime(200); // essence pull confirmed: craft sent
     mock.feedLine('You were successful.'); // then the successful attempt
     mock.feedLine('Condition: flawless (99%)'); // completes the order
+    mock.feedLine('You put a thing in the mystic vault.'); // the server confirms the put
 
     expect(
       mock.terminalWrites.some(
@@ -966,6 +940,7 @@ describe('crafting-helper state machine', () => {
     jest.advanceTimersByTime(200);
     mock.feedLine('You were successful.');
     mock.feedLine('Condition: flawless (99%)');
+    mock.feedLine('You put a thing in the mystic vault.'); // the server confirms the put
 
     plugin.onAlias!(mock.api, 'crafthelper order history');
     expect(
@@ -991,6 +966,9 @@ describe('crafting-helper state machine', () => {
     plugin.onAlias!(mock.api, "crafthelper order add 1 'silksteel cloth helmet' 90+");
     const orderId = getOrderQueue('testchar')[0].id;
     plugin.onAlias!(mock.api, 'crafthelper order start');
+    // The MUD answers every successful pull ("You get a ... from the mystic vault." — corpus shape), which is
+    // what lets the plugin tell the failure below belongs to the second get and not a late reply to the first.
+    mock.feedLine('You get a silksteel thread from the mystic vault.');
     jest.advanceTimersByTime(200); // pull silksteel thread succeeds
 
     mock.feedLine('I see nothing like that in the vault.'); // fails on the SECOND component
@@ -1173,7 +1151,9 @@ describe('crafting-helper state machine', () => {
     plugin.onAlias!(mock.api, 'crafthelper improve spellcraft start');
     plugin.onAlias!(mock.api, 'crafthelper improve tailor start');
     expect(
-      mock.terminalWrites.some((w) => w.includes('Already running in improve mode') && w.includes('crafthelper improve stop')),
+      mock.terminalWrites.some(
+        (w) => w.includes('Already running in improve mode') && w.includes('crafthelper improve stop'),
+      ),
     ).toBe(true);
 
     plugin.onAlias!(mock.api, 'crafthelper improve stop');
@@ -1182,7 +1162,9 @@ describe('crafting-helper state machine', () => {
     plugin.onAlias!(mock.api, "crafthelper order add 1 'diamond gem pain' 97+"); // auto-starts (idle, empty queue)
     plugin.onAlias!(mock.api, 'crafthelper order start');
     expect(
-      mock.terminalWrites.some((w) => w.includes('Already running in order mode') && w.includes('crafthelper order stop')),
+      mock.terminalWrites.some(
+        (w) => w.includes('Already running in order mode') && w.includes('crafthelper order stop'),
+      ),
     ).toBe(true);
   });
 
@@ -1444,7 +1426,10 @@ describe('crafting-helper state machine', () => {
     expect(mock.sent).toEqual(['score']); // no get/craft ever sent
     expect(
       mock.terminalWrites.some(
-        (w) => w.includes('Skill level 948 has no matching tier') && w.includes('"Spellcrafting"') && w.includes('Tier table config'),
+        (w) =>
+          w.includes('Skill level 948 has no matching tier') &&
+          w.includes('"Spellcrafting"') &&
+          w.includes('Tier table config'),
       ),
     ).toBe(true);
   });
@@ -1727,6 +1712,7 @@ describe('crafting-helper state machine', () => {
     jest.advanceTimersByTime(200);
     mock.feedLine('You were successful.');
     mock.feedLine('Condition: flawless (98%)');
+    mock.feedLine('You put a thing in the mystic vault.'); // the server confirms the put
 
     expect(mock.sent).toContain("put 1 'diamond gem pain' vault");
   });
@@ -1745,6 +1731,7 @@ describe('crafting-helper state machine', () => {
     expect(mock.sent).toContain("lore 'diamond gem pain'");
 
     mock.feedLine('Condition: flawless (98%)');
+    mock.feedLine('You put a thing in the mystic vault.'); // the server confirms the put
     expect(mock.sent).toContain("put 1 'diamond gem pain' orders");
     expect(getOrderQueue('testchar')[0].quantityRemaining).toBe(1);
 
@@ -1766,6 +1753,7 @@ describe('crafting-helper state machine', () => {
     mock.feedLine('You were successful.');
 
     mock.feedLine('Condition: scuffed (92%)');
+    mock.feedLine('You put a thing in the mystic vault.'); // the server confirms the put
     expect(mock.sent).toContain("put 1 'diamond gem pain' common");
     expect(getOrderQueue('testchar')[0].quantityRemaining).toBe(1); // unchanged — didn't count
 
@@ -1792,6 +1780,7 @@ describe('crafting-helper state machine', () => {
     mock.feedLine('You were successful.');
 
     mock.feedLine('Condition: excellent (95%)'); // satisfies 90+ AND falls in the 95-97 map row
+    mock.feedLine('You put a thing in the mystic vault.'); // the server confirms the put
     expect(mock.sent).toContain("put 1 'silksteel cloth helmet' vault"); // mapped container wins, not "orders"
     expect(mock.sent).not.toContain("put 1 'silksteel cloth helmet' orders");
     expect(getOrderQueue('testchar')[0].quantityRemaining).toBe(1); // still counted toward the order
@@ -1814,6 +1803,7 @@ describe('crafting-helper state machine', () => {
     mock.feedLine('You were successful.');
 
     mock.feedLine('Condition: good (92%)'); // in spec, not covered by either map row
+    mock.feedLine('You put a thing in the mystic vault.'); // the server confirms the put
     expect(mock.sent).toContain("put 1 'diamond gem pain' orders");
   });
 
@@ -1829,6 +1819,7 @@ describe('crafting-helper state machine', () => {
     jest.advanceTimersByTime(200);
     mock.feedLine('You were successful.');
     mock.feedLine('Condition: flawless (98%)');
+    mock.feedLine('You put a thing in the mystic vault.'); // the server confirms the put
 
     expect(getOrderQueue('testchar')).toHaveLength(1); // completed order removed
     jest.advanceTimersByTime(100);
@@ -1846,6 +1837,7 @@ describe('crafting-helper state machine', () => {
     mock.feedLine('You were successful.');
 
     mock.feedLine('Condition: flawless (98%)');
+    mock.feedLine('You put a thing in the mystic vault.'); // the server confirms the put
     expect(
       mock.terminalWrites.some(
         (w) => w.includes('"diamond gem pain" @ 98% (in spec)') && w.includes('1/2 done') && w.includes('1 remaining'),
@@ -1857,7 +1849,10 @@ describe('crafting-helper state machine', () => {
     jest.advanceTimersByTime(200);
     mock.feedLine('You were successful.');
     mock.feedLine('Condition: flawless (99%)');
-    expect(mock.terminalWrites.some((w) => w.includes('Order') && w.includes('complete') && w.includes('2/2 done'))).toBe(true);
+    mock.feedLine('You put a thing in the mystic vault.'); // the server confirms the put
+    expect(
+      mock.terminalWrites.some((w) => w.includes('Order') && w.includes('complete') && w.includes('2/2 done')),
+    ).toBe(true);
   });
 
   it('writes a progress line for an off-spec item too, noting it did not count toward the order', () => {
@@ -1873,6 +1868,7 @@ describe('crafting-helper state machine', () => {
     mock.feedLine('You were successful.');
 
     mock.feedLine('Condition: scuffed (92%)');
+    mock.feedLine('You put a thing in the mystic vault.'); // the server confirms the put
     expect(
       mock.terminalWrites.some((w) => w.includes('off spec for order') && w.includes('needs 97+') && w.includes('0/1')),
     ).toBe(true);
@@ -1893,7 +1889,7 @@ describe('crafting-helper state machine', () => {
     jest.advanceTimersByTime(2000); // loreResponseTimeoutMs default
     // The made item goes to the vault rather than staying in inventory; nothing else is sent.
     expect(mock.sent).toEqual([...sentSoFar, "put 1 'diamond gem pain' vault"]);
-    expect(mock.terminalWrites.some((w) => w.includes("verify quality"))).toBe(true);
+    expect(mock.terminalWrites.some((w) => w.includes('verify quality'))).toBe(true);
   });
 
   it('order remove drops a queued order; removing the active order lets the in-flight attempt finish, then advances', () => {
@@ -1915,6 +1911,7 @@ describe('crafting-helper state machine', () => {
 
     mock.feedLine('You were successful.');
     mock.feedLine('Condition: flawless (98%)'); // would have matched the removed order's spec, but it's gone
+    mock.feedLine('You put a thing in the mystic vault.'); // the server confirms the put
     expect(mock.sent).toContain("put 1 'diamond gem pain' vault"); // no active order to route to -> default container
 
     jest.advanceTimersByTime(100);
@@ -1947,6 +1944,7 @@ describe('crafting-helper state machine', () => {
     plugin.onAlias!(mock.api, 'crafthelper order stop');
     mock.feedLine('You were successful.');
     mock.feedLine('Condition: flawless (98%)');
+    mock.feedLine('You put a thing in the mystic vault.'); // the server confirms the put
     const sentSoFar = [...mock.sent];
 
     jest.advanceTimersByTime(200);
@@ -1989,7 +1987,7 @@ describe('crafting-helper state machine', () => {
     expect(getOrderQueue('__unknown__')).toHaveLength(0);
   });
 
-  it('clears activeOrder on stop so order status reports none instead of a stale order (review 3.4)', () => {
+  it('clears activeOrder on stop so order status reports none instead of a stale order', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
@@ -2004,7 +2002,7 @@ describe('crafting-helper state machine', () => {
     expect(mock.terminalWrites.at(-1)).toContain('activeOrder=none');
   });
 
-  it('only tags the truly in-flight order as [active], not whatever is now at queue[0] (review 3.5)', () => {
+  it('only tags the truly in-flight order as [active], not whatever is now at queue[0]', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
@@ -2034,7 +2032,7 @@ describe('crafting-helper state machine', () => {
     expect(mock.terminalWrites.join('\n')).not.toContain('[active]'); // the real active order is gone from storage; the surviving order (now at queue[0]) is not it
   });
 
-  it('does not let a late interrupted/vault-failure line in the same payload discard an already-detected success (review 3.2)', () => {
+  it('does not let a late interrupted/vault-failure line in the same payload discard an already-detected success', () => {
     const mock = createMockApi(defaultConfig());
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
@@ -2051,7 +2049,7 @@ describe('crafting-helper state machine', () => {
     expect(mock.terminalWrites.at(-1)).not.toContain('error_stopped');
   });
 
-  it('goes cleanly idle, not error_stopped, if stop was requested while awaiting a score-rank line (review 3.3)', () => {
+  it('goes cleanly idle, not error_stopped, if stop was requested while awaiting a score-rank line', () => {
     const mock = createMockApi(defaultConfig({ scoreResponseTimeoutMs: 500 }));
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);
@@ -2064,7 +2062,7 @@ describe('crafting-helper state machine', () => {
     expect(mock.terminalWrites.at(-1)).toContain('state=idle');
   });
 
-  it('goes cleanly idle, not error_stopped, if stop was requested while awaiting a quality (lore) line (review 3.3)', () => {
+  it('goes cleanly idle, not error_stopped, if stop was requested while awaiting a quality (lore) line', () => {
     const mock = createMockApi(defaultConfig({ loreResponseTimeoutMs: 500 }));
     const plugin = createCraftingHelperPlugin();
     plugin.onEnable!(mock.api);

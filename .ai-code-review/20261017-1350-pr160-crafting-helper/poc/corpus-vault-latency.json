@@ -1,0 +1,64 @@
+{
+  "inputs": {
+    "get": 1,
+    "put": 24
+  },
+  "getReplyDeltaMs": {
+    "n": 1,
+    "min": 308,
+    "p50": 308,
+    "p95": 308,
+    "p99": 308,
+    "max": 308
+  },
+  "putReplyDeltaMs": {
+    "n": 21,
+    "min": 86,
+    "p50": 192,
+    "p95": 347,
+    "p99": 379,
+    "max": 379
+  },
+  "topFirstReplyShapes": {
+    "get": [
+      [
+        "You get a silksteel cloth helmet from the mystic vault.",
+        2
+      ]
+    ],
+    "put": [
+      [
+        "<N/Nhp N/Nm N/Nmv Ntnl> [Chamber of Repose] [NESWUD] [N:Npm]",
+        12
+      ],
+      [
+        "You do not have that item.",
+        9
+      ],
+      [
+        "<N/Nhp N/Nm N/Nmv Ntnl> [Chamber of Repose] [NESWUD] [N:Nam]",
+        5
+      ],
+      [
+        "You put a traveler's diary in the mystic vault.",
+        4
+      ],
+      [
+        "You put an old, battered inkwell in the mystic vault.",
+        3
+      ],
+      [
+        "You put a tattered, old quill in the mystic vault.",
+        2
+      ],
+      [
+        "Ice Plains",
+        1
+      ],
+      [
+        "You have wandered onto a shelf of ice. The wind sweeps around you,",
+        1
+      ]
+    ]
+  }
+}

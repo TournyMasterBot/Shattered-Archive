@@ -43,9 +43,9 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
   // hooks must be unconditional / always in the same order
   const firstInputRef = React.useRef<HTMLInputElement | null>(null);
   const shouldCloseRef = React.useRef(false);
-  const [actionFeedback, setActionFeedback] = React.useState<
-    Record<string, 'idle' | 'done' | 'no-handler' | 'error'>
-  >({});
+  const [actionFeedback, setActionFeedback] = React.useState<Record<string, 'idle' | 'done' | 'no-handler' | 'error'>>(
+    {},
+  );
   const actionTimers = React.useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   // Only build plugin + schema when open (avoids unnecessary create() calls)

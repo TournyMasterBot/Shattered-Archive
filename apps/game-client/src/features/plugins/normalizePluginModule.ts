@@ -41,17 +41,14 @@ export function normalizePluginModule(mod: IPluginModule): IPluginModule {
       };
 
   return {
+    // Spread first: any hook not normalized below passes through untouched. This used to be a
+    // field-by-field copy, and `onAlias` was simply never listed — so since b825d70 (2026-08-14)
+    // `tryExecuteAlias`, which reads the normalized module, found no alias handler on ANY plugin
+    // (brew's `brew <name>`, questbot's `pq start`, gourd, people, enchant, ...). A whitelist drops
+    // the next new IPluginModule hook the same way.
+    ...mod,
     manifest,
     assets,
     configSchema,
-    onEnable: mod.onEnable,
-    onDisable: mod.onDisable,
-    onEvent: mod.onEvent,
-    // Previously dropped here — every plugin's alias commands (brew's
-    // `brew <name>`, questbot's `pq start`, crafting-helper's `crafthelper
-    // start`, etc.) were silently unreachable via tryExecuteAlias, which
-    // reads onAlias off this normalized module, not the raw one.
-    onAlias: mod.onAlias,
-    exportPlugin: mod.exportPlugin,
   };
 }

@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Jest (`jest.useFakeTimers()` for timer-driven tests), the existing `createMockApi`/`defaultConfig`/`feedLine`/`feedRaw` test harness already in `crafting-helper.plugin.test.ts`.
 
-**Spec:** `/Users/alexk/Downloads/20261002-0900-crafting-helper-v1.0.0-review.md` (the code review document this plan implements — all finding numbers below, e.g. "1.1", "3.2", refer to its section numbering). Every claim in that review was independently re-verified against the current source in this worktree (file:line, not stale context) before this plan was written — see the per-task "Verified" notes.
+**Spec:** `.ai-code-review/20261002-0900-crafting-helper-v1.0.0-review.md` (the code review document this plan implements — all finding numbers below, e.g. "1.1", "3.2", refer to its section numbering). Every claim in that review was independently re-verified against the current source in this worktree (file:line, not stale context) before this plan was written — see the per-task "Verified" notes.
 
 ## Global Constraints
 

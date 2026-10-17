@@ -1,10 +1,10 @@
 File Index
 
 /normalizePluginModule.ts
-Purpose: Normalizes plugin module structure and validates data types for consistent plugin handling.
+Purpose: Normalizes plugin module structure and validates data types for consistent plugin handling. Spreads the raw module first so unlisted hooks pass through — a field-by-field copy once dropped `onAlias` and killed every plugin's alias commands (b825d70 → PR #160).
 
 /normalizePluginModule.test.ts
-Purpose: Pins the actions-array passthrough (valid array kept, non-array dropped to undefined, absent stays undefined) and onAlias passthrough.
+Purpose: Pins the actions-array passthrough (valid array kept, non-array dropped to undefined, absent stays undefined) and onAlias passthrough, plus that every hook and an unknown future hook survive normalization.
 
 /pluginCss.ts
 Purpose: Manages dynamic CSS styling for plugins with unique identifiers.

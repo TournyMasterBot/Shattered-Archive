@@ -872,6 +872,7 @@ if (cmd) {
                 { id: 'plugin-combat-compression', label: 'Combat Compression' },
                 { id: 'plugin-stun-highlight', label: 'Stun Highlight' },
                 { id: 'plugin-tick-warning', label: 'Tick Warning' },
+                { id: 'plugin-crafting-helper', label: 'Crafting Helper' },
               ].map(({ id, label }) => (
                 <button key={id} type="button" className={styles.pluginIndexLink} onClick={() => scrollToAnchor(id)}>
                   {label}
@@ -2341,6 +2342,43 @@ Jovar               — icewall_port start`}</pre>
                 Keeps its own one-shot timer, re-armed on every <code>game:tick</code> event, rather than reading
                 the HUD's tick store — so it fires even when no HUD component showing the countdown is mounted, and
                 fires at the same instant the countdown badge would show the same number of seconds remaining
+              </li>
+            </ul>
+
+            {/* ── Crafting Helper ── */}
+            <h4 id="plugin-crafting-helper" className={styles.pluginHeading}>
+              Crafting Helper
+            </h4>
+            <p>
+              Automates tier-3 crafting. <strong>Improve</strong> trains one craft skill (vault pull → craft → store,
+              escalating trinket tiers as you level); <strong>Order</strong> fulfils a per-character queue of item
+              and armor-set orders at a target quality and keeps a materials-spent history. Nothing runs until you
+              start it, except that the first <code>order add</code> on an empty queue starts fulfilling right away
+              (switchable).
+            </p>
+            <ul className={styles.list}>
+              <li>
+                Enable from <strong>Plugins → Manage Plugins</strong>, then type <code>crafthelper help</code> (or{' '}
+                <code>crh help</code>) in the game for every command
+              </li>
+              <li>
+                <code>crafthelper improve spellcraft start</code> / <code>stop</code> / <code>status</code>;{' '}
+                <code>crafthelper order add 6 'diamond gem pain' 97+</code> (quality 0–100, quantity 1–500, a{' '}
+                <em>… set</em> name queues every slot); <code>order list</code> / <code>remove</code> /{' '}
+                <code>start</code> / <code>stop</code> / <code>status</code> / <code>history</code>
+              </li>
+              <li>
+                Safety brakes (adjustable): stops after 15 failed crafts in a row, after 100 attempts per ordered
+                item, or if it would send more than 120 commands in 10 seconds. Timeouts outside their allowed range
+                (including 0 or empty) use the default instead of firing immediately
+              </li>
+              <li>
+                Only the game's own system lines drive a run; the same words typed by another player in chat are
+                ignored. A skill-up is only believed when it raises your level by 1–5
+              </li>
+              <li>
+                Disabling the plugin, a closed connection or a character switch mid-run abandons the run and lists
+                any pulled materials still in your inventory; stopping (or an error stop) returns them to the vault
               </li>
             </ul>
 
