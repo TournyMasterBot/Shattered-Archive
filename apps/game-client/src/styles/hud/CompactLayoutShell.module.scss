@@ -1,0 +1,130 @@
+// apps/game-client/src/styles/hud/CompactLayoutShell.module.scss
+@use '../BorderedPanel' as bp;
+
+.shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.leftColumn {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  // Extra top padding (vs. the 8px on every other side): the terminal
+  // panel's embedded title pokes up above .terminalPanel's border-box
+  // edge via top: -1.5em at font-size: 1rem (_BorderedPanel.scss) — both
+  // expressed in relative units, so this is sized in rem too rather than
+  // racing a fixed pixel value against a value that scales with root
+  // font size (e.g. an accessibility zoom setting). 1.5rem is that mixin's
+  // own stated minimum (its comment: "at least ~1.5x this element's own
+  // font-size") — was 2rem, which left ~8px of visible dead space above
+  // the panel with no title clipped by it either way (confirmed live with
+  // a populated title at 1.5rem before landing this).
+  padding: 1.5rem 8px 8px;
+  box-sizing: border-box;
+}
+
+.terminalPanel {
+  // $bg-color matches this rule's own `background` below so the embedded
+  // title (which pokes above the panel via negative top) reads as one
+  // continuous background instead of a mismatched patch (finding C2).
+  @include bp.borderedPanelTitle(#333, #000);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  border-radius: 8px;
+  background: #000;
+}
+
+// Wraps ONLY <Terminal />, not the title span — the title is positioned
+// via top: -0.7em off .terminalPanel and must render outside this clip
+// region, or .terminalPanel's own overflow would cut it off (finding C2).
+.terminalBody {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.subWindow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+// A trailing label row (current HUD layout + theme) below the command
+// input, purely so the input field isn't flush against the window's
+// bottom edge / OS rounded corners.
+.footerRow {
+  flex-shrink: 0;
+  padding-top: 2px;
+  font-size: 0.7rem;
+  color: #666;
+  text-align: center;
+}
+
+.verticalResizer {
+  width: 4px;
+  cursor: col-resize;
+  background: #252525;
+  flex-shrink: 0;
+}
+
+.rightColumn {
+  width: var(--right-pane-width);
+  min-width: 220px;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 6px;
+  gap: 6px;
+}
+
+.chatPane {
+  // Falls back to 50% of the right column's height until the user drags
+  // the resizer, at which point useCompactLayoutSizing sets an explicit
+  // pixel value on this var and it takes over.
+  height: var(--sa-chat-pane-height, 50%);
+  flex-shrink: 0;
+  min-height: 120px;
+  display: flex;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.chatResizer {
+  height: 4px;
+  cursor: row-resize;
+  background: #252525;
+  flex-shrink: 0;
+}
+
+.affectsAndSlot {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+// Restores the flex-container behavior that AffectsBlock relied on when it
+// was a direct child of .affectsAndSlot, before the sa-hud-affects-panel
+// wrapper div was introduced (theme CSS selector fix). Without this,
+// AffectsBlock's own `flex: 1` has no effect on a plain block parent, it
+// collapses to content height, and .affectsScroll never gets a bounded
+// height to scroll within — long affects lists get silently clipped by
+// .shell's overflow: hidden instead of scrolling.
+.affectsPanel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}

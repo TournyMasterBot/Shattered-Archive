@@ -1,0 +1,108 @@
+{
+  "mode": "jsonl",
+  "scannedAt": "2026-10-17T19:10:23.257Z",
+  "root": "C:/Projects/DSL/GameLogs/ShatteredArchive/Docker/game-server",
+  "filesScanned": 331,
+  "logicalLines": 2533502,
+  "needles": {
+    "craftSuccess": {
+      "total": 0,
+      "whole": 0,
+      "promptPrefixed": 0,
+      "speech": 0,
+      "otherPrefixOrSuffix": 0,
+      "topNonWholeShapes": [],
+      "samples": {}
+    },
+    "craftDestroyed": {
+      "total": 0,
+      "whole": 0,
+      "promptPrefixed": 0,
+      "speech": 0,
+      "otherPrefixOrSuffix": 0,
+      "topNonWholeShapes": [],
+      "samples": {}
+    },
+    "craftNoLoss": {
+      "total": 0,
+      "whole": 0,
+      "promptPrefixed": 0,
+      "speech": 0,
+      "otherPrefixOrSuffix": 0,
+      "topNonWholeShapes": [],
+      "samples": {}
+    },
+    "vaultFailure": {
+      "total": 0,
+      "whole": 0,
+      "promptPrefixed": 0,
+      "speech": 0,
+      "otherPrefixOrSuffix": 0,
+      "topNonWholeShapes": [],
+      "samples": {}
+    },
+    "craftInterrupted": {
+      "total": 0,
+      "whole": 0,
+      "promptPrefixed": 0,
+      "speech": 0,
+      "otherPrefixOrSuffix": 0,
+      "topNonWholeShapes": [],
+      "samples": {}
+    },
+    "copyover": {
+      "total": 46,
+      "whole": 46,
+      "promptPrefixed": 0,
+      "speech": 0,
+      "otherPrefixOrSuffix": 0,
+      "topNonWholeShapes": [],
+      "samples": {
+        "whole": "Copyover recovery complete."
+      }
+    },
+    "skillUp": {
+      "total": 0,
+      "whole": 0,
+      "promptPrefixed": 0,
+      "speech": 0,
+      "otherPrefixOrSuffix": 0,
+      "topNonWholeShapes": [],
+      "samples": {}
+    },
+    "condition": {
+      "total": 301,
+      "whole": 150,
+      "promptPrefixed": 0,
+      "speech": 0,
+      "otherPrefixOrSuffix": 151,
+      "topNonWholeShapes": [
+        [
+          "otherPrefixOrSuffix: Size: tiny ⟂ (none)",
+          151
+        ]
+      ],
+      "samples": {
+        "whole": "Condition: perfect (100%)",
+        "otherPrefixOrSuffix": "Size: tiny   Condition: excellent (95%)"
+      }
+    }
+  },
+  "skillUpValues": {
+    "min": null,
+    "max": null,
+    "over1001": 0,
+    "count": 0
+  },
+  "conditionValues": {
+    "min": 50,
+    "max": 100,
+    "over100": 0,
+    "count": 301
+  },
+  "precedingCommandForInterrupt": [],
+  "interruptDeltaMs": null,
+  "craftToOutcomeMs": null,
+  "craftInputs": 0,
+  "doubleCraftWithin30s": 0
+}

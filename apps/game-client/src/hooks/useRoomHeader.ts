@@ -1,6 +1,7 @@
 // apps\game-client\src\hooks\useRoomHeader.ts
 import { useEffect, useMemo, useState } from 'react';
 import { ListenEvent } from '../features/event-emitter/event-dispatcher';
+import { getRoomData, setRoomData } from '../features/room/roomDataStore';
 
 type RoomDataPayload = {
   room?: string;
@@ -13,8 +14,11 @@ type RoomDataPayload = {
 // @ai-hash: 728aa1ed
 // ── END AI-METHOD ──
 export function useRoomHeader() {
-  const [roomName, setRoomName] = useState('');
-  const [sector, setSector] = useState('');
+  // Seed from roomDataStore (the same cache useCompassBlock already seeds
+  // exits from) so a remount — a live theme switch, e.g. — doesn't blank
+  // the room name/sector until the next game:room-data event.
+  const [roomName, setRoomName] = useState(() => getRoomData()?.room ?? '');
+  const [sector, setSector] = useState(() => getRoomData()?.sector ?? '');
 
   useEffect(() => {
     const dispose = ListenEvent<RoomDataPayload>(
@@ -25,6 +29,10 @@ export function useRoomHeader() {
 
         setRoomName(nextRoom);
         setSector(nextSector);
+        // Write independently rather than relying on useCompassBlock's own
+        // listener to persist this same event — the two hooks aren't
+        // guaranteed to be mounted together in every shell/widget layout.
+        setRoomData(payload ?? {});
       },
       { key: 'useRoomHeader::game:room-data' },
     );

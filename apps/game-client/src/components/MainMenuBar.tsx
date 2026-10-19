@@ -109,6 +109,10 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
             <div className={`${styles.subMenuItem} ${styles.subMenuItemHasSubmenu}`} onClick={toggleGameSettings}>
               Settings
               <div className={`${styles.subMenuLevel2} ${isGameSettingsOpen ? styles.subMenuOpen : ''}`}>
+                <div className={styles.subMenuItem} onClick={openGraphicsModal}>
+                  Graphics…
+                </div>
+
                 <div className={styles.subMenuItem} onClick={openAudioModal}>
                   Audio…
                 </div>

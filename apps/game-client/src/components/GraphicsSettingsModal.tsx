@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import styles from '../styles/GraphicsSettingsModal.module.scss';
 import { DispatchEvent, ListenDomEvent } from '../features/event-emitter/event-dispatcher';
+import { getHudThemeId, setHudThemeId, type HudThemeId } from '../features/hudLayout/hudThemeStore';
 
 export interface GraphicsSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type GraphicsNavKey = 'rendering';
+type GraphicsNavKey = 'rendering' | 'layout';
 
 type GraphicsConfig = {
   // Rendering
@@ -92,6 +93,8 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
   const [config, setConfig] = useState<GraphicsConfig>(() => loadConfig());
   const [draft, setDraft] = useState<GraphicsConfig>(() => loadConfig());
 
+  const [hudThemeId, setHudThemeIdState] = useState<HudThemeId>(() => getHudThemeId());
+
   // Track viewport size (same pattern as your ScriptSandbox)
   useEffect(() => {
     const disposeResize = ListenDomEvent<UIEvent>(
@@ -119,6 +122,7 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
       setConfig(current);
       setDraft(current);
       setActiveNav('rendering');
+      setHudThemeIdState(getHudThemeId());
     }
   }, [isOpen]);
 
@@ -169,6 +173,7 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
 
   const navItems: Array<{ key: GraphicsNavKey; label: string; hint?: string }> = [
     { key: 'rendering', label: 'Rendering', hint: 'Effects & engine' },
+    { key: 'layout', label: 'Layout', hint: 'HUD arrangement' },
   ];
 
   return (
@@ -207,7 +212,9 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
           {/* Right settings */}
           <div className={styles.settingsPane}>
             <div className={styles.paneHeader}>
-              <div className={styles.paneTitle}>{activeNav === 'rendering' ? 'Rendering' : ''}</div>
+              <div className={styles.paneTitle}>
+                {activeNav === 'rendering' ? 'Rendering' : activeNav === 'layout' ? 'Layout' : ''}
+              </div>
 
               <div className={styles.actions}>
                 <button
@@ -268,6 +275,27 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
                     />
                   </label>
                 </div>
+              </div>
+            )}
+
+            {activeNav === 'layout' && (
+              <div className={styles.section}>
+                <label className={styles.field}>
+                  <div className={styles.fieldLabel}>Theme</div>
+                  <select
+                    aria-label="Theme"
+                    value={hudThemeId}
+                    onChange={(e) => {
+                      const next = e.target.value as HudThemeId;
+                      setHudThemeIdState(next);
+                      setHudThemeId(next);
+                    }}
+                  >
+                    <option value="default">Default</option>
+                    <option value="slate-amber">Slate &amp; Amber</option>
+                  </select>
+                  <div className={styles.hint}>Applies immediately — no reload needed.</div>
+                </label>
               </div>
             )}
           </div>

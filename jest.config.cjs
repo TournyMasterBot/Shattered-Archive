@@ -132,6 +132,7 @@ module.exports = {
         '^@shatteredarchive/utils-client$': '<rootDir>/utils/utils-client/src/index.ts',
         '^@shatteredarchive/utils-global$': '<rootDir>/utils/utils-global/src/index.ts',
         '^(\\.{1,2}/.*)\\.js$': '$1',
+        '\\.(css|scss)$': '<rootDir>/jest.style-mock.js',
       },
 
       testPathIgnorePatterns: ['/node_modules/', '/dist/', '/coverage/', ...LOCAL_CONFIG_IGNORES],

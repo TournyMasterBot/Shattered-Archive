@@ -2,7 +2,6 @@
 import React from 'react';
 import styles from '../styles/LayoutShell.module.scss';
 
-import Terminal from './Terminal';
 import CommandInput from './CommandInput';
 import RightSidebar from './RightSidebar';
 import { AutoLevelMode, AutoLevelRunState } from '../features/autoleveling/autoleveling-types';
@@ -21,6 +20,10 @@ interface LayoutShellProps {
   autoLevelMode?: AutoLevelMode;
   autoLevelRunState?: AutoLevelRunState;
   onSightseeRescan?: () => void;
+  // MainContainer owns the single <Terminal/> instance and portals it into
+  // whichever slot is attached — see LayoutShellProps.ts's HudShellBaseProps
+  // for why (live theme switching must not destroy/recreate xterm.js).
+  terminalSlotRef: (el: HTMLDivElement | null) => void;
 }
 
 export const LayoutShell: React.FC<LayoutShellProps> = ({
@@ -34,6 +37,7 @@ export const LayoutShell: React.FC<LayoutShellProps> = ({
   autoLevelMode,
   autoLevelRunState,
   onSightseeRescan,
+  terminalSlotRef,
 }) => {
   return (
     <div className={styles.layoutShell} style={layoutVars}>
@@ -41,9 +45,7 @@ export const LayoutShell: React.FC<LayoutShellProps> = ({
         {/* LEFT COLUMN (Play Area + Bottom Pane) */}
         <div className={styles.leftColumn}>
           <div className={styles.playArea}>
-            <div className={styles.playAreaTerminalShell}>
-              <Terminal />
-            </div>
+            <div className={styles.playAreaTerminalShell} ref={terminalSlotRef} />
 
             {/* Command input bar at the bottom of the play area */}
             <CommandInput

@@ -38,10 +38,19 @@ const addAffectPhrase = 'add_affect ';
 const affectDataPhrase = 'affect_data ';
 const loginDataPhrase = 'login_data ';
 
-// ---- Identity snapshot (GMCP-only) --------------------------------------
+// ---- Identity snapshot ---------------------------------------------------
+// characterName comes from GMCP login_data, set below. raceName/className
+// have no GMCP equivalent — they're scraped from the plain-text `score`/`sc`
+// output, but that scan (and the analogous world-time-of-day one) is a
+// per-line regex, which does not belong in this shared hot path: moved to
+// features/plugins/core-plugins/world-time-and-identity.plugin.ts, an
+// opt-in plugin that writes to these SAME globals/events, so consumers
+// (useCharacterIdentity, useWorldTimePeriod) needed no changes.
 
 type IdentitySnapshot = {
   characterName?: string;
+  raceName?: string;
+  className?: string;
   updatedAt?: number;
 };
 
