@@ -1,0 +1,129 @@
+{
+  "mode": "txt",
+  "scannedAt": "2026-10-17T19:10:34.881Z",
+  "root": "C:/Projects/DSL/GameLogs",
+  "filesScanned": 979,
+  "logicalLines": 23185631,
+  "needles": {
+    "craftSuccess": {
+      "total": 0,
+      "whole": 0,
+      "promptPrefixed": 0,
+      "speech": 0,
+      "otherPrefixOrSuffix": 0,
+      "topNonWholeShapes": [],
+      "samples": {}
+    },
+    "craftDestroyed": {
+      "total": 0,
+      "whole": 0,
+      "promptPrefixed": 0,
+      "speech": 0,
+      "otherPrefixOrSuffix": 0,
+      "topNonWholeShapes": [],
+      "samples": {}
+    },
+    "craftNoLoss": {
+      "total": 0,
+      "whole": 0,
+      "promptPrefixed": 0,
+      "speech": 0,
+      "otherPrefixOrSuffix": 0,
+      "topNonWholeShapes": [],
+      "samples": {}
+    },
+    "vaultFailure": {
+      "total": 59,
+      "whole": 59,
+      "promptPrefixed": 0,
+      "speech": 0,
+      "otherPrefixOrSuffix": 0,
+      "topNonWholeShapes": [],
+      "samples": {
+        "whole": "I see nothing like that in the vault."
+      }
+    },
+    "craftInterrupted": {
+      "total": 0,
+      "whole": 0,
+      "promptPrefixed": 0,
+      "speech": 0,
+      "otherPrefixOrSuffix": 0,
+      "topNonWholeShapes": [],
+      "samples": {}
+    },
+    "copyover": {
+      "total": 57,
+      "whole": 57,
+      "promptPrefixed": 0,
+      "speech": 0,
+      "otherPrefixOrSuffix": 0,
+      "topNonWholeShapes": [],
+      "samples": {
+        "whole": "Copyover recovery complete."
+      }
+    },
+    "skillUp": {
+      "total": 4,
+      "whole": 0,
+      "promptPrefixed": 0,
+      "speech": 4,
+      "otherPrefixOrSuffix": 0,
+      "topNonWholeShapes": [
+        [
+          "speech: <Name> grats ' ⟂ '",
+          1
+        ],
+        [
+          "speech: <Name> OOC Kingdom: 'finally ⟂ '",
+          1
+        ],
+        [
+          "speech: <Name> grats ' ⟂ Uh oh'",
+          1
+        ],
+        [
+          "speech: <Name> OOC: 'yay ⟂ '",
+          1
+        ]
+      ],
+      "samples": {
+        "speech": "<Name> grats 'Your crafting skill has improved. (700)'"
+      }
+    },
+    "condition": {
+      "total": 5014,
+      "whole": 1964,
+      "promptPrefixed": 0,
+      "speech": 1,
+      "otherPrefixOrSuffix": 3049,
+      "topNonWholeShapes": [
+        [
+          "otherPrefixOrSuffix: Size: tiny ⟂ (none)",
+          3049
+        ],
+        [
+          "speech: <Name> OOC Clan: 'An adamantium pickaxe lies here. ⟂ '",
+          1
+        ]
+      ],
+      "samples": {
+        "otherPrefixOrSuffix": "Size: tiny   Condition: good (90%)",
+        "whole": "Condition: perfect (100%)",
+        "speech": "<Name> OOC Clan: 'An adamantium pickaxe lies here.Condition: poor (30%)'"
+      }
+    }
+  },
+  "skillUpValues": {
+    "min": 666,
+    "max": 815,
+    "over1001": 0,
+    "count": 4
+  },
+  "conditionValues": {
+    "min": 25,
+    "max": 100,
+    "over100": 0,
+    "count": 5014
+  }
+}

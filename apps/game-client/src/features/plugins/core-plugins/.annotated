@@ -12,6 +12,27 @@ Purpose: Colorize log lines based on configurable rules without trigger scripts.
 /combat-compression.plugin.ts
 Purpose: Squelches selected combat-log line classes (Damage/Avoidance/Condition/Death/Flee/Rescue/Disarm/Ambient/Item Use/Status/Incapacitation/Attack Flavor/UI Noise) via patterns verified against the real server log corpus (incl. Coliseum- and Bloodbath-arena mining passes); exports PATTERNS and the damage-verb DAMAGE_LINE_PATTERN for reuse (e.g. text-to-speech's combat compression and Arena Observer Mode).
 
+/crafting-helper.plugin.ts
+Purpose: Automates tier-3 crafting via two modes behind one config-driven state machine — Improve (auto-escalating skill-up training across all 5 craft skills) and Order (fulfills queued multi-component item/armor-set requests at a target quality, checked via `lore` and tracked to completion with per-order material-spend history). Commands via `crafthelper`/`crh` aliases; full syntax lives in `crafthelper help`, not the (deliberately terse) plugin manifest description. Reads other players' chat on the same stream, so every server-signal matcher is WHOLE-LINE only (Condition may carry a `Size: <word>` prefix — 3200 of 5315 corpus lines do); all sends go through one `send()` (rate limit + debug trace); timers live in named slots with an epoch so a stale callback is a no-op; outcome/lore replies are consumed once (`outcomePending`/`qualityPending`); an order item is credited only after the server confirms its `put` (`pendingPut`: `You put … in …` credits, `You do not have that item.` or silence stops the run); a run is bound to the character that started it (`runKey`) and is reset, not resumed, on disable / connection close / character login. PR #160 review fixes: .ai-code-review/20261017-1350-pr160-crafting-helper.
+
+/crafting-helper.plugin.test.ts
+Purpose: State-machine integration tests (score → pull → craft → outcome branches, tier escalation, order-mode recipe/set resolution, quality routing, materials tracking, every in-game command) plus pure-function unit tests for the tier/recipe/quality-spec parsers and the order-id/materials-summary formatters.
+
+/crafting-helper-storage.ts
+Purpose: Per-character persisted storage for tracked craft-skill levels, the queued-order list (capped at MAX_QUEUED_ORDERS, rejects rather than evicts), and completed-order history. Skill levels mirror peopleDb.ts (debounced); orders/history write through immediately because losing the last update means crafting an extra item; everything flushes on pagehide/hidden. Stored elements are rebuilt by `parse*` on load and bad ones dropped (counted for the player), copies are deep, write failures are reported via onStorageWriteError.
+
+/crafting-helper-storage.test.ts
+Purpose: Round-trip get/set, debounce-coalescing, per-character isolation, size-cap trimming, and corrupt-storage fallback for the skill-level store, order queue, and completed-order history.
+
+/crafting-helper.test-harness.ts
+Purpose: Shared mock plugin runtime (multi-event emit, command/terminal capture) and scenario helpers (boot, reachCrafting, freshModules, SYS lines) for the crafting-helper suites; not a test file.
+
+/crafting-helper.hardening.test.ts
+Purpose: Proof-of-concept regression suite for the PR #160 review (SEC/SAF/TMR/LIF/DAT/CFG/COR ids in test names). Fails against the unfixed PR head (8561e03); chat-line shapes are the real ones from the player-log corpus.
+
+/crafting-helper.hardening-units.test.ts
+Purpose: Contract tests for the helpers/limits those fixes added (numIn, sanitizeCommandArg, table-upgrade guard, queue cap, storage-failure reporting, rate-limit recovery).
+
 /disarm.plugin.ts
 Purpose: Automatically re-wields disarmed weapons by mapping item names to aliases.
 

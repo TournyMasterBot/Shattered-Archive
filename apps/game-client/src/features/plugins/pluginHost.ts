@@ -432,17 +432,22 @@ export class PluginHost {
   /**
    * Invoke a named action registered by an enabled plugin.
    * Called from the configure modal action buttons.
+   *
+   * Distinguishes "no handler was found" from "a handler was found but
+   * threw" so callers (the config UI) can report an honest outcome instead
+   * of labeling both cases the same way.
    */
-  invokePluginAction(pluginId: PluginId, actionKey: string): void {
-    if (!this.state) return;
+  invokePluginAction(pluginId: PluginId, actionKey: string): 'ok' | 'no-handler' | 'error' {
+    if (!this.state) return 'no-handler';
     const c = this.state.cleanups.get(pluginId);
     const handler = c?.actionHandlers?.get(actionKey);
-    if (handler) {
-      try {
-        handler();
-      } catch (err) {
-        c?.api?.error('Action error', err);
-      }
+    if (!handler) return 'no-handler';
+    try {
+      handler();
+      return 'ok';
+    } catch (err) {
+      c?.api?.error('Action error', err);
+      return 'error';
     }
   }
 }

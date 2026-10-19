@@ -809,6 +809,40 @@ Valid `startPoint` values: `justice_bind` (Arkane justice bind point), `icewall_
 
 ---
 
+## Crafting Helper
+
+**Purpose:** Automates tier-3 crafting from the command bar. **Improve** mode trains one craft skill, pulling the materials for the highest trinket tier your skill qualifies for from the vault, crafting, storing the trinket and repeating (tiers escalate as you level). **Order** mode fulfils a per-character queue of multi-component item and armor-set orders at a target quality, checking each result with `lore` and keeping a materials-spent history. Nothing runs until you start it, except that the first `order add` on an empty queue starts fulfilling right away (switchable).
+
+**Commands** (`crh` works in place of `crafthelper`; `crafthelper help` prints the full list in-game):
+
+| Command | What it does |
+|---|---|
+| `crafthelper improve <craft> start` / `stop` / `status` | Train a craft skill (e.g. `spellcraft`, `tailor`), finish the current step then stop, or show state and session stats. |
+| `crafthelper order add <qty> '<item or set>' <quality>` | Queue an order. Quality is `97+` (at least), `99` (exactly) or `95-98` (range), 0–100. Quantity is 1–500. A `… set` name queues one order per slot. |
+| `crafthelper order list` / `remove <id>` / `start` / `stop` / `status` / `history [id]` | Manage and run the queue; `history` shows completed orders and the materials each used. |
+
+**Configuration:**
+
+| Field | Type | Description |
+|---|---|---|
+| Craft types / Tier table | Text | The recipe data (one row per line). Saving the config keeps a copy of whatever is shown, so an unedited default table is treated as "use the shipped one" and picks up later recipe fixes. |
+| Command pacing / Pull confirm / Score / Lore / Craft response timeouts | Number (ms) | 50–5000, 50–10000, 100–60000, 100–60000 and 100–3600000. A value outside the range (including 0 or empty) uses the default instead of firing immediately. The craft response timeout defaults to 180 s because a high-tier craft can take over 150 s. |
+| Order holding container / Quality → container map | Text | Where finished items are stored. A multi-word container is quoted for you. |
+| Start orders as soon as one is added | Boolean | On by default: `order add` on an empty queue begins fulfilling immediately. Turn off to queue orders and start them yourself. |
+| Stop after N failed crafts in a row / Order attempt limit / Command rate limit | Number | Safety brakes (defaults 15 / 100 per item / 120 commands per 10 s). A run that trips one stops instead of burning more vault materials or flooding the MUD. |
+| Debug logging | Boolean | Logs every command the plugin sends to the plugin log. |
+| HUD widget slot | Select | Where the status widget appears, or none. |
+
+**Notes:**
+- Only the game's own system lines drive a run (`You were successful.`, `Condition: … (N%)`, `Copyover recovery complete.`, …). The same words spoken or sent on a channel by another player are ignored — matching is on the whole line.
+- An order item counts toward its order only after the game confirms the `put` (`You put … in …`). `You do not have that item.`, or no reply within the Lore timeout, stops the run and credits nothing.
+- A copyover (server hot-restart) drops the craft in flight; the plugin resends the same craft once per attempt.
+- A skill-up is only believed when it moves your tracked level up by 1–5 and stays within the 1001 cap.
+- Disabling the plugin, closing the connection or switching character mid-run abandons the run and reports any pulled materials still in your inventory; nothing is sent while it does. Stopping (or an error stop) returns them to the vault.
+- Orders and history are saved per character in browser storage and written immediately; at most 200 orders can be queued.
+
+---
+
 ## Comparison: plugins vs. scripts
 
 | | Scripts | Plugins |
