@@ -10,6 +10,17 @@
 //   show craft <name>                      — filter by craft
 //   set status <name> [enemy|neutral|ally] — tag a player for annotation
 //   set team <name> <tag>                  — assign a team label (use 'none' to clear)
+//
+// The passive scan is armed by the player's OWN input, not run on every
+// line forever — same shape as world-time-and-identity.plugin.ts's
+// score-sheet scan. `who` is a PREFIX shared by a whole real command family
+// (confirmed against the live game-server log corpus: who, whoc, whok,
+// whocraft, whois, whoisd, whoisic, whoic, whos, whosi, whov, whoami all
+// actually used), so arming is a startsWith('who') check, not an exact
+// match like `sc`/`score`. Unlike a score sheet (one contiguous block), a
+// busy server's who-list reply can span several raw-data chunks, so this
+// does NOT disarm on the first matching chunk — the window stays open for
+// its full duration and closes only on the timeout.
 
 import type { IPluginModule, PluginRuntimeApi } from '@shatteredarchive/types-client';
 import { stripAnsi } from '../../autoleveling/autoleveling-text';
@@ -258,12 +269,35 @@ function tryParseLine(line: string, debug: boolean, api: PluginRuntimeApi) {
 
 // ── Plugin factory ─────────────────────────────────────────────────────
 
+// One-shot-per-command window, mirroring level-progress.plugin.ts's `worth`
+// fetch and world-time-and-identity.plugin.ts's score-sheet scan — armed
+// only by the player's own who-family input, never a perpetual per-line
+// scan. Longer than a single command's own render time so a busy server's
+// multi-chunk reply has room to fully arrive; there's no natural
+// "satisfied" signal to disarm early on (no fixed terminator line across
+// every who* variant), so this closes on the timeout only.
+const PEOPLE_ARM_MS = 5_000;
+const WHO_COMMAND_RE = /^who/i;
+
 export function createPeoplePlugin(): IPluginModule {
+  let peopleArmed = false;
+  let peopleTimerId: ReturnType<typeof setTimeout> | null = null;
+
+  const disarmPeople = () => {
+    peopleArmed = false;
+    if (peopleTimerId !== null) {
+      clearTimeout(peopleTimerId);
+      peopleTimerId = null;
+    }
+  };
+
   function onEnable(api: PluginRuntimeApi): () => void {
     const cfg = api.getConfig();
     api.log(`People DB ready — ${dbSize()} people known.`);
 
     const off = api.onEvent('shatteredarchive:raw-data', (payload: any) => {
+      if (!peopleArmed) return;
+
       const rawText = String(payload?.rawText ?? payload?.text ?? '');
       if (!rawText) return;
 
@@ -278,11 +312,21 @@ export function createPeoplePlugin(): IPluginModule {
 
     return () => {
       off();
+      disarmPeople();
     };
   }
 
   function onAlias(api: PluginRuntimeApi, input: string): boolean | undefined {
     const t = input.trim();
+
+    // Arms the passive scan above — never consumed, the real who/whoc/whok/
+    // whocraft/whois/etc. command must still reach the server. Checked
+    // first since none of the commands below start with "who".
+    if (WHO_COMMAND_RE.test(t)) {
+      peopleArmed = true;
+      if (peopleTimerId !== null) clearTimeout(peopleTimerId);
+      peopleTimerId = setTimeout(disarmPeople, PEOPLE_ARM_MS);
+    }
 
     // set status <name> [enemy|neutral|ally]
     const statusMatch = t.match(/^set\s+status\s+(\S+)(?:\s+(enemy|neutral|ally))?\s*$/i);
@@ -356,7 +400,8 @@ export function createPeoplePlugin(): IPluginModule {
       id: 'people',
       name: 'People',
       version: '0.1.0',
-      description: 'Tracks player info (level, race, class, org) from who-list output. Powers the Highlighter plugin.',
+      description:
+        'Tracks player info (level, race, class, org) from who-list output. Powers the Highlighter plugin. Only scans in the few seconds after you run a who/whoc/whok/whocraft/whois command — not a perpetual per-line scan.',
     },
 
     configSchema: {

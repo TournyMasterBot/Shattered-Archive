@@ -14,7 +14,11 @@ export function ProbeOpponentConditionLine(lineText: string): OpponentStatusDeta
   }
   if (!gated) return null;
 
-  const clean = lineText; //.replace(ANSI_CSI_RE, '').trim();
+  // Deliberately NOT stripping ANSI here: mob names are often colored
+  // (e.g. "\x1b[0;36mmerman\x1b[0m"), and RightSidebar/CompactVitalsRow
+  // render the extracted label through ansiToHtml so the color survives
+  // into the UI instead of being discarded.
+  const clean = lineText;
   if (!clean) return null;
 
   for (let i = 0; i < OPPONENT_BUCKETS.length; i++) {

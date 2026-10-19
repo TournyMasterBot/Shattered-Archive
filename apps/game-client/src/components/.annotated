@@ -1,5 +1,8 @@
 File Index
 
+/RightSidebar.tsx
+Purpose: Fixed right-side panel (StatusBlock: tick + vitals + enemy + ancillary, plus room/compass). Custom-HUD-layout branch extracted StatusBlock's enemy-tracking state (enemyUi/damageChunk, the event:fighting:opponent listener and its staleness ticker) into the shared useOpponentStatus hook so both this classic sidebar and the compact layout's CompactVitalsRow consume the same logic instead of duplicating it.
+
 /AccountModal.tsx
 Purpose: Phase D — optional cloud-account panel (mirrors ConnectModal/LibraryModal's {isOpen,onClose,connectionId} shape). Logged-out: a single "Log in" button (gameSso.startLogin, which opens a POPUP — never navigates this window, so the game connection survives; the button shows a waiting state and the panel updates itself when the popup lands). Logged-in: save/load this connection's scripts+plugins to/from the cloud (via useAccountModal.ts) and log out. Never gates any existing functionality — logged out remains the default, fully-supported state. Phase E updated the blurb copy to mention library writings (parchment/notes/books) alongside scripts/plugins, and to say Load only replaces scripts/plugins — library content is merged, never deleted.
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ListenEvent } from '../features/event-emitter/event-dispatcher';
+import { getAffects } from '../features/affects/affectsStore';
 
 type AnyRecord = Record<string, unknown>;
 
@@ -43,7 +44,10 @@ function isSanctuaryName(name: string): boolean {
 // @ai-hash: a5d3fed3
 // ── END AI-METHOD ──
 export function useSanctuaryActive() {
-  const [hasSanctuary, setHasSanctuary] = useState(false);
+  // Seed from the same affects cache useAffectsBlock writes to, so a
+  // remount — a live theme switch, e.g. — doesn't blank the sanctuary glow
+  // until the next game:affects-* event.
+  const [hasSanctuary, setHasSanctuary] = useState(() => getAffects().some((a) => isSanctuaryName(getAffectName(a))));
 
   const keyTrueupRef = useRef(makeInstanceKey('useSanctuaryActive::game:affects-trueup'));
   const keyAddRef = useRef(makeInstanceKey('useSanctuaryActive::game:affect-added'));

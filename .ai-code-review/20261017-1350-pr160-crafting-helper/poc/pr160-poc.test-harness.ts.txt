@@ -1,0 +1,73 @@
+// apps/game-client/src/features/plugins/core-plugins/crafting-helper.test-harness.ts
+//
+// Shared mock runtime for the Crafting Helper test suites. Extracted from
+// crafting-helper.plugin.test.ts so the hardening suite can drive the same
+// state machine without a second copy of the mock. Not a test file itself
+// (no .test. in the name), so jest does not collect it.
+import type { HudWidgetContent, PluginRuntimeApi } from '@shatteredarchive/types-client';
+import { DEFAULT_CRAFT_TYPES_CONFIG, DEFAULT_TIER_TABLE_CONFIG } from './crafting-helper.plugin';
+
+type Handler = (payload: unknown) => void;
+
+export function createMockApi(config: Record<string, unknown>) {
+  const sent: string[] = [];
+  const terminalWrites: string[] = [];
+  const hudWrites: Array<{ slotId: string; content: HudWidgetContent | null }> = [];
+  const logs: unknown[][] = [];
+  const handlers = new Map<string, Set<Handler>>();
+
+  const api: PluginRuntimeApi = {
+    connectionId: 'test-conn',
+    pluginId: 'crafting-helper',
+    sendCommand: (cmd: string) => sent.push(cmd),
+    log: (...args: unknown[]) => logs.push(args),
+    error: () => {},
+    onEvent: (eventName: string, handler: Handler) => {
+      if (!handlers.has(eventName)) handlers.set(eventName, new Set());
+      handlers.get(eventName)!.add(handler);
+      return () => {
+        handlers.get(eventName)?.delete(handler);
+      };
+    },
+    httpGetJson: async () => ({}),
+    getConfig: () => config,
+    setConfig: () => {},
+    updateConfig: (patch: Record<string, unknown>) => Object.assign(config, patch),
+    writeTerminal: (dslText: string) => terminalWrites.push(dslText),
+    registerAction: () => {},
+    registerOmitRules: () => {},
+    setHudWidget: (slotId, content) => {
+      hudWrites.push({ slotId, content });
+    },
+  };
+
+  const emit = (eventName: string, payload: unknown) => {
+    for (const h of [...(handlers.get(eventName) ?? [])]) h(payload);
+  };
+
+  return {
+    api,
+    sent,
+    terminalWrites,
+    hudWrites,
+    logs,
+    /** Fire any event the plugin subscribed to (raw-data, remote-server:close, character-login, ...). */
+    emit,
+    listenerCount: (eventName: string) => handlers.get(eventName)?.size ?? 0,
+    feedLine: (line: string) => emit('shatteredarchive:raw-data', { rawText: `${line}\r\n` }),
+    feedRaw: (rawText: string) => emit('shatteredarchive:raw-data', { rawText }),
+  };
+}
+
+export function defaultConfig(overrides: Record<string, unknown> = {}) {
+  return {
+    craftTypes: DEFAULT_CRAFT_TYPES_CONFIG,
+    tierTable: DEFAULT_TIER_TABLE_CONFIG,
+    commandPacingDelayMs: 100,
+    pullConfirmTimeoutMs: 200,
+    scoreResponseTimeoutMs: 200,
+    debug: false,
+    hudSlot: 'hud.bottomStrip',
+    ...overrides,
+  };
+}

@@ -18,6 +18,10 @@ import { createWarlockAlphabetPlugin } from './core-plugins/warlock-alphabet.plu
 import { createQuestBotPlugin } from './core-plugins/questbot.plugin';
 import { createVoiceDictationPlugin } from './core-plugins/voice-dictation.plugin';
 import { createTextToSpeechPlugin } from './core-plugins/text-to-speech.plugin';
+import { createTickWarningPlugin } from './core-plugins/tick-warning.plugin';
+import { createWorldTimeAndIdentityPlugin } from './core-plugins/world-time-and-identity.plugin';
+import { createLevelProgressPlugin } from './core-plugins/level-progress.plugin';
+import { createCraftingHelperPlugin } from './core-plugins/crafting-helper.plugin';
 
 export interface CorePluginDefinition {
   id: PluginId;
@@ -115,6 +119,26 @@ export const CORE_PLUGINS: CorePluginDefinition[] = [
     id: 'text-to-speech',
     manifest: createTextToSpeechPlugin().manifest,
     create: createTextToSpeechPlugin,
+  },
+  {
+    id: 'tick-warning',
+    manifest: createTickWarningPlugin().manifest,
+    create: createTickWarningPlugin,
+  },
+  {
+    id: 'world-time-and-identity',
+    manifest: createWorldTimeAndIdentityPlugin().manifest,
+    create: createWorldTimeAndIdentityPlugin,
+  },
+  {
+    id: 'level-progress',
+    manifest: createLevelProgressPlugin().manifest,
+    create: createLevelProgressPlugin,
+  },
+  {
+    id: 'crafting-helper',
+    manifest: createCraftingHelperPlugin().manifest,
+    create: createCraftingHelperPlugin,
   },
 ];
 

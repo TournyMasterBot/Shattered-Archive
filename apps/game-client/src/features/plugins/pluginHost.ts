@@ -1,6 +1,13 @@
 // apps/game-client/src/features/plugins/pluginHost.ts
-import type { IPluginModule, PluginId, PluginRuntimeApi } from '@shatteredarchive/types-client';
+import {
+  type HudSlotId,
+  type HudWidgetContent,
+  type IPluginModule,
+  type PluginId,
+  type PluginRuntimeApi,
+} from '@shatteredarchive/types-client';
 
+import { ALL_HUD_SLOT_IDS, publishHudWidget } from '../hudLayout/hudWidgetRegistry';
 import { applyPluginBaseCss, removePluginBaseCss } from './pluginCss';
 import { startPluginBundledScripts } from './pluginScriptRunner';
 import { normalizePluginModule } from './normalizePluginModule';
@@ -178,6 +185,10 @@ function makeDefaultApi(
       setPluginOmitRules(pluginId, rules);
     },
 
+    setHudWidget: (slotId: HudSlotId, content: HudWidgetContent | null) => {
+      publishHudWidget(slotId, pluginId, content);
+    },
+
     registerAction: (key: string, handler: () => void) => {
       actionHandlers.set(key, handler);
     },
@@ -328,6 +339,9 @@ export class PluginHost {
     if (c?.removeBaseCss) c.removeBaseCss();
 
     setPluginOmitRules(pluginId, []);
+    for (const slotId of ALL_HUD_SLOT_IDS) {
+      publishHudWidget(slotId, pluginId, null);
+    }
     s.cleanups.delete(pluginId);
     s.enabled.delete(pluginId);
   }
@@ -418,17 +432,22 @@ export class PluginHost {
   /**
    * Invoke a named action registered by an enabled plugin.
    * Called from the configure modal action buttons.
+   *
+   * Distinguishes "no handler was found" from "a handler was found but
+   * threw" so callers (the config UI) can report an honest outcome instead
+   * of labeling both cases the same way.
    */
-  invokePluginAction(pluginId: PluginId, actionKey: string): void {
-    if (!this.state) return;
+  invokePluginAction(pluginId: PluginId, actionKey: string): 'ok' | 'no-handler' | 'error' {
+    if (!this.state) return 'no-handler';
     const c = this.state.cleanups.get(pluginId);
     const handler = c?.actionHandlers?.get(actionKey);
-    if (handler) {
-      try {
-        handler();
-      } catch (err) {
-        c?.api?.error('Action error', err);
-      }
+    if (!handler) return 'no-handler';
+    try {
+      handler();
+      return 'ok';
+    } catch (err) {
+      c?.api?.error('Action error', err);
+      return 'error';
     }
   }
 }

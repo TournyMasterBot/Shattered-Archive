@@ -52,7 +52,17 @@ const ChatPaneView: React.FC<ChatPaneViewProps> = ({ paneId, visible }) => {
 // @ai-method: ChatPane — Displays and manages chat messages across multiple categorized panes with draggable reordering and customizable visibility.
 // @ai-hash: bbba2693
 // ── END AI-METHOD ──
-export const ChatPane: React.FC = () => {
+export interface ChatPaneProps {
+  /**
+   * Wrap the pill strip onto extra rows instead of scrolling it
+   * horizontally, so every pane pill AND the gear button stay visible with
+   * no scrolling. Opt-in (compact layout only) — the classic layout keeps
+   * today's single-row scrolling strip.
+   */
+  wrapPills?: boolean;
+}
+
+export const ChatPane: React.FC<ChatPaneProps> = ({ wrapPills = false }) => {
   const [settings, setSettings] = useState<ChatSettings>(getChatSettings());
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -265,9 +275,13 @@ export const ChatPane: React.FC = () => {
   return (
     <div className={styles.chatRoot}>
       {/* Top strip: pills + gear */}
-      <div className={styles.chatTopBar}>
+      <div className={`${styles.chatTopBar} ${wrapPills ? 'sa-chat-top-bar-wrap' : ''}`}>
         {/* Pills are ALWAYS present so "All" never disappears. */}
-        <div className={styles.chatPills} role="tablist" aria-label="Chat panes">
+        <div
+          className={`${styles.chatPills} ${wrapPills ? 'sa-chat-pills-wrap' : ''}`}
+          role="tablist"
+          aria-label="Chat panes"
+        >
           <button
             key="all"
             type="button"

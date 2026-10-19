@@ -1,6 +1,8 @@
 import type { IPluginModule, PluginRuntimeApi } from '@shatteredarchive/types-client';
 
-import { PluginHost } from './pluginHost';
+import { PluginHost, pluginHost } from './pluginHost';
+import { CORE_PLUGINS } from './registry';
+import { getHudWidget } from '../hudLayout/hudWidgetRegistry';
 
 /**
  * Plugin modules are CLOSURES — `create()` mints fresh queues, timers and
@@ -121,5 +123,220 @@ describe('PluginHost.syncInstalled', () => {
 
     host.syncInstalled([{ id: 'text-to-speech', enabled: true }]);
     expect(tts.enableCount).toBe(2);
+  });
+});
+
+describe('PluginRuntimeApi.setHudWidget', () => {
+  it('publishes into the widget registry, owned by the plugin id', () => {
+    pluginHost.setConnection('test-conn');
+    let capturedApi: PluginRuntimeApi | null = null;
+
+    pluginHost.registerModule({
+      manifest: { id: 'test-plugin', name: 'Test', version: '1.0.0' },
+      onEnable: (api) => {
+        capturedApi = api;
+      },
+    } as IPluginModule);
+    pluginHost.enable('test-plugin');
+
+    capturedApi!.setHudWidget!('hud.rightColumn', { label: 'Enemy', value: 'A rabid wolf' });
+
+    expect(getHudWidget('hud.rightColumn')).toEqual({
+      ownerId: 'test-plugin',
+      content: { label: 'Enemy', value: 'A rabid wolf' },
+    });
+  });
+
+  it('clears every slot the plugin owns when the plugin is disabled', () => {
+    pluginHost.setConnection('test-conn-2');
+    let capturedApi: PluginRuntimeApi | null = null;
+
+    pluginHost.registerModule({
+      manifest: { id: 'test-plugin-2', name: 'Test 2', version: '1.0.0' },
+      onEnable: (api) => {
+        capturedApi = api;
+      },
+    } as IPluginModule);
+    pluginHost.enable('test-plugin-2');
+    capturedApi!.setHudWidget!('hud.bottomStrip', { value: 'x' });
+    expect(getHudWidget('hud.bottomStrip')).not.toBeNull();
+
+    pluginHost.disable('test-plugin-2');
+    expect(getHudWidget('hud.bottomStrip')).toBeNull();
+  });
+
+  it('disabling one plugin does not clear a slot owned by another plugin', () => {
+    pluginHost.setConnection('test-conn-3');
+    let apiA: PluginRuntimeApi | null = null;
+
+    pluginHost.registerModule({
+      manifest: { id: 'plugin-a', name: 'A', version: '1.0.0' },
+      onEnable: (api) => {
+        apiA = api;
+      },
+    } as IPluginModule);
+    pluginHost.registerModule({
+      manifest: { id: 'plugin-b', name: 'B', version: '1.0.0' },
+    } as IPluginModule);
+    pluginHost.enable('plugin-a');
+    pluginHost.enable('plugin-b');
+
+    apiA!.setHudWidget!('hud.rightColumn', { value: 'from A' });
+    pluginHost.disable('plugin-b'); // never touched this slot
+
+    expect(getHudWidget('hud.rightColumn')).toEqual({ ownerId: 'plugin-a', content: { value: 'from A' } });
+  });
+});
+
+describe('PluginHost.tryExecuteAlias', () => {
+  // Regression: normalizePluginModule's returned object omitted `onAlias`
+  // entirely, so every enabled plugin's alias commands (brew's `brew <name>`,
+  // questbot's `pq start`, etc.) were silently unreachable — tryExecuteAlias
+  // reads onAlias off the normalized module stored at enable time, not the
+  // raw one passed to registerModule.
+  it("reaches an enabled plugin's onAlias and lets it consume a command", () => {
+    const host = new PluginHost();
+    let received: string | null = null;
+
+    host.setConnection('alias-conn');
+    host.registerModule({
+      manifest: { id: 'alias-plugin', name: 'Alias Plugin', version: '1.0.0' },
+      onAlias: (_api, input: string) => {
+        if (input.trim().toLowerCase() !== 'ping') return undefined;
+        received = input;
+        return true;
+      },
+    } as IPluginModule);
+    host.enable('alias-plugin');
+
+    expect(host.tryExecuteAlias('ping')).toBe(true);
+    expect(received).toBe('ping');
+  });
+
+  it('returns false, leaving the command unconsumed, when no enabled plugin matches', () => {
+    const host = new PluginHost();
+    host.setConnection('alias-conn-2');
+    host.registerModule({
+      manifest: { id: 'alias-plugin-2', name: 'Alias Plugin 2', version: '1.0.0' },
+      onAlias: () => undefined,
+    } as IPluginModule);
+    host.enable('alias-plugin-2');
+
+    expect(host.tryExecuteAlias('anything else')).toBe(false);
+  });
+});
+
+describe('PluginHost.invokePluginAction', () => {
+  it('returns "ok" and calls the handler when one is registered', () => {
+    const host = new PluginHost();
+    const handler = jest.fn();
+    const module: IPluginModule = {
+      manifest: { id: 'action-probe', name: 'Action Probe', version: '1.0.0' },
+      configSchema: { defaults: {}, fields: [] },
+      onEnable(api: PluginRuntimeApi) {
+        api.registerAction('sync', handler);
+        return () => {};
+      },
+    } as IPluginModule;
+
+    host.setConnection('dsl-mud');
+    host.registerModule(module);
+    host.syncInstalled([{ id: 'action-probe', enabled: true }]);
+
+    const result = host.invokePluginAction('action-probe', 'sync');
+
+    expect(result).toBe('ok');
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns "no-handler" and does not throw when no handler is registered for the key', () => {
+    const host = new PluginHost();
+    const module: IPluginModule = {
+      manifest: { id: 'action-probe-2', name: 'Action Probe 2', version: '1.0.0' },
+      configSchema: { defaults: {}, fields: [] },
+      onEnable() {
+        return () => {};
+      },
+    } as IPluginModule;
+
+    host.setConnection('dsl-mud');
+    host.registerModule(module);
+    host.syncInstalled([{ id: 'action-probe-2', enabled: true }]);
+
+    const result = host.invokePluginAction('action-probe-2', 'nonexistent-key');
+
+    expect(result).toBe('no-handler');
+  });
+
+  it('returns "no-handler" when the plugin was never enabled', () => {
+    const host = new PluginHost();
+    expect(host.invokePluginAction('never-enabled', 'sync')).toBe('no-handler');
+  });
+
+  it('returns "error" (distinct from "no-handler") and does not throw when a registered handler throws', () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const host = new PluginHost();
+    const module: IPluginModule = {
+      manifest: { id: 'action-probe-3', name: 'Action Probe 3', version: '1.0.0' },
+      configSchema: { defaults: {}, fields: [] },
+      onEnable(api: PluginRuntimeApi) {
+        api.registerAction('sync', () => {
+          throw new Error('boom');
+        });
+        return () => {};
+      },
+    } as IPluginModule;
+
+    host.setConnection('dsl-mud');
+    host.registerModule(module);
+    host.syncInstalled([{ id: 'action-probe-3', enabled: true }]);
+
+    const result = host.invokePluginAction('action-probe-3', 'sync');
+
+    expect(result).toBe('error');
+    expect(result).not.toBe('no-handler');
+    expect(consoleErrorSpy).toHaveBeenCalledWith('[Plugin]', 'Action error', expect.any(Error));
+
+    consoleErrorSpy.mockRestore();
+  });
+});
+
+// HOST-1: the toy "alias-plugin" test above passed while every REAL plugin's aliases were dead (the
+// normalizer dropped onAlias). This runs the real registry through the real host.
+describe('PluginHost.tryExecuteAlias — every core plugin that defines onAlias is reachable', () => {
+  const aliasPluginIds = CORE_PLUGINS.filter((def) => typeof def.create().onAlias === 'function').map((def) => def.id);
+
+  it('covers the plugins known to define an alias handler (a rename or removal must be deliberate)', () => {
+    expect(aliasPluginIds).toEqual(
+      expect.arrayContaining([
+        'crafting-helper',
+        'brew',
+        'questbot',
+        'people',
+        'gourd',
+        'enchant',
+        'warlock-alphabet',
+        'text-to-speech',
+        'world-time-and-identity',
+      ]),
+    );
+  });
+
+  it.each(aliasPluginIds)('%s: tryExecuteAlias hands typed input to its onAlias', (id) => {
+    const def = CORE_PLUGINS.find((d) => d.id === id)!;
+    const mod = def.create();
+    // The real onEnable would start timers / speech / network; only alias dispatch is under test.
+    mod.onEnable = () => () => {};
+    const onAlias = jest.fn().mockReturnValue(true);
+    mod.onAlias = onAlias;
+
+    const host = new PluginHost();
+    host.setConnection('core-alias-conn');
+    host.registerModule(mod);
+    host.syncInstalled([{ id, enabled: true }]);
+
+    expect(host.tryExecuteAlias('zz unmatched input')).toBe(true);
+    expect(onAlias).toHaveBeenCalledWith(expect.anything(), 'zz unmatched input');
+    host.shutdown();
   });
 });
