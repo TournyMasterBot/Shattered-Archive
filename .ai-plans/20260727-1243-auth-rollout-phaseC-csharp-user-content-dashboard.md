@@ -264,7 +264,7 @@ Decision 4's per-service authority model.
   site-owns-its-content rule), Bookmarked Books (list + remove), Maps (create/
   rename/delete inline — this is the C# service's own content, so full CRUD
   here is correct unlike scripts/plugins), Game Logs (upload form + list +
-  delete), and static "coming soon" placeholder cards for Kingdom Tactics/MUD
+  delete), and static "coming soon" placeholder cards for a removed app/MUD
   Builder (Phase H wires real fan-out later). New
   `wwwroot/js/user/dashboard.js` (jQuery AJAX — confirmed this is the ONLY JS
   convention anywhere in this app before adding anything new) drives every
@@ -502,7 +502,7 @@ Decision 4's per-service authority model.
   create/rename/delete inline — this IS this service's own content, so full CRUD
   here is appropriate unlike scripts/plugins), Logs (list + upload form + delete),
   and a "Other services" section rendering static placeholder cards (no live
-  fetch yet — Phase H wires real fan-out) for kingdom-tactics/mud-builder. A
+  fetch yet — Phase H wires real fan-out) for removed-app/mud-builder. A
   visible link to `admin/roles` when `HttpContext.GetUser()`'s tier is `manager`+
   (reuse the nav-visibility pattern already in `_nav.cshtml`).
   `wwwroot/js/user/dashboard.js` drives all the fetch calls against Steps 2-4's

@@ -3,7 +3,7 @@
  *
  * The repo-root jest.config.cjs collects tests by a `-server`/`-client` path SEGMENT
  * (`<rootDir>/**​/**-server/**​/*.test.ts`); with `--rootDir .` this package IS the
- * `-server` dir, so no co-located test below it can match. Like kingdom-tactics-server,
+ * `-server` dir, so no co-located test below it can match.
  * this app therefore owns a self-contained node-environment config, which also lets it
  * be tested in isolation and resolve workspace deps to their TS sources (no prior build).
  *

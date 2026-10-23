@@ -6,9 +6,6 @@ Purpose: Normalizes plugin module structure and validates data types for consist
 /normalizePluginModule.test.ts
 Purpose: Pins the actions-array passthrough (valid array kept, non-array dropped to undefined, absent stays undefined) and onAlias passthrough, plus that every hook and an unknown future hook survive normalization.
 
-/pluginCss.ts
-Purpose: Manages dynamic CSS styling for plugins with unique identifiers.
-
 /pluginHost.ts
 Purpose: Manages plugin lifecycle, execution, and communication within the game client. Registration and syncInstalled are instance-preserving: a running plugin is never re-created just because the installed list changed. api.log/api.error stamp exactly one `[plugin:<id>]` prefix on each terminal line — plugins must not repeat their own id in the message. api.setHudWidget (optional on PluginRuntimeApi) publishes into the hudWidgetRegistry under the plugin's id; disable() clears every ALL_HUD_SLOT_IDS slot for that plugin unconditionally (the registry's ownership check makes it a no-op for slots it doesn't own). invokePluginAction returns 'ok' | 'no-handler' | 'error' (not a bare boolean) so callers (PluginConfigModal) can tell "no handler was found" apart from "a handler ran and threw" instead of flashing the same failure label for both.
 
@@ -23,6 +20,3 @@ Purpose: Runs bundled plugin scripts as triggers, timers, or aliases within a ru
 
 /registry.ts
 Purpose: Registers and provides access to all core plugins for the game client.
-
-/routed-gmcp-events.ts
-Purpose: Defines all GMCP and custom game events routed through the client application.

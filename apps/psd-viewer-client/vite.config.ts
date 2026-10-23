@@ -6,10 +6,10 @@ import path from 'node:path';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
 
-  // Port convention: game 30080/31000, web 40080/41000, KT 50080/51000,
-  // mud-builder 60080/61000 → psd-viewer 62080/62000 (65535 ceiling rules out 7xxxx).
-  const port = Number(env.VITE_PORT) || 62080;
-  const apiTarget = env.VITE_PSD_API || 'http://localhost:62000';
+  // Port convention: game 30080/31000, web 40080/41000,
+  // psd-viewer 20080/20000 — the 6xxxx decades are taken (auth owns 62080/62000); see docs/ports.md.
+  const port = Number(env.VITE_PORT) || 20080;
+  const apiTarget = env.VITE_PSD_API || 'http://localhost:20000';
 
   return {
     plugins: [react()],

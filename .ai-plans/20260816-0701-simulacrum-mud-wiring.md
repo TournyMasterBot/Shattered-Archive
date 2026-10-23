@@ -85,7 +85,7 @@ resource limits are visible in `docker inspect`, and both landing pages are live
   `roles.json` grants (`manager`/`trusted`/etc.) remain valid values, no migration needed — but it's a
   change to a SHARED constant; `mud-builder-server` is confirmed (repo-wide grep) to be the ONLY
   consumer of `SERVICE_TIERS`/`tierRank` from the shared package today (soulsteel-server,
-  scrum-poker-server, kingdom-tactics-server, web-server, game-server import OTHER things from
+  scrum-poker-server, removed-app-server, web-server, game-server import OTHER things from
   `@shatteredarchive/services-server`, never this), so the blast radius is real but narrow.
   `apps/mud-builder-client/src/api/client.ts:446` has its OWN un-imported literal copy of the same
   list for the Roles-tab dropdown — MUST be updated too or the UI can't grant the new tier.
@@ -212,20 +212,20 @@ resource limits are visible in `docker inspect`, and both landing pages are live
 - **`services/merc-area` is unrelated** — a pure TS `.are`-file parser/emitter, performs no I/O, runs
   no MUD.
 - **Port-numbering convention**: `31000` game-server, `41000` web-server, `51000`
-  kingdom-tactics-server, `61000` mud-builder-server, `62000` auth-server, `63000` scrum-poker-server,
+  removed-app-server, `61000` mud-builder-server, `62000` auth-server, `63000` scrum-poker-server,
   `64000` soulsteel-server — `65000` is next free for simulacrum-server's HTTP surface, `65001` for
   the TCP relay (separate listener/protocol on the same process).
 - **nginx routing layers, three total**: (1) `deploy/nginx/edge-subdomains.conf` (HTTP,
   resolver+variable upstream pattern); (2) `deploy/nginx/includes/tls-dev.conf` (HTTPS mirror, must
-  stay route-for-route identical — a gap here bit kingdom-tactics and soulsteel already); (3)
+  stay route-for-route identical — a gap here bit removed-app and soulsteel already); (3)
   `C:/Projects/DSL/nginx/shattered_archive.site` (the FRONT proxy, terminates real TLS, forwards plain
   HTTP to `51.222.137.28`). `build.shatteredarchive.dev` is currently a 503 stub there; going live
   means "delete the stub block and copy the auth or scrum-poker block above" (stated inline).
   **Cert SAN gap**: a name only gets TLS coverage once added to the shared cert's `-d` list via
   `certbot --expand` — confirmed as a separate step from route wiring by soulsteel's own comment.
-- **Landing/privacy pages**: `deploy/index.html:652-679` — MUD Builder and Kingdom Tactics are
+- **Landing/privacy pages**: `deploy/index.html:652-679` — MUD Builder and a removed app are
   unlinked `demo-soon` cards because their front-proxy blocks are still stubs.
-  `deploy/privacy.html:339-342` has one combined row for `build.`+`kingdom-tactics.` — extend/add a
+  `deploy/privacy.html:339-342` has one combined row for `build.`+`removed-app.` — extend/add a
   row for `simulacrum.`. Privacy lives in `deploy/privacy.html`, a SEPARATE file from `index.html`.
 
 ## Steps
@@ -411,7 +411,7 @@ resource limits are visible in `docker inspect`, and both landing pages are live
   (mirror the existing `auth.`/`soulsteel.` blocks' shape — `proxy_pass http://51.222.137.28;` with
   `Host $host` preserved, shared multi-SAN cert paths) plus an HTTP→HTTPS redirect entry. Delete the
   `build.shatteredarchive.dev` 503 stub and replace it with a real block, same shape. Leave
-  `kingdom-tactics.shatteredarchive.dev`'s stub untouched. Add a prominent comment on both new blocks
+  `removed-app.shatteredarchive.dev`'s stub untouched. Add a prominent comment on both new blocks
   stating the cert SAN gap explicitly.
 - Files: /workspace/dsl/nginx/shattered_archive.site.
 - Verify: `nginx -t` syntax-checks cleanly. Explicitly tell the user (cannot self-verify end-to-end):
@@ -424,7 +424,7 @@ resource limits are visible in `docker inspect`, and both landing pages are live
   (mention it's free to browse, trusted+ to edit); add a NEW live demo card for Simulacrum, clearly
   framed as trusted+-only ("sign in and request access" rather than "play now") and as a
   stock/near-stock ROM 2.4 baseline, never framed as or compared to a specific real MUD by name. Leave
-  Kingdom Tactics as-is. `deploy/privacy.html` — extend/split the existing `build.`+`kingdom-tactics.`
+  a removed app as-is. `deploy/privacy.html` — extend/split the existing `build.`+`removed-app.`
   row to add `simulacrum.shatteredarchive.dev`; add a short note under "What each service stores on
   the server" covering `simulacrum-server`'s access-code/auth-token handling (game-server's own row is
   unaffected — it gained nothing). Run full regression: `pnpm --filter simulacrum-server test`,
@@ -530,7 +530,7 @@ resource limits are visible in `docker inspect`, and both landing pages are live
   `simulacrum.shatteredarchive.dev` entirely (not a doc issue; self-hosters would have had no way
   to resolve the hostname at all). Fixed both scripts, then corrected `deploy/index.html`'s
   "Map the development domains" list to match — which was ALSO stale on several PRE-EXISTING
-  names (missing the apex, `build.`, `kingdom-tactics.`, `soulsteel.`, none of them this plan's
+  names (missing the apex, `build.`, `removed-app.`, `soulsteel.`, none of them this plan's
   doing) — and updated the "Bring the stack up" paragraph to mention Simulacrum needs the
   experimental stack specifically (its container ships in the default `docker-compose.yml` too,
   confirmed via grep, but fails closed there without MUD Builder's shared role store).
@@ -574,7 +574,7 @@ resource limits are visible in `docker inspect`, and both landing pages are live
   verification. `deploy/index.html`: MUD Builder flipped from `demo-soon` to a live `<a>` card; a
   NEW Simulacrum live card added right after it, framed as "sign in and request access" (trusted+
   only) and as a near-stock ROM 2.4 baseline, never compared to a specific real MUD by name.
-  `deploy/privacy.html`: `simulacrum.shatteredarchive.dev` added to the build.+kingdom-tactics.
+  `deploy/privacy.html`: `simulacrum.shatteredarchive.dev` added to the build.+removed-app.
   ads/analytics table row (No/No, unchanged) plus a new "Simulacrum" subsection under "What each
   service stores on the server" covering the short-lived single-use access code and the
   account-to-character link that surfaces on the Auth Hub dashboard. Full regression: `pnpm
@@ -666,7 +666,7 @@ resource limits are visible in `docker inspect`, and both landing pages are live
   block (ports 65000/65001, `sa-shared` join, the single-file `roles.json` mount, an `access-codes/`
   bind mount) plus a `simulacrum-server` entry in auth-server's `SERVICE_REGISTRY` (redirect URI
   `https://simulacrum.shatteredarchive.dev/api/sso/callback`) — the SSO-redirect pattern already used
-  by kingdom-tactics-server, not the device-credential pattern mud-builder-client/kingdom-tactics-client
+  by removed-app-server, not the device-credential pattern mud-builder-client/removed-app-client
   use (both exist in this repo; redirect matches what this plan's Step 1 text specified). Updated the
   root `jest.config.cjs` (added to `LOCAL_CONFIG_PACKAGES`/`LOCAL_CONFIG_IGNORES`) and ran `pnpm
   install` to register the new workspace member (lockfile updated, no new external deps). Verified:
@@ -799,7 +799,7 @@ resource limits are visible in `docker inspect`, and both landing pages are live
   matching every other live public hostname's existing entry there. Prod compose: added
   `simulacrum-server` to `GAME_PROXY_ALLOWLIST` (the internal `-server`-suffixed alias, per
   correction 5 — never the public hostname) and a full `simulacrum-server` service block
-  mirroring `soulsteel-server`'s shape (prod has no `mud-builder-server` OR `kingdom-tactics-
+  mirroring `soulsteel-server`'s shape (prod has no `mud-builder-server` OR `removed-app-
   server` block to mirror instead — both are still experimental-only).
 
   **Flagged a real operational gap rather than silently working around it**: `mud-builder-server`
@@ -835,9 +835,9 @@ resource limits are visible in `docker inspect`, and both landing pages are live
   already proven live) — genuinely the closer precedent once the actual traffic shape is
   considered, not just the two names the step happened to mention. `build.shatteredarchive.dev`
   (mud-builder, no websocket) DOES match the auth/soulsteel shape correctly, so that one used
-  the originally-suggested pattern as-is. Replaced the `build.`+`kingdom-tactics.` shared "stubs"
+  the originally-suggested pattern as-is. Replaced the `build.`+`removed-app.` shared "stubs"
   banner comment (which explained both together) with build's own live-block comment plus a
-  smaller kingdom-tactics-only stub banner, so kingdom-tactics' still-untouched block keeps its
+  smaller removed-app-only stub banner, so removed-app' still-untouched block keeps its
   own explanatory context rather than losing it as a side effect of build's block going live.
 
   Verified `nginx -t` for real, not just visually: generated throwaway self-signed certs for

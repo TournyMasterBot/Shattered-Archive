@@ -1,0 +1,24 @@
+# ShatteredArchive
+
+> ShatteredArchive is a Docker Compose stack of small, independent services for MUD players and builders: a scriptable browser MUD client, an area builder, a map and data browser, a single sign-on hub, and a few tools that grew out of the same workshop. Every service listed here is running as a public demo. Demo instances are shared and disposable, so treat anything created on them as temporary.
+
+## Start here
+
+- [ShatteredArchive home](https://shatteredarchive.dev/): hub page that describes and links every live service and the self-hosting steps
+- [Source code on GitHub](https://github.com/TournyMasterBot/Shattered-Archive): the full repository, including both Docker Compose files
+- [Docker setup guide](https://github.com/TournyMasterBot/Shattered-Archive/blob/main/docs/docker.md): how to run the whole stack yourself
+- [Privacy notice](https://shatteredarchive.dev/privacy): what the landing page and demos collect
+
+## Live demos
+
+- [Game Client](https://game-client.shatteredarchive.dev): browser MUD client with plugins, triggers and user-authored scripts in an embedded Lua and Python interpreter
+- [Web Client](https://web-client.shatteredarchive.dev): map and world-data browser covering continents, areas and the reference data behind them
+- [Scrum Poker](https://scrum-poker.shatteredarchive.dev/): planning poker with no accounts; the room URL is the only membership
+- [Auth Hub](https://auth.shatteredarchive.dev): single sign-on hub for accounts, API keys, device-bound credentials and SSO
+- [Soulsteel](https://soulsteel.shatteredarchive.dev): a Herald's dashboard for The Umbral Cloak and the Soulsteel Dagger social-deduction rite; no accounts, state stays in the browser
+- [MUD Builder](https://build.shatteredarchive.dev): area authoring for a Merc-derived MUD (rooms, mobs, objects, resets, scripts, generated maps) with hot reload; browsing is free, editing needs a trusted-tier sign-in
+- [Simulacrum](https://simulacrum.shatteredarchive.dev): near-stock ROM 2.4 world that MUD Builder edits; reachable only by a signed-in trusted-tier account
+
+## Optional
+
+- Only the home page, the privacy notice and Scrum Poker are intended for search indexing. The other hosts are application shells or APIs and disallow crawling in their robots.txt; please respect that.

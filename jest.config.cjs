@@ -3,7 +3,7 @@
  *
  * Packages listed by PATH own a self-contained local jest.config.cjs (they need
  * settings the generic projects below don't have: workspace deps resolved to TS
- * sources, CSS/asset stubs for jsdom, kt-config stubs). Keep new settings in the
+ * sources, CSS/asset stubs for jsdom, app-config stubs). Keep new settings in the
  * package config, not here — the root only aggregates.
  *
  * The generic `server`/`client` projects collect the remaining packages by their
@@ -17,8 +17,6 @@
 const LOCAL_CONFIG_PACKAGES = [
   '<rootDir>/apps/auth-client',
   '<rootDir>/apps/auth-server',
-  '<rootDir>/apps/kingdom-tactics-client',
-  '<rootDir>/apps/kingdom-tactics-server',
   '<rootDir>/apps/mud-builder-client',
   '<rootDir>/apps/mud-builder-server',
   '<rootDir>/apps/scrum-poker-client',
@@ -27,7 +25,6 @@ const LOCAL_CONFIG_PACKAGES = [
   '<rootDir>/apps/soulsteel-client',
   '<rootDir>/apps/soulsteel-server',
   '<rootDir>/sdks/sdks-client',
-  '<rootDir>/services/kingdom-tactics-engine',
   '<rootDir>/services/merc-area',
   '<rootDir>/services/scrum-poker-core',
 ];
@@ -35,8 +32,6 @@ const LOCAL_CONFIG_PACKAGES = [
 const LOCAL_CONFIG_IGNORES = [
   '/apps/auth-client/',
   '/apps/auth-server/',
-  '/apps/kingdom-tactics-client/',
-  '/apps/kingdom-tactics-server/',
   '/apps/mud-builder-client/',
   '/apps/mud-builder-server/',
   '/apps/scrum-poker-client/',
@@ -45,7 +40,6 @@ const LOCAL_CONFIG_IGNORES = [
   '/apps/soulsteel-client/',
   '/apps/soulsteel-server/',
   '/sdks/sdks-client/',
-  '/services/kingdom-tactics-engine/',
   '/services/merc-area/',
   '/services/scrum-poker-core/',
 ];

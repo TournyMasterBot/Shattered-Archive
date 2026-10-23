@@ -3,6 +3,11 @@
 These instructions apply to all code generation, suggestions, and reviews in this repository.
 They extend and are consistent with `.github/copilot-instructions.md`.
 
+**Sibling project memory.** If the sibling repo is cloned next to this one, read
+`../Shattered-AI/.memory/README.md` before any work on the local AI tooling (qwen CLI/MCP, hooks, research harness),
+on feature-knowledge/standards tooling, or when asked what that program is trying to achieve. It records the mission,
+the hard rules, the current state and the decisions. Skip silently if `../Shattered-AI/.memory` does not exist.
+
 ---
 
 ## /qwen pre-flight verification (mandatory when the MCP stack is available)
@@ -44,8 +49,14 @@ Scope + gating:
 ## Package manager
 
 - Always use **pnpm** (never npm or yarn) via **Corepack**.
-- The pinned version is in `package.json` → `packageManager` (currently `pnpm@11.x`).
-  - Do not suggest upgrading pnpm without also updating the `packageManager` sha512 hash.
+- The pinned version is in `package.json` → `packageManager` (currently `pnpm@12.9.1`, node `26.10.0`, corepack `0.36.0` in the images).
+  - Do not suggest upgrading pnpm without also updating the `packageManager` sha512 hash (the hex of the npm `dist.integrity` value) in every repo that pins it, and refreshing the lockfiles with
+    `pnpm install --lockfile-only` (pnpm 12 wants a `packageManagerDependencies` block in the lockfile, otherwise a frozen install fails).
+  - Moved from 11.27.1 to **12.9.1** on 2026-10-04 and built and deployed (all 16 stack images, health checked). 11.8.0 has 3 HIGH advisories, fixed from 11.11.0 on (OSV); 12.9.1 has none.
+    From pnpm 11.28 a frozen install is refused when the lockfile lists a workspace project whose `package.json` is missing (`ERR_PNPM_OUTDATED_LOCKFILE`), so every `deploy/*.Dockerfile` copies the `package.json` of
+    **every** project in `pnpm-lock.yaml` (the block marked "pnpm 11.28+ and 12 refuse a frozen install"). When a workspace project is added or removed, update those lines to match the `importers:` list of
+    `pnpm-lock.yaml`, or the next image build fails.
+  - A build script that is neither allowed nor declined fails the install (`ERR_PNPM_IGNORED_BUILDS`); decide it in `pnpm-workspace.yaml`.
 - When running installs in scripts or docs, always pass `--frozen-lockfile`.
 - Never suggest `--ignore-scripts` globally — script approval is managed per-package via
   `onlyBuiltDependencies` and `allowBuilds` in `pnpm-workspace.yaml`.
@@ -55,9 +66,12 @@ Scope + gating:
 ## Dependency security
 
 ### Minimum age
-`minimum-dep-age=86400` is set in `.npmrc` (1 day in seconds). This is intentional.
+`minimumReleaseAge: 1440` (MINUTES = 1 day) is set in `pnpm-workspace.yaml`. This is intentional.
 Do not remove or lower it. New package versions must be at least 1 day old before
 pnpm will install them, reducing the window for typosquatting attacks.
+pnpm 11 reads its settings ONLY from `pnpm-workspace.yaml`: the earlier `minimum-dep-age=86400` line in
+`.npmrc` is not a pnpm setting at all and never enforced anything (verified 2026-10-03). Verify a setting
+with `pnpm config get <name>`; `undefined` means pnpm is not reading it.
 
 ### Build script approval
 Native packages that need post-install build scripts are allowlisted in
@@ -76,9 +90,23 @@ All dependencies must resolve from the npm registry. Do not introduce:
 Workspace-internal `workspace:*` references are fine.
 
 ### Hoisting
-`shamefully-hoist=false` is enforced in `.npmrc`. Each package must declare all
+`shamefully-hoist` stays at pnpm's default (`false`). Each package must declare all
 its own imports. Do not set `shamefully-hoist=true` or `hoist-pattern` overrides
 to work around missing declarations — fix the `package.json` instead.
+
+### Periodic update check (low priority, ongoing maintenance)
+Pins go stale. Now and then (weekly is plenty) run `node ../Shattered-AI/scripts/update-check.mjs` (when the
+sibling repo is present). It lists newer base-image digests, republished tags, npm packages, pnpm and npx-run tools
+that are **more than 24 hours old**, and writes a report; it never changes anything. Apply an update as a normal
+reviewed change (every `FROM` + its version comment, the Known-CVE table below, then a frozen-lockfile install).
+Never auto-update, and never adopt a version younger than 24 hours.
+
+### Mechanical rule checks
+`.ai-rules.md` (repo root) is the short rule list the local qwen agent loads; it must not contradict this file. The
+detectors for the pinning, Docker and security rules live in `../Shattered-AI/tools/gates`
+(`node ../Shattered-AI/tools/gates/run.mjs --repo . --all`). Compose files follow the Docker pinning rule too: a
+third-party `image:` is `name:tag@sha256:<digest>` (locally built images are exempt). `npm install -g corepack` in a
+Dockerfile must pin `corepack@<version>`.
 
 ---
 
@@ -122,36 +150,95 @@ in the package index but not yet baked into the upstream image layer.
 
 ---
 
-## Known open CVEs (as of 2026-06-19)
+## Known open CVEs (as of 2026-10-04)
 
-| Image | Digest prefix | CVEs | Status |
-|-------|--------------|------|--------|
-| `node:26.3.1-alpine3.24` | `a2dc166a` | 1 high | No upstream fix yet; `apk upgrade` applied |
-| `nginx:1.31.2-alpine3.23` | `81595dd7` | 2 high | No upstream fix yet; `apk upgrade` applied |
+| Image | Digest prefix | Alpine layer (OSV, `apk info`) | Status |
+|-------|--------------|------------------|--------|
+| `node:26.10.0-alpine3.24` | `0b36e8c1` | 0 advisories (18 packages, Alpine 3.24.2) | `apk upgrade` applied at build; the node binary itself is not covered by this check |
+| `nginx:1.31.6-alpine3.24` | `df221db8` | 1 advisory: `pcre2 10.48-r0` (ALPINE-CVE-2026-103111, severity not given by OSV); 71 packages, Alpine 3.24.2 | `apk upgrade` applied at build; the nginx binary itself is not covered by this check |
 
 Update this table when new patched images are published.
+
+> **IDE linter counts seen 2026-10-04** (they appeared when `DslLogViewer/Dockerfile` was edited, so the linter works now): `node:26.10.0-alpine3.24` 4 high, 0 critical; `nginx:1.31.6-alpine` 3 high, 0 critical;
+> the replaced `node:26.1.0-alpine3.23` had 4 critical and 28 high, and the unpinned `node:22-alpine` of DslScripts 10 high. The high ones are in the node / nginx binaries (no upstream fix yet); the registry digests of both
+> new tags were re-read the same day and match the pins.
+
+> **How this was checked (2026-10-04), and what it does not show:** the pins were moved from `node:26.3.1-alpine3.24` / `nginx:1.31.2-alpine3.23` to the rows above (every `FROM` and
+> compose `image:` in ShatteredArchive, Shattered-AI and Shattered-Story together). Docker Scout needs a login on this host and the IDE showed no image diagnostics, so the check was:
+> list each image's Alpine packages and ask OSV about them. The old images had the same kind of findings plus many more on the nginx image (curl, c-ares). The earlier "1 high" /
+> "2 high" counts (2026-06-19) concerned the node and nginx binaries; that part cannot be reproduced here, so re-check it in the IDE (open a Dockerfile) when convenient.
+> The nginx image moved from Alpine 3.23 to 3.24 with this bump.
 
 ---
 
 ## AI context indexes (.ai-context / .annotated / @ai- headers)
 
-Directories in this repo carry generated AI indexes: `.ai-context` (folder
-narrative), `.annotated` (per-file one-line purposes), and `AI-ANNOTATION`
-comment headers (`@ai-summary`, `@ai-public`, `@ai-deps`, `@ai-notes`) at the
-top of some code files. Formats are defined in
+Directories in this repo carry AI indexes: `.ai-context` (folder narrative),
+`.annotated` (per-file entries), and `AI-ANNOTATION` comment headers
+(`@ai-summary`, `@ai-public`, `@ai-deps`, `@ai-notes`) at the top of some code
+files. Formats are defined in
 `c:\Projects\Shattered-AI\doc\ai-context-conventions.md`.
 
-- **Read them first.** When starting work in an unfamiliar directory, read its
-  `.ai-context` and `.annotated` before opening code files, and trust them for
-  orientation — open only the files you will change or must quote.
-- **Keep them fresh.** After creating or removing files in a directory, refresh
-  that folder's `.annotated` and `.ai-context`. After substantive edits to a
-  code file, update its one-liner in `.annotated` and its `@ai-` header block
-  if it has one. (Edits made through the qwen MCP server refresh directory
-  indexes automatically; edits made directly on the host — i.e. by Claude — do
-  not, so update them yourself.)
-- Don't pad indexes with obvious entries, and preserve hand-written nuance when
-  refreshing — update entries in place rather than regenerating wholesale.
+- **Read them first, as hints.** When starting work in an unfamiliar directory,
+  read its `.ai-context` and `.annotated` before opening code files. They are
+  neither complete nor always current, so open the files you will change or must quote.
+- **One rule for every writer (Claude, qwen, the generator).** An entry records
+  ONLY context the code cannot tell: a constraint or invariant, a relation to a
+  sibling, why not the obvious alternative, a gotcha, a change-together pair,
+  where the tests are. Never restate the file or folder name. Never replace a
+  context-bearing entry with something thinner; change one only to ADD
+  meaningful new context. Writing nothing is fine, and a folder with nothing to
+  say needs no index. Decisions made in a session go in the folder's existing
+  index files (`.annotated` for one file, `.ai-context` when it spans files).
+- Enforced mechanically: IDX-2 to IDX-6 in `Shattered-AI/tools/gates`, the
+  PostToolUse `index-entry-guard` hook, qwen's edit gates, and the completion
+  gate below, which asks for the note when a meaningful change lands in an
+  indexed folder.
+
+## Completion gate (Stop hook, project-level)
+
+`.claude/hooks/completion-gate.js` runs when a turn ends and BLOCKS it while
+this turn's changes under `apps/game-client/src/` leave something undone. It
+judges only what this turn changed (`session-baseline.js` keeps the pre-edit
+copy). Only scripts count: md, txt, json, css and config never need tests.
+
+- **tests** logic changed and no related test was touched. **quality** a new or
+  changed test has no assertion, is a tautology, is skipped/todo, or only
+  asserts on logging. **run** the related tests do not pass. **coverage** a
+  branch or error path of a changed function is never executed by those tests.
+- **index** a meaningful change in a folder that already has an index, and
+  neither index file was touched. **ui** a JSX change with no fresh showcase
+  screenshot (Shattered-AI `tools/browser-test`, `saveShowcase`).
+
+A test checks concrete, observable behavior and covers every code path you
+added; it never asserts on log output unless the code is a logger. Do NOT
+refactor production code on your own to make it testable: if a meaningful test
+needs a sizeable change (hard-wired clock, network, storage, DOM), describe the
+smallest injectable seam and ask the user (AskUserQuestion).
+
+Markers in the final message, one per line: `OVERRIDE <kind>: <specific reason
+it does not apply>`, and for tests/run/coverage `ASK <kind>: <what blocks a
+meaningful test | the smallest seam>` (resolves the gate while the user
+decides). Everything is logged to `.claude/state/gate-log.jsonl` and surfaces in
+`/pr-package`. After 3 consecutive blocks the gate releases and logs it.
+
+## Docs lookup (docs-hub MCP server)
+
+`tools/docs-hub` (Shattered-AI) is one lookup tool for library docs and our own service docs, used by Claude Code and the qwen CLI.
+`lookup_docs` answers from, in order: our `docs/agent/` pages and recorded corrections (they win and end the search), the installed
+package's own docs (the exact version the lockfile pins), then Context7 pinned to that version's tag. It is a lookup, not an injection:
+call it when you need it.
+
+- **When:** BEFORE writing code against a library whose installed MAJOR version is newer than your training (`lib_versions` with
+  `risky: true` lists them; today that includes jest 30, vite 8, nodemailer 9, dotenv 17, uuid 13), and when unsure how one of our
+  own services behaves. The `docs-nudge` hook reminds you when an edit newly imports such a library with no lookup this session.
+- **Report bad docs:** if a result was wrong, stale or about the wrong library, call `report_doc_issue` with the right answer. It is
+  not served again for that query, and a supplied correction becomes a `docs/agent/corrections/<library>.md` page that outranks
+  Context7 (review and commit it). Do not keep looking up a result you already know is bad.
+- **Our docs:** pages live in each repo's `docs/agent/` (standard: `Shattered-AI/doc/docs-standard.md`); a page whose source files changed
+  after `verified_date` is returned marked STALE. Re-verify it when you touch what it describes.
+- **Setup:** the server is registered in the git-ignored, per-machine `.mcp.json`; Claude Code asks you to approve a new project MCP
+  server once. The qwen CLI starts it from `servers.config.json`.
 
 ## Delegating bulk reading to local qwen (free)
 

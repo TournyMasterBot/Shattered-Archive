@@ -89,8 +89,8 @@ export function registerRoutes(app: Application, config: MudBuilderConfig = getM
     // .are files (area.lst-driven registration means an extra subdirectory here is inert).
     const snippetStore = new SnippetStore(config.areaPath);
     registerSnippetRoutes(app, authStore, snippetStore, roleStore, config);
-    // Phase H: same route name as kingdom-tactics-server's own summary endpoint, for a
-    // uniform C# dashboard caller.
+    // Phase H: uniform summary route name for the C# dashboard
+    // caller.
     registerSummaryRoutes(app, authStore, snippetStore, config);
     // Phase 15: requires real auth to exist at all (requireRebuildAllowed needs a real
     // AuthStore) — registered here alongside the other auth-gated route groups, not

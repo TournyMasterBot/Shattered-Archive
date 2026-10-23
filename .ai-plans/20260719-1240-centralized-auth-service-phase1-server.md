@@ -2,7 +2,7 @@
 
 Created: 2026-07-19T12:40:00-0500 · Workspace: /workspace/shattered-archive · Status: COMPLETE
 Task: Build `apps/auth-server` — a new, self-contained centralized login service that all other
-Shattered Archive apps (game-client, kingdom-tactics, mud-builder, the C# DSL/Server, etc.) will
+Shattered Archive apps (game-client, removed-app, mud-builder, the C# DSL/Server, etc.) will
 eventually validate bearer tokens against. This service does nothing by itself: it only manages
 accounts and issues/validates per-service API keys mapped back to one master account identity.
 
@@ -183,7 +183,7 @@ the Goal is covered by a test.
   machine, show-once token display, React 19 + Vite + `@vitejs/plugin-react-swc`.
 - **Port numbering convention — CORRECTED this session (was wrong, see Progress log).** Verified
   against every app's actual `.env`: the scheme is `<digit>0080` (client dev) / `<digit>1000`
-  (server) — game=**3** (30080/31000), web=**4** (40080/41000), kingdom-tactics=**5**
+  (server) — game=**3** (30080/31000), web=**4** (40080/41000), removed-app=**5**
   (50080/51000, reserved not deployed), mud-builder=**6** (61000; no client dev-port `.env` found
   for `mud-builder-client`). **TCP ports only go up to 65535** — digit **7** would be 70080/71000,
   and both exceed that ceiling entirely; they are not valid ports, not merely "outside policy." The
@@ -655,7 +655,7 @@ the Goal is covered by a test.
   71000/70080 (the naive next slot in the `<digit>0080`/`<digit>1000` sequence after mud-builder's
   6) are not valid TCP ports at all — the valid range tops out at 65535, so digit 7 never fits;
   flagged directly by the user ("ports are 65535, its networking"). Re-verified every app's actual
-  `.env` (game 30080/31000, web 40080/41000, kingdom-tactics 50080/51000 reserved, mud-builder
+  `.env` (game 30080/31000, web 40080/41000, removed-app 50080/51000 reserved, mud-builder
   61000) and reassigned auth-server to **62000** / auth-client dev to **62080** — the next free pair
   inside mud-builder's already-used 60000s block, still leaving room for 2-3 more service pairs
   (63/64/65) before this scheme needs to change again. Fixed everywhere the old numbers appeared:

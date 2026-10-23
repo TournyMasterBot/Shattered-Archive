@@ -11,3 +11,9 @@ Purpose: VS Code extension manifest (dsl-color-preview) — command contribution
 
 /tsconfig.json
 Purpose: NodeNext build config extending the repo base, typed against @types/vscode and @types/node.
+
+/src/ansi.ts
+Purpose: ANSI SGR -> HTML, stripAnsi and DSL -> ANSI; hand-synced copies (dsl-log-preview ansiToHtml, game-client dsl-to-ansi) since a VSIX cannot import across the workspace. Change together with those.
+
+/src/convert.ts
+Purpose: vscode-free dispatch (ansi vs dsl by detectFormat) behind the preview and both copy commands; keep it free of vscode imports so it can be bundled and checked standalone.

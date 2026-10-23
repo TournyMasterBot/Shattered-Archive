@@ -41,7 +41,7 @@ if (fs.existsSync(envFile)) {
   log.debug('[simulacrum-server] Loaded environment overrides', { envFile });
 }
 
-// Port convention: game 31000, web 41000, KT 51000, mud-builder 61000, auth 62000,
+// Port convention: game 31000, web 41000, mud-builder 61000, auth 62000,
 // scrum-poker 63000, soulsteel 64000 -> simulacrum 65000 (Express), 65001 (TCP relay).
 process.env.PORT ??= '65000';
 const config = getConfigFromEnv('simulacrum-server');

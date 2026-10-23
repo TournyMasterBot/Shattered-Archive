@@ -1,0 +1,47 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "ShatteredArchive",
+    "identifier": "shatteredarchive.dev"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:shatteredarchive.dev:docs:llms-txt",
+      "displayName": "ShatteredArchive llms.txt",
+      "type": "text/plain",
+      "url": "https://shatteredarchive.dev/llms.txt",
+      "description": "Markdown index of the ShatteredArchive demo hub: what each live service does and where to find the source code and setup guide.",
+      "capabilities": ["service-overview", "self-hosting-links"],
+      "representativeQueries": [
+        "What is ShatteredArchive?",
+        "Which ShatteredArchive demo services are live?",
+        "Where is the ShatteredArchive source code?"
+      ]
+    },
+    {
+      "identifier": "urn:air:shatteredarchive.dev:docs:sitemap",
+      "displayName": "ShatteredArchive sitemap",
+      "type": "application/xml",
+      "url": "https://shatteredarchive.dev/sitemap.xml",
+      "description": "Sitemap of the pages on shatteredarchive.dev that are meant to be indexed.",
+      "representativeQueries": [
+        "Which pages does shatteredarchive.dev publish?",
+        "List the crawlable URLs on shatteredarchive.dev"
+      ]
+    },
+    {
+      "identifier": "urn:air:shatteredarchive.dev:skills:shattered-archive-hub",
+      "displayName": "ShatteredArchive hub guide",
+      "type": "text/markdown; profile=\"urn:air:agent-skills\"",
+      "url": "https://shatteredarchive.dev/.well-known/agent-skills/shattered-archive-hub.md",
+      "description": "Agent skill: how to find the right ShatteredArchive demo service, what needs a sign-in, and how to run the stack locally.",
+      "capabilities": ["demo-discovery", "self-hosting-guidance"],
+      "tags": ["mud", "docker", "self-hosting", "demos"],
+      "representativeQueries": [
+        "Which ShatteredArchive service should I use to build MUD areas?",
+        "How do I run the ShatteredArchive stack locally?",
+        "Does ShatteredArchive Scrum Poker need an account?"
+      ]
+    }
+  ]
+}

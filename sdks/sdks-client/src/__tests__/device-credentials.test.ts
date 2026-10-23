@@ -182,7 +182,7 @@ describe('DeviceCredentials', () => {
     await creds.enroll('Test laptop');
 
     const a = await creds.getAccessToken(SERVICE);
-    const b = await creds.getAccessToken('kingdom-tactics-server');
+    const b = await creds.getAccessToken('scrum-poker-server');
     expect(a).not.toBe(b);
     expect(state.calls.assert).toBe(2);
   });

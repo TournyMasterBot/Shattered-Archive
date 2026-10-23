@@ -37,7 +37,7 @@ export interface MudBuilderConfig {
   /**
    * BROWSER-facing auth-server origin, handed to the client via /api/capabilities so it can
    * enroll a device key. Distinct from authServerUrl, which is an internal docker alias the
-   * browser cannot resolve — same split kingdom-tactics-server already makes
+   * browser cannot resolve — hence the split
    * (AUTH_SERVER_URL vs AUTH_SERVER_PUBLIC_URL). Absent = device credentials unadvertised, so
    * the client stays on manual token entry.
    *

@@ -1,8 +1,7 @@
 # services/scrum-poker-core
 
 The isomorphic heart of Scrum Poker (scrum-poker.shatteredarchive.dev), imported unchanged by
-both `apps/scrum-poker-server` and `apps/scrum-poker-client` — the same arrangement
-`services/kingdom-tactics-engine` has with the KT client/server pair, and enforced the same way:
+both `apps/scrum-poker-server` and `apps/scrum-poker-client` — enforced the same way as `services/merc-area`:
 `tsconfig.json` sets `"types": []`, so a shipped module that reaches for `fs`, `process` or a DOM
 global fails the build.
 

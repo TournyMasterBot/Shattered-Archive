@@ -7,7 +7,7 @@ description: Create, execute, resume, or hand off shared plan documents (.ai-pla
 
 One plan document per task lives at `<repo>/.ai-plans/YYYYMMDD-HHMM-<slug>.md`.
 It is the single source of truth: the MCP server's `plan_start`/`plan_step` tools
-(qwen via Continue `/plan`) and Claude (this skill) read and write the SAME format,
+(qwen via `/plan` in `pnpm run qwen`) and Claude (this skill) read and write the SAME format,
 so work can be handed off in either direction mid-plan. Full design:
 `c:/Projects/Shattered-AI/doc/ai-assistant-architecture.md` ("Plan mode").
 
@@ -63,6 +63,7 @@ Hard rules:
 | `C:/Projects/DslLogViewer` | `/workspace/dsl-log-viewer` |
 | `C:/Projects/shatteredarchive-mobile` | `/workspace/shatteredarchive-mobile` |
 | `C:/Projects/merc-mud` | `/workspace/merc-mud` |
+| `C:/Projects/Shattered-Story` | `/workspace/shattered-story` |
 
 - Size steps for a 32k-context model: each step independently completable by an
   agent that has read ONLY Goal + Constraints + that step; explicit Files and
@@ -74,7 +75,7 @@ Hard rules:
 1. Orient cheaply first (`.ai-context`/`.annotated`, or
    `docker exec shattered_mcp node build/cli.js pack "<task>" <container paths>`).
 2. Write the doc per the contract, `Status: ACTIVE`.
-3. Tell the user: run `/plan resume` in Continue — qwen auto-attaches the doc and
+3. Tell the user: run `/plan` in `pnpm run qwen` — qwen auto-attaches the doc and
    works it step by step. Nothing else to wire up.
 
 ### Execute / continue a plan yourself (agent mode)
@@ -89,7 +90,7 @@ Hard rules:
    log `- <ISO> step N blocked: <why>` and leave the box unchecked.
 
 ### Hand off to qwen — PRE-FLIGHT before telling the user to run `/plan resume`
-Don't send the user to Continue only to hit "No active plan." `plan_step {}` (bare) scans ALL
+Don't send the user to `pnpm run qwen` only to hit "No active plan." `plan_step {}` (bare) scans ALL
 `WORKSPACE_DIRS` for `.ai-plans/*.md`, sorts by mtime, and auto-attaches the most-recent doc with
 `Status: ACTIVE` — Claude-authored docs included (verified in `mcp-ollama/src/index.ts` ~line 3999),
 so NO registration/`plan_start` is needed. But confirm ALL of these first:
@@ -103,7 +104,7 @@ so NO registration/`plan_start` is needed. But confirm ALL of these first:
    satisfies this, so don't bury the status.
 4. **The next unchecked step is genuinely (QWEN-SAFE)** — if it's (CLAUDE), qwen will (correctly) STOP;
    reorder so the qwen step is next, or do the CLAUDE step yourself first.
-5. **Beware the stale container cache** (bit us 2026-07-09). `/plan resume` in Continue reads the
+5. **Beware the stale container cache** (bit us 2026-07-09, in the old Continue setup; the CLI's `/plan` calls a bare `plan_step` and is not affected). `/plan resume` in Continue read the
    in-container active-plan cache (`shattered-archive.plan.json`), NOT a fresh mtime scan. If that
    cache still points at a PRIOR, already-`Status: COMPLETE` plan (e.g. the previous phase's doc),
    `/plan resume` re-attaches THAT, reports "plan complete", and NEVER touches your new ACTIVE doc —
@@ -111,7 +112,7 @@ so NO registration/`plan_start` is needed. But confirm ALL of these first:
    `plan_step {}` most-recent-ACTIVE auto-attach) rather than `/plan resume`; and **verify what qwen
    reports** — it must name the INTENDED doc/step, not "complete". If it says "complete", assume the
    cache is stale and CHECK the intended step actually landed (files exist) before trusting it.
-Only when 1–5 hold, tell the user: run `/plan` in Continue (bare — avoids the stale-resume cache).
+Only when 1–5 hold, tell the user: run `/plan` in `pnpm run qwen` (it calls a bare `plan_step`, which avoids the stale-resume cache; qwen asks before it edits the plan document).
 
 ### Abandon
 Set `Status: ABANDONED`, append `- <ISO> plan abandoned — <why>`.

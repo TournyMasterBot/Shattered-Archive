@@ -460,7 +460,7 @@ describe('Phase 4: centralized-auth introspect fallback', () => {
   /**
    * The Phase A service-isolation rule. auth-server vouching for a token says only that it is
    * real — not that it was minted for THIS service. Without the audience check, a token for
-   * kingdom-tactics-server (or an auth-web browser session) would be a full builder write
+   * scrum-poker-server (or an auth-web browser session) would be a full builder write
    * credential, which is exactly what audience-scoping exists to prevent.
    */
   it('refuses a token that is valid but was minted for ANOTHER service', async () => {
@@ -468,7 +468,7 @@ describe('Phase 4: centralized-auth introspect fallback', () => {
     const fake = await startFakeIntrospect(() => ({
       valid: true,
       accountId: 'acct1',
-      service: 'kingdom-tactics-server',
+      service: 'scrum-poker-server',
       label: 'alice',
     }));
     const { server, base } = await startApp(

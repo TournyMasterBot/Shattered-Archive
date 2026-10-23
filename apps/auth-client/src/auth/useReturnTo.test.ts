@@ -5,7 +5,7 @@ import { parseReturnTo } from './useReturnTo.js';
  * victim sees a genuine, trusted auth URL and is handed to the attacker after signing in. So
  * every rejection below is a security property, not a nicety.
  */
-const ALLOWED = ['https://build.shatteredarchive.dev', 'https://kingdom-tactics.shatteredarchive.dev'];
+const ALLOWED = ['https://build.shatteredarchive.dev', 'https://scrum-poker.shatteredarchive.dev'];
 
 describe('parseReturnTo', () => {
   it('accepts an allowed origin', () => {

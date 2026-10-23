@@ -27,7 +27,7 @@
 
   Excluded on purpose, each for its own reason:
     auth.shatteredarchive.dev            login/signup/reset — must never be indexed
-    build. / kingdom-tactics.            still 503 stubs on the front proxy; not live
+    build.                              still 503 stubs on the front proxy; not live
     game-client. / web-client.           application shells, Disallow: /
     game-server. / web-server.           JSON APIs, no documents
     dsl-log-viewer.…com                  tool, not content

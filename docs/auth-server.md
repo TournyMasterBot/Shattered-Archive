@@ -398,26 +398,7 @@ Enrollment **always requires a real sign-in**. That is deliberate: if a device c
 enrolled using only a token, an attacker who stole a token could enroll their own key and
 keep access permanently — exactly the problem this design exists to remove.
 
-Kingdom Tactics does this **automatically** as part of its normal SSO login, so there is no
-separate step for the user there:
-
-```mermaid
-sequenceDiagram
-    participant You
-    participant KT as Kingdom Tactics
-    participant Auth as Account service
-
-    You->>KT: Log in
-    KT->>Auth: SSO hand-off
-    You->>Auth: Sign in
-    Auth-->>KT: Back with a one-time code
-    Note over KT: Session with the account service exists<br/>right now - so enrol immediately
-    KT->>Auth: POST /api/device/enroll
-    Auth-->>KT: Device ID
-    Note over You,Auth: If this fails, the login still worked -<br/>you just sign in again next visit.
-```
-
-The MUD Builder reaches the same end state without a login of its own. It enrols from its
+The MUD Builder needs no login step of its own. It enrols from its
 access probe, so a user who already has a hub session never sees a prompt at all — and a user
 who doesn't gets one link, not a credential to copy:
 
@@ -465,7 +446,7 @@ flowchart TD
 sequenceDiagram
     participant Browser as Your browser
     participant Auth as Account service
-    participant Service as Builder / Kingdom Tactics / etc.
+    participant Service as Builder / other services
 
     Note over Browser: Access token expired (they last ~10 min)
     Browser->>Auth: POST /api/device/challenge
@@ -483,7 +464,7 @@ You see none of this. The token is held in memory only, never written to disk, a
 re-minted silently whenever it expires.
 
 **One token per service.** The signature names which service the token is for, and the
-resulting token works *only* there. A token for the Builder is refused by Kingdom Tactics.
+resulting token works *only* there. A token for the Builder is refused by every other service.
 This is the same service-isolation rule the rest of the hub follows.
 
 ### When a device stops working
@@ -575,7 +556,7 @@ explicitly in **`DEVICE_ORIGIN_SERVICES`** on auth-server, paired with the servi
 allowed to reach:
 
 ```
-DEVICE_ORIGIN_SERVICES=https://build.shatteredarchive.dev=mud-builder-server,https://kingdom-tactics.shatteredarchive.dev=kingdom-tactics-server
+DEVICE_ORIGIN_SERVICES=https://build.shatteredarchive.dev=mud-builder-server
 ```
 
 **This mapping is the security boundary, not just an allowlist.** A device asks for a token by
@@ -620,9 +601,9 @@ different origin even though cookies ignore ports entirely — which is precisel
 works at all: `localhost:60080` calling `localhost:62000` is cross-origin (so it needs an
 allowlist entry) yet same-host for cookies (so the session cookie is still sent).
 
-Current values: the experimental stack maps the Builder and Kingdom Tactics origins to their
-own services; the production stack is **deliberately empty**, because neither of those clients
-is deployed there yet. Local dev values live in `apps/auth-server/.env`.
+Current values: the experimental stack maps the Builder origin to its
+own service; the production stack is **deliberately empty**, because that client
+is not deployed there yet. Local dev values live in `apps/auth-server/.env`.
 
 > **`.com` apps cannot use this path.** `shatteredarchive.com` is a different registrable
 > domain from `shatteredarchive.dev`, so a `.com` origin calling the `.dev` hub is
@@ -652,22 +633,17 @@ hold on the next renewal rather than only on the next enrollment — which for a
 would be never.
 
 **Empty by default, and switching a service on is not a no-op:** it immediately refuses every
-account that has no key for that service. Kingdom Tactics should stay open — anyone signed in
-may play. The Builder is the natural candidate to turn on.
+account that has no key for that service. Tools anyone signed in may use should stay off;
+the Builder is the natural candidate to turn on.
 
 #### Which apps use this
 
 | App | How it enrols |
 |---|---|
 | MUD Builder | **Automatically** on page load when you already have a hub session. Otherwise it offers a sign-in link that brings you straight back, and a manual "Enrol this device" fallback |
-| Kingdom Tactics | **Automatically**, right after the normal SSO login — no extra step for the user |
 | auth-client | Does not enrol — it is same-origin with this service and uses the session cookie directly. It is where you *manage* the devices the other apps enrolled (see "Managing your devices") |
 
-Kingdom Tactics enrols during the login hand-off because that is the one moment a session with
-this service is guaranteed to exist. If it fails, the login still succeeds — the user just gets
-asked to sign in again next visit, exactly as before device credentials existed.
-
-The Builder instead enrols from its access probe: if the browser is not yet bound but the user
+The Builder enrols from its access probe: if the browser is not yet bound but the user
 already has a hub session, it binds silently and the page simply works. **Nothing is pasted and
 nothing is prompted.** If there is no session yet, it links to the hub's login with a
 `returnTo`, and the user lands back on the Builder already set up.
@@ -893,43 +869,6 @@ client-wiring.md` — a real hub signup, the full game-sso redirect chain, a rea
 bearer token, and PUT/GET round trips against the live C# backend, run fresh
 multiple times across the phase's steps.
 
-**Phase F (Kingdom Tactics) is done as of 2026-07-28.** Unlike game-client,
-`kingdom-tactics-server` **is** a real backend and performs its **own** SSO code
-exchange with its **own** registered Ed25519 key — a standard Phase A consumer,
-not a borrowed-key one. `join` frames on the `/ws/kt` gateway carry an optional
-bearer token (introspected server-side, attached to the claimed seat as an
-accountId) purely additively — a missing, invalid, expired, or unreachable-hub
-token all degrade to the same fully-anonymous join, never a rejection. A
-separate, browser-facing hand-off (`GET /api/kt/auth/start` /
-`GET /api/kt/auth/callback`, both new HTTP routes — this service's first ever
-beyond `/` and `/health`) mints the token kt-client stores, over the same safe
-URL-fragment mechanism as game-client's Phase D. Once a match decides, kt-server
-persists match history + a replayable action log (never the hidden-outcome
-combat salt — replay reconstruction happens server-side, the client only ever
-sees the resulting state sequence) and, separately, account-scoped army-layout
-saves, all per-account JSON files gated by the SAME introspection wiring as the
-WS resolver — but with the OPPOSITE failure policy (a missing/invalid token 401s
-these HTTP routes; there's no anonymous equivalent for "my match history").
-
-Deployed single-subdomain (`kingdom-tactics.shatteredarchive.dev`, added
-2026-07-28) — the edge nginx proxies `/api/kt/`, `/ws/kt`, and `/health` to
-`kingdom-tactics-server` and everything else to `kingdom-tactics-client`,
-mirroring `build.shatteredarchive.dev`'s pattern; kt-client itself makes only
-relative-path calls (no separate client/server subdomain pair, no baked-in
-absolute API origin). This service's own server-to-server hub calls
-(introspect/exchange) use the internal docker alias
-(`http://auth-server.shatteredarchive.dev:62000`, no TLS, matching
-mud-builder-server's convention) while the browser-facing `/sso/authorize`
-redirect stays the public edge — the same public-vs-internal split Phase B/D
-already established, implemented here via `AUTH_SERVER_URL`/
-`AUTH_SERVER_PUBLIC_URL`.
-
-Live E2E evidence trail: `.ai-plans/20260727-1930-auth-rollout-phaseF-kingdom-
-tactics.md` — real hub logins, the full WS join + HTTP hand-off flows, a
-determinism-proven match replay, and (Step 4) the complete chain re-run through
-the actual deployed containers and edge nginx routing, not just direct
-container-to-container calls.
-
 See [`deploy.md`](./deploy.md) for the general
 deployment architecture.
 
@@ -949,7 +888,7 @@ encrypted stores:
 | `pnpm --filter @shatteredarchive/auth-server revoke-tier <username>` | Clear an account back to the plain `user` tier |
 | `pnpm --filter @shatteredarchive/auth-server register-redirect-uri <service> <add\|remove\|list> [uri]` | Manage a service's registered SSO redirect URIs (exact-match, http(s) only) |
 
-> Don't add a `--` before the arguments — on this repo's pinned `pnpm@11.x`,
+> Don't add a `--` before the arguments — on `pnpm@11.x` (this repo moved to 12.9.1 on 2026-10-04; not re-checked there),
 > `pnpm --filter <pkg> <script> -- <args>` forwards the literal `--` through as an argument
 > instead of stripping it. None of these scripts take flag-shaped arguments, so it's never
 > needed.

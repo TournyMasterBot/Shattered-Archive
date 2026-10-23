@@ -45,7 +45,10 @@ These instructions apply to all code generation, refactors, and code reviews in 
 ## Tests and coverage
 
 - If you change behavior, add or update tests with meaningful assertions.
-- Don’t add placeholder tests just to increase coverage.
+- Tests check concrete, observable behavior and cover every code path you added (each branch and error path). Do not assert on log or console output unless the code under test is a logger.
+- Don’t add placeholder, skipped, tautological or snapshot-only tests just to increase coverage.
+- Documentation, data and config files (md, txt, json, css, yml) need no tests; scripts do.
+- If code cannot be tested meaningfully as written, do not refactor it on your own just to test it: describe the smallest injectable seam (an interface for the clock, network, storage or DOM) and ask before changing production code.
 - If a package has no tests yet, prefer:
   - adding at least one focused test for the new behavior, OR
   - explaining why tests are not added (e.g., pure wiring / docs-only change).

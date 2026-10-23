@@ -43,7 +43,7 @@ initializeCanvas(noCanvas, (width: number, height: number) => ({
   data: new Uint8ClampedArray(width * height * 4),
 }));
 
-const PORT = Number(process.env.PORT) || 62000;
+const PORT = Number(process.env.PORT) || 20000;
 
 // The ONE directory this tool reads from. Anything under it is fair game (so a
 // PSD sitting next to the presets still opens by name); anything outside is
@@ -86,7 +86,7 @@ const app = express();
 // Only the vite dev client is allowed to read responses. A request with NO Origin
 // (the vite proxy's server-side hop — the normal path — plus curl) is allowed
 // through: originless requests aren't browser cross-origin reads.
-const ALLOWED_ORIGINS = new Set(['http://localhost:62080', 'http://127.0.0.1:62080']);
+const ALLOWED_ORIGINS = new Set(['http://localhost:20080', 'http://127.0.0.1:20080']);
 app.use(
   cors({
     origin: (origin, callback) => callback(null, !origin || ALLOWED_ORIGINS.has(origin)),

@@ -5,6 +5,10 @@ packages:
   - types/*
   - services/*
 
+# Reject package versions published less than 1 day ago (value is in MINUTES). pnpm 11 reads this setting only from
+# this file: the old `minimum-dep-age` line in .npmrc is not a pnpm setting and never did anything.
+minimumReleaseAge: 1440
+
 allowBuilds:
   '@parcel/watcher': true
   '@swc/core': true

@@ -6,16 +6,16 @@ real consumer in Phase 2 via `mud-builder-server`) against more real Node servic
 
 > **SCOPE CHANGE (2026-07-20, user-directed) — READ BEFORE TRUSTING STEPS 1-2 BELOW.**
 > This plan originally targeted THREE services: `web-server`, `game-server`,
-> `kingdom-tactics-server`. The user then explicitly reverted every auth-related change made
+> `removed-app-server`. The user then explicitly reverted every auth-related change made
 > to `web-server` and `game-server` (undoing steps 1 and 2 below in full — the
 > `introspect-check.ts` scripts, `package.json` script entries, `.env` blocks, and
 > `docs/*.md` Configuration rows are all gone from those two apps again) and directed that
-> only `kingdom-tactics-server` and the MUD Builder pair (`mud-builder-server`, wired in
+> only `removed-app-server` and the MUD Builder pair (`mud-builder-server`, wired in
 > Phase 2) actually adopt the centralized-auth introspect mechanism for now. Steps 1 and 2
 > are kept below **as a historical record of what was built and then deliberately undone**,
 > not as a description of current repo state — their `[x]` boxes are stale on purpose (see
 > the box-state note added to each) rather than silently deleted, so a future session doesn't
-> re-discover and redo work that was intentionally reverted. Step 3 (`kingdom-tactics-server`)
+> re-discover and redo work that was intentionally reverted. Step 3 (`removed-app-server`)
 > stands as originally built. See the final Progress-log entry for the full reasoning.
 
 > DELEGATION / OWNERSHIP — READ FIRST
@@ -36,12 +36,12 @@ real consumer in Phase 2 via `mud-builder-server`) against more real Node servic
 > only surfaced this way).
 
 ## Goal
-**(Superseded by the scope change above — current goal is `kingdom-tactics-server` only.)**
-Originally: each of `web-server`, `game-server`, and `kingdom-tactics-server` gains a small,
+**(Superseded by the scope change above — current goal is `removed-app-server` only.)**
+Originally: each of `web-server`, `game-server`, and `removed-app-server` gains a small,
 host-only `scripts/introspect-check.ts` CLI (mirroring `auth-server`'s own `register-service`/
 `revoke-service-key` host-script convention) that reads `AUTH_SERVER_URL`/
 `SERVICE_PRIVATE_KEY_PATH`, calls `services-server`'s existing `introspect()` helper with a
-token given on argv, and prints the result. `kingdom-tactics-server` has this and it's
+token given on argv, and prints the result. `removed-app-server` has this and it's
 verified working; `web-server`/`game-server` do not (reverted) and are not currently planned
 to get it — if a future phase wants them wired in, treat it as a fresh decision, not a
 resumption of steps 1-2 here.
@@ -81,7 +81,7 @@ resumption of steps 1-2 here.
   literal `--` token through as an argument instead of stripping it. Every host script
   invocation in this plan (`register-service <name>`, and each new `introspect-check
   <token>` script once wired) must be written WITHOUT `--`.
-- **`kingdom-tactics-server` has no docs file at all** (`docs/kingdom-tactics-server.md`
+- **`removed-app-server` has no docs file at all** (`docs/removed-app-server.md`
   doesn't exist, confirmed). Do not create one speculatively as part of this phase — just
   document the two new env vars as a commented block in its `.env`, matching the minimal
   style already used there (no prose-doc convention to extend). Flag if this turns out to
@@ -103,16 +103,16 @@ resumption of steps 1-2 here.
   `auth-server` never stores the private half.
 - **Research done before this plan was written** (Explore-agent survey, not re-verified
   per-service here — re-confirm the specific file/line at execution time since code may have
-  moved): all three of `web-server`/`game-server`/`kingdom-tactics-server` share the exact
+  moved): all three of `web-server`/`game-server`/`removed-app-server` share the exact
   same shape — `getConfigFromEnv('<name>')` + `createExpressService()` from `services-server`,
   no local `config.ts`, no local auth guard, HTTP surface limited to `/` + `/health` (plus
-  `game-server`'s `/ws/game` and `kingdom-tactics-server`'s `/ws/kt` WebSocket gateways, whose
+  `game-server`'s `/ws/game` and `removed-app-server`'s `/ws/removed` WebSocket gateways, whose
   own "authorization" is game-domain seat-claiming, not caller auth — irrelevant to this
   phase). Route-registration entry points if ever needed: `apps/web-server/src/index.ts:266`,
-  `apps/game-server/src/index.ts:156`, `apps/kingdom-tactics-server/src/index.ts:43` (NOT used
+  `apps/game-server/src/index.ts:156`, `apps/removed-app-server/src/index.ts:43` (NOT used
   by this plan, since no HTTP route is being added — noted only for context/future phases).
   Env-var docs: `docs/web-server.md` (`# Configuration`, ~line 111), `docs/game-server.md`
-  (`# Configuration`, ~line 132), no doc file for `kingdom-tactics-server` (see Constraints).
+  (`# Configuration`, ~line 132), no doc file for `removed-app-server` (see Constraints).
 - **Pattern to mirror for the new scripts**: `apps/auth-server/scripts/register-service.ts`
   (dotenv loading, a `main().catch()` wrapper, host-only banner comment, `Usage:` line —
   now fixed this session to NOT show a `--` before its argument).
@@ -147,22 +147,22 @@ resumption of steps 1-2 here.
 - Verify (HOST): `pnpm --filter @shatteredarchive/game-server build` succeeds. Live check in
   step 4; box only after that passes for this service.
 
-### [x] 3. (CLAUDE) kingdom-tactics-server: introspect-check script + env docs
-- Do: Same shape again, service name `'kingdom-tactics-server'`. Per Constraints, do NOT
-  create a new `docs/kingdom-tactics-server.md` — just the `.env` comment block (mirror
+### [x] 3. (CLAUDE) removed-app-server: introspect-check script + env docs
+- Do: Same shape again, service name `'removed-app-server'`. Per Constraints, do NOT
+  create a new `docs/removed-app-server.md` — just the `.env` comment block (mirror
   `mud-builder-server/.env`'s inline-doc style since this app has no prose-doc precedent of
   its own to match instead).
-- Files: `apps/kingdom-tactics-server/scripts/introspect-check.ts`,
-  `apps/kingdom-tactics-server/package.json`, `apps/kingdom-tactics-server/.env`.
-- Verify (HOST): `pnpm --filter @shatteredarchive/kingdom-tactics-server build` succeeds.
+- Files: `apps/removed-app-server/scripts/introspect-check.ts`,
+  `apps/removed-app-server/package.json`, `apps/removed-app-server/.env`.
+- Verify (HOST): `pnpm --filter @shatteredarchive/removed-app-server build` succeeds.
   Live check in step 4; box only after that passes for this service.
 
-### [x] 4. (CLAUDE) Live verification against a real auth-server, docs close-out — **partially superseded 2026-07-20: this step's evidence for web-server/game-server describes code that was subsequently reverted (steps 1-2); its evidence for kingdom-tactics-server still accurately describes current repo state**
+### [x] 4. (CLAUDE) Live verification against a real auth-server, docs close-out — **partially superseded 2026-07-20: this step's evidence for web-server/game-server describes code that was subsequently reverted (steps 1-2); its evidence for removed-app-server still accurately describes current repo state**
 - Do:
   1. Start a real `auth-server` (per its README — temporary local `DATA_ENCRYPTION_KEY` in
      `.env`, reverted after, same discipline as Phase 2's verification).
   2. Register three real service keys: `pnpm --filter @shatteredarchive/auth-server
-     register-service web-server` (and `game-server`, `kingdom-tactics-server`) — no `--`.
+     register-service web-server` (and `game-server`, `removed-app-server`) — no `--`.
      Save each private key to that service's own `shattered-service.key` (or a scratchpad
      path referenced via `SERVICE_PRIVATE_KEY_PATH` for the test run — decide and note which,
      consistent with how Phase 2 step 6 handled `mud-builder-server`'s).
@@ -190,7 +190,7 @@ resumption of steps 1-2 here.
   centralized auth service work — Phase 1 (`auth-server`) and Phase 2 (`auth-client` +
   `mud-builder-server` consumer) are both independently complete. Scope chosen from the
   user's explicit direction ("more introspect consumers") after an Explore-agent survey of
-  `web-server`/`game-server`/`kingdom-tactics-server` found none of them has ANY existing
+  `web-server`/`game-server`/`removed-app-server` found none of them has ANY existing
   auth surface (unlike `mud-builder-server`, which already had a master-only `/api/auth`
   mount Phase 2 could safely reuse) — this is the key judgment call baked into this plan's
   design: a host-only `introspect-check` script per service, mirroring `auth-server`'s own
@@ -200,7 +200,7 @@ resumption of steps 1-2 here.
   that should be its own deliberately-designed phase, not inherited from this proof.
 - 2026-07-20T01:1x steps 1-4 DONE and boxed together, Status COMPLETE (Claude). Built as one
   continuous pass — the three scripts are structurally identical (service name is the only
-  thing that differs). `apps/{web-server,game-server,kingdom-tactics-server}/scripts/
+  thing that differs). `apps/{web-server,game-server,removed-app-server}/scripts/
   introspect-check.ts`: dotenv-loads `.env` (mirroring `auth-server/scripts/
   register-service.ts`'s `override:true` pattern), reads `AUTH_SERVER_URL`/
   `SERVICE_PRIVATE_KEY_PATH` from env (fails fast with a clear message if either is unset),
@@ -210,11 +210,11 @@ resumption of steps 1-2 here.
   commented `AUTH_SERVER_URL`/`SERVICE_PRIVATE_KEY_PATH` block (mirroring
   `mud-builder-server/.env`'s Phase-2 style) in all three. `docs/web-server.md` and
   `docs/game-server.md`'s Configuration tables gained the two new rows;
-  `kingdom-tactics-server` skipped a doc file per the Constraints (none exists for it yet).
+  `removed-app-server` skipped a doc file per the Constraints (none exists for it yet).
   No `config.ts` was added to any of the three, per Constraints — `process.env` read directly.
   Verified on HOST: `pnpm --filter <pkg> build` — clean for all three. Re-ran each service's
   own `test` — `web-server`/`game-server` still correctly report "0 matches" (confirmed via
-  `find` they have zero test files, unchanged, not a regression); `kingdom-tactics-server`
+  `find` they have zero test files, unchanged, not a regression); `removed-app-server`
   still 5/5 (its own local jest config, untouched). Then a REAL end-to-end run: started a
   real `auth-server` (temporary local `DATA_ENCRYPTION_KEY`, reverted after), registered THREE
   real service keys via `pnpm --filter @shatteredarchive/auth-server register-service
@@ -236,7 +236,7 @@ resumption of steps 1-2 here.
   Phase 2's existing "every current and future Node consumer" phrasing already reads
   correctly now that three of those are real; nothing needed changing.
 - 2026-07-20T01:3x SCOPE CHANGE (user-directed): "Undo any changes made to game client and
-  web server related to authentication. Leave any other changes alone. kingdom tactics and
+  web server related to authentication. Leave any other changes alone. a removed app and
   builder are fine to modify." Reverted, in full, everything steps 1 and 2 added:
   `apps/web-server/scripts/introspect-check.ts` and `apps/game-server/scripts/
   introspect-check.ts` deleted entirely; the `"introspect-check"` line removed from both
@@ -247,13 +247,13 @@ resumption of steps 1-2 here.
   their exact original content/no-trailing-newline); the two new Configuration-table rows
   removed from `docs/web-server.md` and `docs/game-server.md`. Confirmed via `git diff` that
   both `.env` files are now byte-identical to their pre-Phase-3 state and both `package.json`s
-  only still differ by the test-script fix. `apps/kingdom-tactics-server` and
+  only still differ by the test-script fix. `apps/removed-app-server` and
   `apps/mud-builder-server` (the "builder" — actually Phase 2's consumer, not this phase's,
   but explicitly named as OK-to-keep) were left untouched. The user asked specifically that
   this doc "indicate a change in authentication mechanisms" — interpreted as: the SET of
   services adopting the centralized-auth introspect mechanism narrowed from three
-  (`web-server`, `game-server`, `kingdom-tactics-server`) to one from THIS phase
-  (`kingdom-tactics-server` — `mud-builder-server` was already wired in Phase 2, a separate,
+  (`web-server`, `game-server`, `removed-app-server`) to one from THIS phase
+  (`removed-app-server` — `mud-builder-server` was already wired in Phase 2, a separate,
   still-`COMPLETE` phase not touched by this reversal). Updated the doc header, Goal, and
   steps 1/2/4's headings above to flag this rather than silently leaving stale `[x]` boxes
   that would misrepresent current repo state to a future reader. `Status` left `COMPLETE` —

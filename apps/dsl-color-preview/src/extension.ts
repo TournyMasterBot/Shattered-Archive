@@ -1,7 +1,7 @@
 // apps/dsl-color-preview/src/extension.ts
 
 import * as vscode from 'vscode';
-import { renderDslToHtml } from './renderDslToHtml';
+import { renderToHtml, toAnsiText, toPlainText } from './convert';
 import { getWebviewHtml } from './getWebviewHtml';
 
 const DEBOUNCE_MS = 120;
@@ -13,8 +13,35 @@ let updateTimer: ReturnType<typeof setTimeout> | undefined;
 export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand('dslColorPreview.showPreview', (uri?: vscode.Uri) => showPreview(context, uri)),
+    vscode.commands.registerCommand('dslColorPreview.copyPlainText', () => copyText('plain text', toPlainText)),
+    vscode.commands.registerCommand('dslColorPreview.copyAnsiText', () => copyText('ANSI text', toAnsiText)),
     vscode.window.onDidChangeActiveTextEditor(onActiveEditorChanged),
   );
+}
+
+// Copies the selection (all cursors, newline-joined like a normal copy) or, with
+// nothing selected, the whole document. Target is the active editor; when the
+// preview panel has focus there is no active text editor, so fall back to the
+// previewed document and whatever selection it has in a visible editor.
+async function copyText(label: string, convert: (text: string) => string): Promise<void> {
+  const editor =
+    vscode.window.activeTextEditor ?? vscode.window.visibleTextEditors.find((e) => e.document === boundDocument);
+  const document = editor?.document ?? boundDocument;
+
+  if (!document) {
+    vscode.window.showInformationMessage('DSL Color Preview: open a text file first.');
+    return;
+  }
+
+  const selected = (editor?.selections ?? [])
+    .filter((s) => !s.isEmpty)
+    .map((s) => document.getText(s))
+    .join(document.eol === vscode.EndOfLine.CRLF ? '\r\n' : '\n');
+  const scope = selected.length > 0 ? 'selection' : 'whole file';
+
+  const text = convert(selected.length > 0 ? selected : document.getText());
+  await vscode.env.clipboard.writeText(text);
+  vscode.window.setStatusBarMessage(`DSL Color Preview: copied ${scope} as ${label} (${text.length} chars)`, 4000);
 }
 
 // Auto-follow: once the panel is open, switching to another .txt file in the
@@ -96,5 +123,5 @@ function render(): void {
 
   const fileName = boundDocument.fileName.split(/[\\/]/).pop() ?? 'DSL Color Preview';
   panel.title = `Preview: ${fileName}`;
-  panel.webview.html = getWebviewHtml(renderDslToHtml(boundDocument.getText()));
+  panel.webview.html = getWebviewHtml(renderToHtml(boundDocument.getText()));
 }

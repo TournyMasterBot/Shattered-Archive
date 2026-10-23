@@ -197,7 +197,7 @@ describe('exchangeCode', () => {
         token: 'minted-token',
         accountId: 'acc-1',
         username: 'someone',
-        service: 'kingdom-tactics-server',
+        service: 'scrum-poker-server',
         expiresAt: '2026-08-03T00:00:00.000Z',
         tokenType: 'sso',
         globalRole: 'user',
@@ -206,10 +206,10 @@ describe('exchangeCode', () => {
 
     const result = await exchangeCode(
       'http://localhost:62000',
-      'kingdom-tactics-server',
+      'scrum-poker-server',
       privateKeyPem,
       'the-code',
-      'http://localhost:51000/api/kt/auth/callback',
+      'http://localhost:63000/api/scrum/auth/callback',
     );
 
     expect(seenUrl).toBe('http://localhost:62000/api/token-exchange');
@@ -219,16 +219,16 @@ describe('exchangeCode', () => {
     expect(JSON.parse(seenBody)).toEqual({
       grantType: 'authorization_code',
       code: 'the-code',
-      redirectUri: 'http://localhost:51000/api/kt/auth/callback',
+      redirectUri: 'http://localhost:63000/api/scrum/auth/callback',
     });
     expect(result.token).toBe('minted-token');
-    expect(result.service).toBe('kingdom-tactics-server');
+    expect(result.service).toBe('scrum-poker-server');
   });
 
   it('throws with a readable message on a non-2xx (e.g. an already-used code)', async () => {
     mockFetch(() => jsonResponse({ error: 'invalid, expired, or already-used code' }, 400));
     await expect(
-      exchangeCode('http://localhost:62000', 'kingdom-tactics-server', privateKeyPem, 'x', 'http://x/callback'),
+      exchangeCode('http://localhost:62000', 'scrum-poker-server', privateKeyPem, 'x', 'http://x/callback'),
     ).rejects.toThrow(/400.*already-used code/);
   });
 
@@ -237,7 +237,7 @@ describe('exchangeCode', () => {
       throw new Error('fetch failed: ECONNREFUSED');
     }) as unknown as typeof fetch;
     await expect(
-      exchangeCode('http://localhost:62000', 'kingdom-tactics-server', privateKeyPem, 'x', 'http://x/callback'),
+      exchangeCode('http://localhost:62000', 'scrum-poker-server', privateKeyPem, 'x', 'http://x/callback'),
     ).rejects.toThrow(/ECONNREFUSED/);
   });
 });

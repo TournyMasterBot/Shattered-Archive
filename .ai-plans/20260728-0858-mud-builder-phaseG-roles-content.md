@@ -96,7 +96,7 @@ else's; full regression passes and the feature is live-deployed and smoke-tested
 - `apps/mud-builder-server/src/auth-store.ts` — first-run-generation / mtime-reload / atomic
   tmp+rename write pattern to copy for `role-store.ts` (new file, same idioms: corrupt-file
   lockdown never overwrites, timing-safe not needed here since this isn't a secret).
-- `apps/kingdom-tactics-server/src/persistence/json-account-store.ts` — the precedent for a
+- `apps/removed-app-server/src/persistence/json-account-store.ts` — the precedent for a
   generic per-account JSON file store (`<dataDir>/<subdir>/<accountId>.json`,
   format-validates accountId before touching the filesystem, malformed/missing file degrades
   to `[]`). `snippet-store.ts` follows this exact shape, adapted (separate app, no cross-repo
@@ -198,17 +198,17 @@ else's; full regression passes and the feature is live-deployed and smoke-tested
   grant POST surfaces as a toast, not a crash.
 
 ### [x] 4. (CLAUDE) Per-account snippet store (mud-builder-server)
-- Do: New `src/snippet-store.ts` mirroring kt-server's `json-account-store.ts` shape (adapted,
+- Do: New `src/snippet-store.ts` mirroring removed-app-server's `json-account-store.ts` shape (adapted,
   no cross-repo import): `Snippet = { id, kind: 'room'|'mob'|'object'|'script', name, data:
   unknown, createdAt, updatedAt }`, file at `<dataDir>/snippets/<accountId>.json`, accountId
   format-validated before touching the filesystem, malformed/missing file degrades to `[]`,
-  reasonable count cap (mirror kt-client's 100-item army cap — this is curated data, not
+  reasonable count cap (mirror removed-app-client's 100-item army cap — this is curated data, not
   telemetry). New `src/routes/snippets.ts`: `GET /api/snippets` (list own), `POST
   /api/snippets` (create, body `{kind,name,data}`), `PUT /api/snippets/:id` (rename/update
   `data`), `DELETE /api/snippets/:id` — all require a `kind:'account'` actor with an
   `accountId` (401 for anonymous, 403 "requires a centrally-authenticated account" for
   `kind:'key'`/`'master'`); ownership scoped by accountId, no cross-account access possible
-  by construction (same file-per-account isolation as kt-server's precedent).
+  by construction (same file-per-account isolation as removed-app-server's precedent).
 - Files: `apps/mud-builder-server/src/snippet-store.ts` (new + `.test.ts`),
   `apps/mud-builder-server/src/routes/snippets.ts` (new + `.test.ts`), `app.ts`.
 - Verify: unit/route tests — create/list/rename/delete round-trip; a second account's file
@@ -261,7 +261,7 @@ else's; full regression passes and the feature is live-deployed and smoke-tested
 ## Progress log
 
 - 2026-07-28T08:58-05:00 plan created (research grounded via direct Grep/Read across
-  auth-server, services-server, kingdom-tactics-server persistence, mud-builder-server/client,
+  auth-server, services-server, removed-app-server persistence, mud-builder-server/client,
   and auth-client's Admin page — confirmed `SERVICE_TIERS`/`canManage` already exist and are
   unused, and that auth-client's Admin page already links to `build.shatteredarchive.dev` as
   mud-builder's future self-administered roles destination).
@@ -307,13 +307,13 @@ else's; full regression passes and the feature is live-deployed and smoke-tested
   `BuilderSection`/`SECTIONS` and `rolesMe`/`rolesList`/`setRole` to `api/client.ts`.
   `pnpm --filter mud-builder-client test` 240/240, `tsc --noEmit` clean.
 - 2026-07-28 step 4 done, WITH A DELIBERATE DESIGN CHANGE from the plan's original per-item
-  CRUD sketch: while researching kt-server's `json-account-store.ts`/`army-layout-store.ts`
+  CRUD sketch: while researching removed-app-server's `json-account-store.ts`/`army-layout-store.ts`
   precedent (named in the plan as the pattern to mirror), found the REAL established idiom
   there is whole-collection GET/PUT (client mutates its own copy of the array, server just
   replaces the file), not per-item POST/PUT/DELETE routes — simpler on both ends, and a
   closer, more faithful mirror of the actual precedent than my own upfront guess. Switched to
   that: `snippet-store.ts` (single non-generic class — no `JsonAccountStore<T>` wrapper,
-  since this app has only the one per-account data type, unlike kt-server's two consumers)
+  since this app has only the one per-account data type, unlike removed-app-server's two consumers)
   + `routes/snippets.ts` (`GET`/`PUT /api/snippets`, 200-item cap, `kind:'account'`-only
   — master/key actors 403, not an empty list, so the client can tell "not for you" from "you
   have none yet"). Snippets live under `<areaPath>/snippets/`, not `authDataPath` (content,

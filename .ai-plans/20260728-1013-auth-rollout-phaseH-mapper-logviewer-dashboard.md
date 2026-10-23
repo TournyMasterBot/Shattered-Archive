@@ -10,13 +10,13 @@ Task: Umbrella step H of `.ai-plans/20260726-1953-centralized-auth-rollout-all-s
 DslMapper and DslLogViewer — today two fully local, backend-less SPAs — gain optional SSO
 login and cloud save/load against the DSL C# service's ALREADY-BUILT Phase C content APIs
 (`maps/user-maps`, `api/user-content/logs`), staying 100% usable logged-out exactly as today
-(anonymous-first). The C# dashboard's two "coming soon" placeholder cards (Kingdom Tactics,
+(anonymous-first). The C# dashboard's two "coming soon" placeholder cards (a removed app,
 MUD Builder — left there deliberately in Phase C step 6) become real, via the on-behalf-of
 exchange Phase A already built end-to-end but has had no consumer until now. Done when: a map
 saved in DslMapper and a log uploaded in DslLogViewer both round-trip through the cloud and
 appear on the C# dashboard as their own local sections (already true for Maps/Logs, this
 phase just adds mapper/logviewer AS cloud clients of those existing sections); the dashboard's
-KT/MUD-Builder cards show real counts with working link-outs, or degrade cleanly if a service
+removed-app/MUD-Builder cards show real counts with working link-outs, or degrade cleanly if a service
 is down.
 
 ## Constraints
@@ -67,7 +67,7 @@ is down.
   /api/user-content/summary`, caller's bearer token introspected normally (an OBO token
   introspects identically to an SSO/API token — same `mintExchangeToken` path, just a
   shorter TTL and a different `kind`), returns counts/titles/updated-at + a link-out URL.
-  Same route name on both kingdom-tactics-server and mud-builder-server for a uniform C#-side
+  Same route name on both removed-app-server and mud-builder-server for a uniform C#-side
   caller.
 
 ## Context (grounded 2026-07-28, file:line — trust this, don't re-survey)
@@ -100,7 +100,7 @@ is down.
   - `Views/User/Dashboard.cshtml` + `wwwroot/js/user/dashboard.js` (Phase C step 6) — jQuery
     AJAX is the ONLY JS convention anywhere in this app (zero `fetch()` calls exist outside
     it) — new dashboard JS must match. Two static "coming soon" placeholder cards already
-    exist for Kingdom Tactics / MUD Builder, explicitly left for this phase.
+    exist for a removed app / MUD Builder, explicitly left for this phase.
   - `appsettings.json:5` `AuthHub:ServiceName = "shattered-web"`; `appsettings.json:11-13`
     `Cors:AllowedOrigins = ["https://game-client.shatteredarchive.dev"]` — needs two more dev
     entries (`http://localhost:8080`, `http://localhost:5900`) for this phase's local E2E;
@@ -132,8 +132,8 @@ is down.
   bearer header, so "reopen a cloud log" needs its own authenticated fetch (via a new
   `cloudLogs.ts`) feeding the SAME text-parsing path the file `<input>` (`:925`, `onFile`)
   already uses, not a reuse of `loadFromUrl` itself.
-- **kingdom-tactics-server** (`apps/kingdom-tactics-server/src/http/`): `kt-api-routes.ts`
-  registers `/api/kt/*` (`app.use('/api/kt', express.json(...))`, `requireAccount(guard)`
+- **removed-app-server** (`apps/removed-app-server/src/http/`): `removed-api-routes.ts`
+  registers `/api/removed/*` (`app.use('/api/removed', express.json(...))`, `requireAccount(guard)`
   pattern from `auth-guard.ts` — 401 with no anonymous fallback, unlike the WS join path).
   `persistence/army-layout-store.ts` (100-army cap) + `match-history-store.ts` (25-entry cap)
   are the two content stores to summarize.
@@ -142,7 +142,7 @@ is down.
   empty list — lets the client tell "not for you" from "you have none yet"); `snippet-store.ts`
   is the one store to summarize (counts by kind: room/mob/object/script).
 - **auth-client** (`apps/auth-client/src/features/keys/KeysPage.tsx:13`) —
-  `KNOWN_SERVICES = ['mud-builder-server'] as const` is stale: missing `kingdom-tactics-server`
+  `KNOWN_SERVICES = ['mud-builder-server'] as const` is stale: missing `removed-app-server`
   (registered since Phase F) and `shattered-web` (registered since Phase B/C). Umbrella step H
   explicitly calls this out ("Extend auth-client KNOWN_SERVICES with every service registered
   by now").
@@ -175,20 +175,20 @@ is down.
   client's `AllowedReturnOrigins` 400s before any cookie is set; `game-sso/*` behavior is
   byte-identical to before this step (regression check — game-client still logs in).
 
-### [ ] 2. Summary endpoints: kingdom-tactics-server + mud-builder-server
+### [ ] 2. Summary endpoints: removed-app-server + mud-builder-server
 - Do: `GET /api/user-content/summary` on both services, each gated by that service's own
-  existing account guard (`requireAccount` on kt-server; the `kind==='account'`-only pattern
+  existing account guard (`requireAccount` on removed-app-server; the `kind==='account'`-only pattern
   from `snippets.ts` on mud-builder-server — 403 for master/local-key actors, not an empty
-  body). kt-server's response: `{armyCount, matchCount, lastMatchAt, linkOutUrl}` (armies
+  body). removed-app-server's response: `{armyCount, matchCount, lastMatchAt, linkOutUrl}` (armies
   from `ArmyLayoutStore.list`, matches from `MatchHistoryStore.listSummaries`, `linkOutUrl`
-  pointing at kt-client's own origin). mud-builder-server's response: `{snippetCount,
+  pointing at removed-app-client's own origin). mud-builder-server's response: `{snippetCount,
   byKind:{room,mob,object,script}, linkOutUrl}` (from `SnippetStore`). Route name matches
   exactly on both for a uniform C# caller.
-- Files: `apps/kingdom-tactics-server/src/http/kt-api-routes.ts` (or a small new sibling
-  file if `kt-api-routes.ts` is getting crowded — check current length first),
-  `kt-api-routes.test.ts`; `apps/mud-builder-server/src/routes/summary.ts` (new, small)
+- Files: `apps/removed-app-server/src/http/removed-api-routes.ts` (or a small new sibling
+  file if `removed-api-routes.ts` is getting crowded — check current length first),
+  `removed-api-routes.test.ts`; `apps/mud-builder-server/src/routes/summary.ts` (new, small)
   + `summary.test.ts`, wired in `app.ts`.
-- Verify: `pnpm --filter kingdom-tactics-server test`, `pnpm --filter mud-builder-server
+- Verify: `pnpm --filter removed-app-server test`, `pnpm --filter mud-builder-server
   test` — isolation (two accounts see their own counts only), anonymous 401, an OBO-minted
   token (mint one via a scratch on-behalf-of exchange call against local auth-server) is
   accepted identically to a normal SSO token — proves the "OBO introspects like any other
@@ -237,10 +237,10 @@ is down.
   C# API's existing 413 as a readable error, not a silent failure; logged-out behavior
   unchanged.
 
-### [ ] 5. C# dashboard roll-up: real KT/MUD-Builder fan-out cards + auth-client fix
+### [ ] 5. C# dashboard roll-up: real removed-app/MUD-Builder fan-out cards + auth-client fix
 - Do: replace the two static "coming soon" cards in `Views/User/Dashboard.cshtml` with real
   ones. New server-side helper (or inline in the dashboard's controller action) calling
-  `authHub.ExchangeOnBehalfOfAsync(<the user's shattered-web-scoped token>, "kingdom-tactics-
+  `authHub.ExchangeOnBehalfOfAsync(<the user's shattered-web-scoped token>, "removed-app-
   server")` then an HTTP GET to that service's `/api/user-content/summary` with the returned
   OBO token as Bearer — same for `"mud-builder-server"`. Both calls run with a bounded
   timeout; a timeout, network failure, or non-2xx renders that ONE card in a degraded state
@@ -250,19 +250,19 @@ is down.
   are currently rendered — check that before choosing client vs server rendering for
   consistency) wires the card contents + link-out buttons.
   Also: fix `apps/auth-client/src/features/keys/KeysPage.tsx:13` — `KNOWN_SERVICES =
-  ['mud-builder-server', 'kingdom-tactics-server', 'shattered-web'] as const`.
+  ['mud-builder-server', 'removed-app-server', 'shattered-web'] as const`.
 - Files: `Server.Web.Public/Views/User/Dashboard.cshtml`, `Server.Web.Public/Controllers/
   UserController.cs` (or a new small controller/service for the fan-out calls), `wwwroot/js/
   user/dashboard.js`; `apps/auth-client/src/features/keys/KeysPage.tsx`,
   `KeysPage.test.tsx` if one exists (update the options-list assertion).
-- Verify: live — a real account with an army saved in kingdom-tactics-client and a snippet
+- Verify: live — a real account with an army saved in removed-app-client and a snippet
   saved in mud-builder shows correct non-zero counts + a working link-out on each card;
   stopping one target service locally shows that card degraded while the other stays live
   and the rest of the dashboard (Maps/Logs/Scripts/Books) is unaffected; `pnpm --filter
   auth-client test` passes with the extended `KNOWN_SERVICES`.
 
 ### [ ] 6. Full regression, docs, `.annotated`/`.ai-context`, close-out
-- Do: `pnpm --filter kingdom-tactics-server test`, `pnpm --filter mud-builder-server test`,
+- Do: `pnpm --filter removed-app-server test`, `pnpm --filter mud-builder-server test`,
   `pnpm --filter auth-client test` (full, not just touched files); `tsc --noEmit` where
   applicable; DSL repo's own build/test convention (check `docs/` or `.github` for it — a
   C# `dotnet build`/`dotnet test` at minimum); `npm run build` in both DslMapper and
@@ -277,21 +277,21 @@ is down.
   don't invent it there if absent, just update their READMEs). Mark this doc `Status:
   COMPLETE`; append the umbrella doc's Phase H checkbox `[x]` + a progress-log entry noting
   "Next: I" (program close-out) as the only remaining step; update
-  `mud-builder-project.md`/`kt`-equivalent memory files if any exist for these newly-touched
+  `mud-builder-project.md`/`removed-app`-equivalent memory files if any exist for these newly-touched
   repos, and `MEMORY.md`'s index.
 - Verify: everything above green; a fresh read of the umbrella doc shows 8/10 checked with
   only Step I unchecked.
 
 ## Verification (whole phase)
 - Every touched ShatteredArchive-workspace package's own test suite green
-  (kingdom-tactics-server, mud-builder-server, auth-client).
+  (removed-app-server, mud-builder-server, auth-client).
 - `tsc -b && vite build` clean in both DslMapper and DslLogViewer (no test suite exists in
   either — documented Constraint, not an oversight).
 - DSL repo's C# build clean (exact command TBD at Step 6 — verify its actual convention
   first rather than assuming `dotnet build` flags).
 - Live smoke: a real (or scratch) hub account logs into DslMapper, saves a named map, reloads,
   loads it back byte-identical; logs into DslLogViewer, uploads the active log, reopens it
-  identically; the C# dashboard shows correct Kingdom Tactics + MUD Builder card counts with
+  identically; the C# dashboard shows correct a removed app + MUD Builder card counts with
   working link-outs, and degrades cleanly (not a broken page) if one target service is
   stopped; `game-sso/*` (game-client's existing flow) still works, unmodified by this phase.
 
@@ -305,14 +305,14 @@ is down.
   (`AuthHubClient.cs:66,134-165`) — the dashboard fan-out step is literally its first real
   caller; Phase C's sub-plan progress log re-read for exact Maps/Logs endpoint contracts
   (`maps/user-maps[/{id}]` full CRUD; `api/user-content/logs` upload/list/get/delete, 8MiB
-  cap, 25-item retention) and confirmation the dashboard's KT/MUD-Builder cards are
-  deliberately-placeholder today; kingdom-tactics-server's `kt-api-routes.ts`/`auth-guard.ts`
+  cap, 25-item retention) and confirmation the dashboard's removed-app/MUD-Builder cards are
+  deliberately-placeholder today; removed-app-server's `removed-api-routes.ts`/`auth-guard.ts`
   and mud-builder-server's `snippets.ts` guard idioms read as the summary-endpoint template;
   DslMapper (`game-mapping/`, port 8080, HashRouter, npm, single-doc `MapDocV1` autosave, no
   test runner) and DslLogViewer (`dsl-log-viewer/`, port 5900, npm, unauthenticated
   `loadFromUrl` already present but insufficient for cloud reopen, no test runner) surveyed
   directly — both are real, working, backend-less SPAs, not scaffolds. auth-client's
-  `KNOWN_SERVICES` confirmed stale (`KeysPage.tsx:13`, missing `kingdom-tactics-server` +
+  `KNOWN_SERVICES` confirmed stale (`KeysPage.tsx:13`, missing `removed-app-server` +
   `shattered-web`). game-client's Phase D `features/auth/` idiom (authTokenStore/
   authFragment/gameSso/siteApi/cloudSync + the `/api/site` vite dev-proxy rewrite) identified
   as the exact pattern to port into both new SPAs.

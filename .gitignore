@@ -48,10 +48,6 @@ apps/auth-server/data/*
 !apps/auth-server/data/dsl-questions.example.json
 shattered-service.key
 
-# kingdom-tactics-server: per-account match-history/replay + army-layout JSON stores (Phase F).
-apps/kingdom-tactics-server/data/*
-!apps/kingdom-tactics-server/data/.gitkeep
-
 # scrum-poker-server: rooms.json holds live room state INCLUDING each room's host token —
 # the one secret in this otherwise accounts-free app. Local dev writes it here; the deployed
 # stack keeps it on the scrum-poker-data named volume.
@@ -116,6 +112,7 @@ desktop.ini
 .jest/
 .claude/settings.local.json
 .claude/settings.json
+.claude/state/
 
 # ============================================================
 # Security Updates (fetched Dependabot data — not committed)
@@ -137,3 +134,11 @@ yarn.lock
 **/yarn.lock
 
 .superpowers/
+
+# ============================================================
+# AI code review scratch notes (local only — findings to revisit later,
+# not a deliverable; .ai-plans is the checked-in equivalent for plans)
+# ============================================================
+.ai-code-review/
+.pr-drafts/
+.mcp.json

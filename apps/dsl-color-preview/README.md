@@ -19,6 +19,28 @@ Once open, the preview auto-follows: switching the active editor to another
 `.txt` file rebinds it there. Switching to a non-`.txt` file (or a non-file
 editor, like the preview panel itself) leaves it showing the last `.txt` file.
 
+## ANSI text files
+
+A `.txt` file that contains real escape sequences (`ESC[1;37m`, `ESC[38;5;208m`,
+e.g. the `GameLog-*.txt` captures) is rendered from its ANSI colors instead of
+being parsed for `{X` codes. The format is detected per file: any `ESC[` means
+ANSI, otherwise DSL. Escape sequences that a log wrapped across a line break
+(`ESC[1;31<CRLF>m`) are still honored and the line break is kept.
+
+## Copy as plain text / ANSI text
+
+Select text (or select nothing for the whole file) and run
+**DSL Color Preview: Copy as Plain Text** or **Copy as ANSI Text** from the
+Command Palette, the editor right-click menu (`.txt` files), or the `...` menu
+of the preview tab (which copies the previewed file).
+
+| Source | Plain text | ANSI text |
+| --- | --- | --- |
+| DSL (`{R`, `{x`) | codes removed (`{{` -> `{`, `{-` -> `~`) | `ESC[..m` sequences, same mapping as game-client `dsl-to-ansi.ts` |
+| ANSI | every escape sequence removed | copied as-is |
+
+A selection that starts mid-file does not inherit colors set earlier in the file.
+
 ## Develop
 
 ```sh

@@ -3,7 +3,7 @@
  *
  * The repo-root jest.config.cjs collects tests by a `-server`/`-client` path SEGMENT
  * (`<rootDir>/**​/**-client/**​/*.test.tsx`); with `--rootDir .` this package IS the
- * `-client` dir, so no co-located test below it can match. Like kingdom-tactics-client,
+ * `-client` dir, so no co-located test below it can match.
  * this app therefore owns a self-contained jsdom config for React Testing Library and
  * resolves workspace deps to their TS sources (no prior build needed).
  *

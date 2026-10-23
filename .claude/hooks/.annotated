@@ -7,7 +7,19 @@ Purpose: Updates a queue file with workspace paths of edited code files for meth
 Purpose: Injects active plan status into AI prompts to enable continuation of ongoing work.
 
 /qdigest-guard.js
-Purpose: Prevents unauthorized use of long-output commands unless wrapped in qdigest.sh.
+Purpose: Denies commands that run a long-output tool (build/test/install/docker logs) unless wrapped in qdigest.sh; parses the command so only the executable counts, exempts bounded output, and logs deny/bypass/wrapped to .qdigest/guard-log.jsonl.
+
+/qdigest-guard.selftest.js
+Purpose: node:test self-test for qdigest-guard.js (17 allow cases incl. observed false positives, 15 deny cases, log events).
 
 /read-pack-guard.js
 Purpose: Prevents expensive full reads of large files by redirecting to cheaper alternative access patterns.
+
+/completion-gate.js
+Purpose: The Stop hook (rules in CLAUDE.md, "Completion gate"). Judges only the CURRENT turn: its state resets after every pass or release, so an OVERRIDE or ASK line in the final message covers one turn only. Fails OPEN on any error (jest missing, bad config) and releases after 3 consecutive blocks; scope is set in completion-gate.config.json, not here.
+
+/session-baseline.js
+Purpose: Must run PRE-edit (PreToolUse): it keeps the file as it was before the turn's first edit, and both completion-gate.js and index-entry-guard.js compare against that copy. Files changed through Bash (sed -i, node scripts) are not captured, so such edits escape the gates.
+
+/completion-gate.config.json
+Purpose: The only place that decides which folders are gated (include/exclude prefixes), the jest config and the showcase screenshot folder. Add a repo or an include prefix here to gate more than apps/game-client/src/.

@@ -16,7 +16,7 @@ most one short-lived token and cannot re-enroll, and the CodeQL clear-text-stora
 ## Constraints
 
 - **Downstream services must not change.** The minted access token stays an opaque bearer
-  that `POST /api/introspect` validates. mud-builder-server, kingdom-tactics-server et al.
+  that `POST /api/introspect` validates. mud-builder-server, removed-app-server et al.
   keep their existing bearer + introspect path untouched. This is what makes "all services"
   affordable — do not break it by inventing per-request signatures.
 - **Sign only at token mint, not per request.** Full DPoP-style per-request signing would
@@ -85,7 +85,7 @@ most one short-lived token and cannot re-enroll, and the CodeQL clear-text-stora
   (`@shatteredarchive/sdk-client`, resolved workspace package, currently just `src/index.ts`).
   NOTE `@shatteredarchive/services-client` is NOT workspace-resolved — its package.json is
   misplaced inside `src/` so the `services/*` glob misses it. Do not put code there.
-- Clients needing adoption: auth-client, mud-builder-client, kingdom-tactics-client,
+- Clients needing adoption: auth-client, mud-builder-client, removed-app-client,
   web-client, game-client. EXCLUDED: scrum-poker-client (accounts-free by design),
   psd-viewer-client (local dev tool, no auth).
 - Edge rate limits added 2026-07-29 live at
@@ -190,15 +190,15 @@ most one short-lived token and cannot re-enroll, and the CodeQL clear-text-stora
   `NGINX_TLS_INCLUDE_FILE=tls-off.conf` and `tls-dev.conf` (the docker run recipe used on
   2026-07-29), plus a grep proving the directive exists in both files.
 
-### [x] 6. (CLAUDE) Roll out to the remaining authed clients — SCOPE NARROWED TO KT ONLY, see log
-- Do: Adopt sdk-client's `authedFetch` in auth-client, kingdom-tactics-client, web-client and
+### [x] 6. (CLAUDE) Roll out to the remaining authed clients — SCOPE NARROWED TO removed-app ONLY, see log
+- Do: Adopt sdk-client's `authedFetch` in auth-client, removed-app-client, web-client and
   game-client, removing any local token-at-rest storage each one has. Confirm per client
   whether it authenticates at all before touching it. Explicitly SKIP scrum-poker-client
   (accounts-free) and psd-viewer-client (local tool). Server side must need no change — if a
   service appears to require one, stop and record why in the progress log rather than
   weakening the introspect constraint.
 - Files: /workspace/shattered-archive/apps/auth-client/src,
-  /workspace/shattered-archive/apps/kingdom-tactics-client/src,
+  /workspace/shattered-archive/apps/removed-app-client/src,
   /workspace/shattered-archive/apps/web-client/src,
   /workspace/shattered-archive/apps/game-client/src
 - Verify: each touched package's own test suite green, and
@@ -315,7 +315,7 @@ most one short-lived token and cannot re-enroll, and the CodeQL clear-text-stora
   whitespace and a trailing slash are tolerated, nothing else. Verified empirically against the
   real parser + matcher: `https://build.shatteredarchive.dev` and a trailing-slash variant
   ALLOW, while `:443`, an http:// scheme, an uppercase host, and a bare hostname all DENY.
-  Set: experimental compose = build.shatteredarchive.dev + kingdom-tactics.shatteredarchive.dev;
+  Set: experimental compose = build.shatteredarchive.dev + removed-app.shatteredarchive.dev;
   prod compose = "" declared EXPLICITLY with a comment, because neither of those clients exists
   in that stack (verified by grep) and an empty deny-all is the correct state there — declaring
   it beats omitting it so the emptiness reads as deliberate; apps/auth-server/.env (tracked, the
@@ -338,7 +338,7 @@ most one short-lived token and cannot re-enroll, and the CodeQL clear-text-stora
   Plumbing the plan hadn't anticipated: the browser-facing auth origin cannot come from the
   bundle (this app ships no VITE_ build args — the edge routes relative URLs), so it now comes
   from the SERVER via a new `authPublicUrl` on /api/capabilities, backed by
-  AUTH_SERVER_PUBLIC_URL — the same internal-vs-public split kingdom-tactics-server already
+  AUTH_SERVER_PUBLIC_URL — the same internal-vs-public split removed-app-server already
   makes. Deliberately has NO fallback to authServerUrl: that is an internal docker alias, and
   handing it to a browser would fail silently rather than cleanly; a test pins that it is
   omitted when unconfigured and that authServerUrl is never exposed. Made the config field
@@ -388,34 +388,34 @@ most one short-lived token and cannot re-enroll, and the CodeQL clear-text-stora
 - 2026-07-30T14:00Z step 6 SCOPE FINDING (verified by grep, not assumed): three of the four
   clients need NOTHING. auth-client keeps no credential in web storage (httpOnly session
   cookie), web-client keeps none, and game-client stores only config/user-path — no credential.
-  The single real target is kingdom-tactics-client's
-  features/auth/authTokenStore.ts ('kt.auth.token' in localStorage), consumed by cloudSync.ts,
+  The single real target is removed-app-client's
+  features/auth/authTokenStore.ts ('removed.auth.token' in localStorage), consumed by cloudSync.ts,
   useAccountScreen.ts and written by useAuthCallback.ts after the SSO hand-off. Because that
-  token is what keeps a user logged in across reloads, KT needs the FULL step-4 treatment
+  token is what keeps a user logged in across reloads, removed-app needs the FULL step-4 treatment
   (enrol after SSO login, then mint silently) rather than just a storage swap — otherwise every
-  reload re-runs the SSO flow. Groundwork already in place: kt-server ALREADY has
+  reload re-runs the SSO flow. Groundwork already in place: removed-app-server ALREADY has
   AUTH_SERVER_PUBLIC_URL, and auth-server's DEVICE_ALLOWED_ORIGINS already lists
-  kingdom-tactics.shatteredarchive.dev. What remains is kt-server exposing the public auth
+  removed-app.shatteredarchive.dev. What remains is removed-app-server exposing the public auth
   origin to its browser (same capabilities-style plumbing added for mud-builder) plus the
   client-side adoption. NOT started — left unchecked deliberately rather than reported as done.
   CONCRETE HANDOFF for whoever picks this up (all verified by reading, not guessed):
-   * kt-server has NO capabilities/config endpoint — one must be added (public GET, e.g.
-     /api/kt/config → { authPublicUrl }). readServiceCredentials()
-     (apps/kingdom-tactics-server/src/index.ts:27-39) already resolves publicAuthServerUrl from
+   * removed-app-server has NO capabilities/config endpoint — one must be added (public GET, e.g.
+     /api/removed/config → { authPublicUrl }). readServiceCredentials()
+     (apps/removed-app-server/src/index.ts:27-39) already resolves publicAuthServerUrl from
      AUTH_SERVER_PUBLIC_URL, so the value exists server-side; it is simply never exposed to the
      browser today (SSO start is a server-side redirect, so the client never needed it).
-     WARNING: unlike mud-builder's, KT's fallback is `AUTH_SERVER_PUBLIC_URL ?? authServerUrl` —
+     WARNING: unlike mud-builder's, removed-app's fallback is `AUTH_SERVER_PUBLIC_URL ?? authServerUrl` —
      do NOT hand that fallback to a browser, since in docker authServerUrl is the internal
      alias. Expose publicAuthServerUrl only when AUTH_SERVER_PUBLIC_URL is explicitly set.
-   * Client files: features/auth/authTokenStore.ts ('kt.auth.token'), consumed by cloudSync.ts
+   * Client files: features/auth/authTokenStore.ts ('removed.auth.token'), consumed by cloudSync.ts
      (:31) and useAccountScreen.ts (:21), written by useAuthCallback.ts after the SSO callback,
      re-exported from features/auth/index.ts. useAccountScreen.test.ts uses
      jest.mock('./authTokenStore'), so it will need updating alongside.
-   * KT client will need the WebCrypto + IndexedDB jest shims (copy
+   * removed-app client will need the WebCrypto + IndexedDB jest shims (copy
      apps/mud-builder-client/jest.setup.cjs) and the @shatteredarchive/sdk-client workspace dep
      + a moduleNameMapper entry, exactly as step 4 did.
    * Already done, no action needed: DEVICE_ALLOWED_ORIGINS already lists
-     kingdom-tactics.shatteredarchive.dev, and the compose already sets AUTH_SERVER_PUBLIC_URL.
+     removed-app.shatteredarchive.dev, and the compose already sets AUTH_SERVER_PUBLIC_URL.
 - 2026-07-30T15:10Z Fixed a PRE-EXISTING flake found while verifying, in code this work never
   touched: routes/state.ts computed `ageMs: Date.now() - stat.mtimeMs`, and a file's mtime can
   read marginally AHEAD of Date.now() (filesystem timestamp granularity / clock rounding,
@@ -424,14 +424,14 @@ most one short-lived token and cannot re-enroll, and the CodeQL clear-text-stora
   was also a real API defect, since the client renders ageMs as snapshot freshness. Now clamped
   with Math.max(0, ...). Verified with 8 consecutive targeted runs and 3 full-suite runs, all
   green (168/168).
-- 2026-07-30T16:30Z step 6 done: kingdom-tactics adopted. kt-server 39/39, kt-client 91/91,
+- 2026-07-30T16:30Z step 6 done: removed-app adopted. removed-app-server 39/39, removed-app-client 91/91,
   compose config OK; whole-program sweep 798 tests green across six packages.
-  Server: new UNGUARDED `GET /api/kt/config` → { authPublicUrl }, read straight from
+  Server: new UNGUARDED `GET /api/removed/config` → { authPublicUrl }, read straight from
   process.env.AUTH_SERVER_PUBLIC_URL and deliberately NOT from index.ts's publicAuthServerUrl,
   whose `?? authServerUrl` fallback is the internal docker alias — a test pins that the field is
   ABSENT when unconfigured (not guessed) so the client falls back cleanly to SSO-only login.
-  No compose change was needed: KT already set AUTH_SERVER_PUBLIC_URL (comment updated to note
-  its new second consumer), and DEVICE_ALLOWED_ORIGINS already listed the KT origin.
+  No compose change was needed: removed-app already set AUTH_SERVER_PUBLIC_URL (comment updated to note
+  its new second consumer), and DEVICE_ALLOWED_ORIGINS already listed the removed-app origin.
   Client: new features/auth/deviceCredentials.ts; authTokenStore.ts is now MEMORY ONLY with its
   exported API unchanged so the three consumers didn't churn; cloudSync prefers the device token
   and falls back to the in-memory SSO token; useAuthCallback enrols right after the SSO hand-off
@@ -459,7 +459,7 @@ most one short-lived token and cannot re-enroll, and the CodeQL clear-text-stora
 - 2026-07-30T16:35Z PLAN COMPLETE. All 7 steps done. Final audit: `grep localStorage|sessionStorage`
   across apps/*/src returns only game-client UI state (HUD layout, affects block, a debug flag) —
   no credential is persisted by any client. The CodeQL clear-text-storage findings for
-  mud-builder-client and the KT token are resolved at the source, not suppressed.
+  mud-builder-client and the removed-app token are resolved at the source, not suppressed.
 
 ## Follow-up: security review hardening (2026-07-30)
 
@@ -484,8 +484,8 @@ Plan stays COMPLETE — this section records the follow-up work, all of it lande
   first turned assert into an oracle answering "what may this device reach" to anyone holding
   only a deviceId — the same enumeration oracle /challenge is written to avoid.
 - 2026-07-30T18:10Z **mud-builder-server never checked the audience.** `tryIntrospect` accepted
-  any `valid: true`, so a token minted for kingdom-tactics-server — or auth-server's own 24h
-  `auth-web` browser session — was a full Builder write credential. KT had it right
+  any `valid: true`, so a token minted for removed-app-server — or auth-server's own 24h
+  `auth-web` browser session — was a full Builder write credential. removed-app had it right
   (index.ts:69); the builder was the only consumer opting out of the Phase A rule.
   FIX: `matchesAudience` in `tryIntrospect`, plus the diagnostic `/api/auth/introspect-check`
   now reports `audienceMatches`/`expectedService` so a diagnostic and a real request cannot
@@ -527,7 +527,7 @@ Plan stays COMPLETE — this section records the follow-up work, all of it lande
   the API key into the grant record (managed in auth-client, never pasted) while the device key
   authenticates. Checked at MINT time so a revocation lands on the next ~10-minute renewal.
   Left EMPTY in both composes deliberately: enabling a service instantly refuses every account
-  without a key for it, and kingdom-tactics-server must stay open to any signed-in player.
+  without a key for it, and removed-app-server must stay open to any signed-in player.
   mud-builder-server is the intended candidate — one-line flip, operator's call.
 - 2026-07-30T18:10Z KNOWN LIMIT, documented: a `.com` origin is cross-SITE to the `.dev` hub, so
   the SameSite=Lax session cookie is never sent and cookie-based enrollment cannot work there at

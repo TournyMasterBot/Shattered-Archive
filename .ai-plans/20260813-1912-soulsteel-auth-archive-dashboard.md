@@ -27,13 +27,13 @@ open a Soulsteel archive that no longer exists anywhere else.
 - **Skip mud-builder's local-API-key/master-key actor system.** `mud-builder-server`'s
   `AuthStore`/`BuilderActor` (`kind: 'account'|'local-key'|'master'`) exists because that app has
   real local-automation use cases (CI, scripts) alongside human accounts. Soulsteel has exactly one
-  actor kind — a centrally-authenticated Herald — so mirror **kingdom-tactics-server's** simpler
+  actor kind — a centrally-authenticated Herald — so mirror **removed-app-server's** simpler
   shape instead: `http/auth-guard.ts`'s `requireAccount(resolveAccountId)` + `@shatteredarchive/
-  services-server`'s `introspect()` helper (used at `apps/kingdom-tactics-server/src/index.ts:64`),
+  services-server`'s `introspect()` helper (used at `apps/removed-app-server/src/index.ts:64`),
   not mud-builder's heavier actor system.
 - **Reuse the generic per-account-file store shape, don't reinvent it.** Two apps already have the
   identical "one JSON file per accountId, whole-collection read/replace" idiom:
-  `apps/kingdom-tactics-server/src/persistence/json-account-store.ts` (the generic `JsonAccountStore<T>`)
+  `apps/removed-app-server/src/persistence/json-account-store.ts` (the generic `JsonAccountStore<T>`)
   and `apps/mud-builder-server/src/snippet-store.ts` (a non-generic copy of the same shape, whose
   own header explains it's duplicated across the app boundary deliberately — same rationale
   `services-server/src/auth-tiers.ts` documents for itself). Soulsteel's archive store is a third
@@ -63,12 +63,12 @@ open a Soulsteel archive that no longer exists anywhere else.
 
 ## Context (verified 2026-08-13, file:line — MCP/qwen stack was down, read directly)
 
-- **Server-side auth wiring to mirror**: `apps/kingdom-tactics-server/src/index.ts:7,30-34,48-78,119`
+- **Server-side auth wiring to mirror**: `apps/removed-app-server/src/index.ts:7,30-34,48-78,119`
   — imports `introspect`/`matchesAudience`/`exchangeCode` from `@shatteredarchive/services-server`;
   reads `AUTH_SERVER_URL`/`SERVICE_PRIVATE_KEY_PATH` from env; `buildAccountIdResolver` wraps
   `introspect(authServerUrl, SERVICE_NAME, privateKeyPem, token)` in a try/catch that degrades to
   "no account" on any failure (network, expired token, etc.) rather than throwing.
-  `apps/kingdom-tactics-server/src/http/auth-guard.ts` (`bearerToken`, `requireAccount`) is the
+  `apps/removed-app-server/src/http/auth-guard.ts` (`bearerToken`, `requireAccount`) is the
   Express middleware shape — a clean 401 on missing/invalid token for account-scoped routes (unlike
   the WS join path, which degrades to anonymous; archive routes have no anonymous meaning, so 401
   is right here too, per `auth-guard.ts:4-9`'s own comment).
@@ -79,7 +79,7 @@ open a Soulsteel archive that no longer exists anywhere else.
   (mirrors `deploy/docker-compose.shattered-archive-experimental.yml:270-275,376-380` for
   mud-builder/KT). Rotation needs `revoke-service-key` on the old key id after the new one is live
   — same two-step as the existing services.
-- **Per-account store to mirror**: `apps/kingdom-tactics-server/src/persistence/json-account-store.ts`
+- **Per-account store to mirror**: `apps/removed-app-server/src/persistence/json-account-store.ts`
   (generic `JsonAccountStore<T>`, `<dataDir>/<subdir>/<accountId>.json`, safe-empty-on-missing-file,
   `VALID_ACCOUNT_ID` defense-in-depth on the filename) and
   `apps/mud-builder-server/src/routes/snippets.ts` (route shape: `requireAnyActor`-gated
@@ -101,8 +101,8 @@ open a Soulsteel archive that no longer exists anywhere else.
   the one-time sign-in redirect (`POST /api/sso/approve` → `POST /api/token-exchange`), and
   `docs/auth-server.md:351-560` ("Device-bound credentials") for the silent, no-prompt reauth a
   returning browser uses afterward — this second mechanism is what keeps the Herald signed in
-  across sessions without re-doing the SSO redirect every time. `apps/kingdom-tactics-client/src/
-  features/auth/kt-auth-config.ts` is the client-side reference for how a single-subdomain app
+  across sessions without re-doing the SSO redirect every time. `apps/removed-app-client/src/
+  features/auth/removed-auth-config.ts` is the client-side reference for how a single-subdomain app
   (client+server same origin, per the MVP plan) points at these without CORS: relative fetch paths,
   `SITE_ORIGIN` only used for the login-start page NAVIGATION.
 - **This plan's own MVP predecessor** established: single subdomain `soulsteel.shatteredarchive.dev`
@@ -115,10 +115,10 @@ open a Soulsteel archive that no longer exists anywhere else.
 - Do: Add `services/soulsteel-core` (finally justified — client and server now share the archive
   wire contract): `RoomStateArchive` type (the MVP plan's `RoomState` plus `{archiveId, accountId
   omitted from the wire type, archivedAt}`). In `soulsteel-server`: read `AUTH_SERVER_URL`/
-  `AUTH_SERVER_PUBLIC_URL`/`SERVICE_PRIVATE_KEY_PATH` from env (mirror kt-server's
+  `AUTH_SERVER_PUBLIC_URL`/`SERVICE_PRIVATE_KEY_PATH` from env (mirror removed-app-server's
   `buildAccountIdResolver`, degrade-to-anonymous only for read paths that have a meaningful
   anonymous behavior — archive routes don't, so 401 per Constraints); add `http/auth-guard.ts`
-  (copy kt-server's `requireAccount`); add `archive-store.ts` (a `JsonAccountStore`-shaped class,
+  (copy removed-app-server's `requireAccount`); add `archive-store.ts` (a `JsonAccountStore`-shaped class,
   duplicated per Constraints, capped count + size per account); add `http/archive-routes.ts`
   registering `POST/GET/GET-by-id/DELETE /api/soulsteel/archives` per Context's route shape.
 - Files: /workspace/shattered-archive/services/soulsteel-core/package.json (new),
@@ -136,7 +136,7 @@ open a Soulsteel archive that no longer exists anywhere else.
   on all four routes with no/invalid token; a second account's list is empty (isolation).
 
 ### [ ] 2. `soulsteel-client`: sign-in, "Archive this game," "My Archives"
-- Do: `src/features/auth/soulsteel-auth-config.ts` (mirror `kt-auth-config.ts`'s shape — relative
+- Do: `src/features/auth/soulsteel-auth-config.ts` (mirror `removed-auth-config.ts`'s shape — relative
   fetch paths, `SITE_ORIGIN` only for the login-start navigation) and a sign-in entry point
   following `docs/auth-server.md`'s SSO hand-off + device-bound-credential flow (Context). An
   "Archive this game" button on `RoomPage` (only enabled when signed in) posts the current
@@ -187,7 +187,7 @@ open a Soulsteel archive that no longer exists anywhere else.
 - Do: Add `AUTH_SERVER_URL: "http://auth-server.shatteredarchive.dev:62000"`,
   `AUTH_SERVER_PUBLIC_URL: "https://auth.shatteredarchive.dev"`, `SERVICE_PRIVATE_KEY_PATH`, and
   the secrets bind-mount to `soulsteel-server`'s block in **both** compose files (mirror
-  `deploy/docker-compose.shattered-archive-experimental.yml:376-380`'s KT block); add a `DATA_DIR`
+  `deploy/docker-compose.shattered-archive-experimental.yml:376-380`'s removed-app block); add a `DATA_DIR`
   + named volume now that there's real persistence to keep across recreates (mirror the scrum-poker
   `scrum-poker-data` volume pattern). On the nginx edge (`deploy/nginx/edge-subdomains.conf`), add a
   light `limit_req_zone` for `POST /api/soulsteel/archives` (mirror `builder_api`'s reasoning —
@@ -211,7 +211,7 @@ open a Soulsteel archive that no longer exists anywhere else.
 - 2026-08-13T19:12:00-05:00 plan created alongside `20260813-1911-soulsteel-herald-tool-mvp.md`, at
   the user's request for the auth-integrated "reload a torn-down room from the C# dashboard"
   feature. MCP/qwen stack was down at plan-writing time — oriented via direct Grep/Read of
-  kingdom-tactics-server's simpler (vs. mud-builder's heavier) auth-actor pattern, the existing
+  removed-app-server's simpler (vs. mud-builder's heavier) auth-actor pattern, the existing
   generic `JsonAccountStore` shape (now about to become a third duplicate — flagged as a possible
   future dedup, not attempted here), the C# `UserContentController.cs` `logs` endpoint family as
   the closest existing shape to an "archived game," and `docs/auth-server.md`'s documented SSO +

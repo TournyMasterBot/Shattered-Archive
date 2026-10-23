@@ -30,7 +30,7 @@ import { RoomStore } from '../room-store.js';
  * viewer's own card.
  *
  * The per-message logic is factored into `handleClientMessage` so it is unit-testable with a
- * fake `send` and no socket, the same arrangement as kingdom-tactics-server's kt-gateway.
+ * fake `send` and no socket.
  */
 
 /**

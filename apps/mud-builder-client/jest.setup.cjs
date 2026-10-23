@@ -113,7 +113,6 @@ if (typeof globalThis.indexedDB === 'undefined') {
   /**
    * The shim's store is per-FILE, so a device enrolled in one test stays enrolled in the next
    * and ordering decides the result. Any suite that enrols must call this in beforeEach.
-   * Mirrors kingdom-tactics-client/jest.setup.cjs, where the same trap was found first.
    */
   globalThis.__resetIndexedDbShim = () => databases.clear();
 }

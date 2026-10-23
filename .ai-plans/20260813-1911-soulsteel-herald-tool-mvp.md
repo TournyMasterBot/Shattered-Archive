@@ -5,7 +5,7 @@ Task: Stand up a new client/server app pair, `apps/soulsteel-client` + `apps/sou
 that helps a Herald run this social-deduction game live: track players, role assignments, nightly
 hidden actions, day votes/executions, and win conditions, with a dark/mystical themed UI. Wire it
 into both deploy composes and the nginx edge exactly like the existing additive apps
-(mud-builder/kingdom-tactics/scrum-poker).
+(mud-builder/scrum-poker).
 
 > **Relationship to the follow-on plan.** Central-auth sign-in + a server-side per-account archive
 > + the C# dashboard "click to reload a torn-down room" integration is a separate, later plan:
@@ -53,12 +53,12 @@ experimental stack, surviving a browser reload.
   FOUC-prevention machinery (`apps/scrum-poker-client/public/theme-init.js`,
   `src/theme/useTheme.ts`) entirely — there is no toggle-driven flash to prevent here, so no inline
   `<script>` and no CSP `script-src` exception is needed. Use the strict `security-headers.conf`
-  profile on the edge, same as `auth.`/`build.`/`kingdom-tactics.`.
+  profile on the edge, same as `auth.`/`build.`/`removed-app.`.
 - **No new npm dependency for the particle effect.** Hand-roll a `<canvas>`-based ambient effect
   (respect `prefers-reduced-motion`). The workspace lockfile has no particle library today
   (confirmed via grep) and CLAUDE.md's minimal-integrations + dependency-review posture favors not
   adding one for a cosmetic effect.
-- **Port convention**: game 30080/31000, web 40080/41000, KT 50080/51000, mud-builder 60080/61000,
+- **Port convention**: game 30080/31000, web 40080/41000, removed-app 50080/51000, mud-builder 60080/61000,
   auth 62080/62000, scrum-poker 63080/63000 (comment at
   `apps/scrum-poker-server/src/index.ts:45-46` and `apps/scrum-poker-client/vite.config.ts:10-11`)
   → **soulsteel gets 64080 (vite dev) / 64000 (server)**. `psd-viewer-server` (default port 62000)
@@ -107,20 +107,20 @@ experimental stack, surviving a browser reload.
   server, and a `healthcheck` using a bare `node -e` TCP-connect probe (no curl in the alpine
   image). Note the scrum-poker block's explicit comment "Deliberately NOT wired to auth-server" —
   soulsteel's Phase-1 server should say the same for now (Phase 2 changes this).
-- **Nginx edge (`deploy/nginx/edge-subdomains.conf`)**: the `build.`/`kingdom-tactics.` blocks
+- **Nginx edge (`deploy/nginx/edge-subdomains.conf`)**: the `build.`/`removed-app.` blocks
   (`:369-490`) are the pattern to copy — additive (not in nginx's `depends_on`), the
   `resolver 127.0.0.11 valid=30s; set $var host:port; proxy_pass http://$var;` idiom (a literal
   hostname in `proxy_pass` goes stale across a container recreate — documented at `:132-150`),
   `security-headers.conf` + `robots-disallow-all.conf` includes, path-split `/api/<name>/` to the
   server and `/` to the client SPA on **one subdomain** (no separate client/server subdomain pair
-  — same reasoning noted in the kingdom-tactics block's own comment, `:427-434`). Soulsteel needs
+  — same reasoning noted in the removed-app block's own comment, `:427-434`). Soulsteel needs
   no `/ws/` location (no websocket, per Constraints) and no rate-limit zone yet (no POST endpoints
   exist until Phase 2).
 - **DSL front proxy (`C:/Projects/DSL/nginx/shattered_archive.site`)**: real per-subdomain HTTPS
   blocks live around `:660-792` (scrum-poker, auth examples); a **stub section for not-yet-public
   services** starts at `:794` with an explicit instruction in its own comment (`:806-808`): "To go
   live, delete the stub block and copy the auth or scrum-poker block above, changing the hostname,
-  cert paths and any websocket path." The `build.`/`kingdom-tactics.` stubs (`:808-871`) each
+  cert paths and any websocket path." The `build.`/`removed-app.` stubs (`:808-871`) each
   `return 503` (not 404, so it's distinguishable from a real misconfiguration) with a small HTML
   body linking back to `shatteredarchive.dev`, reuse the shared multi-SAN cert
   (`shatteredarchive-dev-apps`), and are what soulsteel's own stub should mirror — it is not meant
@@ -259,12 +259,12 @@ experimental stack, surviving a browser reload.
   comment, `expose: ["64000"]`, `networks.shatteredarchive.aliases` =
   `soulsteel-server.shatteredarchive.dev` / `soulsteel-client.shatteredarchive.dev`. Add a
   `soulsteel.shatteredarchive.dev` server block to `deploy/nginx/edge-subdomains.conf`, copied from
-  the `build.`/`kingdom-tactics.` blocks' resolver+variable pattern — `location /api/soulsteel/`
+  the `build.`/`removed-app.` blocks' resolver+variable pattern — `location /api/soulsteel/`
   and `location = /health` to `soulsteel-server:64000`, `location /` to `soulsteel-client:80`,
   `security-headers.conf` + `robots-disallow-all.conf`, no rate-limit zone (Constraints). Add a
   stub block for `soulsteel.shatteredarchive.dev` to `C:/Projects/DSL/nginx/shattered_archive.site`
   in the "NOT-YET-PUBLIC SERVICES (stubs)" section, mirroring the existing `build.`/
-  `kingdom-tactics.` stubs exactly (503, shared multi-SAN cert, link back to the root domain).
+  `removed-app.` stubs exactly (503, shared multi-SAN cert, link back to the root domain).
 - Files: /workspace/shattered-archive/deploy/soulsteel-server.Dockerfile,
   /workspace/shattered-archive/deploy/soulsteel-client.Dockerfile,
   /workspace/shattered-archive/deploy/nginx/soulsteel-client.conf,
@@ -380,7 +380,7 @@ experimental stack, surviving a browser reload.
   variable pattern, `/api/soulsteel/` + `/health` to the server, `/` to the client, no rate-limit
   zone yet — no POST routes exist). Added a 503 stub block to `C:/Projects/DSL/nginx/
   shattered_archive.site`'s "NOT-YET-PUBLIC SERVICES" section (updated its "two blocks" comment
-  to "three"), mirroring the build./kingdom-tactics. stubs exactly. Added
+  to "three"), mirroring the build./removed-app. stubs exactly. Added
   `soulsteel.shatteredarchive.dev` to both `deploy/scripts/add-hosts.ps1` and `add-hosts.sh`
   (found these list every subdomain individually — not called out in the plan's Files list, but
   needed for the user's stated hosts-file dev workflow to actually cover this app).
@@ -405,7 +405,7 @@ experimental stack, surviving a browser reload.
   `*.shatteredarchive.dev` to HTTPS, and `deploy/nginx/includes/tls-dev.conf` (the dev-only HTTPS
   mirror of `edge-subdomains.conf`, loaded when `NGINX_TLS_INCLUDE_FILE=tls-dev.conf`, confirmed
   that's what this live stack actually runs) had no soulsteel block — exactly the same gap
-  `tls-dev.conf`'s own comments say bit kingdom-tactics AND scrum-poker before, each time only
+  `tls-dev.conf`'s own comments say bit removed-app AND scrum-poker before, each time only
   caught by live-testing the real hostname, never by review. `curl` masked it (no auto-upgrade),
   so the plain HTTP check passed while the real page 404'd. Added the matching HTTPS block
   (mirrors the new HTTP one exactly, hardcoded `security-headers.conf` since `tls-dev.conf` is

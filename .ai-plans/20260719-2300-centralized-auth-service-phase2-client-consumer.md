@@ -13,7 +13,7 @@ the mechanism Phase 1 built and tested only with a synthetic in-test keypair.
 > and Constraints sections first, they are not repeated in full here).
 > - **Note on concurrent ACTIVE plans**: at the time this doc was created, 3 OTHER
 >   unrelated `.ai-plans/*.md` docs were already `Status: ACTIVE` in this repo
->   (mud-builder Phase 13, two kingdom-tactics plans) — this is evidently how this repo
+>   (mud-builder Phase 13, two removed-app plans) — this is evidently how this repo
 >   actually operates (parallel independent workstreams), not a single global lock. The
 >   qplan skill's "exactly one ACTIVE doc" guidance is about avoiding qwen's `plan_step
 >   {}` auto-attach picking the wrong (stale) doc if this one is handed to `/plan
@@ -72,7 +72,7 @@ API key.
   do not duplicate `auth-server`'s `crypto-primitives.ts` by copy-paste.** Recommendation
   (Claude's call, flag if you want this different): add it to `services/services-server`
   (`src/auth-introspect-client.ts`) — every current and future Node consumer
-  (`mud-builder-server`, `web-server`, `game-server`, `kingdom-tactics-server`) already
+  (`mud-builder-server`, `web-server`, `game-server`, `removed-app-server`) already
   depends on this package, so this is the lowest-friction shared home. Do NOT create a new
   top-level `sdks/*` package for one helper — `sdks/sdks-client`/`sdks-server` are existing
   umbrella packages, not a per-integration pattern, and inventing a third top-level

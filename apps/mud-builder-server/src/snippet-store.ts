@@ -6,10 +6,8 @@ import path from 'path';
  * @ai-summary Phase G: per-account snippet storage — `<dataDir>/snippets/
  *   <accountId>.json`, one file per account, whole-collection read/replace
  *   (no per-item server route; the client mutates its own copy of the array
- *   and PUTs the result back). Mirrors kingdom-tactics-server's
- *   JsonAccountStore/ArmyLayoutStore shape (generic-per-account-file +
- *   whole-collection save), adapted as a single non-generic class since this
- *   app has only the one per-account data type — no cross-repo import (same
+ *   and PUTs the result back). Deliberately one
+ *   non-generic class: this app has only the one per-account data type, and no cross-repo import (same
  *   "duplicated deliberately across the app boundary" rationale as
  *   services-server/src/auth-tiers.ts's own header documents for itself).
  * @ai-public SnippetStore, Snippet, SnippetKind
@@ -17,7 +15,7 @@ import path from 'path';
  *   introspect response, never raw user input — the format check is defense
  *   in depth, not a response to any observed issue. A missing/malformed file
  *   degrades to an empty list rather than throwing (same "safe read" idiom as
- *   the kt-server precedent).
+ *   the repo's other JSON stores).
  */
 
 const VALID_ACCOUNT_ID = /^[a-zA-Z0-9_-]+$/;

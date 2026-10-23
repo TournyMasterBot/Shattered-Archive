@@ -1,16 +1,7 @@
 File Index
 
-/opponent-buckets.ts
-Purpose: Defines health-based condition phrases and numerical ranges for opponent characters.
-
 /opponentStatusStore.ts
 Purpose: Caches the most recent enemy UI snapshot (label/pct/lastSeenTs) so useOpponentStatus can seed itself on a fresh mount instead of starting blank; isEnemyActive is still derived fresh from lastSeenTs, so a stale cache correctly reads as inactive.
-
-/opponent-gates.ts
-Purpose: Defines visual condition descriptions for opponent characters in the combat system.
-
-/opponent-types.ts
-Purpose: Defines types and utilities for managing opponent status display and opacity in the combat UI.
 
 /probe-opponent-condition.ts
 Purpose: Analyzes combat log lines to detect and extract opponent condition statuses.
