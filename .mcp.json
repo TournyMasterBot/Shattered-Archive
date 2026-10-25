@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "docs-hub": {
+      "command": "node",
+      "args": ["C:/Projects/Shattered-AI/tools/docs-hub/src/server.mjs"]
+    },
+    "archive": {
+      "command": "node",
+      "args": ["C:/Projects/Shattered-AI/tools/archive-mcp/src/server.mjs"]
+    }
+  }
+}
