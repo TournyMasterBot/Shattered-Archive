@@ -1,5 +1,5 @@
-# node 26.10.0-alpine3.24
-FROM node:26.10.0-alpine3.24@sha256:0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2eee500cfd9e80 AS build
+# node 26.12.1-alpine3.24
+FROM node:26.12.1-alpine3.24@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797 AS build
 RUN apk --no-cache upgrade
 WORKDIR /repo
 ENV COREPACK_ENABLE_STRICT=1
@@ -43,8 +43,8 @@ RUN pnpm --filter @shatteredarchive/scrum-poker-core build
 
 RUN pnpm --filter @shatteredarchive/scrum-poker-server... build
 
-# node 26.10.0-alpine3.24
-FROM node:26.10.0-alpine3.24@sha256:0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2eee500cfd9e80 AS runtime
+# node 26.12.1-alpine3.24
+FROM node:26.12.1-alpine3.24@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797 AS runtime
 RUN apk --no-cache upgrade
 WORKDIR /repo
 

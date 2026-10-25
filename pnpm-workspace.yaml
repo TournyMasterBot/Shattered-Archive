@@ -57,3 +57,16 @@ overrides:
   # above) since game-client only uses transformers' browser/WASM path, not the
   # Node/sharp path, so this is untested-by-upstream but effectively dormant.
   sharp: '0.35.3'
+  # Dependabot / GHSA — Handlebars.compile()/precompile() code injection via a crafted
+  # pre-parsed AST (bypasses the 4.7.9 validator). 4.7.10 closes it. Pulled in only by
+  # ts-jest (29.4.11 declares ^4.7.9, so 4.7.10 is in range); dev-only, we never pass an object to compile().
+  handlebars: '4.7.10'
+  # Dependabot #118 / GHSA — quote() command injection via a line terminator in a token
+  # after a { comment } token (affects >= 1.8.4, < 1.11.0). Pulled in only by
+  # concurrently 9.2.4 (root dev scripts), which declares ^1.9.0, so 1.11.0 is in range.
+  # We never call quote() on untrusted input.
+  shell-quote: '1.11.0'
+  # Dependabot #119 / GHSA — IP spoofing via an IPv4-mapped IPv6 trust subnet with a short
+  # prefix (affects >= 1.1.0, < 2.0.8). Pulled in only by express 5, which declares ^2.0.7,
+  # so 2.0.8 is in range. Fixed by the override rather than waiting on an express bump.
+  proxy-addr: '2.0.8'
