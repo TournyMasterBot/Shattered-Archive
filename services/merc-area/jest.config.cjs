@@ -3,8 +3,8 @@
  *
  * The repo-root jest.config.cjs only collects tests whose path contains a
  * `-server`/`-client` segment; this package is `merc-area` (a pure format
- * library), so it owns a self-contained node-environment config, exactly like
- * kingdom-tactics-engine. This also makes the library testable in isolation.
+ * library), so it owns a self-contained node-environment config.
+ * This also makes the library testable in isolation.
  *
  * @type {import('jest').Config}
  */

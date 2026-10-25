@@ -1,7 +1,7 @@
 File Index
 
 /add-hosts.ps1
-Purpose: This PowerShell script automatically updates the system hosts file to map local domain names to localhost for development purposes. Simulacrum (2026-08-16): `simulacrum.shatteredarchive.dev` was missing from the entries list — a real gap, not just doc staleness, since self-hosters following deploy/index.html's setup steps would have no way to reach it. Added; keep in step with add-hosts.sh and deploy/index.html's own domain-list (which was ALSO stale on several pre-existing names — apex, build., kingdom-tactics., soulsteel. — fixed in the same pass).
+Purpose: This PowerShell script automatically updates the system hosts file to map local domain names to localhost for development purposes. Simulacrum (2026-08-16): `simulacrum.shatteredarchive.dev` was missing from the entries list — a real gap, not just doc staleness, since self-hosters following deploy/index.html's setup steps would have no way to reach it. Added; keep in step with add-hosts.sh and deploy/index.html's own domain-list (which was ALSO stale on several pre-existing names — apex, build., soulsteel. — fixed in the same pass).
 
 /add-hosts.sh
 Purpose: This script modifies the system hosts file to map local domain names for a development environment. Same 2026-08-16 `simulacrum.shatteredarchive.dev` fix as add-hosts.ps1 — see that entry.

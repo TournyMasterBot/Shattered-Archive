@@ -26,14 +26,10 @@
     "dev:web-server": "pnpm --filter @shatteredarchive/web-server dev",
     "dev:game-client": "pnpm --filter @shatteredarchive/game-client dev",
     "dev:game-server": "pnpm --filter @shatteredarchive/game-server dev",
-    "dev:kingdom-tactics-client": "pnpm --filter @shatteredarchive/kingdom-tactics-client dev",
-    "dev:kingdom-tactics-server": "pnpm --filter @shatteredarchive/kingdom-tactics-server dev",
     "start:web-client": "pnpm --filter @shatteredarchive/web-client preview",
     "start:web-server": "pnpm --filter @shatteredarchive/web-server preview",
     "start:game-client": "pnpm --filter @shatteredarchive/game-client preview",
     "start:game-server": "pnpm --filter @shatteredarchive/game-server preview",
-    "start:kingdom-tactics-client": "pnpm --filter @shatteredarchive/kingdom-tactics-client preview",
-    "start:kingdom-tactics-server": "pnpm --filter @shatteredarchive/kingdom-tactics-server start",
     "dev:mud-builder-client": "pnpm --filter @shatteredarchive/mud-builder-client dev",
     "dev:mud-builder-server": "pnpm --filter @shatteredarchive/mud-builder-server dev",
     "start:mud-builder-client": "pnpm --filter @shatteredarchive/mud-builder-client preview",
@@ -97,7 +93,7 @@
     "typescript-eslint": "^8.61.1"
   },
   "engines": {
-    "node": ">=24.0.0"
+    "node": "^24.22.1 || >=26.12.1"
   },
-  "packageManager": "pnpm@11.8.0+sha512.c1f5e7c4cb241c8f174b743851d82f42b802324afc8b0f116b96adb15aa06664948dde36960a3ba1079ba5b4b29dd0140135b94b5b5f5263592249d68e555f26"
+  "packageManager": "pnpm@12.9.1+sha512.06b055fff5cd20dc12781de173ced3310ce0951bf2ec620211a16045d5444d5c93a663210764ef29a653a610459ba0368f0e74f84d80c54723cf95aae7bc0d6d"
 }

@@ -7,8 +7,8 @@ import { requireAnyActor } from './auth.js';
 
 /**
  * AI-ANNOTATION
- * @ai-summary Phase H: GET /api/user-content/summary — same route name as
- *   kingdom-tactics-server's own summary endpoint, for a uniform C# dashboard
+ * @ai-summary Phase H: GET /api/user-content/summary — uniform route name for a
+ *   C# dashboard
  *   caller. `kind:'account'`-only, same as snippets.ts (a local key/master
  *   has no accountId to summarize) — 403, not a zeroed-out body.
  * @ai-public registerSummaryRoutes

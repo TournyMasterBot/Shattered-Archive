@@ -18,7 +18,7 @@ no profiles: people exist only while they're active in a room.
 | `apps/scrum-poker-server` | Express 5 + `ws` on port **63000**. Transport, persistence, the clock, permissions. |
 | `apps/scrum-poker-client` | Vite + React 19 SPA, dev port **63080**. |
 
-Port convention: game 30080/31000, web 40080/41000, KT 50080/51000, mud-builder 60080/61000,
+Port convention: game 30080/31000, web 40080/41000, mud-builder 60080/61000,
 auth 62080/62000 → **scrum-poker 63080/63000**.
 
 ## Running locally

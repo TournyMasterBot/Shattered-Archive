@@ -1,4 +1,0 @@
-File Index
-
-/connectionSingleton.ts
-Purpose: Manages global WebSocket connection state and metadata for the game client application.

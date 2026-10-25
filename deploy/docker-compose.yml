@@ -15,7 +15,8 @@ services:
   # EDGE NGINX (HTTP/HTTPS termination)
   ############################################################
   nginx:
-    image: nginx:alpine
+    # nginx 1.31.6-alpine3.24 — the same digest as deploy/nginx.Dockerfile (CLAUDE.md "Docker"); update both together.
+    image: nginx:1.31.6-alpine@sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2
     container_name: shatteredarchive-prod-nginx
 
     depends_on:
@@ -81,9 +82,13 @@ services:
       # file itself are never exposed over HTTP.
       - ./favicon.ico:/var/www/shatteredarchive-dev/favicon.ico:ro
       - ./index.html:/var/www/shatteredarchive-dev/index.html:ro
+      - ./llms.txt:/var/www/shatteredarchive-dev/llms.txt:ro
       - ./privacy.html:/var/www/shatteredarchive-dev/privacy.html:ro
       - ./site.js:/var/www/shatteredarchive-dev/site.js:ro
       - ./sitemap.xml:/var/www/shatteredarchive-dev/sitemap.xml:ro
+      - ./well-known/ard.json:/var/www/shatteredarchive-dev/.well-known/ard.json:ro
+      - ./well-known/ai-catalog.json:/var/www/shatteredarchive-dev/.well-known/ai-catalog.json:ro
+      - ./well-known/shattered-archive-hub.md:/var/www/shatteredarchive-dev/.well-known/agent-skills/shattered-archive-hub.md:ro
 
     networks:
       shatteredarchive-prod:
@@ -274,8 +279,8 @@ services:
       # mirroring nginx's own origin → upstream routing. Also derives the CORS allowlist for
       # /api/device, so the two can never drift apart.
       #
-      # EMPTY ON PURPOSE, not an oversight: the two clients that use device credentials
-      # (mud-builder-client, kingdom-tactics-client) exist only in the experimental compose,
+      # EMPTY ON PURPOSE, not an oversight: the client that uses device credentials
+      # (mud-builder-client) exists only in the experimental compose,
       # so nothing in THIS stack needs an entry yet. Empty means deny-all, which is the
       # correct fail-closed state — auth-client is same-origin with auth-server here (nginx
       # routes /api/ on auth.shatteredarchive.dev to this service) so CORS never applies to it.

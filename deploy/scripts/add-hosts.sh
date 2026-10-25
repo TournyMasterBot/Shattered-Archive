@@ -21,7 +21,6 @@ BLOCK=$(cat <<'EOF'
 127.0.0.1 web-server.shatteredarchive.dev
 127.0.0.1 build.shatteredarchive.dev
 127.0.0.1 auth.shatteredarchive.dev
-127.0.0.1 kingdom-tactics.shatteredarchive.dev
 127.0.0.1 scrum-poker.shatteredarchive.dev
 127.0.0.1 soulsteel.shatteredarchive.dev
 127.0.0.1 simulacrum.shatteredarchive.dev

@@ -46,4 +46,4 @@ Purpose: Phase G delegated-role store (Decision 4) — `<authDataPath>/roles.jso
 Purpose: skills.dat overlay store (Phase 7): stock fallback, (fun,target) stock-pair validation, gated atomic writes; Phase 12 hash() (null=stock) + conditional write (baseHash mismatch → 409 before backup, success returns new hash).
 
 /snippet-store.ts
-Purpose: Phase G per-account private-content store — `<areaPath>/snippets/<accountId>.json`, whole-collection read/replace (200-item cap). Single non-generic class (not a generic JsonAccountStore<T> like kingdom-tactics-server's precedent) since this app has only the one per-account data type. Covered via routes/snippets.test.ts, same no-standalone-store-test convention as role-store.ts.
+Purpose: Phase G per-account private-content store — `<areaPath>/snippets/<accountId>.json`, whole-collection read/replace (200-item cap). Single non-generic class (not a generic JsonAccountStore<T>) since this app has only the one per-account data type. Covered via routes/snippets.test.ts, same no-standalone-store-test convention as role-store.ts.

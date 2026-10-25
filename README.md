@@ -49,7 +49,7 @@ execution of multiple applications and services during development.
 
 ```text
 apps/       – End-user applications (game client, game server,
-              web client, web server, kingdom-tactics pair, the
+              web client, web server, the
               MUD builder pair — see docs/mud-builder/README.md — the
               auth-client/auth-server pair, the centralized login
               service — see docs/auth-client.md and docs/auth-server.md —
@@ -82,14 +82,15 @@ This project is cross-platform and supports **Windows, macOS, and Linux**.
 **Windows (PowerShell):**
 ```powershell
 corepack enable
-corepack prepare pnpm@latest --activate
 ```
 
 **macOS / Linux:**
 ```bash
 corepack enable
-corepack prepare pnpm@latest --activate
 ```
+
+Corepack then installs exactly the pnpm version pinned in `package.json` (`packageManager`), so do not run
+`corepack prepare pnpm@latest`: an unpinned pnpm bypasses the pinned version and its integrity hash.
 
 For more options, see:
 https://pnpm.io/installation

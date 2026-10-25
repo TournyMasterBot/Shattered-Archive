@@ -7,7 +7,7 @@ export default defineConfig(({ mode, command }) => {
   // Load only VITE_* vars from .env files
   const env = loadEnv(mode, process.cwd(), 'VITE_');
 
-  // Port convention: game 30080/31000, web 40080/41000, KT 50080/51000,
+  // Port convention: game 30080/31000, web 40080/41000,
   // mud-builder 60080/61000, auth 62080/62000 → scrum-poker 63080/63000.
   const port = Number(env.VITE_PORT) || 63080;
 

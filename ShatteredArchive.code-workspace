@@ -23,6 +23,9 @@
 		},
 		{
 			"path": "../merc-mud"
+		},
+		{
+			"path": "../Shattered-Story"
 		}
 	],
 	"settings": {}

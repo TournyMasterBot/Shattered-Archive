@@ -229,7 +229,7 @@ export class DeviceCredentials {
 
   /**
    * A valid access token for one service, minted silently if needed. Cached per service
-   * because tokens are audience-scoped — a Builder token is refused by Kingdom Tactics.
+   * because tokens are audience-scoped — a Builder token is refused by Scrum Poker.
    */
   async getAccessToken(service: string): Promise<string> {
     const cached = this.tokens.get(service);

@@ -167,10 +167,10 @@ describe('KeyStore', () => {
 
   it('mints separate device tokens per audience, and neither carries the other\'s service', () => {
     const builder = store.mintDeviceToken(ACCOUNT_ID, 'mud-builder-server', 0);
-    const kt = store.mintDeviceToken(ACCOUNT_ID, 'kingdom-tactics-server', 0);
-    expect(builder.token).not.toBe(kt.token);
+    const poker = store.mintDeviceToken(ACCOUNT_ID, 'scrum-poker-server', 0);
+    expect(builder.token).not.toBe(poker.token);
     expect(store.verify(builder.token, epochLookup(0))?.service).toBe('mud-builder-server');
-    expect(store.verify(kt.token, epochLookup(0))?.service).toBe('kingdom-tactics-server');
+    expect(store.verify(poker.token, epochLookup(0))?.service).toBe('scrum-poker-server');
   });
 
   it('an expired device token stops verifying, and an epoch bump invalidates a live one', () => {

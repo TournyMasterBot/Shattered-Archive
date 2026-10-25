@@ -1,4 +1,4 @@
-psd-viewer-server is a minimal, self-contained Express service (port 62000, no shared
+psd-viewer-server is a minimal, self-contained Express service (port 20000, no shared
 services-server framework) whose single job is to turn a large Photoshop .psd on disk into
 a compact PNG for the psd-viewer-client. The design constraint is file size: the target
 PSDs are 200-500 MB, so raw bytes are never shipped to the browser. GET /api/psd/png reads

@@ -1,5 +1,5 @@
-# nginx 1.31.2-alpine3.23
-FROM nginx:1.31.2-alpine@sha256:81595dd77c2cc4ec66c6721daa3c13b6a1f7bb3a8a2cd3247a874e3bd5c39dd2
+# nginx 1.31.6-alpine3.24
+FROM nginx:1.31.6-alpine@sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2
 
 RUN apk --no-cache upgrade
 # Needed only to generate a local self-signed cert automatically.

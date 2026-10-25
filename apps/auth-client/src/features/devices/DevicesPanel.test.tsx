@@ -33,7 +33,7 @@ describe('DevicesPanel', () => {
       {
         id: 'd2',
         label: 'Firefox on Linux',
-        allowedServices: ['kingdom-tactics-server'],
+        allowedServices: ['scrum-poker-server'],
         createdAt: '2026-07-10T00:00:00Z',
         lastSeenAt: '2026-07-11T00:00:00Z',
         revokedAt: '2026-07-12T00:00:00Z',

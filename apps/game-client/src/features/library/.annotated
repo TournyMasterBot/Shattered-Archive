@@ -1,8 +1,5 @@
 File Index
 
-/library-store.ts
-Purpose: Manages IndexedDB storage for library notes, books, and user notes with synchronization and migration support.
-
 /library-types.ts
 Purpose: Defines shared TypeScript types for library data structures across client and server. Phase E added tag?/recipients? to LibraryNote/UserNote/LibraryBook and their export-bundle counterparts (now byte-compatible with mobile's LibraryBundle again), plus a verbatim port of LineStats/LineWarnings/soft-hard line+char limit constants/getLineStats/getWarnings from mobile's book-types.ts (no shared package exists to import from instead).
 

@@ -25,13 +25,13 @@ function makeDevice() {
 const SERVICE = 'mud-builder-server';
 /**
  * The harness maps this origin to `mud-builder-server` and a second one to
- * `kingdom-tactics-server` (see test-helpers.ts), which is what makes the cross-audience
+ * `scrum-poker-server` (see test-helpers.ts), which is what makes the cross-audience
  * refusal testable. Enrollment REQUIRES an Origin: the audience is derived from it, and a
  * request without one has no provable audience.
  */
 const BUILDER_ORIGIN = 'http://localhost:60080';
-const KT_ORIGIN = 'http://localhost:50080';
-const KT_SERVICE = 'kingdom-tactics-server';
+const OTHER_ORIGIN = 'http://localhost:63080';
+const OTHER_SERVICE = 'scrum-poker-server';
 
 async function enroll(
   base: string,
@@ -125,8 +125,8 @@ describe('device routes', () => {
     const { res, body } = await assert(harness.base, {
       deviceId,
       nonce,
-      service: KT_SERVICE,
-      signature: device.sign(deviceId, nonce, KT_SERVICE),
+      service: OTHER_SERVICE,
+      signature: device.sign(deviceId, nonce, OTHER_SERVICE),
     });
     expect(res.status).toBe(403);
     expect(body.code).toBe('DEVICE_AUDIENCE_NOT_ALLOWED');
@@ -135,19 +135,19 @@ describe('device routes', () => {
   it('mints for a service when the enrolling origin IS mapped to it', async () => {
     const cookie = await fullyOnboardedSession(harness.base, 'devaud2');
     const device = makeDevice();
-    const { body: enrolled } = await enroll(harness.base, cookie, device.publicKeyJwk, 'KT laptop', KT_ORIGIN);
+    const { body: enrolled } = await enroll(harness.base, cookie, device.publicKeyJwk, 'Poker laptop', OTHER_ORIGIN);
     const deviceId = enrolled.deviceId as string;
-    expect(enrolled.allowedServices).toEqual([KT_SERVICE]);
+    expect(enrolled.allowedServices).toEqual([OTHER_SERVICE]);
 
     const { nonce } = await challenge(harness.base, deviceId);
     const { res, body } = await assert(harness.base, {
       deviceId,
       nonce,
-      service: KT_SERVICE,
-      signature: device.sign(deviceId, nonce, KT_SERVICE),
+      service: OTHER_SERVICE,
+      signature: device.sign(deviceId, nonce, OTHER_SERVICE),
     });
     expect(res.status).toBe(200);
-    expect(body.service).toBe(KT_SERVICE);
+    expect(body.service).toBe(OTHER_SERVICE);
   });
 
   /**
@@ -220,7 +220,7 @@ describe('device routes', () => {
     /** A key for a DIFFERENT service is not a grant for this one. */
     it('does not accept a key minted for another service as the grant', async () => {
       const { device, deviceId } = await enrolledDevice(harness, 'devgrant3');
-      await mintFor('devgrant3', KT_SERVICE);
+      await mintFor('devgrant3', OTHER_SERVICE);
 
       const { nonce } = await challenge(harness.base, deviceId);
       const { res } = await assert(harness.base, {
@@ -399,7 +399,7 @@ describe('device routes', () => {
     const { res, body } = await assert(harness.base, {
       deviceId,
       nonce,
-      service: 'kingdom-tactics-server',
+      service: 'scrum-poker-server',
       signature: device.sign(deviceId, nonce, SERVICE), // signed for mud-builder-server
     });
     expect(res.status).toBe(401);

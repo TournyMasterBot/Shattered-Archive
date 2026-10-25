@@ -1,7 +1,7 @@
 # apps/scrum-poker-server
 
 The backend for scrum-poker.shatteredarchive.dev (port 63000). An Express 5 + `ws` app that
-mirrors kingdom-tactics-server's bootstrap (`@shatteredarchive/services-server`:
+uses the shared bootstrap (`@shatteredarchive/services-server`:
 `getConfigFromEnv` + `createExpressService`, Winston logging, `/health`) and mounts a
 `/ws/scrum` gateway.
 
@@ -42,7 +42,7 @@ here talks to auth-server.
   CONNECTION via `toRoomView(room, viewerId)`, never built once and fanned out, because each
   viewer must see their own hidden vote and no one else's. The `joined` ack is the one place a
   `participantSecret` leaves the server, and it goes to a single connection — never a broadcast. `handleClientMessage`/`runSweep` are exported and take a `now()` so the whole
-  gateway is testable with fake connections and no socket (same shape as kt-gateway).
+  gateway is testable with fake connections and no socket.
 
 Two behaviours that look like bugs but are load-bearing: a `ping` frame does NOT bump the idle
 clock (the timer measures interaction, not an open tab, so a heartbeat would make the one-hour

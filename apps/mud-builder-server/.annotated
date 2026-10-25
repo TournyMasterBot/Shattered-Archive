@@ -7,4 +7,4 @@ Purpose: Self-contained node jest config; maps merc-area and workspace types to 
 Purpose: Express-based API server package (port 61000) bridging the builder UI to the merc-mud area folder.
 
 /tsconfig.json
-Purpose: NodeNext build config mirroring kingdom-tactics-server.
+Purpose: NodeNext build config.

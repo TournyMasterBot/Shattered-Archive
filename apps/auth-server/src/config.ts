@@ -74,7 +74,7 @@ export interface AuthServerConfig {
    * that service from every one of the account's devices at once.
    *
    * Opt-in per service, and empty by default, because the right answer differs by service: a
-   * game anyone may play (kingdom-tactics-server) must stay open to any signed-in account,
+   * game anyone may play (scrum-poker-server) must stay open to any signed-in account,
    * whereas a privileged authoring tool (mud-builder-server) should require an explicit grant.
    */
   deviceGrantRequiredServices: string[];

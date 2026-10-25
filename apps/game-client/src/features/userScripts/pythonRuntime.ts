@@ -21,6 +21,7 @@ type SkulptFacade = {
 
   builtin: {
     func: new (fn: (...args: unknown[]) => unknown) => unknown;
+    str: new (value: string) => unknown;
     none: { none$: unknown };
   };
 
@@ -53,6 +54,14 @@ function pyToJs(value: unknown): unknown {
 
 function pyNone(): unknown {
   return getSk().builtin.none.none$;
+}
+
+/**
+ * A JS string as a real Python `str`. A Skulpt builtin must return Python objects: a raw JS string only survives
+ * %-formatting and str(...), while .upper()/.split(), `+`, `==`, len() and int() on it throw.
+ */
+function pyStr(value: string): unknown {
+  return new (getSk().builtin.str)(value);
 }
 
 /**
@@ -152,7 +161,7 @@ function registerBuiltins(api: ScriptSandboxApi) {
       const v = api.getGlobalVar?.(key);
       // Return as JSON string if not simple string
       const out = v == null ? '' : typeof v === 'string' ? v : JSON.stringify(v);
-      return out as unknown;
+      return pyStr(out);
     });
   }
 
@@ -180,7 +189,7 @@ function registerBuiltins(api: ScriptSandboxApi) {
     b.getNamedVar = new sk.builtin.func((pyName: unknown) => {
       const name = String(pyToJs(pyName));
       const v = api.getNamedVar?.(name) ?? '';
-      return v as unknown;
+      return pyStr(v);
     });
   }
 

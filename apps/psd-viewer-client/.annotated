@@ -4,7 +4,7 @@ File Index
 Purpose: @shatteredarchive/psd-viewer-client manifest — Vite + React 19, plugin-react-swc; dev/build/preview scripts.
 
 /vite.config.ts
-Purpose: Vite config — port 62080, alias @ → src, and the /api + /health proxy to psd-viewer-server (localhost:62000).
+Purpose: Vite config — port 20080, alias @ → src, and the /api + /health proxy to psd-viewer-server (localhost:20000).
 
 /index.html
 Purpose: SPA shell mounting src/main.tsx into #root.

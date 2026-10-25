@@ -52,7 +52,7 @@ const POOL_ANSWERS: Record<string, string> = { q1: 'A1', q2: 'A2', q3: 'A3' };
 /** Module-level so `deviceAllowedOrigins` can be derived from its keys, as config.ts does. */
 const DEVICE_ORIGIN_SERVICES = new Map<string, string[]>([
   ['http://localhost:60080', ['mud-builder-server']],
-  ['http://localhost:50080', ['kingdom-tactics-server']],
+  ['http://localhost:63080', ['scrum-poker-server']],
 ]);
 
 export function startTestApp(): Promise<TestHarness> {
@@ -77,7 +77,7 @@ export function startTestApp(): Promise<TestHarness> {
     deviceAllowedOrigins: [...DEVICE_ORIGIN_SERVICES.keys()],
     // Two origins mapped to DIFFERENT services, so the audience binding is exercised by the
     // shared harness rather than only by a bespoke setup: a device enrolled from the builder
-    // origin must be refused a kingdom-tactics token.
+    // origin must be refused a scrum-poker token.
     deviceOriginServices: DEVICE_ORIGIN_SERVICES,
     deviceGrantRequiredServices: [],
     // Effectively unthrottled for tests — the limiter has its own dedicated suite, and a

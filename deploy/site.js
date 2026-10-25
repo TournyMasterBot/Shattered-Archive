@@ -135,3 +135,89 @@ var GA_ID = 'G-7BKPVVZ1BS';
     cookie_flags: 'SameSite=Lax;Secure',
   });
 })();
+
+/*
+ * WebMCP tools (https://github.com/webmachinelearning/webmcp).
+ *
+ * Registers two READ-ONLY tools so a browser-resident agent can answer "which demo do I want?"
+ * without scraping the page. Both read the live DOM at call time rather than a copy of the data,
+ * so adding a demo card or a documentation link needs no change here.
+ *
+ * Feature-detected: browsers without `navigator.modelContext` skip this block entirely, and a
+ * registration failure (a duplicate name, an unsupported shape) is swallowed — an agent API must
+ * never be able to break the page it describes. No network requests and no writes, so nothing
+ * here widens the CSP.
+ */
+(function () {
+  var modelContext = navigator.modelContext;
+  if (!modelContext || typeof modelContext.registerTool !== 'function') return;
+
+  function asText(value) {
+    return { content: [{ type: 'text', text: JSON.stringify(value, null, 2) }] };
+  }
+
+  function register(tool) {
+    try {
+      modelContext.registerTool(tool);
+    } catch (e) {
+      // See the block comment: never break the page.
+    }
+  }
+
+  register({
+    name: 'list_demos',
+    description:
+      'List the ShatteredArchive demo services shown on this page: name, what it does, its URL ' +
+      '(null while "coming soon") and whether it is live. Read-only.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['all', 'live', 'coming-soon'],
+          description: 'Which demos to return. Defaults to "all".',
+        },
+      },
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true },
+    execute: function (args) {
+      var want = (args && args.status) || 'all';
+      var demos = Array.prototype.map.call(document.querySelectorAll('.demo'), function (card) {
+        var badge = card.querySelector('.badge');
+        var description = card.querySelector('p');
+        var host = card.querySelector('.demo-host');
+        var isLive = !!badge && badge.classList.contains('badge-live');
+        return {
+          name: card.querySelector('h3') ? card.querySelector('h3').textContent.trim() : '',
+          description: description ? description.textContent.replace(/\s+/g, ' ').trim() : '',
+          host: host ? host.textContent.trim() : '',
+          url: card.tagName === 'A' ? card.href : null,
+          status: isLive ? 'live' : 'coming-soon',
+        };
+      });
+      return Promise.resolve(
+        asText(
+          demos.filter(function (d) {
+            return want === 'all' || d.status === want;
+          })
+        )
+      );
+    },
+  });
+
+  register({
+    name: 'get_documentation_links',
+    description:
+      'Return the documentation and source-code links listed on this page, for people who want ' +
+      'to self-host the ShatteredArchive stack. Read-only.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    execute: function () {
+      var links = Array.prototype.map.call(document.querySelectorAll('ul.links a'), function (a) {
+        return { title: a.textContent.replace(/\s+/g, ' ').trim(), url: a.href };
+      });
+      return Promise.resolve(asText(links));
+    },
+  });
+})();

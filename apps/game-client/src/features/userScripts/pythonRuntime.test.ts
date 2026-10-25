@@ -10,7 +10,7 @@ import type { ScriptSandboxApi } from './types';
 //  2. global modules were loaded under a name but registered as `__main__`, so
 //     calling into them via `import <name> as g` could never resolve.
 
-function recorder() {
+function recorder(vars: { named?: Record<string, string>; globals?: Record<string, unknown> } = {}) {
   const sent: string[] = [];
   const logged: unknown[][] = [];
   const errors: unknown[][] = [];
@@ -18,6 +18,8 @@ function recorder() {
     sendCommand: (cmd: string) => void sent.push(cmd),
     log: (...args: unknown[]) => void logged.push(args),
     error: (...args: unknown[]) => void errors.push(args),
+    getNamedVar: (name: string) => vars.named?.[name],
+    getGlobalVar: (key: string) => vars.globals?.[key],
   };
   return { api, sent, logged, errors };
 }
@@ -74,6 +76,58 @@ describe('per-script Python', () => {
 
     expect(r.errors).toEqual([]);
     expect(r.sent).toEqual(['is none: True']);
+  });
+});
+
+// Regression (found 2026-10-03): getNamedVar/getGlobalVar used to return RAW JS strings from the Skulpt builtin, so the documented
+// `-> str` values failed on .upper()/.split()/.isdigit(), `+`, `==`, len() and int() ("tp$getattr is not a function",
+// "cannot concatenate 'str' and '<invalid type>'"). Only %-formatting and str(...) worked, and the docs' own example uses
+// %-formatting, which hid it.
+describe('variable getters return real Python strings', () => {
+  it('getNamedVar supports str methods, +, ==, len() and int()', async () => {
+    const r = recorder({ named: { TARGET: 'orc-guard', COUNT: '41' } });
+    await runPythonSourceInBrowser(
+      [
+        't = getNamedVar("TARGET")',
+        'sendCommand(t.upper())',
+        'sendCommand("kill " + t)',
+        'sendCommand(",".join(t.split("-")))',
+        'sendCommand("same" if t == "orc-guard" else "different")',
+        'sendCommand("len %d" % len(t))',
+        'sendCommand("n %d" % (int(getNamedVar("COUNT")) + 1))',
+      ].join('\n') + '\n',
+      r.api,
+    );
+
+    expect(r.errors).toEqual([]);
+    expect(r.sent).toEqual(['ORC-GUARD', 'kill orc-guard', 'orc,guard', 'same', 'len 9', 'n 42']);
+  });
+
+  it('a missing named variable is an empty str (not None, not a foreign object)', async () => {
+    const r = recorder();
+    await runPythonSourceInBrowser(
+      'v = getNamedVar("NOPE")\nsendCommand("empty" if v == "" else "other")\nsendCommand("digits" if v.isdigit() else "nodigits")\nsendCommand("len %d" % len(v))\n',
+      r.api,
+    );
+
+    expect(r.errors).toEqual([]);
+    expect(r.sent).toEqual(['empty', 'nodigits', 'len 0']);
+  });
+
+  it('getGlobalVar returns strings (JSON text for non-strings) that support str operations', async () => {
+    const r = recorder({ globals: { LAST: 'rat', N: 41, OBJ: { a: 1 } } });
+    await runPythonSourceInBrowser(
+      [
+        'sendCommand(getGlobalVar("LAST").upper())',
+        'sendCommand("n %d" % (int(getGlobalVar("N")) + 1))',
+        'sendCommand("json" if getGlobalVar("OBJ").startswith("{") else "text")',
+        'sendCommand("missing:" + getGlobalVar("NOPE") + ".")',
+      ].join('\n') + '\n',
+      r.api,
+    );
+
+    expect(r.errors).toEqual([]);
+    expect(r.sent).toEqual(['RAT', 'n 42', 'json', 'missing:.']);
   });
 });
 

@@ -167,11 +167,11 @@ describe('DeviceStore', () => {
     expect(DeviceStore.mayMintFor(found.device, 'mud-builder-server')).toBe(true);
     // The whole point: a device enrolled on the builder origin cannot reach for another
     // service's audience, even though nothing stops it from asking.
-    expect(DeviceStore.mayMintFor(found.device, 'kingdom-tactics-server')).toBe(false);
+    expect(DeviceStore.mayMintFor(found.device, 'scrum-poker-server')).toBe(false);
   });
 
   it('carries every service when an origin maps to more than one', () => {
-    const both = ['mud-builder-server', 'kingdom-tactics-server'];
+    const both = ['mud-builder-server', 'scrum-poker-server'];
     const { id } = store.enroll(ACCOUNT_ID, realPublicJwk(), 'Multi', 0, ORIGIN, both);
     const found = store.lookup(id, epochLookup(0));
     expect(found.ok).toBe(true);

@@ -25,6 +25,10 @@
       that is the whole point.
     -->
     <link rel="canonical" href="https://shatteredarchive.dev/" />
+    <!-- Agent discovery (ARD): points tools at the manifest listing llms.txt, the sitemap and the
+         hub agent skill. Absolute for the same reason as the canonical above — this file is also
+         served, byte-identical, from game-server. and web-client. -->
+    <link rel="ard" href="https://shatteredarchive.dev/.well-known/ard.json" />
 
     <!-- Social preview. og:image is deliberately ABSENT rather than pointed at a placeholder:
          a broken or missing image URL renders worse in a share card than no image tag, which
@@ -673,21 +677,6 @@
               </p>
               <span class="demo-host">simulacrum.shatteredarchive.dev</span>
             </a>
-
-            <!-- Still a 503 stub on the front proxy, so a link would land on "Not yet
-                 deployed". Swap the <div> for an <a href> when the stub is replaced by a
-                 real proxy block in DSL/nginx/shattered_archive.site. -->
-            <div class="demo demo-soon">
-              <div class="demo-head">
-                <h3>Kingdom Tactics</h3>
-                <span class="badge badge-soon">Coming soon</span>
-              </div>
-              <p>
-                A turn-based tactics game built on the archive's class, skill and alignment data — online
-                matches and local hotseat share one engine.
-              </p>
-              <span class="demo-host">kingdom-tactics.shatteredarchive.dev</span>
-            </div>
           </div>
         </section>
       </div>
@@ -727,7 +716,6 @@
               <li><code>web-server.shatteredarchive.dev</code></li>
               <li><code>build.shatteredarchive.dev</code></li>
               <li><code>auth.shatteredarchive.dev</code></li>
-              <li><code>kingdom-tactics.shatteredarchive.dev</code></li>
               <li><code>scrum-poker.shatteredarchive.dev</code></li>
               <li><code>soulsteel.shatteredarchive.dev</code></li>
               <li><code>simulacrum.shatteredarchive.dev</code></li>
@@ -738,7 +726,7 @@
             <h3>2. Bring the stack up</h3>
             <p>
               From <code>deploy/</code>. The default compose file runs the published services; the
-              experimental one adds MUD Builder, Kingdom Tactics, and Simulacrum. Simulacrum's own
+              experimental one adds MUD Builder and Simulacrum. Simulacrum's own
               container also ships in the default file, but it needs MUD Builder's shared role
               store to grant anyone access, so it only works when run via the experimental stack.
             </p>

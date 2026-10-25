@@ -24,6 +24,14 @@
         "command": "dslColorPreview.showPreview",
         "title": "DSL Color Preview: Open Preview to the Side",
         "icon": "$(preview)"
+      },
+      {
+        "command": "dslColorPreview.copyPlainText",
+        "title": "DSL Color Preview: Copy as Plain Text"
+      },
+      {
+        "command": "dslColorPreview.copyAnsiText",
+        "title": "DSL Color Preview: Copy as ANSI Text"
       }
     ],
     "menus": {
@@ -31,6 +39,16 @@
         {
           "command": "dslColorPreview.showPreview",
           "group": "navigation"
+        },
+        {
+          "command": "dslColorPreview.copyPlainText",
+          "when": "activeWebviewPanelId == dslColorPreview",
+          "group": "1_copy@1"
+        },
+        {
+          "command": "dslColorPreview.copyAnsiText",
+          "when": "activeWebviewPanelId == dslColorPreview",
+          "group": "1_copy@2"
         }
       ],
       "explorer/context": [
@@ -45,6 +63,16 @@
           "command": "dslColorPreview.showPreview",
           "when": "resourceExtname == .txt",
           "group": "navigation"
+        },
+        {
+          "command": "dslColorPreview.copyPlainText",
+          "when": "resourceExtname == .txt",
+          "group": "9_cutcopypaste@90"
+        },
+        {
+          "command": "dslColorPreview.copyAnsiText",
+          "when": "resourceExtname == .txt",
+          "group": "9_cutcopypaste@91"
         }
       ]
     }

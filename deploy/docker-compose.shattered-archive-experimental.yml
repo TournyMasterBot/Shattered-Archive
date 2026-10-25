@@ -87,7 +87,11 @@ services:
       - ./index.html:/var/www/shatteredarchive-dev/index.html:ro
       - ./privacy.html:/var/www/shatteredarchive-dev/privacy.html:ro
       - ./site.js:/var/www/shatteredarchive-dev/site.js:ro
+      - ./llms.txt:/var/www/shatteredarchive-dev/llms.txt:ro
       - ./sitemap.xml:/var/www/shatteredarchive-dev/sitemap.xml:ro
+      - ./well-known/ard.json:/var/www/shatteredarchive-dev/.well-known/ard.json:ro
+      - ./well-known/ai-catalog.json:/var/www/shatteredarchive-dev/.well-known/ai-catalog.json:ro
+      - ./well-known/shattered-archive-hub.md:/var/www/shatteredarchive-dev/.well-known/agent-skills/shattered-archive-hub.md:ro
 
       # nginx logs to host
       - "C:/Projects/DSL/GameLogs/ShatteredArchive/Docker/nginx:/var/log/nginx"
@@ -104,7 +108,6 @@ services:
           - web-server.shatteredarchive.dev
           - build.shatteredarchive.dev
           - auth.shatteredarchive.dev
-          - kingdom-tactics.shatteredarchive.dev
           - scrum-poker.shatteredarchive.dev
           - simulacrum.shatteredarchive.dev
       sa-shared: {}
@@ -366,78 +369,6 @@ services:
           - mud-builder-client.shatteredarchive.dev
 
   ############################################################
-  # KINGDOM TACTICS (kingdom-tactics.shatteredarchive.dev) — Phase F,
-  # additive like mud-builder/auth: neither container is in nginx's
-  # depends_on, so the rest of the stack starts fine either way. Single
-  # subdomain for client+server (see edge-subdomains.conf) — kt-client's own
-  # code calls relative /api/kt paths, no separate server subdomain.
-  ############################################################
-  kingdom-tactics-server:
-    build:
-      context: ..
-      dockerfile: deploy/kingdom-tactics-server.Dockerfile
-    image: shatteredarchive-kingdom-tactics-server
-    stdin_open: true
-    tty: true
-    restart: unless-stopped
-    volumes:
-      # Ed25519 private half for this service's own SSO registration (Step 1) — git-ignored
-      # (see .gitignore's `shattered-service.key` pattern), minted via `pnpm --filter
-      # @shatteredarchive/auth-server register-service kingdom-tactics-server` run against
-      # auth-server's live data dir/key. Rotation needs revoke-service-key on the OLD key id.
-      - "../apps/kingdom-tactics-server/secrets:/repo/apps/kingdom-tactics-server/secrets:ro"
-      # Named volume (not a host bind-mount like auth-server's data/): match-history/army-layout
-      # JSON is pure application data, never hand-edited on the host.
-      - "kingdom-tactics-data:/repo/apps/kingdom-tactics-server/data"
-    environment:
-      NODE_ENV: production
-      PORT: "51000"
-      DATA_DIR: "/repo/apps/kingdom-tactics-server/data"
-      # Server-to-server calls (introspect/exchange) use the internal alias, no TLS — matches
-      # mud-builder-server's own AUTH_SERVER_URL convention. AUTH_SERVER_PUBLIC_URL is what the
-      # BROWSER gets redirected to, so it must stay the real public edge. Since 2026-07-30 it
-      # has a SECOND consumer: GET /api/kt/config serves it to kt-client so the browser can
-      # enrol a device key. Its counterpart is auth-server's DEVICE_ORIGIN_SERVICES, which must
-      # list kingdom-tactics.shatteredarchive.dev (it does).
-      AUTH_SERVER_URL: "http://auth-server.shatteredarchive.dev:62000"
-      AUTH_SERVER_PUBLIC_URL: "https://auth.shatteredarchive.dev"
-      SERVICE_PRIVATE_KEY_PATH: "/repo/apps/kingdom-tactics-server/secrets/shattered-service.key"
-      # MUST match exactly what's registered via register-redirect-uri for this service, or the
-      # hub's code store burns the code on a mismatch.
-      KT_SERVER_CALLBACK_URL: "https://kingdom-tactics.shatteredarchive.dev/api/kt/auth/callback"
-      KT_CLIENT_ALLOWED_RETURN_ORIGINS: "https://kingdom-tactics.shatteredarchive.dev"
-    expose:
-      - "51000"
-    networks:
-      shatteredarchive:
-        aliases:
-          - kingdom-tactics-server.shatteredarchive.dev
-
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "node -e \"const net=require('net');const s=net.connect(51000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
-        ]
-      interval: 10s
-      timeout: 3s
-      retries: 12
-      start_period: 20s
-
-  kingdom-tactics-client:
-    build:
-      context: ..
-      dockerfile: deploy/kingdom-tactics-client.Dockerfile
-    image: shatteredarchive-kingdom-tactics-client
-    stdin_open: true
-    tty: true
-    restart: unless-stopped
-    networks:
-      shatteredarchive:
-        aliases:
-          - kingdom-tactics-client.shatteredarchive.dev
-
-  ############################################################
   # SIMULACRUM (simulacrum.shatteredarchive.dev) — .ai-plans/
   # 20260816-0701-simulacrum-mud-wiring.md Step 1. Two listeners in one
   # process: a small Express surface (65000 — /health, the SSO sign-in page,
@@ -458,7 +389,7 @@ services:
       # Ed25519 private half for this service's own SSO/introspect registration — git-ignored
       # (see .gitignore's `shattered-service.key` pattern), minted via `pnpm --filter
       # @shatteredarchive/auth-server register-service simulacrum-server` run against
-      # auth-server's live data dir/key, same ceremony as mud-builder-server/kingdom-tactics-server.
+      # auth-server's live data dir/key, same ceremony as mud-builder-server.
       - "../apps/simulacrum-server/secrets:/repo/apps/simulacrum-server/secrets:ro"
       # SINGLE-FILE bind mount onto mud-builder-server's OWN roles.json (Constraints: trusted+
       # tier is shared between mud-builder-server and simulacrum-server, not two independent
@@ -610,15 +541,15 @@ services:
       #
       # auth-client is absent on purpose: it is same-origin with auth-server here (nginx
       # routes /api/ on auth.shatteredarchive.dev to this service), so CORS never applies.
-      DEVICE_ORIGIN_SERVICES: "https://build.shatteredarchive.dev=mud-builder-server,https://kingdom-tactics.shatteredarchive.dev=kingdom-tactics-server"
+      DEVICE_ORIGIN_SERVICES: "https://build.shatteredarchive.dev=mud-builder-server"
       # Services where holding a device key is NOT sufficient: the account must also hold an
       # active API key for that service, minted in auth-client's API keys tab. That makes the
       # API key the ENTITLEMENT record — granted and revoked in one place, never pasted into
       # an app — while the device key remains the thing that authenticates.
       #
       # Empty by DEFAULT and deliberately so: switching a service on here immediately refuses
-      # every account that has no key for it. kingdom-tactics-server must stay open (anyone
-      # signed in may play); mud-builder-server is the candidate to turn on, since authoring
+      # every account that has no key for it. mud-builder-server is the candidate to turn on,
+      # since authoring
       # access should be explicitly granted. Enable with:
       #   DEVICE_GRANT_REQUIRED_SERVICES: "mud-builder-server"
       DEVICE_GRANT_REQUIRED_SERVICES: ""
@@ -658,7 +589,7 @@ services:
           - auth-client.shatteredarchive.dev
 
   ############################################################
-  # SCRUM POKER (scrum-poker.shatteredarchive.dev) — additive like mud-builder/auth/KT:
+  # SCRUM POKER (scrum-poker.shatteredarchive.dev) — additive like mud-builder/auth:
   # neither container is in nginx's depends_on, so the rest of the stack starts fine
   # either way. Single subdomain for client+server (see edge-subdomains.conf): the client
   # calls same-origin /api/scrum and /ws/scrum, so there is no separate server subdomain.
@@ -755,7 +686,7 @@ services:
   # health-check-only skeleton — no data dir, no volume, not wired to auth-server. Game state
   # lives entirely in the browser's IndexedDB. The follow-on plan
   # (.ai-plans/20260813-1912-soulsteel-auth-archive-dashboard.md) is what adds persistence,
-  # an auth wiring block matching kingdom-tactics-server's, and a named volume — do not add
+  # an auth wiring block matching mud-builder-server's, and a named volume — do not add
   # those here speculatively ahead of that plan landing.
   ############################################################
   soulsteel-server:
@@ -820,5 +751,4 @@ volumes:
   # other's files. See deploy/docker-compose.yml for the full rationale.
   sa-service-pubkeys:
     name: sa-service-pubkeys
-  kingdom-tactics-data:
   scrum-poker-data:

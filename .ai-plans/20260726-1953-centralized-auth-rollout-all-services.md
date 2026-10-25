@@ -13,7 +13,7 @@ with this doc tracking overall order and completion.
 
 > **HISTORY — READ BEFORE WIRING game-server.** Phase 3
 > (`.ai-plans/20260720-0052-centralized-auth-service-phase3-more-consumers.md`) originally
-> wired `web-server` + `game-server` + `kingdom-tactics-server`, and the user **explicitly
+> wired `web-server` + `game-server` + `removed-app-server`, and the user **explicitly
 > reverted** the `web-server`/`game-server` halves on 2026-07-20 ("Undo any changes made to
 > game client and web server related to authentication"). This plan re-opens the **game**
 > pair as a fresh, user-directed decision (2026-07-26 request explicitly lists Web Game).
@@ -29,7 +29,7 @@ One account (auth-server identity) works across every Shattered Archive property
 | auth-server/-client | The hub itself | Gains SSO hand-off flow, global roles + user management (list/manage strictly-below), delegation surface, and a visual refresh drawing from the C# site's style |
 | mud-builder pair | **Already wired** (Phases 2/4, live since 2026-07-24) — the reference pattern | Adds per-user saved content; Engine tab gated by an auth-server role |
 | game pair | Unwired (Phase 3 reversion) | game-client login + save userScripts/books/configs into the C# service's store |
-| kingdom-tactics pair | Host-script only (Phase 3 `introspect-check`) | Real WS auth + persisted match history/replays/army layouts + dashboard |
+| removed-app pair | Host-script only (Phase 3 `introspect-check`) | Real WS auth + persisted match history/replays/army layouts + dashboard |
 | C# Server.Web.Public (DSL repo) | Own separate JWT user system (deployed but never utilized) | Auth-server identity **replaces its own login in total** — legacy flow deleted outright, nothing to migrate; central content repository + roll-up dashboard |
 | DslMapper (own repo) | No auth, no backend | Optional login + save maps (stored via the C# service) |
 | DslLogViewer (own repo) | No auth, no backend | Optional login + save game logs (stored via the C# service) |
@@ -65,7 +65,7 @@ present in every token exchange as proof of service trust.
 
 The mud-builder pair proved the mechanism end to end (Ed25519 service assertions →
 `/api/introspect`, local-store-first with introspect fallback, live deployment with key
-rotation discipline). Every other property still has either no auth at all (game, KT, mapper,
+rotation discipline). Every other property still has either no auth at all (game, removed-app, mapper,
 log viewer, mobile) or a completely separate identity silo (the C# site's own JWT users).
 Users currently cannot carry content between properties, and nothing consumer-facing can ask
 "who are you" without a paste-an-API-key ritual. The hub exists and is deployed; this program
@@ -84,7 +84,7 @@ is about consumers.
   about the login *path*, not about reaching the site).
 - **Local-first where a local path is retained by design; the C# service is the deliberate
   exception.** For services keeping a local auth path (mud-builder's `builder-auth.json` +
-  master key, KT's anonymous play), that path is always checked first and keeps working with
+  master key, removed-app's anonymous play), that path is always checked first and keeps working with
   `auth-server` unreachable — introspection stays additive there. The C# service, by
   explicit user direction (2026-07-26), **replaces its login with auth-server identity in
   total** — auth-server is a hard login dependency there by design (mitigate outages with
@@ -137,7 +137,7 @@ is about consumers.
   token exchange as proof of service trust. Consequence: browser/mobile apps are **public
   clients** — each pairs with the backend service it stores data through, and THAT backend
   performs its exchange (game-client, DslMapper, DslLogViewer, and mobile pair with the C#
-  service; kt-client with kingdom-tactics-server; mud-builder-client with
+  service; removed-app-client with removed-app-server; mud-builder-client with
   mud-builder-server). Design target: compromising any one service must not grant access to
   any other; the only accepted single point of trust is auth-server itself.
 - **`KNOWN_SERVICES` in `apps/auth-client/src/features/keys/KeysPage.tsx:13` grows by one
@@ -197,12 +197,12 @@ is about consumers.
   core plugins + per-plugin settings), `hooks/useUserScriptSandbox.ts` — this is the content
   that becomes server-saved. Where exactly it persists today (localStorage keys, shapes) is
   a sub-plan verification item, not assumed here.
-- **kingdom-tactics-server** (`apps/kingdom-tactics-server/.ai-context`): Express 5 + `ws`
-  at `/ws/kt`, server-authoritative `MatchSession`/`MatchRegistry`, port 51000, "No
+- **removed-app-server** (`apps/removed-app-server/.ai-context`): Express 5 + `ws`
+  at `/ws/removed`, server-authoritative `MatchSession`/`MatchRegistry`, port 51000, "No
   auth/reconnect in v1 (Phase 7)". Already has `scripts/introspect-check.ts` + `.env` block
   from Phase 3. Deterministic engine + action log means replays are re-simulation from a
   stored action log (cheap), not video/state dumps; hidden-outcome rolls use a server-only
-  salt (memory `kt-combat-reactions-salted-rng`) — a replay/spectator path must not leak it.
+  salt (memory `removed-app-combat-reactions-salted-rng`) — a replay/spectator path must not leak it.
 - **C# Server.Web.Public** (`C:\Projects\DSL\Server\Server.Web.Public`): ASP.NET MVC with
   its OWN complete user system — `Middleware/JwtMiddleware.cs:18` (jwt-token cookie →
   `IJwtUtils.ValidateJwtToken` → `IUserService.PublicGetById` → `context.Items["User"]` +
@@ -423,12 +423,12 @@ is about consumers.
 - Verify: alias created on web appears on mobile after sync and vice versa; auth survives
   app background/restart; logged-out mobile unchanged.
 
-### [x] F. (CLAUDE) Kingdom Tactics: WS auth + persistence + dashboard (apps/kingdom-tactics-*)
+### [x] F. (CLAUDE) a removed app: WS auth + persistence + dashboard (apps/removed-app-*)
 - Do: promote the Phase 3 host-script proof into a real guard — token presented in the WS
   hello/claim frame, introspected server-side, accountId attached to the seat; persist
   match history + action-log replays (deterministic re-simulation; never persist/serve the
   hidden-outcome salt) + army layouts keyed by accountId (storage engine chosen in
-  sub-plan); kt-client gains login (Phase A SSO) + a dashboard (history list, replay
+  sub-plan); removed-app-client gains login (Phase A SSO) + a dashboard (history list, replay
   viewer reusing the engine, army-layout save/load); summary endpoint for Phase H.
   Anonymous play stays possible (local-first: auth adds persistence, never gates the game).
 - Verify: play a match logged in → it appears in history → replay reproduces the recorded
@@ -454,7 +454,7 @@ is about consumers.
   no service key in either bundle, their SSO code exchange runs in the C# backend
   (key-custody constraint). Then the roll-up: a summary-endpoint convention (`GET /api/user-content/summary`,
   caller's bearer token introspected, returns counts/titles/updated-at + link-out URL) on
-  kingdom-tactics-server + mud-builder-server; the C# dashboard fans out server-side via
+  removed-app-server + mud-builder-server; the C# dashboard fans out server-side via
   Phase A's **on-behalf-of exchange** (its own assertion + the user's C#-scoped token → a
   short-TTL token scoped to each target service, still bound to the same user — never raw
   forwarding of the user's token across services, never impersonation via its own service
@@ -714,11 +714,11 @@ is about consumers.
 - 2026-07-27T19:20-05:00 **Phase E DEFERRED** (user-directed): an open branch
   in `shatteredarchive-mobile` already adds better iOS compatibility, and the
   user does not want auth wiring done twice against a codebase mid-refactor
-  there. Skipping ahead to **F** (Kingdom Tactics) instead; E stays `[ ]` and
+  there. Skipping ahead to **F** (a removed app) instead; E stays `[ ]` and
   unstarted, to be picked back up once that iOS branch lands/merges — do not
   start E without re-confirming that branch's status first.
 - 2026-07-28T13:20-05:00 **Phase F COMPLETE** (sub-plan
-  `.ai-plans/20260727-1930-auth-rollout-phaseF-kingdom-tactics.md`, all 4
+  `.ai-plans/20260727-1930-auth-rollout-phaseF-removed-app.md`, all 4
   steps done + live-verified, incl. a real docker deployment). Kingdom
   Tactics' WS `join` frame now carries an optional bearer token (introspected
   server-side, attached to the claimed seat as an accountId) purely
@@ -730,16 +730,16 @@ is about consumers.
   account-scoped army-layout cloud sync, all gated by the SAME introspection
   wiring as the WS resolver but the OPPOSITE failure policy (401, not
   anonymous — "my match history" has no anonymous equivalent).
-  kingdom-tactics-server is, unlike game-client, a REAL backend and performs
+  removed-app-server is, unlike game-client, a REAL backend and performs
   its OWN SSO code exchange with its OWN registered key (a standard Phase A
-  consumer, not a borrowed-key one) — its new `/api/kt/auth/start`/
-  `/api/kt/auth/callback` routes are this service's first-ever HTTP surface
-  beyond `/`/`/health`. kt-client gained a login + dashboard + a replay
+  consumer, not a borrowed-key one) — its new `/api/removed/auth/start`/
+  `/api/removed/auth/callback` routes are this service's first-ever HTTP surface
+  beyond `/`/`/health`. removed-app-client gained a login + dashboard + a replay
   viewer that reuses the existing `Arena` component in read-only mode (zero
   new board-rendering code) and army-layout cloud save/load.
   **Deployed for real this phase** (per explicit user direction, "Full
   deploy now"), not just prepped: two new Dockerfiles, a new
-  `kingdom-tactics.shatteredarchive.dev` edge-nginx subdomain
+  `removed-app.shatteredarchive.dev` edge-nginx subdomain
   (single-subdomain design — confirmed as the REAL working pattern in this
   repo by finding that game-client's OWN Dockerfile silently ignores the
   separate-subdomain build args its compose block passes), new compose
@@ -753,7 +753,7 @@ is about consumers.
   own live-test residue (real, if low-stakes, test data + a private key)
   into the image. `.dockerignore` fix benefits every existing service's
   future builds too, not just this one. One new hosts-file entry is needed
-  on the user's machine for browser access (`kingdom-tactics.shatteredarchive.dev`)
+  on the user's machine for browser access (`removed-app.shatteredarchive.dev`)
   — flagged explicitly, since this repo/session cannot edit that system
   file itself. Full evidence, all real bugs found/fixed, and the exact
   design-correction reasoning (why single-subdomain over the originally-
@@ -762,7 +762,7 @@ is about consumers.
   role-gated Engine) — or resume **E** (Mobile) if that iOS branch has
   landed by then.
 - 2026-07-28T14:05-05:00 **Phase F final sign-off** (user added the
-  `kingdom-tactics.shatteredarchive.dev` hosts entry and asked for a final
+  `removed-app.shatteredarchive.dev` hosts entry and asked for a final
   live-tested review). Caught and fixed one more real deploy bug that only
   surfaces over the ACTUAL public scheme: this repo's nginx keeps HTTP
   (`edge-subdomains.conf`) and HTTPS (`nginx/includes/tls-dev.conf`) as two
@@ -790,7 +790,7 @@ is about consumers.
   (admin tier+); (2) private per-account snippets — save/load
   Room/Mob/Object/Script templates via a new My Content tab, never touching
   the live area files, whole-collection GET/PUT (discovered mid-build that
-  this — not per-item CRUD — is kingdom-tactics-server's actual established
+  this — not per-item CRUD — is removed-app-server's actual established
   precedent for per-account storage, a better mirror than the sub-plan's own
   upfront guess). Real bug found and fixed along the way: mud-builder-server's
   jest config mapped `@shatteredarchive/services-server` straight to
@@ -1022,7 +1022,7 @@ is about consumers.
     out (the hub has none — the docker edge splits /api/* and /health to
     auth-server:62000 and / to auth-client:80 itself). HTTP->HTTPS needed NO
     change: the port-80 block already covers *.shatteredarchive.dev and ends in
-    an unconditional 301. build./kingdom-tactics. stay stubs.
+    an unconditional 301. build./removed-app. stay stubs.
   * SA prod compose (deploy/docker-compose.yml): auth-server now ALSO joins
     sa-shared under the SAME alias it has internally. This was the real cross-
     project gap — the C# site is a DIFFERENT compose project and could not

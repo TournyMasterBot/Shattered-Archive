@@ -1,0 +1,13 @@
+{
+  "repos": {
+    "C:/Projects/ShatteredArchive": {
+      "include": ["apps/game-client/src/"],
+      "exclude": ["/types/", "/shims/", "/test-utils/", "/testUtils/"],
+      "jestConfig": "jest.config.cjs",
+      "verifyTimeoutSec": 150,
+      "verify": true
+    }
+  },
+  "showcaseRoot": "C:/Projects/Shattered-AI/tools/browser-test/output/showcase",
+  "maxBlocks": 3
+}
