@@ -27,7 +27,7 @@ async function main(): Promise<void> {
 
   const config = getAuthServerConfig();
   const key = loadDataKey();
-  const store = new ServiceKeyStore(config.dataDir, key);
+  const store = new ServiceKeyStore(config.secureDataDir,key);
 
   store.revokeKey(serviceName, keyId);
   console.log(`Revoked key ${keyId} for service ${JSON.stringify(serviceName)}.`);

@@ -27,7 +27,7 @@ async function main(): Promise<void> {
 
   const config = getAuthServerConfig();
   const key = loadDataKey();
-  const store = new AccountStore(config.dataDir, key);
+  const store = new AccountStore(config.secureDataDir,key);
 
   const account = store.findByUsername(username);
   if (!account) {

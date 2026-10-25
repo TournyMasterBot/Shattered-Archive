@@ -26,7 +26,7 @@ async function main(): Promise<void> {
 
   const config = getAuthServerConfig();
   const key = loadDataKey();
-  const store = new ServiceKeyStore(config.dataDir, key);
+  const store = new ServiceKeyStore(config.secureDataDir,key);
 
   const { publicKeyPem, privateKeyPem } = generateServiceKeypair();
   const { keyId } = store.registerKey(serviceName, publicKeyPem);

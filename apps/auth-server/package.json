@@ -11,6 +11,7 @@
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
     "temp-password": "tsx scripts/issue-temp-password.ts",
+    "list-accounts": "tsx scripts/list-accounts.ts",
     "register-service": "tsx scripts/register-service.ts",
     "revoke-service-key": "tsx scripts/revoke-service-key.ts",
     "grant-tier": "tsx scripts/grant-tier.ts",

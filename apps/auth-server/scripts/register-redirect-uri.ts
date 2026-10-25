@@ -25,7 +25,7 @@ async function main(): Promise<void> {
   }
 
   const config = getAuthServerConfig();
-  const store = new ServiceKeyStore(config.dataDir, loadDataKey());
+  const store = new ServiceKeyStore(config.secureDataDir,loadDataKey());
 
   if (verb === 'add') {
     store.addRedirectUri(serviceName, uri);
