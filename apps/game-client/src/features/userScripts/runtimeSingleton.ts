@@ -2,6 +2,7 @@
 
 import { AccessibilitySettings, getAccessibilitySettings } from '../accessibility/accessibility-settings-store';
 import { STORAGE_KEY_PREFIX_USERSCRIPTS, UserScriptRuntime } from './userScriptRuntime';
+import { canonicalConnectionId } from '../connection/connectionId';
 import { pluginHost } from '../plugins/pluginHost';
 import { ListenDomEvent, ListenEvent, ListenRedispatchMap, DispatchEvent } from '../event-emitter/event-dispatcher';
 import { dslToAnsi } from '../chat/dsl-to-ansi';
@@ -45,8 +46,7 @@ type NamedVarDeleteEvent = { name: string; connectionId?: string };
 type NamedVarClearEvent = { connectionId?: string };
 
 function safeConnId(v: unknown): string {
-  const s = String(v ?? '').trim();
-  return s.length > 0 ? s : 'default';
+  return canonicalConnectionId(String(v ?? ''));
 }
 
 function normalizeVarName(name: unknown): string {
@@ -326,7 +326,7 @@ export class RuntimeSingleton {
             return;
           }
 
-          const connectionId = e.key.slice(STORAGE_KEY_PREFIX_USERSCRIPTS.length) || 'default';
+          const connectionId = e.key.slice(STORAGE_KEY_PREFIX_USERSCRIPTS.length);
           this.hydrateRuntime(connectionId);
         },
         { key: 'runtimeSingleton::window::storage' },
@@ -396,7 +396,7 @@ export class RuntimeSingleton {
       getTimers: () => this.userScriptRuntime.getAllScripts().filter((s: any) => s.kind === 'timer'),
 
       reload: (connectionId?: string) => {
-        const id = connectionId ?? 'default';
+        const id = canonicalConnectionId(connectionId);
         this.hydrateRuntime(id);
         console.log('[__SA_RUNTIME__] reloaded', { connectionId: id });
       },

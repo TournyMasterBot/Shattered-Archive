@@ -33,11 +33,15 @@ jest.mock('../hooks/useVisualViewportHeight', () => ({
   useVisualViewportHeight: () => {},
 }));
 
+// Mutable per test so the connection-id derivation can be driven from here.
+const mockConn = { host: '', port: 0 };
+const mockPluginConnectionIds: unknown[] = [];
+
 jest.mock('../hooks/useGameConnection', () => ({
   useGameConnection: () => ({
     isConnected: false,
-    currentHost: '',
-    currentPort: 0,
+    currentHost: mockConn.host,
+    currentPort: mockConn.port,
     lastError: null,
     connect: jest.fn(),
     disconnect: jest.fn(),
@@ -46,7 +50,9 @@ jest.mock('../hooks/useGameConnection', () => ({
 }));
 
 jest.mock('../hooks/usePlugins', () => ({
-  usePlugins: () => ({
+  usePlugins: (connectionId?: string) => {
+    mockPluginConnectionIds.push(connectionId);
+    return {
     plugins: [],
     installed: [],
     getPlugin: jest.fn(),
@@ -60,7 +66,8 @@ jest.mock('../hooks/usePlugins', () => ({
     disablePlugin: jest.fn(),
     setPluginEnabled: jest.fn(),
     updatePluginConfig: jest.fn(),
-  }),
+    };
+  },
 }));
 
 jest.mock('../hooks/useEquipmentCapture', () => ({
@@ -245,6 +252,36 @@ describe('MainContainer — shell selection', () => {
   beforeEach(() => {
     window.localStorage.clear();
     setViewportWidth(1440);
+    mockConn.host = '';
+    mockConn.port = 0;
+    mockPluginConnectionIds.length = 0;
+  });
+
+  describe('connection id handed to the per-connection stores', () => {
+    const lastId = () => mockPluginConnectionIds[mockPluginConnectionIds.length - 1];
+
+    it('is dsl-mud while disconnected', async () => {
+      render(<MainContainer />);
+      await screen.findByText('classic-shell');
+      expect(lastId()).toBe('dsl-mud');
+    });
+
+    it('stays dsl-mud once connected to the DSL game, so nothing is re-keyed on connect', async () => {
+      mockConn.host = 'dsl-mud.org';
+      mockConn.port = 4000;
+      render(<MainContainer />);
+      await screen.findByText('classic-shell');
+      expect(lastId()).toBe('dsl-mud');
+      expect(mockPluginConnectionIds).not.toContain('default');
+    });
+
+    it('keeps host:port for a custom server', async () => {
+      mockConn.host = 'mud.example.com';
+      mockConn.port = 4000;
+      render(<MainContainer />);
+      await screen.findByText('classic-shell');
+      expect(lastId()).toBe('mud.example.com:4000');
+    });
   });
 
   it('renders the classic shell by default', async () => {

@@ -1,7 +1,8 @@
+import { canonicalConnectionId } from '../connection/connectionId';
 // apps\game-client\src\features\plugins\pluginCss.ts
 
 function getStyleId(connectionId: string, pluginId: string) {
-  const c = connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
+  const c = canonicalConnectionId(connectionId);
   return `plugin-css-style-${c}-${pluginId}`;
 }
 

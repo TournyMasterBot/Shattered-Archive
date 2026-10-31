@@ -1,6 +1,7 @@
 // apps/game-client/src/features/userScripts/userVariablesStore.ts
 
 import { DispatchEvent } from '../event-emitter/event-dispatcher';
+import { canonicalConnectionId } from '../connection/connectionId';
 
 const USER_VARS_KEY_PREFIX = 'shatteredArchive.userVariables.';
 
@@ -12,7 +13,7 @@ type NamedVarsPayloadV1 = {
 };
 
 function safeConnectionId(connectionId?: string | null) {
-  return connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
+  return canonicalConnectionId(connectionId);
 }
 
 export function getUserVariablesStorageKey(connectionId?: string | null) {

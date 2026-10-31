@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 
 import App from './App.js';
+import { a11yProblems } from './axe-helper.js';
 
 function mockMe(summary: Record<string, unknown>): void {
   globalThis.fetch = jest.fn(async (input: RequestInfo | URL) => {
@@ -44,6 +45,56 @@ describe('App /signup landing (Phase B)', () => {
     mockLoggedOut();
     render(<App />);
     expect(await screen.findByRole('heading', { name: 'Log in' })).toBeTruthy();
+  });
+});
+
+describe('App accessibility (axe)', () => {
+  afterEach(() => {
+    window.history.pushState(null, '', '/');
+  });
+
+  it('login view has no axe violations', async () => {
+    window.history.pushState(null, '', '/');
+    mockLoggedOut();
+    const { container } = render(<App />);
+    await screen.findByRole('heading', { name: 'Log in' });
+    expect(await a11yProblems(container)).toEqual([]);
+  });
+
+  it('signup view has no axe violations', async () => {
+    window.history.pushState(null, '', '/signup');
+    mockLoggedOut();
+    const { container } = render(<App />);
+    await screen.findByRole('heading', { name: 'Create an account' });
+    expect(await a11yProblems(container)).toEqual([]);
+  });
+
+  it('signed-in account view has no axe violations', async () => {
+    mockMe({ ...baseSummary, globalRole: 'moderator' });
+    const { container } = render(<App />);
+    await screen.findByRole('button', { name: 'Admin' });
+    expect(await a11yProblems(container)).toEqual([]);
+  });
+
+  // Proves the audit can fail: jsdom reports this bug as `incomplete`, which a plain jest-axe check lets through.
+  it('reports a focusable link inside aria-hidden', async () => {
+    const { container } = render(
+      <div aria-hidden="true">
+        <a href="https://example.test/">Privacy</a>
+      </div>,
+    );
+    const problems = await a11yProblems(container);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain('aria-hidden-focus');
+  });
+
+  it('does not flag a decorative aria-hidden element with nothing focusable inside', async () => {
+    const { container } = render(
+      <p>
+        <span aria-hidden="true">=====</span> Loading
+      </p>,
+    );
+    expect(await a11yProblems(container)).toEqual([]);
   });
 });
 

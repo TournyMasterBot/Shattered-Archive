@@ -58,8 +58,9 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, con
               <div className={styles.connectionLine}>Connection: {connectionId}</div>
               <div className={styles.blurb}>
                 Save pushes this connection's local scripts, plugin configs, and library writings to the cloud. Load
-                replaces the scripts/plugin configs with whatever was last saved there, and merges in any library
-                writings saved from the cloud (your local writings are never deleted by Load).
+                shows what it will replace and asks first. It replaces scripts/plugin configs with whatever was last
+                saved there (an empty cloud never wipes this device), and merges in any library writings saved from the
+                cloud (your local writings are never deleted by Load).
               </div>
               <div className={styles.actionsColumn}>
                 <button type="button" className={styles.secondaryButton} onClick={handleSaveToCloud} disabled={busy}>

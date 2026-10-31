@@ -110,6 +110,31 @@ describe('PluginHost.syncInstalled', () => {
     });
   });
 
+  it('hands out one shared config object until the config changes, then a fresh one', () => {
+    const host = new PluginHost();
+    const probe = makeProbe('p-config');
+    host.setConnection('dsl-mud');
+    host.registerModule(probe.module);
+    host.syncInstalled([{ id: 'p-config', enabled: true, userConfig: { alpha: 'one' } }]);
+    const api = probe.api!;
+
+    const first = api.getConfig();
+    expect(api.getConfig()).toBe(first);
+
+    api.updateConfig({ alpha: 'two' });
+    const second = api.getConfig();
+    expect(second).not.toBe(first);
+    expect(second).toEqual({ alpha: 'two', beta: 'default-beta' });
+    expect(api.getConfig()).toBe(second);
+    // The earlier snapshot is untouched by the later update.
+    expect(first.alpha).toBe('one');
+
+    api.setConfig({ alpha: 'three' });
+    const third = api.getConfig();
+    expect(third).not.toBe(second);
+    expect(third).toEqual({ alpha: 'three' });
+  });
+
   it('still disables a plugin that was turned off, and re-enabling builds a fresh instance', () => {
     const host = new PluginHost();
     const tts = makeProbe('text-to-speech');

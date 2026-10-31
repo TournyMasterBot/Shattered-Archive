@@ -20,3 +20,5 @@ Purpose: Runs bundled plugin scripts as triggers, timers, or aliases within a ru
 
 /registry.ts
 Purpose: Registers and provides access to all core plugins for the game client.
+
+shared/regexCache.ts: patterns are tried as case-insensitive regexes with a literal-substring fallback for ones that do not compile; never pass g/y flags (a cached RegExp with lastIndex state would skip matches). shared/memoLast.ts keeps ONE remembered argument, so two call sites that alternate need their own instance (text-to-speech has one parser each for include and exclude).

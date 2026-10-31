@@ -10,6 +10,7 @@
  * - Coerce missing fields from fallback conservatively.
  */
 
+import { canonicalConnectionId } from '../connection/connectionId';
 import type { AutoLevelConfig } from './autoleveling-types';
 import { createDefaultAutoLevelConfig } from './autoleveling-defaults';
 import { migrateAutoLevelConfigV2ToV3 } from './autoleveling-normalize';
@@ -56,7 +57,7 @@ const KEY_PREFIX = 'autoleveling-config-v3:';
 const KEY_PREFIX_V2 = 'autoleveling-config-v2:';
 
 function keyFor(connectionId: string): string {
-  return `${KEY_PREFIX}${connectionId || 'default'}`;
+  return `${KEY_PREFIX}${canonicalConnectionId(connectionId)}`;
 }
 
 function isObject(x: unknown): x is Record<string, unknown> {
@@ -115,7 +116,7 @@ export function loadAutoLevelConfig(connectionId: string, fallback?: AutoLevelCo
 
     if (!raw) {
       // One-time forward migration from the old modal's v2 key.
-      raw = localStorage.getItem(`${KEY_PREFIX_V2}${connectionId || 'default'}`);
+      raw = localStorage.getItem(`${KEY_PREFIX_V2}${canonicalConnectionId(connectionId)}`);
       if (!raw) {
         sdbg('load: miss -> fallback', { key: k });
         return fb;

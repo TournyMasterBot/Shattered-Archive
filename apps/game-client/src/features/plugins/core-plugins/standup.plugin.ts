@@ -1,19 +1,24 @@
 // apps\game-client\src\features\plugins\core-plugins\standup.plugin.ts
 import type { IPluginModule, PluginRuntimeApi } from '@shatteredarchive/types-client';
+import { memoLast } from '../shared/memoLast';
 
 function stripAnsi(s: string): string {
   if (!s || !s.includes('\x1b')) return s;
   return s.replace(/\u001b\[[0-9;]*m/g, '');
 }
 
-/** Parse the patterns textarea into a trimmed, non-empty string array. */
-function parsePatterns(raw: unknown): string[] {
+/**
+ * Parse the patterns textarea into a trimmed, non-empty string array. Runs on every
+ * received line, but the text only changes when the user edits it, so the last parse is
+ * reused. The result is shared: read it, never modify it.
+ */
+const parsePatterns = memoLast((raw: unknown): string[] => {
   if (typeof raw !== 'string') return [];
   return raw
     .split('\n')
     .map((l) => l.trim())
     .filter((l) => l.length > 0 && !l.startsWith('#'));
-}
+});
 
 export const DEFAULT_STANDUP_PATTERNS = [
   'knocking you senseless',

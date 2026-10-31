@@ -1,3 +1,4 @@
+import { canonicalConnectionId } from '../features/connection/connectionId';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useUserScriptSandbox, getUserScriptStorageKey } from '../hooks/useUserScriptSandbox';
 import {
@@ -275,7 +276,7 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
   // ── END AI-METHOD ──
   const handleExportDownload = () => {
     const json = buildExport();
-    const fname = `shatteredArchive-userScripts-${connectionId || 'default'}-${safeFileStamp()}.json`;
+    const fname = `shatteredArchive-userScripts-${canonicalConnectionId(connectionId)}-${safeFileStamp()}.json`;
     downloadJson(fname, json);
   };
 
@@ -744,11 +745,15 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
     setDraggingScriptId(null);
   }, [activeTab]);
 
-  // Keep global draft synced to chosen language (only when switching language)
+  // Keep global draft synced to chosen language (only when switching language).
+  // `isOpen` is a dependency because closing resets the language to JavaScript and
+  // the draft to ''; reopening with a saved JavaScript source changes neither the
+  // language nor `sources`, so without it this effect never re-ran and the editor
+  // came back blank ("Unsaved changes") with the saved script still in storage.
   useEffect(() => {
     const src = globalMgr.sources?.[globalLanguage] ?? '';
     setGlobalDraft(src);
-  }, [globalLanguage, globalMgr.sources]);
+  }, [globalLanguage, globalMgr.sources, isOpen]);
 
   // ------------- Derived values -------------
 

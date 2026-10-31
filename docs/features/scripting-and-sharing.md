@@ -37,11 +37,14 @@ Each script is written in one of five languages:
 | **Lua** | If you prefer Lua |
 | **Python** | If you prefer Python |
 
-All five run on both the web client and mobile.
+All five run on both the web client and mobile. (On mobile, `await` inside a
+JavaScript or TypeScript script works where the phone's engine supports it;
+otherwise use `runGlobal(...).then(...)`.)
 
 ### What a script can do
 
-Every language gets the same `api` object:
+Every language gets the same calls. JavaScript, TypeScript and Lua can spell them either way (`api.sendCommand("north")`
+or `sendCommand("north")`); Python uses the plain names only. The `api.` spelling is shown here:
 
 | Call | Does |
 |---|---|
@@ -51,7 +54,7 @@ Every language gets the same `api` object:
 | `api.getGlobalVar(key)` / `api.setGlobalVar(key, v)` / `api.deleteGlobalVar(key)` | Persistent key/value storage |
 | `api.getNamedVar(name)` / `api.setNamedVar(name, v)` | Named variables used for `{NAME}` expansion |
 | `api.doAfter(ms, 'world'\|'alias', cmd)` | Run something after a delay |
-| `api.runGlobal(id, args)` | Call a global function — see below |
+| `api.runGlobal(id, args, callback)` | Call a global function, written in any language — see below |
 | `api.httpGetJson(url)` | Fetch JSON from a URL |
 | `api.event` | The event that triggered this script |
 
@@ -95,7 +98,8 @@ the same everywhere.
 
 Global scripts are shared functions your triggers, aliases and timers call
 instead of copy-pasting the same code into a dozen scripts. There is one file
-per language.
+per language, and a global written in **any** language can be called from a
+script in **any** language.
 
 **Web:** the Scripts panel's globals section.
 **Mobile:** Scripts tab → **Globals** (top right).
@@ -131,8 +135,63 @@ global.lua.heal
 kill goblin
 ```
 
-Global scripts stay loaded between calls, so module-level state persists. Editing
-one reloads it on the next call — no restart needed.
+Global scripts stay loaded between calls, so module-level state persists.
+Saving the global file for a language restarts that language's engine (see below).
+
+### Lua and Python are one program
+
+Lua and Python each run as a single engine: the global file is run first, and
+then every Lua (or Python) trigger, alias and timer runs in that same engine.
+
+- A function or variable defined in the global file, or in any script, can be
+  used directly by every other script in that language: `bump()`, `counter`. You
+  do not need `runGlobal` to reach your own language.
+- A Lua variable set without `local` (`kills = (kills or 0) + 1`) is still there
+  for the next script. Use `local` for anything that should stay private to one
+  run. A Python name set at the top level persists the same way.
+- Saving the global file for a language **restarts** that engine, so what it held
+  (including values scripts set) starts over. Editing a trigger, alias or timer does not.
+
+### JavaScript and TypeScript: globals by name
+
+Everything the JavaScript and TypeScript global files export is available in every
+JavaScript and TypeScript script by name, so you just call it:
+
+```javascript
+// Global file
+exports.state = { kills: 0 };
+exports.hit = (api, args) => { api.sendCommand("kill " + args.target); return ++exports.state.kills; };
+
+// Any JavaScript / TypeScript script
+const kills = hit({ target: "goblin" });   // the number it returned
+state.kills = 0;                           // the global file's own object
+```
+
+The `(api, args)` / `(args)` rule above is applied for you, and what the function
+returns comes back as it is (a promise from an `async` function). Scripts may use
+`await` at the top level. If both files export a name, the script's own language
+wins; names the script already has (`log`, `sendCommand`, `event`), reserved words
+and names that are not valid identifiers are not bound.
+
+### Calling a global from any language
+
+| From | Call | Result |
+|---|---|---|
+| JavaScript / TypeScript | `await runGlobal("global.lua.combat.flee", args)` | the value |
+| Lua | `local r = runGlobal("global.python.combat.info", {who = "orc"})` | the value if the global finished at once, else `nil` |
+| Python | `r = runGlobal("global.javascript.double", {"n": 21})` | the value if the global finished at once, else `None` |
+| Lua / Python, a global that takes time | `runGlobal(id, args, callback)` | `callback(result, error)`, after your script has finished |
+
+Arguments and results are plain data: text, numbers, true/false, nothing, lists
+and dictionaries. A function, a class instance or a value that contains itself
+comes back as nothing. A Lua table with keys 1..n is a list, any other table a
+dictionary, and whole numbers reach Lua as integers. A Lua global receives its
+arguments as a JSON string, a Python global receives the value.
+
+"Finished at once" means before `runGlobal` returned: any Lua function, any
+non-`async` JavaScript / TypeScript function, any Python function that does not
+sleep. For anything else pass a callback, which is always called, later.
+`runGlobal("...")` on a line of its own, ignoring the result, works as it always did.
 
 ---
 

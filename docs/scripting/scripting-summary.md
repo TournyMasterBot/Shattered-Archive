@@ -109,6 +109,31 @@ Examples:
 - `global.lua.core.echo`
 - `global.python.core.echo`
 
+### Lua and Python are one engine each
+Lua and Python each run as a single engine per connection: the Globals source for that language is run into it, then
+every trigger, alias and timer in that language runs in it too. A function or variable defined anywhere in that
+language (Globals or any script) is visible to all the others, and saving the Globals source restarts the engine.
+JavaScript and TypeScript scripts stay separate from one another, but they call the Globals JS / TS files by name (see below), and everything can share through `runGlobal` and Global Variables.
+
+### Calling a global from any language
+A global written in any language can be called from a script in any language, with the same identifier
+(`global.<language>.<path>`), the same arguments and the same plain-data result. How you write the call depends on
+what the calling language can do:
+
+| From | Call | Result |
+|------|------|--------|
+| JavaScript / TypeScript | `core.echo({ text })` (a JS / TS global, by name) or `await runGlobal("global.lua.x.y", args)` | the value, or a promise of it |
+| Lua | `local r = runGlobal("global.python.x.y", { n = 1 })` | the value if the global finished at once, otherwise `nil` |
+| Python | `r = runGlobal("global.lua.x.y", {"n": 1})` | the value if the global finished at once, otherwise `None` |
+| Lua / Python, async target | `runGlobal(id, args, callback)` | `callback(result, error)`, always, after the calling script has finished |
+
+What a global returns comes back as plain data: string, number, boolean, null, list, dict / object. A function,
+a class instance or a cycle comes back as nothing. A Lua table with keys 1..n is a list, any other table a dict.
+Scripts that only ever called `runGlobal("...")` as a statement keep working exactly as before.
+
+"Finished at once" means before the call returned: any Lua function, any JS / TS function that is not `async`, and any
+Python function that does not sleep or wait. Use the callback form for the rest.
+
 ### Lua/Python name mapping
 For Lua and Python globals, dotted paths map to underscores at runtime:
 

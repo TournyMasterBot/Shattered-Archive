@@ -1,1 +1,7 @@
 Phase D's cloud-account feature: an optional login against the central Shattered Archive hub (via the C# site's backend, since game-client is a public client with no service key of its own) plus manual cloud save/load of user scripts and plugin configs. Nothing here gates any existing game-client functionality — logged out is, and remains, the default and fully-supported state.
+
+loadImpact.ts is the single decision point for Load and Save safety (mirrors the mobile app's load-impact.ts): planCloudLoad builds the confirm text AND the replace flags the apply step obeys, so the warning and the write cannot disagree; savesThatWouldErase guards a Save that would upload an empty collection over a non-empty cloud copy. Rules: an EMPTY cloud never replaces local scripts, plugins or globals; Load fetches first and only then confirms and writes; library and auto-leveling data merge after the confirm because loadLibraryFromCloud writes IndexedDB itself. The server omits count when it is 0 (it answers {}), so read counts with ?? 0.
+
+loadImpact.ts and useAccountModal.ts both decide what Load replaces; planCloudLoad is the only place that may. The mobile app keeps a parallel features/auth/load-impact.ts and cloud-sync.ts: change the wording or the empty-cloud rule in one and the other drifts (they share one server and one account).
+
+loadImpact.test.ts pins the exact user-facing wording (counts, singular/plural, "was"/"were"); the web Account modal and the mobile app promise the same behavior, so reword both together.

@@ -70,6 +70,8 @@ import { PATTERNS as COMBAT_PATTERNS } from './combat-compression.plugin';
 import { PATTERNS as WEAPON_FLAG_PATTERNS } from './weapon-flag-squelch.plugin';
 import { classifyStrictChatSubtype } from '../../chat/strict-chat-classifier';
 import { persistPluginConfigPatch } from '../pluginConfigPersist';
+import { memoLast } from '../shared/memoLast';
+import { matchesAnyPattern } from '../shared/regexCache';
 
 const PLUGIN_ID = 'text-to-speech';
 
@@ -467,12 +469,19 @@ function voiceSelectOptions(): Array<{ value: string; label: string }> {
 
 refreshVoiceCache();
 
-function parsePatterns(raw: unknown): string[] {
-  return String(raw ?? '')
-    .split('\n')
-    .map((s) => s.trim())
-    .filter(Boolean);
+// Called per received line for each of include/exclude; the config strings change only
+// when edited, so each parser keeps its own memo of the last text it parsed (the two call
+// sites alternate, so they must not share one). Results are read-only.
+function makePatternParser() {
+  return memoLast((raw: unknown): string[] =>
+    String(raw ?? '')
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
 }
+const parseIncludePatterns = makePatternParser();
+const parseExcludePatterns = makePatternParser();
 
 // The PROMPT command (see the in-game HELP PROMPT file) lets every player
 // build their own status line from %h/%H/%m/%M/%v/%V/etc. tokens, so the
@@ -496,15 +505,8 @@ function looksLikePromptLine(line: string): boolean {
 // if the line doesn't compile as a regex at all (e.g. an unbalanced paren) —
 // existing plain-word patterns ("misses", "HP:") compile fine as regex and
 // behave identically either way, so this is backward compatible in practice.
-function matchesAny(text: string, patterns: string[]): boolean {
-  return patterns.some((p) => {
-    try {
-      return new RegExp(p, 'i').test(text);
-    } catch {
-      return text.toLowerCase().includes(p.toLowerCase());
-    }
-  });
-}
+// (Compiled once per distinct pattern in shared/regexCache.ts.)
+const matchesAny = matchesAnyPattern;
 
 // Buckets are declared as disjoint integer ranges (90-99, 75-89, ...), but
 // hp/hpMax*100 is essentially never a clean integer in real play — a
@@ -2751,8 +2753,8 @@ export function createTextToSpeechPlugin(): IPluginModule {
       if (!rawText) return;
 
       const fromUserScript = payload?.fromUserScript === true;
-      const includePatterns = parsePatterns(cfg.includePatterns);
-      const excludePatterns = parsePatterns(cfg.excludePatterns);
+      const includePatterns = parseIncludePatterns(cfg.includePatterns);
+      const excludePatterns = parseExcludePatterns(cfg.excludePatterns);
       const debug = cfg.debug === true;
 
       // Full sanitize, not just the SGR colors: a non-color sequence left in

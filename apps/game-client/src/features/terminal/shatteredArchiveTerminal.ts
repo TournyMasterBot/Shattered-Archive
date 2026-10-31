@@ -25,6 +25,9 @@ export class ShatteredArchiveTerminal {
   private term: XTerm | null = null;
   private fit: FitAddon | null = null;
   private autoScroll = true;
+  // The xterm scroll container, looked up once and reused: with auto-scroll off every
+  // received line used to run a DOM querySelector just to read its scrollTop.
+  private scrollableEl: HTMLDivElement | null = null;
 
   private constructor() {
     this.attachWindowEvents();
@@ -44,6 +47,14 @@ export class ShatteredArchiveTerminal {
     this.term = null;
     this.fit = null;
     this.autoScroll = true;
+    this.scrollableEl = null;
+  }
+
+  /** The terminal's scroll container, cached while it is still inside `root`. */
+  private scrollableFor(root: HTMLElement): HTMLDivElement | null {
+    if (this.scrollableEl && root.contains(this.scrollableEl)) return this.scrollableEl;
+    this.scrollableEl = root.querySelector('.xterm-scrollable-element') as HTMLDivElement | null;
+    return this.scrollableEl;
   }
 
   public setAutoScroll(enabled: boolean): void {
@@ -151,7 +162,7 @@ export class ShatteredArchiveTerminal {
       let prevScrollTop: number | null = null;
       let scrollable: HTMLDivElement | null = null;
       if (!this.autoScroll && t.element) {
-        scrollable = t.element.querySelector('.xterm-scrollable-element') as HTMLDivElement | null;
+        scrollable = this.scrollableFor(t.element);
         if (scrollable) {
           prevScrollTop = scrollable.scrollTop;
         }

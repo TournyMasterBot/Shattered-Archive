@@ -3,6 +3,7 @@
 import { AnyUserScript, ScriptSandboxApi, TriggerContextEvent } from './types';
 import { runTimerScript, runUserScript } from './runtime';
 import { DispatchEvent, ListenEvent, ListenRedispatch } from '../event-emitter/event-dispatcher';
+import { canonicalConnectionId } from '../connection/connectionId';
 import { SendCommandFn } from '../../types/userscript-types/send-command-function';
 import { ScriptErrorInfo } from '../../types/userscript-types/script-error-info';
 import { UserScriptRuntimeOptions } from '../../types/userscript-types/user-script-runtime-options';
@@ -21,7 +22,7 @@ import {
   getGlobalVarsStorageKey,
   getGlobalVarsSnapshot,
 } from './globalScriptsStore';
-import { invokeGlobalById } from './globalRuntime';
+import { invokeGlobalById, invokeGlobalSync } from './globalRuntime';
 import { OmitRule, setOmitRules, shouldOmitLine } from './triggerOmitStore';
 import { safeTrim } from './safeTrim';
 import { expandMatchTextWithGlobals } from './expand-global-vars';
@@ -108,7 +109,7 @@ function escapeRegexLiteral(s: string): string {
 }
 
 function safeConnectionId(connectionId?: string | null) {
-  return connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
+  return canonicalConnectionId(connectionId);
 }
 
 function stripOuterQuotes(s: string): string {
@@ -550,12 +551,20 @@ export class UserScriptRuntime {
     const dontRequireMatchText = trig.dontRequireMatchText === true;
     if (dontRequireMatchText) return true;
 
-    const matchTextRaw = expandMatchTextWithGlobals(safeTrim(trig.matchText), (key) =>
-      getGlobalVarStore(this.activeConnectionId, key),
-    );
-    if (!matchTextRaw) return false;
+    const trimmed = safeTrim(trig.matchText);
+    if (!trimmed) return false;
 
-    const expanded = expandMatchTextWithGlobals(matchTextRaw, (key) => getGlobalVarStore(this.activeConnectionId, key));
+    // This runs for every enabled trigger on every received line. Match text with no `{token}`
+    // expands to itself, so skip both expansion passes (two regex scans each) for it; text WITH
+    // tokens still goes through the exact same two passes as before.
+    let expanded: string | null;
+    if (trimmed.indexOf('{') === -1) {
+      expanded = trimmed;
+    } else {
+      const matchTextRaw = expandMatchTextWithGlobals(trimmed, (key) => getGlobalVarStore(this.activeConnectionId, key));
+      if (!matchTextRaw) return false;
+      expanded = expandMatchTextWithGlobals(matchTextRaw, (key) => getGlobalVarStore(this.activeConnectionId, key));
+    }
     if (!expanded) return false;
 
     const text = pickMatchTextFromPayload(payload);
@@ -1031,6 +1040,9 @@ export class UserScriptRuntime {
         return invokeGlobalById(this.activeConnectionId, globalId, apiRef, args);
       },
 
+      runGlobalNow: (globalId: string, args?: unknown) =>
+        invokeGlobalSync(this.activeConnectionId, globalId, apiRef, args),
+
       writeTerminal: (dsl: string) => {
         if (!dsl) return;
 
@@ -1046,7 +1058,7 @@ export class UserScriptRuntime {
       },
     } satisfies ScriptSandboxApi);
 
-    void runUserScript(script, apiRef).catch((err) => {
+    void runUserScript(script, apiRef, this.activeConnectionId).catch((err) => {
       const message = err instanceof Error ? err.message : String(err ?? 'Unknown error');
       const stack = err instanceof Error && err.stack ? err.stack.toString() : undefined;
 
@@ -1077,7 +1089,7 @@ export class UserScriptRuntime {
       window.localStorage.setItem(key, JSON.stringify(scripts));
 
       DispatchEvent<{ connectionId?: string }>('shatteredarchive:userScripts-updated', {
-        connectionId: connectionId ?? 'default',
+        connectionId: canonicalConnectionId(connectionId),
       });
     } catch (err) {
       console.error('Failed to save user scripts', { connectionId, err });

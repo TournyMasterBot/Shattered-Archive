@@ -1,4 +1,5 @@
 // apps/game-client/src/hooks/useUserVariables.ts
+import { canonicalConnectionId } from '../features/connection/connectionId';
 import { useEffect, useState, useCallback } from 'react';
 import {
   getUserVariablesSnapshot,
@@ -22,7 +23,7 @@ export function useUserVariables(connectionId?: string | null) {
     const dispose = ListenEvent<{ connectionId?: string }>(
       'shatteredarchive:userVariables-updated',
       (payload) => {
-        const evConn = payload?.connectionId ?? 'default';
+        const evConn = canonicalConnectionId(payload?.connectionId);
         const curConn = connectionId ?? 'default';
         if (evConn !== curConn) return;
 

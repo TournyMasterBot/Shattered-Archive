@@ -45,6 +45,14 @@ await runGlobal?.("global.typescript.core.echo", { text: `Target is: ${target}` 
 
 ---
 
+## Calling the Globals by name
+
+TypeScript scripts get the same names as JavaScript ones (see javascript.md): the exports of both Globals files, with
+**Globals → TypeScript** winning a name they both export. They are type-erased, not type-checked, so a call such as
+`const t: number = triple({ n: 5 });` is not checked against the Globals file.
+
+---
+
 ## Example: Typed HTTP usage
 
 ```ts

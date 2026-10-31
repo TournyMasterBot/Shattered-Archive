@@ -1,6 +1,7 @@
 // apps\game-client\src\features\plugins\core-plugins\colorkit.plugin.ts
 import type { IPluginModule, PluginEvent, PluginRuntimeApi } from '@shatteredarchive/types-client';
 import { stripAnsi } from '../../autoleveling/autoleveling-text';
+import { memoLast } from '../shared/memoLast';
 
 /**
  * Color Kit — colorize matched lines without writing trigger scripts.
@@ -67,7 +68,11 @@ function normalizeColor(raw: string): string | null {
 
 // ── Parsing ─────────────────────────────────────────────────────────────────
 
-function parseRules(raw: unknown): ColorRule[] {
+// Runs on every received line; the rules text only changes when edited, so the last parse
+// is reused. The result is shared: read it, never modify it.
+const parseRules = memoLast(parseRulesUncached);
+
+function parseRulesUncached(raw: unknown): ColorRule[] {
   if (typeof raw !== 'string') return [];
 
   const rules: ColorRule[] = [];

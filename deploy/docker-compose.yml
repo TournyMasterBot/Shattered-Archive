@@ -279,24 +279,22 @@ services:
       # mirroring nginx's own origin → upstream routing. Also derives the CORS allowlist for
       # /api/device, so the two can never drift apart.
       #
-      # EMPTY ON PURPOSE, not an oversight: the client that uses device credentials
-      # (mud-builder-client) exists only in the experimental compose,
-      # so nothing in THIS stack needs an entry yet. Empty means deny-all, which is the
-      # correct fail-closed state — auth-client is same-origin with auth-server here (nginx
-      # routes /api/ on auth.shatteredarchive.dev to this service) so CORS never applies to it.
+      # The one client that uses device credentials in this stack is mud-builder-client, so its
+      # origin maps to mud-builder-server. auth-client is absent on purpose: it is same-origin
+      # with auth-server here (nginx routes /api/ on auth.shatteredarchive.dev to this service)
+      # so CORS never applies to it. Anything not listed is denied (fail-closed).
       #
-      # When a client lands in this stack, add `origin=service`: comma-separated, the origin
-      # lowercase, scheme+host, no path, and NO default port (a browser sends
-      # https://x.dev, never https://x.dev:443); `origin=svc1|svc2` for several services.
-      # Wildcards are unsupported — invalid with credentials, and reflecting arbitrary origins
-      # would let any hostile page enroll itself against a signed-in account. See the
-      # experimental compose for a filled-in example.
+      # Format: `origin=service`, comma-separated, the origin lowercase, scheme+host, no path,
+      # and NO default port (a browser sends https://x.dev, never https://x.dev:443);
+      # `origin=svc1|svc2` for several services. Wildcards are unsupported — invalid with
+      # credentials, and reflecting arbitrary origins would let any hostile page enroll itself
+      # against a signed-in account. Mirrors the experimental compose.
       #
       # NOTE a shatteredarchive.COM origin cannot use this path: it is cross-SITE relative to
       # the .dev hub, so the SameSite=Lax session cookie is never sent and enrollment cannot
       # authenticate. That is a cookie limit, not a CORS one — such an app needs the SSO code
       # flow instead.
-      DEVICE_ORIGIN_SERVICES: ""
+      DEVICE_ORIGIN_SERVICES: "https://build.shatteredarchive.dev=mud-builder-server"
       # Services that additionally require an active API key on the account before a device may
       # mint for them. Empty = no service requires one. See the experimental compose.
       DEVICE_GRANT_REQUIRED_SERVICES: ""
@@ -327,12 +325,9 @@ services:
       # LIVE BUG (2026-08-16): both simulacrum-server and mud-builder-server were missing
       # from this list — confirmed against the experimental stack (which shares this exact
       # gap) that an absent entry means every account-based sign-in against that service is
-      # silently rejected, no matter how valid the credential is. simulacrum-server's own
-      # container ships in THIS file already (see its service block); mud-builder-server's
-      # does not yet (experimental-only) but is declared here regardless — an entry with no
-      # published key yet is a harmless, expected no-op per the reconciler's own third
-      # refusal, and pre-declaring it avoids re-discovering this exact bug the day
-      # mud-builder-server IS added here for real.
+      # silently rejected, no matter how valid the credential is. Both containers now ship
+      # in THIS file (see their service blocks). An entry with no published key yet is a
+      # harmless, expected no-op per the reconciler's own third refusal.
       # ------------------------------------------------------------------
       SERVICE_REGISTRY: >-
         {
@@ -549,22 +544,95 @@ services:
           - soulsteel-client.shatteredarchive.dev
 
   ############################################################
+  # MUD BUILDER (build.shatteredarchive.dev) — additive, like auth: not in nginx's
+  # depends_on. The edge's build. block resolves these two at request time (resolver +
+  # variable), so before they existed every request there was a 502; bringing them up
+  # needs no nginx restart.
+  #
+  # PROD CAPABILITY LEVEL (decided 2026-10-31): areas are EDITABLE (MUD_WRITE_ENABLED) but
+  # the engine-rebuild pipeline is OFF. The experimental compose also mounts the docker
+  # socket and the host repo trees for that pipeline — root-equivalent host access behind a
+  # bearer-token Express app — and none of that is mounted here. Leave MUD_REBUILD_ENABLED
+  # and the MERC_MUD_REPO_PATH / SHATTERED_ARCHIVE_REPO_PATH pair unset; do not copy them
+  # across from the experimental block.
+  #
+  # The game (merc-mud2.4) is a separate compose project on this host. Game and builder share
+  # ONE host directory: the builder's writes (area files, backups/, reload.signal,
+  # copyover.signal) are the live game files. merc-mud2.4 bind-mounts
+  # /home/ubuntu/src/merc-mud/2.4/area (confirmed with `docker inspect` 2026-10-31); the
+  # relative path below resolves to that ONLY while this repo is checked out beside merc-mud
+  # (/home/ubuntu/src/shatteredarchive — lowercase on this host). Same sibling layout
+  # simulacrum-server uses below.
+  # On first run the builder writes its master key to area/auth/builder-auth.json there.
+  ############################################################
+  mud-builder-server:
+    build:
+      context: ..
+      dockerfile: deploy/mud-builder-server.Dockerfile
+    image: shatteredarchive-prod-mud-builder-server
+    container_name: shatteredarchive-prod-mud-builder-server
+    restart: unless-stopped
+    volumes:
+      - ../../merc-mud/2.4/area:/mud/area
+      # Ed25519 private half for the auth-server introspect fallback — git-ignored, minted via
+      # `pnpm --filter @shatteredarchive/auth-server register-service mud-builder-server` run
+      # against the PROD auth-server's data dir/key (a SEPARATE registration from the
+      # experimental stack's). Without this file account-minted keys are rejected here; the
+      # builder's own master key / API keys still work.
+      - ../apps/mud-builder-server/secrets:/repo/apps/mud-builder-server/secrets:ro
+    environment:
+      NODE_ENV: production
+      PORT: "61000"
+      MERC_MUD_PATH: "/mud"
+      MERC_AREA_DIR: "area"
+      MUD_WRITE_ENABLED: "true"
+      AUTH_SERVER_URL: "http://auth-server.shatteredarchive.dev:62000"
+      # Browser-facing counterpart, handed to the client so it can enrol a device key. Pairs
+      # with auth-server's DEVICE_ORIGIN_SERVICES entry for https://build.shatteredarchive.dev.
+      AUTH_SERVER_PUBLIC_URL: "https://auth.shatteredarchive.dev"
+      SERVICE_PRIVATE_KEY_PATH: "/repo/apps/mud-builder-server/secrets/shattered-service.key"
+    expose:
+      - "61000"
+    networks:
+      shatteredarchive-prod:
+        aliases:
+          - mud-builder-server.shatteredarchive.dev
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const net=require('net');const s=net.connect(61000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  mud-builder-client:
+    build:
+      context: ..
+      dockerfile: deploy/mud-builder-client.Dockerfile
+    image: shatteredarchive-prod-mud-builder-client
+    container_name: shatteredarchive-prod-mud-builder-client
+    restart: unless-stopped
+    networks:
+      shatteredarchive-prod:
+        aliases:
+          - mud-builder-client.shatteredarchive.dev
+
+  ############################################################
   # SIMULACRUM (simulacrum.shatteredarchive.dev) — .ai-plans/
   # 20260816-0701-simulacrum-mud-wiring.md Step 5. Same two-listener shape as the
   # experimental compose (Express 65000 + gated TCP relay 65001) — see that file
   # for the full design note.
   #
-  # OPERATIONAL GAP, flagged rather than silently worked around: mud-builder-server
-  # is NOT deployed to this prod compose (still experimental-only — its own front-
-  # proxy block is a 503 stub). This service's role-store mount below (Constraints:
-  # trusted+ tier shared between mud-builder-server and simulacrum-server) therefore
-  # has nothing real to share with in PROD yet — the path is a best guess mirroring
-  # this host's dev sibling-directory layout, unconfirmed, and until either
-  # mud-builder-server also goes live here (letting the Roles tab grant tiers) or an
-  # operator manually seeds a roles.json row at that path, simulacrum is publicly
-  # reachable but NO ACCOUNT can obtain an access code — a safe failure mode (fails
-  # closed to "nobody"), not a broken one, but worth knowing before wondering why a
-  # trusted+ account still gets 403'd here.
+  # Role store: the mount below is the trusted+ tier shared with mud-builder-server (defined
+  # above), whose Roles tab grants it. Until an operator grants a tier there (or seeds a
+  # roles.json row at that path), NO ACCOUNT can obtain an access code — a safe failure mode
+  # (fails closed to "nobody"), not a broken one, but worth knowing before wondering why a
+  # trusted+ account still gets 403'd here. Both services must see the SAME roles.json: it sits
+  # under the builder's area mount (area/auth/roles.json), so the same sibling layout applies.
   ############################################################
   simulacrum-server:
     build:

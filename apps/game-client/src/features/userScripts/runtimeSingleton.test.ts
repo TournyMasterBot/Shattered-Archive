@@ -169,15 +169,15 @@ describe('RuntimeSingleton', () => {
     expect(r1).toBe(r2);
   });
 
-  test('constructor hydrates runtime with "default" and replaces loaded scripts', () => {
+  test('constructor hydrates runtime with "dsl-mud" and replaces loaded scripts', () => {
     const { RuntimeSingleton } = importSingleton();
 
     // trigger construction
     void RuntimeSingleton.Instance;
 
-    expect(getStorageKeyMock).toHaveBeenCalledWith('default');
+    expect(getStorageKeyMock).toHaveBeenCalledWith('dsl-mud');
     expect(loadScriptsFromStorageMock).toHaveBeenCalledTimes(1);
-    expect(loadScriptsFromStorageMock).toHaveBeenCalledWith('default');
+    expect(loadScriptsFromStorageMock).toHaveBeenCalledWith('dsl-mud');
 
     expect(replaceAllScriptsMock).toHaveBeenCalledTimes(1);
     expect(replaceAllScriptsMock).toHaveBeenCalledWith([
@@ -292,14 +292,49 @@ describe('RuntimeSingleton', () => {
     expect(setActiveConnectionIdMock).toHaveBeenLastCalledWith('abc123');
   });
 
-  test('connection-changed defaults connectionId to "default" if missing', () => {
+  test('connection-changed defaults connectionId to "dsl-mud" if missing', () => {
     const { RuntimeSingleton } = importSingleton();
     void RuntimeSingleton.Instance;
 
     emitWindowEvent('shatteredarchive:connection-changed', {});
 
-    expect(loadScriptsFromStorageMock).toHaveBeenLastCalledWith('default');
-    expect(setActiveConnectionIdMock).toHaveBeenLastCalledWith('default');
+    expect(loadScriptsFromStorageMock).toHaveBeenLastCalledWith('dsl-mud');
+    expect(setActiveConnectionIdMock).toHaveBeenLastCalledWith('dsl-mud');
+  });
+
+  test('connection-changed with the legacy default id hydrates the dsl-mud bucket', () => {
+    const { RuntimeSingleton } = importSingleton();
+    void RuntimeSingleton.Instance;
+
+    emitWindowEvent('shatteredarchive:connection-changed', { connectionId: 'default' });
+
+    expect(loadScriptsFromStorageMock).toHaveBeenLastCalledWith('dsl-mud');
+    expect(setActiveConnectionIdMock).toHaveBeenLastCalledWith('dsl-mud');
+  });
+
+  test('userScripts-updated with the legacy default id hydrates the dsl-mud bucket', () => {
+    const { RuntimeSingleton } = importSingleton();
+    void RuntimeSingleton.Instance;
+
+    emitWindowEvent('shatteredarchive:userScripts-updated', { connectionId: ' default ' });
+
+    expect(loadScriptsFromStorageMock).toHaveBeenLastCalledWith('dsl-mud');
+  });
+
+  test('named variables set under the legacy default id are the ones read as dsl-mud', () => {
+    const { RuntimeSingleton } = importSingleton();
+    void RuntimeSingleton.Instance;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { UserScriptRuntime } = require('./userScriptRuntime') as { UserScriptRuntime: jest.Mock };
+    const options = UserScriptRuntime.mock.calls[0][0] as { getNamedVar: (name: string) => string | undefined };
+
+    emitWindowEvent('shatteredarchive:named-var:set', { connectionId: 'default', name: 'target', value: 'weed' });
+
+    expect(options.getNamedVar('target')).toBe('weed');
+
+    emitWindowEvent('shatteredarchive:named-var:clear', { connectionId: 'default' });
+
+    expect(options.getNamedVar('target')).toBeUndefined();
   });
 
   test('userScripts-updated rehydrates scripts for connectionId', () => {

@@ -15,6 +15,7 @@ type SectionId =
   | 'aliases'
   | 'timers'
   | 'variables'
+  | 'globals'
   | 'examples'
   | 'plugins'
   | 'autoleveling'
@@ -33,6 +34,7 @@ const NAV_SECTIONS: NavSection[] = [
   { id: 'aliases', label: 'Aliases' },
   { id: 'timers', label: 'Timers' },
   { id: 'variables', label: 'Variables' },
+  { id: 'globals', label: 'Global Scripts' },
   { id: 'examples', label: 'Practical Examples' },
   { id: 'plugins', label: 'Plugins' },
   { id: 'autoleveling', label: 'Auto Leveling' },
@@ -686,6 +688,110 @@ deleteGlobalVar("killCount");`}</pre>
                 </li>
               </ul>
             </div>
+          </section>
+
+          {/* ── GLOBAL SCRIPTS ──────────────────────────────── */}
+          <section data-section="globals" className={styles.section}>
+            <h3 className={styles.sectionHeading}>Global Scripts</h3>
+
+            <p>
+              The <strong>Globals</strong> tab holds one file for each of JavaScript, TypeScript, Lua and Python. Put
+              the functions you use in many places there, instead of copying them into a dozen scripts. A global
+              written in <em>any</em> language can be called from a script in <em>any</em> language.
+            </p>
+
+            <h4 className={styles.subHeading}>Writing a global</h4>
+            <ul className={styles.list}>
+              <li>
+                <strong>JavaScript / TypeScript</strong> — assign to <code>exports</code>. A plain{' '}
+                <code>function foo() {'{}'}</code> is local to the file and cannot be called.
+              </li>
+              <li>
+                <strong>Lua</strong> — a top-level function. A dotted name uses an underscore, so{' '}
+                <code>global.lua.combat.flee</code> calls <code>combat_flee</code>. A Lua global receives its arguments
+                as JSON text.
+              </li>
+              <li>
+                <strong>Python</strong> — a top-level function, <code>def combat_flee(args):</code>, with the same
+                underscore rule. A Python global receives the value itself.
+              </li>
+            </ul>
+            <pre className={styles.code}>{`// Globals → JavaScript
+exports.state = { kills: 0 };
+exports.double = (args) => args.n * 2;
+exports.hit = (api, args) => {
+  api.sendCommand("kill " + args.target);
+  return ++exports.state.kills;
+};`}</pre>
+
+            <h4 className={styles.subHeading}>JavaScript and TypeScript: call it by name</h4>
+            <p>
+              Everything the JavaScript and TypeScript Globals files export is available in your JavaScript and
+              TypeScript scripts by name. No <code>runGlobal</code> is needed, and you pass just the arguments:
+            </p>
+            <pre className={styles.code}>{`sendCommand("say " + double({ n: 21 }));   // say 42
+const kills = hit({ target: "goblin" });    // the number it returned
+state.kills = 0;                            // the Globals file's own object
+
+const later = await someAsyncGlobal();      // top-level await works`}</pre>
+
+            <h4 className={styles.subHeading}>Lua and Python: one shared program</h4>
+            <p>
+              Lua and Python each run as <strong>one program</strong>. The Globals file is run first, then every trigger,
+              alias and timer in that language runs in the same place, so anything defined in one is visible to the
+              others:
+            </p>
+            <pre className={styles.code}>{`-- Globals → Lua
+counter = 0
+function bump() counter = counter + 1 end
+
+-- any Lua trigger, alias or timer
+bump()
+writeTerminal("counter is " .. counter .. "\\n")
+kills = (kills or 0) + 1      -- still there for the next script (use local to keep it private)`}</pre>
+            <div className={styles.callout}>
+              <strong>Saving the Globals file for a language restarts it.</strong> Whatever your scripts had stored in
+              that language's program starts over. Use <code>setGlobalVar</code> for values that must survive.
+            </div>
+
+            <h4 className={styles.subHeading}>Calling a global in another language</h4>
+            <p>
+              Use <code>runGlobal("global.&lt;language&gt;.&lt;name&gt;", args)</code>. What the function returns comes
+              back to you:
+            </p>
+            <pre className={styles.code}>{`// JavaScript / TypeScript: await it
+const sum = await runGlobal("global.lua.core.add", { a: 40, b: 2 });
+
+-- Lua: it is an ordinary call
+local info = runGlobal("global.python.core.info", { who = "orc" })
+writeTerminal(info.name .. "\\n")
+
+# Python: the same
+total = runGlobal("global.javascript.double", {"n": 21})`}</pre>
+            <p>
+              In Lua and Python the value is returned when the global finished at once (any Lua function, any
+              JavaScript function that is not <code>async</code>, any Python function that does not sleep). For one that
+              takes time, pass a function as a third argument. It is always called afterwards, with the result and any
+              error, once your script has finished:
+            </p>
+            <pre className={styles.code}>{`-- Lua
+runGlobal("global.javascript.later", { n = 7 }, function(result, err)
+  writeTerminal(tostring(result) .. "\\n")
+end)
+
+# Python
+def got(result, err):
+    writeTerminal("%s\\n" % result)
+runGlobal("global.javascript.later", {"n": 7}, got)`}</pre>
+            <div className={styles.callout}>
+              <strong>Plain data only.</strong> Arguments and results are text, numbers, true/false, nothing, lists and
+              dictionaries. A function, or something that contains itself, comes back as nothing. A global that fails is
+              reported in the script log and gives nothing back.
+            </div>
+            <p>
+              A <strong>Plain Text</strong> script can run a global by putting its name alone on a line:{' '}
+              <code>global.lua.heal</code>.
+            </p>
           </section>
 
           {/* ── PRACTICAL EXAMPLES ──────────────────────────── */}

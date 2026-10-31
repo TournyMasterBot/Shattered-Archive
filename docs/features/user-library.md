@@ -15,7 +15,7 @@
   - [Line and character limit warnings](#line-and-character-limit-warnings)
   - [Saving](#saving)
   - [Deleting (and safety confirmations)](#deleting-and-safety-confirmations)
-  - [Unsaved changes guard (Books)](#unsaved-changes-guard-books)
+  - [Unsaved changes guard](#unsaved-changes-guard)
   - [Scribe panel (sending content into the game)](#scribe-panel-sending-content-into-the-game)
     - [Parchment scribe](#parchment-scribe)
     - [Notes scribe](#notes-scribe)
@@ -228,19 +228,35 @@ This helps prevent accidental loss.
 
 ---
 
-## Unsaved changes guard (Books)
+## Unsaved changes guard
 
-Books can have multiple pages, and it’s easy to lose edits when switching pages or switching books.
+Every writing surface asks before it would throw away something you typed: parchment, notes, book pages and
+organization content. (Colors and Scratch pad hold nothing saved, so they do not ask.)
 
-To protect the user:
-- The modal checks if the current book page is "dirty" (draft differs from saved version)
-- If dirty, it prompts before:
-  - changing page
-  - switching tabs away from books
-  - closing the modal
-  - deleting the book
+"Unsaved" means the editor differs from what is saved (`features/library/unsavedChanges.ts`):
+- An edit typed back to the saved text is not unsaved.
+- A tag is compared without surrounding spaces, and a blank tag is the same as none.
+- For an organization item, the title and folder path are compared the way the save cleans them up, and the
+  note spool only counts for notes.
+- With nothing open there is nothing to lose.
 
-This guard applies only to the books editor, because page navigation is the most common place for accidental loss.
+If something is unsaved, the library prompts ("You have unsaved changes to the parchment "Alpha". Discard them?")
+before:
+- picking another item in the list, or in the Scribe panel's pickers (clicking the item that is already open never asks)
+- switching tabs
+- creating a new parchment, note, book or organization item
+- importing a JSON file (the import reloads the library under the editor)
+- changing the organization or its content type
+- closing the modal
+- changing book page, adding, restoring or tearing out a page, and deleting a book (books, as before)
+
+Closing or reloading the browser tab while something is unsaved shows the browser's own "Leave site?" prompt.
+
+Deleting a parchment, note or organization item asks only its own question; the unsaved changes go with the item. Deleting a book asks about unsaved changes first, as it always did.
+
+Before 2026-10-31 only the books editor was guarded; parchment, notes and organization items were dropped silently.
+The mobile app's book editor autosaves parchment and notes, so only a failed save leaves anything unsaved there; its
+Organizations screen asks Save / Discard / Cancel like the book editor does.
 
 ---
 

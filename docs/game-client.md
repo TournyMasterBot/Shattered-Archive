@@ -92,7 +92,7 @@ The client is a Vite/React/TypeScript single-page application. All user-visible 
 
 **Status**: Fully Supported
 
-Supported via native browser. This includes external requests (`fetch`, `httpGetJson`) and all browser APIs.
+Supported via native browser. This includes external requests (`fetch`, `httpGetJson`) and all browser APIs. A script body runs inside an `async` function, so top-level `await` works, and it starts running in the same turn it was triggered in (up to its first `await`). The api's members are bound as plain names (`sendCommand(...)`) as well as on `api`, and so are the exports of the Globals JS / TS files (see [Script engines and the invoke contract](#script-engines-and-the-invoke-contract)).
 
 ## Typescript
 
@@ -102,15 +102,35 @@ On-the-fly transpilation using the TypeScript compiler API bundled into the clie
 
 ## LUA
 
-**Status**: Best Effort
+**Status**: Fully Supported
 
-Supported via `fengari-web`. No file system, no HTTP, no WebSocket. Only the JS bridge API is available.
+Supported via `fengari-web` (Lua 5.3). No file system, no HTTP, no WebSocket. Only the JS bridge API is available. One shared Lua state per connection: the Globals Lua file and every Lua trigger, alias and timer run in it.
 
 ## Python
 
-**Status**: Best Effort
+**Status**: Fully Supported
 
-Supported via `skulpt`. Core language features only — no sockets, HTTP, or OS access. Only the JS bridge API is available.
+Supported via `skulpt`. Core language features and Skulpt's bundled standard library only — no sockets, HTTP, or OS access. Only the JS bridge API is available. One shared module namespace per connection, like Lua.
+
+## Script engines and the invoke contract
+
+Source: `apps/game-client/src/features/userScripts/` (`runtime.ts`, `globalRuntime.ts`, `luaRuntime.ts`, `pythonRuntime.ts`, `plainData.ts`). Player-facing description: [scripting-and-sharing](./features/scripting-and-sharing.md) and [scripting-summary](./scripting/scripting-summary.md).
+
+**Engines.** `runUserScript(script, api, connectionId?)` dispatches by language.
+
+| Language | With a `connectionId` | Without (plugin-bundled scripts) |
+|---|---|---|
+| Lua | the connection's Lua state in `globalRuntime` (`luaCache`): Globals Lua is run into it, then every script | a Lua state of its own, closed afterwards |
+| Python | the connection's module namespace (`pyCache`, `engines` in `pythonRuntime`) | a throwaway namespace |
+| JavaScript / TypeScript | each script is its own function, with the Globals JS / TS exports bound by name | no Globals |
+
+Saving the Globals source for a language closes/forgets that engine (`invalidateGlobalRuntime`); the next use starts fresh. Every call site must pass the connection id, or the script silently loses the shared scope. Skulpt is configured once and scripts run through `Sk.compile` plus the module function against the shared globals dict; the compiled function is cached by source.
+
+**One invoke contract.** `invokeGlobalSync(connectionId, "global.<language>.<path>", api, args)` is the only implementation. It returns a `GlobalCall` (`types.ts`): `{ settled: true, value | error }` when the function finished before the call returned (every Lua function, every non-async JS/TS function, a Python function that does not suspend), otherwise `{ settled: false, promise }`. `invokeGlobalById` is its awaitable form and resolves `undefined` on failure. Results pass through `toPlainData`. The sandbox api carries both `runGlobal` (Promise) and `runGlobalNow` (GlobalCall); every api builder (`useUserScriptSandbox`, `UserScriptRuntime`) sets both. The Lua and Python `runGlobal` bridges use `runGlobalNow`: they return the value when settled and accept a callback that is always called later.
+
+**Timing is part of the contract.** A script starts running in the turn it was triggered in: no `await` before a script body, and `getJsGlobalScope` / `ensureJsModule` are synchronous. Skulpt already runs synchronously until it suspends, which is what makes a Python call settle at once.
+
+**Mobile** mirrors all of it in `features/scripts` (`global-runtime.ts`, `lua-runtime.ts`, `python-runtime.ts`, `script-runtime.ts`); keep the two in step.
 
 ---
 
@@ -129,7 +149,7 @@ Key fields:
 
 ## Alias
 
-Aliases intercept user-typed commands before they are sent to the MUD. If the typed text matches an alias pattern (including capture variable syntax like `{TARGET}`), the alias script executes instead of the raw command being sent. Captured variables are injected as local constants in the script scope.
+Aliases intercept user-typed commands before they are sent to the MUD. If the typed text matches an alias pattern (including capture variable syntax like `{TARGET}`), the alias script executes instead of the raw command being sent. Captured variables are injected as local constants in a JavaScript / TypeScript script's scope (they take priority over a Globals export of the same name) and are readable with `getNamedVar("TARGET")` in every language.
 
 The command separator character (default `;`) is configurable via Accessibility Settings and propagated via `shatteredarchive:accessibility-updated`.
 
