@@ -1080,7 +1080,7 @@ const QUEST_AREAS: Record<string, QuestArea> = {
 //     }
 //   }
 
-type CustomAreaDef = {
+type _CustomAreaDef = {
   name: string;
   startPoint: string;
   startToArea: string[];

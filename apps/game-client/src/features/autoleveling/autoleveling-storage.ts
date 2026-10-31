@@ -41,13 +41,13 @@ function isAutoLevelingDebugEnabled(): boolean {
 function sdbg(...args: any[]) {
   return;
   if (!isAutoLevelingDebugEnabled()) return;
-  // eslint-disable-next-line no-console
+
   console.debug(STORAGE_LOG_PREFIX, ...args);
 }
 
 function swarn(...args: any[]) {
   if (!isAutoLevelingDebugEnabled()) return;
-  // eslint-disable-next-line no-console
+
   console.warn(STORAGE_LOG_PREFIX, ...args);
 }
 

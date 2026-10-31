@@ -114,7 +114,7 @@ Supported via `skulpt`. Core language features and Skulpt's bundled standard lib
 
 ## Script engines and the invoke contract
 
-Source: `apps/game-client/src/features/userScripts/` (`runtime.ts`, `globalRuntime.ts`, `luaRuntime.ts`, `pythonRuntime.ts`, `plainData.ts`). Player-facing description: [scripting-and-sharing](./features/scripting-and-sharing.md) and [scripting-summary](./scripting/scripting-summary.md).
+Source: `apps/game-client/src/features/userScripts/` (`runtime.ts`, `globalRuntime.ts`, `luaRuntime.ts`, `pythonRuntime.ts`, `plainData.ts`). Player-facing description: [scripting-and-sharing](./game/scripting-and-sharing.md) and [scripting-summary](./scripting/scripting-summary.md).
 
 **Engines.** `runUserScript(script, api, connectionId?)` dispatches by language.
 

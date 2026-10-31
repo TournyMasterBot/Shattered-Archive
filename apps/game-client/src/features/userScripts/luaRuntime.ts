@@ -2,10 +2,13 @@
 import type { GlobalCall, ScriptSandboxApi } from './types';
 import { lua, lauxlib, lualib, to_luastring } from 'fengari-web';
 
+/** Opaque handle to a Fengari Lua state. The library is untyped JS, so the handle is only ever passed back into it. */
+export type LuaState = object;
+
 /**
  * Push a JS function onto the Lua stack as a C function.
  */
-function pushJsFunction(L: any, fn: (Linner: any) => number) {
+function pushJsFunction(L: LuaState, fn: (Linner: LuaState) => number) {
   lua.lua_pushcfunction(L, fn);
 }
 
@@ -15,7 +18,7 @@ function pushJsFunction(L: any, fn: (Linner: any) => number) {
  * primitives). Fengari has no built-in JS<->Lua remapper (unlike Skulpt's
  * ffi.remapToPy), so this is what lets `event` cross the bridge as a table.
  */
-function pushJsValue(L: any, value: unknown): void {
+function pushJsValue(L: LuaState, value: unknown): void {
   if (value === null || value === undefined) {
     lua.lua_pushnil(L);
     return;
@@ -57,7 +60,7 @@ function pushJsValue(L: any, value: unknown): void {
 /**
  * Create a fresh Lua state with standard libs opened.
  */
-export function createLuaState(): any {
+export function createLuaState(): LuaState {
   const L = lauxlib.luaL_newstate();
   lualib.luaL_openlibs(L);
   return L;
@@ -70,7 +73,7 @@ const LUA_TO_JS_MAX_DEPTH = 16;
  * else) or a dict. nil, functions, userdata and threads have no plain form and read as undefined, as does a table
  * nested deeper than LUA_TO_JS_MAX_DEPTH (which is also what stops a table that contains itself).
  */
-export function luaToJs(L: any, index: number, depth = 0): unknown {
+export function luaToJs(L: LuaState, index: number, depth = 0): unknown {
   switch (lua.lua_type(L, index)) {
     case lua.LUA_TBOOLEAN:
       return lua.lua_toboolean(L, index);
@@ -85,7 +88,7 @@ export function luaToJs(L: any, index: number, depth = 0): unknown {
   }
 }
 
-function luaTableToJs(L: any, index: number, depth: number): unknown {
+function luaTableToJs(L: LuaState, index: number, depth: number): unknown {
   // Each level of nesting holds a key and a value on the stack; only LUA_MINSTACK slots are guaranteed.
   if (!lua.lua_checkstack(L, 4)) return undefined;
 
@@ -115,7 +118,7 @@ function luaTableToJs(L: any, index: number, depth: number): unknown {
 }
 
 /** runGlobal's second argument: a table or other value as plain data, or a string (parsed as JSON when it is). */
-function readRunGlobalArgs(L: any, index: number): unknown {
+function readRunGlobalArgs(L: LuaState, index: number): unknown {
   if (lua.lua_gettop(L) < index || lua.lua_isnil(L, index)) return undefined;
   if (lua.lua_type(L, index) !== lua.LUA_TSTRING) return luaToJs(L, index);
 
@@ -132,7 +135,13 @@ function readRunGlobalArgs(L: any, index: number): unknown {
 const closedStates = new WeakSet<object>();
 
 /** Call the Lua function kept in the registry under `ref` with (result, error), under the api that asked. */
-function fireLuaCallback(L: any, ref: number, api: ScriptSandboxApi, result: unknown, errorMessage?: string): void {
+function fireLuaCallback(
+  L: LuaState,
+  ref: number,
+  api: ScriptSandboxApi,
+  result: unknown,
+  errorMessage?: string,
+): void {
   if (closedStates.has(L)) return;
 
   runWithApi(L, api, () => {
@@ -156,7 +165,7 @@ function fireLuaCallback(L: any, ref: number, api: ScriptSandboxApi, result: unk
  * callback(result, nil), or callback(nil, message) if the global failed. With no callback the outcome is only
  * logged, as before.
  */
-function makeRunGlobal(L: any, api: ScriptSandboxApi): (Linner: any) => number {
+function makeRunGlobal(L: LuaState, api: ScriptSandboxApi): (Linner: LuaState) => number {
   return (Linner) => {
     const id = lua.lua_tojsstring(Linner, 1);
     const args = readRunGlobalArgs(Linner, 2);
@@ -205,11 +214,11 @@ function asOutcome(result: Promise<unknown> | undefined): Promise<{ value?: unkn
  *   - getNamedVar(name)
  *   - event (table: event.name, event.payload, ...; nil if not applicable)
  */
-export function bindApiToLuaState(L: any, api: ScriptSandboxApi) {
+export function bindApiToLuaState(L: LuaState, api: ScriptSandboxApi) {
   // ----- 1) api table -----
   lua.lua_newtable(L);
 
-  const setApiField = (name: string, fn: (Linner: any) => number) => {
+  const setApiField = (name: string, fn: (Linner: LuaState) => number) => {
     pushJsFunction(L, fn);
     lua.lua_setfield(L, -2, to_luastring(name));
   };
@@ -327,7 +336,7 @@ export function bindApiToLuaState(L: any, api: ScriptSandboxApi) {
   lua.lua_setglobal(L, to_luastring('api'));
 
   // ----- 2) Global convenience functions -----
-  const setGlobal = (name: string, fn: (Linner: any) => number) => {
+  const setGlobal = (name: string, fn: (Linner: LuaState) => number) => {
     pushJsFunction(L, fn);
     lua.lua_setglobal(L, to_luastring(name));
   };
@@ -460,7 +469,7 @@ const apiStacks = new WeakMap<object, ScriptSandboxApi[]>();
  * Close a state made by createLuaState, releasing its memory. Without this a state lives as long as anything
  * still references it, and every one-shot run would leave a whole Lua VM (all standard libraries) behind.
  */
-export function closeLuaState(L: any): void {
+export function closeLuaState(L: LuaState): void {
   apiStacks.delete(L);
   closedStates.add(L);
   lua.lua_close(L);
@@ -471,7 +480,7 @@ export function closeLuaState(L: any): void {
  * api rebound, and the value stack back to its starting height. A long-lived state keeps whatever a failed
  * load or pcall leaves on its stack (the error message), so without the reset it would grow on every error.
  */
-function runWithApi<T>(L: any, api: ScriptSandboxApi, body: () => T): T {
+function runWithApi<T>(L: LuaState, api: ScriptSandboxApi, body: () => T): T {
   const top = lua.lua_gettop(L);
   let stack = apiStacks.get(L);
   if (!stack) {
@@ -494,7 +503,7 @@ function runWithApi<T>(L: any, api: ScriptSandboxApi, body: () => T): T {
  * Execute a chunk of Lua source with a given ScriptSandboxApi. Globals and functions the chunk defines stay in
  * the state for later chunks.
  */
-export function runLuaChunkInState(L: any, source: string, api: ScriptSandboxApi, chunkName?: string): boolean {
+export function runLuaChunkInState(L: LuaState, source: string, api: ScriptSandboxApi, chunkName?: string): boolean {
   return runWithApi(L, api, () => {
     // load Lua chunk
     const status = lauxlib.luaL_loadbuffer(L, to_luastring(source), null, to_luastring(chunkName ?? 'user_script'));
@@ -523,7 +532,7 @@ export function runLuaChunkInState(L: any, source: string, api: ScriptSandboxApi
  *   function foo(argsJson) ... return value end
  */
 export function callLuaGlobalFunctionWithResult(
-  L: any,
+  L: LuaState,
   funcName: string,
   args: unknown,
   api: ScriptSandboxApi,
@@ -553,7 +562,12 @@ export function callLuaGlobalFunctionWithResult(
 }
 
 /** Call a global Lua function by name; true when it ran without error. */
-export function callLuaGlobalFunctionInState(L: any, funcName: string, args: unknown, api: ScriptSandboxApi): boolean {
+export function callLuaGlobalFunctionInState(
+  L: LuaState,
+  funcName: string,
+  args: unknown,
+  api: ScriptSandboxApi,
+): boolean {
   return callLuaGlobalFunctionWithResult(L, funcName, args, api).ok;
 }
 

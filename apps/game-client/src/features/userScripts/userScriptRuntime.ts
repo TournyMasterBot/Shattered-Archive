@@ -1,8 +1,8 @@
 // apps/game-client/src/features/userScripts/userScriptRuntime.ts
 
 import { AnyUserScript, ScriptSandboxApi, TriggerContextEvent } from './types';
-import { runTimerScript, runUserScript } from './runtime';
-import { DispatchEvent, ListenEvent, ListenRedispatch } from '../event-emitter/event-dispatcher';
+import { runUserScript } from './runtime';
+import { DispatchEvent, ListenEvent } from '../event-emitter/event-dispatcher';
 import { canonicalConnectionId } from '../connection/connectionId';
 import { SendCommandFn } from '../../types/userscript-types/send-command-function';
 import { ScriptErrorInfo } from '../../types/userscript-types/script-error-info';
@@ -29,7 +29,6 @@ import { expandMatchTextWithGlobals } from './expand-global-vars';
 
 export const STORAGE_KEY_PREFIX_USERSCRIPTS = 'shatteredArchive.userScripts.';
 
-const RAW_EVENT_NAME = 'shatteredarchive:raw-data';
 
 const tickPhrase = 'tick ';
 const charDataPhrase = 'char_data ';
@@ -55,14 +54,32 @@ type IdentitySnapshot = {
   updatedAt?: number;
 };
 
+/** Window slots this runtime reads and writes. */
+type RuntimeWindow = Window & {
+  __SA_IDENTITY__?: IdentitySnapshot;
+  __SA_EVENT_SNAPSHOTS__?: Record<string, unknown>;
+};
+
+/** An event detail the runtime reads defensively: every field is checked or coerced before use. */
+type LooseDetail = Record<string, unknown> | null | undefined;
+
+/** The optional trigger fields the runtime reads; narrowing on `kind` alone does not expose them. */
+type TriggerLike = {
+  eventName?: unknown;
+  matchText?: unknown;
+  dontRequireMatchText?: unknown;
+  omitFromOutput?: unknown;
+  caseInsensitive?: boolean;
+};
+
 function getIdentitySnapshot(): IdentitySnapshot {
-  const w = window as any;
+  const w = window as RuntimeWindow;
   w.__SA_IDENTITY__ = w.__SA_IDENTITY__ || {};
   return w.__SA_IDENTITY__ as IdentitySnapshot;
 }
 
 function setIdentitySnapshot(patch: Partial<IdentitySnapshot>) {
-  const w = window as any;
+  const w = window as RuntimeWindow;
   const cur = getIdentitySnapshot();
   const next: IdentitySnapshot = { ...cur, ...patch, updatedAt: Date.now() };
   w.__SA_IDENTITY__ = next;
@@ -73,7 +90,7 @@ function toCleanString(v: unknown): string {
   return v == null ? '' : String(v).trim();
 }
 
-function extractCharacterFromLoginData(data: any): { characterName?: string } {
+function extractCharacterFromLoginData(data: LooseDetail): { characterName?: string } {
   const characterName =
     toCleanString(data?.name) ||
     toCleanString(data?.characterName) ||
@@ -95,12 +112,13 @@ function normalizeSplitChar(v: string | undefined): string {
   return s.slice(0, 1);
 }
 
-function pickMatchTextFromPayload(payload: any): string {
+function pickMatchTextFromPayload(payload: unknown): string {
   if (payload == null) return '';
   if (typeof payload === 'string') return payload;
-  if (typeof payload?.text === 'string') return payload.text;
-  if (typeof payload?.rawText === 'string') return payload.rawText;
-  if (typeof payload?.line === 'string') return payload.line;
+  const p = payload as { text?: unknown; rawText?: unknown; line?: unknown };
+  if (typeof p.text === 'string') return p.text;
+  if (typeof p.rawText === 'string') return p.rawText;
+  if (typeof p.line === 'string') return p.line;
   return '';
 }
 
@@ -169,7 +187,7 @@ function parseInlineObjectVars(input: string): { command: string; vars: Record<s
   if (!m) return null;
 
   const command = m[1];
-  let rest = (m[2] ?? '').trim();
+  const rest = (m[2] ?? '').trim();
   if (!rest) return null;
 
   if (rest[0] !== '{' || rest[rest.length - 1] !== '}') return null;
@@ -355,11 +373,11 @@ export class UserScriptRuntime {
   private attachWindowEvents() {
     // Debug: console.log('Attaching user script runtime events');
 
-    ListenEvent<any>('shatteredarchive:raw-data', (payload) => {
+    ListenEvent<LooseDetail>('shatteredarchive:raw-data', (payload) => {
       void this.processRawEvent(payload);
     });
 
-    ListenEvent<any>('shatteredarchive:gmcp-data', (payload) => {
+    ListenEvent<LooseDetail>('shatteredarchive:gmcp-data', (payload) => {
       void this.processGmcpEvent(payload);
     });
 
@@ -369,8 +387,8 @@ export class UserScriptRuntime {
     });
     */
 
-    ListenEvent<any>('shatteredarchive:userScripts-updated', (payload) => {
-      const connectionId = payload?.connectionId;
+    ListenEvent<LooseDetail>('shatteredarchive:userScripts-updated', (payload) => {
+      const connectionId = payload?.connectionId as string | null | undefined;
       this.reloadFromStorage(connectionId);
     });
 
@@ -399,7 +417,7 @@ export class UserScriptRuntime {
     for (const s of this.scripts.values()) {
       if (s.kind !== 'trigger' || !s.enabled) continue;
 
-      const trig: any = s;
+      const trig = s as typeof s & TriggerLike;
       if (trig.omitFromOutput !== true) continue;
 
       const eventName = safeTrim(String(trig.eventName ?? ''));
@@ -496,7 +514,9 @@ export class UserScriptRuntime {
     for (const off of this.triggerUnsubs.values()) {
       try {
         off();
-      } catch {}
+      } catch {
+        // best-effort: a failing unsubscribe must not stop the remaining ones
+      }
     }
     this.triggerUnsubs.clear();
 
@@ -506,7 +526,7 @@ export class UserScriptRuntime {
       if (script.kind !== 'trigger') continue;
       if (!script.enabled) continue;
 
-      const trig: any = script;
+      const trig = script as typeof script & TriggerLike;
       const eventName = safeTrim(trig.eventName);
       if (!eventName) continue;
 
@@ -523,14 +543,14 @@ export class UserScriptRuntime {
     for (const [eventName, scripts] of byEvent.entries()) {
       const key = `UserScriptRuntime::triggers::${eventName}`;
 
-      const off = ListenEvent<any>(
+      const off = ListenEvent<unknown>(
         eventName,
         (payload) => {
           for (const s of scripts) {
             const current = this.scripts.get(s.id);
             if (!current || current.kind !== 'trigger' || !current.enabled) continue;
 
-            const curTrig: any = current;
+            const curTrig = current as typeof current & TriggerLike;
             if (!this.triggerPassesMatch(curTrig, payload)) continue;
 
             this.executeScript(current, {
@@ -547,7 +567,7 @@ export class UserScriptRuntime {
     this.rebuildOmitRules();
   }
 
-  private triggerPassesMatch(trig: any, payload: any): boolean {
+  private triggerPassesMatch(trig: TriggerLike, payload: unknown): boolean {
     const dontRequireMatchText = trig.dontRequireMatchText === true;
     if (dontRequireMatchText) return true;
 
@@ -635,7 +655,7 @@ export class UserScriptRuntime {
 
   /* ------------------------------ raw stream ------------------------------ */
 
-  async processRawEvent(payload: any): Promise<void> {
+  async processRawEvent(payload: LooseDetail): Promise<void> {
     const rawText = String(payload?.rawText ?? '');
 
     const specialEventType = await this.processForSpecialLines(rawText);
@@ -662,7 +682,7 @@ export class UserScriptRuntime {
     }
 
     if (!omit) {
-      DispatchEvent('shatteredarchive:write-terminal', payload);
+      DispatchEvent('shatteredarchive:write-terminal', payload as object);
     }
   }
 
@@ -737,7 +757,7 @@ export class UserScriptRuntime {
 
   /* -------------------------------- gmcp -------------------------------- */
 
-  processGmcpEvent(payload: any): void {
+  processGmcpEvent(payload: LooseDetail): void {
     const rawText = String(payload?.rawText ?? '');
 
     try {
@@ -765,7 +785,7 @@ export class UserScriptRuntime {
           const data = JSON.parse(jsonPart);
 
           // Snapshot for late subscribers
-          const w = window as any;
+          const w = window as RuntimeWindow;
           w.__SA_EVENT_SNAPSHOTS__ = w.__SA_EVENT_SNAPSHOTS__ || {};
           w.__SA_EVENT_SNAPSHOTS__['game:character-login'] = data;
 
@@ -801,13 +821,13 @@ export class UserScriptRuntime {
       */
       const jsonPart = rawText.slice(length).trim();
       const data = JSON.parse(jsonPart) as T;
-      const w = window as any;
+      const w = window as RuntimeWindow;
 
       w.__SA_EVENT_SNAPSHOTS__ = w.__SA_EVENT_SNAPSHOTS__ || {};
       w.__SA_EVENT_SNAPSHOTS__[eventName] = data;
 
       DispatchEvent(eventName, data);
-    } catch (err) {
+    } catch {
       console.log('Failed to dispatch GMCP event', {
         eventName,
         length,
@@ -862,7 +882,7 @@ export class UserScriptRuntime {
       for (const script of this.scripts.values()) {
         if (script.kind !== 'alias' || !script.enabled) continue;
 
-        const aliasRaw = String((script as any).alias ?? '');
+        const aliasRaw = String(script.alias ?? '');
         const aliasTrim = aliasRaw.trim();
         if (!aliasTrim) continue;
 
@@ -965,7 +985,7 @@ export class UserScriptRuntime {
     for (const script of this.scripts.values()) {
       if (script.kind !== 'timer' || !script.enabled) continue;
 
-      const interval = Number((script as any).intervalMs ?? 0);
+      const interval = Number(script.intervalMs ?? 0);
       if (!Number.isFinite(interval) || interval <= 0) continue;
 
       active.add(script.id);
@@ -1001,11 +1021,11 @@ export class UserScriptRuntime {
     if (!script.enabled) return;
 
     const payloadVars =
-      extraContext?.event && typeof (extraContext.event as any)?.payload === 'object'
-        ? ((extraContext.event as any).payload?.vars as Record<string, string> | undefined)
+      extraContext?.event && typeof extraContext.event.payload === 'object'
+        ? ((extraContext.event.payload as { vars?: Record<string, string> } | null)?.vars)
         : undefined;
 
-    const vars = payloadVars && typeof payloadVars === 'object' ? payloadVars : {};
+    const vars: Record<string, unknown> = payloadVars && typeof payloadVars === 'object' ? payloadVars : {};
 
     const apiRef = {} as ScriptSandboxApi;
 
@@ -1032,7 +1052,7 @@ export class UserScriptRuntime {
 
       getNamedVar: (name: string) => {
         const k = String(name ?? '');
-        const v = (vars as any)[k];
+        const v = vars[k];
         return v == null ? undefined : String(v);
       },
 

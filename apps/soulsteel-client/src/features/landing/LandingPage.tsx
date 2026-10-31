@@ -54,6 +54,7 @@ export default function LandingPage({ onEnterRoom }: LandingPageProps) {
     refresh();
   };
 
+  // eslint-disable-next-line react-hooks/purity -- "older than N days" is relative to the moment of render by design
   const cutoff = Date.now() - Math.max(1, bulkDeleteDays) * MS_PER_DAY;
   const oldRooms = rooms.filter((r) => new Date(r.updatedAt).getTime() < cutoff);
 

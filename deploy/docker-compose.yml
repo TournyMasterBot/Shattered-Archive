@@ -488,10 +488,10 @@ services:
   # depends_on, so it can never block the rest of the stack from starting. Single subdomain
   # for client+server; the client calls same-origin /api/soulsteel and /health.
   #
-  # Phase 1 (see .ai-plans/20260813-1911-soulsteel-herald-tool-mvp.md): the server is a
+  # Phase 1 (see .ai-plans-completed/completed/20260813-1911-soulsteel-herald-tool-mvp.md): the server is a
   # health-check-only skeleton — no data dir, no volume, not wired to auth-server. Game state
   # lives entirely in the browser's IndexedDB. The follow-on plan
-  # (.ai-plans/20260813-1912-soulsteel-auth-archive-dashboard.md) is what adds persistence,
+  # (.ai-plans/proposed/2026-08-13_soulsteel-auth-archive-dashboard/tech-plan.md) is what adds persistence,
   # auth wiring, and a named volume — do not add those here speculatively ahead of that plan.
   ############################################################
   soulsteel-server:

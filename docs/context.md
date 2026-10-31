@@ -116,11 +116,11 @@ The `apps/web-server` in this repo is a Node.js caching proxy deployed at `https
 | [web-server.md](./web-server.md) | REST API, caching, Shattered Archive Remote Server context |
 | [definitions.md](./definitions.md) | Terminology: Pages, Components, Hooks, Features |
 | [architecture/Emitted Events.md](./architecture/Emitted%20Events.md) | Mermaid event flow diagrams |
-| [features/user-equipment.md](./features/user-equipment.md) | Equipment capture + delta system |
-| [features/contribute.md](./features/contribute.md) | Identify + Creature Lore submission feature |
-| [features/user-library.md](./features/user-library.md) | Library/spell browsing feature |
-| [features/user-account.md](./features/user-account.md) | Optional hub login + cloud save/load of scripts & plugin configs |
-| [features/scripting-and-sharing.md](./features/scripting-and-sharing.md) | USER guide: the five script languages, global scripts/runGlobal, plugin config, and moving all three between web/mobile/devices by cloud or file |
+| [game/user-equipment.md](./game/user-equipment.md) | Equipment capture + delta system |
+| [game/contribute.md](./game/contribute.md) | Identify + Creature Lore submission feature |
+| [game/user-library.md](./game/user-library.md) | Library/spell browsing feature |
+| [game/user-account.md](./game/user-account.md) | Optional hub login + cloud save/load of scripts & plugin configs |
+| [game/scripting-and-sharing.md](./game/scripting-and-sharing.md) | USER guide: the five script languages, global scripts/runGlobal, plugin config, and moving all three between web/mobile/devices by cloud or file |
 | [scripting/javascript.md](./scripting/javascript.md) | JS script API reference |
 | [scripting/typescript.md](./scripting/typescript.md) | TS script API reference |
 | [scripting/lua.md](./scripting/lua.md) | Lua runtime notes |

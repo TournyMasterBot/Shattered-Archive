@@ -118,7 +118,7 @@ const ENG_LOG_PREFIX = '[autoleveling][engine]';
 
 function isAutoLevelingDebugEnabled(): boolean {
   try {
-    if (typeof window !== 'undefined' && (window as any).__AUTOLEVELING_DEBUG__ === true) return true;
+    if (typeof window !== 'undefined' && (window as unknown as { __AUTOLEVELING_DEBUG__?: unknown }).__AUTOLEVELING_DEBUG__ === true) return true;
 
     const v = typeof localStorage !== 'undefined' ? localStorage.getItem('autoleveling.debug') : null;
     if (v === '1' || v === 'true') return true;
@@ -129,15 +129,15 @@ function isAutoLevelingDebugEnabled(): boolean {
   }
 }
 
-function dbg(...args: any[]) {
+function dbg(...args: unknown[]) {
   if (!isAutoLevelingDebugEnabled()) return;
-  // eslint-disable-next-line no-console
+   
   console.debug(ENG_LOG_PREFIX, ...args);
 }
 
-function warn(...args: any[]) {
+function warn(...args: unknown[]) {
   if (!isAutoLevelingDebugEnabled()) return;
-  // eslint-disable-next-line no-console
+   
   console.warn(ENG_LOG_PREFIX, ...args);
 }
 
@@ -262,8 +262,18 @@ function normalizeDirToken(v: unknown): string | null {
   return null;
 }
 
-function extractEventMoveKey(detail: any): { cmd?: string; dir?: string; ts?: number; room?: any; reasonLine?: any } {
-  const cmd = detail?.cmd != null ? normCmd(detail.cmd) : undefined;
+/** CustomEvent details the engine reads defensively: every field is checked or coerced before use. */
+type EventDetail = Record<string, unknown> | null | undefined;
+
+/** What the bound handlers need from an event: its detail and, for a few, its type. Real DOM events satisfy this. */
+type EngineEvent = { detail?: EventDetail; type?: string };
+
+/** GMCP affect payloads: `n` is the affect name. */
+type AffectDetail = { n?: unknown } | null | undefined;
+type AffectsTrueup = AffectDetail[] | { affects?: AffectDetail[] } | null | undefined;
+
+function extractEventMoveKey(detail: EventDetail): { cmd?: string; dir?: string; ts?: number; room?: RoomSnapshot; reasonLine?: string } {
+  const cmd = detail?.cmd != null ? normCmd(detail.cmd as string) : undefined;
 
   const dir = normalizeDirToken(detail?.dir) ?? normalizeDirToken(detail?.direction) ?? undefined;
 
@@ -273,8 +283,8 @@ function extractEventMoveKey(detail: any): { cmd?: string; dir?: string; ts?: nu
     cmd,
     dir,
     ts,
-    room: detail?.room,
-    reasonLine: detail?.reasonLine,
+    room: detail?.room as RoomSnapshot | undefined,
+    reasonLine: detail?.reasonLine as string | undefined,
   };
 }
 
@@ -305,7 +315,7 @@ export class AutoLevelingEngine {
   private sightseeWait: null | {
     promise: Promise<'next' | 'prev'>;
     resolve: (d: 'next' | 'prev') => void;
-    reject: (e: any) => void;
+    reject: (e: unknown) => void;
   } = null;
   private lastMovementCmd: string | null = null;
 
@@ -313,7 +323,7 @@ export class AutoLevelingEngine {
   private moveWait: null | {
     promise: Promise<MovementResult>;
     resolve: (r: MovementResult) => void;
-    reject: (e: any) => void;
+    reject: (e: unknown) => void;
     timeoutId: ReturnType<typeof setTimeout> | null;
     startedAt: number;
     cmd: string; // normalized
@@ -326,7 +336,7 @@ export class AutoLevelingEngine {
     text: string;
     caseInsensitive: boolean;
     resolve: () => void;
-    reject: (e: any) => void;
+    reject: (e: unknown) => void;
     timeoutId: ReturnType<typeof setTimeout> | null;
   } = null;
 
@@ -334,14 +344,14 @@ export class AutoLevelingEngine {
     kind: 'regex';
     re: RegExp;
     resolve: () => void;
-    reject: (e: any) => void;
+    reject: (e: unknown) => void;
     timeoutId: ReturnType<typeof setTimeout> | null;
   } = null;
 
   private waitFighting: null | {
     value: boolean;
     resolve: () => void;
-    reject: (e: any) => void;
+    reject: (e: unknown) => void;
     timeoutId: ReturnType<typeof setTimeout> | null;
   } = null;
 
@@ -350,7 +360,7 @@ export class AutoLevelingEngine {
     startedAt: number;
     minDelayMs: number;
     resolve: (r: { ok: boolean; reason?: string }) => void;
-    reject: (e: any) => void;
+    reject: (e: unknown) => void;
     timeoutId: ReturnType<typeof setTimeout> | null;
     sawNotHere: boolean;
   } = null;
@@ -426,11 +436,11 @@ export class AutoLevelingEngine {
   // GMCP affects — normalized lowercase names of currently-active affects
   private activeAffects = new Set<string>();
 
-  private boundOnTerminalData = (ev: Event) => {
+  private boundOnTerminalData = (ev: EngineEvent) => {
     if (this.stopping || this.paused) {
       return;
     }
-    const ce = ev as CustomEvent<any>;
+    const ce = ev;
     const textRaw = ce?.detail?.text;
     if (textRaw === undefined || textRaw === null) return;
     const text = String(textRaw);
@@ -477,10 +487,10 @@ export class AutoLevelingEngine {
    * Only waitForMovement's own much-larger backstop timer below still produces the
    * fatal 'timeout' outcome, reserved for "the tracker itself never resolved at all."
    */
-  private boundOnMovementResolved = (outcome: 'succeeded' | 'failed', ev: Event) => {
+  private boundOnMovementResolved = (outcome: 'succeeded' | 'failed', ev: EngineEvent) => {
     if (!this.moveWait) return;
 
-    const ce = ev as CustomEvent<any>;
+    const ce = ev;
     const { cmd, dir, ts, room, reasonLine } = extractEventMoveKey(ce?.detail);
 
     // If timestamp exists and it's clearly older than this wait, ignore it. Kept as
@@ -527,18 +537,18 @@ export class AutoLevelingEngine {
     }
   };
 
-  private boundOnFlee = (ev: Event) => {
+  private boundOnFlee = (ev: EngineEvent) => {
     if (this.stopping || this.paused) return;
 
-    const ce = ev as CustomEvent<any>;
+    const ce = ev;
     dbg('event:flee observed -> pausing engine', { detail: ce?.detail });
     this.pause();
   };
 
-  private boundOnCreatureDeath = (ev: Event) => {
+  private boundOnCreatureDeath = (ev: EngineEvent) => {
     if (this.stopping || this.paused) return;
 
-    const ce = ev as CustomEvent<any>;
+    const ce = ev;
     const textRaw = String(ce?.detail?.text ?? '');
     dbg('creature death observed', { detail: ce?.detail });
 
@@ -562,11 +572,11 @@ export class AutoLevelingEngine {
     }
   };
 
-  private boundOnCharDataFighting = (ev: Event) => {
+  private boundOnCharDataFighting = (ev: EngineEvent) => {
     if (this.stopping || this.paused) {
       return;
     }
-    const ce = ev as CustomEvent<any>;
+    const ce = ev;
     const d = ce?.detail;
 
     // Authoritative: GMCP char-data property "isFighting"
@@ -583,11 +593,11 @@ export class AutoLevelingEngine {
 
     if (typeof v !== 'boolean') return;
 
-    dbg('char-data fighting observed', { type: (ev as any).type, isFighting: v });
-    this.setIsFighting(v, `event:${(ev as any).type}`);
+    dbg('char-data fighting observed', { type: ev.type, isFighting: v });
+    this.setIsFighting(v, `event:${ev.type}`);
   };
 
-  private onCharDataVitals(d: any) {
+  private onCharDataVitals(d: EventDetail) {
     if (!d) return;
     const hp = Number(d.hp ?? 0);
     const hpMax = Number(d.max_hp ?? 0);
@@ -815,7 +825,7 @@ export class AutoLevelingEngine {
    * estimate is kept in *base* XP (alignment modifier divided out) and the modifier
    * re-applied for the prediction.
    */
-  private trackToNextLevel(d: any) {
+  private trackToNextLevel(d: EventDetail) {
     const tnl = Number(d?.tnl);
     if (!Number.isFinite(tnl) || tnl < 0) return;
 
@@ -850,7 +860,7 @@ export class AutoLevelingEngine {
     const NOTE = `${ESC}[1;93m`; // bold bright yellow — stands out against game text
     const BODY = `${ESC}[93m`;
     const OFF = `${ESC}[0m`;
-    DispatchEvent('shatteredarchive:write-terminal' as any, {
+    DispatchEvent('shatteredarchive:write-terminal', {
       rawText: `\r\n${NOTE}[auto-level]${OFF} ${BODY}${body}${OFF}\r\n`,
     });
   }
@@ -956,21 +966,21 @@ export class AutoLevelingEngine {
       this.offListeners = [
         // Incoming terminal text — shatteredarchive:raw-data is the authoritative event
         // Payload shape: { text: string, rawText: string, fromUserScript: boolean }
-        ListenEvent<any>(
+        ListenEvent<EventDetail>(
           'shatteredarchive:raw-data',
           (payload) => {
-            this.boundOnTerminalData({ detail: payload } as any);
+            this.boundOnTerminalData({ detail: payload });
           },
           { key: 'AutoLevelingEngine:raw-data' },
         ),
 
         // GMCP char-data — authoritative source for isFighting and vitals
         // Payload shape: { hp, max_hp, mana, max_mana, move, max_move, is_fighting, ... }
-        ListenEvent<any>(
+        ListenEvent<EventDetail>(
           'game:char-data',
           (payload) => {
             this.onCharDataVitals(payload);
-            this.boundOnCharDataFighting({ detail: payload, type: 'game:char-data' } as any);
+            this.boundOnCharDataFighting({ detail: payload, type: 'game:char-data' });
           },
           { key: 'AutoLevelingEngine:game:char-data' },
         ),
@@ -979,36 +989,36 @@ export class AutoLevelingEngine {
         // movementTracker.ts, bound once at app scope) is the authoritative source now;
         // it diffs {room,sector,exits} itself rather than treating any game:room-data
         // arrival as success (the bug this used to have).
-        ListenEvent<any>(
+        ListenEvent<EventDetail>(
           'shatteredarchive:movement-succeeded',
           (payload) => {
-            this.boundOnMovementResolved('succeeded', { detail: payload } as any);
+            this.boundOnMovementResolved('succeeded', { detail: payload });
           },
           { key: 'AutoLevelingEngine:movement-succeeded' },
         ),
-        ListenEvent<any>(
+        ListenEvent<EventDetail>(
           'shatteredarchive:movement-failed',
           (payload) => {
-            this.boundOnMovementResolved('failed', { detail: payload } as any);
+            this.boundOnMovementResolved('failed', { detail: payload });
           },
           { key: 'AutoLevelingEngine:movement-failed' },
         ),
 
         // Handle creature deaths
-        ListenEvent<any>(
+        ListenEvent<EventDetail>(
           'event:creature-death',
           (payload) => {
-            this.boundOnCreatureDeath({ detail: payload } as any);
+            this.boundOnCreatureDeath({ detail: payload });
           },
           { key: 'AutoLevelingEngine:event:creature-death' },
         ),
 
         // GMCP affects — track active affect names for if_affect_missing
-        ListenEvent<any>(
+        ListenEvent<AffectsTrueup>(
           'game:affects-trueup',
           (payload) => {
             this.activeAffects.clear();
-            const list: any[] = Array.isArray(payload)
+            const list: AffectDetail[] = Array.isArray(payload)
               ? payload
               : Array.isArray(payload?.affects)
                 ? payload.affects
@@ -1021,7 +1031,7 @@ export class AutoLevelingEngine {
           { key: 'AutoLevelingEngine:game:affects-trueup' },
         ),
 
-        ListenEvent<any>(
+        ListenEvent<AffectDetail>(
           'game:affect-added',
           (payload) => {
             if (payload?.n) {
@@ -1032,7 +1042,7 @@ export class AutoLevelingEngine {
           { key: 'AutoLevelingEngine:game:affect-added' },
         ),
 
-        ListenEvent<any>(
+        ListenEvent<AffectDetail>(
           'game:affect-removed',
           (payload) => {
             if (payload?.n) {
@@ -1046,7 +1056,7 @@ export class AutoLevelingEngine {
         ),
 
         // GMCP tick — count ticks so `send_every_ticks` buffs can pace themselves
-        ListenEvent<any>(
+        ListenEvent<unknown>(
           'game:tick',
           () => {
             this.tickCount += 1;
@@ -1056,18 +1066,18 @@ export class AutoLevelingEngine {
         ),
 
         // Pause on flee
-        ListenEvent<any>(
+        ListenEvent<EventDetail>(
           'event:flee:success',
           (payload) => {
-            this.boundOnFlee({ detail: payload } as any);
+            this.boundOnFlee({ detail: payload });
           },
           { key: 'AutoLevelingEngine:event:flee:success' },
         ),
         // Be aware of a failed flee
-        ListenEvent<any>(
+        ListenEvent<EventDetail>(
           'event:flee:failed',
           (payload) => {
-            this.boundOnFlee({ detail: payload } as any);
+            this.boundOnFlee({ detail: payload });
           },
           { key: 'AutoLevelingEngine:event:flee:failed' },
         ),
@@ -1120,7 +1130,9 @@ export class AutoLevelingEngine {
     if (this.paused) return;
     dbg('pause()');
     this.paused = true;
-    this.deps.setRunState({ status: 'paused' } as any);
+    // KNOWN TYPE GAP (not changed here): the paused variant of AutoLevelRunState also requires round/step/actionIndex,
+    // but this has always sent status only.
+    this.deps.setRunState({ status: 'paused' } as unknown as AutoLevelRunState);
     this.writeAutoLevelLine('paused');
   }
 
@@ -1145,7 +1157,7 @@ export class AutoLevelingEngine {
       ...(cfg.steps.identify.post ?? []),
     ].filter(
       (a): a is Extract<typeof a, { kind: 'send' }> =>
-        a.kind === 'send' && String((a as any).cmd ?? '').trim().length > 0,
+        a.kind === 'send' && String(a.cmd ?? '').trim().length > 0,
     );
 
     if (sendActions.length > 0) {
@@ -1176,7 +1188,7 @@ export class AutoLevelingEngine {
     if (direction === 'prev' && !this.lastMovementCmd) {
       // Nothing to reverse — leave the wait active and tell the user.
       dbg('advanceSightsee: prev blocked — no prior movement');
-      DispatchEvent('shatteredarchive:write-terminal' as any, {
+      DispatchEvent('shatteredarchive:write-terminal', {
         rawText: '\r\n[SIGHTSEE] Nothing to go back to — press Next to advance.\r\n',
       });
       return;
@@ -1299,7 +1311,7 @@ export class AutoLevelingEngine {
 
           try {
             await this.waitWhilePausedOrStopped();
-          } catch (err: any) {
+          } catch {
             dbg('engine stopping from waitWhilePausedOrStopped', { roundDelay: this.cfg.roundLoopTimeMs });
             this.deps.setRunState({ status: 'stopping' });
             break;
@@ -1420,8 +1432,8 @@ export class AutoLevelingEngine {
 
         this.trainingPathSteps = this.cfg.init.trainingPath.split(';').filter((x) => x?.trim()?.length > 0);
         round += 1;
-      } catch (e: any) {
-        const msg = String(e?.message ?? e ?? 'AutoLeveling error');
+      } catch (e: unknown) {
+        const msg = String((e as { message?: unknown } | null | undefined)?.message ?? e ?? 'AutoLeveling error');
         warn('fatal error', msg);
         this.deps.setRunState({ status: 'error', message: msg });
         this.writeAutoLevelLine(`error: ${msg}`);
@@ -1730,7 +1742,7 @@ export class AutoLevelingEngine {
     const expectedDir = mv.isMove ? mv.dir : undefined;
 
     let resolveFn!: (r: MovementResult) => void;
-    let rejectFn!: (e: any) => void;
+    let rejectFn!: (e: unknown) => void;
 
     const promise = new Promise<MovementResult>((resolve, reject) => {
       resolveFn = resolve;
@@ -2245,17 +2257,17 @@ export class AutoLevelingEngine {
 
       const a = this.injectedQueue.shift()!;
 
-      if ((a as any).kind === '__dry_run_notify') {
+      if (a.kind === '__dry_run_notify') {
         const n = a as Extract<InjectedEngineAction, { kind: '__dry_run_notify' }>;
         const msg = `\r\n[DRY RUN] Would engage: ${n.target.cleanName} — skipping: ${n.wouldSend}\r\n`;
-        DispatchEvent('shatteredarchive:write-terminal' as any, { rawText: msg });
+        DispatchEvent('shatteredarchive:write-terminal', { rawText: msg });
         dbg('dry_run notify written', { target: n.target.cleanName, wouldSend: n.wouldSend });
         // Brief pause so the user can read the message before the engine moves on.
         if (!this.stopping) await this.delayMs(1200);
         continue;
       }
 
-      if ((a as any).kind === '__engage_target') {
+      if (a.kind === '__engage_target') {
         const eng = a as Extract<InjectedEngineAction, { kind: '__engage_target' }>;
         dbg('flushInjected engage', { target: eng.target.cleanName });
 
@@ -2382,8 +2394,8 @@ export class AutoLevelingEngine {
     }
   }
 
-  private rejectAllWaits(err: any) {
-    dbg('rejectAllWaits', { err: String(err?.message ?? err ?? err) });
+  private rejectAllWaits(err: unknown) {
+    dbg('rejectAllWaits', { err: String((err as { message?: unknown } | null | undefined)?.message ?? err ?? err) });
 
     if (this.sightseeWait) {
       const rej = this.sightseeWait.reject;

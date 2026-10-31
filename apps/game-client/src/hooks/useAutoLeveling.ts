@@ -15,7 +15,7 @@
  * - Engine owns runtime behavior: movement gating, encounter detection/injection, engagement, waits.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { AutoLevelConfig, AutoLevelRunState, AutoLevelXpProgress } from '../features/autoleveling/autoleveling-types';
 import { createDefaultAutoLevelConfig } from '../features/autoleveling/autoleveling-defaults';
@@ -62,7 +62,7 @@ function isAutoLevelingDebugEnabled(): boolean {
 // ── END AI-METHOD ──
 function hdbg(...args: any[]) {
   if (!isAutoLevelingDebugEnabled()) return;
-  // eslint-disable-next-line no-console
+   
   console.debug(HOOK_LOG_PREFIX, ...args);
 }
 
@@ -71,7 +71,7 @@ function hdbg(...args: any[]) {
 // @ai-hash: 5f87768e
 // ── END AI-METHOD ──
 function hwarn(...args: any[]) {
-  // eslint-disable-next-line no-console
+   
   console.warn(HOOK_LOG_PREFIX, ...args);
 }
 

@@ -22,13 +22,14 @@ export const UserStyleOverrideModal: React.FC<UserStyleOverrideModalProps> = ({
   onDiscardDraft,
   onClose,
 }) => {
-  if (!isOpen) return null;
-
+  // Hooks first: they must run on every render, including the closed one.
   const draftRef = React.useRef(draftCss);
 
   React.useEffect(() => {
     draftRef.current = draftCss;
   }, [draftCss]);
+
+  if (!isOpen) return null;
 
   const hasUnsavedChanges = draftCss !== appliedCss;
 

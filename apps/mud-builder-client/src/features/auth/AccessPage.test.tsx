@@ -185,7 +185,7 @@ describe('AccessPage device enrolment', () => {
 
   /** capabilities now advertises authPublicUrl, so the device panel appears. */
   function mockServer(options: { enrollStatus?: number } = {}) {
-    globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = jest.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
       const url = String(input);
       const json = (body: unknown, status = 200) =>
         ({ ok: status < 400, status, statusText: 'x', json: async () => body }) as unknown as Response;

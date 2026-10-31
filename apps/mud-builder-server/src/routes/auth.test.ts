@@ -630,7 +630,7 @@ describe('Phase 4: centralized-auth introspect fallback', () => {
 
 describe('simulacrum-wiring correction 5: builder-tier floor on the general write gate', () => {
   /**
-   * Mirrors the three-way split .ai-plans/20260816-0701-simulacrum-mud-wiring.md Step 3
+   * Mirrors the three-way split .ai-plans-completed/completed/20260816-0701-simulacrum-mud-wiring.md Step 3
    * describes: `user` and `trusted` are both below the floor for the REAL persist path
    * (authGuard gates PUT /api/areas/:file, POST /api/reload, and — exercised here as a
    * stand-in, same as the rest of this file — PUT /api/groups); `builder`+ passes. This is

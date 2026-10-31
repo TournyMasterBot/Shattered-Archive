@@ -193,7 +193,7 @@ services:
       JSON_LOG_FILE_PATH: "/repo/apps/game-server/log/server.log.jsonl"
       LOG_RESPECT_SOH: "true"
       CORS_ORIGIN: "https://game-client.shatteredarchive.dev,https://web-client.shatteredarchive.dev"
-    # Step 1 (.ai-plans/20260816-0701-simulacrum-mud-wiring.md) made simulacrum-server a real
+    # Step 1 (.ai-plans-completed/completed/20260816-0701-simulacrum-mud-wiring.md) made simulacrum-server a real
     # container on THIS network with its own internal alias, same "-server"-suffixed convention
     # as auth-server.shatteredarchive.dev/mud-builder-server.shatteredarchive.dev — resolved by
     # Docker's own embedded DNS, no extra_hosts override needed (the old host-gateway entry here,
@@ -288,7 +288,7 @@ services:
       # NOTHING in this container's code uses any of these three mounts yet. This is a
       # deliberate, large increase in blast radius (root-equivalent host access from a
       # bearer-token-authenticated Express app), accepted knowingly during planning — see
-      # .ai-plans/20260725-1223-mud-builder-phase15-engine-rebuild-auth-hardening.md's
+      # .ai-plans-completed/completed/20260725-1223-mud-builder-phase15-engine-rebuild-auth-hardening.md's
       # Constraints. The docker socket lets this container drive the SAME docker engine
       # the host uses; the two read-only repo mounts give it a LIVE view of host source
       # (distinct from its own baked-in /repo build-time copy) to build/recreate against.
@@ -682,10 +682,10 @@ services:
   # way. Single subdomain for client+server (see edge-subdomains.conf): the client calls
   # same-origin /api/soulsteel and /health, so there is no separate server subdomain.
   #
-  # Phase 1 (see .ai-plans/20260813-1911-soulsteel-herald-tool-mvp.md): the server is a
+  # Phase 1 (see .ai-plans-completed/completed/20260813-1911-soulsteel-herald-tool-mvp.md): the server is a
   # health-check-only skeleton — no data dir, no volume, not wired to auth-server. Game state
   # lives entirely in the browser's IndexedDB. The follow-on plan
-  # (.ai-plans/20260813-1912-soulsteel-auth-archive-dashboard.md) is what adds persistence,
+  # (.ai-plans/proposed/2026-08-13_soulsteel-auth-archive-dashboard/tech-plan.md) is what adds persistence,
   # an auth wiring block matching mud-builder-server's, and a named volume — do not add
   # those here speculatively ahead of that plan landing.
   ############################################################

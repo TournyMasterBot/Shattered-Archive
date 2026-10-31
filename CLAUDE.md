@@ -95,6 +95,13 @@ Full rule: `docs/claude/ai-indexes-and-completion-gate.md`.
 - **Game questions** (classes, items, areas, routes, prices, AGL): `archive_ask`, not C# or HTML scraping. **Library
   docs** newer than your training: `lookup_docs` (docs-hub) before writing code. Every tool: `../Shattered-AI/doc/tooling.md`.
 
+## Work items (bugs, proposals, tech debt)
+
+Tracked work lives in `.ai-plans/{proposed,active}/<yyyy-mm-dd_slug>/` and moves as a folder: `/report-bug`, `/propose-work`,
+`/tech-debt` capture; `/scope-work` scopes (never sizes, follows `docs/standards/data-classification.md`); `/tech-plan` plans in
+testable phases (language standards in `docs/standards/`, edge-case classifiers in `docs/standards/edge-cases/`); `/implement-plan` builds and verifies each phase (a phase never ends
+unbuildable or red); then `/pr-review` and `/pr-package` (`.pr/<slug>/`). Contract: `docs/claude/work-item-workflow.md`.
+
 ## `docs/claude/`
 
 | File | Holds |
@@ -105,6 +112,7 @@ Full rule: `docs/claude/ai-indexes-and-completion-gate.md`.
 | `ai-indexes-and-completion-gate.md` | index rules and enforcement, the gate's kinds, markers and logging |
 | `tool-lookup.md` | docs-hub `lookup_docs`, the single tool list, `archive_ask` |
 | `working-posture.md` | edit-heavy posture and the shell / path rules, in full |
+| `work-item-workflow.md` | the work-item folders and states, `item.md` format, file and screenshot naming, the skills' shared rules |
 
 See `.github/copilot-instructions.md` for full project structure, branching policy, coding standards, test requirements,
 and licensing constraints.

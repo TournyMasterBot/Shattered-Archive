@@ -137,7 +137,7 @@ describe('RuntimeSingleton', () => {
 
   function importSingleton() {
     // must be imported AFTER resetModules so module-level state resets
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- a synchronous fresh require is the point: jest.resetModules() above must take effect
     return require('./runtimeSingleton') as typeof import('./runtimeSingleton');
   }
 

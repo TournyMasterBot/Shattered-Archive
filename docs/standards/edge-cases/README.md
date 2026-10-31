@@ -1,0 +1,54 @@
+# Edge-case classifiers
+
+A catalog of edge cases that have bitten, or will bite, any work touching a given feature or technology. `/tech-plan` applies it when
+planning, `/implement-plan` proves each applicable classifier and adds the ones it discovers, `/pr-review` checks the diff against it.
+The goal is that a mistake made once (a dark form whose scrollbar stayed light) is caught on every later piece of work.
+
+One file per feature or technology, named for the topic (`theming-dark-mode.md`, `http-endpoints.md`, `react-forms.md`). A file holds
+classifiers; a classifier is one edge case phrased so it can be checked against any new work in that area.
+
+## File format
+
+```
+---
+topic: <what this file covers>
+prefix: <a readable word from the topic, up to 8 capital letters, unique across files>
+applies-when: <keywords a skill matches against the work: technologies, UI kinds, data kinds, paths>
+---
+```
+
+then one section per classifier:
+
+```
+### <PREFIX>-NN <the edge case in one line>
+- Applies when: <the condition that makes it relevant to a piece of work>
+- Edge case: <what goes wrong, concretely>
+- Required behaviour: <what must be true instead>
+- Verify: <test, API call or screenshot that proves it; say what must be visible or asserted>
+- Origin: <work item slug, bug or PR that taught it; "general" for platform behaviour>
+```
+
+The front matter is YAML: put any value containing `: ` or starting with a quote, `[`, `{` or `#` in double quotes.
+
+Rules: ids are never reused or renumbered (a retired classifier is marked `Retired:` with the reason and stays); one edge case per
+classifier; phrase it by the **category of mistake**, not the one component it happened in; no Personal or Restricted values
+(`docs/standards/data-classification.md`); a `Verify` line that only says "check manually" is not enough: name what to look at.
+
+## Index
+
+Skills read this table to choose files; keep it current whenever a file is added or its `applies-when` changes.
+
+| File | Prefix | Applies when |
+|---|---|---|
+| [theming-dark-mode.md](theming-dark-mode.md) | TH | themed or dark/light UI: forms, modals, panels, lists, anything with colors that follow a theme |
+| [persisted-settings-and-defaults.md](persisted-settings-and-defaults.md) | SETTINGS | saved settings or user config merged with defaults; localStorage / AsyncStorage / cloud-synced settings; settings import and migrations |
+
+## How the skills use it
+
+1. **Select.** From the work's affected areas and what it builds, pick every file whose `applies-when` matches (when unsure, include it).
+2. **Apply.** Every classifier in a picked file whose *Applies when* is true becomes a row in the plan's edge-case table, with a test
+   or verification. "Not applicable" is allowed only with a one-line reason in the plan.
+3. **Propose, confirm, then add.** Any reusable edge case found while planning, implementing, reviewing or at the user's sign-off
+   (something the user finds wrong while testing is the strongest source) is drafted as a classifier and shown to the user. It is
+   written into the matching file (or a new file plus an index row) only after the user confirms it; the user may reword it first.
+   Skills never add a classifier unasked.

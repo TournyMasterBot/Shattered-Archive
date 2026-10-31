@@ -2,7 +2,7 @@
 //
 // Single shared movement classifier, replacing the two independently-drifted copies that
 // used to live in useCompassBlock.ts (normalizeExit) and autoleveling-engine.ts
-// (isMovementCommand/MOVE_DIRS) — see .ai-plans/20260813-1325-movement-tracking-fix.md.
+// (isMovementCommand/MOVE_DIRS) — see .ai-plans-completed/closed-incomplete/20260813-1325-movement-tracking-fix.md.
 
 /**
  * Corpus-verified real movement tokens (30-day + historical DSL MUD sweep, see the

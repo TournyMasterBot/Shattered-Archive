@@ -953,6 +953,11 @@ if (cmd) {
               Click <strong>Install</strong> to add one, then toggle it on. Installed plugins that are toggled off
               appear dimmed — they won't run until enabled.
             </p>
+            <p>
+              Click <strong>Configure</strong> to change a plugin's settings, then <strong>Save</strong>. Settings you
+              leave alone keep following the plugin's own defaults, so improvements to a default reach you
+              automatically. <strong>Reset to defaults</strong> puts every setting back, and takes effect when you Save.
+            </p>
 
             {/* ── Plugin index ── */}
             <div className={styles.pluginIndex}>

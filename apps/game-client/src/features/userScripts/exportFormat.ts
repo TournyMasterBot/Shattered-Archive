@@ -64,7 +64,7 @@ export function isValidUserScript(v: unknown): v is AnyUserScript {
   const language = v.language;
   const source = v.source;
   const kind = v.kind;
-  const group = (v as any).group;
+  const group = v.group;
 
   if (typeof id !== 'string' || id.trim().length === 0) return false;
   if (typeof name !== 'string') return false;
@@ -75,9 +75,9 @@ export function isValidUserScript(v: unknown): v is AnyUserScript {
   if (group !== undefined && typeof group !== 'string') return false;
 
   if (kind === 'trigger') {
-    const eventName = (v as any).eventName;
-    const matchText = (v as any).matchText;
-    const dontRequireMatchText = (v as any).dontRequireMatchText;
+    const eventName = v.eventName;
+    const matchText = v.matchText;
+    const dontRequireMatchText = v.dontRequireMatchText;
 
     if (typeof eventName !== 'string') return false;
     if (typeof matchText !== 'string') return false;
@@ -87,13 +87,13 @@ export function isValidUserScript(v: unknown): v is AnyUserScript {
   }
 
   if (kind === 'timer') {
-    const intervalMs = (v as any).intervalMs;
+    const intervalMs = v.intervalMs;
     if (typeof intervalMs !== 'number' || !Number.isFinite(intervalMs) || intervalMs < 0) return false;
     return true;
   }
 
   if (kind === 'alias') {
-    const alias = (v as any).alias;
+    const alias = v.alias;
     if (typeof alias !== 'string') return false;
     return true;
   }
@@ -109,16 +109,17 @@ export function isValidUserScript(v: unknown): v is AnyUserScript {
 export function extractGlobalsItem(text: string): Partial<Record<GlobalScriptLanguage, string>> | null {
   try {
     const parsed = JSON.parse(text);
-    if (!isObject(parsed) || !Array.isArray((parsed as any).items)) return null;
+    if (!isObject(parsed) || !Array.isArray(parsed.items)) return null;
 
-    for (const it of (parsed as any).items) {
-      if (!isObject(it) || (it as any).kind !== 'globalScripts') continue;
-      const value = (it as any).value;
+    for (const it of parsed.items as unknown[]) {
+      if (!isObject(it) || it.kind !== 'globalScripts') continue;
+      const value = it.value;
       if (!isObject(value)) continue;
 
       const out: Partial<Record<GlobalScriptLanguage, string>> = {};
       for (const lang of ['javascript', 'typescript', 'lua', 'python'] as GlobalScriptLanguage[]) {
-        if (typeof (value as any)[lang] === 'string') out[lang] = (value as any)[lang];
+        const text = value[lang];
+        if (typeof text === 'string') out[lang] = text;
       }
       return out;
     }
@@ -137,11 +138,11 @@ export function extractGlobalsItem(text: string): Partial<Record<GlobalScriptLan
 export function extractPluginConfigsItem(text: string): Record<string, unknown>[] | null {
   try {
     const parsed = JSON.parse(text);
-    if (!isObject(parsed) || !Array.isArray((parsed as any).items)) return null;
+    if (!isObject(parsed) || !Array.isArray(parsed.items)) return null;
 
-    for (const it of (parsed as any).items) {
-      if (!isObject(it) || (it as any).kind !== 'pluginConfigs') continue;
-      const value = (it as any).value;
+    for (const it of parsed.items as unknown[]) {
+      if (!isObject(it) || it.kind !== 'pluginConfigs') continue;
+      const value = it.value;
       if (!Array.isArray(value)) continue;
 
       // The same structural floor the server applies
@@ -149,12 +150,12 @@ export function extractPluginConfigsItem(text: string): Record<string, unknown>[
       return value.filter(
         (r: unknown) =>
           isObject(r) &&
-          typeof (r as any).id === 'string' &&
-          (r as any).id.trim().length > 0 &&
-          typeof (r as any).name === 'string' &&
-          typeof (r as any).version === 'string' &&
-          typeof (r as any).enabled === 'boolean' &&
-          (r as any).installedAt !== undefined,
+          typeof r.id === 'string' &&
+          r.id.trim().length > 0 &&
+          typeof r.name === 'string' &&
+          typeof r.version === 'string' &&
+          typeof r.enabled === 'boolean' &&
+          r.installedAt !== undefined,
       ) as Record<string, unknown>[];
     }
   } catch {
@@ -168,45 +169,42 @@ export function tryParseExportFile(text: string): { ok: true; file: ExportFileV1
     const parsed = JSON.parse(text);
 
     if (!isObject(parsed)) return { ok: false, error: 'Root JSON must be an object.' };
-    if ((parsed as any).schema !== EXPORT_SCHEMA) return { ok: false, error: 'Unsupported schema.' };
-    if (!Array.isArray((parsed as any).items)) return { ok: false, error: 'Missing items array.' };
+    if (parsed.schema !== EXPORT_SCHEMA) return { ok: false, error: 'Unsupported schema.' };
+    if (!Array.isArray(parsed.items)) return { ok: false, error: 'Missing items array.' };
 
     const items: ExportFileV1['items'] = [];
-    for (const it of (parsed as any).items) {
+    for (const it of parsed.items as unknown[]) {
       if (!isObject(it)) return { ok: false, error: 'Invalid item shape.' };
-      if ((it as any).format !== 'json') return { ok: false, error: 'Unsupported format.' };
+      if (it.format !== 'json') return { ok: false, error: 'Unsupported format.' };
       // `storage` is informational: the mobile client writes 'asyncStorage'
       // because that is honestly where its data lives, and rejecting that would
       // make every mobile export unimportable here.
-      if (typeof (it as any).storage !== 'string') return { ok: false, error: 'Unsupported storage type.' };
+      if (typeof it.storage !== 'string') return { ok: false, error: 'Unsupported storage type.' };
       // Globals and plugin configs ride along in the same file; they are applied
       // separately on import, so skip them here rather than failing the parse.
-      if ((it as any).kind === 'globalScripts' || (it as any).kind === 'pluginConfigs') continue;
-      if ((it as any).kind !== 'userScripts') return { ok: false, error: 'Unsupported kind.' };
-      if (typeof (it as any).key !== 'string' || (it as any).key.trim().length === 0)
-        return { ok: false, error: 'Invalid key.' };
-      if (!Array.isArray((it as any).value)) return { ok: false, error: 'Invalid value (expected array).' };
+      if (it.kind === 'globalScripts' || it.kind === 'pluginConfigs') continue;
+      if (it.kind !== 'userScripts') return { ok: false, error: 'Unsupported kind.' };
+      if (typeof it.key !== 'string' || it.key.trim().length === 0) return { ok: false, error: 'Invalid key.' };
+      if (!Array.isArray(it.value)) return { ok: false, error: 'Invalid value (expected array).' };
 
-      const validScripts = (it as any).value.filter(isValidUserScript);
+      const validScripts = (it.value as unknown[]).filter(isValidUserScript);
 
       items.push({
         storage: 'localStorage',
-        key: (it as any).key,
+        key: it.key,
         format: 'json',
         kind: 'userScripts',
         selection:
-          isObject((it as any).selection) && Array.isArray(((it as any).selection as any).ids)
-            ? { ids: ((it as any).selection as any).ids }
-            : undefined,
-        strategyHint: (it as any).strategyHint === 'mergeById' ? 'mergeById' : undefined,
+          isObject(it.selection) && Array.isArray(it.selection.ids) ? { ids: it.selection.ids as string[] } : undefined,
+        strategyHint: it.strategyHint === 'mergeById' ? 'mergeById' : undefined,
         value: validScripts,
       });
     }
 
     const file: ExportFileV1 = {
       schema: EXPORT_SCHEMA,
-      exportedAt: typeof (parsed as any).exportedAt === 'string' ? (parsed as any).exportedAt : nowIso(),
-      app: typeof (parsed as any).app === 'string' ? (parsed as any).app : undefined,
+      exportedAt: typeof parsed.exportedAt === 'string' ? parsed.exportedAt : nowIso(),
+      app: typeof parsed.app === 'string' ? parsed.app : undefined,
       items,
     };
 

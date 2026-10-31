@@ -19,7 +19,6 @@ import {
 } from '../features/userScripts/globalScriptsStore';
 import { PLUGINS_STORAGE_KEY, readInstalledPlugins, writeInstalledPlugins } from '../hooks/usePlugins';
 import {
-  EXPORT_SCHEMA,
   extractGlobalsItem,
   extractPluginConfigsItem,
   isValidUserScript,
@@ -139,7 +138,7 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
       .filter((s) => {
         if (!q) return true;
         const hay =
-          `${s.name} ${s.kind} ${s.id} ${(s as any).group ?? ''} ${s.kind === 'alias' ? (s as AliasScript).alias : ''}`.toLowerCase();
+          `${s.name} ${s.kind} ${s.id} ${s.group ?? ''} ${s.kind === 'alias' ? (s as AliasScript).alias : ''}`.toLowerCase();
         return hay.includes(q);
       })
       .slice()
@@ -419,9 +418,9 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
                       {!s.enabled && <span className={styles.ieRowDisabled}>disabled</span>}
                     </div>
 
-                    {(s as any).group && (
+                    {s.group && (
                       <div className={styles.ieRowSub}>
-                        group: <span className={styles.ieMono}>{String((s as any).group)}</span>
+                        group: <span className={styles.ieMono}>{String(s.group)}</span>
                       </div>
                     )}
 
@@ -848,7 +847,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
         source: s.source,
         eventName: 'grouping-only',
         matchText: '',
-        group: (s as any).group ?? '',
+        group: s.group ?? '',
       };
       return asTriggerLike;
     });
@@ -975,7 +974,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       if (!script || script.kind !== kind) return;
 
       const normalizedGroup = targetGroupPath === 'Ungrouped' ? '' : targetGroupPath;
-      const updated = { ...(script as any), group: normalizedGroup } as AnyUserScript;
+      const updated = { ...script, group: normalizedGroup } as AnyUserScript;
 
       current[idx] = updated;
       replaceAllScripts(current);
@@ -997,7 +996,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       if (!dragged || !target) return;
       if (dragged.kind !== kind || target.kind !== kind) return;
 
-      const targetGroup = ((target as any).group ?? '') as string;
+      const targetGroup = (target.group ?? '');
       moveNonTriggerToGroup(draggedId, kind, targetGroup || 'Ungrouped');
       moveScriptInArray(draggedId, targetId);
     },
@@ -1332,7 +1331,7 @@ look`,
 
     return (
       <div className={styles.body} style={{ flexDirection: 'column' }}>
-        <div className={styles.editorPane} style={{ borderRight: 'none' as any }}>
+        <div className={styles.editorPane} style={{ borderRight: 'none' }}>
           <div className={styles.editorHeader}>
             <div className={styles.title} style={{ marginRight: 10 }}>
               Global Scripts
@@ -1342,7 +1341,7 @@ look`,
               <select
                 className={styles.languageSelect}
                 value={globalLanguage}
-                onChange={(e) => setGlobalLanguage(e.target.value as any)}
+                onChange={(e) => setGlobalLanguage(e.target.value as 'javascript' | 'lua' | 'python' | 'typescript')}
               >
                 <option value="javascript">JavaScript</option>
                 <option value="typescript">TypeScript</option>
@@ -1414,7 +1413,7 @@ look`,
                 if (!k) return;
 
                 // Store JSON when valid, otherwise store raw string
-                let v: any = globalVarValue;
+                let v: unknown = globalVarValue;
                 try {
                   v = JSON.parse(globalVarValue);
                 } catch {
@@ -1457,7 +1456,7 @@ look`,
 
     return (
       <div className={styles.body} style={{ flexDirection: 'column' }}>
-        <div className={styles.editorPane} style={{ borderRight: 'none' as any }}>
+        <div className={styles.editorPane} style={{ borderRight: 'none' }}>
           <div className={styles.editorHeader}>
             <div className={styles.title} style={{ marginRight: 10 }}>
               Named Variables

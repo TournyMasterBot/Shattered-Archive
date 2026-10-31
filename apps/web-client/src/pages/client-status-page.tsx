@@ -21,7 +21,7 @@ async function checkEndpoint(label: string, url: string): Promise<HealthResult> 
       statusText: res.ok ? 'OK' : `HTTP ${res.status}`,
       latency: Math.round(time),
     };
-  } catch (e) {
+  } catch {
     return { ok: false, statusText: 'Connection Failed' };
   }
 }

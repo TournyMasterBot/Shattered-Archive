@@ -7,7 +7,7 @@ import { pluginHost } from '../plugins/pluginHost';
 import { ListenDomEvent, ListenEvent, ListenRedispatchMap, DispatchEvent } from '../event-emitter/event-dispatcher';
 import { dslToAnsi } from '../chat/dsl-to-ansi';
 import { ShatteredArchiveChatLine } from '../../types/chat-types/chat-line';
-import { appendChatLine, appendChatRaw } from '../chat/chat-store';
+import { appendChatLine } from '../chat/chat-store';
 import { GameRemoteServerRaw } from '../../types/event-types/game-remote-server-raw';
 import { GameRemoteServerGmcp } from '../../types/event-types/game-remote-server-gmcp';
 import { GameRemoteServerError } from '../../types/event-types/game-remote-server-error';
@@ -19,15 +19,17 @@ import { ShatteredArchiveServerClosed } from '../../types/event-types/shattered-
 import { getGlobalVarsSnapshot } from './globalScriptsStore';
 import { getChatSettings } from '../chat/chat-settings-store';
 import { classifyStrictChatSubtype } from '../chat/strict-chat-classifier';
+import type { AnyUserScript } from './types';
 
 declare global {
   interface Window {
+    __SA_USERSCRIPTS_TIMER_TICK__?: number;
     __SA_RUNTIME__?: {
       runtime: UserScriptRuntime;
-      getScripts: () => any[];
-      getTriggers: () => any[];
-      getAliases: () => any[];
-      getTimers: () => any[];
+      getScripts: () => AnyUserScript[];
+      getTriggers: () => AnyUserScript[];
+      getAliases: () => AnyUserScript[];
+      getTimers: () => AnyUserScript[];
       reload: (connectionId?: string) => void;
       rebuildTriggers: () => void;
       dump: () => void;
@@ -377,9 +379,8 @@ export class RuntimeSingleton {
 
     // Timers should run even when the user script editor/modal isn't mounted.
     // Use a single global tick (HMR-safe) to drive UserScriptRuntime.tickTimers().
-    const w = window as any;
-    if (!w.__SA_USERSCRIPTS_TIMER_TICK__) {
-      w.__SA_USERSCRIPTS_TIMER_TICK__ = window.setInterval(() => {
+    if (!window.__SA_USERSCRIPTS_TIMER_TICK__) {
+      window.__SA_USERSCRIPTS_TIMER_TICK__ = window.setInterval(() => {
         try {
           this.userScriptRuntime.tickTimers();
         } catch (err) {
@@ -391,9 +392,9 @@ export class RuntimeSingleton {
     window.__SA_RUNTIME__ = {
       runtime: this.userScriptRuntime,
       getScripts: () => this.userScriptRuntime.getAllScripts(),
-      getTriggers: () => this.userScriptRuntime.getAllScripts().filter((s: any) => s.kind === 'trigger'),
-      getAliases: () => this.userScriptRuntime.getAllScripts().filter((s: any) => s.kind === 'alias'),
-      getTimers: () => this.userScriptRuntime.getAllScripts().filter((s: any) => s.kind === 'timer'),
+      getTriggers: () => this.userScriptRuntime.getAllScripts().filter((s) => s.kind === 'trigger'),
+      getAliases: () => this.userScriptRuntime.getAllScripts().filter((s) => s.kind === 'alias'),
+      getTimers: () => this.userScriptRuntime.getAllScripts().filter((s) => s.kind === 'timer'),
 
       reload: (connectionId?: string) => {
         const id = canonicalConnectionId(connectionId);
@@ -402,13 +403,13 @@ export class RuntimeSingleton {
       },
 
       rebuildTriggers: () => {
-        (this.userScriptRuntime as any).rebuildTriggerListeners?.();
+        (this.userScriptRuntime as unknown as { rebuildTriggerListeners?: () => void }).rebuildTriggerListeners?.();
         console.log('[__SA_RUNTIME__] rebuildTriggers called');
       },
 
       dump: () => {
         const all = this.userScriptRuntime.getAllScripts();
-        const byKind = all.reduce((acc: any, s: any) => {
+        const byKind = all.reduce<Record<string, AnyUserScript[]>>((acc, s) => {
           acc[s.kind] = acc[s.kind] ?? [];
           acc[s.kind].push(s);
           return acc;
@@ -416,9 +417,9 @@ export class RuntimeSingleton {
 
         console.group('[__SA_RUNTIME__] scripts');
         console.log('count:', all.length);
-        console.log('byKind:', Object.fromEntries(Object.entries(byKind).map(([k, v]: any) => [k, v.length])));
+        console.log('byKind:', Object.fromEntries(Object.entries(byKind).map(([k, v]) => [k, v.length])));
         console.table(
-          all.map((s: any) => ({
+          all.map((s) => ({
             id: s.id,
             name: s.name,
             kind: s.kind,

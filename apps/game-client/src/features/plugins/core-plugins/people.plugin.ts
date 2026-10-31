@@ -367,7 +367,7 @@ export function createPeoplePlugin(): IPluginModule {
     const show = m[1].toLowerCase();
     const query = m[2].trim();
 
-    let results =
+    const results =
       show === 'kinfo'
         ? findByOrg('kingdom', query)
         : show === 'cinfo'

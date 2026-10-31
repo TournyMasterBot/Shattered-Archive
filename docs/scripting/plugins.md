@@ -9,6 +9,11 @@ Plugins are pre-built automation tools available from **Plugins → Manage Plugi
 1. Open **Plugins → Manage Plugins…** from the menu bar.
 2. Toggle a plugin on or off with the enable switch.
 3. Click **Configure** to open the settings panel for that plugin.
+4. Change what you need, then click **Save**. **Cancel** closes the panel without saving.
+
+Settings you never change keep following the plugin: when an update improves one of a plugin's default settings, you get the
+improvement automatically. A setting you do change keeps your value. To go back to a plugin's defaults, click
+**Reset to defaults** in its settings panel, then **Save**.
 
 Configuration is stored in `localStorage` and persists across sessions.
 

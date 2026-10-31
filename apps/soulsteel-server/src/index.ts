@@ -42,11 +42,11 @@ if (fs.existsSync(envFile)) {
 process.env.PORT ??= '64000';
 const config = getConfigFromEnv('soulsteel-server');
 
-// Phase 1 (see .ai-plans/20260813-1911-soulsteel-herald-tool-mvp.md): deliberately a
+// Phase 1 (see .ai-plans-completed/completed/20260813-1911-soulsteel-herald-tool-mvp.md): deliberately a
 // health-check-only skeleton. The Herald is the sole operator of a room — there is no
 // multiplayer session to broker — and game state lives entirely in the browser's IndexedDB, so
 // there are no domain routes here yet. Auth-linked archive routes are added by the follow-on
-// plan (.ai-plans/20260813-1912-soulsteel-auth-archive-dashboard.md), which only needs to add
+// plan (.ai-plans/proposed/2026-08-13_soulsteel-auth-archive-dashboard/tech-plan.md), which only needs to add
 // routes to this file, not rebuild the boot/deploy scaffold.
 const service = createExpressService(config, (app) => {
   app.get('/', (_req, res) => {

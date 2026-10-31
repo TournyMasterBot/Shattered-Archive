@@ -1112,7 +1112,7 @@ export function createTextToSpeechPlugin(): IPluginModule {
   // speakArenaLineIfWorthy below). Per-subject, so two different mobs
   // sitting at the same tier at once (a multi-mob pull) don't suppress each
   // other's first mention of it.
-  let lastConditionBucketBySubject = new Map<string, string>();
+  const lastConditionBucketBySubject = new Map<string, string>();
   // Last spoken line's canonical shape, to squelch an immediately-repeating
   // structural duplicate (see canonicalizeArenaLine above).
   let lastSpokenArenaShape: string | null = null;
@@ -1232,7 +1232,7 @@ export function createTextToSpeechPlugin(): IPluginModule {
   // Battle Focus mode only — debuff names currently announced via
   // game:affect-added, so game:affect-removed only speaks a wear-off for
   // ones we actually flagged (never for buffs, which this channel ignores).
-  let trackedSelfDebuffs = new Set<string>();
+  const trackedSelfDebuffs = new Set<string>();
 
   /**
    * Lines held back because they MIGHT be a room render — see

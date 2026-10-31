@@ -24,6 +24,8 @@ export default function MobPlacementAccordion({
   resets: ResetsEditor;
   block: ResetBlock;
 }) {
+  // Hook first: it must run on every render, including the one that returns null below.
+  const scriptsEditor = useAreaScripts(wb);
   const mReset = resets.resets[block.start];
   if (mReset.command !== 'M') return null;
   const mobVnum = mReset.arg1;
@@ -65,7 +67,6 @@ export default function MobPlacementAccordion({
     resets.setResets(next);
   };
 
-  const scriptsEditor = useAreaScripts(wb);
   const mobScripts = scriptsEditor.scripts.filter(({ script }) => (script.attach ?? 'mob') === 'mob' && script.mobVnum === mobVnum);
 
   return (

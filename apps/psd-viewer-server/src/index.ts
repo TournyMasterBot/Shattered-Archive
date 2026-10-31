@@ -173,6 +173,6 @@ app.get('/api/psd/png', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  // eslint-disable-next-line no-console
+   
   console.log(`[psd-viewer-server] listening on http://localhost:${PORT}`);
 });

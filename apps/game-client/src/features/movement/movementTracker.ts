@@ -6,7 +6,7 @@
 // codebase used to carry (useCompassBlock.ts, autoleveling-engine.ts).
 //
 // Design is corpus-validated against real DSL MUD play (35,362 real moves across 229
-// game-server log files) — see .ai-plans/20260813-1325-movement-tracking-fix.md for the
+// game-server log files) — see .ai-plans-completed/closed-incomplete/20260813-1325-movement-tracking-fix.md for the
 // full research. The two load-bearing findings that shape this file:
 //   - A room diff must include `exits`, not just `room`/`sector` — 13.4% of real moves land
 //     in a same-name/same-sector room with a different exit set.

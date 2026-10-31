@@ -442,6 +442,20 @@ export class PluginHost {
   }
 
   /**
+   * Set an enabled plugin's live config to exactly what a reload would give it: the plugin's defaults with the saved
+   * overrides on top (the merge enable() and syncInstalled() apply). updateEnabledPluginConfig only MERGES a patch, so after
+   * a Save that drops keys (a value set back to its default, or Reset to defaults) it would leave the old runtime values in
+   * place until something else re-synced.
+   */
+  replaceEnabledPluginConfig(pluginId: PluginId, userConfig: Record<string, unknown>) {
+    if (!this.state) return;
+    const c = this.state.cleanups.get(pluginId);
+    if (!c?.api) return;
+    const defaults = c.module?.configSchema?.defaults ?? {};
+    c.api.setConfig({ ...defaults, ...userConfig });
+  }
+
+  /**
    * Invoke a named action registered by an enabled plugin.
    * Called from the configure modal action buttons.
    *

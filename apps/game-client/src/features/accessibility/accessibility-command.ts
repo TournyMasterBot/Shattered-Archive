@@ -32,7 +32,7 @@ export type AccessibilityCommandAction =
   | { kind: 'send'; lines: string[]; keepInputAfterSend: boolean; flushQueue?: boolean }
   | { kind: 'noop'; keepInputAfterSend: boolean };
 
-export function preprocessOutgoingCommand(rawInput: string, history: string[]): AccessibilityCommandAction {
+export function preprocessOutgoingCommand(rawInput: string, _history: string[]): AccessibilityCommandAction {
   const settings = getAccessibilitySettings();
   const keep = !!settings.keepInputAfterSend;
 

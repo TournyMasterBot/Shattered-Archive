@@ -162,7 +162,9 @@ export const ContributeIdentifyModal: React.FC<ContributeIdentifyModalProps> = (
     return () => {
       try {
         off?.();
-      } catch {}
+      } catch {
+        // best-effort cleanup: the unsubscribe may already have run
+      }
       stopCapture();
     };
   }, [isOpen, stopCapture]);

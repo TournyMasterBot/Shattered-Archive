@@ -253,7 +253,7 @@ export function containerArg(container: string): string {
 // default is treated as "unmodified" and replaced by the current default.
 // When a default table changes, add the OLD table's fingerprint here so
 // existing saves upgrade. (Fixing this at the source — the modal persisting
-// only non-default keys — is tracked in .ai-bug/.)
+// only non-default keys — is the work item 2026-10-17_plugin-config-save-freezes-defaults under .ai-plans/.)
 export const LEGACY_DEFAULT_TABLE_FINGERPRINTS: { craftTypes: readonly string[]; tierTable: readonly string[] } = {
   craftTypes: [],
   tierTable: [],

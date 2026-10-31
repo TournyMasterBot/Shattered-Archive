@@ -170,7 +170,7 @@ export function createColorKitPlugin(): IPluginModule {
 
     onEnable(api: PluginRuntimeApi) {
       const cfg = api.getConfig();
-      const colorRules = parseRules(cfg.rules);
+      const _colorRules = parseRules(cfg.rules);
 
       // Register all omit rules up-front so the terminal suppresses original output
       // for every configured match.

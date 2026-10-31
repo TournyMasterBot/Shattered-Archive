@@ -33,7 +33,6 @@ import { useEquipmentDeltas } from '../hooks/useEquipmentDeltas';
 import AutoLevelingWizard from '../components/AutoLevelingWizard';
 import { useAutoLeveling } from '../hooks/useAutoLeveling';
 import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
-import { useTerminal } from '../hooks/useTerminal';
 import { ShatteredArchiveTerminal } from '../features/terminal/shatteredArchiveTerminal';
 import { DispatchEvent, ListenEvent } from '../features/event-emitter/event-dispatcher';
 import { PLUGIN_CONFIG_PERSIST_EVENT, type PluginConfigPersistPayload } from '../features/plugins/pluginConfigPersist';
@@ -143,8 +142,8 @@ export const MainContainer: React.FC = () => {
   // Warn before closing/reloading the tab while a play-server connection is live.
   useBeforeUnloadGuard(gameConn.isConnected);
 
-  const userScriptRuntime = RuntimeSingleton.Instance.GetUserScriptRuntime;
-  const terminal = ShatteredArchiveTerminal.Instance;
+  const _userScriptRuntime = RuntimeSingleton.Instance.GetUserScriptRuntime;
+  const _terminal = ShatteredArchiveTerminal.Instance;
 
   React.useEffect(() => {
     applyCssToDom(getAppliedCss());

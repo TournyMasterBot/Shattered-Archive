@@ -77,8 +77,6 @@ export const FilterableSelect: React.FC<FilterableSelectProps> = ({
     }
   };
 
-  let lastGroup: string | undefined;
-
   return (
     <div className={`${styles.filterableSelect} ${className ?? ''}`} ref={rootRef}>
       <input
@@ -97,8 +95,7 @@ export const FilterableSelect: React.FC<FilterableSelectProps> = ({
       {open && filtered.length > 0 && (
         <ul className={styles.filterableSelectList} role="listbox">
           {filtered.map((o, ix) => {
-            const showHeader = !!o.group && o.group !== lastGroup;
-            lastGroup = o.group;
+            const showHeader = !!o.group && o.group !== filtered[ix - 1]?.group;
             return (
               <React.Fragment key={o.value}>
                 {showHeader && (

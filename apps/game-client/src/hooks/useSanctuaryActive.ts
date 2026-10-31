@@ -97,13 +97,19 @@ export function useSanctuaryActive() {
     return () => {
       try {
         offTrueup?.();
-      } catch {}
+      } catch {
+        // best-effort cleanup: a failing unsubscribe must not skip the others
+      }
       try {
         offAdd?.();
-      } catch {}
+      } catch {
+        // best-effort cleanup: a failing unsubscribe must not skip the others
+      }
       try {
         offRemove?.();
-      } catch {}
+      } catch {
+        // best-effort cleanup: a failing unsubscribe must not skip the others
+      }
     };
   }, []);
 

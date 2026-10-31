@@ -16,6 +16,14 @@ const serverGlobs = [
   'apps/game-server/**',
   'apps/web-server/**',
   'apps/dsl-color-preview/**',
+  'apps/dsl-log-preview/**',
+  // Node build/maintenance scripts that live beside browser code or outside any package
+  'apps/*/scripts/**/*.{js,cjs,mjs,ts}',
+  'deploy/scripts/**/*.{js,cjs,mjs,ts}',
+  // Work-item capture scripts (Playwright; they also run code inside the page, so no-undef is off for them)
+  '.ai-plans/**/*.{js,cjs,mjs}',
+  '.ai-plans-completed/**/*.{js,cjs,mjs}',
+  '.pr/**/*.{js,cjs,mjs}',
   'scripts/**/*.{js,cjs,mjs,ts}',
   '*.config.{js,cjs,mjs}',
   'jest.config.{js,cjs,mjs}',
@@ -99,6 +107,15 @@ export default [
       '@typescript-eslint/no-unused-expressions': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
       'no-undef': 'off',
+    },
+  },
+
+  // TEST files: mocks, fixtures and jest.fn casts legitimately need `any`. Production code keeps the warning.
+  // Last on purpose: later flat-config entries win.
+  {
+    files: ['**/*.test.{ts,tsx}', '**/__tests__/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 ];

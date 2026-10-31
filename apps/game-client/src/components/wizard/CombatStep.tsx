@@ -11,7 +11,7 @@
  * away and back shows the same rows, reopening the wizard reloads them.
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import styles from '../../styles/AutoLevelingWizard.module.scss';
 import {
@@ -258,7 +258,10 @@ const SAVE_DEBOUNCE_MS = 500;
 /** A debounced call that also flushes any pending invocation on unmount. */
 function useDebouncedSave<A extends unknown[]>(fn: (...args: A) => void, delay: number) {
   const fnRef = useRef(fn);
-  fnRef.current = fn;
+  // Layout effect, not a render-time write: the timer callback below only ever runs after a commit.
+  useLayoutEffect(() => {
+    fnRef.current = fn;
+  }, [fn]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pending = useRef<A | null>(null);
 

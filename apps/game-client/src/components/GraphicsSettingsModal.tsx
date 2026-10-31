@@ -156,7 +156,7 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
   };
 
   const handleResetDefaults = () => {
-    const defaults = loadConfig(); // loadConfig() returns defaults if nothing stored; but we want hard defaults
+    const _defaults = loadConfig(); // loadConfig() returns defaults if nothing stored; but we want hard defaults
     // If you want a truly "factory reset", clear storage first:
     try {
       window.localStorage.removeItem(STORAGE_KEY);

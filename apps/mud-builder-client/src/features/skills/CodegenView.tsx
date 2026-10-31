@@ -108,7 +108,7 @@ export default function CodegenView({ writeEnabled }: { writeEnabled: boolean })
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   const spec = selected !== null ? (specs?.[selected] ?? null) : null;

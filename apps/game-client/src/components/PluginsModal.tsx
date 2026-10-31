@@ -196,7 +196,7 @@ export const PluginsModal: React.FC<PluginsModalProps> = ({ isOpen, onClose, con
           isEnabled={!!getInstallRecord(activeConfigPluginId)?.enabled}
           onSave={(pluginId, config) => {
             updatePluginConfig(pluginId, config);
-            pluginHost.updateEnabledPluginConfig(pluginId, config);
+            pluginHost.replaceEnabledPluginConfig(pluginId, config);
           }}
         />
       )}

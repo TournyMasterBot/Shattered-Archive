@@ -22,7 +22,7 @@ async function checkEndpoint(label: string, url: string): Promise<HealthResult> 
       statusText: res.ok ? 'OK' : `HTTP ${res.status}`,
       latency: Math.round(time),
     };
-  } catch (e) {
+  } catch {
     return { ok: false, statusText: 'Connection Failed' };
   }
 }
@@ -41,7 +41,7 @@ function ClientStatusPage() {
   });
 
   async function runChecks() {
-    const [game, web, client] = await Promise.all([
+    const [game, web, _client] = await Promise.all([
       checkEndpoint('game-server', '/api/game/health'),
       checkEndpoint('web-server', '/api/web/health'),
       checkEndpoint('client', '/api/health'),

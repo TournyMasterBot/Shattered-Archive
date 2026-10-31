@@ -77,8 +77,8 @@ async function fetchJsonWithTimeout(url: string, ms = 10_000) {
 
     const json = await r.json();
     return { ok: true as const, status: r.status, json };
-  } catch (e: any) {
-    return { ok: false as const, status: 0, text: String(e?.message ?? e ?? 'fetch failed') };
+  } catch (e: unknown) {
+    return { ok: false as const, status: 0, text: String((e as { message?: unknown } | null | undefined)?.message ?? e ?? 'fetch failed') };
   } finally {
     clearTimeout(t);
   }
@@ -176,7 +176,7 @@ if (!offlineRoot) {
 // @ai-method: safeJsonParseFile — Parses JSON file content safely, returning null on file missing, read, or parse errors.
 // @ai-hash: 3ccd18a6
 // ── END AI-METHOD ──
-function safeJsonParseFile(filePath: string): any | null {
+function safeJsonParseFile(filePath: string): Record<string, unknown> | null {
   try {
     if (!fs.existsSync(filePath)) return null;
     const raw = fs.readFileSync(filePath, 'utf8');
@@ -184,6 +184,21 @@ function safeJsonParseFile(filePath: string): any | null {
   } catch {
     return null;
   }
+}
+
+/** The slice of Express's request/response this file uses; the real objects satisfy it (@types/express is not a dependency of this package). */
+interface HttpRequest {
+  path: string;
+  params: Record<string, string | undefined>;
+  query: Record<string, unknown>;
+}
+interface HttpResponse {
+  setHeader(name: string, value: string | number | readonly string[]): unknown;
+  status(code: number): HttpResponse;
+  json(body: unknown): unknown;
+}
+interface HttpApp {
+  get(route: string, handler: (req: HttpRequest, res: HttpResponse) => unknown): unknown;
 }
 
 let offlineContinentNamesCache: string[] | null = null;
@@ -200,7 +215,7 @@ function loadOfflineContinentNames(): string[] | null {
   const j = safeJsonParseFile(p);
   const arr = j?.continentNames;
 
-  if (Array.isArray(arr) && arr.every((x: any) => typeof x === 'string')) {
+  if (Array.isArray(arr) && arr.every((x: unknown) => typeof x === 'string')) {
     offlineContinentNamesCache = arr;
     return arr;
   }
@@ -226,7 +241,7 @@ function loadOfflineAreaNames(continentRaw: string): string[] | null {
   const j = safeJsonParseFile(p);
 
   const arr = j?.areaNames;
-  if (Array.isArray(arr) && arr.every((x: any) => typeof x === 'string')) {
+  if (Array.isArray(arr) && arr.every((x: unknown) => typeof x === 'string')) {
     return arr;
   }
 
@@ -268,7 +283,7 @@ function loadOfflineAutoLevelingClasses(): { classes: unknown[] } | null {
 // @ai-hash: 0dc9e627
 // ── END AI-METHOD ──
 function getMaybeBasePath(cfg: unknown): string {
-  const c: any = cfg as any;
+  const c = cfg as Record<string, unknown> | null | undefined;
   const bp = c?.basePath ?? c?.base_path ?? c?.apiBasePath ?? c?.api_base_path ?? '';
   if (!bp) return '';
   if (typeof bp !== 'string') return '';
@@ -281,7 +296,7 @@ function getMaybeBasePath(cfg: unknown): string {
 // @ai-method: registerGet — Registers GET route with optional base path prefix handling.
 // @ai-hash: 1c485439
 // ── END AI-METHOD ──
-function registerGet(app: any, basePath: string, route: string, handler: (req: any, res: any) => any) {
+function registerGet(app: HttpApp, basePath: string, route: string, handler: (req: HttpRequest, res: HttpResponse) => unknown) {
   app.get(route, handler);
   if (basePath) {
     const full = `${basePath}${route.startsWith('/') ? route : `/${route}`}`;
@@ -312,7 +327,7 @@ const service = createExpressService(webConfig, (app) => {
   // @ai-hash: dcca7363
   // ── END AI-METHOD ──
   // GET /maps/continent/names -> { continentNames: string[] }
-  const handleContinentNames = async (req: any, res: any) => {
+  const handleContinentNames = async (req: HttpRequest, res: HttpResponse) => {
     const key = req.path;
     const cached = getCached(key);
     if (cached !== null) {
@@ -356,7 +371,7 @@ const service = createExpressService(webConfig, (app) => {
   // @ai-hash: 7530ae73
   // ── END AI-METHOD ──
   // GET /maps/continent/:continent/get-area-names -> { areaNames: string[] }
-  const handleAreaNamesByContinent = async (req: any, res: any) => {
+  const handleAreaNamesByContinent = async (req: HttpRequest, res: HttpResponse) => {
     const continent = String(req.params?.continent ?? '').trim();
 
     // allow spaces for "NE Ocean" etc
@@ -410,7 +425,7 @@ const service = createExpressService(webConfig, (app) => {
   // @ai-hash: 606f7964
   // ── END AI-METHOD ──
   // GET /maps/area/:area/beasts -> { beasts: [...] }
-  const handleBeastsByArea = async (req: any, res: any) => {
+  const handleBeastsByArea = async (req: HttpRequest, res: HttpResponse) => {
     const areaName = String(req.params?.areaName ?? '').trim();
     if (areaName.length > 80) return res.status(400).json({ error: 'Invalid area' });
 
@@ -443,25 +458,30 @@ const service = createExpressService(webConfig, (app) => {
   };
 
   // GET /maps/autoleveling/areas -> { areas: AutoPilotArea[] }  (auto-leveling wizard)
-  const sendJson = (res: any, source: string, body: unknown, status = 200) => {
+  const sendJson = (res: HttpResponse, source: string, body: unknown, status = 200) => {
     res.setHeader('X-Maps-Source', source);
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', `public, max-age=${maxAgeSeconds(MAPS_TTL_MS)}`);
     return res.status(status).json(body);
   };
 
-  const toSummary = (a: any) => ({
-    slug: a?.slug,
-    areaName: a?.areaName,
-    continent: a?.continent,
-    levelRange: a?.levelRange,
-    isExcellentLevelingArea: !!a?.isExcellentLevelingArea,
-    stepCount: Array.isArray(a?.dirs) ? a.dirs.length : (a?.stepCount ?? 0),
-    targetCount: Array.isArray(a?.recommendedTargets) ? a.recommendedTargets.length : (a?.targetCount ?? 0),
-  });
+  const toSummary = (area: unknown) => {
+    const a = area as Record<string, unknown> | null | undefined;
+    const dirs = a?.dirs;
+    const targets = a?.recommendedTargets;
+    return {
+      slug: a?.slug,
+      areaName: a?.areaName,
+      continent: a?.continent,
+      levelRange: a?.levelRange,
+      isExcellentLevelingArea: !!a?.isExcellentLevelingArea,
+      stepCount: Array.isArray(dirs) ? dirs.length : (a?.stepCount ?? 0),
+      targetCount: Array.isArray(targets) ? targets.length : (a?.targetCount ?? 0),
+    };
+  };
 
   // GET /maps/autoleveling/areas[?continent=X] -> { areas: AutoPilotAreaSummary[] }  (lightweight index)
-  const handleAutoLevelingAreas = async (req: any, res: any) => {
+  const handleAutoLevelingAreas = async (req: HttpRequest, res: HttpResponse) => {
     const continent = String(req.query?.continent ?? '').trim();
     const key = `/maps/autoleveling/areas${continent ? `?continent=${continent.toLowerCase()}` : ''}`;
 
@@ -476,7 +496,7 @@ const service = createExpressService(webConfig, (app) => {
     );
     if (upstreamUrl) {
       const result = await fetchJsonWithTimeout(upstreamUrl, 10_000);
-      if (result.ok && result.json && Array.isArray((result.json as any).areas)) {
+      if (result.ok && result.json && Array.isArray((result.json as { areas?: unknown }).areas)) {
         setCached(key, result.json, MAPS_TTL_MS);
         return sendJson(res, 'upstream', result.json);
       }
@@ -489,7 +509,7 @@ const service = createExpressService(webConfig, (app) => {
   };
 
   // GET /maps/autoleveling/areas/:slug -> AutoPilotArea  (route + targets for one area)
-  const handleAutoLevelingArea = async (req: any, res: any) => {
+  const handleAutoLevelingArea = async (req: HttpRequest, res: HttpResponse) => {
     const slug = String(req.params?.slug ?? '').trim().toLowerCase();
     if (!/^[a-z0-9-]{1,80}$/.test(slug)) return res.status(400).json({ error: 'invalid slug' });
 
@@ -501,20 +521,20 @@ const service = createExpressService(webConfig, (app) => {
     const upstreamUrl = buildUpstreamUrl(`maps/autoleveling/areas/${encodeURIComponent(slug)}`);
     if (upstreamUrl) {
       const result = await fetchJsonWithTimeout(upstreamUrl, 10_000);
-      if (result.ok && result.json && (result.json as any).slug) {
+      if (result.ok && result.json && (result.json as { slug?: unknown }).slug) {
         setCached(key, result.json, MAPS_TTL_MS);
         return sendJson(res, 'upstream', result.json);
       }
     }
 
     const offline = loadOfflineAutoLevelingAreas();
-    const area = (offline?.areas ?? []).find((a: any) => String(a?.slug ?? '').toLowerCase() === slug);
+    const area = (offline?.areas ?? []).find((a) => String((a as { slug?: unknown } | null | undefined)?.slug ?? '').toLowerCase() === slug);
     if (area) return sendJson(res, 'offline', area);
     return res.status(404).json({ error: 'no such auto-leveling area', slug });
   };
 
   // GET /maps/autoleveling/classes -> { classes: AutoPilotClass[] }  (wizard Combat step)
-  const handleAutoLevelingClasses = async (_req: any, res: any) => {
+  const handleAutoLevelingClasses = async (_req: HttpRequest, res: HttpResponse) => {
     const key = '/maps/autoleveling/classes';
     const cached = getCached(key);
     if (cached !== null) return sendJson(res, 'cache', cached);
@@ -522,7 +542,7 @@ const service = createExpressService(webConfig, (app) => {
     const upstreamUrl = buildUpstreamUrl('maps/autoleveling/classes');
     if (upstreamUrl) {
       const result = await fetchJsonWithTimeout(upstreamUrl, 10_000);
-      if (result.ok && result.json && Array.isArray((result.json as any).classes)) {
+      if (result.ok && result.json && Array.isArray((result.json as { classes?: unknown }).classes)) {
         setCached(key, result.json, MAPS_TTL_MS);
         return sendJson(res, 'upstream', result.json);
       }

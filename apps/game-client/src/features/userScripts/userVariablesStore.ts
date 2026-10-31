@@ -130,7 +130,7 @@ export function resolveTemplate(
   template: string,
   vars: NamedVariables,
 ): { ok: true; text: string } | { ok: false; text: string } {
-  const names = extractVariableNames(template);
+  const _names = extractVariableNames(template);
   let ok = true;
 
   const out = template.replace(/\{([A-Za-z0-9_]+)\}/g, (_all, name: string) => {

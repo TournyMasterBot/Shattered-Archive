@@ -123,7 +123,7 @@ function formatXpProgress(p: AutoLevelXpProgress): string {
 export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
   isOpen,
   onClose,
-  config,
+  config: _config,
   setConfig,
   runState,
   xpProgress,

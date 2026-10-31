@@ -3,9 +3,8 @@ import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 
 import { ShatteredArchiveTerminal } from '../features/terminal/shatteredArchiveTerminal';
-import { registerListener, unregisterListener } from '../features/event-emitter/event-dispatcher';
 
-type ScrollTarget = {
+type _ScrollTarget = {
   el: HTMLDivElement;
   kind: 'viewport' | 'scrollable';
 };
@@ -59,7 +58,7 @@ export function useTerminal() {
     let cleanup: (() => void) | undefined;
 
     const init = async () => {
-      const isSmall = typeof window !== 'undefined' && window.innerWidth <= 768;
+      const _isSmall = typeof window !== 'undefined' && window.innerWidth <= 768;
 
       await loadTerminalFonts();
       if (disposed) return;
@@ -200,7 +199,9 @@ export function useTerminal() {
 
         try {
           ro.disconnect();
-        } catch {}
+        } catch {
+          // the observer may already be disconnected
+        }
 
         window.clearTimeout(helperTick);
 

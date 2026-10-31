@@ -225,7 +225,7 @@ timestamp; a **session** token always has one (24h TTL), an **API** key only if 
 chose one at mint time. `tokenType` is `"api"` or `"session"`, mirroring which kind of
 credential was checked — useful for a consumer that wants to gate a sensitive action to
 short-lived, purpose-scoped tokens only (a real example is in progress: see
-`.ai-plans/20260725-1223-mud-builder-phase15-engine-rebuild-auth-hardening.md`'s Step 4,
+`.ai-plans-completed/completed/20260725-1223-mud-builder-phase15-engine-rebuild-auth-hardening.md`'s Step 4,
 a `mud-builder-server` guard that will require `expiresAt` within 7 days).
 
 `globalRole` (Phase A, additive like the Phase 15 fields) is the account's hub-global
@@ -776,7 +776,7 @@ introspect, then `grant-tier` picked up **without a restart**, an `on_behalf_of`
 against `mud-builder-server` as the target audience, code-replay refusal, and a
 revoked-service-key 401) passed end to end through the edge at
 `https://auth.shatteredarchive.dev`. Evidence trail:
-`.ai-plans/20260727-0905-auth-rollout-phaseA-hub-sso-roles.md`.
+`.ai-plans-completed/completed/20260727-0905-auth-rollout-phaseA-hub-sso-roles.md`.
 
 Wiring a NEW consumer now has one extra registration step beyond the key: its SSO
 callback must be registered with `register-redirect-uri <service> add <uri>`
@@ -794,7 +794,7 @@ bundle, not an outage).
 2026-07-27** — `shattered-web` is registered (key id `570aac0b4cbc`); the legacy
 JWT/password login was deleted outright, replaced by the SSO hand-off + JIT
 provisioning. Evidence trail:
-`.ai-plans/20260727-1022-auth-rollout-phaseB-csharp-clean-cut.md`.
+`.ai-plans-completed/closed-incomplete/20260727-1022-auth-rollout-phaseB-csharp-clean-cut.md`.
 
 **Deployment topology correction (2026-07-27, user-clarified):** the
 `shatteredarchive-csharp` container this repo can see and redeploy
@@ -864,7 +864,7 @@ game-client works fully logged-out; the only effect of logging in is enabling
 cloud save/load of that connection's scripts and plugin configs from the
 in-client Account panel.
 
-Live E2E evidence trail: `.ai-plans/20260727-1420-auth-rollout-phaseD-game-
+Live E2E evidence trail: `.ai-plans-completed/completed/20260727-1420-auth-rollout-phaseD-game-
 client-wiring.md` — a real hub signup, the full game-sso redirect chain, a real
 bearer token, and PUT/GET round trips against the live C# backend, run fresh
 multiple times across the phase's steps.

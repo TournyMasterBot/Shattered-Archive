@@ -119,7 +119,7 @@ export function startPluginBundledScripts(
 
       return {
         alias: String(a.alias ?? ''),
-        run: (inputText: string) => {
+        run: (_inputText: string) => {
           // run the alias script; if the script wants to send to game, it can call api.sendCommand itself
           void runNow(any, pluginApi);
         },

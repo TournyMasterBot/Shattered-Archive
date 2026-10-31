@@ -3,7 +3,7 @@
  *
  * Two independent listeners share this one config: a small Express surface (`port`) and a
  * plain TCP relay (`relayPort`) that gates every connection with a trusted+ access code
- * before ever dialing merc-mud. See .ai-plans/20260816-0701-simulacrum-mud-wiring.md Step 1.
+ * before ever dialing merc-mud. See .ai-plans-completed/completed/20260816-0701-simulacrum-mud-wiring.md Step 1.
  */
 export interface SimulacrumConfig {
   /** Express surface port (health, SSO, access-code minting, the standalone sign-in page). */

@@ -132,4 +132,4 @@ This is part of a separate **DSL** repository and is the authoritative data sour
 
 The contribute endpoints (`POST /contribute/identify`, `POST /contribute/creaturelore`) are called **directly** by the game client against `https://shatteredarchive.com` — they do **not** go through `apps/web-server`.
 
-See [features/contribute.md](./features/contribute.md) for the contribute feature documentation.
+See [game/contribute.md](./game/contribute.md) for the contribute feature documentation.

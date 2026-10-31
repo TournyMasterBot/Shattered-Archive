@@ -288,7 +288,7 @@ export default function SimulatePane({
 
   useEffect(() => {
     if (initialRoomTarget) setFilter(String(initialRoomTarget.vnum));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [initialRoomTarget]);
 
   // Boot-state and live-state are two different questions about two different snapshots —
