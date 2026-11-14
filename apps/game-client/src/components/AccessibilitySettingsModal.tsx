@@ -1,6 +1,9 @@
 // apps/game-client/src/components/AccessibilitySettingsModal.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import styles from '../styles/AccessibilitySettingsModal.module.scss';
+import { useWindowLayer } from '../hooks/useWindowLayer';
+import { useResizableModal } from '../hooks/useResizableModal';
+import { ResizeGrip } from './ResizeGrip';
 import {
   getAccessibilitySettings,
   setAccessibilitySettings,
@@ -55,6 +58,8 @@ export const AccessibilitySettingsModal: React.FC<AccessibilitySettingsModalProp
 
   const fontPct = useMemo(() => Math.round((draft.fontScale ?? 1) * 100), [draft.fontScale]);
 
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => onClose() });
+  const { attach: resizeAttach, style: resizeStyle, gripProps: resizeGrip } = useResizableModal({ storageKey: 'shatteredarchive:modal-size:AccessibilitySettingsModal:v1', centered: true });
   if (!isOpen) return null;
 
   const save = () => {
@@ -89,8 +94,8 @@ export const AccessibilitySettingsModal: React.FC<AccessibilitySettingsModalProp
   };
 
   return (
-    <div className={styles.backdrop}>
-      <div className={styles.modal} role="dialog" aria-modal="true" aria-label="Accessibility Settings">
+    <div className={styles.backdrop} style={{ zIndex: layer.zIndex }}>
+      <div ref={resizeAttach} className={styles.modal} role="dialog" aria-modal="true" aria-label="Accessibility Settings" style={resizeStyle}>
         <div className={styles.header}>
           <div className={styles.title}>Accessibility</div>
           <button type="button" className={styles.closeButton} onClick={closeWithoutSaving} aria-label="Close">
@@ -257,6 +262,7 @@ export const AccessibilitySettingsModal: React.FC<AccessibilitySettingsModalProp
             Save
           </button>
         </div>
+        <ResizeGrip {...resizeGrip} />
       </div>
     </div>
   );

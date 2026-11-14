@@ -24,8 +24,8 @@ import { indexedDbKvStore, type KvStore } from './autoleveling-idb';
 const INDEX_URL = (force?: boolean) => `/api/web/maps/autoleveling/areas${force ? '?refresh=1' : ''}`;
 const DETAIL_URL = (slug: string, force?: boolean) =>
   `/api/web/maps/autoleveling/areas/${encodeURIComponent(slug)}${force ? '?refresh=1' : ''}`;
-const INDEX_KEY = 'autolevelingAreaIndex';
-const DETAIL_KEY = (slug: string) => `autolevelingArea:${slug}`;
+const INDEX_KEY = 'autolevelingAreaIndex.v2'; // v2 (2026-11-13): see CATALOG_KEY in autoleveling-classes.ts
+const DETAIL_KEY = (slug: string) => `autolevelingArea.v2:${slug}`;
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // soft freshness hint
 
 type Cached<T> = { data: T; fetchedAt: number };

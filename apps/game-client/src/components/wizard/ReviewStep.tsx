@@ -181,6 +181,7 @@ export const ReviewStep: React.FC<Props> = ({ draft, onPatch }) => {
                     <code>{b.cmd || '(empty)'}</code>
                     <span className={styles.reviewDim}> — {describeBuffGate(b)}</span>
                     {b.unverified ? <span className={styles.reviewWarn}> · unverified</span> : null}
+                    {b.disabled ? <span className={styles.reviewWarn}> · paused: will not be used</span> : null}
                     {b.inCombatCmd ? (
                       <span className={styles.reviewDim}>
                         {' '}
@@ -205,7 +206,10 @@ export const ReviewStep: React.FC<Props> = ({ draft, onPatch }) => {
                 {fightCommands.map((f, i) => (
                   <li key={i}>
                     <code>{f.cmd || '(empty)'}</code>
-                    <span className={styles.reviewDim}> {f.cooldownSec > 0 ? `every ${f.cooldownSec}s` : 'every tick'}</span>
+                    <span className={styles.reviewDim}>
+                      {' '}
+                      {f.disabled ? 'paused: will not be used' : f.cooldownSec > 0 ? `every ${f.cooldownSec}s` : 'every tick'}
+                    </span>
                   </li>
                 ))}
               </ul>

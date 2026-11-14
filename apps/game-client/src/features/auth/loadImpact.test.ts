@@ -160,6 +160,17 @@ describe('describeLoadResult', () => {
     );
   });
 
+  it('names the personal target edits among the auto-leveling records when there are any, and only then', () => {
+    const plan = planCloudLoad(local(), cloud());
+    expect(describeLoadResult(plan, counts({ autolevelRecords: 5, autolevelTargetEdits: 2 }), 0).text).toContain(
+      'and 5 auto-leveling record(s) (2 of them target edit(s)). Reloading',
+    );
+    expect(describeLoadResult(plan, counts({ autolevelRecords: 5, autolevelTargetEdits: 0 }), 0).text).toContain(
+      'and 5 auto-leveling record(s). Reloading',
+    );
+    expect(describeLoadResult(plan, counts({ autolevelRecords: 5 }), 0).text).toContain('and 5 auto-leveling record(s). Reloading');
+  });
+
   it('counts merged library or auto-leveling data as a change even when no scripts were replaced', () => {
     const r = describeLoadResult(planCloudLoad(local(), cloud()), counts({ notes: 2 }), 0);
     expect(r.changed).toBe(true);

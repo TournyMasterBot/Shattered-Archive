@@ -15,7 +15,8 @@ import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from
 
 import styles from '../../styles/AutoLevelingWizard.module.scss';
 import {
-  getFightOverlay,
+  getBuffOverlayOrNull,
+  getFightOverlayOrNull,
   getLearnedCooldown,
   setBuffOverlay,
   setFightOverlay,
@@ -25,7 +26,14 @@ import {
 } from '../../features/autoleveling/autoleveling-user-data';
 import { BUFF_CATALOG } from '../../features/autoleveling/autoleveling-buff-catalog';
 import {
+  DEFAULT_REFRESH_TICKS,
+  buffRowFromCatalog,
+  defaultBuffRows,
+  defaultFightRows,
+} from '../../features/autoleveling/autoleveling-class-defaults';
+import {
   abilitiesForClass,
+  classByName,
   classOffensiveAbilities,
   getClassCatalog,
 } from '../../features/autoleveling/autoleveling-classes';
@@ -35,6 +43,8 @@ import type {
   AutoLevelOnceKey,
   AutoLevelVitalsGate,
 } from '../../features/autoleveling/autoleveling-types';
+import HelpInfoButton from '../HelpInfoButton';
+import CombatHelp from './CombatHelp';
 import { DSL_CLASSES_FALLBACK } from './dsl-classes';
 import { FilterableSelect, type FilterableSelectOption } from './FilterableSelect';
 import type { WizardDraft } from './useWizardDraft';
@@ -239,8 +249,6 @@ const VitalsGateControl: React.FC<{
   );
 };
 
-const DEFAULT_REFRESH_TICKS = 6;
-
 interface Props {
   areaSlug: string | null;
   charName: string | null;
@@ -302,16 +310,80 @@ export const CombatStep: React.FC<Props> = ({
   onPatch,
 }) => {
   const [catalog, setCatalog] = useState<AutoPilotClass[]>([]);
+  // false until the first answer: an empty catalog is only "unavailable" once we have asked
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     let alive = true;
     void getClassCatalog().then((cs) => {
-      if (alive) setCatalog(cs);
+      if (!alive) return;
+      setCatalog(cs);
+      setCatalogLoaded(true);
     });
     return () => {
       alive = false;
     };
   }, []);
+
+  // The newest props, for async work that must not act on a stale closure (and must not restart when they change).
+  const latest = useRef({ buffs, fightCommands, charLevel });
+  useLayoutEffect(() => {
+    latest.current = { buffs, fightCommands, charLevel };
+  });
+  // `<area>|<class>` the defaults were last decided for, so each pair is decided once per mount.
+  const seededFor = useRef('');
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  /** Defaults for a class: verified buffs, and fight commands with any cooldown the engine already learned. */
+  const defaultsFor = useCallback(
+    async (cls: AutoPilotClass | undefined) => {
+      if (!cls) return { buffs: [] as BuffRow[], fight: [] as FightRow[] };
+      const level = latest.current.charLevel;
+      const offense = classOffensiveAbilities(catalog, cls.name);
+      const fight = await Promise.all(
+        defaultFightRows(offense, level).map(async (r) => ({ ...r, cooldownSec: (await getLearnedCooldown(r.cmd)) ?? 0 })),
+      );
+      return { buffs: defaultBuffRows(cls.abilities, level), fight };
+    },
+    [catalog],
+  );
+
+  // Pre-fill for a class the player already has chosen (remembered from last time) once the catalog is here:
+  // only where NOTHING was ever saved for this area (buffs) or area+class (fight), and only over empty rows. A saved set,
+  // including one the player emptied, always wins; seeded rows stay in the draft until the player first edits them.
+  useEffect(() => {
+    if (!areaSlug || !playerClass || catalog.length === 0) return;
+    const key = `${areaSlug}|${playerClass.trim().toLowerCase()}`;
+    if (seededFor.current === key) return;
+    seededFor.current = key;
+    const cls = classByName(catalog, playerClass);
+    if (!cls) return;
+    // Not cancelled by a dependency change (the level arriving must not drop the seed); only an unmount or a newer
+    // class decision (seededFor moved on) discards it.
+    void (async () => {
+      const [savedBuffs, savedFight] = await Promise.all([
+        getBuffOverlayOrNull(areaSlug),
+        getFightOverlayOrNull(areaSlug, playerClass),
+      ]);
+      if (!mounted.current || seededFor.current !== key) return;
+      const wantBuffs = savedBuffs === null && latest.current.buffs.length === 0;
+      const wantFight = savedFight === null && latest.current.fightCommands.length === 0;
+      if (!wantBuffs && !wantFight) return;
+      const d = await defaultsFor(cls);
+      if (!mounted.current || seededFor.current !== key) return;
+      const patch: Partial<WizardDraft> = {};
+      if (wantBuffs) patch.buffs = d.buffs;
+      if (wantFight) patch.fightCommands = d.fight;
+      onPatch(patch);
+    })();
+  }, [areaSlug, playerClass, catalog, defaultsFor, onPatch]);
 
   const baseClasses =
     catalog.length > 0
@@ -369,11 +441,23 @@ export const CombatStep: React.FC<Props> = ({
         return;
       }
       const req = ++classReq.current;
-      void getFightOverlay(areaSlug, cls).then((rows) => {
-        if (req === classReq.current) onPatch({ fightCommands: rows });
-      });
+      seededFor.current = `${areaSlug}|${cls.trim().toLowerCase()}`;
+      void (async () => {
+        const [savedFight, savedBuffs] = await Promise.all([
+          getFightOverlayOrNull(areaSlug, cls),
+          getBuffOverlayOrNull(areaSlug),
+        ]);
+        if (req !== classReq.current) return;
+        // Never saved for this class -> the class's defaults; saved (even emptied) -> exactly what was saved.
+        // Buffs belong to the area, not the class: with none saved they follow the newly chosen class.
+        const d = savedFight === null || savedBuffs === null ? await defaultsFor(classByName(catalog, cls)) : null;
+        if (req !== classReq.current) return;
+        const patch: Partial<WizardDraft> = { fightCommands: savedFight ?? d?.fight ?? [] };
+        if (savedBuffs === null) patch.buffs = d?.buffs ?? [];
+        onPatch(patch);
+      })();
     },
-    [areaSlug, onPatch],
+    [areaSlug, onPatch, catalog, defaultsFor],
   );
 
   /* -------------------------------- buffs -------------------------------- */
@@ -387,12 +471,46 @@ export const CombatStep: React.FC<Props> = ({
     commitBuffs(buffs.map((b, ix) => (ix === i ? { ...b, ...patch } : b)));
   const removeBuff = (i: number) => commitBuffs(buffs.filter((_, ix) => ix !== i));
   const moveBuff = (i: number, dir: -1 | 1) => commitBuffs(moveItem(buffs, i, dir));
+  // Pause keeps the row but the engine skips it; resume deletes the flag (stored like a never-paused row).
+  const setBuffPaused = (i: number, paused: boolean) =>
+    commitBuffs(
+      buffs.map((b, ix) => {
+        if (ix !== i) return b;
+        if (paused) return { ...b, disabled: true };
+        const { disabled: _paused, ...rest } = b;
+        return rest;
+      }),
+    );
+
+  /**
+   * Why this buff row may not work yet, while it still casts the verified spell: the class gets the ability later
+   * (or never). A player who changed the command to another way of applying it (a potion, a wand, a staff) has
+   * defined how, so there is nothing to warn about.
+   */
+  const buffAbilityNote = (b: BuffRow): string | null => {
+    if (!playerClass || catalog.length === 0) return null;
+    const entry = BUFF_CATALOG.find((c) => c.label.toLowerCase() === b.label.trim().toLowerCase());
+    if (!entry || b.cmd.trim() !== entry.cmd) return null;
+    const ability = classAbilities.find(
+      (a) => a.name.toLowerCase() === entry.label.toLowerCase() || (entry.affect && a.name.toLowerCase() === entry.affect),
+    );
+    if (!ability) {
+      return `Your class does not get ${entry.label} as an ability. Change the command to the way you apply it (a potion, wand or staff).`;
+    }
+    if (charLevel != null && ability.level > charLevel) {
+      return `You do not have ${entry.label} as an ability yet: your class gets it at level ${ability.level}. Change the command to quaff a potion or use a wand or staff, then resume it, or leave it paused until then.`;
+    }
+    return null;
+  };
 
   const setBuffGate = (i: number, gate: BuffGate) =>
     commitBuffs(
       buffs.map((b, ix) => {
         if (ix !== i) return b;
-        const keep = b.unverified ? { unverified: true as const } : {};
+        const keep = {
+          ...(b.unverified ? { unverified: true as const } : {}),
+          ...(b.disabled ? { disabled: true as const } : {}),
+        };
         if (gate === 'ticks')
           return { label: b.label, cmd: b.cmd, refreshTicks: b.refreshTicks ?? DEFAULT_REFRESH_TICKS, ...keep };
         if (gate === 'always') return { label: b.label, cmd: b.cmd, ...keep };
@@ -412,15 +530,7 @@ export const CombatStep: React.FC<Props> = ({
     const entry = BUFF_CATALOG.find((c) => c.label === label);
     if (!entry) return;
     if (buffs.some((b) => b.label.toLowerCase() === entry.label.toLowerCase())) return;
-    const row: BuffRow = { label: entry.label, cmd: entry.cmd };
-    if (entry.affect) {
-      row.affect = entry.affect;
-      if (entry.suggestInCombat) row.inCombatCmd = entry.suggestInCombat;
-      if (entry.suggestHoldNearLevel) row.holdNearLevel = true;
-    } else {
-      row.refreshTicks = DEFAULT_REFRESH_TICKS;
-    }
-    commitBuffs([...buffs, row]);
+    commitBuffs([...buffs, buffRowFromCatalog(entry)]);
   };
 
   // A class ability → a buff row. If the name matches a BUFF_CATALOG entry we get the verified
@@ -454,6 +564,17 @@ export const CombatStep: React.FC<Props> = ({
   const addFight = () => commitFight([...fightCommands, { cmd: '', cooldownSec: 0 }]);
   const updateFight = (i: number, patch: Partial<FightRow>) =>
     commitFight(fightCommands.map((f, ix) => (ix === i ? { ...f, ...patch } : f)));
+  // Pause keeps the row (and its cooldown and gates) but the engine skips it; resume drops the flag so a
+  // resumed row is stored exactly like one that was never paused.
+  const setFightPaused = (i: number, paused: boolean) =>
+    commitFight(
+      fightCommands.map((f, ix) => {
+        if (ix !== i) return f;
+        if (paused) return { ...f, disabled: true };
+        const { disabled: _paused, ...rest } = f;
+        return rest;
+      }),
+    );
   const removeFight = (i: number) => commitFight(fightCommands.filter((_, ix) => ix !== i));
   const moveFight = (i: number, dir: -1 | 1) => commitFight(moveItem(fightCommands, i, dir));
 
@@ -473,8 +594,14 @@ export const CombatStep: React.FC<Props> = ({
     return <div className={styles.notice}>Pick a curated area first — combat setup is per area.</div>;
   }
 
+  if (showHelp) return <CombatHelp onBack={() => setShowHelp(false)} />;
+
   return (
     <div className={styles.stepPanel}>
+      <div className={styles.subHead}>
+        <span>Class, buffs and fight commands</span>
+        <HelpInfoButton topic="Combat" open={false} onToggle={() => setShowHelp(true)} />
+      </div>
       <div className={styles.combatGrid}>
         <label className={styles.field}>
           <span className={styles.fieldLabel}>Class</span>
@@ -531,6 +658,12 @@ export const CombatStep: React.FC<Props> = ({
           />
         </label>
       </div>
+      {catalogLoaded && catalog.length === 0 && (
+        <div className={styles.notice} role="status">
+          The class list could not be loaded, so only the five base classes are shown and no abilities are pre-filled.
+          Check your connection and reopen the wizard.
+        </div>
+      )}
       <p className={styles.fieldHint}>
         <code>{'{name}'}</code> becomes the target keyword. Blank means <code>kill {'{name}'}</code>.
       </p>
@@ -578,8 +711,9 @@ export const CombatStep: React.FC<Props> = ({
       {buffs.length === 0 && <div className={styles.notice}>No buffs — the run starts fighting straight away.</div>}
       {buffs.map((b, i) => {
         const gate = gateOf(b);
+        const abilityNote = buffAbilityNote(b);
         return (
-          <div key={i} className={styles.buffCard} data-buff-card>
+          <div key={i} className={`${styles.buffCard} ${b.disabled ? styles.rowPaused : ''}`} data-buff-card>
             <div className={styles.buffCardTop}>
               <ReorderButtons
                 index={i}
@@ -609,6 +743,21 @@ export const CombatStep: React.FC<Props> = ({
                 value={b.cmd}
                 onChange={(e) => updateBuff(i, { cmd: e.target.value })}
               />
+              {b.disabled && <span className={styles.editedBadge}>paused</span>}
+              <button
+                type="button"
+                className={`${styles.linkButton} ${styles.linkAction}`}
+                onClick={() => setBuffPaused(i, !b.disabled)}
+                aria-label={b.disabled ? `Resume buff ${i + 1}` : `Pause buff ${i + 1}`}
+                aria-pressed={!!b.disabled}
+                title={
+                  b.disabled
+                    ? 'Paused: autopilot skips this buff. Resume to use it again.'
+                    : 'Pause this buff without removing it.'
+                }
+              >
+                {b.disabled ? 'resume' : 'pause'}
+              </button>
               <button
                 type="button"
                 className={styles.linkButton}
@@ -618,6 +767,11 @@ export const CombatStep: React.FC<Props> = ({
                 remove
               </button>
             </div>
+            {abilityNote && (
+              <div className={styles.fieldHint} role="note">
+                ⚠ {abilityNote}
+              </div>
+            )}
 
             <div className={styles.gateBar}>
               <span className={styles.gateLabel}>recast when</span>
@@ -754,7 +908,7 @@ export const CombatStep: React.FC<Props> = ({
             <div className={styles.notice}>No extra commands — the engine still auto-attacks.</div>
           )}
           {fightCommands.map((f, i) => (
-            <div key={i} className={styles.buffCard}>
+            <div key={i} className={`${styles.buffCard} ${f.disabled ? styles.rowPaused : ''}`}>
               <div className={styles.editorRow}>
                 <ReorderButtons
                   index={i}
@@ -784,6 +938,21 @@ export const CombatStep: React.FC<Props> = ({
                   />
                   <span className={styles.fieldHint}>sec</span>
                 </span>
+                {f.disabled && <span className={styles.editedBadge}>paused</span>}
+                <button
+                  type="button"
+                  className={`${styles.linkButton} ${styles.linkAction}`}
+                  onClick={() => setFightPaused(i, !f.disabled)}
+                  aria-label={f.disabled ? `Resume command ${i + 1}` : `Pause command ${i + 1}`}
+                  aria-pressed={!!f.disabled}
+                  title={
+                    f.disabled
+                      ? 'Paused: autopilot skips this command. Resume to use it again.'
+                      : 'Pause this command (for example until you have practiced it) without removing it.'
+                  }
+                >
+                  {f.disabled ? 'resume' : 'pause'}
+                </button>
                 <button
                   type="button"
                   className={styles.linkButton}

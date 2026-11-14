@@ -23,6 +23,7 @@ const mockExportAutolevel = jest.fn();
 const mockLoadLocalScripts = jest.fn();
 
 jest.mock('../features/auth/cloudSync', () => ({
+  AUTOLEVEL_MAX_RECORDS: 1000,
   loadScripts: (...a: unknown[]) => mockCloud.loadScripts(...a),
   loadPluginConfigs: (...a: unknown[]) => mockCloud.loadPluginConfigs(...a),
   loadGlobalScripts: (...a: unknown[]) => mockCloud.loadGlobalScripts(...a),
@@ -387,6 +388,156 @@ describe('handleSaveToCloud', () => {
     await act(() => result.current.handleSaveToCloud());
 
     expect(result.current.isLoggedIn).toBe(false);
+  });
+});
+
+// The auto-leveling upload replaces the whole cloud collection. A device that never loaded (a phone, say) must not wipe what
+// another device saved: Save merges the cloud copy into this device first (newest edit wins per record), then uploads the union.
+describe('handleSaveToCloud — auto-leveling records (CLOUDSYNC-02, E4, E21)', () => {
+  const edit = (id: string, updatedAt: number) => ({
+    id,
+    kind: 'targetOverride',
+    areaSlug: 'centaur-village',
+    data: { key: id, hidden: true },
+    updatedAt,
+  });
+
+  it('merges the cloud copy into this device BEFORE exporting, and uploads what the merge produced (E21)', async () => {
+    const order: string[] = [];
+    const fromOtherDevice = [edit('a', 5)];
+    setCloud({ autolevel: ok(fromOtherDevice) });
+    mockImportAutolevel.mockImplementation(async () => void order.push('import'));
+    mockExportAutolevel.mockImplementation(async () => {
+      order.push('export');
+      return [edit('a', 5), edit('b', 9)]; // the union the real merge would leave
+    });
+    const { result } = mount();
+
+    await act(() => result.current.handleSaveToCloud());
+
+    expect(mockImportAutolevel).toHaveBeenCalledWith(fromOtherDevice);
+    expect(order).toEqual(['import', 'export']);
+    expect(mockCloud.saveAutolevelUserData).toHaveBeenCalledWith([edit('a', 5), edit('b', 9)]);
+    expect(result.current.status?.kind).toBe('ok');
+    expect(result.current.status?.text).toContain('and 0 auto-leveling record(s) to the cloud.'); // the mocked server says count {}
+  });
+
+  it('a cloud answer that is not a list for scripts, plugins or globals counts as nothing in the cloud: no erase prompt', async () => {
+    setCloud({ scripts: ok({ x: 1 }), plugins: ok('junk'), globals: ok(null) });
+    const { result } = mount();
+
+    await act(() => result.current.handleSaveToCloud());
+
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(result.current.status?.kind).toBe('ok');
+  });
+
+  it('treats a cloud answer that is not a list as empty rather than failing', async () => {
+    setCloud({ autolevel: ok({ nope: true }) });
+    const { result } = mount();
+
+    await act(() => result.current.handleSaveToCloud());
+
+    expect(mockImportAutolevel).toHaveBeenCalledWith([]);
+    expect(result.current.status?.kind).toBe('ok');
+  });
+
+  it('does not merge or upload anything when the user cancels the erase confirmation', async () => {
+    setCloud({ scripts: ok([SCRIPT('cloud')]) });
+    confirmSpy.mockReturnValue(false);
+    const { result } = mount();
+
+    await act(() => result.current.handleSaveToCloud());
+
+    expect(mockImportAutolevel).not.toHaveBeenCalled();
+    expect(mockCloud.saveAutolevelUserData).not.toHaveBeenCalled();
+  });
+
+  it('stops, uploading nothing, when the auto-leveling look-ahead fails', async () => {
+    setCloud({ autolevel: { kind: 'error', message: 'offline' } });
+    const { result } = mount();
+
+    await act(() => result.current.handleSaveToCloud());
+
+    expect(result.current.status).toEqual({
+      kind: 'err',
+      text: 'Save stopped: could not check what is already in the cloud (offline).',
+    });
+    expect(mockImportAutolevel).not.toHaveBeenCalled();
+    expect(mockCloud.saveScripts).not.toHaveBeenCalled();
+    expect(mockCloud.saveAutolevelUserData).not.toHaveBeenCalled();
+  });
+
+  it('logs out when the auto-leveling look-ahead finds an expired session', async () => {
+    setCloud({ autolevel: { kind: 'unauthenticated' } });
+    const { result } = mount();
+
+    await act(() => result.current.handleSaveToCloud());
+
+    expect(result.current.isLoggedIn).toBe(false);
+    expect(mockCloud.saveScripts).not.toHaveBeenCalled();
+  });
+
+  it('refuses a union above the account limit before uploading ANYTHING, and says so (E4)', async () => {
+    mockLoadLocalScripts.mockReturnValue([SCRIPT('a')]);
+    mockExportAutolevel.mockResolvedValue(Array.from({ length: 1001 }, (_, i) => edit(`r${i}`, i)));
+    const { result } = mount();
+
+    await act(() => result.current.handleSaveToCloud());
+
+    expect(result.current.status).toEqual({
+      kind: 'err',
+      text: 'Save stopped: 1001 auto-leveling records is more than the account limit of 1000. Nothing was changed in the cloud.',
+    });
+    expect(mockCloud.saveScripts).not.toHaveBeenCalled();
+    expect(mockCloud.saveAutolevelUserData).not.toHaveBeenCalled();
+  });
+
+  it('uploads exactly the limit', async () => {
+    mockExportAutolevel.mockResolvedValue(Array.from({ length: 1000 }, (_, i) => edit(`r${i}`, i)));
+    const { result } = mount();
+
+    await act(() => result.current.handleSaveToCloud());
+
+    expect(mockCloud.saveAutolevelUserData).toHaveBeenCalledTimes(1);
+    expect(result.current.status?.kind).toBe('ok');
+  });
+});
+
+describe('handleLoadFromCloud — auto-leveling records (E18)', () => {
+  it('imports the cloud records and names the target edits among them', async () => {
+    const records = [
+      { id: 'a', kind: 'targetOverride', areaSlug: 'x', data: { key: 'a', hidden: true }, updatedAt: 1 },
+      { id: 'b', kind: 'targetOverride', areaSlug: 'x', data: { key: 'b', hidden: true }, updatedAt: 1 },
+      { id: 'pref:global', kind: 'pref', data: { playerClass: 'mage' }, updatedAt: 1 },
+    ];
+    setCloud({ autolevel: ok(records) });
+    const { result } = mount();
+
+    await act(() => result.current.handleLoadFromCloud());
+
+    expect(mockImportAutolevel).toHaveBeenCalledWith(records);
+    expect(result.current.status?.text).toContain('and 3 auto-leveling record(s) (2 of them target edit(s)).');
+  });
+
+  it('a cloud answer that is not a list for any collection loads as empty and says nothing is saved', async () => {
+    setCloud({ scripts: ok({ x: 1 }), plugins: ok('junk'), globals: ok(null), autolevel: ok({ nope: true }) });
+    const { result } = mount();
+
+    await act(() => result.current.handleLoadFromCloud());
+
+    expect(mockImportAutolevel).toHaveBeenCalledWith([]);
+    expect(result.current.status?.kind).toBe('info');
+    expect(result.current.status?.text).toContain('Nothing is saved to this account yet');
+  });
+
+  it('a null entry in the cloud list does not break the count', async () => {
+    setCloud({ autolevel: ok([null, { id: 'a', kind: 'pref', data: {}, updatedAt: 1 }]) });
+    const { result } = mount();
+
+    await act(() => result.current.handleLoadFromCloud());
+
+    expect(result.current.status?.text).toContain('and 2 auto-leveling record(s). Reloading');
   });
 });
 

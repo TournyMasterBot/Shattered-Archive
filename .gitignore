@@ -157,5 +157,8 @@ yarn.lock
 # The folder name decides, so a shot in the wrong folder is the only way to mis-file one.
 # ============================================================
 .ai-plans/**/screenshots/incremental/
+# local test-account credentials kept beside a plan (throwaway accounts on the local docker stack only)
+.ai-plans/**/*.local.json
+.ai-plans-completed/**/*.local.json
 .ai-plans-completed/**/screenshots/incremental/
 .pr/**/screenshots/incremental/

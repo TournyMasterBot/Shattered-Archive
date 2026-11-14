@@ -1,0 +1,28 @@
+{
+  "schema": "shatteredArchive.export.v1",
+  "exportedAt": "2026-11-05T03:51:29.134Z",
+  "app": "game-client",
+  "items": [
+    {
+      "storage": "localStorage",
+      "key": "userScripts",
+      "format": "json",
+      "kind": "userScripts",
+      "strategyHint": "mergeById",
+      "value": [
+        {
+          "id": "hidden-room-content",
+          "name": "Hidden room content marker",
+          "kind": "trigger",
+          "enabled": true,
+          "language": "javascript",
+          "group": "exploration",
+          "eventName": "shatteredarchive:raw-data",
+          "matchText": "",
+          "dontRequireMatchText": true,
+          "source": "const MARKER = '{Y>>> {RHIDDEN{Y: something concealed in this room <<<{x\\n';\n\nconst state = (globalThis.__saHiddenRoom ??= { inBlock: false });\nconst payload = (event && event.payload) || {};\nconst chunk = String(payload.rawText ?? payload.text ?? '');\n\nconst lines = chunk.split('\\n');\nif (lines[lines.length - 1] === '') lines.pop();\n\nfor (const raw of lines) {\n  const plain = raw.replace(/\\x1b\\[[0-9;?]*[A-Za-z]/g, '').replace(/\\r/g, '');\n\n  if (/^ ?\\[Exits:/.test(plain)) {\n    state.inBlock = true;\n    continue;\n  }\n  if (!state.inBlock) continue;\n\n  if (plain === '' || /^<\\d+\\/\\d+hp/.test(plain)) {\n    state.inBlock = false;\n    continue;\n  }\n  if (/^ {5}$/.test(plain)) {\n    writeTerminal(MARKER);\n  }\n}\n"
+        }
+      ]
+    }
+  ]
+}

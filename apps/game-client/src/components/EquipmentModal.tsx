@@ -1,6 +1,9 @@
 // apps/game-client/src/components/EquipmentModal.tsx
 import React from 'react';
 import styles from '../styles/EquipmentModal.module.scss';
+import { useWindowLayer } from '../hooks/useWindowLayer';
+import { useResizableModal } from '../hooks/useResizableModal';
+import { ResizeGrip } from './ResizeGrip';
 import { useEquipmentState } from '../hooks/useEquipmentState';
 import { setHotbarDockMode } from '../features/equipment/equipment-store';
 import type { EquipmentSlot, EqSlot, HotbarDockMode } from '../features/equipment/equipment-types';
@@ -102,13 +105,15 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ isOpen, onClose,
   };
 
   // Hooks are done; safe to early-return now.
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => onClose() });
+  const { attach: resizeAttach, style: resizeStyle, gripProps: resizeGrip } = useResizableModal({ storageKey: 'shatteredarchive:modal-size:EquipmentModal:v1', centered: true });
   if (!isOpen) {
     return null;
   }
 
   return (
-    <div className={styles.backdrop} role="dialog" aria-modal="true" onMouseDown={onClose}>
-      <div className={styles.modal} onMouseDown={(e) => e.stopPropagation()}>
+    <div className={styles.backdrop} style={{ zIndex: layer.zIndex }} role="dialog" aria-modal="true" onMouseDown={onClose}>
+      <div ref={resizeAttach} className={styles.modal} onMouseDown={(e) => e.stopPropagation()} style={resizeStyle}>
         <div className={styles.header}>
           <div className={styles.title}>Equipment</div>
           <button className={styles.closeBtn} onClick={onClose}>
@@ -184,6 +189,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ isOpen, onClose,
             ) : null}
           </div>
         </div>
+        <ResizeGrip {...resizeGrip} />
       </div>
     </div>
   );

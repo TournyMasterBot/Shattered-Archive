@@ -71,6 +71,18 @@ describe('area index cache', () => {
     expect(await getAreaIndex({ force: true })).toHaveLength(3);
   });
 
+  it('ignores an index and a detail cached under the pre-v2 keys (E8)', async () => {
+    const store = memoryKvStore();
+    __setAreaStoreForTests(store);
+    await store.set('autolevelingAreaIndex', { data: INDEX, fetchedAt: Date.now() });
+    await store.set('autolevelingArea:centaur-village', { data: CENTAUR_DETAIL, fetchedAt: Date.now() });
+
+    expect(await getAreaIndexCached()).toEqual([]);
+    (global as any).fetch = jest.fn().mockRejectedValue(new Error('offline'));
+    expect(await getAreaIndex({ force: true })).toEqual([]);
+    expect(await getAreaDetail('centaur-village', { force: true })).toBeNull();
+  });
+
   it('drops malformed rows', async () => {
     mockFetch(() => ({ areas: [...INDEX, { slug: 42 }] }));
     expect(await getAreaIndex()).toHaveLength(3);

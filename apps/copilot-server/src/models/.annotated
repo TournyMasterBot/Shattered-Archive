@@ -1,0 +1,7 @@
+File Index
+
+/ollama.ts
+Purpose: Models are LOCAL ONLY (E4). Both the constructor and the server config refuse a non-local base URL and any model named like a hosted one (:cloud, -cloud). One request at a time: a 16 GB card holds one model, and a second request would only queue inside Ollama. It never throws; every failure is a reason. warm() loads the model with an empty prompt and must send the same load-relevant options as a real call (none: no num_ctx), or Ollama reloads the model on the first real call and the warm-up was for nothing.
+
+/fake.ts
+Purpose: The deterministic stand-in used by every test and by COPILOT_MODEL_BACKEND=fake. With no script its agent answer restates the owner's command and names its verb, which is what checkUnderstanding looks for.

@@ -1,0 +1,19 @@
+File Index
+
+/azah.ts
+Purpose: `readAzahRows` is the ONLY place that names source columns, and it never selects the author's user id, the server id or the other bookkeeping columns: a column that is not selected cannot leak, so add to its SELECT lists only what the importer uses (a test puts a user id and a server id in a fixture and checks the output). Ids come from the source's own keys so a re-run gives the same files; they are never built from a title. The pure code takes rows and the import day: no database, file or clock. Every record gets the credit; nothing is `confirmed` or walked. A link into another area is `offPage` and the area file names a room that lives in another file (the strict reader allows exactly that).
+
+/merc.ts
+Purpose: The Simulacrum's map from the game's own .are files (area.lst order), world sandbox. The files are the authority: every exit is confirmed with confidence 1. An exit with a number of 0 or below, or one no listed file defines, is NO link (db.c fix_exits gives it no room, do_exits never shows it): it is only counted as dead. Titles and descriptions go through playerText (comm.c colour_translate: 15 known sigils removed, a doubled brace is one brace, an unknown sigil stays), because that is the text a walked room is matched on. Ids come from the game numbers (mr<vnum>, ml<vnum>-<dir>). Locked doors and room-script warps have no place in the schema and are only counted in the report. Each area is laid out on its own grid, then the areas are placed side by side.
+
+/mercCheck.ts
+Purpose: Agreement with the MUD Builder, which reads the same files with the same parser: same rooms, titles (the Builder shows raw sigils, so this compares player text), live exits and cross-file flags. The Builder's side arrives as plain data; scripts/check-against-builder.mjs feeds it mapRooms from apps/mud-builder-server routes/map.ts (exported for this). A difference is a bug in one of the two.
+
+/mercWalked.ts
+Purpose: Walked evidence goes over the file map, never the other way round: it adds traversals and "walked back" to links the files hold and REPORTS every disagreement (a walk the files contradict, an exit the game showed that the files lack, a room the files do not know), because that means the files and the running game drifted apart or the replay matched wrongly. A title shared by several file rooms is narrowed by the doors walked, otherwise ambiguous and never guessed.
+
+/zones.ts
+Purpose: The CMud zone tree rules: a root is a continent, a child of a root an area, deeper zones are subzones of the depth-2 ancestor. A zone whose chain breaks (missing parent, loop) is listed as unmatched and never placed on a guess; its rooms go to the Unsorted continent. Names are only for display, plus one hint ("maze" in a name types the subzone); nothing is regrouped by name.
+
+/merge.ts
+Purpose: E9 in one place: the later dated record wins, any date beats none, a tie or two undated records leave the base as it is. Dates compare by day. An exit with no known target never beats one that has a target. These functions take two records already known to be the same thing; matching rooms across layers is not decided here.

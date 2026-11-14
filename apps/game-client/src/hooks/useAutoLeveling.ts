@@ -25,6 +25,7 @@ import {
   saveAutoLevelConfig,
 } from '../features/autoleveling/autoleveling-storage';
 import { AutoLevelingEngine } from '../features/autoleveling/autoleveling-engine';
+import { useAutopilotSignals } from './useAutopilotSignals';
 import { bumpLearnedCooldown, getLearnedCooldown } from '../features/autoleveling/autoleveling-user-data';
 import { ListenEvent, DispatchEvent } from '../features/event-emitter/event-dispatcher';
 import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
@@ -153,6 +154,9 @@ export function useAutoLeveling(connectionId: string, isConnectedInitial = false
   /*useEffect(() => {
     hdbg('runState updated', runState);
   }, [runState]);*/
+
+  // Tell whoever listens (the Copilot command gate and need-help link) what Autopilot is doing.
+  useAutopilotSignals(runState);
 
   // Last kill's XP/tnl estimate — kept separate from runState so it isn't wiped by the
   // next status transition (see AutoLevelXpProgress doc comment).

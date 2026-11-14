@@ -1,0 +1,10 @@
+File Index
+
+/worldIndexFixture.ts
+Purpose: Placeholder areas and rooms plus makeIndex(): a WorldIndex whose state a test fixes, with jest spies for loadRooms / reloadRooms / refresh. No real world data.
+
+/simulacrumAdminFlagOn.ts
+Purpose: (relation) tests for the Simulacrum Admin feature that import code behind __SIMULACRUM_ADMIN_LOCAL__ must set the flag on through this file; jest.config.cjs keeps it false globally so a forgotten import fails loudly instead of testing a production build with the panel in it.
+
+/worldIndexFixture.ts
+Purpose: (gotcha) uses the `jest` global for its spies, so it may only be imported from test files; importing it from production code would break the build. Its areas and rooms are placeholders, one area (gamma.are) has a parse error and no vnum range on purpose, to exercise the "unreadable area" and "no range" branches of the picker and the Server tab.

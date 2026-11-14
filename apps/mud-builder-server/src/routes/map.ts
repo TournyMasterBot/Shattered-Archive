@@ -80,9 +80,9 @@ function areaRooms(area: AreaFile): Room[] {
   return rooms;
 }
 
-type RoomIndex = Map<number, { file: string; name: string }>;
+export type RoomIndex = Map<number, { file: string; name: string }>;
 
-function mapRooms(file: string, area: AreaFile, worldRooms: RoomIndex): AreaMapRoom[] {
+export function mapRooms(file: string, area: AreaFile, worldRooms: RoomIndex): AreaMapRoom[] {
   const own = new Set(areaRooms(area).map((r) => r.vnum));
   const resolve = (toVnum: number): { file: string; name: string } | undefined => {
     if (toVnum < 0 || own.has(toVnum)) return undefined;

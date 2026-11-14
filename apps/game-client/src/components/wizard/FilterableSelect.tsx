@@ -73,6 +73,8 @@ export const FilterableSelect: React.FC<FilterableSelectProps> = ({
       e.preventDefault();
       if (open && filtered[activeIx]) commit(filtered[activeIx]);
     } else if (e.key === 'Escape') {
+      // an open list takes the key: the first Escape closes it, and only the next one reaches the window around it
+      if (open) e.stopPropagation();
       setOpen(false);
     }
   };

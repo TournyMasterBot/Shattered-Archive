@@ -176,6 +176,25 @@ describe('FilterableSelect typeahead behaviour', () => {
     expect(onPick).not.toHaveBeenCalled();
   });
 
+  it('an open list takes the Escape key, so the window around it stays; with the list already closed the key goes on to the window', () => {
+    const outside = jest.fn();
+    render(
+      <div onKeyDown={(e) => e.key === 'Escape' && outside()}>
+        <FilterableSelect options={OPTIONS} onPick={jest.fn()} placeholder="Pick one" ariaLabel="Ability" />
+      </div>,
+    );
+    const input = screen.getByLabelText('Ability');
+    fireEvent.focus(input);
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+
+    key(input, 'Escape'); // closes the list
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(outside).not.toHaveBeenCalled();
+
+    key(input, 'Escape'); // nothing left to close: the window may have it
+    expect(outside).toHaveBeenCalledTimes(1);
+  });
+
   it('ignores other keys', () => {
     const { onPick, input } = setup();
     key(input, 'ArrowDown');

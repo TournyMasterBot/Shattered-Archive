@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 
 import type { ServerHealth } from '@shatteredarchive/types-server';
 import { getConfigFromEnv, createExpressService } from '@shatteredarchive/services-server';
+import { cacheControlFor, createFallbackNotifier } from './mapsResponsePolicy.js';
 
 /* ---------------- env loading ---------------- */
 
@@ -458,10 +459,12 @@ const service = createExpressService(webConfig, (app) => {
   };
 
   // GET /maps/autoleveling/areas -> { areas: AutoPilotArea[] }  (auto-leveling wizard)
-  const sendJson = (res: HttpResponse, source: string, body: unknown, status = 200) => {
+  const noteFallback = createFallbackNotifier((message, meta) => console.warn(message, meta));
+  const sendJson = (res: HttpResponse, source: string, body: unknown, status = 200, endpoint = '/maps') => {
+    if (source === 'offline') noteFallback(endpoint);
     res.setHeader('X-Maps-Source', source);
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Cache-Control', `public, max-age=${maxAgeSeconds(MAPS_TTL_MS)}`);
+    res.setHeader('Cache-Control', cacheControlFor(source, maxAgeSeconds(MAPS_TTL_MS)));
     return res.status(status).json(body);
   };
 
@@ -505,7 +508,7 @@ const service = createExpressService(webConfig, (app) => {
     const offline = loadOfflineAutoLevelingAreas();
     let areas = (offline?.areas ?? []).map(toSummary);
     if (continent) areas = areas.filter((a) => String(a.continent ?? '').toLowerCase() === continent.toLowerCase());
-    return sendJson(res, 'offline', { areas });
+    return sendJson(res, 'offline', { areas }, 200, '/maps/autoleveling/areas');
   };
 
   // GET /maps/autoleveling/areas/:slug -> AutoPilotArea  (route + targets for one area)
@@ -529,7 +532,7 @@ const service = createExpressService(webConfig, (app) => {
 
     const offline = loadOfflineAutoLevelingAreas();
     const area = (offline?.areas ?? []).find((a) => String((a as { slug?: unknown } | null | undefined)?.slug ?? '').toLowerCase() === slug);
-    if (area) return sendJson(res, 'offline', area);
+    if (area) return sendJson(res, 'offline', area, 200, '/maps/autoleveling/areas/:slug');
     return res.status(404).json({ error: 'no such auto-leveling area', slug });
   };
 
@@ -549,7 +552,7 @@ const service = createExpressService(webConfig, (app) => {
     }
 
     const offline = loadOfflineAutoLevelingClasses();
-    return sendJson(res, 'offline', { classes: offline?.classes ?? [] });
+    return sendJson(res, 'offline', { classes: offline?.classes ?? [] }, 200, '/maps/autoleveling/classes');
   };
 
   registerGet(app, basePath, '/maps/continent/names', handleContinentNames);

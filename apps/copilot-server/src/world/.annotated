@@ -1,0 +1,34 @@
+File Index
+
+/memory.ts
+Purpose: The only writer of the walked-evidence layer. A view is applied in three steps and COMMITTED only after the file write succeeds, so a failing disk leaves memory, `last` and the stats as they were (tested). Views are served one at a time through a promise chain that survives a throwing view. A title match is trusted only if the room is not the one just left and its way back does not lead elsewhere (a corridor of look-alike rooms must not collapse onto one room); an ambiguous match picks the room whose way back already leads to where the character came from, else makes a new room. All walked rooms are in ONE unplaced area: the log does not say which area a room is in.
+
+/parseRoom.ts
+Purpose: The GMCP part is exact; the text is trusted only when a line equals the GMCP room name and an exits line follows. Anything else is `disagrees`, `dark` or `absent` and gives no contents, so a wrong parse can never put a thing in a room. The room text comes BEFORE the room event (the game sends GMCP just before the prompt), which is why a view is read backwards from the event to the last command or prompt. An indented blank line is the game's mark for an object it does not name (`unlisted`). People are marked `player` and must never be stored.
+
+/feed.ts
+Purpose: An arrival is followed (a link recorded) only when exactly ONE movement command was typed since the previous view AND it was the last command; several mean a move failed or look-alike rooms were passed (the reducer collapses identical room_data), and `recall` after a failed move is not an arrival by that exit. A login or session event ends the memory's session.
+
+/lookup.ts
+Purpose: Labels are by exact whole-word match against the Archive's names, and the kind follows where the line was printed (unindented = creature list, indented = item list); a miss is `unknown`, never a guess. Names under 5 characters are ignored (too general). A failed fetch keeps the old names and only delays the next try; both lists load or neither does.
+
+/replay.ts
+Purpose: Replays game-server jsonl through the SAME path live play uses (Pipeline, world feed, a ViewSink) and takes only records between a connect to the chosen target (default dsl-mud.org:4000) and the next close: the logs also hold the Simulacrum, a second DSL port and a docker host, and their rooms must never reach the DSL layer. A connect that cannot be read counts as `unknown`, never as the target. The memory is told nothing about which world it is in, so the caller must pick the target.
+
+/replayCli.ts
+Purpose: `pnpm replay:world`: days oldest first, the layer is written once per day (WorldMemory deferWrites + flush: serializing the layer per view would take hours over 500,000 views) and a progress file lets a run be stopped and resumed. An existing layer is continued ONLY together with its progress file; otherwise it is replaced, because replaying the same days into it would count every view twice.
+
+/traceCli.ts
+Purpose: `pnpm replay:trace`: walks Azah's candidate layer with the logs and writes every verdict to one report file in the private folder. `--world dsl` is required and anything else is refused (Azah mapped the DSL only). Prints counts only; the per-room verdicts stay in the file. Method and numbers: docs/shattered-maps/verification.md.
+
+/worlds.ts
+Purpose: The ONE table of which connection targets belong to which world. The DSL is only dsl-mud.org:4000 (its player port): dsl-mud.org:8000 is not the production game. A replay uses the targets of one world, and a layer's progress file records its world so it is never continued with another's logs. This is a local-only table on purpose: no production package may name the second world.
+
+/router.ts
+Purpose: Sends each live room view to the memory of the world its CONNECTION went to (the connect record's host:port, via the feed's onSession hook), and REFUSES a view when no known world is current: a server that started mid-session, another game, or another port of the DSL host must not write into any layer. fanOut gives one view to the DSL's walked memory and the audited-map tracer. Never route by what the rooms look like.
+
+/audited.ts
+Purpose: The DSL's audited map as live evidence for a movement command. Only DSL views reach its tracer (the router), and a missing or non-audited folder is no evidence, not an error, while a folder with a bad slice is reported and ignored (the server still starts). mergeEvidence: a contradiction (0) from any source wins, because a suggestion must not walk into an exit someone has seen lead elsewhere.
+
+/memory.near.test.ts
+Purpose: WorldMemory.near, the lookup behind GET /world/near (the map window's add-room flow): walked rooms by title with the titles their exits led to, same-exits first, then most visited. The route is in app.ts (the world id picks which memory: dsl or sandbox, anything else is 404).

@@ -1,0 +1,12 @@
+// The corner grip of a resizable modal: the same mark as the Copilot window's. The modal's root is made a positioning context by the hook.
+.grip {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+  touch-action: none;
+  z-index: 5;
+  background: linear-gradient(135deg, transparent 50%, #4a4a4a 50%, #4a4a4a 60%, transparent 60%, transparent 72%, #4a4a4a 72%, #4a4a4a 82%, transparent 82%);
+}

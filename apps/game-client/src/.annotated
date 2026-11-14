@@ -1,7 +1,25 @@
 File Index
 
+/main.tsx
+Purpose: Besides the render, it starts local-only Copilot through a dynamic import inside `if (__COPILOT_LOCAL__)` (see /copilot-local.d.ts). It sits outside the connection-migration promise on purpose, so Copilot never delays or blocks the app render, and a failing start is logged and ignored.
+
 /App.tsx
 Purpose: App component renders the main application container.
 
 /auth-callback.ts
 Purpose: Entry script for auth-callback.html — the login popup's landing page, and a SECOND vite entry (see vite.config.ts rollupOptions.input; without it the page 404s in the built image and login hangs to its timeout). Deliberately outside features/: it is a page entry like main.tsx, not part of the app bundle — no React, no game connection, so the tab actually playing is never touched. Parses the #auth_token fragment, strips it from the URL before anything else can read it, writes the token via authTokenStore (same origin ⇒ same localStorage the opener reads), then closes itself. Only self-closes when window.opener exists — a directly-navigated window would just look broken.
+
+/copilot-local.d.ts
+Purpose: Types the __COPILOT_LOCAL__ build constant that vite.config.ts defines from the PROCESS env only (never .env files, which are in the Docker build context). Every Copilot import must sit behind `if (__COPILOT_LOCAL__)` so Vite drops it from a production bundle; scripts/check-local-only.mjs proves the marker is absent from dist. The jest client project defines it as false (jest.config.cjs globals); a test that exercises gated code sets globalThis.__COPILOT_LOCAL__ itself and puts it back to false.
+
+/main.tsx
+Purpose: The Copilot start-up is the dynamic import inside `if (__COPILOT_LOCAL__)`; keep it there, outside the migration promise, so the production build drops the branch and the chunk. main.copilot.test.tsx proves the flag-false path never requires the Copilot module.
+
+/main.tsx
+Purpose: Simulacrum Admin has its OWN second branch, `if (__SIMULACRUM_ADMIN_LOCAL__)`, with its own dynamic import: the two switches are independent, so never merge the branches. main.simulacrumAdmin.test.tsx covers all flag combinations.
+
+/simulacrum-admin-local.d.ts
+Purpose: Types the __SIMULACRUM_ADMIN_LOCAL__ build constant that vite.config.ts defines from the PROCESS env only (SIMULACRUM_ADMIN_LOCAL), exactly as copilot-local.d.ts does for Copilot, but a separate constant (LOCAL-04). The jest client project defines it as false; a test that needs it true sets globalThis.__SIMULACRUM_ADMIN_LOCAL__ itself (or imports testing/simulacrumAdminFlagOn first) and puts it back to false.
+
+/main.tsx
+Purpose: Third local-only branch (the map window's second world): `if (__SIMULACRUM_ADMIN_LOCAL__)` imports `./features/worldmap/localWorld`, which is the only file that names the Simulacrum's world and its route; keep it a branch and an import of its own (not merged into the Simulacrum Admin one) so a production build drops both and `scripts/check-local-only.mjs` can fail a production dist that holds `api/world-map/sandbox`. The render callback after `connectionIdMigrationReady` is covered by main.render.test.tsx; the flag branches by main.mapWorld.test.tsx, main.simulacrumAdmin.test.tsx and main.copilot.test.tsx.

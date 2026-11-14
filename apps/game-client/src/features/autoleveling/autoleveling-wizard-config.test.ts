@@ -86,6 +86,49 @@ describe('draftToConfig', () => {
     expect(cfg.init.targets.map((t) => t.keywords[0])).toEqual(['ranger', 'scout']);
   });
 
+  it('a paused (disabled) fight command stays in the draft but never reaches the engine; the others keep their order', () => {
+    const draft = baseDraft({
+      fightCommands: [
+        { cmd: 'bash', cooldownSec: 8 },
+        { cmd: 'kick', cooldownSec: 0, disabled: true },
+        { cmd: 'trip', cooldownSec: 4 },
+      ],
+    });
+    const cfg = draftToConfig(draft);
+    expect(cfg.steps.fight.exec.map((a: any) => a.cmd)).toEqual(['bash', 'trip']);
+    expect(draft.fightCommands).toHaveLength(3); // nothing was removed
+  });
+
+  it('a paused buff stays in the draft but reaches neither the pre-round actions nor the critical buffs', () => {
+    const draft = baseDraft({
+      buffs: [
+        { label: 'Sanctuary', cmd: "cast 'sanctuary'", affect: 'sanctuary', inCombatCmd: 'quaff divine', disabled: true },
+        { label: 'Armor', cmd: "cast 'armor'", affect: 'armor' },
+        { label: 'Haste', cmd: "cast 'haste'", affect: 'haste', holdNearLevel: true, disabled: true },
+      ],
+    });
+    const cfg = draftToConfig(draft);
+    expect(cfg.steps.start.pre.map((a: any) => a.cmd)).toEqual(["cast 'armor'"]);
+    expect(cfg.criticalBuffs).toEqual([]);
+    expect(draft.buffs).toHaveLength(3);
+  });
+
+  it('every fight command paused leaves no fight actions (autopilot just auto-attacks)', () => {
+    const cfg = draftToConfig(baseDraft({ fightCommands: [{ cmd: 'bash', cooldownSec: 8, disabled: true }] }));
+    expect(cfg.steps.fight.exec).toEqual([]);
+  });
+
+  it('an edited pre-loaded target reaches the engine with its edited room line and keyword (personal override)', () => {
+    const draft = baseDraft();
+    draft.targets[0] = {
+      ...draft.targets[0],
+      lookName: 'A tall centaur ranger eyes you.',
+      engageName: 'rng',
+    };
+    const cfg = draftToConfig(draft);
+    expect(cfg.init.targets[0]).toMatchObject({ lookName: 'A tall centaur ranger eyes you.', keywords: ['rng'] });
+  });
+
   it('maps each buff to its start-step action by gate', () => {
     const cfg = draftToConfig(baseDraft());
     expect(cfg.steps.start.pre).toEqual([
@@ -139,6 +182,26 @@ describe('draftToConfig', () => {
   it('a null area yields an empty route (engine will refuse to start)', () => {
     const cfg = draftToConfig(baseDraft({ area: null }));
     expect(cfg.init.trainingPath).toBeNull();
+  });
+
+  it('a buff with no affect and no tick gate becomes a plain send every round; weight commands undefined means no weight actions', () => {
+    const cfg = draftToConfig(
+      baseDraft({ buffs: [{ label: 'Bless', cmd: 'cast bless' }], weightCommands: undefined, weightAtOrAbovePct: undefined } as never),
+    );
+    expect(cfg.steps.start.pre).toEqual([{ kind: 'send', cmd: 'cast bless', vitalsGate: undefined, onceKey: undefined }]);
+    expect(cfg.weight.commands).toEqual([]);
+  });
+
+  it('an area whose route is empty also yields a null route, not an empty string', () => {
+    const cfg = draftToConfig(baseDraft({ area: { ...centaurVillage, requiredActions: [], dirs: [] } }));
+    expect(cfg.init.trainingPath).toBeNull();
+  });
+
+  it('a draft with no mode runs auto-level, and missing rest commands mean no rest actions', () => {
+    const cfg = draftToConfig(baseDraft({ mode: undefined as never, restStartOfRound: undefined, restEndOfRound: undefined }));
+    expect(cfg.mode).toBe('auto_level');
+    expect(cfg.rest.startOfRound).toEqual([]);
+    expect(cfg.rest.endOfRound).toEqual([]);
   });
 });
 

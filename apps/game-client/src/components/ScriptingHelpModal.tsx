@@ -1,6 +1,9 @@
 // apps/game-client/src/components/ScriptingHelpModal.tsx
 import React from 'react';
 import styles from '../styles/ScriptingHelpModal.module.scss';
+import { useWindowLayer } from '../hooks/useWindowLayer';
+import { useResizableModal } from '../hooks/useResizableModal';
+import { ResizeGrip } from './ResizeGrip';
 
 interface ScriptingHelpModalProps {
   isOpen: boolean;
@@ -122,10 +125,21 @@ const ScriptingHelpModal: React.FC<ScriptingHelpModalProps> = ({ isOpen, onClose
     return () => observer.disconnect();
   }, [isOpen]);
 
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => onClose() });
+  const { attach: resizeAttach, style: resizeStyle, gripProps: resizeGrip } = useResizableModal({ storageKey: 'shatteredarchive:modal-size:ScriptingHelpModal:v1', centered: false, limits: { minWidth: 480, minHeight: 360 } });
+
   if (!isOpen) return null;
 
   return (
-    <div ref={modalRef} className={styles.modal} style={{ left: initialPos.x, top: initialPos.y }}>
+    <div
+      ref={(el) => {
+        modalRef.current = el;
+        resizeAttach(el);
+      }}
+      className={styles.modal}
+      style={{ left: initialPos.x, top: initialPos.y, zIndex: layer.zIndex, ...resizeStyle }}
+      onPointerDownCapture={layer.bringToFront}
+    >
       {/* Header */}
       <div ref={headerRef} className={styles.header} onMouseDown={onHeaderMouseDown}>
         <h2 className={styles.title}>Scripting Help</h2>
@@ -3018,6 +3032,7 @@ if (hp && maxHp && (hp / maxHp) < 0.20) {
           </section>
         </div>
       </div>
+      <ResizeGrip {...resizeGrip} />
     </div>
   );
 };

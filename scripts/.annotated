@@ -14,3 +14,12 @@ Purpose: Merges multiple coverage summary files into a single report.
 
 /split-coverage-final.cjs
 Purpose: Processes Jest coverage data to generate summarized reports per workspace.
+
+/check-local-only.mjs
+Purpose: The guard for every local-only feature (Copilot, Simulacrum Admin). A feature is one entry in its FEATURES list (name pattern, the only Dockerfile lines it may carry, the file and constant its bundle marker is read from, extra dist needles); a feature missing from the list is NOT guarded (LOCAL-04). Its test (check-local-only.test.mjs) runs real vite builds with each switch alone and together, so keep marker files where FEATURES says.
+
+/generate-simulacrum-admin-commands.mjs
+Purpose: Writes features/simulacrumAdmin/commandTable.generated.ts from the sibling merc-mud repo's interp.c (default ../merc-mud/2.4/src/interp.c); --check fails when the committed file is stale. Resolves level symbols by value (the game's macros are unparenthesised). Its test (generate-simulacrum-admin-commands.test.mjs) is part of test:guards and skips the real-table case when the sibling repo is absent.
+
+/publish-map-renderer.mjs
+Purpose: Joins three compiled shattered-maps-core files (schema, hierarchy, render) into ONE strict IIFE for the C# site, with no bundler and no new dependency: it strips relative imports and exports, refuses any other import, a name declared twice and a missing public name, and normalizes CRLF so the bytes are the same on every machine. Writes the DSL repo wwwroot/js/maps/worldmap2.js and worldmap2.js.sha256; --check exits 1 when they differ from the build (run it before committing a change in the core). The C# side compares the hash in RendererBundleTests. Tests: publish-map-renderer.test.mjs (part of test:guards). Docs: docs/shattered-maps/surfaces.md.

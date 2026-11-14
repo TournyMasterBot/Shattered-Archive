@@ -2,6 +2,9 @@
 
 import React from 'react';
 import styles from '../styles/LibraryModal.module.scss';
+import { useWindowLayer } from '../hooks/useWindowLayer';
+import { useResizableModal } from '../hooks/useResizableModal';
+import { ResizeGrip } from './ResizeGrip';
 import useLibrary from '../hooks/useLibrary';
 import { renderDslToHtml } from '../features/library/renderDslColorPreviewHtml';
 import type {
@@ -1014,6 +1017,8 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   }, [lib.userNotes]);
 
   // IMPORTANT: return null ONLY AFTER ALL HOOKS HAVE RUN
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => handleRequestClose() });
+  const { attach: resizeAttach, style: resizeStyle, gripProps: resizeGrip } = useResizableModal({ storageKey: 'shatteredarchive:modal-size:LibraryModal:v1', centered: true, limits: { minWidth: 560, minHeight: 360 } });
   if (!isOpen) return null;
 
   const showList = tab === 'parchment' || tab === 'notes' || tab === 'books';
@@ -1021,8 +1026,8 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   const leftTitle = tab === 'parchment' ? 'Parchment' : tab === 'notes' ? 'Notes' : tab === 'books' ? 'Books' : '';
 
   return (
-    <div className={styles.backdrop}>
-      <div className={styles.modal}>
+    <div className={styles.backdrop} style={{ zIndex: layer.zIndex }}>
+      <div ref={resizeAttach} className={styles.modal} style={resizeStyle}>
         <div className={styles.header}>
           <div className={styles.title}>Library</div>
           <button type="button" className={styles.closeButton} onClick={handleRequestClose}>
@@ -1742,6 +1747,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
             </div>
           )}
         </div>
+        <ResizeGrip {...resizeGrip} />
       </div>
     </div>
   );

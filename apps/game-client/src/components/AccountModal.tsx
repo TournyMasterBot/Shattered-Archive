@@ -1,6 +1,9 @@
 // apps/game-client/src/components/AccountModal.tsx
 import React from 'react';
 import styles from '../styles/AccountModal.module.scss';
+import { useWindowLayer } from '../hooks/useWindowLayer';
+import { useResizableModal } from '../hooks/useResizableModal';
+import { ResizeGrip } from './ResizeGrip';
 import { useAccountModal } from '../hooks/useAccountModal';
 
 interface AccountModalProps {
@@ -13,11 +16,13 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, con
   const { isLoggedIn, busy, loginPending, status, handleLogin, handleLogout, handleSaveToCloud, handleLoadFromCloud } =
     useAccountModal({ isOpen, connectionId, onClose });
 
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => onClose() });
+  const { attach: resizeAttach, style: resizeStyle, gripProps: resizeGrip } = useResizableModal({ storageKey: 'shatteredarchive:modal-size:AccountModal:v1', centered: true });
   if (!isOpen) return null;
 
   return (
-    <div className={styles.backdrop}>
-      <div className={styles.modal} role="dialog" aria-modal="true" aria-label="Account">
+    <div className={styles.backdrop} style={{ zIndex: layer.zIndex }}>
+      <div ref={resizeAttach} className={styles.modal} role="dialog" aria-modal="true" aria-label="Account" style={resizeStyle}>
         <header className={styles.header}>
           <div className={styles.title}>Account</div>
           <button type="button" className={styles.closeButton} onClick={onClose}>
@@ -86,6 +91,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, con
             Close
           </button>
         </div>
+        <ResizeGrip {...resizeGrip} />
       </div>
     </div>
   );

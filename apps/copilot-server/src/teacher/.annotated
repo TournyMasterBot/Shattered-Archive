@@ -1,0 +1,19 @@
+File Index
+
+/bundle.ts
+Purpose: Everything that leaves in a bundle passes through `redact` and is cut AFTER it (a cut before could leave half a name that the replacement no longer recognises). An empty queue writes nothing, and a bundle id is never reused. Writes with LedgerFs.append (it creates the folder): there is no overwrite on purpose. The data folder is a host bind mount, so a Claude session reads the files directly; the HTTP answer carries the same content and a RELATIVE folder, never the server's own path. "Claimed" (diagram D6) is deliberately not a stored ticket status.
+
+/findings.ts
+Purpose: A finding must arrive unaccepted: the only acceptance is the owner's (acceptTicket), because it is the only thing that lets a scenario graduate. Every two-step write is ordered so that a retry finishes it (import: finding then ticket; accept: lessons first, acceptance last). A stored finding is never replaced by a later copy of itself. The why is redacted here as well as in the skill's rules: a session may have seen a name.
+
+/metrics.ts
+Purpose: The scenario is (sphere, situation), not (sphere, kind, situation): a ticket for an unusable model answer has kind `unknown`, while the suggestion that later handles the same situation has a real kind, so keying on kind would never graduate it. The kind shown is the newest ticket's. Occurrences of a situation with no ticket are not listed. Computed on every request, nothing stored.
+
+/service.ts
+Purpose: recordOccurrence needs the suggestion (the decision has no situation key) and the server only remembers recent ones, so a late approval of an old suggestion is not an occurrence. It is called from bootstrap's onDecision BEFORE SuggestionService.answered, which keeps the suggestion findable either way. Only approved and auto count: a correction or rejection is the agent being wrong.
+
+/cli.ts
+Purpose: The scripts talk to the server over HTTP because the server is the only writer of its ledger files (a second process appending would desync its in-memory index). The dev vhost uses a local mkcert certificate, so the pnpm scripts set NODE_USE_SYSTEM_CA=1; a certificate failure is reported as that, not as a server that is down. `pnpm run x -- args` passes the `--` on to the script: runCli drops the first one. Refuses any COPILOT_API that is not this machine, a private network or *.shatteredarchive.dev. `persona-feedback` files a ticket whose SUMMARY is the payload (core's buildPersonaFeedbackSummary): a ticket has no structured fields, and validateTicket enforces that format for that reason, so the bundle can show a persona entry; the proposal itself is Shattered-Story's scripts/persona-proposal.mjs, not here.
+
+/main.ts
+Purpose: Five-line entry for the pnpm scripts; the logic and its tests are in cli.ts. No test of its own: it was exercised live in the phase 15 API check.

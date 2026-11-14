@@ -16,6 +16,7 @@ COPY sdks ./sdks
 # pnpm 11.28+ and 12 refuse a frozen install when pnpm-lock.yaml lists a workspace project whose package.json is missing: manifests of the projects this stage does not copy in full.
 COPY apps/auth-client/package.json ./apps/auth-client/package.json
 COPY apps/auth-server/package.json ./apps/auth-server/package.json
+COPY apps/copilot-server/package.json ./apps/copilot-server/package.json
 COPY apps/dsl-color-preview/package.json ./apps/dsl-color-preview/package.json
 COPY apps/dsl-log-preview/package.json ./apps/dsl-log-preview/package.json
 COPY apps/game-server/package.json ./apps/game-server/package.json
@@ -25,6 +26,7 @@ COPY apps/psd-viewer-client/package.json ./apps/psd-viewer-client/package.json
 COPY apps/psd-viewer-server/package.json ./apps/psd-viewer-server/package.json
 COPY apps/scrum-poker-client/package.json ./apps/scrum-poker-client/package.json
 COPY apps/scrum-poker-server/package.json ./apps/scrum-poker-server/package.json
+COPY apps/shattered-maps-client/package.json ./apps/shattered-maps-client/package.json
 COPY apps/simulacrum-server/package.json ./apps/simulacrum-server/package.json
 COPY apps/soulsteel-client/package.json ./apps/soulsteel-client/package.json
 COPY apps/soulsteel-server/package.json ./apps/soulsteel-server/package.json
@@ -43,6 +45,12 @@ ARG VITE_ENV
 # names this machine's dev value, so without an explicit env var every image
 # would bake in localhost:5000.
 ARG VITE_SITE_API
+# Local-only Copilot switch (edge case LOCAL-01). Unset in every production build; only the experimental compose
+# passes it. vite.config.ts reads it from the process environment, never from an .env file.
+ARG COPILOT_LOCAL
+# Local-only Simulacrum Admin switch (edge cases LOCAL-01, LOCAL-04). Same rules: unset in every production build, passed only by the
+# experimental compose, read by vite.config.ts from the process environment.
+ARG SIMULACRUM_ADMIN_LOCAL
 
 ENV VITE_PORT=$VITE_PORT
 ENV VITE_SITE_API=$VITE_SITE_API
@@ -50,6 +58,8 @@ ENV VITE_WEB_API=$VITE_WEB_API
 ENV VITE_WEB_WS=$VITE_WEB_WS
 ENV VITE_WEB_SECURE=$VITE_WEB_SECURE
 ENV VITE_ENV=$VITE_ENV
+ENV COPILOT_LOCAL=$COPILOT_LOCAL
+ENV SIMULACRUM_ADMIN_LOCAL=$SIMULACRUM_ADMIN_LOCAL
 
 RUN pnpm --filter @shatteredarchive/game-client... build
 

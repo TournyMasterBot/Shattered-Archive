@@ -45,3 +45,10 @@ applies-when: "saved settings, user config, defaults merged with stored values, 
 - Verify: run it twice and assert the second run writes nothing; run it on a frozen input; run it against throwing storage and assert the
   data is unchanged and the app continues.
 - Origin: 2026-10-17_plugin-config-save-freezes-defaults
+
+### SETTINGS-06 "Never set" and "deliberately emptied" look the same
+- Applies when: code seeds defaults into a stored list or overlay when it reads as empty.
+- Edge case: the user deletes every row on purpose, and the next load seeds the defaults again.
+- Required behaviour: read distinguishes "no record" from "an empty record"; only "no record" seeds, and seeded rows are not stored until the user edits.
+- Verify: a test that an absent record seeds, an empty stored record stays empty, and a seeded-but-untouched list writes nothing.
+- Origin: 2026-11-13_editable-autopilot-targets-synced

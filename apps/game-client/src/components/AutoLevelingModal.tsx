@@ -37,6 +37,9 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from '../styles/AutoLevelingModal.module.scss';
+import { useWindowLayer } from '../hooks/useWindowLayer';
+import { useResizableModal } from '../hooks/useResizableModal';
+import { ResizeGrip } from './ResizeGrip';
 
 import type {
   AutoLevelConfig,
@@ -1166,15 +1169,22 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
     );
   };
 
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => onClose() });
+  const { attach: resizeAttach, style: resizeStyle, gripProps: resizeGrip } = useResizableModal({ storageKey: 'shatteredarchive:modal-size:AutoLevelingModal:v1', centered: false, limits: { minWidth: 480, minHeight: 360 } });
+
   if (!isOpen) return null;
 
   return (
     <div
-      ref={modalRef}
+      ref={(el) => {
+        modalRef.current = el;
+        resizeAttach(el);
+      }}
       className={styles.modal}
       role="dialog"
       aria-modal="true"
-      style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: 5000 }}
+      onPointerDownCapture={layer.bringToFront}
+      style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: layer.zIndex, ...resizeStyle }}
     >
       <div className={styles.header} onMouseDown={onHeaderMouseDown}>
         <div className={styles.title}>Autopilot</div>
@@ -2536,6 +2546,7 @@ export const AutoLevelingModal: React.FC<AutoLevelingModalProps> = ({
           </div>
         )}
       </div>
+      <ResizeGrip {...resizeGrip} />
     </div>
   );
 };

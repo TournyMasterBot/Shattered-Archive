@@ -12,6 +12,7 @@ import type { GlobalScriptBucket } from '../userScripts/globalScriptsStore';
 import type { InstalledPluginRecord } from '../../hooks/usePlugins';
 import type { LibraryNote, UserNote, LibraryBook } from '../library/library-types';
 import type { UserRecord } from '../autoleveling/autoleveling-user-data';
+import type { MapBackupDocument } from '../worldmap/sync/backup';
 
 export type CloudSyncResult<T> =
   | { kind: 'ok'; data: T }
@@ -77,6 +78,13 @@ export function saveGlobalScripts(buckets: GlobalScriptBucket[]): Promise<CloudS
     body: JSON.stringify(buckets),
   });
 }
+
+/**
+ * The most auto-leveling records an account can store (the server rejects a larger upload,
+ * `UserContentController.MaxAutolevelRecords`). Learned cooldowns, buff/fight lists, custom targets and
+ * personal target edits all count. Checked before any upload so a refusal changes nothing in the cloud.
+ */
+export const AUTOLEVEL_MAX_RECORDS = 1000;
 
 export function loadAutolevelUserData(): Promise<CloudSyncResult<UserRecord[]>> {
   return authedRequest('/api/user-content/autoleveling');
@@ -161,4 +169,17 @@ export function upsertLibraryBookCloud(item: LibraryBook): Promise<CloudSyncResu
 
 export function deleteLibraryBookCloud(id: string): Promise<CloudSyncResult<void>> {
   return authedRequest(`/library/my-writings/books/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+// The map backup (Phase 44): the explored and added room ids of the player, unioned on the site by the sync command only. See worldmap/sync/backup.ts.
+export function syncMapVisitsCloud(doc: MapBackupDocument): Promise<CloudSyncResult<MapBackupDocument>> {
+  return authedRequest('/api/user-content/map-visits/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(doc),
+  });
+}
+
+export function deleteMapVisitsCloud(): Promise<CloudSyncResult<void>> {
+  return authedRequest('/api/user-content/map-visits', { method: 'DELETE' });
 }

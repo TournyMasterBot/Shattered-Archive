@@ -1,0 +1,7 @@
+File Index
+
+/dslColors.ts
+Purpose: Mirrors DSL_ANSI_COLORS in apps/game-client/src/features/chat/dsl-to-ansi.ts. Change both together: the game-client test dsl-to-ansi.roundtrip.test.ts fails when they drift. The client table has 19 colour keys (the plan's "20" counted {x).
+
+/ansiToDsl.ts
+Purpose: The game sends 0;37 and 1;30 (explicit reset or bold in front), not just 31/91, and bold persists across sequences; 1;30 and 90 are both {D because the DSL has one black. A colour the DSL has no code for is flagged and clears to {x rather than being guessed (the caller keeps the raw ANSI beside the DSL text). A code is written only when the effective colour changes, so the output has no repeated {x.

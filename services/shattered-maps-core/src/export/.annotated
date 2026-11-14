@@ -1,0 +1,4 @@
+File Index
+
+/merc.ts
+Purpose: The only place the neutral map meets the Builder's `Area` model. Imports `@shatteredarchive/merc-area` (also pure, `types: []`) and nothing else outside the package, so it still runs in the browser. Two rules a reader would not guess: a room keeps its own `vnum` only when it is in the range, unique in the export and not used by any room OUTSIDE the export (the whole map is checked, not the slice); and every field the Merc file cannot hold is counted in `report.unrepresentable` instead of dropped, which is how the owner learns what the round trip loses. Nothing is written (text is null) while `report.errors` has anything. `emitAreaFile` is not wrapped in a try: everything it refuses (a `~`, a door outside 0-9) is cleaned or fixed before it is called. The export never touches the Builder; the commit route is not known to this package.

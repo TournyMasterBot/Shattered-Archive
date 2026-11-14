@@ -1,0 +1,16 @@
+File Index
+
+/records.ts
+Purpose: Validators are STRICT on purpose (unknown fields rejected, length caps, id/codename patterns checked before any path or key use) and never echo the offending value, because it may be game text. Keep them in step with contracts.ts: Lesson.situationKey and EscalationTicket.kind were added in Phase 6 so conflicts and scenarios can be keyed. Decision.sphere and Decision.kind (optional) name the bucket an answer counts in; they were added in Phase 14 so GET /stats/buckets can be counted from the ledger alone. Finding and ScenarioOccurrence (phase 15): a finding must say acceptedBy explicitly (null or owner) and a path in it can never contain .. or a URL; an occurrence uses the decision's id so a retried decision counts once. A persona-feedback ticket (phase 16) has no structured fields, so its SUMMARY is the payload (Persona feedback for <codename>; field: <field>; why: <text>) and the ticket must name that same character; the field list is the Shattered Story persona file's own keys.
+
+/understanding.ts
+Purpose: Mechanical only: no model judges a model. The restatement must contain the corrected command's verb (as typed or resolved through the policy's verb table), so this depends on policy/classify.ts resolveVerb. The say/gossip/emote shortcuts have no verb word.
+
+/store.ts
+Purpose: One instance per file and one writer (calls are serialised in-process only). needsNewline guards against gluing a record to a torn tail; it is set before every write and cleared after, so a failed or half-done write is followed by a newline. Rotated files are <path>.<n> and are all read on load, so the whole history is in memory.
+
+/graduation.ts
+Purpose: Only an owner acceptance can graduate a scenario; a later ticket re-opens it (graduated=false, accepted=false). detectLessonConflicts only REPORTS; lessons that differ in world or scope are deliberately not conflicts (E6).
+
+/trainer.test.ts
+Purpose: The trainer stamp (only claude exists) on Decision and Lesson: any other value is refused, and a lesson of the dsl world can never carry it. A trainer decision never counts toward the owners earned confidence.

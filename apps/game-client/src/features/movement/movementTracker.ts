@@ -21,6 +21,7 @@
 // until they're migrated onto this module instead.
 
 import { DispatchEvent, ListenEvent } from '../event-emitter/event-dispatcher';
+import { setRoomData } from '../room/roomDataStore';
 import { classifyMovement } from './classifyMovement';
 
 export type RoomSnapshot = { room?: string; sector?: string; exits?: string[] };
@@ -100,7 +101,12 @@ class MovementTracker {
     );
     const offRoom = ListenEvent<RoomSnapshot>(
       'game:room-data',
-      (payload) => this.onRoomData(payload ?? {}),
+      (payload) => {
+        // this listener is bound at app scope, so it also keeps the shared "where am I" cache: the HUD widgets that used to fill it are not
+        // always on screen, and a window opened later (the map) must still know the room the player is standing in
+        setRoomData(payload ?? {});
+        this.onRoomData(payload ?? {});
+      },
       { key: 'movementTracker::game-room-data' },
     );
     const offRaw = ListenEvent<{ text?: string }>(

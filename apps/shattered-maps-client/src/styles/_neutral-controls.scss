@@ -1,0 +1,61 @@
+/* Shared mixin for the neutral viewer's modules: native controls follow the dark surface in every state (TH-01 to TH-04).
+   Each module still declares its own palette variables, as the SCSS standard asks; this partial only needs the names to exist. */
+@mixin controls($bg-inset, $bg-raised, $border, $text, $text-dim, $accent, $info) {
+  color-scheme: dark; /* TH-01/TH-02: native scrollbars, select popups, number and checkbox controls follow the dark surface */
+
+  button,
+  select,
+  input:not([type='radio']):not([type='file']),
+  textarea {
+    background: $bg-inset;
+    color: $text;
+    border: 1px solid $border;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:hover:not(:disabled),
+  select:hover {
+    border-color: $accent;
+  }
+
+  button:active:not(:disabled) {
+    background: $bg-raised;
+  }
+
+  button:focus-visible,
+  select:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  a:focus-visible {
+    outline: 2px solid $info;
+    outline-offset: 1px;
+  }
+
+  button:disabled,
+  input:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: $text-dim;
+    opacity: 1;
+  }
+
+  input,
+  textarea {
+    caret-color: $accent;
+  }
+
+  ::selection {
+    background: rgba(139, 195, 74, 0.35);
+    color: $text;
+  }
+}

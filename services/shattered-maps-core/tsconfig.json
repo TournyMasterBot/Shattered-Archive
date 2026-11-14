@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    "lib": ["ES2023"],
+
+    // Pure/isomorphic, same guard as copilot-core: NO ambient node/DOM types in shipped code. The map model runs
+    // unchanged in the Node server (world memory, importers) and in the browser (the Maps viewer); ids come from an
+    // injected random source and dates are plain strings, so there is no clock and no file system in here.
+    "types": [],
+
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/testing", "dist", "node_modules"]
+}

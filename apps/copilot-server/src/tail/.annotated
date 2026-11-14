@@ -1,0 +1,13 @@
+File Index
+
+/tailer.ts
+Purpose: Follows the game-server jsonl logs with per-file checkpoints. Files are found by LISTING (the file for one date can sit in the previous day's folder) and only `*.jsonl` is read: a plain-text `.log` twin sits beside each one. The offset only ever moves past a complete line. A rename is told from a recreate by a sha1 of the file's first consumed bytes, not by name or inode. The first scan of a new install starts at each file's end (the newest one 256 KiB back), never replaying history. Files with data are read oldest first so the newest file has the last word on the current room. setPaused(true) makes every pass return at once (and stops a pass between batches); resuming moves EVERY file to its current end before reading, so no text or command written while paused is ever learned (the first resume after a start does the same; the server starts paused). The one exception is the session: `primeSession` then delivers just the newest connect/close record and the login, room and vitals after it, or a switch-on mid-connection leaves `connected` false and no character registered (the "online but no suggestions" bug). A consumer that throws loses that batch (a poison batch must not stall the feed); a crash between a batch and the save can repeat one batch.
+
+/checkpoints.ts
+Purpose: The on-disk checkpoint format. Parsing is tolerant by design (an unreadable file means "start at the ends", never "replay"), and a path that is absolute or contains `..` is dropped, so a hand-edited checkpoint cannot make the tailer read outside the log folder.
+
+/primer.ts
+Purpose: Picks, scanning a log newest line first, only the session records (connect/close, login, room, vitals) that the tailer hands over on a resume. Never picks game text or a command; that boundary is the whole point of the file, so a new record kind needs the owner's say. Stops at a game-server start-up record because a restart ends every connection.
+
+/pipeline.ts
+Purpose: Log lines to GameState and a bounded ring. The ring never keeps a real character name: a login is handed once to `onFeed` (the future character registry) and stored without it. Change together with routes/state.ts, which decides what leaves the process.

@@ -1,6 +1,7 @@
 import { canonicalConnectionId } from '../features/connection/connectionId';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useUserScriptSandbox, getUserScriptStorageKey } from '../hooks/useUserScriptSandbox';
+import { useWindowLayer } from '../hooks/useWindowLayer';
 import {
   AnyUserScript,
   TimerScript,
@@ -193,6 +194,9 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
     setImportItemEnabled(enabledMap);
     setImportResult(null);
   }, [importText, mode]);
+
+  // registered only for the Escape key (it is drawn inside the sandbox modal, so Escape closes this first and the sandbox on the next press)
+  useWindowLayer({ open: isOpen, onEscape: () => onClose() });
 
   if (!isOpen) return null;
 
@@ -1010,6 +1014,8 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
     return [...nodes].sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
   }, []);
 
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => onClose() });
+
   if (!isOpen) {
     return null;
   }
@@ -1729,7 +1735,7 @@ look`,
   };
 
   return (
-    <div className={styles.backdrop}>
+    <div className={styles.backdrop} style={{ zIndex: layer.zIndex }}>
       <div className={styles.modal} style={modalStyle}>
         <div className={styles.header}>
           <div className={styles.title}>User Script Sandbox</div>

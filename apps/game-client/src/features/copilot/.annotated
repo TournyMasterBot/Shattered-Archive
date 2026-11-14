@@ -1,0 +1,67 @@
+File Index
+
+/useServerStatus.ts
+Purpose: The window's online/stale/offline light. Any failed answer (unreachable, an error status, or a body that is not Copilot's) is `offline`; only a successful answer with `stale` set is `stale`. Each poll carries the unmount AbortSignal and the next poll is scheduled only after the previous one answered, so a slow server cannot pile requests up; an answer that arrives after unmount is ignored. It is separate from the settings and gate because it is the only part of this folder that React renders from.
+
+/enabled.ts
+Purpose: Copilot's on/off switch (copilot.enabled.v1). Off is the default and the safe reading: only the exact text `true` is on, so a missing, damaged or blocked value is off. One store per page, shared through the runtime by the window, the command gate (it refuses `copilot-off` before any other check) and the menu label; other tabs arrive through the `storage` event wired in loader.ts. The server's own learning from the game logs is NOT behind this switch.
+
+/mode.ts
+Purpose: The mode picker's saved value (copilot.mode.v1). The mode here is only the OWNER'S choice shown in the window; the server infers its own mode from the log (battle in a fight, otherwise exploration) until the client sends one (a later phase), so the two can differ.
+
+/index.ts
+Purpose: The only file main.tsx imports (dynamically, behind __COPILOT_LOCAL__). It imports ./loader lazily inside the flag check; a static import of loader here would pull the marker into every build. Tests: index.test.ts (flag false never loads the loader), main.copilot.test.tsx.
+
+/autopilotLink.ts
+Purpose: Copilot drives Autopilot only through the same shatteredarchive:autoleveling-* events the toolbar buttons use, never through the engine, so Autopilot's own rules (socket ready, already running) still apply. Status is learned from shatteredarchive:autopilot-status, which useAutopilotSignals emits; before attach() it reads idle.
+
+/gate.ts
+Purpose: E2, one controller at a time: user over Autopilot over Copilot. A refused command is recorded and NEVER queued (a queued command would run later in a situation nobody approved). A trailing space or line end is trimmed; a line break INSIDE, any control character, empty or over 200 characters is refused, so a suggestion cannot smuggle a second command into the game. The user check is before the Autopilot check on purpose: both busy is reported as user-typing.
+
+/settings.ts
+Purpose: ONE write path (apply) for the editor, the reset button and the cross-tab storage event (SETTINGS-04). The editor and reset write the storage key even when nothing changed, so a corrupt stored value is replaced by what the window shows; the storage event never writes (it would echo between tabs). The two warnings carry no stored value.
+
+/api.ts
+Purpose: Never throws. offline = unreachable or slow, and the window shows that and suggests nothing (E1); there is no retry and no queue. fetch is looked up per call because jsdom has none until a test sets it. Suggestions are re-validated here (validateSuggestion): the client does not trust the server's shape either.
+
+/config.ts
+Purpose: See .ai-context: the API address is a fixed dev vhost plus a validated per-browser override, not a build variable.
+
+/loader.ts
+Purpose: The only file that imports COPILOT_BUNDLE_MARKER, so the marker ships only in a flagged bundle (a separate lazy chunk). dispose() removes the three listeners it adds. getCopilotRuntime() is the page's single runtime, shared by startCopilot (page load) and the window: a second gate would replace the first one's user-typing listener (same bus key) and go blind to the user's typing. loadCopilot itself is not memoized (its tests build several with fakes).
+
+/review.ts
+Purpose: The owner's three answers and the one rule that matters: a command is sent ONLY through the gate, and when the gate refuses nothing is posted (a recorded `approved` would claim a command that never ran, and the server retires a suggestion on ANY decision, so a refused answer must leave it listed). The signal is read per call, not held, so React's double mount cannot leave it permanently aborted. why: 3-280 trimmed characters, required for a correction, optional for a rejection (the server's own cap is 500). Every answer carries the suggestion's sphere and kind (bucketOf): the server counts the owner's history from them.
+
+/useSuggestions.ts
+Purpose: Poll for suggestions and the open-ticket count. dismiss() hides an answered suggestion at once and keeps it hidden while the server still lists it (a poll already in flight can), then forgets the id once the server has retired it so a later suggestion with that id shows. Oldest first, one per id.
+
+/autoApprove.ts
+Purpose: Applies copilot-core decide() to each new suggestion ONCE (the id is marked before the first await, so two polls cannot both run it, and a gate refusal is never retried). Settings are read AFTER the state and bucket answers arrive, so a rule switched off meanwhile does not run; the window closing or either answer failing means nothing runs. Staleness is the text feed age from GET /state dated at arrival (a server-stale or unreported age is stale). The client has no fight-target facts, so a fight start is always fight-start-unknown (asks, files a ticket). A refused record does not retire the suggestion on the server.
+
+/useBucketStats.ts
+Purpose: Polls GET /stats/buckets for the settings panel only; keeps the last good table when a poll fails. autoApprove.ts does NOT use this hook: it fetches the table itself per suggestion, so the decision never rests on a cached count. Related: copilot-core policy/buckets.ts (the counting), copilot-server GET /stats/buckets.
+
+/useTraining.ts
+Purpose: Polls GET /training and offers the Claude training switch. The server decides everything (training is on only while Copilot is on and the connection is the Simulacrums); the client only shows the switch while the server reports that world, and shows the banner while enabled. The status is hidden when Copilot is off by deriving it, not by setting state in the effect (that is a lint rule here).
+
+/mapHistory.ts
+Purpose: The Copilot server's walked rooms (GET /world/near) as a history source for the map window's add-room flow (features/worldmap/mine/history.ts). Registered by loader.ts, so a production bundle has none of it; the map code never imports from this folder. It answers only while the Copilot switch is on (off means nothing leaves the page).
+
+/mapHistory.test.ts
+Purpose: Covers the switch gate (a page with Copilot off asks the server nothing) and the failure case (an unreachable server is no history); loader.test.ts covers the registration and withdrawal on dispose.
+
+/focus.ts
+Purpose: Training or AI agent (copilot.focus.v1). Training is the default and the safe reading: only the exact text `agent` is the agent. In Training autoApprove never sends a command by itself, whatever the trust rules say, and still files tickets; in the AI agent `decide` alone applies, with its 20-answer earned-confidence gate and the hard floor kept. The floor and the unclassifiable commands (group, follow, order, emotes at players) never run by themselves in either focus.
+
+(focus, autoApprove and the loader)
+Purpose: (relation) loader.ts builds the focus store beside the on/off store and wires its storage event; CopilotWindow passes it to CopilotFocus (the choice) and CopilotReview (which hands focus.get to createAutoApprover). The focus is read by autoApprove only after the server answers, just before a command would be sent, so switching to Training stops a command already on its way. CopilotWindow.test resets the shared runtime (focus, settings) in beforeEach: a rule one test switches on is otherwise toggled off by the next.
+
+/loader.ts
+Purpose: (relation) builds the focus store next to the on/off store and forwards the storage event for copilot.focus.v1, so a focus change in one tab reaches the others. Tests that touch the shared runtime must reset focus and settings, or they leak into each other.
+
+/autoApprove.ts
+Purpose: (constraint) `training` is checked only after decide says `auto`, so Training still files escalation tickets for the teacher but never sends; the focus getter is read after the server answers, immediately before gate.send.
+
+(testing the focus)
+Purpose: (gotcha) createFocusStore(undefined) is a working in-memory store, so component tests inject it instead of touching localStorage; the shared runtime (getCopilotRuntime) keeps focus and settings across tests in a file, so reset both in beforeEach. In Training autoApprove returns { kind: "ask", reason: "training" } for a suggestion decide would have run, and the review list leaves its card in place.

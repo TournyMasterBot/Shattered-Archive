@@ -303,6 +303,263 @@ describe('waitForEngageOutcome (queue-depth-aware timeout, movement-tracking-fix
   });
 });
 
+describe('room scan waits for the look reply (live-log fix 2026-11-13)', () => {
+  const roomBlock = (mobLine: string) =>
+    `A Knot On the Trunk\r\n [Exits: northwest northeast  ]\r\n${mobLine}\r\n<700/704hp 600/674m 250/250mv 1tnl>\r\n`;
+  const rawData = (text: string) => emit('shatteredarchive:raw-data', { text, rawText: text, fromUserScript: false });
+
+  afterEach(() => jest.useRealTimers());
+
+  it('does NOT resolve on the old fixed 500 ms settle when the reply is still in flight', async () => {
+    jest.useFakeTimers();
+    const { engine } = makeEngine(makeConfig());
+    engine.bind();
+    let done = false;
+    engine.armRoomScanWait(500, 3000).then(() => (done = true));
+
+    await jest.advanceTimersByTimeAsync(1400); // reply lagging, as at 13:41:31 (1.5 s)
+    expect(done).toBe(false);
+  });
+
+  it('resolves once the Exits block arrives (after the grace) and the mob in it is already injected', async () => {
+    jest.useFakeTimers();
+    const { engine } = makeEngine(makeConfig());
+    engine.bind();
+    const target = { cleanName: 'oversized chipmunk', lookName: 'An oversized chipmunk crouches here.', keywords: ['chipm'] };
+    engine.targets = [{ target, lookNameNorm: 'an oversized chipmunk crouches here' }];
+    let done = false;
+    engine.armRoomScanWait(500, 3000).then(() => (done = true));
+
+    await jest.advanceTimersByTimeAsync(1500);
+    rawData(roomBlock('An oversized chipmunk crouches here.'));
+    await jest.advanceTimersByTimeAsync(100);
+    expect(done).toBe(false); // still inside the grace for split chunks
+    await jest.advanceTimersByTimeAsync(200);
+
+    expect(done).toBe(true);
+    expect(engine.injectedQueue.map((a: any) => a.kind)).toEqual(['__engage_target']);
+  });
+
+  it('keeps the old settle as a floor when the reply is fast', async () => {
+    jest.useFakeTimers();
+    const { engine } = makeEngine(makeConfig());
+    engine.bind();
+    let done = false;
+    engine.armRoomScanWait(500, 3000).then(() => (done = true));
+
+    rawData(roomBlock('A squirrel scurries about here.'));
+    await jest.advanceTimersByTimeAsync(300); // grace elapsed, floor (500) not yet
+    expect(done).toBe(false);
+    await jest.advanceTimersByTimeAsync(250);
+    expect(done).toBe(true);
+  });
+
+  it('re-arming resolves the previous wait, and rejectAllWaits (stop/cleanup) releases a pending one', async () => {
+    jest.useFakeTimers();
+    const { engine } = makeEngine(makeConfig());
+    engine.bind();
+    let first = false;
+    let second = false;
+    engine.armRoomScanWait(0, 3000).then(() => (first = true));
+    engine.armRoomScanWait(0, 3000).then(() => (second = true));
+    await jest.advanceTimersByTimeAsync(0);
+    expect(first).toBe(true); // superseded, never left hanging
+    expect(second).toBe(false);
+
+    engine.rejectAllWaits(new Error('stopped'));
+    await jest.advanceTimersByTimeAsync(0);
+    expect(second).toBe(true);
+    expect(engine.roomScanWait).toBeNull();
+  });
+
+  it('a path `look` step holds the next step until the reply arrives, not for a fixed delay', async () => {
+    const { sent, off } = captureSends();
+    const cfg = makeConfig({
+      loopRounds: false,
+      idleTimeoutMs: 2000,
+      moveSettleMs: 0,
+      lookSettleMs: 0,
+      postFightSettleMs: 0,
+      init: { ...createDefaultAutoLevelConfig().init, trainingPath: 'look;e', targets: [] },
+    });
+    const { engine } = makeEngine(cfg);
+    engine.bind();
+    const done = engine.start();
+
+    await waitFor(() => sent.includes('look'));
+    await new Promise((r) => setTimeout(r, 400)); // a fixed 0 ms settle would already have moved on
+    expect(sent).not.toContain('e');
+
+    rawData(roomBlock('An enlarged squirrel scurries about here.'));
+    await waitFor(() => sent.includes('e'));
+    emit('shatteredarchive:movement-succeeded', { cmd: 'e', room: { room: 'Next Room', sector: 'inside', exits: [] } });
+    await done;
+    off();
+  }, 10000);
+
+  it('a non-look, non-move path step still uses the fixed settle and never arms a room scan', async () => {
+    const { sent, off } = captureSends();
+    const cfg = makeConfig({
+      loopRounds: false,
+      idleTimeoutMs: 2000,
+      moveSettleMs: 0,
+      lookSettleMs: 50,
+      postFightSettleMs: 0,
+      init: { ...createDefaultAutoLevelConfig().init, trainingPath: 'open door', targets: [] },
+    });
+    const { engine } = makeEngine(cfg);
+    engine.bind();
+    const armSpy = jest.spyOn(engine, 'armRoomScanWait');
+    await engine.start(); // completes with no reply text at all: nothing waits on one
+
+    expect(sent).toContain('open door');
+    expect(armSpy).not.toHaveBeenCalled();
+    off();
+  }, 10000);
+
+  it('after a kill, the re-scan look holds the loop until its reply arrives and a mob in it is engaged', async () => {
+    const { sent, off } = captureSends();
+    const cfg = makeConfig({
+      loopRounds: false,
+      idleTimeoutMs: 2000,
+      lookSettleMs: 0,
+      postFightSettleMs: 0,
+      init: { ...createDefaultAutoLevelConfig().init, trainingPath: '', targets: [] },
+      steps: {
+        ...createDefaultAutoLevelConfig().steps,
+        identify: { pre: [], exec: [{ kind: 'send', cmd: 'look' }], post: [] }, // what the wizard writes
+      },
+    });
+    const { engine } = makeEngine(cfg);
+    engine.bind();
+    engine.cfg = cfg;
+    const target = { cleanName: 'enlarged squirrel', lookName: 'An enlarged squirrel scurries about here.', keywords: ['squirrel'] };
+    engine.targets = [{ target, lookNameNorm: 'an enlarged squirrel scurries about here' }];
+    engine.injectedQueue.push({ kind: '__engage_target', target });
+    engine.encounterLocked = true;
+
+    const flushing = engine.flushInjected(1);
+    await waitFor(() => sent.includes('kill squirrel') && engine.engageWait !== null); // armed after the send
+    emit('game:char-data', { is_fighting: true });
+    await waitFor(() => engine.isFighting === true);
+    emit('game:char-data', { is_fighting: false });
+    await waitFor(() => sent.includes('look'));
+
+    let flushed = false;
+    flushing.then(() => (flushed = true));
+    await new Promise((r) => setTimeout(r, 400)); // reply still in flight
+    expect(flushed).toBe(false);
+
+    rawData(roomBlock('An enlarged squirrel scurries about here.')); // a second squirrel is still here
+    await waitFor(() => sent.filter((c) => c === 'kill squirrel').length === 2);
+    off();
+    engine.stopping = true;
+    emit('game:char-data', { is_fighting: true });
+    emit('game:char-data', { is_fighting: false });
+    await flushing;
+  }, 15000);
+
+  // Live log 2026-11-13 15:46: after a post-fight `cast 'frenzy'` the look was answered 4.5 s later (ability lag); a 3 s cap
+  // gave up first and the engine walked on. No reply is a sign of lag: tell the player once, keep waiting, give up only at the cap.
+  describe('ability lag (no reply to look)', () => {
+    it('keeps waiting past 3 s, tells the player once, and resolves when the late reply arrives', async () => {
+      jest.useFakeTimers();
+      const { writes, off } = captureTerminalWrites();
+      const { engine } = makeEngine(makeConfig());
+      engine.bind();
+      let done = false;
+      engine.armRoomScanWait(500).then(() => (done = true));
+
+      await jest.advanceTimersByTimeAsync(2900);
+      expect(writes).toEqual([]); // no notice while a normal reply could still be on its way
+      await jest.advanceTimersByTimeAsync(200);
+      expect(done).toBe(false); // the old 3 s cap would have released here
+      expect(writes.filter((w) => w.includes('probably ability lag'))).toHaveLength(1);
+
+      await jest.advanceTimersByTimeAsync(5000);
+      expect(done).toBe(false);
+      expect(writes.filter((w) => w.includes('probably ability lag'))).toHaveLength(1); // once, not every second
+
+      rawData(roomBlock('An oversized chipmunk crouches here.')); // the reply, 8 s late
+      await jest.advanceTimersByTimeAsync(300);
+      expect(done).toBe(true);
+      off();
+    });
+
+    it('a normal fast reply produces no notice at all', async () => {
+      jest.useFakeTimers();
+      const { writes, off } = captureTerminalWrites();
+      const { engine } = makeEngine(makeConfig());
+      engine.bind();
+      let done = false;
+      engine.armRoomScanWait(500).then(() => (done = true));
+
+      rawData(roomBlock('A squirrel scurries about here.'));
+      await jest.advanceTimersByTimeAsync(600);
+      expect(done).toBe(true);
+      await jest.advanceTimersByTimeAsync(20000);
+      expect(writes).toEqual([]);
+      off();
+    });
+
+    it('gives up only at the hard cap, and says so', async () => {
+      jest.useFakeTimers();
+      const { writes, off } = captureTerminalWrites();
+      const { engine } = makeEngine(makeConfig());
+      engine.bind();
+      let done = false;
+      engine.armRoomScanWait(500).then(() => (done = true));
+
+      await jest.advanceTimersByTimeAsync(19900);
+      expect(done).toBe(false);
+      await jest.advanceTimersByTimeAsync(200);
+      expect(done).toBe(true);
+      expect(writes.some((w) => w.includes('no reply to look after 20s'))).toBe(true);
+      off();
+    });
+
+    it('a sightless reply with no Exits line (a dark room, blindness) counts as the answer', async () => {
+      jest.useFakeTimers();
+      const { engine } = makeEngine(makeConfig());
+      engine.bind();
+      let done = false;
+      engine.armRoomScanWait(0).then(() => (done = true));
+
+      rawData('It is pitch black ...\r\n');
+      await jest.advanceTimersByTimeAsync(300);
+      expect(done).toBe(true);
+    });
+
+    it('an explicit hard cap at or below the notice time gives no notice (a caller that wants a short wait)', async () => {
+      jest.useFakeTimers();
+      const { writes, off } = captureTerminalWrites();
+      const { engine } = makeEngine(makeConfig());
+      engine.bind();
+      let done = false;
+      engine.armRoomScanWait(0, 2000).then(() => (done = true));
+
+      await jest.advanceTimersByTimeAsync(2100);
+      expect(done).toBe(true);
+      expect(writes.some((w) => w.includes('probably ability lag'))).toBe(false);
+      off();
+    });
+  });
+
+  it('ignores text without an Exits line, and gives up at the max wait', async () => {
+    jest.useFakeTimers();
+    const { engine } = makeEngine(makeConfig());
+    engine.bind();
+    let done = false;
+    engine.armRoomScanWait(500, 3000).then(() => (done = true));
+
+    rawData('You are hungry.\r\n');
+    await jest.advanceTimersByTimeAsync(2900);
+    expect(done).toBe(false);
+    await jest.advanceTimersByTimeAsync(200);
+    expect(done).toBe(true);
+  });
+});
+
 describe('rest step (during-round threshold rules)', () => {
   it('restRuleTriggered requires ALL present thresholds to be at/below their percentage', () => {
     const { engine } = makeEngine(makeConfig());
@@ -603,6 +860,50 @@ describe('run-control terminal notices', () => {
     expect(writes[0]).toContain('error:');
     expect(writes[0]).toContain('disabled');
   });
+
+  // Each guard refuses the run with its own state: nothing is sent, the run never reports "started", and the reason is in the run state.
+  it.each([
+    ['a disabled mode', { mode: 'disabled' as const }, 'Auto leveling is disabled'],
+    ['no training path', { init: { ...createDefaultAutoLevelConfig().init, trainingPath: '' } }, 'Training path is undefined'],
+    ['a training path with no steps in it', { init: { ...createDefaultAutoLevelConfig().init, trainingPath: ' ; ;' } }, 'Training path step length is 0'],
+  ])('refuses to start with %s, and says why in the run state', async (_label, over, message) => {
+    const { sent, off } = captureSends();
+    const { writes, off: offWrites } = captureTerminalWrites();
+    const { engine, runStates } = makeEngine(makeConfig(over as Partial<AutoLevelConfig>));
+    engine.bind();
+
+    await engine.start();
+    off();
+    offWrites();
+
+    expect(runStates).toContainEqual({ status: 'error', message });
+    expect(sent).toEqual([]);
+    expect(writes.some((w) => w.includes('started'))).toBe(false);
+  });
+
+  it('stopping while paused releases the round loop at its next step instead of hanging', async () => {
+    const { sent, off } = captureSends();
+    const cfg = makeConfig({
+      loopRounds: false,
+      moveSettleMs: 0,
+      lookSettleMs: 0,
+      init: { ...createDefaultAutoLevelConfig().init, trainingPath: 'n;e', targets: [] },
+    });
+    const { engine, runStates } = makeEngine(cfg);
+    engine.bind();
+    const done = engine.start();
+
+    await waitFor(() => sent.includes('n'));
+    engine.pause();
+    emit('shatteredarchive:movement-succeeded', { cmd: 'n', room: { room: 'R', sector: 'inside', exits: [] } });
+    await new Promise((r) => setTimeout(r, 100));
+    engine.stop();
+    await done;
+    off();
+
+    expect(sent).not.toContain('e'); // the second step never went out
+    expect(runStates[runStates.length - 1]).toMatchObject({ status: 'idle' });
+  }, 10000);
 });
 
 describe('refreshRunSnapshot (pause-to-edit resync for targets/buffs/route, step 12)', () => {

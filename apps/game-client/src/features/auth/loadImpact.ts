@@ -141,6 +141,8 @@ export interface LoadResultCounts {
   notes: number;
   books: number;
   autolevelRecords: number;
+  /** How many of those records are personal edits of pre-loaded autopilot targets (named in the message when any). */
+  autolevelTargetEdits?: number;
 }
 
 /** What the user is told after a load. `changed` is false when nothing on this client was touched. */
@@ -168,10 +170,12 @@ export function describeLoadResult(
   if (plan.replacePlugins) parts.push(count(counts.plugins, 'plugin config'));
   if (plan.replaceGlobals) parts.push(count(counts.globalBuckets, 'global-script set'));
   const applied = parts.length > 0 ? `Loaded ${parts.join(', ')}` : 'Loaded no scripts or plugins';
+  const edits = counts.autolevelTargetEdits ?? 0;
+  const editNote = edits > 0 ? ` (${edits} of them target edit(s))` : '';
   return {
     changed,
     text:
       `${applied}; merged ${counts.parchment} parchment / ${counts.notes} note(s) / ${counts.books} book(s) ` +
-      `and ${counts.autolevelRecords} auto-leveling record(s). Reloading to apply…`,
+      `and ${counts.autolevelRecords} auto-leveling record(s)${editNote}. Reloading to apply…`,
   };
 }

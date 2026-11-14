@@ -50,10 +50,23 @@ session to log out of; "Log out" just clears the local copy
 `cloudSync.ts` wraps the C# site's per-account content API
 (`/api/user-content/scripts`, `/api/user-content/plugin-configs` —
 whole-collection GET/PUT, matching how these are already stored client-side as
-a single JSON array). Every call carries `Authorization: Bearer <token>`; a
+a single JSON array; the map window's cloud backup uses `/api/user-content/map-visits`,
+see `docs/shattered-maps/map-backup.md`). Every call carries `Authorization: Bearer <token>`; a
 401 clears the stored token and returns `{ kind: 'unauthenticated' }` rather
 than throwing, so the modal can show a clean "log in again" message instead of
 crashing.
+
+**Autopilot records.** `/api/user-content/autoleveling` stores the wizard's records (`UserRecord[]`,
+`features/autoleveling/autoleveling-user-data.ts`) as one whole-collection blob, 1000 records at most. The
+server accepts exactly seven kinds (`Server.Dsl/AgentApi/AutolevelUserRecords.cs`): `target`, `buff`, `fight`,
+`path`, `pref`, `abilityTiming` and `targetOverride` (a player's personal edit of a pre-loaded area target).
+The list is a contract with the client's `SYNCED_RECORD_KINDS`: a kind the client exports but the server lacks
+rejects the whole upload with a 400 (until 2026-11-13 that happened to `abilityTiming`). A `targetOverride`
+carries the area on the record and `{ key, lookName?, engageName?, hidden? }` in `data`; text fields are 1-200
+characters with no `;`, line break or control character, because they end up in `kill {name}`. Save reads the cloud
+copy and merges it into this device first (newest edit wins per record), then uploads the union, because the PUT
+replaces the whole collection; over 1000 records the save stops before uploading anything. Details:
+`docs/game/autopilot.md`.
 
 **Save** reads the CURRENT connection's local state and PUTs it up:
 - Scripts: `RuntimeSingleton.Runtime.loadScriptsFromStorage(connectionId)` —

@@ -25,6 +25,21 @@ review it with `git diff`, do not run it over files you did not change). Do not 
 - A swallowed failure in new code logs a single `console.warn` with a fixed message and **no config values, keys' contents or user text**
   (`docs/standards/data-classification.md`).
 
+## Async and state
+Decided 2026-11-06 (`2026-11-05_copilot-ai-training-sibling-to-autopilot`).
+- A hook that subscribes (`ListenEvent`, timers, sockets) returns the unsubscribe from its effect. Every `fetch` takes an `AbortSignal` and the
+  effect aborts it on cleanup; a polling or tail loop takes a stop signal and ends on unmount or server shutdown.
+- A test proves it: after unmount or shutdown no further request, timer tick or file read happens.
+- Enforced by review and tests; no lint rule covers it.
+
+## Security-sensitive code
+Decided 2026-11-06 (`2026-11-05_copilot-ai-training-sibling-to-autopilot`).
+- A new HTTP server validates every request with hand-written validators (no new validation dependency): body-size cap, unknown fields
+  rejected, types and ranges checked, and string ids matched against a strict pattern before they touch a path or a store.
+- A local-only server (Copilot) refuses to start unless its enable flag is set, listens only on its configured address, rejects a non-local
+  `Origin`, and never logs game text, character names or request bodies (`docs/standards/data-classification.md`).
+- Local-only client code is behind a build-time constant so the production bundle does not contain it; a script asserts that on the built output.
+
 ## Testing
 - Tests are co-located `*.test.ts` / `*.test.tsx` (79 of 79 in `game-client`). Pure helpers get unit tests; components are rendered with
   Testing Library and asserted on observable output or the `onSave`-style callback payload (as `PluginConfigModal.test.tsx` does).

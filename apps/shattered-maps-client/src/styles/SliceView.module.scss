@@ -1,0 +1,182 @@
+@use 'neutral-controls' as c;
+
+$bg-raised: #181818;
+$bg-inset: #101010;
+$border: #2b2b2b;
+$border-soft: #242424;
+$text: #f0f0f0;
+$text-dim: #a8a8a8;
+$accent: #8bc34a;
+$danger: #ef5350;
+$warn: #ffb74d;
+$info: #64b5f6;
+
+.view {
+  color: $text;
+  @include c.controls($bg-inset, $bg-raised, $border, $text, $text-dim, $accent, $info);
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.empty {
+  color: $text-dim;
+}
+
+.floors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.active {
+  border-color: $accent;
+  background: rgba(139, 195, 74, 0.15);
+}
+
+.count {
+  color: $text-dim;
+  font-size: 0.78rem;
+}
+
+/* The drawing is the core's SVG, written for a light page (dark labels, pale tiles): it sits on its own light sheet in the dark window.
+   The markup is injected, so its attributes are styled with :global selectors. */
+.picture {
+  background: #f4f1ea;
+  border: 1px solid $border;
+  border-radius: 8px;
+  overflow: auto;
+  max-height: 70vh;
+  padding: 4px;
+
+  :global(svg) {
+    display: block;
+    max-width: none;
+  }
+
+  :global([data-room]) {
+    cursor: pointer;
+  }
+
+  :global([data-room]:hover) {
+    stroke: #1d4ed8;
+    stroke-width: 2;
+  }
+
+  :global([data-room][data-selected='true']) {
+    stroke: #1d4ed8;
+    stroke-width: 3.5;
+  }
+
+  :global([data-review='accepted']) {
+    stroke: #2e7d32;
+    stroke-width: 3;
+  }
+
+  :global([data-review='edited']) {
+    stroke: #ef6c00;
+    stroke-width: 3;
+  }
+
+  :global([data-review='rejected']) {
+    stroke: #b71c1c;
+    stroke-width: 3;
+    stroke-dasharray: 4 3;
+    opacity: 0.55;
+  }
+
+  :global([data-area]) {
+    cursor: pointer;
+  }
+
+  :global([data-area]:hover) {
+    stroke: #1d4ed8;
+    stroke-width: 2;
+  }
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  color: $text-dim;
+  font-size: 0.78rem;
+}
+
+.counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+
+  span[data-kind='unknown'] {
+    color: $warn;
+  }
+
+  span[data-kind='conflict'] {
+    color: $danger;
+  }
+
+  span[data-kind='offpage'] {
+    color: $info;
+  }
+
+  span[data-kind='unplaced'] {
+    color: $text-dim;
+  }
+}
+
+.chooser {
+  padding: 12px;
+  background: $bg-raised;
+  border: 1px solid $border;
+  border-radius: 8px;
+}
+
+.kids {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.list {
+  margin-top: 10px;
+  background: $bg-raised;
+  border: 1px solid $border-soft;
+  border-radius: 8px;
+  padding: 6px 10px;
+
+  summary {
+    cursor: pointer;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 6px 0 0;
+    max-height: 240px;
+    overflow-y: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  li {
+    display: inline-flex;
+    gap: 2px;
+  }
+}
+
+.zoomIn {
+  padding: 4px 6px;
+}

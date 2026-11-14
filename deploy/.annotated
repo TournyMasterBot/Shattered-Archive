@@ -65,3 +65,15 @@ Purpose: Dockerfile for building and serving the web client application with Nod
 
 /web-server.Dockerfile
 Purpose: This Dockerfile builds and runs the web server application in a production environment.
+
+/game-client.Dockerfile
+Purpose: Also declares the two local-only build switches, ARG/ENV COPILOT_LOCAL and ARG/ENV SIMULACRUM_ADMIN_LOCAL: empty unless the experimental compose passes them, and scripts/check-local-only.mjs allows exactly those lines (and comments) about those features in this shared file. vite.config.ts reads them from the process environment, never from the .env that ships in this build context.
+
+/shattered-maps-client.Dockerfile
+Purpose: Static build of the Mapper (apps/shattered-maps-client) served by nginx; no build arguments, no server, no data volume. Built only by the experimental (dev) compose: the production compose does not have this service. The manifest list of the other workspace projects must stay complete (scripts/check-workspace-manifests.mjs), like every Dockerfile here.
+
+/nginx/edge-maps.conf
+Purpose: The dev-only edge vhost of maps.shatteredarchive.dev, mounted by the experimental compose as its own template (/etc/nginx/templates/maps.conf.template), never added to edge-subdomains.conf, which the production compose also mounts: publishing the map editor to production is a separate decision. Limited to loopback and private networks. Needs the hosts entry (scripts/add-hosts.ps1) and the nginx container recreated once to take the new mount.
+
+/nginx/edge-simulacrum-admin.conf
+Purpose: The dev-only edge vhost of simulacrum-admin.shatteredarchive.dev (read-only world data for the Simulacrum Admin teleport picker), mounted by the experimental compose as its own template and given an alias on the nginx service. Not in docker-compose.yml, not in edge-subdomains.conf. Needs a hosts-file line (deploy/scripts/add-hosts.ps1 and .sh list it, and rewrite the whole block, so a hand-added name is lost when they run; the wildcard certificate already covers it).

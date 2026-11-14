@@ -1,5 +1,11 @@
 File Index
 
+/CopilotWindow.tsx
+Purpose: Deliberately NOT a modal: role="dialog" with no aria-modal, no backdrop, no focus trap, and it never takes focus on open, because the owner types game commands while it is open (the command input behind it must keep working). Only the window itself takes pointer events. z-index 4900, under the Autopilot wizard's 5000. Reached only through a React.lazy import behind __COPILOT_LOCAL__ in pages/MainContainer.tsx. The header is a one-row flex whose status text is the only part that shrinks (ellipsis); the minimum width (360) is what keeps the close button inside, found by a Playwright check at the old 320. Tests: CopilotWindow.test.tsx, CopilotWindow.switch.test.tsx; the real-browser drive is under the plan's screenshots. The on/off switch is read from the shared runtime (a prop in tests); while it is off only the header is mounted, so the polling hooks and auto-approval do not run (that, not a flag inside them, is what stops the requests), and mode and status are hidden so the header still fits at 360.
+
+/CopilotReview.tsx
+Purpose: The window body. Every answer goes through features/copilot/review.ts, so a command reaches the game only through the CommandGate; a refused answer posts NOTHING (the server retires a suggestion on any decision, and a recorded `approved` would claim a command that never ran), so the card stays and shows the reason. Buttons are disabled while the poll fails (the last list stays, marked). The reviewer is built inside the click handlers, not during render, because it reads the abort-controller ref (react-hooks/refs). Counter, placeholder, selection and caret colours for the why box are in CopilotWindow.module.scss and were checked in the browser, not by jest (CSS modules are not applied there). Tests: CopilotReview.test.tsx. The automatic half: an effect hands each new suggestion to features/copilot/autoApprove.ts once (it remembers the ids), a run by a rule dismisses the card at once so it cannot be approved twice by hand, a refusal leaves the card and logs "waiting for you", and unmounting aborts the signal so nothing unsent is sent after the window closes.
+
 /RightSidebar.tsx
 Purpose: Fixed right-side panel (StatusBlock: tick + vitals + enemy + ancillary, plus room/compass). Custom-HUD-layout branch extracted StatusBlock's enemy-tracking state (enemyUi/damageChunk, the event:fighting:opponent listener and its staleness ticker) into the shared useOpponentStatus hook so both this classic sidebar and the compact layout's CompactVitalsRow consume the same logic instead of duplicating it.
 
@@ -11,6 +17,7 @@ Purpose: The original ~2500-line auto-leveling modal, superseded by AutoLeveling
 
 /AutoLevelingWizard.tsx
 Purpose: THE ONLY auto-leveling UI as of 2026-09-13 — the `localStorage['autoleveling.wizard']` opt-out escape hatch to AutoLevelingModal was removed from MainContainer.tsx (live-playtest feedback: Weight wasn't "gated behind a flag", it's just part of this wizard) rather than left for step 13; AutoLevelingModal.tsx/.module.scss are now unreferenced dead code, not yet deleted. A linear 7-step wizard (Area / Targets / Combat / Rest / Weight / Review / Start — Rest inserted 2026-09-12, Weight inserted 2026-09-13) sharing the same `useAutoLeveling` props via a MainContainer shared-props IIFE. Step panels live in `components/wizard/` (AreaStep, TargetsStep, CombatStep, RestStep, WeightStep, ReviewStep + useWizardDraft/useCharacterLevel/dsl-classes/FilterableSelect). 2026-09-13: a step-header "Apply live changes" bar (visible while running, only on Combat/Rest/Weight — each with its own precise hint text since Combat/Rest each mix a hot-swappable part with a frozen one) calls `setConfig(draftToConfig(draft))` on demand for the 3 config paths the engine already re-fetches fresh per-call (fight-commands, rest during-round, weight); a separate "Pause to edit" hint on Targets covers everything else (targets/buffs/route/rest-start-end-of-round), which only ever picks up an edit via the engine's pause→resume resync (`refreshRunSnapshot()`), never live. Area route + targets come from the C#-served IndexedDB cache (`features/autoleveling/autoleveling-content.ts`, with a ⟳ refresh control that bypasses both the client IndexedDB cache and web-server's own in-memory cache via `?refresh=1`); buff/fight overlays + custom targets + class pref from `autoleveling-user-data.ts`, seeded into the draft on area selection. Start step is a run-monitor wired to the real engine controls, plus (2026-09-12) a "Last kill" row from `useAutoLeveling`'s separate `xpProgress` state (survives status transitions, cleared on a fresh Start, hidden unless actively running). The draft→AutoLevelConfig build + retiring the old modal is a later plan step (.ai-plans-completed/closed-incomplete/20260909-0739-autoleveling-redesign.md). Draggable, matches AutoLevelingModal's shell.
+Context (2026-11-13): the Targets-step handlers here (edit, hide/restore, reset, delete unmatched, add/remove own target) are the ONLY place that persists target changes: the step validates text and asks, the wizard stores through setTargetOverride / updateCustomTarget / removeCustomTarget and updates the draft by row identity (targetRowId), returning a message when storage fails. Area selection seeds the draft through applyTargetOverrides (an override whose target left the served list becomes draft.unmatchedOverrides, kept not applied). Tests: AutoLevelingWizard.targets.test.tsx runs the real wizard on in-memory storage with a mocked fetch. Gotcha: a target edit made DURING a run is stored at once but reaches the engine only through the existing pause -> resume snapshot refresh, like every other target change. Fixed 2026-11-14: that refresh re-reads the SAVED config, and nothing wrote the draft to it while a run was active, so an unchecked target was still attacked after Resume; the wizard now calls setConfig(draftToConfig(draft)) on every draft change while runState is 'paused' (needs an area chosen in this wizard instance, so a reopened empty draft never overwrites the run).
 
 /LibraryModal.tsx
 Purpose: The parchment/notes/books editor (tabs, list+editor split, Scribe panel that pushes drafts into the live game session as commands, JSON export/import, DSL color preview). Phase E added tag-based grouping to all three sidebar lists (parchmentByTag/booksByTag memos, notesBySpool now nests a tag sub-group within each spool — reuses mobile's groupByTag algorithm), a tag input in the editor header, cursor-tracked line/char-limit stats under the body textarea (getLineStats/getWarnings from library-types.ts), and tag/recipients round-tripping through the export/import bundle and handleSave's three branches — closing the editor-parity gap with the mobile client's book-editor. Organizations Phase 2 Step 5 added an 'organizations' tab as its own top-level pane (`{tab === 'organizations' && <OrganizationsPane />}`, not threaded into the parchment/notes/books showList branches) — see OrganizationsPane.tsx. UNSAVED-CHANGES GUARD: every exit that would drop the draft (item select incl. the Scribe pickers, tab switch, New, JSON import, close, and the browser tab via useBeforeUnloadGuard) goes through confirmLoseChanges, which judges the open tab's draft against what is saved (features/library/unsavedChanges.ts) and, for the Organizations tab, relies on OrganizationsPane's onDirtyChange report. Clicking the item already open never asks. Colors and Scratch are not guarded (nothing saved to lose). Tests: LibraryModal.unsaved.test.tsx.
@@ -26,3 +33,106 @@ Purpose: The in-app Scripting Help (Help > Scripting…): a section nav plus one
  UNSAVED-CHANGES GUARD: select item, + New, content-type buttons and the organization picker all go through confirmLoseChanges; the pane reports dirty + title to LibraryModal via onDirtyChange (and false on unmount) so the Library can guard tab-switch/close, and holds the browser tab itself. An item just saved is not 'dirty' while the reloaded list has not arrived yet (awaitingReload). Tests: OrganizationsPane.unsaved.test.tsx.
 /PluginConfigModal.tsx
 Purpose: The plugin Configure panel. Its draft is seeded with {...defaults, ...saved} so every field shows its effective value, but Save hands onSave ONLY toOverrides(draft, defaults): the values that differ from the plugin's defaults (storing the whole draft froze the defaults for the user). Reset to defaults resets the draft only: nothing is stored until Save, and Cancel discards it. The action buttons push the unsaved draft to the running plugin as a runtime-only patch that never reaches storage. Design: docs/game/plugin-config.md.
+
+/CopilotSettings.tsx
+Purpose: Mounted only while its tab is shown (CopilotWindow keeps the Suggestions list mounted behind it, hidden, so auto-approval keeps running and a half-typed correction survives), so its bucket-count poll stops when the tab is left. The always-ask list has NO control on purpose: the rule rows are built from the kinds isNeverAuto rejects, and a stored blob that names a floor kind is dropped by normalizeSettings, not here. A 0.90 threshold needs about 35 straight approvals (Wilson), so the earned value is shown beside each threshold. The stale-limit field keeps a local draft so a half-typed number is not snapped back; its error text sits OUTSIDE the label (inside it, the accessible name changes while the message shows). Folded spheres are out of the accessibility tree, so a role query counts 7 checkboxes, not 28 (count DOM inputs). Tests: CopilotSettings.test.tsx (S1-S4); the real-browser drive is playwright/copilot-settings.mjs in the plan folder.
+
+/SimulacrumAdminWindow.tsx
+Purpose: Local-only Simulacrum Admin: the default export is the HOST that MainContainer always mounts (lazily, behind __SIMULACRUM_ADMIN_LOCAL__) in a flagged build. It follows the connection runtime, tells the page through onAvailableChange when the client enters or leaves the simulacrum (that is what shows the menu entry), renders nothing unless open AND active, and so closes the window the moment the connection leaves (E2). The six tab panels all stay mounted and are only hidden, so a later tab keeps what was typed. z-index 4800: above the menu bar and hotbar, below the Copilot window (4900) and 5000+ modals. The tab list lives in features/simulacrumAdmin/tabs.ts (not here) so this file exports only components; each tab's real component lives in the sub-folder simulacrumAdmin/ (only GMCP so far, the other tabs still show a placeholder line) and receives the runtime's store it needs, not the whole runtime; the title bar's level comes from runtime.character (login_data), never the character's name, and sits in its own non-shrinking element because the host name alone fills the default 560px width (it was cut off to "...:65001, l..." when it shared the ellipsised text); the host takes an optional `runtime` prop purely so tests can inject their own connection runtime. Tests: SimulacrumAdminWindow.test.tsx.
+
+/MainMenuBar.tsx
+Purpose: The Simulacrum Admin item sits after the Copilot item in the Game menu, rendered only when __SIMULACRUM_ADMIN_LOCAL__ is true AND onOpenSimulacrumAdmin is given; MainContainer gives it only while the client is on the simulacrum. Independent of the Copilot item (MainMenuBar.simulacrumAdmin.test.tsx covers every flag combination).
+
+/simulacrumAdmin/GmcpTab.tsx
+Purpose: The GMCP tab (Messages and Parity with DSL views). It stays mounted when another tab shows but renders nothing and skips its memos (visible=false), so incoming messages do not redraw 200 hidden rows; its filter and selection live in component state and survive. Copy goes through an injectable copyText for tests.
+
+/WorldMapWindow.tsx
+Purpose: The world map as a floating, movable, resizable window (no backdrop, geometry kept like the Copilot window: useFloatingPanel), opened from Game > Map… and mounted only while open, so nothing is requested from the map API until the player asks. PRODUCTION feature, not flag-gated: it reads only the audited layer from the C# site. Follows the player (centres on their room and floor); a drag, a floor choice or a click into another area stops the following, and Reset view / Centre on me bring it back. The picture is the shared renderer's SVG in a CSS-transformed stage (pan and zoom never re-render it); the renderer is asked for the slice frame (align slice) so the same room is at the same place on every floor, and for ghost floors (the nearby floors drawn behind, dimmer the further away). dangerouslySetInnerHTML is deliberate (renderSvg escapes everything) and the {__html} object is memoized: React 19 re-assigns innerHTML for a new object, which would redraw the picture on every step. The wheel needs a non-passive listener (React's onWheel is passive). The drag delta must be taken before the state updater runs (it runs later, after lastX has moved on). The red "you are here" dot (a circle with data-you-are-here, drawn by its own layout effect on top of the SVG after every redraw, not part of the memoized picture; fainter when the place is only probable or one of several) follows the here setting and the Show where I am button under Centre on me. Controls are overlays inside the picture area marked data-ui and kept small; settings live in a popover from the gear and in features/worldmap/settings.ts. Tests: WorldMapWindow.test.tsx (jsdom has no PointerEvent: a MouseEvent of the same name carries the coordinates).
+Related: its pointer handling follows docs/standards/edge-cases/pointer-interaction.md (POINTER-01..03); capture starts only after a 4 px drag, and a press clears the stale suppressClick flag. Fit and zoom limits are in features/worldmap/viewport.ts.
+
+/WorldMapWindow.tsx (worlds)
+Purpose: The window is wrapped so that it is KEYED BY THE ACTIVE MAP WORLD (features/worldmap/world.ts): when a local build moves to another game the inner window remounts and starts over on that world's own client, so an area, a floor or a placement of one world can never be shown for another. The title says `Map · <label>` for any world with a label, but the dialog's accessible name stays "Map" (tests and Playwright scripts find it by that name). A production build has one world with no label, so the key never changes there.
+
+/CopilotWindow.training.test.tsx
+Purpose: Claude training in the Copilot window: the banner stays visible on both tabs while the server says training is on, goes when the server says off (polled every 3 s), and no switch is shown for the production game. The server decides everything, the window only shows it.
+
+/AddRoomPanel.tsx
+Purpose: The map window's add-a-room form, lying over the picture inside the window (no extra dialog). All the logic is in features/worldmap/mine/draft.ts; this only holds the form state. It reads the room ONCE when opened (the first effect deliberately has no dependencies: reading again while it is open would throw away what was typed). The world is shown as text, never a choice: the layer belongs to the game the client is connected to. A save goes to the player's layer in this browser, never to the published map. Tests: AddRoomPanel.test.tsx (the closed-at-once and late-answer cases are there on purpose: an answer arriving after the panel closed must not set state).
+
+/WorldMapWindow.tsx (fog of war)
+Purpose: With the `fog` setting on, the window draws `applyFog(area.map, visited + the player's room)` instead of the area: the floors strip, the ghost floors and the clicked-room line all follow the fogged copy (the raw area is kept for "which floor is the clicked room on"). The eye in the header only shows while fog is on and opens the gear's popover. The window keeps no search of rooms, so nothing else needs hiding. Tests pass their own VisitStore (`visits` prop) and set `window.__SA_IDENTITY__` for the character.
+
+/HelpInfoButton.tsx
+Purpose: The blue (i) every window can put in its header to open its help. A toggle (aria-pressed); it stops pointerdown so a press on it never starts the header's window drag (the header is the drag handle). Shared look in styles/HelpInfo.module.scss (also the help article's own styles). CopilotHelp.tsx and MapHelp.tsx are the two articles; the Copilot one is local-build only (the Copilot window is), the map one is production.
+
+/CopilotHelp.tsx, /MapHelp.tsx
+Purpose: Plain-text help articles for the blue (i). Keep CopilotHelp in step with DSL docs/copilot/user-guide.md and MapHelp with docs/shattered-maps/user-guide.md; the Copilot one must stay out of production (only the Copilot window imports it).
+
+MapBackupSection.tsx: the "Cloud backup" part of the map gear; the logic and the result wording are in features/worldmap/sync/backup.ts, and the text in MapHelp.tsx and docs/shattered-maps/user-guide.md must keep saying that nothing is sent until Sync now is pressed.
+
+WorldMapWindow.tsx: the gear renders MapBackupSection last (after Add a room by hand) and forwards visits, layers and the new `backup` prop; WorldMapWindow.test.tsx has the sync and erase paths through the window, MapBackupSection.test.tsx the section alone.
+
+MapHelp.tsx: the Mazes and tangled exits section describes what the core renderer draws (the round and square chips on a room's edge, the line drawn for the selected room, amber and purple hexagons, the IN / OUT / END / 1-WAY labels); keep it, docs/shattered-maps/user-guide.md and the C# page legend saying the same. The window's own test counts room names as the dark texts (fill #222), because the exit chips now write their glyph inside a group.
+
+MapWorldPicker.tsx: the small Map choice at the top of the map gear; it returns null when the build has one world, so a production bundle shows nothing, and it names no world itself (labels come from the registry in features/worldmap/world.ts).
+
+WorldMapWindow.tsx renders MapWorldPicker first in the gear and its OpenWindow is keyed by the shown world id, so a pick restarts the window (area, floor, placement) on purpose; tests for the choice are in WorldMapWindow.test.tsx ("choosing the map by hand") and MapWorldPicker.test.tsx.
+
+/simulacrumAdmin/CommandsTab.tsx
+Purpose: The Commands tab. Selection, typed values and the last result are kept per command+form while the tab is hidden (the window keeps every panel mounted). The inline confirmation is the only way a destructive command reaches sender.run, which asks through the `confirm` callback; an open question is answered "no" on unmount so nothing is sent behind a closed window. The result is words from the game's verdict, never "done" for a refusal (ADMIN-03). Escape in the dialog stops propagation so it does not close the window.
+
+/simulacrumAdmin/ActivityTab.tsx
+Purpose: The Activity tab: runtime.activity newest first with verdict badges, a verdict filter, Clear and "Copy raw" (the reply as received, not the display text). Draws nothing while hidden.
+
+/simulacrumAdmin/PlayersTab.tsx
+Purpose: The Players tab. Rows come from the catalog (every form with a `category`), the target fills the form's first field, and a reply is shown only for the same command AND target. Recent targets are state only (no storage; they go with the window). Uses the same sender and ConfirmDialog as the Commands tab, so destructive and bulk (`transfer all`) commands ask identically. The destination of transfer is a typed field until the World tab's picker fills it.
+
+/simulacrumAdmin/ConfirmDialog.tsx
+Purpose: The inline question before a destructive or bulk command, shared by the Commands and Players tabs. The confirm button has focus (Enter confirms); Escape cancels and stops propagation so the window's own Escape does not close it.
+
+/simulacrumAdmin/FieldInput.tsx
+Purpose: One argument input shared by the tabs: a select for a choice, a text box otherwise. It never validates; commandBuilder does, so the error text comes from one place.
+
+/simulacrumAdmin/OutcomeView.tsx
+Purpose: The result box for a run, words from features/simulacrumAdmin/outcomeText.ts (a refusal is never shown as done).
+
+/simulacrumAdmin/useConfirmation.ts
+Purpose: Holds a tab's open confirmation and passes `confirm` to sender.run. A question still open when the tab unmounts is answered "no", so nothing is sent behind a closed window.
+
+/simulacrumAdmin/RoomPicker.tsx
+Purpose: Area filter -> rooms of the opened area -> room search (vnum exact/prefix/range, name) in one area or in every opened area. Reads only the shared WorldIndex it is given (no fetch of its own); draws at most 200 rows per list. In the all-areas scope a fully typed vnum asks the index to load the area whose range holds it (event handler, not an effect). Offline/error states have Try again.
+
+/simulacrumAdmin/WorldTab.tsx
+Purpose: The World tab: RoomPicker plus goto, violate, at and transfer for the picked room, all through sender.run (same confirmation and verdicts). The transfer target is the Players tab's target, shared through the window. A "No such location." refusal offers a refresh of the world index (stale list, E10).
+
+/simulacrumAdmin/ServerTab.tsx
+Purpose: The Server tab: one CommandCard per command of the catalog's server group and settings group (derived, so a new command appears without a code change; a short FIRST list only orders them). Hidden, not removed, while another tab shows, because each card keeps its own open state, values and answer. areload's file field becomes a select of the readable area files from the shared world index.
+
+/simulacrumAdmin/CommandCard.tsx
+Purpose: One command as a collapsible card (forms, fields, exact line, Run, confirmation, answer) for places where a command has a fixed spot in the UI. Same sender, ConfirmDialog and OutcomeView as the other tabs. The CommandsTab keeps its own form pane because it must keep values per command while you browse; do not merge them without re-checking that behaviour.
+
+WorldMapWindow.tsx: the gear has no tile-shape choice any more (rooms are octagons; the hexagon layout was removed 2026-11-14), and an old saved layout in the settings is ignored by parseSettings.
+
+/ResizeGrip.tsx
+Purpose: The corner grip of useResizableModal, last child of a modal root. The same mark as the Copilot window.
+
+/windowStack.test.tsx
+Purpose: The real windows together: stacking by drag and click, Escape closing the top one, and resizing by the grip across overlay modals and a dragged window.
+
+/CopilotFocus.tsx
+Purpose: The Training / AI agent choice above the tabs. Switching to the AI agent asks first, once per browser session (sessionStorage), and Escape answers only that question; switching to Training never asks. sessionStorage is touched only inside try blocks, because a browser that blocks it throws on access.
+
+(window stack and resize, 2026-11-14)
+Purpose: (constraint) every modal and window here registers with hooks/useWindowLayer BEFORE its early return null, puts zIndex: layer.zIndex on its root, and uses ResizeGrip + useResizableModal (destructured) unless it has its own resize (the floating panels via useFloatingPanel, UserScriptSandboxModal). Escape closes only the top window, one per press; the Copilot and map windows keep a local Escape handler that calls the same function as the stack, so help or a sub-panel closes before the window from either path. ImportExportModal inside UserScriptSandboxModal registers for Escape only (it is drawn inside the sandbox, so it must not take a z-index of its own).
+
+/PluginConfigModal.tsx (Escape and the window stack)
+Purpose: (gotcha) its backdrop swallows EVERY keydown in the capture phase (so no game hotkey fires behind it) and closes on Escape itself; that stopPropagation means the window stack only sees Escape when the focus is outside the dialog, which is why it also registers with useWindowLayer. Do not remove either path. Rendered through createPortal, so its backdrop z-index comes from the stack like the others.
+
+/ScriptingHelpModal.tsx (drag, stack and resize)
+Purpose: (gotcha) it is dragged by writing left/top straight onto the element (not state), and its inline style carries the stack z-index; the resize grip adds width/height through the hook style, so the two never fight over the same properties. Its minimum size is 480 x 360.
+
+/UserScriptSandboxModal.tsx (Escape)
+Purpose: (relation) the import/export dialog is a child drawn inside the sandbox and registers with the window stack for Escape only (no z-index), so Escape closes it first and the sandbox on the next press. The sandbox keeps its own older mouse resize (modalWidth/modalHeight) and does not use useResizableModal.
+
+(testing windows in jest)
+Purpose: (gotcha) CSS module class names are not usable in these tests (no class attribute survives), so find a modal overlay by its inline z-index (`[style*="z-index"]`), and a modal root as the resize grip parentElement. jsdom has no PointerEvent: dispatch `new MouseEvent("pointerdown", { clientX, clientY, button: 0, bubbles: true })`, and mock Element.prototype.getBoundingClientRect for resize tests (no layout). Escape through the window stack is a document-level keydown: fire it on document.body.

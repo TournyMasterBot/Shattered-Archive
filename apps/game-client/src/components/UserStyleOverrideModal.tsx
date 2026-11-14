@@ -1,5 +1,8 @@
 import React from 'react';
 import styles from '../styles/UserStylesOverrideModal.module.scss';
+import { useWindowLayer } from '../hooks/useWindowLayer';
+import { useResizableModal } from '../hooks/useResizableModal';
+import { ResizeGrip } from './ResizeGrip';
 
 export interface UserStyleOverrideModalProps {
   isOpen: boolean;
@@ -29,13 +32,15 @@ export const UserStyleOverrideModal: React.FC<UserStyleOverrideModalProps> = ({
     draftRef.current = draftCss;
   }, [draftCss]);
 
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => onClose() });
+  const { attach: resizeAttach, style: resizeStyle, gripProps: resizeGrip } = useResizableModal({ storageKey: 'shatteredarchive:modal-size:UserStyleOverrideModal:v1', centered: true });
   if (!isOpen) return null;
 
   const hasUnsavedChanges = draftCss !== appliedCss;
 
   return (
-    <div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Custom CSS overrides">
-      <div className={styles.modal}>
+    <div className={styles.overlay} style={{ zIndex: layer.zIndex }} role="dialog" aria-modal="true" aria-label="Custom CSS overrides">
+      <div ref={resizeAttach} className={styles.modal} style={resizeStyle}>
         <header className={styles.header}>
           <h2 className={styles.title}>Custom CSS Overrides</h2>
           <button type="button" className={styles.closeButton} onClick={onClose}>
@@ -120,6 +125,7 @@ button {
             Save & Apply
           </button>
         </footer>
+        <ResizeGrip {...resizeGrip} />
       </div>
     </div>
   );

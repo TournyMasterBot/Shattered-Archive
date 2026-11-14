@@ -1,0 +1,10 @@
+File Index
+
+/whoisic.ts
+Purpose: WhoisicRecord.name is a REAL character name from the header. It exists only so the caller can map it to a codename immediately; never log it, store it outside the data directory, or put it in a prompt, bundle or fixture. Tests use invented blocks only. The "newest description wins" rule is pickNewestWhoisic (the plan's `newest` flag cannot be intrinsic to one block).
+
+/matrix.ts
+Purpose: Reads the PRIVATE matrix (DSL repo, docs/copilot/test-character-matrix.json: 601 rows, codename C### or a mineral, male/female names that may be null). Rejection reasons never contain a name. Not committed data: tests build invented rows.
+
+/registry.ts
+Purpose: The codename is a stable BASE (`Orion`); gender is an attribute (`U` until whoisic Sex), because a new real character's gender is unknown at login (so P10's `<Constellation>-<M|F>` is the display form, `formatCodename`). A matrix name is never stored (E8). CONSTELLATIONS omits any word that is also a name in the private matrix (two were found); re-run `pnpm check:private-names` after editing the list. The store must be atomic and single-writer.

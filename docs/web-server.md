@@ -113,7 +113,7 @@ src/offline/
 | Variable | Description |
 |---|---|
 | `PORT` | Server port (required) |
-| `SHATTEREDARCHIVE_BASE` | Base URL of the Shattered Archive Remote Server (optional; uses offline fallback if omitted) |
+| `SHATTEREDARCHIVE_BASE` | Base URL of the Shattered Archive Remote Server (optional; uses offline fallback if omitted). In the docker stack it must be the C# service by container name (`http://shatteredarchive-csharp:5000`, set in the compose file); `localhost` inside the container is the container itself and silently selects the offline snapshot. `apps/web-server/.env` keeps `localhost` for a host-run dev server. |
 | `ENVIRONMENT` | `"dev"` or `"prod"` (default: `"dev"`) |
 
 ---

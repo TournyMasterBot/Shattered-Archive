@@ -188,6 +188,22 @@ const DAMAGE_LINE_RE = new RegExp(DAMAGE_LINE_PATTERN, 'm');
  *  DslLogViewer's proven ROUND_GAP_MS gap-since-last-damage heuristic. */
 const ROUND_GAP_MS = 1000;
 
+/** After a room scan's "[Exits:" line arrives, wait this long for the mob lines that follow it
+ *  (a split TCP chunk) before the scan counts as answered. */
+const ROOM_SCAN_GRACE_MS = 250;
+
+/** A `look` normally answers in ~250 ms. Past this with no reply the character is almost certainly in ability lag
+ *  (a cast's wait state holds every later command back), so the scan says so and keeps waiting. */
+const ROOM_SCAN_LAG_NOTICE_MS = 3000;
+
+/** Longest a room scan waits at all. Live log 2026-11-13: after a post-fight `cast 'frenzy'` the `look` was answered
+ *  4.5 s later; a 3 s cap gave up first and the engine walked on before the reply. Generous on purpose: a reply that
+ *  never comes (the server dropped it) costs this much once, a lagged one must never be walked past. */
+const ROOM_SCAN_HARD_CAP_MS = 20_000;
+
+/** What counts as the server answering a `look`: the room block's Exits line, or the sightless replies that have none. */
+const ROOM_REPLY_RE = /\[Exits:|pitch black|you can't see|you cannot see|you are blind/i;
+
 /** Cooldown bump applied each time a fight-command re-fires within the same round. */
 const COOLDOWN_LEARN_BUMP_SEC = 0.5;
 
@@ -310,6 +326,13 @@ export class AutoLevelingEngine {
   private lastEncounterMatch: { targetCleanName: string; lookName: string; at: number } | null = null;
   // dry_run: track mobs already announced this room so we only fire once per mob per room
   private dryRunAnnouncedThisRoom = new Set<string>();
+  // armed before a `look` is sent; resolves when the room block ("[Exits:") is answered, or on timeout
+  private roomScanWait: {
+    resolve: () => void;
+    timeoutId: ReturnType<typeof setTimeout>;
+    noticeId: ReturnType<typeof setTimeout> | null;
+    graceId: ReturnType<typeof setTimeout> | null;
+  } | null = null;
 
   // sightsee mode — per-step gate
   private sightseeWait: null | {
@@ -463,6 +486,9 @@ export class AutoLevelingEngine {
     if (!this.encounterLocked && !this.stopping) {
       this.tryDetectEncounter(text);
     }
+
+    // after detection, so the mobs in this very chunk are already injected when the scan resolves
+    this.onRoomScanText(text);
   };
 
   /**
@@ -1365,6 +1391,10 @@ export class AutoLevelingEngine {
           }
 
           const gate = mv.isMove ? this.waitForMovement(step, this.cfg.idleTimeoutMs) : null;
+          // A path `look` waits for its actual reply (see armRoomScanWait), not a fixed delay.
+          const lookScan = !mv.isMove && /^(look|l)$/i.test(step.trim())
+            ? this.armRoomScanWait(this.cfg.lookSettleMs ?? 500, ROOM_SCAN_HARD_CAP_MS)
+            : null;
 
           await this.sendCommand(step);
           if (mv.isMove) this.lastMovementCmd = step;
@@ -1389,8 +1419,12 @@ export class AutoLevelingEngine {
           } else {
             // Non-movement command (e.g. look) — wait for the server's response text to
             // arrive before checking for encounter detections.
-            const settleMs = this.cfg.lookSettleMs ?? 500;
-            if (settleMs > 0) await this.delayMs(settleMs);
+            if (lookScan) {
+              await lookScan;
+            } else {
+              const settleMs = this.cfg.lookSettleMs ?? 500;
+              if (settleMs > 0) await this.delayMs(settleMs);
+            }
           }
 
           if (mv.isMove && !this.stopping) {
@@ -1716,6 +1750,71 @@ export class AutoLevelingEngine {
 
   private delayMs(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, Math.max(0, ms | 0)));
+  }
+
+  /* ----------------------------- room scan (look reply) --------------------- */
+
+  /**
+   * Arm BEFORE sending a `look`, await AFTER: resolves once the room block has actually
+   * arrived (its "[Exits:" line, plus ROOM_SCAN_GRACE_MS for the mob lines) instead of after a
+   * fixed delay. A fixed delay lost the race whenever the reply lagged (live log 2026-11-13:
+   * replies at 777 ms and 1.5 s against a 500 ms settle) — the engine walked on, then the late
+   * reply injected an encounter for the room it had just left.
+   *
+   * No reply is itself information: past ROOM_SCAN_LAG_NOTICE_MS the character is in ability lag, so the
+   * scan tells the player once and keeps waiting, up to `hardCapMs` (a reply that never comes). Never rejects.
+   * Floors at `minWaitMs` as before.
+   */
+  private armRoomScanWait(minWaitMs: number, hardCapMs: number = ROOM_SCAN_HARD_CAP_MS): Promise<void> {
+    this.cancelRoomScanWait();
+    return new Promise<void>((resolve) => {
+      const startedAt = now();
+      const timeoutId = setTimeout(() => {
+        dbg('room scan gave up', { hardCapMs });
+        this.writeAutoLevelLine(`no reply to look after ${Math.round(hardCapMs / 1000)}s — continuing anyway`);
+        this.finishRoomScanWait();
+      }, Math.max(minWaitMs, hardCapMs));
+      // Only worth a notice when it can still be answered before the hard cap
+      const noticeId =
+        hardCapMs > ROOM_SCAN_LAG_NOTICE_MS
+          ? setTimeout(() => {
+              dbg('room scan: no reply yet, assuming ability lag');
+              this.writeAutoLevelLine('no reply to look yet — probably ability lag, waiting for it to pass');
+            }, ROOM_SCAN_LAG_NOTICE_MS)
+          : null;
+      this.roomScanWait = {
+        resolve: () => {
+          // honour the old fixed settle as a floor so a fast reply never shortens it
+          const left = minWaitMs - (now() - startedAt);
+          if (left > 0) setTimeout(resolve, left);
+          else resolve();
+        },
+        timeoutId,
+        noticeId,
+        graceId: null,
+      };
+    });
+  }
+
+  private onRoomScanText(textRaw: string) {
+    const w = this.roomScanWait;
+    if (!w || w.graceId) return;
+    if (!ROOM_REPLY_RE.test(stripAnsi(String(textRaw ?? '')))) return;
+    w.graceId = setTimeout(() => this.finishRoomScanWait(), ROOM_SCAN_GRACE_MS);
+  }
+
+  private finishRoomScanWait() {
+    const w = this.roomScanWait;
+    if (!w) return;
+    this.roomScanWait = null;
+    clearTimeout(w.timeoutId);
+    if (w.noticeId) clearTimeout(w.noticeId);
+    if (w.graceId) clearTimeout(w.graceId);
+    w.resolve();
+  }
+
+  private cancelRoomScanWait() {
+    if (this.roomScanWait) this.finishRoomScanWait();
   }
 
   /* ----------------------------- movement gating ---------------------------- */
@@ -2363,11 +2462,15 @@ export class AutoLevelingEngine {
         if (!this.stopping) {
           const cfgRecheck = this.deps.getConfig();
           this.deps.setRunState({ status: 'running', round, step: 'identify', actionIndex: 0 });
+          // Armed first so the reply can't slip past; resolves when the room block has arrived.
+          const settleMs = cfgRecheck.lookSettleMs ?? 500;
+          const scanned = this.armRoomScanWait(settleMs, ROOM_SCAN_HARD_CAP_MS);
           await this.runTriplet(cfgRecheck.steps.identify, 'identify', round);
           // Wait for the server to send back the room description before we check
-          // whether another mob was detected (i.e. injected into the queue).
-          const settleMs = cfgRecheck.lookSettleMs ?? 500;
-          if (settleMs > 0 && !this.stopping) await this.delayMs(settleMs);
+          // whether another mob was detected (i.e. injected into the queue). A fixed delay
+          // let a lagging reply land after the engine had already walked on.
+          if (!this.stopping) await scanned;
+          else this.cancelRoomScanWait();
           // If another mob was detected during the re-scan, it will have been injected into
           // the queue. The while-loop above will pick it up on the next iteration.
         }
@@ -2450,6 +2553,8 @@ export class AutoLevelingEngine {
         // ignore
       }
     }
+
+    this.cancelRoomScanWait();
 
     if (this.engageWait) {
       if (this.engageWait.timeoutId) {

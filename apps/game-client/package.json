@@ -22,6 +22,8 @@
     "skulpt": "^1.2.0"
   },
   "devDependencies": {
+    "@shatteredarchive/copilot-core": "workspace:*",
+    "@shatteredarchive/shattered-maps-core": "workspace:*",
     "@shatteredarchive/types-client": "workspace:*",
     "@shatteredarchive/types-global": "workspace:*",
     "@shatteredarchive/utils-client": "workspace:*",

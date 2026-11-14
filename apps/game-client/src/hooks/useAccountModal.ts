@@ -104,23 +104,32 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
 
       // A save uploads whole collections, so an EMPTY local one would erase a non-empty
       // cloud copy. Look at the cloud first and ask before that can happen.
-      const [cloudScripts, cloudPlugins, cloudGlobals] = await Promise.all([
+      // The auto-leveling records are read too, for a different reason: that upload replaces the whole cloud
+      // collection, so a device that never loaded (the phone, say) would wipe the other device's edits.
+      const [cloudScripts, cloudPlugins, cloudGlobals, cloudAutolevel] = await Promise.all([
         cloudSync.loadScripts(),
         cloudSync.loadPluginConfigs(),
         cloudSync.loadGlobalScripts(),
+        cloudSync.loadAutolevelUserData(),
       ]);
       if (
         cloudScripts.kind === 'unauthenticated' ||
         cloudPlugins.kind === 'unauthenticated' ||
-        cloudGlobals.kind === 'unauthenticated'
+        cloudGlobals.kind === 'unauthenticated' ||
+        cloudAutolevel.kind === 'unauthenticated'
       ) {
         setIsLoggedIn(false);
         setStatus({ kind: 'err', text: 'Your session expired — please log in again.' });
         return;
       }
       // A failed look-ahead must not silently skip the safety check.
-      if (cloudScripts.kind === 'error' || cloudPlugins.kind === 'error' || cloudGlobals.kind === 'error') {
-        const failed = [cloudScripts, cloudPlugins, cloudGlobals].find((r) => r.kind === 'error');
+      if (
+        cloudScripts.kind === 'error' ||
+        cloudPlugins.kind === 'error' ||
+        cloudGlobals.kind === 'error' ||
+        cloudAutolevel.kind === 'error'
+      ) {
+        const failed = [cloudScripts, cloudPlugins, cloudGlobals, cloudAutolevel].find((r) => r.kind === 'error');
         setStatus({
           kind: 'err',
           text: `Save stopped: could not check what is already in the cloud (${failed?.kind === 'error' ? failed.message : 'error'}).`,
@@ -151,7 +160,20 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
         }
       }
 
+      // Newest edit wins per record: merge what the cloud has into this device first, then upload the union, so a
+      // save never drops a record another device wrote. (Records are merged, not erased; deleting one on this
+      // device and saving does not remove it from the cloud.)
+      await importAutolevelUserData(Array.isArray(cloudAutolevel.data) ? cloudAutolevel.data : []);
       const autolevelRecords = await exportAutolevelUserData();
+      if (autolevelRecords.length > cloudSync.AUTOLEVEL_MAX_RECORDS) {
+        setStatus({
+          kind: 'err',
+          text:
+            `Save stopped: ${autolevelRecords.length} auto-leveling records is more than the account limit of ` +
+            `${cloudSync.AUTOLEVEL_MAX_RECORDS}. Nothing was changed in the cloud.`,
+        });
+        return;
+      }
 
       const [scriptsResult, pluginsResult, globalsResult, libraryResult, autolevelResult] = await Promise.all([
         cloudSync.saveScripts(scripts),
@@ -314,6 +336,7 @@ export function useAccountModal({ isOpen, connectionId }: UseAccountModalOptions
           notes: libraryResult.data.notes,
           books: libraryResult.data.books,
           autolevelRecords: autolevelRecords.length,
+          autolevelTargetEdits: autolevelRecords.filter((r) => r?.kind === 'targetOverride').length,
         },
         localScripts.length,
       );

@@ -1,0 +1,31 @@
+File Index
+
+/producer.ts
+Purpose: The model proposes, the code disposes. The kind is the STRICTER of the model's claim and classifyCommand, so a model cannot call a floor command safe; movement takes its confidence from the map evidence and never from the model (a stub returning null until the world-map phases, so every movement asks); a rating outside 0..1 becomes null. One repair prompt, then a ticket and no suggestion (E5). A wrongSphere answer re-routes once.
+
+/router.ts
+Purpose: Only ACCEPTED lessons are read (E6): a proposed lesson is the agent's own reading of a correction and must not steer anything until a teaching session accepts it. A failing archive means no facts, never a failed suggestion.
+
+/corrections.ts
+Purpose: A model never judges a model: understanding is copilot-core's mechanical checkUnderstanding. Every way of failing opens a correction-not-understood ticket; the lesson is stored as `proposed`. Never throws: it runs in the background of POST /decisions.
+
+/service.ts
+Purpose: GET /suggestions must never wait for a model, so production runs on poke() after every log pass, one at a time, and the route only reads current(). A suggestion is current for 60 s and only while the log still shows its situation. The answered suggestion is dropped but stays findable, because a correction needs it. A refused decision (the command gate would not send it) does NOT retire the suggestion: nothing was answered. reset() (Copilot switched off or on) aborts the model call in progress and discards its answer; it does not stop the service, which stop() does for good.
+
+/prompt.ts
+Purpose: The only text a model is given. Game text arrives already redacted (codenames for names); the prompt carries no raw log. parseWatcherAnswer is strict: control characters and line breaks in a command are refused, since the command would go to the game.
+
+/spheres.ts
+Purpose: The built-in ring is the fallback when Shattered-AI's spheres.json is absent or invalid; the file is read by shape, never trusted.
+
+/producer.fight.test.ts
+Purpose: The fight rule and the urgent flee in the producer: a replaced command is an info command with the gate's reason, a held fight gives no suggestion and says why, and the flee is built from the monitor with no model call.
+
+/service.fight.test.ts
+Purpose: poke() makes the flee itself before it looks at a running model, a model answer that arrives after the fight turned bad is dropped, and a suggestion more than two rounds behind the fight is not current (the fight keeps one situation key all through, so rounds are what tell a fresh one from an old one).
+
+/wiring.fight.test.ts
+Purpose: Real log records through the real pipeline into the fight watch and the producer; a command echo is a JSON STRING payload in the real log (the helper must build it that way or the consider is never seen).
+
+/wiring.ts
+Purpose: createSuggestionParts is undefined without a model, so a server with backend none only makes the registry's whoisic offer.

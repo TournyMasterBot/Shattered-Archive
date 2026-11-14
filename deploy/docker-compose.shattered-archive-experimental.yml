@@ -76,7 +76,18 @@ services:
     volumes:
       # keep your template-based config flow
       - ./nginx/edge-subdomains.conf:/etc/nginx/templates/default.conf.template:ro
+      # LOCAL-ONLY Copilot (docs/copilot/README.md): its vhost is a SEPARATE template so the shared edge-subdomains.conf, which
+      # the production compose also mounts, never mentions it. Rendered to /etc/nginx/conf.d/copilot.conf by the image's envsubst step.
+      - ./nginx/edge-copilot.conf:/etc/nginx/templates/copilot.conf.template:ro
+      # LOCAL-ONLY Simulacrum Admin (docs/game/simulacrum-admin.md): read-only world data for the teleport picker, also a separate template.
+      - ./nginx/edge-simulacrum-admin.conf:/etc/nginx/templates/simulacrum-admin.conf.template:ro
+      # Shattered-Maps (the Mapper): its vhost is a separate template too, so the production compose, which mounts the shared
+      # edge-subdomains.conf, publishes nothing of it until the owner decides to.
+      - ./nginx/edge-maps.conf:/etc/nginx/templates/maps.conf.template:ro
       - ./nginx/includes:/etc/nginx/includes:ro
+      # LOCAL-ONLY: the dev CSP with https://copilot.shatteredarchive.dev and https://simulacrum-admin.shatteredarchive.dev added to connect-src, mounted OVER the shared include
+      # (the mount above provides the folder; this single-file mount replaces one file in it).
+      - ./nginx/edge-copilot-csp.conf:/etc/nginx/includes/security-headers-scripting-dev.conf:ro
       # DO NOT CHANGE CERTS (as requested)
       - ./nginx/certs:/etc/nginx/certs:ro
 
@@ -110,6 +121,9 @@ services:
           - auth.shatteredarchive.dev
           - scrum-poker.shatteredarchive.dev
           - simulacrum.shatteredarchive.dev
+          - copilot.shatteredarchive.dev
+          - simulacrum-admin.shatteredarchive.dev
+          - maps.shatteredarchive.dev
       sa-shared: {}
 
     restart: unless-stopped
@@ -139,6 +153,10 @@ services:
         # allowlists http://game-client.shatteredarchive.dev to match.
         VITE_SITE_API: "http://localhost:5000"
         VITE_ENV: "development"
+        # Local-only Copilot build switch: this compose file only, never deploy/docker-compose.yml.
+        COPILOT_LOCAL: "true"
+        # Local-only Simulacrum Admin build switch: this compose file only, never deploy/docker-compose.yml.
+        SIMULACRUM_ADMIN_LOCAL: "true"
     image: shatteredarchive-game-client
     stdin_open: true
     tty: true
@@ -233,6 +251,10 @@ services:
     environment:
       NODE_ENV: production
       PORT: "41000"
+      # The C# service runs in its own stack; "localhost" (the value in apps/web-server/.env, right for a
+      # host-run dev server) is this container itself, so every /maps/* call fell back to the stale offline
+      # snapshot. The service is reachable on the shared network by its container name.
+      SHATTEREDARCHIVE_BASE: "http://shatteredarchive-csharp:5000"
       LOG_LEVEL: "debug"
       LOG_DATE_PARTITIONED: "true"
       LOG_FILE_PATH: "/repo/apps/web-server/log/server.log"
@@ -438,6 +460,79 @@ services:
       timeout: 3s
       retries: 12
       start_period: 20s
+
+  ############################################################
+  # COPILOT SERVER (LOCAL-ONLY) — copilot.shatteredarchive.dev
+  #
+  # A local AI training companion (docs/copilot/README.md). It exists ONLY here: never add it to deploy/docker-compose.yml, and
+  # never publish its port (nginx reaches it over the network; scripts/check-local-only.mjs fails if a production file mentions
+  # Copilot). Under a profile, so a plain `up` does not start it:
+  #   docker compose -f deploy/docker-compose.shattered-archive-experimental.yml --profile copilot up -d --build copilot-server
+  # The data directory holds real character names and corrections: it is a host bind mount that the DSL repo git-ignores.
+  ############################################################
+  copilot-server:
+    profiles: ["copilot"]
+    build:
+      context: ..
+      dockerfile: deploy/copilot-server.Dockerfile
+    image: shatteredarchive-copilot-server
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      # the game-server's jsonl logs, READ-ONLY: Copilot learns from them and never writes to them
+      - "C:/Projects/DSL/GameLogs/ShatteredArchive/Docker/game-server:/logs:ro"
+      # Copilot's private data (git-ignored in the DSL repo)
+      - "C:/Projects/DSL/GameLogs/ShatteredArchive/Docker/copilot-server:/data"
+      # the private test-character matrix (real test names), READ-ONLY: it tells a test character from a real one at login
+      - "C:/Projects/DSL/docs/copilot:/matrix:ro"
+      # Shattered-AI's expert definitions, READ-ONLY: only spheres.json is read (the four spheres, their neighbours and misroute hints)
+      - "C:/Projects/Shattered-AI/tools/archive-mcp/experts:/spheres:ro"
+    environment:
+      NODE_ENV: production
+      COPILOT_ENABLED: "true"
+      COPILOT_PORT: "65100"
+      COPILOT_LISTEN_HOST: "0.0.0.0"
+      COPILOT_DATA_DIR: "/data"
+      COPILOT_LOG_DIR: "/logs"
+      COPILOT_MATRIX_PATH: "/matrix/test-character-matrix.json"
+      COPILOT_SPHERES_PATH: "/spheres/spheres.json"
+      # Models are LOCAL ONLY. The default is the local Ollama of the Shattered-AI stack (ollama-code, published on the host at 41434) with
+      # gemma4:26b for both roles, loaded into the GPU when this server starts (and again at every Copilot switch-on). A model that is not
+      # installed is named in the log. Override in the shell before `up`: COPILOT_MODEL_BACKEND=fake is a deterministic stand-in that proposes
+      # only `look` (no GPU), none = no model (only the whoisic offer). Two local models cannot share 16 GB, so one model serves both roles.
+      COPILOT_MODEL_BACKEND: "${COPILOT_MODEL_BACKEND:-ollama}"
+      COPILOT_OLLAMA_URL: "${COPILOT_OLLAMA_URL:-http://host.docker.internal:41434}"
+      COPILOT_WATCHER_MODEL: "${COPILOT_WATCHER_MODEL:-gemma4:26b}"
+      COPILOT_AGENT_MODEL: "${COPILOT_AGENT_MODEL:-gemma4:26b}"
+      # milliseconds a model call may take; the cold load of an 18 GB model on a 16 GB card needs well over the server's 60 s default
+      COPILOT_MODEL_TIMEOUT_MS: "${COPILOT_MODEL_TIMEOUT_MS:-180000}"
+      # The Archive (the C# server deployed by Server/deploy-local.ps1, published on the host at 5000): monster and room lookups for the
+      # fight gate and the sphere facts, and the room hints. `localhost` would be this container itself, so the host is named instead.
+      # Empty it (COPILOT_ARCHIVE_URL=) to run with no lookups.
+      COPILOT_ARCHIVE_URL: "${COPILOT_ARCHIVE_URL-http://host.docker.internal:5000}"
+      COPILOT_ALLOWED_ORIGINS: "https://game-client.shatteredarchive.dev,http://game-client.shatteredarchive.dev,http://localhost:30080"
+    expose:
+      - "65100"
+    networks:
+      shatteredarchive:
+        aliases:
+          - copilot-server.shatteredarchive.dev
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:65100/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
 
   ############################################################
   # AUTH SERVER (auth.shatteredarchive.dev) — additive, like mud-builder:
@@ -675,6 +770,30 @@ services:
       shatteredarchive:
         aliases:
           - scrum-poker-client.shatteredarchive.dev
+
+  ############################################################
+  # SHATTERED-MAPS (maps.shatteredarchive.dev): the Mapper, the map editor and renderer moved in from the DslMapper repository
+  # (docs/shattered-maps/app.md). A static single-page app: no server and no data volume, its work stays in the browser. Additive
+  # like scrum-poker: it is not in nginx's depends_on. Dev stack only; nothing of it is in deploy/docker-compose.yml.
+  #
+  # Reached through the edge at https://maps.shatteredarchive.dev/ (needs the hosts entry: deploy/scripts/add-hosts.ps1), and
+  # directly on this machine only at http://127.0.0.1:22081/ (port registry: docs/ports.md). `pnpm --filter
+  # @shatteredarchive/shattered-maps-client dev` still runs the same app with hot reload on 22080 for development.
+  ############################################################
+  shattered-maps-client:
+    build:
+      context: ..
+      dockerfile: deploy/shattered-maps-client.Dockerfile
+    image: shatteredarchive-shattered-maps-client
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:22081:80"
+    networks:
+      shatteredarchive:
+        aliases:
+          - shattered-maps-client.shatteredarchive.dev
 
   ############################################################
   # SOULSTEEL (soulsteel.shatteredarchive.dev) — additive like scrum-poker/mud-builder/auth:

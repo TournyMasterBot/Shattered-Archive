@@ -111,7 +111,7 @@ jest.mock('winston', () => {
 });
 
 import * as winston from 'winston';
-import { Logger, createSohGateFormat } from '../logger-service.js';
+import { Logger, SohGate } from '../logger-service.js';
 import { LogLevel, LoggerProps } from '@shatteredarchive/types-server';
 
 type FakeWinstonLogger = {
@@ -209,58 +209,177 @@ describe('Logger', () => {
     expect(fakeLogger.level).toBe(LogLevel.Error);
   });
 
-  describe('SOH gate (createSohGateFormat)', () => {
-    function info(message: string, data: string) {
-      return {
-        level: 'info',
-        message,
-        payload: { data },
-      };
+  describe('SOH gate (SohGate)', () => {
+    const SOH = '\u0001';
+    const MINUTE = 60 * 1000;
+
+    function makeGate(extra: Partial<ConstructorParameters<typeof SohGate>[0]> = {}) {
+      const clock = { t: 1_000_000 };
+      const gate = new SohGate({ enabled: true, now: () => clock.t, ...extra });
+      return { gate, clock };
     }
 
-    it('drops SOH line, suppresses until second SOH, then resumes', () => {
-      const gateFactory = createSohGateFormat({ enabled: true });
-      const gate = gateFactory();
+    it('drops the SOH record, suppresses until the second SOH, then resumes', () => {
+      const { gate } = makeGate();
 
-      const r1 = gate.transform(info('x', '\u0001'));
-      expect(r1).toBe(false);
-
-      const r2 = gate.transform(info('x', 'hello'));
-      expect(r2).toBe(false);
-
-      const r3 = gate.transform(info('x', '\u0001'));
-      expect(r3).toBe(false);
-
-      const r4 = gate.transform(info('x', 'visible'));
-      expect(r4).not.toBe(false);
+      expect(gate.shouldDrop('x', { data: SOH })).toBe(true);
+      expect(gate.shouldDrop('x', { data: 'hello' })).toBe(true);
+      expect(gate.shouldDrop('x', { data: SOH })).toBe(true);
+      expect(gate.shouldDrop('x', { data: 'visible' })).toBe(false);
     });
 
     it('only toggles for allowlisted event types when sohToggleEventTypes is set', () => {
-      const gateFactory = createSohGateFormat({
-        enabled: true,
-        sohToggleEventTypes: ['allowed:type'],
-      });
-      const gate = gateFactory();
+      const { gate } = makeGate({ sohToggleEventTypes: ['allowed:type'] });
 
-      const a1 = gate.transform(info('other:type', '\u0001'));
-      expect(a1).not.toBe(false);
-
-      const b1 = gate.transform(info('allowed:type', '\u0001'));
-      expect(b1).toBe(false);
-
-      const b2 = gate.transform(info('allowed:type', 'hidden'));
-      expect(b2).toBe(false);
+      expect(gate.shouldDrop('other:type', { data: SOH })).toBe(false);
+      expect(gate.shouldDrop('allowed:type', { data: SOH })).toBe(true);
+      expect(gate.shouldDrop('allowed:type', { data: 'hidden' })).toBe(true);
     });
 
     it('does nothing when disabled', () => {
-      const gateFactory = createSohGateFormat({ enabled: false });
-      const gate = gateFactory();
+      const { gate } = makeGate({ enabled: false });
 
-      const r1 = gate.transform(info('x', '\u0001'));
-      expect(r1).not.toBe(false);
+      expect(gate.shouldDrop('x', { data: SOH })).toBe(false);
+      expect(gate.shouldDrop('x', { data: 'still visible' })).toBe(false);
+    });
 
-      const r2 = gate.transform(info('x', 'still visible'));
-      expect(r2).not.toBe(false);
+    it('turns logging back on 5 minutes after an unpaired SOH', () => {
+      const { gate, clock } = makeGate();
+
+      expect(gate.shouldDrop('x', { data: SOH })).toBe(true);
+
+      clock.t += 5 * MINUTE - 1;
+      expect(gate.shouldDrop('x', { data: 'still hidden at 4m59.999s' })).toBe(true);
+
+      clock.t += 1;
+      expect(gate.shouldDrop('x', { data: 'visible again at 5m' })).toBe(false);
+      expect(gate.shouldDrop('x', { data: 'and stays visible' })).toBe(false);
+    });
+
+    it('never lets a configured limit exceed 5 minutes, and honours a shorter one', () => {
+      const long = makeGate({ maxSuppressMs: 60 * MINUTE });
+      long.gate.shouldDrop('x', { data: SOH });
+      long.clock.t += 5 * MINUTE;
+      expect(long.gate.shouldDrop('x', { data: 'visible' })).toBe(false);
+
+      const short = makeGate({ maxSuppressMs: 10 * 1000 });
+      short.gate.shouldDrop('x', { data: SOH });
+      short.clock.t += 10 * 1000;
+      expect(short.gate.shouldDrop('x', { data: 'visible' })).toBe(false);
+
+      const junk = makeGate({ maxSuppressMs: Number.NaN });
+      junk.gate.shouldDrop('x', { data: SOH });
+      junk.clock.t += 5 * MINUTE;
+      expect(junk.gate.shouldDrop('x', { data: 'visible' })).toBe(false);
+    });
+
+    it('treats a SOH that arrives after the limit as a new opening, not a stale closing', () => {
+      const { gate, clock } = makeGate();
+
+      gate.shouldDrop('x', { data: SOH });
+      clock.t += 6 * MINUTE;
+
+      expect(gate.shouldDrop('x', { data: SOH })).toBe(true);
+      expect(gate.shouldDrop('x', { data: 'hidden: the new prompt' })).toBe(true);
+      expect(gate.shouldDrop('x', { data: SOH })).toBe(true);
+      expect(gate.shouldDrop('x', { data: 'visible' })).toBe(false);
+    });
+
+    it('keeps each connection on its own switch', () => {
+      const { gate } = makeGate();
+
+      expect(gate.shouldDrop('x', { data: SOH }, 'sim')).toBe(true);
+      expect(gate.shouldDrop('x', { data: 'sim hidden' }, 'sim')).toBe(true);
+
+      expect(gate.shouldDrop('x', { data: 'real session text' }, 'real')).toBe(false);
+      expect(gate.shouldDrop('x', { data: 'server record' })).toBe(false);
+
+      // a SOH on the real connection does not close the simulacrum connection's prompt
+      expect(gate.shouldDrop('x', { data: SOH }, 'real')).toBe(true);
+      expect(gate.shouldDrop('x', { data: 'sim still hidden' }, 'sim')).toBe(true);
+    });
+
+    it('forgets a connection when it ends, so a left-open SOH cannot outlive it', () => {
+      const { gate } = makeGate();
+
+      gate.shouldDrop('x', { data: SOH }, 'c1');
+      gate.endConnection('c1');
+
+      expect(gate.shouldDrop('x', { data: 'visible' }, 'c1')).toBe(false);
+    });
+  });
+
+  describe('Logger SOH wiring', () => {
+    const SOH = '\u0001';
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    function sent(): string[] {
+      return fakeLogger.log.mock.calls.map((c) => String(c[0].message));
+    }
+
+    it('evaluates the switch once per record and drops hidden records before winston sees them', () => {
+      const logger = new Logger({ level: LogLevel.Debug, diskToggleOnSoh: true, sohToggleEventTypes: ['raw'] });
+
+      logger.debug('raw', { data: SOH });
+      logger.debug('raw', { data: 'password echo' });
+      logger.debug('raw', { data: SOH });
+      logger.debug('raw', { data: 'after' });
+
+      expect(fakeLogger.log).toHaveBeenCalledTimes(1);
+      expect(fakeLogger.log).toHaveBeenCalledWith({ level: 'debug', message: 'raw', payload: { data: 'after' } });
+    });
+
+    it('re-enables logging 5 minutes after an unpaired SOH', () => {
+      jest.useFakeTimers({ now: new Date('2026-11-08T00:00:00Z') });
+      const logger = new Logger({ level: LogLevel.Debug, diskToggleOnSoh: true });
+
+      logger.debug('raw', { data: SOH });
+      logger.debug('first', {});
+      jest.setSystemTime(new Date('2026-11-08T00:04:59Z'));
+      logger.debug('second', {});
+      jest.setSystemTime(new Date('2026-11-08T00:05:00Z'));
+      logger.debug('third', {});
+
+      expect(sent()).toEqual(['third']);
+    });
+
+    it('does not let one connection hide another, and a closed connection starts clean', () => {
+      const logger = new Logger({ level: LogLevel.Debug, diskToggleOnSoh: true });
+      const sim = logger.forConnection('sim');
+      const real = logger.forConnection('real');
+
+      sim.debug('raw', { data: SOH });
+      sim.debug('sim-hidden', {});
+      real.debug('real-visible', {});
+      logger.info('server-visible');
+
+      expect(sent()).toEqual(['real-visible', 'server-visible']);
+
+      logger.endConnection('sim');
+      sim.info('sim-closed');
+
+      expect(sent()).toEqual(['real-visible', 'server-visible', 'sim-closed']);
+    });
+
+    it('leaves the payload shape alone: the connection id is never written into the record', () => {
+      const logger = new Logger({ level: LogLevel.Debug, diskToggleOnSoh: true });
+
+      logger.forConnection('abc').warn('w', { a: 1 });
+
+      expect(fakeLogger.log).toHaveBeenCalledWith({ level: 'warn', message: 'w', payload: { a: 1 } });
+    });
+
+    it('does not let a record below the configured level move the switch', () => {
+      const logger = new Logger({ level: LogLevel.Info, diskToggleOnSoh: true });
+
+      logger.debug('raw', { data: SOH }); // below the level: real winston discards it (the mock here does not)
+      logger.info('visible');
+
+      // 'visible' is not hidden: the below-level SOH never switched anything off
+      expect(sent()).toEqual(['raw', 'visible']);
     });
   });
 });

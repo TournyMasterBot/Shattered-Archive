@@ -1,6 +1,10 @@
 // apps\game-client\src\features\plugins\core-plugins\roller.plugin.ts
 import type { IPluginModule, PluginExportInfo, PluginRuntimeApi } from '@shatteredarchive/types-client';
 
+import { RollStats, formatRollStats } from './roller-stats';
+
+const HUD_SLOT = 'hud.rightColumn' as const;
+
 type ParsedRoll = {
   str?: number;
   int?: number;
@@ -137,6 +141,7 @@ export function createRollerPlugin(): IPluginModule {
   let lastRoll: ParsedRoll | null = null;
   let lastRollTs: number | null = null;
   let lastPromptTs: number | null = null;
+  const stats = new RollStats();
 
   // Helper to always get the latest config from the plugin API
   function getConfigFromApi(api: PluginRuntimeApi) {
@@ -201,6 +206,16 @@ export function createRollerPlugin(): IPluginModule {
       scripts: [],
     },
 
+    // Stats are per enable: toggling the plugin starts a fresh session.
+    onEnable: (api: PluginRuntimeApi) => {
+      stats.reset();
+      api.setHudWidget?.(HUD_SLOT, null);
+    },
+
+    onDisable: (api: PluginRuntimeApi) => {
+      api.setHudWidget?.(HUD_SLOT, null);
+    },
+
     onEvent: (api: PluginRuntimeApi, evt) => {
       if (!evt || evt.name !== 'shatteredarchive:raw-data') {
         return;
@@ -258,6 +273,18 @@ export function createRollerPlugin(): IPluginModule {
               `DEX ${mark(typeof minDex === 'number' ? (lastRoll.dex ?? 0) >= minDex : true)} ${fmt(lastRoll.dex)}/${fmt(minDex)} | ` +
               `CON ${mark(typeof minCon === 'number' ? (lastRoll.con ?? 0) >= minCon : true)} ${fmt(lastRoll.con)}/${fmt(minCon)}`,
           );
+        }
+
+        if (typeof lastRoll.total === 'number') {
+          stats.add(lastRoll.total);
+          const snap = stats.snapshot();
+          if (snap) {
+            api.log(`[Roller] ${formatRollStats(snap)}`);
+            api.setHudWidget?.(HUD_SLOT, {
+              label: `Rolls ${snap.count}`,
+              value: `avg ${snap.average.toFixed(1)} · med ${snap.median} · min ${snap.min} · max ${snap.max}`,
+            });
+          }
         }
 
         api.sendCommand(decision);

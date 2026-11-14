@@ -20,6 +20,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import styles from '../styles/AutoLevelingWizard.module.scss';
+import { useWindowLayer } from '../hooks/useWindowLayer';
+import { useResizableModal } from '../hooks/useResizableModal';
+import { ResizeGrip } from './ResizeGrip';
 import type {
   AutoLevelConfig,
   AutoLevelRunState,
@@ -28,12 +31,24 @@ import type {
 import { getAreaDetail } from '../features/autoleveling/autoleveling-content';
 import {
   addCustomTarget as persistCustomTarget,
+  deleteTargetOverride,
   getBuffOverlay,
   getCustomTargets,
   getFightOverlay,
   getPrefs,
+  getTargetOverrides,
+  removeCustomTarget as deleteCustomTarget,
+  resetTargetOverride,
+  setTargetOverride,
+  updateCustomTarget,
   type FightRow,
+  type TargetEditResult,
 } from '../features/autoleveling/autoleveling-user-data';
+import {
+  applyTargetOverrides,
+  targetOverrideKey,
+  type TargetOverridePatch,
+} from '../features/autoleveling/autoleveling-target-overrides';
 import { draftToConfig } from '../features/autoleveling/autoleveling-wizard-config';
 import { AreaStep } from './wizard/AreaStep';
 import { CombatStep } from './wizard/CombatStep';
@@ -41,7 +56,7 @@ import { RestStep } from './wizard/RestStep';
 import { ReviewStep } from './wizard/ReviewStep';
 import { TargetsStep } from './wizard/TargetsStep';
 import { useCharacterLogin } from './wizard/useCharacterLevel';
-import { useWizardDraft, type DraftTarget } from './wizard/useWizardDraft';
+import { targetRowId, useWizardDraft, type DraftTarget } from './wizard/useWizardDraft';
 import { WeightStep } from './wizard/WeightStep';
 
 /* ------------------------------------------------------------------------- */
@@ -65,6 +80,14 @@ export interface AutoLevelingWizardProps {
   moveNext: () => void;
   movePrev: () => void;
   rescanRoom: () => void;
+}
+
+const TARGET_STORAGE_MESSAGE = 'Could not save that change. Your browser storage may be unavailable.';
+const TARGET_UNSAFE_MESSAGE = 'That text is not allowed: use 1-200 characters, with no ";" or line breaks.';
+
+/** Words for the player when a target edit was refused or could not be stored. */
+function targetFailureMessage(res: Extract<TargetEditResult<unknown>, { ok: false }>): string {
+  return res.error === 'unsafe' ? TARGET_UNSAFE_MESSAGE : TARGET_STORAGE_MESSAGE;
 }
 
 type StepId = 'area' | 'targets' | 'combat' | 'rest' | 'weight' | 'review' | 'start';
@@ -140,7 +163,17 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
   const [stepIx, setStepIx] = useState(0);
 
   const { level: charLevel, name: charName } = useCharacterLogin();
-  const { draft, patch, setArea, toggleTarget, addCustomTarget, removeCustomTarget, reset } = useWizardDraft();
+  const {
+    draft,
+    patch,
+    setArea,
+    toggleTarget,
+    editTarget,
+    addCustomTarget,
+    removeCustomTarget,
+    deleteUnmatched,
+    reset,
+  } = useWizardDraft();
   const [customChosen, setCustomChosen] = useState(false);
   const [targetsLoading, setTargetsLoading] = useState(false);
 
@@ -175,6 +208,18 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
     if (!draft.area || customChosen) return;
     setConfig(draftToConfig(draft));
   }, [isOpen, step.id, isRunning, draft, customChosen, setConfig]);
+
+  // Pause -> edit -> Resume: the engine re-reads the SAVED config on resume (refreshRunSnapshot), so edits made while
+  // paused (an unchecked target, a changed buff) must reach it. Nothing else writes the draft while a run is active,
+  // so without this an unchecked target is still attacked after Resume. Only while paused (the engine ignores config
+  // changes to targets mid-round anyway), and only with an area chosen in THIS wizard instance, so a reopened wizard
+  // with an empty draft can never overwrite the running config.
+  const isPaused = runState.status === 'paused';
+  useEffect(() => {
+    if (!isOpen || !isPaused) return;
+    if (!draft.area || customChosen) return;
+    setConfig(draftToConfig(draft));
+  }, [isOpen, isPaused, draft, customChosen, setConfig]);
 
   // Combat fight-commands, Rest during-round rules, and the Weight gate all re-fetch config
   // fresh on their own next check (see autoleveling-engine.ts) — no pause needed for these
@@ -227,28 +272,48 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
         const prefs = await getPrefs();
         const cls = prefs.playerClass ?? null;
         const playerAlignment = (prefs.playerAlignment as 'good' | 'neutral' | 'evil' | undefined) ?? 'neutral';
-        const [detail, saved, buffs, fightCommands] = await Promise.all([
+        const [detail, saved, overrides, buffs, fightCommands] = await Promise.all([
           getAreaDetail(slug, opts),
           getCustomTargets(slug),
+          getTargetOverrides(slug),
           getBuffOverlay(slug),
           cls ? getFightOverlay(slug, cls) : Promise.resolve<FightRow[]>([]),
         ]);
+        // The served list with the player's own overrides applied; an override whose target left the list
+        // comes back as `unmatched` (kept, not applied).
+        const { rows, unmatched } = applyTargetOverrides(detail?.recommendedTargets ?? [], overrides);
         const seen = new Set<string>();
         const seed: DraftTarget[] = [];
-        for (const t of detail?.recommendedTargets ?? []) {
-          const key = t.lookName.toLowerCase();
-          if (seen.has(key)) continue;
-          seen.add(key);
-          seed.push({ ...t, enabled: true, origin: 'area' });
+        for (const row of rows) {
+          seen.add(row.key);
+          seed.push({
+            lookName: row.lookName,
+            engageName: row.engageName,
+            level: row.level,
+            enabled: !row.hidden,
+            origin: 'area',
+            key: row.key,
+            defaultLookName: row.defaultLookName,
+            defaultEngageName: row.defaultEngageName,
+            overridden: row.overridden,
+            hidden: row.hidden,
+          });
         }
         for (const rec of saved) {
           const t = rec.data;
-          const key = String(t?.lookName ?? '').toLowerCase();
+          const key = targetOverrideKey(String(t?.lookName ?? ''));
           if (!key || seen.has(key)) continue;
           seen.add(key);
-          seed.push({ lookName: t.lookName, engageName: t.engageName, level: t.level, enabled: true, origin: 'custom' });
+          seed.push({
+            lookName: t.lookName,
+            engageName: t.engageName,
+            level: t.level,
+            enabled: true,
+            origin: 'custom',
+            id: rec.id,
+          });
         }
-        setArea(slug, detail, seed);
+        setArea(slug, detail, seed, unmatched);
         patch({
           playerClass: cls,
           buffs,
@@ -269,13 +334,118 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
     if (draft.areaSlug) void onSelectArea(draft.areaSlug, { force: true });
   }, [draft.areaSlug, onSelectArea]);
 
+  // A custom target is saved first so its draft row carries the stored record's id (needed to edit or
+  // delete it later); with no area chosen, or when storage fails, the row lives in the draft only.
   const onAddCustomTarget = useCallback(
-    (t: { lookName: string; engageName: string }) => {
-      addCustomTarget(t);
-      if (draft.areaSlug) void persistCustomTarget(draft.areaSlug, t);
+    async (t: { lookName: string; engageName: string }) => {
+      if (!draft.areaSlug) {
+        addCustomTarget(t);
+        return;
+      }
+      try {
+        const saved = await persistCustomTarget(draft.areaSlug, t);
+        addCustomTarget({ ...t, id: saved.id });
+      } catch {
+        console.warn('[autoleveling] could not save the target');
+        addCustomTarget(t);
+      }
     },
     [addCustomTarget, draft.areaSlug],
   );
+
+  // The player's edit of a pre-loaded target is stored as an override (only what differs from the shared
+  // list); an edit of their own target updates it in place. Resolves with a message when it was not saved.
+  const onEditTarget = useCallback(
+    async (rid: string, next: TargetOverridePatch & { lookName: string; engageName: string }): Promise<string | null> => {
+      const row = draft.targets.find((t) => targetRowId(t) === rid);
+      if (!row) return 'That target is no longer in the list.';
+      if (row.origin === 'area') {
+        if (!draft.areaSlug || !row.defaultLookName || !row.defaultEngageName) return TARGET_STORAGE_MESSAGE;
+        const res = await setTargetOverride(
+          draft.areaSlug,
+          { lookName: row.defaultLookName, engageName: row.defaultEngageName },
+          next,
+        );
+        if (!res.ok) return targetFailureMessage(res);
+        const d = res.record?.data;
+        editTarget(rid, {
+          lookName: d?.lookName ?? row.defaultLookName,
+          engageName: d?.engageName ?? row.defaultEngageName,
+          overridden: res.record !== null,
+          hidden: d?.hidden === true,
+        });
+        return null;
+      }
+      if (row.id) {
+        const res = await updateCustomTarget(row.id, next);
+        if (!res.ok) return targetFailureMessage(res);
+      }
+      editTarget(rid, { lookName: next.lookName.trim(), engageName: next.engageName.trim() });
+      return null;
+    },
+    [draft.targets, draft.areaSlug, editTarget],
+  );
+
+  const onSetTargetHidden = useCallback(
+    async (rid: string, hidden: boolean) => {
+      const row = draft.targets.find((t) => targetRowId(t) === rid);
+      if (!row || row.origin !== 'area' || !draft.areaSlug || !row.defaultLookName || !row.defaultEngageName) return;
+      const res = await setTargetOverride(
+        draft.areaSlug,
+        { lookName: row.defaultLookName, engageName: row.defaultEngageName },
+        { hidden },
+      );
+      if (!res.ok) return;
+      const d = res.record?.data;
+      editTarget(rid, {
+        hidden: d?.hidden === true,
+        enabled: d?.hidden !== true,
+        overridden: res.record !== null,
+        lookName: d?.lookName ?? row.defaultLookName,
+        engageName: d?.engageName ?? row.defaultEngageName,
+      });
+    },
+    [draft.targets, draft.areaSlug, editTarget],
+  );
+  const onHideTarget = useCallback((rid: string) => void onSetTargetHidden(rid, true), [onSetTargetHidden]);
+  const onRestoreTarget = useCallback((rid: string) => void onSetTargetHidden(rid, false), [onSetTargetHidden]);
+
+  // Reset to default: the row is rebuilt from the shared values, not merged over what the player had.
+  const onResetTarget = useCallback(
+    async (rid: string) => {
+      const row = draft.targets.find((t) => targetRowId(t) === rid);
+      if (!row || row.origin !== 'area' || !draft.areaSlug || !row.key) return;
+      await resetTargetOverride(draft.areaSlug, row.key);
+      editTarget(rid, {
+        lookName: row.defaultLookName ?? row.lookName,
+        engageName: row.defaultEngageName ?? row.engageName,
+        overridden: false,
+        hidden: false,
+        enabled: true,
+      });
+    },
+    [draft.targets, draft.areaSlug, editTarget],
+  );
+
+  const onDeleteUnmatched = useCallback(
+    async (recordId: string) => {
+      await deleteTargetOverride(recordId);
+      deleteUnmatched(recordId);
+    },
+    [deleteUnmatched],
+  );
+
+  const onRemoveCustomTarget = useCallback(
+    async (rid: string) => {
+      const row = draft.targets.find((t) => targetRowId(t) === rid);
+      if (row?.id) await deleteCustomTarget(row.id);
+      removeCustomTarget(rid);
+    },
+    [draft.targets, removeCustomTarget],
+  );
+
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => onClose() });
+  const { attach: resizeAttach, style: resizeStyle, gripProps: resizeGrip } = useResizableModal({ storageKey: 'shatteredarchive:modal-size:AutoLevelingWizard:v1', centered: false, limits: { minWidth: 480, minHeight: 360 } });
 
   if (!isOpen) return null;
 
@@ -288,12 +458,16 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
 
   return (
     <div
-      ref={modalRef}
+      ref={(el) => {
+        modalRef.current = el;
+        resizeAttach(el);
+      }}
       className={styles.modal}
       role="dialog"
       aria-modal="true"
       aria-label="Auto-leveling wizard"
-      style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: 5000 }}
+      onPointerDownCapture={layer.bringToFront}
+      style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: layer.zIndex, ...resizeStyle }}
     >
       <div className={styles.header} onMouseDown={onHeaderMouseDown}>
         <div className={styles.title}>Autopilot</div>
@@ -376,10 +550,16 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
               <TargetsStep
                 areaName={draft.area?.areaName ?? (draft.areaSlug ? draft.areaSlug : null)}
                 targets={draft.targets}
+                unmatched={draft.unmatchedOverrides}
                 loading={targetsLoading}
                 onToggle={toggleTarget}
                 onAddCustom={onAddCustomTarget}
-                onRemoveCustom={removeCustomTarget}
+                onRemoveCustom={onRemoveCustomTarget}
+                onEdit={onEditTarget}
+                onHide={onHideTarget}
+                onRestore={onRestoreTarget}
+                onReset={onResetTarget}
+                onDeleteUnmatched={onDeleteUnmatched}
               />
             ))}
 
@@ -538,6 +718,7 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
           </button>
         )}
       </div>
+      <ResizeGrip {...resizeGrip} />
     </div>
   );
 };

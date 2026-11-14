@@ -34,3 +34,6 @@ Purpose: How plugin settings are stored and read back: userConfig holds only the
 
 /user-library.md
 Purpose: This file documents the structure, functionality, and developer guidelines for the LibraryModal component in a React-based writing tool. Now also covers tag-based grouping, line/char-limit warnings, and the optional cloud-sync layer (librarySync.ts) — see library-sync.md for the player-facing version.
+
+/autopilot.md
+Purpose: Developer notes for the autopilot wizard's data layer: where areas/classes/user records live, the seven synced record kinds and the contract with the server validator, the personal override layer for pre-loaded targets (key, only-differences, unmatched rule, text-safety rule), and manual cloud sync. Grows with work item 2026-11-13_editable-autopilot-targets-synced.

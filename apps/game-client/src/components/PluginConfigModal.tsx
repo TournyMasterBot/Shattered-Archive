@@ -2,6 +2,9 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import styles from '../styles/PluginConfigModal.module.scss';
+import { useWindowLayer } from '../hooks/useWindowLayer';
+import { useResizableModal } from '../hooks/useResizableModal';
+import { ResizeGrip } from './ResizeGrip';
 
 import type { PluginId } from '@shatteredarchive/types-client';
 import { findCorePlugin } from '../features/plugins/registry';
@@ -138,6 +141,10 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
     if (e.key === 'Escape') onClose();
   };
 
+  // The backdrop above takes the Escape key itself when the focus is inside; this covers the focus being elsewhere on the page.
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => onClose() });
+  const { attach: resizeAttach, style: resizeStyle, gripProps: resizeGrip } = useResizableModal({ storageKey: 'shatteredarchive:modal-size:PluginConfigModal:v1', centered: true });
+
   // return after all hooks are declared
   if (!isOpen) {
     return null;
@@ -146,19 +153,20 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
   const modal = (
     <div
       className={styles.backdrop}
+      style={{ zIndex: layer.zIndex }}
       onPointerDown={onBackdropPointerDown}
       onClick={onBackdropClick}
       onKeyDownCapture={onBackdropKeyDownCapture}
       onKeyUpCapture={stopKeysCapture}
       onKeyPressCapture={stopKeysCapture}
     >
-      <div
+      <div ref={resizeAttach}
         className={styles.modal}
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
         onKeyDownCapture={stopKeysCapture}
         onKeyUpCapture={stopKeysCapture}
-        onKeyPressCapture={stopKeysCapture}
+        onKeyPressCapture={stopKeysCapture} style={resizeStyle}
       >
         <div className={styles.header}>
           <div className={styles.title}>Configure: {mod?.manifest?.name ?? pluginId}</div>
@@ -348,6 +356,7 @@ export const PluginConfigModal: React.FC<PluginConfigModalProps> = ({
             Save
           </button>
         </div>
+        <ResizeGrip {...resizeGrip} />
       </div>
     </div>
   );

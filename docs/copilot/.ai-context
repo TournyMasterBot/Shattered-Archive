@@ -1,0 +1,5 @@
+Developer notes for Copilot, the local-only AI training companion (the `docs/{service}/{feature}.md` convention in docs/claude/work-item-workflow.md; the plan is .ai-plans/active/2026-11-05_copilot-ai-training-sibling-to-autopilot/). README.md is the entry point and holds the local-only boundary (the three gates, the two guard scripts); every later page is added by the phase that delivers the behaviour it describes.
+
+Codenames only. A real character name never appears in these files (docs/standards/data-classification.md); use `<Mineral>-<M|F>` for test characters and `<Constellation>-<M|F>` for real ones.
+
+The Copilot END-USER guide is not here: it lives in the DSL repo (`C:\Projects\DSL\docs\copilot\user-guide.md`) by the owner's decision. The end-user guide for the production-bound map surfaces is docs/shattered-maps/user-guide.md.

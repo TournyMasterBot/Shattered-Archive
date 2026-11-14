@@ -1,5 +1,8 @@
 import React from 'react';
 import styles from '../styles/PluginsModal.module.scss';
+import { useWindowLayer } from '../hooks/useWindowLayer';
+import { useResizableModal } from '../hooks/useResizableModal';
+import { ResizeGrip } from './ResizeGrip';
 
 import { CORE_PLUGINS, findCorePlugin } from '../features/plugins/registry';
 import { usePlugins } from '../hooks/usePlugins';
@@ -34,6 +37,8 @@ export const PluginsModal: React.FC<PluginsModalProps> = ({ isOpen, onClose, con
 
   const cssState = usePluginCssOverrides(connectionId, activeCssPluginId ?? '');
 
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => onClose() });
+  const { attach: resizeAttach, style: resizeStyle, gripProps: resizeGrip } = useResizableModal({ storageKey: 'shatteredarchive:modal-size:PluginsModal:v1', centered: true });
   if (!isOpen) return null;
 
   const handleExport = (id: string) => {
@@ -83,8 +88,8 @@ export const PluginsModal: React.FC<PluginsModalProps> = ({ isOpen, onClose, con
 
   return (
     <>
-      <div className={styles.backdrop}>
-        <div className={styles.modal}>
+      <div className={styles.backdrop} style={{ zIndex: layer.zIndex }}>
+        <div ref={resizeAttach} className={styles.modal} style={resizeStyle}>
           <div className={styles.header}>
             <div className={styles.title}>Plugins</div>
             <button type="button" className={styles.closeButton} onClick={onClose}>
@@ -161,6 +166,7 @@ export const PluginsModal: React.FC<PluginsModalProps> = ({ isOpen, onClose, con
                 : `${installed.length} installed plugin(s) for this connection.`}
             </div>
           </div>
+          <ResizeGrip {...resizeGrip} />
         </div>
       </div>
 

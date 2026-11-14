@@ -42,6 +42,19 @@ Skills read this table to choose files; keep it current whenever a file is added
 |---|---|---|
 | [theming-dark-mode.md](theming-dark-mode.md) | TH | themed or dark/light UI: forms, modals, panels, lists, anything with colors that follow a theme |
 | [persisted-settings-and-defaults.md](persisted-settings-and-defaults.md) | SETTINGS | saved settings or user config merged with defaults; localStorage / AsyncStorage / cloud-synced settings; settings import and migrations |
+| [expo-native-upgrade.md](expo-native-upgrade.md) | EXPO | Expo / React Native SDK upgrades; `expo prebuild` and committed `android/` / `ios/` folders; config plugins; native module changes; package pins and `minimumReleaseAge` |
+| [local-only-features.md](local-only-features.md) | LOCAL | local-only / dev-docker-only features; build flags; compose profiles; nginx, csproj and Dockerfile files shared with production; adding a workspace project |
+| [log-tailing.md](log-tailing.md) | LOGTAIL | following growing, rotated or gated jsonl logs (game-server logs, SOH gate, offset checkpoints) |
+| [auto-approval-policy.md](auto-approval-policy.md) | AUTOAPPR | an agent proposing actions with approval, auto-approval, confidence thresholds, hard floors and escalation |
+| [game-data-privacy.md](game-data-privacy.md) | PRIVNAME | game text (logs, chat, room text, whoisic) exported, summarised, scrubbed or committed; character names and codenames |
+| [ansi-color-handling.md](ansi-color-handling.md) | ANSI | ANSI escape sequences and DSL `{X` colour codes: parsing, storing, converting |
+| [cloud-synced-user-content.md](cloud-synced-user-content.md) | CLOUDSYNC | cloud sync, Save/Load to cloud, /api/user-content, UserRecord kinds, whole-collection PUT, personal overrides, web and mobile sharing stored data |
+| [served-fallback-data.md](served-fallback-data.md) | FALLBACK | bundled offline snapshots served when an upstream call fails; web-server proxy; SHATTEREDARCHIVE_BASE |
+| [world-map-identity.md](world-map-identity.md) | MAPID | building a room/area/world map from observations: identity, fixtures, transient contents, baselines |
+| [admin-tooling.md](admin-tooling.md) | ADMIN | admin or operator tools that issue privileged commands: command catalogs, destructive and bulk commands, confirmation, showing results |
+| [shared-event-bus.md](shared-event-bus.md) | EVENTBUS | subscribing to events on the shared dispatcher (`ListenEvent`, `DispatchEvent`, `game:remote-server:*`): listener keys, replaced listeners, hot reload |
+| [pointer-interaction.md](pointer-interaction.md) | POINTER | a surface that pans, zooms or drags (map, canvas, floating window) with clickable children: pointer capture, drag deltas, the wheel |
+| [live-stream-views.md](live-stream-views.md) | LIVESTRM | views that capture a live stream (GMCP, socket output, tailed logs) in memory: buffers, caps, listeners |
 
 ## How the skills use it
 

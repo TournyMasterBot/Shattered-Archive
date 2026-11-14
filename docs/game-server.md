@@ -143,7 +143,7 @@ Controlled via environment variables:
 | `LOG_MAX_FILE_SIZE` | (none) | Max log file size |
 | `LOG_MAX_FILES` | (none) | Max number of log files |
 | `LOG_DATE_PARTITIONED` | `false` | Date-partition log files |
-| `LOG_RESPECT_SOH` | `true` | Suppress high-volume log events (raw data) when SOH control char received |
+| `LOG_RESPECT_SOH` | `true` | Hide a connection's log records between a SOH control char and the next one (password echo); `false` turns it off. Self-heals after 5 minutes |
 
 ---
 
@@ -151,4 +151,10 @@ Controlled via environment variables:
 
 Uses `@shatteredarchive/services-server` Logger with both plain-text and JSONL output.
 
-Log events `game:remote-server:raw` and `game:client:input` are considered high-volume and are suppressed when `LOG_RESPECT_SOH` is true and a SOH (Start of Header) character is received.
+When `LOG_RESPECT_SOH` is true, a SOH (Start of Header) character in a `game:remote-server:raw` or `game:client:input` record switches logging off for that WebSocket connection (the DSL MUD brackets a password prompt with two SOH characters, the second switches it back on). Rules:
+
+- The switch is **per connection**. A SOH on one connection never hides another connection's records (a real session, a Simulacrum session and a Copilot test can run at once).
+- While it is off, **every** record of that connection is dropped, including GMCP; the SOH records themselves are never written.
+- It turns itself back on **5 minutes** after it went off, so an unpaired SOH (an engine that does not send the closing one, a connection lost mid-prompt) cannot silence logging indefinitely. A SOH that arrives after that starts a new suppression.
+- A connection's state is discarded when its socket closes, and the `client-closed` record is always written.
+- The decision is made once per record before winston fans it out to the console, text and JSONL transports (see `SohGate` in `services/services-server/src/logger-service.ts`).

@@ -4,6 +4,7 @@ import type React from 'react';
 import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
 import { preprocessOutgoingCommand } from '../features/accessibility/accessibility-command';
 import { OutboundQueue } from '../features/commands/outbound-queue';
+import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 
 interface UseGameCommandOptions {
   sendRaw: (data: string) => void;
@@ -43,6 +44,11 @@ export function useGameCommand(options: UseGameCommandOptions): UseGameCommandRe
       }
     });
   }, [inputRef]);
+
+  // The user's own typing, for whoever must not talk over it (the Copilot command gate waits 2 s after the last keystroke).
+  useEffect(() => {
+    if (inputValue !== '') DispatchEvent('shatteredarchive:user-typing', { at: Date.now() });
+  }, [inputValue]);
 
   const sendLineRef = useRef<(line: string) => void>(() => {});
 

@@ -1,0 +1,95 @@
+/* The blue (i) in a window header, and the shared look of a help view (an article that replaces the window's body, with a Back button). */
+$info-blue: #2f7de1;
+$info-blue-hover: #4a91f0;
+
+.info {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin: 0 4px;
+  padding: 0;
+  color: #fff;
+  background: $info-blue;
+  border: 0;
+  border-radius: 50%;
+  font: italic 700 11px/1 Georgia, 'Times New Roman', serif;
+  cursor: pointer;
+
+  &:hover {
+    background: $info-blue-hover;
+  }
+
+  &[aria-pressed='true'] {
+    box-shadow: 0 0 0 2px rgba(47, 125, 225, 0.45);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+}
+
+.help {
+  box-sizing: border-box;
+  height: 100%;
+  overflow: auto;
+  padding: 8px 12px 12px;
+  color: #e8e8e8;
+  font-size: 0.8rem;
+  line-height: 1.45;
+
+  h3 {
+    margin: 0 0 4px;
+    font-size: 0.95rem;
+  }
+
+  h4 {
+    margin: 10px 0 3px;
+    color: $info-blue-hover;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  p,
+  ul,
+  ol {
+    margin: 0 0 6px;
+  }
+
+  ul,
+  ol {
+    padding-left: 18px;
+  }
+
+  li {
+    margin-bottom: 2px;
+  }
+
+  kbd {
+    padding: 0 4px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    font: inherit;
+    font-size: 0.75rem;
+  }
+}
+
+.helpBack {
+  margin: 0 0 6px;
+  padding: 2px 10px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid $info-blue-hover;
+    outline-offset: 1px;
+  }
+}

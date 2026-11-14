@@ -36,6 +36,15 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    // Copilot is local-only (docs/standards/edge-cases/local-only-features.md). The flag is read from the
+    // PROCESS environment only, never from env.* above: apps/game-client/.env* files are inside the Docker
+    // build context, so a flag set there would silently ship in a production image. Vite replaces the
+    // constant by a literal, so with it false the Copilot branch and its imports are dropped from the bundle.
+    // Simulacrum Admin is a SECOND local-only feature with its own switch (LOCAL-04), read from the process environment for the same reason.
+    define: {
+      __COPILOT_LOCAL__: JSON.stringify(process.env.COPILOT_LOCAL === 'true'),
+      __SIMULACRUM_ADMIN_LOCAL__: JSON.stringify(process.env.SIMULACRUM_ADMIN_LOCAL === 'true'),
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),

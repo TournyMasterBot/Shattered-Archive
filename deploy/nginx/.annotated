@@ -26,3 +26,9 @@ Purpose: Configures SSL parameters and security headers for local development wi
 
 /web-client.conf
 Purpose: This file configures the Nginx web server for the client-side application.
+
+/edge-simulacrum-admin.conf
+Purpose: LOCAL-ONLY vhost simulacrum-admin.shatteredarchive.dev: three read-only GET routes onto mud-builder-server:61000 (areas, map, one area's map) and a 404 for everything else. Mounted as its own template by the experimental compose only; never add it to edge-subdomains.conf (production mounts that). CORS headers are at SERVER level with always (an add_header in a location drops all inherited ones) and MUD Builder's own CORS headers are proxy_hide_header'd (two Allow-Origin values break the browser). The guard tests in scripts/check-local-only.test.mjs pin all of this, and a mutation of each rule is caught.
+
+/edge-copilot-csp.conf
+Purpose: (updated) the dev CSP override shared by BOTH local-only features: connect-src adds the Copilot origin and the Simulacrum Admin origin. A guard test requires it to equal includes/security-headers-scripting-dev.conf except for those two origins.

@@ -69,6 +69,19 @@ describe('class catalog cache', () => {
     expect(await getClassCatalog({ force: true })).toHaveLength(3);
   });
 
+  it('ignores a list cached under the pre-v2 key, so a stale 31-class list is never served (E8)', async () => {
+    const store = memoryKvStore();
+    __setClassStoreForTests(store);
+    await store.set('autolevelingClasses', { data: [CLERIC], fetchedAt: Date.now() });
+
+    expect(await getClassCatalogCached()).toEqual([]); // old entry invisible
+    (global as any).fetch = jest.fn().mockRejectedValue(new Error('offline'));
+    expect(await getClassCatalog({ force: true })).toEqual([]); // and not a fallback either
+
+    mockFetch(() => ({ classes: CATALOG }));
+    expect(await getClassCatalog({ force: true })).toHaveLength(3); // the live list replaces it
+  });
+
   it('drops malformed class rows', async () => {
     mockFetch(() => ({ classes: [...CATALOG, { mortalClass: 1 }, 42, null] }));
     expect(await getClassCatalog()).toHaveLength(3);

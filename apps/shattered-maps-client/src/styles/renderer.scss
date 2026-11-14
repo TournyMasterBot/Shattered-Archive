@@ -1,0 +1,33 @@
+.hexmap polygon {
+  vector-effect: non-scaling-stroke;
+  shape-rendering: geometricPrecision;
+  stroke-linejoin: round;
+}
+.edge { stroke: #3a3a3a; stroke-width: 1.5; }
+.edge--door { stroke-dasharray: 4 3; }
+.hex polygon { fill: #181818; stroke: #2a2a2a; stroke-width: 1; }
+.hex--focus polygon { fill: #202020; stroke: #4a4a4a; stroke-width: 2; }
+.hex__label { fill: #e0e0e0; font-size: 10px; text-anchor: middle; dominant-baseline: middle; }
+.badge { fill: #bdbdbd; font-size: 10px; text-anchor: middle; dominant-baseline: middle; }
+.badge--u { }
+.badge--d { }
+
+.oct-renderer {
+  width: 100%;
+  height: 100%;
+  background-color: #111;
+
+  polygon {
+    vector-effect: non-scaling-stroke; /* keep stroke width consistent while zooming */
+    stroke-linejoin: round;            /* rounded corners for octagons */
+    cursor: pointer;
+    transition: fill 0.15s ease;
+  }
+
+  text {
+    font-family: monospace, monospace;
+    fill: #fff;
+    pointer-events: none;
+    user-select: none;
+  }
+}

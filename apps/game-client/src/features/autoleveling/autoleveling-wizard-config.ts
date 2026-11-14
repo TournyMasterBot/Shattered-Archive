@@ -144,13 +144,18 @@ export function draftToConfig(draft: ConfigDraft): AutoLevelConfig {
     .filter((t) => t.enabled && t.lookName.trim() && t.engageName.trim())
     .map(draftTargetToConfig);
 
-  const startPre: AutoLevelAction[] = draft.buffs.filter((b) => b.cmd.trim()).map(buffToStartAction);
+  // A paused buff (`disabled`) stays in the draft and in storage but reaches neither the pre-round actions nor the critical buffs.
+  const activeBuffs = draft.buffs.filter((b) => !b.disabled);
+  const startPre: AutoLevelAction[] = activeBuffs.filter((b) => b.cmd.trim()).map(buffToStartAction);
 
-  const criticalBuffs: AutoLevelCriticalBuff[] = draft.buffs
+  const criticalBuffs: AutoLevelCriticalBuff[] = activeBuffs
     .filter((b) => b.cmd.trim() && b.affect?.trim() && (b.inCombatCmd?.trim() || b.holdNearLevel))
     .map(buffToCriticalBuff);
 
-  const fightExec: AutoLevelAction[] = draft.fightCommands.filter((f) => f.cmd.trim()).map(fightRowToAction);
+  // A paused row (`disabled`) stays in the draft and in storage but never reaches the engine.
+  const fightExec: AutoLevelAction[] = draft.fightCommands
+    .filter((f) => f.cmd.trim() && !f.disabled)
+    .map(fightRowToAction);
 
   const mode = draft.mode ?? 'auto_level';
 

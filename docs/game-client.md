@@ -79,6 +79,20 @@ The client is a Vite/React/TypeScript single-page application. All user-visible 
 
 ---
 
+# Map window
+
+Game > Map… opens the world map window (`components/WorldMapWindow.tsx`, `features/worldmap/`): a floating, movable, resizable window beside the terminal that shows the published
+map of the area the player is in from the C# site's `/api/world-map/*` API and follows `game:room-data`. It has floors (a strip, and dimmed ghost floors behind the chosen one), pan and
+zoom, clickable exits into neighbouring areas with a Reset view button, and a small settings popover. It is a production feature with no flag, mounted only while open. The way it places
+the player, its freshness rule, the vertical display and its safety notes are in [docs/shattered-maps/surfaces.md](shattered-maps/surfaces.md); what a player sees is in
+[docs/shattered-maps/user-guide.md](shattered-maps/user-guide.md).
+
+A production build shows one world, the DSL's, and has no world picker. In a local development build (`SIMULACRUM_ADMIN_LOCAL`) the window follows the
+connection instead: while the client is connected to the Simulacrum it shows the Simulacrum's map (title `Map · Simulacrum`) from `/api/world-map/sandbox`, and the
+DSL's map otherwise. That code is `features/worldmap/localWorld.ts`, imported only behind the flag, so a production bundle has neither it nor the route
+(`scripts/check-local-only.mjs`). See [docs/shattered-maps/worlds.md](shattered-maps/worlds.md).
+
+---
 # Scripting Language Support
 
 ## JS Bridge Supported Commands
@@ -660,7 +674,7 @@ These events are parsed from `shatteredarchive:gmcp-data` inside `UserScriptRunt
 ### `game:room-data`
 
 **Emitted by:** `UserScriptRuntime` on GMCP `room_data` packets
-**Listened by:** `useCompassBlock`, `useRoomHeader`, autoleveling engine, movement hooks
+**Listened by:** `useCompassBlock`, `useRoomHeader`, autoleveling engine, movement hooks, `useWorldMap` (the map pane)
 
 ```ts
 {

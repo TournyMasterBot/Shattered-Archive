@@ -136,6 +136,9 @@ nginx talks to containers **only over the Docker network**.
 
 All external traffic flows through nginx.
 
+The experimental (dev) compose also has a local-only `copilot-server` service under the `copilot` profile, with its own nginx template and
+no published port. It is never part of the production stack; see [copilot/server-api.md](copilot/server-api.md).
+
 ---
 
 ## 7. Common Failure Modes

@@ -40,7 +40,7 @@ Purpose: .are import API (Phase 10) — POST /api/import/area/preview (quarantin
 Purpose: /api/map tests: single-area shape with internal/external/dangling exits told apart (external carries file+name), 404 unlisted / 400 invalid name, world aggregation of areas + directional links with a broken file tolerated.
 
 /map.ts
-Purpose: Read-only map aggregates (Phase 12) — GET /api/map/:file (rooms+exits with locks, cross-area targets resolved via worldVnumIndex to {file,name}, Phase 12b `warps` from R-script `warp <vnum>` lines) and GET /api/map (world graph: area nodes + directional cross-area exit links with per-exit detail); never writes, never audited, unparseable files listed with parseError.
+Purpose: Read-only map aggregates (Phase 12) — GET /api/map/:file (rooms+exits with locks, cross-area targets resolved via worldVnumIndex to {file,name}, Phase 12b `warps` from R-script `warp <vnum>` lines) and GET /api/map (world graph: area nodes + directional cross-area exit links with per-exit detail); never writes, never audited, unparseable files listed with parseError. `mapRooms` is exported on purpose: shattered-maps-core/scripts/check-against-builder.mjs compares it with the Simulacrum map import over the same area folder, so a change to what counts as an external exit shows up there.
 
 /presence.test.ts
 Purpose: Presence tests: registry unit (heartbeat/list/refresh, lazy TTL expiry via injected clock), standalone routes (anonymous heartbeat, 400 guards), full-app auth-on (401 anon, credential-named entry, open GET, never audited). Phase 4 case: a centrally-issued token heartbeats under its auth-server label via the same fake-introspect pattern as auth.test.ts.

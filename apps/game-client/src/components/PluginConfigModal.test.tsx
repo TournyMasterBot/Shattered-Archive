@@ -1,8 +1,86 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import React from 'react';
+import { useWindowLayer } from '../hooks/useWindowLayer';
 import { PluginConfigModal } from './PluginConfigModal';
 import { pluginHost } from '../features/plugins/pluginHost';
 import { corePluginDefaults } from '../features/plugins/pluginConfigOverrides';
+
+describe('PluginConfigModal — Escape and the window stack', () => {
+  const renderIt = (onClose = jest.fn()) =>
+    render(<PluginConfigModal isOpen onClose={onClose} connectionId="test-conn" pluginId="level-progress" initialUserConfig={{}} onSave={jest.fn()} isEnabled />);
+
+  it('Escape with the focus inside the modal closes it once (the backdrop takes the key and the stack does not also close it)', () => {
+    const onClose = jest.fn();
+    renderIt(onClose);
+    fireEvent.keyDown(screen.getByRole('button', { name: '✕' }), { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('Escape with the focus elsewhere on the page closes it through the window stack', () => {
+    const onClose = jest.fn();
+    renderIt(onClose);
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('keys other than Escape are kept from the page behind it (no game hotkey fires) and do not close it', () => {
+    const onClose = jest.fn();
+    const behind = jest.fn();
+    document.addEventListener('keydown', behind);
+    try {
+      renderIt(onClose);
+      fireEvent.keyDown(screen.getByRole('button', { name: '✕' }), { key: 'a' });
+      expect(onClose).not.toHaveBeenCalled();
+      expect(behind).not.toHaveBeenCalled();
+    } finally {
+      document.removeEventListener('keydown', behind);
+    }
+  });
+
+  it('is drawn above a window that was open before it, and nothing is drawn or registered while closed', () => {
+    const Earlier: React.FC = () => {
+      const layer = useWindowLayer({ open: true, onEscape: () => undefined });
+      return <div data-testid="earlier" style={{ zIndex: layer.zIndex }} />;
+    };
+    render(<Earlier />);
+    const onClose = jest.fn();
+    const closed = render(<PluginConfigModal isOpen={false} onClose={onClose} connectionId="test-conn" pluginId="level-progress" initialUserConfig={{}} onSave={jest.fn()} isEnabled />);
+    const layers = () => Array.from(document.body.querySelectorAll<HTMLElement>('[style*="z-index"]'));
+    expect(layers()).toHaveLength(1); // only the earlier window: a closed modal draws nothing
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(onClose).not.toHaveBeenCalled(); // and takes no part in Escape
+    closed.unmount();
+
+    renderIt();
+    expect(layers()).toHaveLength(2);
+    const backdrop = layers().find((el) => el.dataset.testid === undefined) as HTMLElement;
+    expect(Number(backdrop.style.zIndex)).toBeGreaterThan(Number(screen.getByTestId('earlier').style.zIndex));
+  });
+
+  it('has a grip that resizes the dialog, and the size is back when it is opened again', () => {
+    const rect = jest.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({ left: 100, top: 50, width: 400, height: 300, right: 500, bottom: 350, x: 100, y: 50, toJSON: () => ({}) } as DOMRect);
+    try {
+      const first = renderIt();
+      const grip = document.body.querySelector('[title="Drag to resize"]') as HTMLElement;
+      act(() => void grip.dispatchEvent(new MouseEvent('pointerdown', { clientX: 500, clientY: 350, button: 0, bubbles: true })));
+      act(() => void document.dispatchEvent(new MouseEvent('pointermove', { clientX: 530, clientY: 360, bubbles: true })));
+      act(() => void document.dispatchEvent(new MouseEvent('pointerup', { clientX: 530, clientY: 360, bubbles: true })));
+      const dialog = grip.parentElement as HTMLElement;
+      expect(dialog.style.width).toBe('460px'); // a centered dialog grows on both sides: 30 of pointer is 60 of width
+      expect(dialog.style.height).toBe('320px');
+      first.unmount();
+
+      renderIt();
+      const reopened = (document.body.querySelector('[title="Drag to resize"]') as HTMLElement).parentElement as HTMLElement;
+      expect(reopened.style.width).toBe('460px');
+      expect(reopened.style.height).toBe('320px');
+    } finally {
+      rect.mockRestore();
+      window.localStorage.clear();
+    }
+  });
+});
 
 // HOST-2: invokePluginAction now returns 'ok' | 'no-handler' | 'error' so the Configure panel's action
 // buttons stop flashing "✓ Synced" when nothing ran. The label branches and the 1.5 s reset had no test.

@@ -6,7 +6,9 @@ import { getClassCatalog } from '../../features/autoleveling/autoleveling-classe
 import { setBuffOverlay, setFightOverlay } from '../../features/autoleveling/autoleveling-user-data';
 
 jest.mock('../../features/autoleveling/autoleveling-user-data', () => ({
-  getFightOverlay: jest.fn().mockResolvedValue([]),
+  // a saved (empty) list by default: nothing is pre-filled over it, which is what the older tests below expect
+  getBuffOverlayOrNull: jest.fn().mockResolvedValue([]),
+  getFightOverlayOrNull: jest.fn().mockResolvedValue([]),
   getLearnedCooldown: jest.fn().mockResolvedValue(null),
   setBuffOverlay: jest.fn().mockResolvedValue(undefined),
   setFightOverlay: jest.fn().mockResolvedValue(undefined),
@@ -16,6 +18,8 @@ jest.mock('../../features/autoleveling/autoleveling-classes', () => ({
   getClassCatalog: jest.fn().mockResolvedValue([]),
   abilitiesForClass: jest.fn(() => []),
   classOffensiveAbilities: jest.fn(() => []),
+  classByName: jest.fn((cs: { name: string }[], n: string) => cs.find((c) => c.name.toLowerCase() === n.trim().toLowerCase())),
+  COMBAT_SKILL_NAMES: ['bash', 'kick'],
 }));
 
 // Editing buffs or fight commands saves them per area, DEBOUNCED: a burst of edits becomes one write of the latest rows, and an
@@ -162,5 +166,50 @@ describe('CombatStep debounced saves', () => {
     });
 
     expect(setBuffOverlay).toHaveBeenCalledWith('area-a', [NEW_BUFF, NEW_BUFF]);
+  });
+
+  // A paused fight command keeps its row (cooldown, gates, order) but is not used; resume restores it exactly.
+  describe('pausing a fight command', () => {
+    const BASH = { cmd: 'bash', cooldownSec: 8 };
+    const KICK = { cmd: 'kick', cooldownSec: 2, vitalsGate: { stat: 'hp', op: 'above', pct: 50 } };
+
+    it('pause marks only that row disabled, keeps everything else on it, and saves after the debounce', async () => {
+      const { onPatch } = await renderStep({ playerClass: 'Warrior', fightCommands: [BASH, KICK] as never });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Pause command 2' }));
+
+      expect(onPatch).toHaveBeenCalledWith({ fightCommands: [BASH, { ...KICK, disabled: true }] });
+      act(() => {
+        jest.advanceTimersByTime(SAVE_DEBOUNCE_MS);
+      });
+      expect(setFightOverlay).toHaveBeenCalledWith('area-a', 'Warrior', [BASH, { ...KICK, disabled: true }]);
+    });
+
+    it('a paused row is shown as paused with a resume button, and resume drops the flag entirely', async () => {
+      const paused = { ...BASH, disabled: true };
+      const { onPatch } = await renderStep({ playerClass: 'Warrior', fightCommands: [paused, KICK] as never });
+
+      expect(screen.getByText('paused')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Pause command 2' })).toHaveAttribute('aria-pressed', 'false');
+      const resume = screen.getByRole('button', { name: 'Resume command 1' });
+      expect(resume).toHaveAttribute('aria-pressed', 'true');
+
+      fireEvent.click(resume);
+
+      const sent = onPatch.mock.calls[0][0].fightCommands;
+      expect(sent).toEqual([BASH, KICK]);
+      expect('disabled' in sent[0]).toBe(false); // stored like a row that was never paused
+    });
+
+    it('a row can still be removed while paused, and the others are untouched', async () => {
+      const { onPatch } = await renderStep({
+        playerClass: 'Warrior',
+        fightCommands: [{ ...BASH, disabled: true }, KICK] as never,
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Remove command 1' }));
+
+      expect(onPatch).toHaveBeenCalledWith({ fightCommands: [KICK] });
+    });
   });
 });
