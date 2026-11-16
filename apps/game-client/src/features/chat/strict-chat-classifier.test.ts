@@ -242,3 +242,30 @@ describe('classifyStrictChatSubtype — own echo with a language tag', () => {
     expect(classifyStrictChatSubtype("You clan 'see (Elvish) in the gossip channel'")).toBe('clan');
   });
 });
+
+describe('classifyStrictChatSubtype — shout', () => {
+  const CASES: Array<[string, string]> = [
+    ["You shout 'Over here!'", 'shout'],
+    ["You shout (Elvish) 'Over here!'", 'shout'],
+    ["Z'resra shouts 'Over here!'", 'shout'],
+    ["Z'resra shouts (Elvish) 'Over here!'", 'shout'],
+  ];
+
+  it.each(CASES)('%s => %s', (line, expected) => {
+    expect(classifyStrictChatSubtype(line)).toBe(expected);
+  });
+
+  it('does not treat the quote-less taunt line as a shout', () => {
+    expect(
+      classifyStrictChatSubtype('An orc shouts a harsh string of insults at you! That little pipsqueak! KILL!! KILL!!'),
+    ).toBeUndefined();
+  });
+
+  it('does not treat a shout mentioned inside a message as a shout', () => {
+    expect(classifyStrictChatSubtype("Z'resra says 'he shouts 'help' a lot'")).toBe('say');
+  });
+
+  it('keeps yell separate from shout', () => {
+    expect(classifyStrictChatSubtype("You yell (Elvish) 'Help!'")).toBe('yell');
+  });
+});

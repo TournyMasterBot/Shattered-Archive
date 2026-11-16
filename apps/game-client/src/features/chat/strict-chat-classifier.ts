@@ -95,6 +95,13 @@ export function classifyStrictChatSubtype(rawLine: string): ChatSubtype | undefi
   if (textContainsString(s, ' yells ')) return 'yell';
   if (textContainsString(s, 'You yell ')) return 'yell';
 
+  // SHOUT — its own channel. Anchored like SAY: the verb phrase may carry a
+  // "(Language)" tag, and the envelope must end at the opening quote, so the
+  // quote-less taunt line ("<X> shouts a harsh string of insults at you!")
+  // is not mistaken for a shout.
+  if (/^\s*You shout\b.*'$/.test(s)) return 'shout';
+  if (/^.+ shouts\b.*'$/.test(s)) return 'shout';
+
   // CLAN GOSSIP — must precede GOSSIP: " gossips " is a substring of
   // "clan gossips ", so the plain-gossip check would otherwise claim it.
   if (textContainsString(s, ' clan gossips ')) return 'cgossip';

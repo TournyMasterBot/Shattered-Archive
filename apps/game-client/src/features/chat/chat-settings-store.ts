@@ -5,6 +5,7 @@ export type ChatSubtype =
   | 'gtell'
   | 'tell'
   | 'yell'
+  | 'shout'
   | 'gossip'
   | 'cgossip'
   | 'oking'
@@ -28,6 +29,7 @@ export const KNOWN_CHAT_SUBTYPES: ChatSubtype[] = [
   'gtell',
   'tell',
   'yell',
+  'shout',
   'gossip',
   'cgossip',
   'oking',
