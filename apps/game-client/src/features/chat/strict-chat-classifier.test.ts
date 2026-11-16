@@ -212,3 +212,33 @@ describe('classifyStrictChatSubtype — quoted-message false positives (regressi
     ).toBe('say');
   });
 });
+
+describe('classifyStrictChatSubtype — own echo with a language tag', () => {
+  // Speaking a language puts "(Language)" between the verb and the quote.
+  // Only in-character channels carry one; OOC channels never do.
+  // These used to fall through unclassified and, in strict mode, were dropped
+  // instead of reaching their tab.
+  const CASES: Array<[string, string]> = [
+    ["You clan (Elvish) 'hi'", 'clan'],
+    ["You clan gossip (Elvish) 'hi'", 'cgossip'],
+    ["You gossip (Elvish) 'hi'", 'gossip'],
+  ];
+
+  it.each(CASES)('%s => %s', (line, expected) => {
+    expect(classifyStrictChatSubtype(line)).toBe(expected);
+  });
+
+  it('still classifies the untagged forms', () => {
+    expect(classifyStrictChatSubtype("You clan 'hi'")).toBe('clan');
+    expect(classifyStrictChatSubtype("You clan gossip 'hi'")).toBe('cgossip');
+    expect(classifyStrictChatSubtype("You gossip 'hi'")).toBe('gossip');
+  });
+
+  it('does not treat clan gossip as clan, with or without a tag', () => {
+    expect(classifyStrictChatSubtype("You clan gossip (Elvish) 'hi'")).not.toBe('clan');
+  });
+
+  it('only looks at the tag before the quote, not text inside the message', () => {
+    expect(classifyStrictChatSubtype("You clan 'see (Elvish) in the gossip channel'")).toBe('clan');
+  });
+});
