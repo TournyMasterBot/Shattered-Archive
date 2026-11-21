@@ -14,6 +14,7 @@
  */
 
 import type { AutoPilotAbility } from './autoleveling-content-types';
+import { cooldownSecFromLag, refreshTicksFromDuration } from './autoleveling-lag';
 import { BUFF_CATALOG, type BuffCatalogEntry } from './autoleveling-buff-catalog';
 import { COMBAT_SKILL_NAMES } from './autoleveling-classes';
 import type { BuffRow, FightRow } from './autoleveling-user-data';
@@ -28,6 +29,13 @@ export const DEFAULT_FIGHT_ROWS = 3;
  * The buffs worth pre-filling for leveling: protection and damage. Detections, travel and
  * alignment-protection buffs stay opt-in (the player adds them from the catalog).
  */
+/**
+ * Abilities that are never pre-filled for any class (owner, 2026-11-14 live test; decided per list on 2026-11-18). Kept as two
+ * lists on purpose: the buff pre-fill and the fight pre-fill each enforce their own. The manual picker still offers them.
+ */
+export const NEVER_DEFAULT_BUFFS: readonly string[] = ['fog', 'dispel fog'];
+export const NEVER_DEFAULT_FIGHTS: readonly string[] = ['fog', 'dispel fog'];
+
 export const DEFAULT_BUFF_LABELS: readonly string[] = [
   'Sanctuary',
   'Armor',
@@ -40,16 +48,43 @@ export const DEFAULT_BUFF_LABELS: readonly string[] = [
   'Berserk',
 ];
 
-/** A buff row from a verified catalog entry: command, affect gate, in-combat suggestion, hold-near-level. */
-export function buffRowFromCatalog(entry: BuffCatalogEntry): BuffRow {
+/** How a buff row decides to recast: when its affect is missing, every N ticks, or every round. */
+export type BuffGateMode = 'affect' | 'ticks' | 'always';
+
+/**
+ * The row after the player switches its recast mode. Built by spreading the existing row and removing only what belongs to the
+ * old mode alone (`affect`, `refreshTicks`, `inCombatCmd`, `holdNearLevel`), so every other field - the vitals and enemy gates,
+ * the fire limit, the combat state, the retry switch, `disabled`, `unverified` and any field added later - survives a switch
+ * (SETTINGS-07). It used to be rebuilt from named fields and silently dropped `vitalsGate` and `onceKey`.
+ */
+export function buffRowForGate(b: BuffRow, gate: BuffGateMode): BuffRow {
+  const { affect: _affect, refreshTicks: _ticks, inCombatCmd: _inCombat, holdNearLevel: _hold, ...common } = b;
+  if (gate === 'ticks') return { ...common, refreshTicks: b.refreshTicks ?? DEFAULT_REFRESH_TICKS };
+  if (gate === 'always') return { ...common };
+  // 'affect' keeps the affect name and the in-combat / hold extras
+  return {
+    ...common,
+    affect: b.affect ?? '',
+    ...(b.inCombatCmd ? { inCombatCmd: b.inCombatCmd } : {}),
+    ...(b.holdNearLevel ? { holdNearLevel: true } : {}),
+  };
+}
+
+/**
+ * A buff row from a verified catalog entry: command, affect gate, in-combat suggestion, hold-near-level. A tick-gated entry (berserk) recasts every
+ * `duration - 1` ticks when the class feed knows the ability's duration (`timing`), else every DEFAULT_REFRESH_TICKS. Rows already saved are never touched.
+ */
+export function buffRowFromCatalog(entry: BuffCatalogEntry, timing?: Pick<AutoPilotAbility, 'durationTicks'>): BuffRow {
   const row: BuffRow = { label: entry.label, cmd: entry.cmd };
   if (entry.affect) {
     row.affect = entry.affect;
     if (entry.suggestInCombat) row.inCombatCmd = entry.suggestInCombat;
     if (entry.suggestHoldNearLevel) row.holdNearLevel = true;
-  } else {
-    row.refreshTicks = DEFAULT_REFRESH_TICKS;
+  } else if (!entry.conditionGated) {
+    row.refreshTicks = refreshTicksFromDuration(timing?.durationTicks, DEFAULT_REFRESH_TICKS);
   }
+  if (entry.combatState) row.combatState = entry.combatState;
+  if (entry.suggestVitalsGate) row.vitalsGate = { ...entry.suggestVitalsGate };
   return row;
 }
 
@@ -67,17 +102,20 @@ const usable = (a: AutoPilotAbility, charLevel: number | null) => charLevel == n
  */
 export function defaultBuffRows(abilities: readonly AutoPilotAbility[], charLevel: number | null): BuffRow[] {
   const levelOf = new Map<string, number>();
+  const abilityOf = new Map<string, AutoPilotAbility>();
   for (const a of abilities) {
     const name = lc(a.name);
     levelOf.set(name, Math.min(a.level, levelOf.get(name) ?? Infinity));
+    if (!abilityOf.has(name)) abilityOf.set(name, a);
   }
   const rows: BuffRow[] = [];
   for (const label of DEFAULT_BUFF_LABELS) {
     const entry = BUFF_CATALOG.find((c) => c.label === label);
     if (!entry) continue;
+    if (NEVER_DEFAULT_BUFFS.includes(lc(entry.label)) || NEVER_DEFAULT_BUFFS.includes(lc(entry.affect))) continue;
     const level = levelOf.get(lc(entry.label)) ?? (entry.affect ? levelOf.get(lc(entry.affect)) : undefined);
     if (level === undefined) continue;
-    const row = buffRowFromCatalog(entry);
+    const row = buffRowFromCatalog(entry, abilityOf.get(lc(entry.label)) ?? (entry.affect ? abilityOf.get(lc(entry.affect)) : undefined));
     rows.push(charLevel == null || level <= charLevel ? row : { ...row, disabled: true });
   }
   return rows;
@@ -96,7 +134,7 @@ export function fightCommandFor(ability: Pick<AutoPilotAbility, 'name' | 'type'>
  * learned cooldown when one exists.
  */
 export function defaultFightRows(offense: readonly AutoPilotAbility[], charLevel: number | null): FightRow[] {
-  const ok = offense.filter((a) => usable(a, charLevel));
+  const ok = offense.filter((a) => usable(a, charLevel) && !NEVER_DEFAULT_FIGHTS.includes(lc(a.name)));
   const casts = ok.filter((a) => a.type !== 'skill').sort((a, b) => b.level - a.level || a.name.localeCompare(b.name));
   // a skill that is offensive by group but not in the known list ranks after the known ones
   const rank = (a: AutoPilotAbility) => {
@@ -115,7 +153,8 @@ export function defaultFightRows(offense: readonly AutoPilotAbility[], charLevel
     const cmd = fightCommandFor(a);
     if (seen.has(cmd)) continue;
     seen.add(cmd);
-    rows.push({ cmd, cooldownSec: 0 });
+    // the reuse time starts at the ability's measured lag (unknown: 0); the caller replaces it with a cooldown the engine already learned for that command
+    rows.push({ cmd, cooldownSec: cooldownSecFromLag(a.lagMs) });
   }
   return rows;
 }

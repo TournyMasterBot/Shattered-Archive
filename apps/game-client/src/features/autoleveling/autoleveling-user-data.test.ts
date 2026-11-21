@@ -15,14 +15,17 @@ import {
   getFightOverlayOrNull,
   getLearnedCooldown,
   getPrefs,
+  getRouteOverride,
   getTargetOverrides,
   importRecords,
   normalizeRecord,
   removeCustomTarget,
+  resetRouteOverride,
   resetTargetOverride,
   setBuffOverlay,
   setFightOverlay,
   setPrefs,
+  setRouteOverride,
   setTargetOverride,
   updateCustomTarget,
   upsertCustomPath,
@@ -179,7 +182,7 @@ describe('autoleveling-user-data', () => {
 
 describe('every exported kind is one the server accepts (E20, CLOUDSYNC-01)', () => {
   // Mirror of the server's AutolevelUserRecords.Kinds (DSL repo); the C# test pins the same literal.
-  const SERVER_KINDS = ['target', 'buff', 'fight', 'path', 'pref', 'abilityTiming', 'targetOverride'];
+  const SERVER_KINDS = ['target', 'buff', 'fight', 'path', 'pref', 'abilityTiming', 'targetOverride', 'routeOverride'];
 
   it('SYNCED_RECORD_KINDS equals the server list', () => {
     expect([...SYNCED_RECORD_KINDS]).toEqual(SERVER_KINDS);
@@ -194,6 +197,7 @@ describe('every exported kind is one the server accepts (E20, CLOUDSYNC-01)', ()
     await upsertCustomPath({ id: 'p', name: 'p', continentName: 'c', areaName: 'a', mode: 'auto_level', steps: [], raw: '' } as any);
     await bumpLearnedCooldown('bash', 2);
     await setTargetOverride('a', RANGER, { engageName: 'rng' });
+    await setRouteOverride('a', ['n'], ['n', 'e']);
 
     const kinds = new Set((await exportAll()).map((r) => r.kind));
     expect([...kinds].sort()).toEqual([...SERVER_KINDS].sort());
@@ -315,6 +319,134 @@ describe('target overrides (E1, E6, E15, E16, E22)', () => {
     await importRecords([{ ...base, data: { key: RANGER_KEY, engageName: 'newer' }, updatedAt: 20 }]);
     await importRecords([{ ...base, data: { key: RANGER_KEY, engageName: 'older' }, updatedAt: 10 }]);
     expect((await getTargetOverrides('centaur-village'))[0].data.engageName).toBe('newer');
+  });
+});
+
+describe('route overrides (one whole-route record per area)', () => {
+  beforeEach(() => __setUserDataStoreForTests(memoryKvStore()));
+  const SERVED = ['e', 'se', 'w'];
+
+  it('has no override until the player saves one', async () => {
+    expect(await getRouteOverride('algoron-threadworks')).toBeNull();
+  });
+
+  it('saves the whole route under a deterministic per-area id and reads it back', async () => {
+    const res = await setRouteOverride('algoron-threadworks', SERVED, [' e ', 'se', 'w', 'w']);
+    expect(res.ok && res.record?.id).toBe('routeOverride:algoron-threadworks');
+    expect((await getRouteOverride('algoron-threadworks'))?.data).toEqual({ dirs: ['e', 'se', 'w', 'w'] });
+    expect(await getRouteOverride('other-area')).toBeNull();
+  });
+
+  it('a second save updates the same record instead of adding another', async () => {
+    await setRouteOverride('a', SERVED, ['e', 'n']);
+    await setRouteOverride('a', SERVED, ['e', 's']);
+    const records = (await exportAll()).filter((r) => r.kind === 'routeOverride');
+    expect(records).toHaveLength(1);
+    expect((records[0].data as { dirs: string[] }).dirs).toEqual(['e', 's']);
+  });
+
+  it('saving the served route again removes the override (an edit back to default leaves no trace)', async () => {
+    await setRouteOverride('a', SERVED, ['e', 'n']);
+    expect(await setRouteOverride('a', SERVED, [...SERVED])).toEqual({ ok: true, record: null });
+    expect(await getRouteOverride('a')).toBeNull();
+  });
+
+  it.each([
+    ['an empty route', [], 'empty'],
+    ['a step with a ;', ['e', 'n;quit'], 'unsafe'],
+    ['a blank step', ['e', '  '], 'unsafe'],
+    ['a step over 200 characters', ['x'.repeat(201)], 'unsafe'],
+    ['more than 1000 steps', Array(1001).fill('e'), 'too-long'],
+  ])('refuses %s and keeps the stored route', async (_name, wanted, error) => {
+    await setRouteOverride('a', SERVED, ['e', 'n']);
+    expect(await setRouteOverride('a', SERVED, wanted as string[])).toEqual({ ok: false, error });
+    expect((await getRouteOverride('a'))?.data.dirs).toEqual(['e', 'n']);
+  });
+
+  it('reset removes the override, including an imported copy stored under another id', async () => {
+    await importRecords([{ id: 'routeOverride:copy', kind: 'routeOverride', areaSlug: 'a', data: { dirs: ['n'] }, updatedAt: 5 }]);
+    expect((await getRouteOverride('a'))?.data.dirs).toEqual(['n']);
+    await resetRouteOverride('a');
+    expect(await getRouteOverride('a')).toBeNull();
+  });
+
+  it('round-trips through export, the wire and a fresh store', async () => {
+    await setRouteOverride('a', SERVED, ['e', 'w', 'w']);
+    const wire = JSON.parse(JSON.stringify(await exportAll()));
+    __setUserDataStoreForTests(memoryKvStore());
+    await importRecords(wire);
+    expect((await getRouteOverride('a'))?.data.dirs).toEqual(['e', 'w', 'w']);
+  });
+
+  it('on import the newest updatedAt wins', async () => {
+    const base = { id: 'routeOverride:a', kind: 'routeOverride' as const, areaSlug: 'a' };
+    await importRecords([{ ...base, data: { dirs: ['n'] }, updatedAt: 20 }]);
+    await importRecords([{ ...base, data: { dirs: ['s'] }, updatedAt: 10 }]);
+    expect((await getRouteOverride('a'))?.data.dirs).toEqual(['n']);
+  });
+
+  describe('when several stored records exist for one area (imported under other ids)', () => {
+    const rec = (id: string, dirs: unknown, updatedAt?: number) => ({
+      id,
+      kind: 'routeOverride',
+      areaSlug: 'a',
+      data: { dirs },
+      ...(updatedAt === undefined ? {} : { updatedAt }),
+    });
+
+    it('the newest updatedAt wins whichever order they are stored in', async () => {
+      __setUserDataStoreForTests(memoryKvStore({ 'routeOverride:new': rec('routeOverride:new', ['n'], 9), 'routeOverride:old': rec('routeOverride:old', ['s'], 5) }));
+      expect((await getRouteOverride('a'))?.data.dirs).toEqual(['n']);
+      __setUserDataStoreForTests(memoryKvStore({ 'routeOverride:old': rec('routeOverride:old', ['s'], 5), 'routeOverride:new': rec('routeOverride:new', ['n'], 9) }));
+      expect((await getRouteOverride('a'))?.data.dirs).toEqual(['n']);
+    });
+
+    it('a record with no updatedAt counts as oldest, whichever order they are stored in', async () => {
+      __setUserDataStoreForTests(memoryKvStore({ 'routeOverride:x': rec('routeOverride:x', ['s']), 'routeOverride:y': rec('routeOverride:y', ['n'], 3) }));
+      expect((await getRouteOverride('a'))?.data.dirs).toEqual(['n']);
+      __setUserDataStoreForTests(memoryKvStore({ 'routeOverride:y': rec('routeOverride:y', ['n'], 3), 'routeOverride:x': rec('routeOverride:x', ['s']) }));
+      expect((await getRouteOverride('a'))?.data.dirs).toEqual(['n']);
+    });
+
+    it('a malformed record is ignored, even when it is the newest', async () => {
+      __setUserDataStoreForTests(memoryKvStore({ 'routeOverride:bad': rec('routeOverride:bad', [], 99), 'routeOverride:ok': rec('routeOverride:ok', ['w'], 1) }));
+      expect((await getRouteOverride('a'))?.data.dirs).toEqual(['w']);
+    });
+
+    it('only a malformed record means no override', async () => {
+      __setUserDataStoreForTests(memoryKvStore({ 'routeOverride:bad': rec('routeOverride:bad', ['e;quit'], 99) }));
+      expect(await getRouteOverride('a')).toBeNull();
+    });
+  });
+
+  it('normalizeRecord refuses a malformed route record from the cloud', () => {
+    const ok = { id: 'r', kind: 'routeOverride', areaSlug: 'a', data: { dirs: ['e'] }, updatedAt: 1 };
+    expect(normalizeRecord(ok)).not.toBeNull();
+    expect(normalizeRecord({ ...ok, areaSlug: undefined })).toBeNull();
+    expect(normalizeRecord({ ...ok, data: { dirs: [] } })).toBeNull();
+    expect(normalizeRecord({ ...ok, data: { dirs: ['e;quit'] } })).toBeNull();
+    expect(normalizeRecord({ ...ok, data: { dirs: [5] } })).toBeNull();
+    expect(normalizeRecord({ ...ok, data: { dirs: ['e'], extra: 1 } })).toBeNull();
+    expect(normalizeRecord({ ...ok, data: ['e'] })).toBeNull();
+  });
+
+  it('a throwing store gives a storage error on save and nothing on read, never throwing', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const broken = memoryKvStore();
+    broken.keys = async () => {
+      throw new Error('storage unavailable');
+    };
+    broken.set = async () => {
+      throw new Error('storage unavailable');
+    };
+    broken.delete = async () => {
+      throw new Error('storage unavailable');
+    };
+    __setUserDataStoreForTests(broken);
+    expect(await getRouteOverride('a')).toBeNull();
+    expect(await setRouteOverride('a', SERVED, ['n'])).toEqual({ ok: false, error: 'storage' });
+    await expect(resetRouteOverride('a')).resolves.toBeUndefined();
+    warn.mockRestore();
   });
 });
 

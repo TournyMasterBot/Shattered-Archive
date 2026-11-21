@@ -1,6 +1,7 @@
 // apps/game-client/src/features/chat/chat-store.ts
 import { ansiToHtml } from '@shatteredarchive/utils-client/ansi-to-html';
 import type { ChatSubtype } from './chat-settings-store';
+import { stripChatDisplayText } from './chat-display-text';
 
 export interface ChatMessage {
   id: string;
@@ -19,8 +20,9 @@ export function appendChatLine(rawText: string, ts?: number, subtype?: ChatSubty
 
   const msg: ChatMessage = {
     id: String(nextId++),
+    // rawText is stored as received (audio beep and classifiers read its BEL); only what is shown is cleaned
     rawText,
-    html: ansiToHtml(rawText),
+    html: ansiToHtml(stripChatDisplayText(rawText)),
     ts: t,
     subtype,
   };

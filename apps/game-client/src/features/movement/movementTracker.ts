@@ -33,7 +33,7 @@ type PendingEntry = {
 };
 
 /** Head-of-queue-relative timeout — corpus-validated, see file header. */
-const HEAD_TIMEOUT_MS = 1200;
+export const HEAD_TIMEOUT_MS = 1200;
 const TIMEOUT_POLL_MS = 100;
 
 const ANSI_CSI_RE = /\[[0-9;]*m/g;

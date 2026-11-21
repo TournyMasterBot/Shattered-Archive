@@ -8,3 +8,6 @@ Purpose: Corpus-validated shared FIFO movement tracker (35k-real-move validated,
 
 /movementTracker.ts
 Purpose: Because bind() runs at app scope, its game:room-data listener also fills roomDataStore (the shared "where am I" cache). The HUD widgets that used to be the only writers (compass, room header) are not always on screen, and a window opened later (the map) found no room and stayed idle until the next move. Keep that write here: it is the one listener that is always bound. movementTracker.roomCache.test.ts drives the bound listeners through real events, a typed move needs the short direction (n, not north).
+
+/movementTracker.ts (HEAD_TIMEOUT_MS, 2026-11-19)
+Purpose: HEAD_TIMEOUT_MS is exported because the autopilot engine derives its movement backstop from it: max(idle wait, 4 x HEAD_TIMEOUT_MS) plus the allowance for commands still queued (features/autoleveling/autoleveling-engine.ts, docs/game/autopilot.md "Pause and stop"). Changing it moves the point at which a stalled move pauses the run. A pending move that is older than it is dropped by the tracker; the engine waits longer so the tracker settles first.

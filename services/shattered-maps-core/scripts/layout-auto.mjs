@@ -100,6 +100,7 @@ export function layoutAll(map, skip, sizeBy, core, extend = new Map(), options =
       related: spec.relations.length + 1,
       overlappingPairsBefore: applied.report.overlappingPairsBefore,
       overlappingPairsAfter: applied.report.overlappingPairsAfter,
+      outsideOutline: applied.report.outsideOutline,
       warnings: applied.report.warnings.length,
     });
   }

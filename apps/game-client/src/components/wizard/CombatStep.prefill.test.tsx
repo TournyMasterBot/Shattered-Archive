@@ -56,7 +56,7 @@ const CLERIC = {
   abilities: [ability('Sanctuary', 'spell', 20), ability('Armor', 'spell', 2), ability('Fly', 'spell', 10), ability('Stone Skin', 'spell', 40)],
 };
 const MAGE = { name: 'Mage', isReclass: false, abilities: [ability('Armor', 'spell', 2)] };
-const SANCTUARY = { label: 'Sanctuary', cmd: "cast 'sanctuary'", affect: 'sanctuary', inCombatCmd: 'quaff <potion>' };
+const SANCTUARY = { label: 'Sanctuary', cmd: "cast 'sanctuary'", affect: 'sanctuary' };
 const ARMOR = { label: 'Armor', cmd: "cast 'armor'", affect: 'armor' };
 const STONE_SKIN = { label: 'Stone Skin', cmd: "cast 'stone skin'", affect: 'stone skin' };
 

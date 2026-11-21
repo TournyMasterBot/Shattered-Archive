@@ -39,8 +39,8 @@ RUN pnpm install --frozen-lockfile
 # The Mapper reads no build-time configuration: it is a static single-page app with a hash router and keeps its work in the browser.
 RUN pnpm --filter @shatteredarchive/shattered-maps-client... build
 
-# nginx 1.31.6-alpine3.24
-FROM nginx:1.31.6-alpine@sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2 AS runtime
+# nginx 1.31.9-alpine3.24
+FROM nginx:1.31.9-alpine@sha256:90b6bd2aec278b16b98221d64deb1d6d35d164567f507ab0716e6053878315aa AS runtime
 RUN apk --no-cache upgrade
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY deploy/nginx/shattered-maps-client.conf /etc/nginx/conf.d/default.conf

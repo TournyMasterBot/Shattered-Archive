@@ -58,8 +58,8 @@ crashing.
 
 **Autopilot records.** `/api/user-content/autoleveling` stores the wizard's records (`UserRecord[]`,
 `features/autoleveling/autoleveling-user-data.ts`) as one whole-collection blob, 1000 records at most. The
-server accepts exactly seven kinds (`Server.Dsl/AgentApi/AutolevelUserRecords.cs`): `target`, `buff`, `fight`,
-`path`, `pref`, `abilityTiming` and `targetOverride` (a player's personal edit of a pre-loaded area target).
+server accepts exactly eight kinds (`Server.Dsl/AgentApi/AutolevelUserRecords.cs`): `target`, `buff`, `fight`,
+`path`, `pref`, `abilityTiming`, `targetOverride` (a player's personal edit of a pre-loaded area target) and `routeOverride` (a player's own route for an area: `{ dirs: [...] }`). The `pref` kind also holds the remembered Rest, Weight and lap-wait values (`pref:global`) and the unticked targets per area (`pref:targets:<areaSlug>`); the server stores their `data` as given.
 The list is a contract with the client's `SYNCED_RECORD_KINDS`: a kind the client exports but the server lacks
 rejects the whole upload with a 400 (until 2026-11-13 that happened to `abilityTiming`). A `targetOverride`
 carries the area on the record and `{ key, lookName?, engageName?, hidden? }` in `data`; text fields are 1-200

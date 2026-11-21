@@ -53,6 +53,11 @@ const LOCAL_CONFIG_IGNORES = [
 ];
 
 module.exports = {
+  // Hard cap on parallel workers for any run of this config. Without it jest starts one worker per core
+  // (~31 on a 32-core machine) and a worker on this suite holds ~4 GB: a bare `jest` run once used 112 GB
+  // and froze the machine (2026-11-19). `--runInBand` (the package scripts) still runs in-process, and a
+  // CLI --maxWorkers overrides this, but .claude/hooks/jest-guard.js denies a CLI value above 4.
+  maxWorkers: 4,
   projects: [
     ...LOCAL_CONFIG_PACKAGES,
 

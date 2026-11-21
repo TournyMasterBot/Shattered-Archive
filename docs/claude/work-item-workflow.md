@@ -33,7 +33,7 @@ Nothing outside `.ai-plans*` and `.pr` is created by the workflow skills except 
 |---|---|---|
 | `item.md` | capture skills | front matter below + the captured body |
 | `scope.md` | `/scope-work` | stakeholder-level scope, no sizing |
-| `tech-plan.md` | `/tech-plan` | phases are `### [ ] Phase N — title` headings; `/implement-plan` flips `[ ]` to `[x]` and records drift from the original in `## Plan amendments` (the original text is kept; significant deviations need the user's decision); progress log at the end |
+| `tech-plan.md` | `/tech-plan` | each phase is a goal, a numbered Work checklist and a Sign-off box under a `### [ ] Phase N — title` heading (the heading box is ticked only when every box below is); `## Workflows (before and after)` holds a mermaid Before and After per changed workflow; `/implement-plan` ticks the boxes as the work is done, so the unticked boxes ARE the outstanding work, and records drift from the original in `## Plan amendments` (the original text is kept; significant deviations need the user's decision); progress log at the end |
 | `test-results.md` | `/implement-plan` | one block per phase: commands, counts, coverage, API calls, screenshots |
 | `pr-review.md` | `/pr-review` | verdict table, findings, PR-template readiness |
 | `summary.md`, `PR_BODY.md` | `/pr-package` | results, coverage, showcase list; the PR text |
@@ -69,6 +69,18 @@ A migrated pre-workflow plan is `type: legacy-plan`: its old plan file is `tech-
   the developer angle in `docs/{service}/{feature}.md` (how it is wired and how to use and interact with it from code), and the end-user
   angle in the service's help or user-guide area (what a user sees and does). A feature that exists with no document gets one. Pure
   internal work with no user-visible effect skips only the end-user part, with the reason recorded.
+- **Status lives in the boxes.** A plan's outstanding work is its unticked boxes (Work steps, each phase's Sign-off, the closing `## Plan sign-off`).
+  A deferred step keeps its box with a `deferred:` note; nothing is ticked that was not run. A changed workflow carries a mermaid Before and After in the
+  plan, and the After moves into the developer doc when the work is done.
+- **Documentation is verified by a check, not by memory.** Before an item asks for sign-off, `node scripts/check-doc-impact.mjs <item folder>`
+  must report nothing unresolved. It lists (1) every doc that names a changed code file but was not changed and (2) every folder with an
+  `.ai-context` / `.annotated` that holds changed files whose index was not touched, tooling folders (`.claude/`, `scripts/`, CI) included. Each
+  finding is updated, or recorded in `test-results.md` by its path as `checked, still accurate: <reason>` (or `unrelated change: <item>`). The
+  documentation surfaces to consider are: the feature doc, its folder index (`docs/{service}/.ai-context`), docs that describe a changed
+  contract (sync, API, event, storage key), end-user text in the app, the indexes of every touched folder, `CLAUDE.md` / `docs/claude/*` when
+  tooling, hooks, scripts or CI change, and the docs of a sibling repo the work crosses. (Origin: the first sweep of
+  `2026-11-18_autopilot-live-test-findings` repeated what the phases had touched and missed a stale feature doc, a stale folder index, a
+  sync-contract doc and the tooling indexes.)
   `{service}` is the product name: the app folder under `apps/` without its `-client` / `-server` suffix, so a client and server pair
   share one folder (`game`, `auth`, `mud-builder`, `scrum-poker`, `soulsteel`, `web`, `psd-viewer`; `simulacrum` and the extensions keep
   their own names). `{feature}` is a kebab-case feature name. The folder's `.ai-context` is updated when a file is added. The

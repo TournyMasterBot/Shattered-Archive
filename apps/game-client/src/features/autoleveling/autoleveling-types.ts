@@ -40,21 +40,52 @@ export interface AutoLevelVitalsGate {
  */
 export type AutoLevelOnceKey = 'fight' | 'round';
 
+/**
+ * Where the action may be sent from: only while fighting (`in`) or only while not fighting (`out`). Absent = either.
+ * The engine decides from the live GMCP `is_fighting`, at the moment it is about to send (not when it was queued), whatever
+ * the game would answer (owner decision D3, 2026-11-18: dark heal can only be cast out of combat).
+ */
+export type AutoLevelCombatState = 'in' | 'out';
+
+/**
+ * The enemy's condition as the game words it: seven phrases, each a band of the enemy's hit points. A band is named by its
+ * lower edge in percent. The bands are the stock base's (100, 90, 75, 50, 30, 15, 0); DSL's are not verified, so the UI
+ * says "about".
+ */
+export const ENEMY_BAND_FLOORS = [0, 15, 30, 50, 75, 90, 100] as const;
+export type AutoLevelEnemyBand = (typeof ENEMY_BAND_FLOORS)[number];
+
+/**
+ * Optional enemy-condition precondition on top of the action's own gates: `below` is satisfied while the enemy's current band
+ * is lower than `band`, `above` while it is higher (bands compared by their floor, so `above 50` means 75 or better). Never
+ * blocks while no condition line has been seen this fight.
+ */
+export interface AutoLevelEnemyGate {
+  op: 'above' | 'below';
+  band: AutoLevelEnemyBand;
+}
+
+/** The gates that sit beside `vitalsGate` and `onceKey` on every action that carries them (all optional, all "and"). */
+export interface AutoLevelExtraGates {
+  combatState?: AutoLevelCombatState;
+  enemyGate?: AutoLevelEnemyGate;
+}
+
 export type AutoLevelAction =
-  | { kind: 'send'; cmd: string; vitalsGate?: AutoLevelVitalsGate; onceKey?: AutoLevelOnceKey }
+  | ({ kind: 'send'; cmd: string; vitalsGate?: AutoLevelVitalsGate; onceKey?: AutoLevelOnceKey } & AutoLevelExtraGates)
   /**
    * Send cmd only if at least cooldownSec seconds have passed since it was last
    * sent by THIS engine run. Used for fight commands that have an in-game reuse
    * timer (bash, kick, a quaffed pot). cooldownSec 0 behaves like a plain send.
    * Syntax in the step editor: cooldown <sec> <command>
    */
-  | {
+  | ({
       kind: 'send_cooldown';
       cmd: string;
       cooldownSec: number;
       vitalsGate?: AutoLevelVitalsGate;
       onceKey?: AutoLevelOnceKey;
-    }
+    } & AutoLevelExtraGates)
   /**
    * Send cmd only if at least everyTicks game ticks have elapsed since it was
    * last sent by THIS engine run. A "tick" is the GMCP `tick` event (~40s on
@@ -62,13 +93,13 @@ export type AutoLevelAction =
    * `if_affect_missing` cannot gate them. everyTicks 0 behaves like a plain send.
    * Syntax in the step editor: every_ticks <n> <command>
    */
-  | {
+  | ({
       kind: 'send_every_ticks';
       cmd: string;
       everyTicks: number;
       vitalsGate?: AutoLevelVitalsGate;
       onceKey?: AutoLevelOnceKey;
-    }
+    } & AutoLevelExtraGates)
   | { kind: 'wait_ms'; ms: number }
   | { kind: 'wait_text'; text: string; caseInsensitive?: boolean; timeoutMs?: number }
   | { kind: 'wait_regex'; pattern: string; flags?: string; timeoutMs?: number }
@@ -82,13 +113,15 @@ export type AutoLevelAction =
    * affectName is matched case-insensitively against GMCP AffectData.n.
    * Syntax in the step editor: if_affect_missing "affect name" command
    */
-  | {
+  | ({
       kind: 'if_affect_missing';
       affectName: string;
       cmd: string;
       vitalsGate?: AutoLevelVitalsGate;
       onceKey?: AutoLevelOnceKey;
-    };
+      /** Re-arm until the affect shows. Absent = on; `false` = send once and leave it to the next checkpoint. */
+      retry?: boolean;
+    } & AutoLevelExtraGates);
 
 export type AutoLevelPhaseTriplet = {
   /**
@@ -212,6 +245,8 @@ export type AutoLevelCriticalBuff = {
   holdNearLevel?: boolean;
   /** Minimum seconds between reactions for this affect (anti-flap). */
   cooldownSec?: number;
+  /** Re-arm until the affect shows. Absent = on; `false` = no retry. */
+  retry?: boolean;
 };
 
 /**
@@ -320,7 +355,11 @@ export type AutoLevelRunState =
   | { status: 'waiting' }
   | { status: 'resting' }
   | { status: 'running'; round: number; step: string; actionIndex: number }
-  | { status: 'paused'; round: number; step: string; actionIndex: number }
+  /**
+   * `reason`: who or what paused it (absent = the player). A `timeout` pause carries `message`, the line the player sees, and raises Copilot's
+   * need-help signal. `round` and the rest are absent when the engine paused itself from outside the round loop.
+   */
+  | { status: 'paused'; round?: number; step?: string; actionIndex?: number; reason?: 'user' | 'flee' | 'timeout'; message?: string }
   | { status: 'stopping' }
   | { status: 'error'; message: string };
 

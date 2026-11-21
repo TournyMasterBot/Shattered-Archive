@@ -88,4 +88,14 @@ describe('autoSpec: a layout spec from the links between areas', () => {
     expect(out.overlapsAfter).toBe(0);
     expect((out.placements.get('east')?.x ?? 0) > (out.placements.get('hub')?.x ?? 99)).toBe(true);
   });
+
+  it('carries the outline, hints and fill of the owner spec, also when its centre is not on the continent', () => {
+    const outline: [number, number][] = [[0, 0], [10, 0], [5, 8]];
+    const owner = { center: 'nowhere', relations: [], outline, hints: { east: [8, 1] as [number, number] }, outlineFill: 0.4 };
+    const spec = autoSpec(chain, 'c', { base: owner }) as NonNullable<ReturnType<typeof autoSpec>>;
+    expect(spec).toMatchObject({ center: 'hub', outline, hints: owner.hints, outlineFill: 0.4 });
+    // and when no link joins two areas the owner's spec still comes back whole
+    const alone = autoSpec(world({ a: ['a1'] }, []), 'c', { base: { ...owner, center: 'a' } });
+    expect(alone).toMatchObject({ center: 'a', outline, outlineFill: 0.4 });
+  });
 });

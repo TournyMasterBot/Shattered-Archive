@@ -25,9 +25,14 @@ import {
   type FightRow,
 } from '../../features/autoleveling/autoleveling-user-data';
 import { BUFF_CATALOG } from '../../features/autoleveling/autoleveling-buff-catalog';
+import { cooldownSecFromLag, refreshTicksFromDuration } from '../../features/autoleveling/autoleveling-lag';
+import { expandCommand, findUnresolvedPlaceholder } from '../../features/autoleveling/autoleveling-command-text';
+import { bandLabel } from '../../features/autoleveling/autoleveling-enemy-condition';
+import { COMBAT_STATE_TEXT } from '../../features/autoleveling/autoleveling-row-text';
 import {
   DEFAULT_REFRESH_TICKS,
   buffRowFromCatalog,
+  buffRowForGate,
   defaultBuffRows,
   defaultFightRows,
 } from '../../features/autoleveling/autoleveling-class-defaults';
@@ -40,6 +45,9 @@ import {
 import type { AutoPilotAbility, AutoPilotClass } from '../../features/autoleveling/autoleveling-content-types';
 import type {
   AutoLevelAlignment,
+  AutoLevelCombatState,
+  AutoLevelEnemyBand,
+  AutoLevelEnemyGate,
   AutoLevelOnceKey,
   AutoLevelVitalsGate,
 } from '../../features/autoleveling/autoleveling-types';
@@ -50,6 +58,20 @@ import { FilterableSelect, type FilterableSelectOption } from './FilterableSelec
 import type { WizardDraft } from './useWizardDraft';
 
 type BuffGate = 'affect' | 'ticks' | 'always';
+
+/** A copy of the row without the keys whose value is undefined: a cleared option is absent from the stored row, not stored as nothing. */
+function withoutUndefined<T extends object>(row: T): T {
+  return Object.fromEntries(Object.entries(row).filter(([, v]) => v !== undefined)) as T;
+}
+
+/**
+ * Why a command will not be sent, or null. A command that still has `<something>` or `{something}` to fill in (other than {name}, which autopilot
+ * fills with the kill keyword) is not sent: it used to be sent to the game literally (CMDTPL-01).
+ */
+function unresolvedNote(cmd: string | undefined): string | null {
+  const left = findUnresolvedPlaceholder(expandCommand(String(cmd ?? ''), 'target'));
+  return left ? `"${cmd}" still has ${left} to fill in: autopilot will not send it until you replace that part.` : null;
+}
 
 const ALIGNMENTS: readonly AutoLevelAlignment[] = ['good', 'neutral', 'evil'];
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -171,6 +193,112 @@ const OnceGateControl: React.FC<{
         once per fight
       </button>
     </div>
+  </div>
+);
+
+/**
+ * Where the row may be sent from: either, only in a fight, only out of one (live findings 2026-11-14: dark heal can only be cast out of
+ * combat). The engine enforces it itself from GMCP is_fighting, whatever the game would answer.
+ */
+const CombatStateControl: React.FC<{
+  value: AutoLevelCombatState | undefined;
+  onChange: (v: AutoLevelCombatState | undefined) => void;
+  contextLabel: string;
+}> = ({ value, onChange, contextLabel }) => (
+  <div className={styles.gateBar}>
+    <span className={styles.gateLabel}>send</span>
+    <div className={styles.gateSeg} role="group" aria-label={`Combat state for ${contextLabel}`}>
+      <button
+        type="button"
+        className={`${styles.gateOpt} ${!value ? styles.gateOptOn : ''}`}
+        aria-pressed={!value}
+        title="Send it whether or not you are fighting."
+        onClick={() => onChange(undefined)}
+      >
+        any time
+      </button>
+      <button
+        type="button"
+        className={`${styles.gateOpt} ${value === 'in' ? styles.gateOptOn : ''}`}
+        aria-pressed={value === 'in'}
+        title="Only while you are fighting."
+        onClick={() => onChange('in')}
+      >
+        {COMBAT_STATE_TEXT.in}
+      </button>
+      <button
+        type="button"
+        className={`${styles.gateOpt} ${value === 'out' ? styles.gateOptOn : ''}`}
+        aria-pressed={value === 'out'}
+        title="Only while you are not fighting, for example a heal the game will not let you cast in combat."
+        onClick={() => onChange('out')}
+      >
+        {COMBAT_STATE_TEXT.out}
+      </button>
+    </div>
+  </div>
+);
+
+/** The enemy's condition bands as menu entries: the phrase with its percent after it, best condition first. */
+const ENEMY_BANDS: readonly AutoLevelEnemyBand[] = [100, 90, 75, 50, 30, 15, 0];
+
+/**
+ * Optional enemy-condition precondition: the game only tells you the enemy's health in words, so the gate compares those phrases
+ * (each shown with its percent, which is approximate). Fires only during a fight and, like the own-vitals gate, never blocks
+ * before the first condition line has been seen. Together with the own-vitals gate below, both must hold.
+ */
+const EnemyGateControl: React.FC<{
+  gate: AutoLevelEnemyGate | undefined;
+  onChange: (g: AutoLevelEnemyGate | undefined) => void;
+  contextLabel: string;
+}> = ({ gate, onChange, contextLabel }) => (
+  <div className={styles.gateBar}>
+    <label className={styles.checkInline}>
+      <input
+        type="checkbox"
+        checked={!!gate}
+        onChange={(e) => onChange(e.target.checked ? { op: 'below', band: 50 } : undefined)}
+        aria-label={`Enable enemy condition gate for ${contextLabel}`}
+      />
+      only when the enemy is
+    </label>
+    {gate && (
+      <>
+        <div className={styles.gateSeg} role="group" aria-label={`Enemy condition direction for ${contextLabel}`}>
+          <button
+            type="button"
+            className={`${styles.gateOpt} ${gate.op === 'below' ? styles.gateOptOn : ''}`}
+            aria-pressed={gate.op === 'below'}
+            title="Healthier-looking bands do not count: only when the enemy looks worse than the one you pick."
+            onClick={() => onChange({ ...gate, op: 'below' })}
+          >
+            below
+          </button>
+          <button
+            type="button"
+            className={`${styles.gateOpt} ${gate.op === 'above' ? styles.gateOptOn : ''}`}
+            aria-pressed={gate.op === 'above'}
+            title="Only when the enemy looks better than the one you pick (for example a skill that stops working on a badly wounded enemy)."
+            onClick={() => onChange({ ...gate, op: 'above' })}
+          >
+            above
+          </button>
+        </div>
+        <select
+          className={styles.select}
+          value={gate.band}
+          onChange={(e) => onChange({ ...gate, band: Number(e.target.value) as AutoLevelEnemyBand })}
+          aria-label={`Enemy condition for ${contextLabel}`}
+          title="The game words the enemy's health; the percents are approximate."
+        >
+          {ENEMY_BANDS.map((b) => (
+            <option key={b} value={b}>
+              {bandLabel(b)}
+            </option>
+          ))}
+        </select>
+      </>
+    )}
   </div>
 );
 
@@ -348,7 +476,7 @@ export const CombatStep: React.FC<Props> = ({
       const level = latest.current.charLevel;
       const offense = classOffensiveAbilities(catalog, cls.name);
       const fight = await Promise.all(
-        defaultFightRows(offense, level).map(async (r) => ({ ...r, cooldownSec: (await getLearnedCooldown(r.cmd)) ?? 0 })),
+        defaultFightRows(offense, level).map(async (r) => ({ ...r, cooldownSec: (await getLearnedCooldown(r.cmd)) ?? r.cooldownSec })),
       );
       return { buffs: defaultBuffRows(cls.abilities, level), fight };
     },
@@ -468,7 +596,7 @@ export const CombatStep: React.FC<Props> = ({
   };
   const addBuff = () => commitBuffs([...buffs, { label: '', cmd: '', affect: '' }]);
   const updateBuff = (i: number, patch: Partial<BuffRow>) =>
-    commitBuffs(buffs.map((b, ix) => (ix === i ? { ...b, ...patch } : b)));
+    commitBuffs(buffs.map((b, ix) => (ix === i ? withoutUndefined({ ...b, ...patch }) : b)));
   const removeBuff = (i: number) => commitBuffs(buffs.filter((_, ix) => ix !== i));
   const moveBuff = (i: number, dir: -1 | 1) => commitBuffs(moveItem(buffs, i, dir));
   // Pause keeps the row but the engine skips it; resume deletes the flag (stored like a never-paused row).
@@ -503,34 +631,16 @@ export const CombatStep: React.FC<Props> = ({
     return null;
   };
 
-  const setBuffGate = (i: number, gate: BuffGate) =>
-    commitBuffs(
-      buffs.map((b, ix) => {
-        if (ix !== i) return b;
-        const keep = {
-          ...(b.unverified ? { unverified: true as const } : {}),
-          ...(b.disabled ? { disabled: true as const } : {}),
-        };
-        if (gate === 'ticks')
-          return { label: b.label, cmd: b.cmd, refreshTicks: b.refreshTicks ?? DEFAULT_REFRESH_TICKS, ...keep };
-        if (gate === 'always') return { label: b.label, cmd: b.cmd, ...keep };
-        // 'affect' — keep the affect name + the in-combat/hold extras
-        return {
-          label: b.label,
-          cmd: b.cmd,
-          affect: b.affect ?? '',
-          ...(b.inCombatCmd ? { inCombatCmd: b.inCombatCmd } : {}),
-          ...(b.holdNearLevel ? { holdNearLevel: true } : {}),
-          ...keep,
-        };
-      }),
-    );
+  // buffRowForGate spreads the row, so every field that is not specific to the old mode survives the switch (SETTINGS-07).
+  const setBuffGate = (i: number, gate: BuffGate) => commitBuffs(buffs.map((b, ix) => (ix === i ? buffRowForGate(b, gate) : b)));
 
   const addFromCatalog = (label: string) => {
     const entry = BUFF_CATALOG.find((c) => c.label === label);
     if (!entry) return;
     if (buffs.some((b) => b.label.toLowerCase() === entry.label.toLowerCase())) return;
-    commitBuffs([...buffs, buffRowFromCatalog(entry)]);
+    // a tick-gated entry takes its recast interval from the class's own ability when the feed knows its duration
+    const ability = classAbilities.find((a) => a.name.toLowerCase() === entry.label.toLowerCase() || (entry.affect && a.name.toLowerCase() === entry.affect.toLowerCase()));
+    commitBuffs([...buffs, buffRowFromCatalog(entry, ability)]);
   };
 
   // A class ability → a buff row. If the name matches a BUFF_CATALOG entry we get the verified
@@ -549,7 +659,7 @@ export const CombatStep: React.FC<Props> = ({
     const lc = name.trim().toLowerCase();
     const ability = classAbilities.find((a) => a.name === name);
     if (ability?.type === 'skill') {
-      commitBuffs([...buffs, { label: name, cmd: lc, refreshTicks: DEFAULT_REFRESH_TICKS, unverified: true }]);
+      commitBuffs([...buffs, { label: name, cmd: lc, refreshTicks: refreshTicksFromDuration(ability.durationTicks, DEFAULT_REFRESH_TICKS), unverified: true }]);
       return;
     }
     commitBuffs([...buffs, { label: name, cmd: `cast '${lc}'`, affect: lc, unverified: true }]);
@@ -563,7 +673,7 @@ export const CombatStep: React.FC<Props> = ({
   };
   const addFight = () => commitFight([...fightCommands, { cmd: '', cooldownSec: 0 }]);
   const updateFight = (i: number, patch: Partial<FightRow>) =>
-    commitFight(fightCommands.map((f, ix) => (ix === i ? { ...f, ...patch } : f)));
+    commitFight(fightCommands.map((f, ix) => (ix === i ? withoutUndefined({ ...f, ...patch }) : f)));
   // Pause keeps the row (and its cooldown and gates) but the engine skips it; resume drops the flag so a
   // resumed row is stored exactly like one that was never paused.
   const setFightPaused = (i: number, paused: boolean) =>
@@ -587,7 +697,7 @@ export const CombatStep: React.FC<Props> = ({
     // Pre-fill from a previously-learned cooldown for this exact ability (any area, any
     // character) — the engine bumps this whenever it sees the command queue up.
     const learned = await getLearnedCooldown(cmd);
-    commitFight([...fightCommands, { cmd, cooldownSec: learned ?? 0 }]);
+    commitFight([...fightCommands, { cmd, cooldownSec: learned ?? cooldownSecFromLag(ab.lagMs) }]);
   };
 
   if (!areaSlug) {
@@ -860,9 +970,36 @@ export const CombatStep: React.FC<Props> = ({
                   />
                   let fall near level-up
                 </label>
+                <label
+                  className={styles.checkInline}
+                  title="If the cast fails (for example 'You lost your concentration') or the affect does not show, try again: up to 3 tries, a few seconds apart, then autopilot says it gave up."
+                >
+                  <input
+                    type="checkbox"
+                    checked={b.retryUntilSet !== false}
+                    onChange={(e) => updateBuff(i, { retryUntilSet: e.target.checked ? undefined : false })}
+                    aria-label={`Retry until the affect shows for buff ${i + 1}`}
+                  />
+                  retry until the affect shows
+                </label>
               </div>
             )}
+            {[b.cmd, b.inCombatCmd].map((c) => unresolvedNote(c)).filter(Boolean).map((note, ni) => (
+              <div key={ni} className={styles.fieldHint} role="note">
+                ⚠ {note}
+              </div>
+            ))}
 
+            <CombatStateControl
+              value={b.combatState}
+              onChange={(v) => updateBuff(i, { combatState: v })}
+              contextLabel={`buff ${i + 1}`}
+            />
+            <EnemyGateControl
+              gate={b.enemyGate}
+              onChange={(g) => updateBuff(i, { enemyGate: g })}
+              contextLabel={`buff ${i + 1}`}
+            />
             <VitalsGateControl
               gate={b.vitalsGate}
               onChange={(g) => updateBuff(i, { vitalsGate: g })}
@@ -963,6 +1100,21 @@ export const CombatStep: React.FC<Props> = ({
                 </button>
               </div>
 
+              {unresolvedNote(f.cmd) ? (
+                <div className={styles.fieldHint} role="note">
+                  ⚠ {unresolvedNote(f.cmd)}
+                </div>
+              ) : null}
+              <CombatStateControl
+                value={f.combatState}
+                onChange={(v) => updateFight(i, { combatState: v })}
+                contextLabel={`fight command ${i + 1}`}
+              />
+              <EnemyGateControl
+                gate={f.enemyGate}
+                onChange={(g) => updateFight(i, { enemyGate: g })}
+                contextLabel={`fight command ${i + 1}`}
+              />
               <VitalsGateControl
                 gate={f.vitalsGate}
                 onChange={(g) => updateFight(i, { vitalsGate: g })}

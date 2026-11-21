@@ -23,3 +23,6 @@ Purpose: Writes features/simulacrumAdmin/commandTable.generated.ts from the sibl
 
 /publish-map-renderer.mjs
 Purpose: Joins three compiled shattered-maps-core files (schema, hierarchy, render) into ONE strict IIFE for the C# site, with no bundler and no new dependency: it strips relative imports and exports, refuses any other import, a name declared twice and a missing public name, and normalizes CRLF so the bytes are the same on every machine. Writes the DSL repo wwwroot/js/maps/worldmap2.js and worldmap2.js.sha256; --check exits 1 when they differ from the build (run it before committing a change in the core). The C# side compares the hash in RendererBundleTests. Tests: publish-map-renderer.test.mjs (part of test:guards). Docs: docs/shattered-maps/surfaces.md.
+
+/check-jest-workers.mjs
+Purpose: Fails when a package.json script, a workflow run line or a Dockerfile RUN line runs jest without --runInBand or --maxWorkers 1-4. Its matching rule is verdict() in .claude/hooks/jest-guard.js (one rule for the Claude hook and this check). Run by a step in .github/workflows/ci-test-coverage.yml and by test:guards. A YAML key other than run: (a step named "Run Jest per app") is a label and is skipped. A person who types a large --maxWorkers on purpose is not guarded: that was an owner decision.

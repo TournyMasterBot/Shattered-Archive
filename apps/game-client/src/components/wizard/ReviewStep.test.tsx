@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import { ReviewStep } from './ReviewStep';
@@ -57,6 +57,96 @@ describe('ReviewStep', () => {
     render(<ReviewStep draft={draftWith({ area: empty as never })} onPatch={jest.fn()} />);
     expect(row('Route')).toHaveTextContent('0 steps per round');
     expect(within(row('Route')).queryByText('Show steps')).toBeNull();
+  });
+
+  describe('route editor', () => {
+    it('offers no editor when the wizard gives no save handler', () => {
+      render(<ReviewStep draft={draftWith()} onPatch={jest.fn()} />);
+      expect(screen.queryByRole('button', { name: 'Edit route' })).toBeNull();
+    });
+
+    it('opens on the current steps (without required actions), saves the typed text, and closes on success', async () => {
+      const onSaveRoute = jest.fn().mockResolvedValue(null);
+      render(<ReviewStep draft={draftWith()} onPatch={jest.fn()} onSaveRoute={onSaveRoute} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Edit route' }));
+      const box = screen.getByLabelText('Route steps') as HTMLTextAreaElement;
+      expect(box.value).toBe('n;e');
+      expect(screen.getByText(/required actions still run first/)).toBeInTheDocument();
+      fireEvent.change(box, { target: { value: 'n;e;w' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save route' }));
+      await screen.findByRole('button', { name: 'Edit route' });
+      expect(onSaveRoute).toHaveBeenCalledWith('n;e;w');
+      expect(screen.queryByLabelText('Route steps')).toBeNull();
+    });
+
+    it('keeps the editor open and shows the message when the save is refused', async () => {
+      const onSaveRoute = jest.fn().mockResolvedValue('The route needs at least one step.');
+      render(<ReviewStep draft={draftWith()} onPatch={jest.fn()} onSaveRoute={onSaveRoute} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Edit route' }));
+      fireEvent.change(screen.getByLabelText('Route steps'), { target: { value: '' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save route' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('The route needs at least one step.');
+      expect(screen.getByLabelText('Route steps')).toBeInTheDocument();
+    });
+
+    it('Cancel and Escape close the editor without saving', () => {
+      const onSaveRoute = jest.fn();
+      render(<ReviewStep draft={draftWith()} onPatch={jest.fn()} onSaveRoute={onSaveRoute} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Edit route' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      expect(screen.queryByLabelText('Route steps')).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Edit route' }));
+      fireEvent.keyDown(screen.getByLabelText('Route steps'), { key: 'Escape' });
+      expect(screen.queryByLabelText('Route steps')).toBeNull();
+      expect(onSaveRoute).not.toHaveBeenCalled();
+    });
+
+    it('an edited route shows a badge, the shared step count and a reset that calls the handler', async () => {
+      const onResetRoute = jest.fn().mockResolvedValue(undefined);
+      const draft = draftWith({ routeOverridden: true, routeDefaultDirs: ['n'] });
+      render(<ReviewStep draft={draft} onPatch={jest.fn()} onSaveRoute={jest.fn()} onResetRoute={onResetRoute} />);
+      expect(within(row('Route')).getByText('edited')).toBeInTheDocument();
+      expect(row('Route')).toHaveTextContent('Shared route: 1 steps');
+      fireEvent.click(screen.getByRole('button', { name: 'Reset route to default' }));
+      expect(onResetRoute).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves out the required-actions note when the area has none', () => {
+      const plain = { ...AREA, requiredActions: [] };
+      render(<ReviewStep draft={draftWith({ area: plain as never })} onPatch={jest.fn()} onSaveRoute={jest.fn()} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Edit route' }));
+      expect(screen.getByText(/Saved for you only/)).toBeInTheDocument();
+      expect(screen.queryByText(/required actions still run first/)).toBeNull();
+    });
+
+    it('disables Save and Cancel while the save is in flight', async () => {
+      let finish: (m: string | null) => void = () => undefined;
+      const onSaveRoute = jest.fn(() => new Promise<string | null>((r) => (finish = r)));
+      render(<ReviewStep draft={draftWith()} onPatch={jest.fn()} onSaveRoute={onSaveRoute} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Edit route' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Save route' }));
+      expect(screen.getByRole('button', { name: 'Save route' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+      fireEvent.click(screen.getByRole('button', { name: 'Save route' }));
+      expect(onSaveRoute).toHaveBeenCalledTimes(1);
+      await act(async () => finish(null));
+      await screen.findByRole('button', { name: 'Edit route' });
+    });
+
+    it('Save does nothing when the wizard stops offering a save handler while the editor is open', () => {
+      const { rerender } = render(<ReviewStep draft={draftWith()} onPatch={jest.fn()} onSaveRoute={jest.fn()} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Edit route' }));
+      rerender(<ReviewStep draft={draftWith()} onPatch={jest.fn()} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Save route' }));
+      expect(screen.getByLabelText('Route steps')).toBeInTheDocument();
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('an untouched route shows no badge and no reset', () => {
+      render(<ReviewStep draft={draftWith()} onPatch={jest.fn()} onSaveRoute={jest.fn()} onResetRoute={jest.fn()} />);
+      expect(within(row('Route')).queryByText('edited')).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Reset route to default' })).toBeNull();
+    });
   });
 
   it('the start-room box edits the reminder and shows the area start room as its placeholder', () => {

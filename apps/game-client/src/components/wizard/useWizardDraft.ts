@@ -49,6 +49,10 @@ export interface WizardDraft {
   targets: DraftTarget[];
   /** The player's overrides whose area target is no longer in the served list (kept, not applied). */
   unmatchedOverrides: UnmatchedOverride[];
+  /** The route as the server serves it (`area.dirs` holds the player's own route when `routeOverridden`). */
+  routeDefaultDirs: string[];
+  /** The player saved their own route for this area (shown in the Review step, restored by "Reset to default"). */
+  routeOverridden: boolean;
 
   mode: WizardMode;
   loopRounds: boolean;
@@ -89,6 +93,9 @@ export interface WizardDraft {
    */
   weightAtOrAbovePct: number;
   weightCommands: string;
+
+  /** Whole minutes to wait between laps (1-60, default 3) so the creatures can return. Remembered with the Rest and Weight values. */
+  lapWaitMin: number;
 }
 
 export function emptyDraft(): WizardDraft {
@@ -97,6 +104,8 @@ export function emptyDraft(): WizardDraft {
     area: null,
     targets: [],
     unmatchedOverrides: [],
+    routeDefaultDirs: [],
+    routeOverridden: false,
     mode: 'auto_level',
     loopRounds: true,
     playerClass: null,
@@ -110,6 +119,7 @@ export function emptyDraft(): WizardDraft {
     restDuringRound: [],
     weightAtOrAbovePct: 90,
     weightCommands: '',
+    lapWaitMin: 3,
   };
 }
 
@@ -121,7 +131,15 @@ export function useWizardDraft() {
 
   const setArea = useCallback(
     (slug: string, area: AutoPilotArea | null, seedTargets: DraftTarget[], unmatched: UnmatchedOverride[] = []) => {
-      setDraft((d) => ({ ...d, areaSlug: slug, area, targets: seedTargets, unmatchedOverrides: unmatched }));
+      setDraft((d) => ({
+        ...d,
+        areaSlug: slug,
+        area,
+        targets: seedTargets,
+        unmatchedOverrides: unmatched,
+        routeDefaultDirs: area?.dirs ?? [],
+        routeOverridden: false,
+      }));
     },
     [],
   );

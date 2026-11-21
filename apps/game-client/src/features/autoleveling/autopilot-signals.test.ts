@@ -53,3 +53,42 @@ describe('createAutopilotSignals', () => {
     expect(t.sent).toEqual([]);
   });
 });
+
+describe('a timeout pause asks for help (L22, L23)', () => {
+  it('asks once when the engine pauses itself, with the reason and what it waited for', () => {
+    const t = setup();
+    t.observe(running);
+    t.observe({ status: 'paused', reason: 'timeout', message: 'no reply to "n"' });
+    t.observe({ status: 'paused', reason: 'timeout', message: 'no reply to "n"' }); // same pause seen again: silent
+    const helps = t.sent.filter((s) => s.name.endsWith('need-help'));
+    expect(helps).toEqual([{ name: 'shatteredarchive:autopilot-need-help', payload: { reason: 'timeout', message: 'no reply to "n"' } }]);
+  });
+
+  it('a pause by the player, with or without a reason, and a flee pause do not ask', () => {
+    const t = setup();
+    t.observe(running);
+    t.observe({ status: 'paused', reason: 'user' });
+    t.observe(running);
+    t.observe({ status: 'paused', reason: 'flee' });
+    t.observe(running);
+    t.observe({ status: 'paused' });
+    expect(t.sent.filter((s) => s.name.endsWith('need-help'))).toEqual([]);
+  });
+
+  it('a second timeout pause after resuming asks again; resuming itself does not', () => {
+    const t = setup();
+    t.observe({ status: 'paused', reason: 'timeout', message: 'first' });
+    t.observe(running);
+    t.observe({ status: 'paused', reason: 'timeout', message: 'second' });
+    const helps = t.sent.filter((s) => s.name.endsWith('need-help'));
+    expect(helps.map((h) => (h.payload as { message: string }).message)).toEqual(['first', 'second']);
+  });
+
+  it('the error path is unchanged', () => {
+    const t = setup();
+    t.observe({ status: 'error', message: 'stuck' });
+    expect(t.sent.filter((s) => s.name.endsWith('need-help'))).toEqual([
+      { name: 'shatteredarchive:autopilot-need-help', payload: { reason: 'error', message: 'stuck' } },
+    ]);
+  });
+});

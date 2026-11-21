@@ -298,6 +298,8 @@ const DIR_WORD: Readonly<Record<string, string>> = { N: 'north', NE: 'northeast'
 const AREA_LINK_COLOR = '#5f6f8c';
 /** A line between two boxes longer than this many pixels crosses a lot of the map: it is drawn faint, so the short hops between neighbours stand out. */
 const FAR_AREA_LINK = 150;
+/** ...but on a big picture a line is only far when it crosses this share of it, so a continent spread over its landmass does not fade every arrow. */
+const FAR_SHARE_OF_PICTURE = 0.15;
 
 interface BoxRect {
   x: number;
@@ -336,6 +338,9 @@ function areaConnectors(slice: MapSlice, rects: ReadonlyMap<string, BoxRect>): s
     [...m].sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0])).map(([dir, count]) => `${DIR_WORD[dir] ?? dir}${count > 1 ? ` (${count})` : ''}`).join(', ');
   const head = (px: number, py: number, ux: number, uy: number): string =>
     `<polygon points="${n(px)},${n(py)} ${n(px - ux * 9 - uy * 4.5)},${n(py - uy * 9 + ux * 4.5)} ${n(px - ux * 9 + uy * 4.5)},${n(py - uy * 9 - ux * 4.5)}" fill="${AREA_LINK_COLOR}"/>`;
+  const all = [...rects.values()];
+  const spread = Math.max(Math.max(...all.map((r) => r.x + r.w)) - Math.min(...all.map((r) => r.x)), Math.max(...all.map((r) => r.y + r.h)) - Math.min(...all.map((r) => r.y)));
+  const far = Math.max(FAR_AREA_LINK, FAR_SHARE_OF_PICTURE * spread);
   const out: string[] = [];
   for (const { a, b, ab, ba } of pairs.values()) {
     const ra = rects.get(a) as BoxRect;
@@ -360,7 +365,7 @@ function areaConnectors(slice: MapSlice, rects: ReadonlyMap<string, BoxRect>): s
     const nameB = escapeXml(names.get(b) as string);
     const says = [ab.size > 0 ? `${nameA} to ${nameB}: ${words(ab)}` : '', ba.size > 0 ? `${nameB} to ${nameA}: ${words(ba)}` : ''].filter(Boolean).join('. ');
     out.push(
-      `<g data-area-link data-from="${escapeXml(a)}" data-to="${escapeXml(b)}"${length > FAR_AREA_LINK ? ' opacity="0.35"' : ''}><line x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}" stroke="${AREA_LINK_COLOR}" stroke-width="1.6"/>${tips}<line x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}" stroke="transparent" stroke-width="10"/><title>${says}</title></g>`,
+      `<g data-area-link data-from="${escapeXml(a)}" data-to="${escapeXml(b)}"${length > far ? ' opacity="0.35"' : ''}><line x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}" stroke="${AREA_LINK_COLOR}" stroke-width="1.6"/>${tips}<line x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}" stroke="transparent" stroke-width="10"/><title>${says}</title></g>`,
     );
   }
   return out;

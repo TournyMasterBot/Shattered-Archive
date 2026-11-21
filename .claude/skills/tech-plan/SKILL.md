@@ -18,6 +18,11 @@ are a plan; ask whether to rewrite it into phases or leave it alone.
 - **Every phase leaves the application buildable and testable.** A phase that ends with a failing build, type-check or test is a
   critical failure (see the workflow doc). Every phase carries the *Exit gate* block below, so this cannot be forgotten.
 - **Phases are deterministic and testable**: someone else, given the phase alone, builds the same thing and can prove it works.
+- **Every phase is a goal, a checklist of work, and a sign-off.** Status is read from the boxes, never from prose: a phase is outstanding
+  while any box under it is unticked, and a step that is skipped or deferred stays unticked with a `deferred:` note until a phase or amendment
+  owns it. The `###` heading box is only the derived summary the hooks count (ticked when every box below it is). See the shape in step 5.
+- **Every workflow the work changes has a before and an after diagram** (step 5, "Workflows"): mermaid, the Before drawn from the code read
+  this session, so the owner sees what changes without reading the Edit map.
 - **Plans follow the coding standards** in `docs/standards/` (step 2) and the data-classification rules (no Personal or Restricted values
   in the plan; placeholders and categories).
 - **Plans apply the edge-case catalog** in `docs/standards/edge-cases/` (step 4) and add to it; a plan that skips the catalog is incomplete.
@@ -64,6 +69,10 @@ sweeps. Library behaviour: `lookup_docs`. Game rules: `archive_ask`. Look for:
   or the related help surface) and read it. Record which exist, which are stale, and which are missing. Where the service has no
   end-user documentation location you can identify, ask the user where it belongs (AskUserQuestion, options drawn from what the repo
   already has) before the plan is written; do not invent one.
+  Then list the **documentation impact** of the Edit map: run `node scripts/check-doc-impact.mjs --files <comma-separated Edit-map files>` (it lists the
+  docs that name those files and the folders whose index would need an entry, tooling folders included). Each hit becomes an Edit-map row owned by a
+  phase, or a stated "checked, no change". Add `CLAUDE.md` / `docs/claude/*` rows when the work changes hooks, scripts, CI or rules, docs of sibling
+  repos when it crosses them, and the docs of any contract it changes (sync, API, event, storage key).
 
 ## 4. Edge cases: apply the catalog, then grow it
 
@@ -101,6 +110,7 @@ Edge-case catalog: <docs/standards/edge-cases/ files applied>  ·  Classifiers a
 
 ## Goal                  (the outcome, testable in one or two sentences)
 ## Out of scope
+## Workflows (before and after)   a Before and an After mermaid diagram per changed workflow, or "No workflow changes: <reason>"
 ## Standards applied     (per language: the decisions that govern this plan, linked)
 ## Edit map              table: File | Line(s) | Anchor | Change | Phase
 ## Edge cases            table: Id | Classifier (catalog id or "-") | Condition | Required behaviour | Covered by (phase, test)
@@ -112,27 +122,67 @@ Edge-case catalog: <docs/standards/edge-cases/ files applied>  ·  Classifiers a
 ## Risks and rollback
 ## Plan amendments       empty at creation; /implement-plan adds dated entries A1, A2, ... when the code has moved since this plan
 ## Progress log
+## Plan sign-off      the closing checklist (below)
 ```
 
-Each phase uses this shape, filled in completely:
+Each phase uses this shape, filled in completely. **Goal first, then the work as a checklist, then a sign-off box**:
 
 ```
-### [ ] Phase N — <title>
+### [ ] Phase N — <title>          (heading box: ticked only when EVERY box below is ticked)
 Goal:        one sentence; what is true after this phase that was not before
 Depends on:  earlier phases / nothing
-Changes:     bullet per edit: path:line (anchor) — what changes and why
-Tests:       new/updated test files with the cases and what each asserts (concrete observable behaviour, every added branch and
-             error path; edge-case ids covered). "None - doc-only" / "None - <trivial reason>" are the only allowed skips.
-API check:   (when an endpoint is added or changed) the real request, expected status and body shape, against the running local service
-UI check:    (when UI changes) route/state, viewport, the Playwright script, screenshot file phase-NN_<name>.png; the final phase adds the
-             showcase set showcase_NN_<name>.png
-Index/docs:  .ai-context / .annotated updates, plus the documentation this phase owns, as file paths: the developer doc
-             (docs/{service}/{feature}.md: create / update) and the end-user doc (create / update, or "no user-visible effect: reason").
-             Documentation lands in the phase that delivers the behaviour, not at the end.
-Exit gate:   build OK · typecheck OK · lint OK · all tests of the touched packages pass (not only this phase's) · coverage of new
-             code reviewed · API check done · screenshot taken · documentation for the phase's behaviour written or updated. If any test fails at the end of the phase it is fixed now, even
-             when the phase did not write it. The app is left buildable and testable.
+Workflow:    the W-ids this phase changes (see "Workflows"), or "none"
+
+Work
+- [ ] N.1 <path:line (anchor)>: what changes and why                       one box per edit
+- [ ] N.2 Tests: <new/updated test files, the cases and what each asserts; edge-case ids covered>
+                (concrete observable behaviour, every added branch and error path; "None - doc-only" / "None - <trivial reason>" are the only skips)
+- [ ] N.3 API check: <the real request, expected status and body shape, against the running local service>     (only when an endpoint changes)
+- [ ] N.4 UI check: <route/state, viewport, Playwright script, shot phase-NN_<name>.png; the final phase adds showcase_NN_<name>.png>   (only when UI changes)
+- [ ] N.5 Docs and indexes: <the .ai-context / .annotated entries, the developer doc (docs/{service}/{feature}.md: create / update), the end-user
+                doc (create / update, or "no user-visible effect: reason")>   (documentation lands in the phase that delivers the behaviour)
+
+Sign-off
+- [ ] N.S Exit gate verified and recorded in test-results.md (<date>): build · typecheck · lint · all tests of the touched packages (a failing
+                test is fixed now, even if this phase did not write it) · coverage of new code · API and UI checks done · the doc-impact check reports
+                0 unresolved · the After diagram of each W-id above matches the behaviour as built
+
 State on exit: what works now, what does not exist yet (a half-built feature stays behind a flag/unreachable, never half-wired)
+```
+
+How the boxes are used (this is what makes outstanding work visible):
+- A Work box is ticked the moment its step is finished, by `/implement-plan`, never in a batch at the end. The sign-off box is ticked only after
+  the exit gate ran green; the heading box last.
+- "What is left" is the list of unticked boxes. A step that cannot be done now (it needs an account, a decision, another phase) is not ticked:
+  it keeps its box and gains a `deferred: <why, who it waits on>` note, and a later phase or an amendment names the box that finishes it.
+- An amended step is marked `amended: see A<n>` next to its box; a step added by an amendment is a new box with the amendment id.
+
+Workflows. For every workflow the work changes (a user flow, a data flow between services, a sequence of calls, a state machine, a run loop)
+write one pair, before the Edit map, so the change is visible at a glance:
+
+```
+### W1 — <the workflow's name>        changed by: Phases 2, 4
+Before  (the current code; entry point and decisions as path:line)
+  <a mermaid block>
+After   (what this plan builds; every new or changed step marked NEW or CHANGED in its label)
+  <a mermaid block>
+```
+
+- Mermaid only, never ASCII art. Pick the kind that fits: `flowchart` for user flows and decisions, `sequenceDiagram` for calls between
+  services, `stateDiagram-v2` for run states. In a `flowchart` quote every label; in a `sequenceDiagram` or `stateDiagram-v2` use no quotes (they
+  print literally). Put no `;` inside any label or message, and no second `:` in a sequence message or state label (the parser rejects or
+  misreads them). Check the diagram renders (editor preview) before handing the plan over.
+- The Before is drawn from the code you read in step 3, never from memory or from an older plan. Name the file and line of the entry point.
+- A plan that changes no workflow says so in one line (`No workflow changes: <reason>`); the section is never silently missing.
+
+Plan sign-off. The last section of the plan is a closing checklist, ticked by `/implement-plan` and the owner:
+
+```
+## Plan sign-off
+- [ ] Every phase above is ticked (work, sign-off and heading boxes)
+- [ ] `node scripts/check-doc-impact.mjs <item folder>` reports 0 unresolved
+- [ ] The After diagrams are in the developer doc(s) (docs/{service}/...) and match the built behaviour
+- [ ] Owner sign-off recorded: Signed off by the user on <yyyy-mm-dd>
 ```
 
 Phase design rules: smallest slices that each deliver something verifiable; schema/type changes before their users; a refactor
@@ -145,7 +195,7 @@ updates docs and indexes, and (UI) captures the final showcase screenshots. Keep
    phase's Tests or verification, every classifier of every picked catalog file is either a table row or listed as not applicable with a
    reason, every touched package has a test command, every feature the work creates or changes has its developer doc
    (`docs/{service}/`) and end-user doc (or a stated "no user-visible effect") in the Edit map and in the phase that delivers it, and every
-   phase has its Exit gate and State on exit.
+   phase has a Goal, numbered Work boxes, a Sign-off box, a State on exit and a matching Exit gate line, every changed workflow has a Before and an After mermaid diagram (or the plan says "No workflow changes"), and the Plan sign-off block exists.
 2. Scan the document for Personal/Restricted values and for sizing words; fix them.
 3. Summarise in chat: number of phases with one line each, the standards files used or created, the classifiers the user approved (and
    those they declined), open risks. No sizing.

@@ -24,6 +24,8 @@ const serverGlobs = [
   '.ai-plans/**/*.{js,cjs,mjs}',
   '.ai-plans-completed/**/*.{js,cjs,mjs}',
   '.pr/**/*.{js,cjs,mjs}',
+  // Node replay and evaluation harnesses that live beside the user-script docs they exercise
+  'docs/userscripts/**/*.{js,cjs,mjs}',
   'scripts/**/*.{js,cjs,mjs,ts}',
   '*.config.{js,cjs,mjs}',
   'jest.config.{js,cjs,mjs}',
@@ -107,6 +109,8 @@ export default [
       '@typescript-eslint/no-unused-expressions': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
       'no-undef': 'off',
+      // Scripts that strip or match ANSI and control codes (same reason as the ts/tsx block above)
+      'no-control-regex': 'off',
     },
   },
 

@@ -49,7 +49,6 @@ for await (const line of rl) {
     if ((body.exits ?? []).length === 0) sampleExitsEmpty++;
     if (!body.room) emptyRoomNames++;
     // an escape character in a room name is exactly what is being counted here
-    // eslint-disable-next-line no-control-regex
     if (/\x1b|\{[a-zA-Z]/.test(String(body.room))) colourInRoom++;
   } else if (pkg === 'char_data') {
     bump('char_data.stance', body.stance);

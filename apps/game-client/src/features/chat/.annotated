@@ -1,7 +1,19 @@
 File Index
 
+/chat-display-text.ts
+Purpose: Cleans only the text that is shown, never the stored raw line: the raw BEL must survive for features/audio/audio-beep.ts and the classifiers. OSC sequences go before BEL because BEL also terminates them. Tests: chat-display-text.test.ts and chat-store.test.ts beside it.
+
 /chat-probe.ts
 Purpose: Identifies and parses chat message quotes in text buffers for efficient chat detection and extraction.
+
+/chat-settings-store.ts
+Purpose: `unreadDots` is stored only when on (toStored) so an untouched default follows future defaults; the other fields are still written in full. normalizeSettings copies enabledPanes instead of sharing the defaults object, because ChatPane memoises on its identity (shared, a gear toggle left the tabs unchanged). Tests load a fresh module per case since the store caches. Tests: chat-settings-store.test.ts.
+
+/chat-unread-store.ts
+Purpose: Module-level on purpose, like chat-store.ts: a ChatPane that unmounts and mounts again must keep the baseline and seen ids or it lights up history it already showed. The baseline is taken once while armed. Rules and tests: chat-unread.ts, chat-unread-store.test.ts.
+
+/chat-unread.ts
+Purpose: summarizeMessages replaces ChatPane's counting loop, it does not add a second pass (the list is unbounded and recomputed per message). Own lines count for pane visibility but never as newest, so what you say cannot light a dot.
 
 /dsl-to-ansi.ts
 Purpose: Maps DSL color codes to ANSI escape sequences for terminal text formatting.

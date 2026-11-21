@@ -66,10 +66,14 @@ export function autoSpec(map: MapFile, continentId: string, options: AutoSpecOpt
   }
   const base = options.base;
   const known = new Set(areaOf.values());
-  const settings = (): Pick<LayoutSpec, 'gap' | 'sizeBy'> & { cellsPerRoom?: number } => ({
+  const settings = (): Pick<LayoutSpec, 'gap' | 'sizeBy' | 'outline' | 'hints' | 'outlineFill'> & { cellsPerRoom?: number } => ({
     gap: options.gap ?? base?.gap ?? 1,
     sizeBy: options.sizeBy ?? base?.sizeBy ?? 'rooms',
     ...(options.cellsPerRoom !== undefined ? { cellsPerRoom: options.cellsPerRoom } : base?.cellsPerRoom !== undefined ? { cellsPerRoom: base.cellsPerRoom } : {}),
+    // the owner's silhouette and hints are carried whole: they shape the result whichever relations were derived
+    ...(base?.outline !== undefined ? { outline: base.outline } : {}),
+    ...(base?.hints !== undefined ? { hints: base.hints } : {}),
+    ...(base?.outlineFill !== undefined ? { outlineFill: base.outlineFill } : {}),
   });
   if (votes.size === 0) return base ? { ...base, ...settings() } : null;
 

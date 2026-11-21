@@ -50,7 +50,7 @@ describe('draftToConfig', () => {
     expect(cfg.version).toBe(3);
     expect(cfg.mode).toBe('auto_level');
     expect(cfg.loopRounds).toBe(true);
-    expect(cfg.roundLoopTimeMs).toBe(3_000); // active-leveling pace, not the 5-min sightsee default
+    expect(cfg.roundLoopTimeMs).toBe(180_000); // the default wait between laps is 3 minutes (it was a fixed 3 SECONDS before 2026-11-18)
   });
 
   it('joins required actions + dirs into init.trainingPath, skipping speedwalkToStart for now', () => {
@@ -202,6 +202,25 @@ describe('draftToConfig', () => {
     expect(cfg.mode).toBe('auto_level');
     expect(cfg.rest.startOfRound).toEqual([]);
     expect(cfg.rest.endOfRound).toEqual([]);
+  });
+});
+
+describe('the wait between laps (live findings 2026-11-14, item 10; L26)', () => {
+  it('follows the minutes the player set, in every active mode', () => {
+    expect(draftToConfig(baseDraft({ lapWaitMin: 5 })).roundLoopTimeMs).toBe(300_000);
+    expect(draftToConfig(baseDraft({ lapWaitMin: 1 })).roundLoopTimeMs).toBe(60_000);
+    expect(draftToConfig(baseDraft({ lapWaitMin: 60, mode: 'dry_run' })).roundLoopTimeMs).toBe(3_600_000);
+  });
+
+  it('falls back to 3 minutes for anything that is not a whole number of minutes from 1 to 60', () => {
+    for (const bad of [0, 61, -2, 2.5, Number.NaN, Number.POSITIVE_INFINITY, '4' as unknown as number]) {
+      expect(draftToConfig(baseDraft({ lapWaitMin: bad })).roundLoopTimeMs).toBe(180_000);
+    }
+    expect(draftToConfig(baseDraft({ lapWaitMin: undefined })).roundLoopTimeMs).toBe(180_000);
+  });
+
+  it('sightsee keeps the engine default whatever the draft says', () => {
+    expect(draftToConfig(baseDraft({ mode: 'sightsee', lapWaitMin: 9 })).roundLoopTimeMs).toBe(createDefaultAutoLevelConfig().roundLoopTimeMs);
   });
 });
 

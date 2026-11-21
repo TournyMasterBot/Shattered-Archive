@@ -11,6 +11,17 @@ import {
   subscribeChatSettings,
   updateChatSettings,
 } from '../features/chat/chat-settings-store';
+import { summarizeMessages, unreadSubtypes } from '../features/chat/chat-unread';
+import {
+  armUnread,
+  disarmUnread,
+  getUnreadState,
+  markPaneSeen,
+  subscribeUnread,
+  type UnreadState,
+} from '../features/chat/chat-unread-store';
+import ChatHelp from './ChatHelp';
+import HelpInfoButton from './HelpInfoButton';
 
 type PaneId = ChatSubtype | 'all';
 
@@ -79,6 +90,8 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ wrapPills = false }) => {
   } | null>(null);
 
   const [activePane, setActivePane] = useState<PaneId>('all');
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [unreadState, setUnreadState] = useState<UnreadState>(getUnreadState());
 
   // For "only show pills if values exist"
   const { messages: allMessages } = useChatLog();
@@ -87,17 +100,9 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ wrapPills = false }) => {
     return subscribeChatSettings(setSettings);
   }, []);
 
-  const countsBySubtype = useMemo(() => {
-    const counts: Record<string, number> = Object.create(null);
-
-    for (const m of allMessages) {
-      const st = (m as any).subtype as ChatSubtype | undefined;
-      if (!st) continue;
-      counts[st] = (counts[st] ?? 0) + 1;
-    }
-
-    return counts as Record<ChatSubtype, number>;
-  }, [allMessages]);
+  // One pass over the (unbounded) message list gives the pill counts and the newest message per channel.
+  const summary = useMemo(() => summarizeMessages(allMessages), [allMessages]);
+  const countsBySubtype = summary.counts as Record<ChatSubtype, number>;
 
   const enabledSubtypeList = useMemo(() => {
     return KNOWN_CHAT_SUBTYPES.filter((s) => settings.enabledPanes[s]);
@@ -145,6 +150,52 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ wrapPills = false }) => {
   const toggleStrict = () => updateChatSettings({ strictChatFormat: !settings.strictChatFormat });
   const togglePanes = () => updateChatSettings({ enableChatPanes: !settings.enableChatPanes });
   const toggleShowHidden = () => updateChatSettings({ showHiddenChatPanes: !settings.showHiddenChatPanes });
+  const toggleUnreadDots = () => updateChatSettings({ unreadDots: !settings.unreadDots });
+
+  // ---- Unread dot --------------------------------------------------------
+  // The dot needs the setting AND lines that carry a channel (strict format) AND channel tabs (panes). Without the
+  // last two there is nothing to dot, so the gear row is disabled and says what is missing.
+  const dotsPrereqsMet = settings.strictChatFormat && settings.enableChatPanes;
+  const dotsActive = settings.unreadDots && dotsPrereqsMet;
+  const missingForDots = [
+    !settings.strictChatFormat && 'Strict Chat Format',
+    !settings.enableChatPanes && 'Enable Chat Panes',
+  ]
+    .filter(Boolean)
+    .join(' and ');
+
+  // The newest message id is read when the dot is switched on, not on every message, so it lives in a ref.
+  const latestIdRef = useRef(0);
+
+  // Declared first so it is listening before the effects below change the store.
+  useEffect(() => subscribeUnread(setUnreadState), []);
+
+  // Keeps the ref current after every render; it runs before the arm effect below, which reads it.
+  useEffect(() => {
+    latestIdRef.current = summary.latestId;
+  });
+
+  // Switching the dot on takes the baseline (what is already here is history); off forgets it.
+  useEffect(() => {
+    if (dotsActive) armUnread(latestIdRef.current);
+    else disarmUnread();
+  }, [dotsActive]);
+
+  // The pane you are on is read: it never carries a dot, and a message that arrives on it is seen at once.
+  const activeNewestId = activePane === 'all' ? 0 : (summary.lastIds[activePane as ChatSubtype] ?? 0);
+  useEffect(() => {
+    if (dotsActive && activePane !== 'all' && activeNewestId > 0)
+      markPaneSeen(activePane as ChatSubtype, activeNewestId);
+  }, [dotsActive, activePane, activeNewestId]);
+
+  // Until the store is armed (first render, before the effect above) nothing is unread; otherwise history would flash.
+  const unread = useMemo(
+    () =>
+      dotsActive && unreadState.armed
+        ? unreadSubtypes({ lastIds: summary.lastIds, seen: unreadState.seen, baseline: unreadState.baseline })
+        : new Set<ChatSubtype>(),
+    [dotsActive, unreadState, summary.lastIds],
+  );
 
   const toggleSubtype = (subtype: ChatSubtype) => {
     updateChatSettings({
@@ -252,7 +303,10 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ wrapPills = false }) => {
     setMenuOpen(true);
   };
 
-  const closeMenu = () => setMenuOpen(false);
+  const closeMenu = () => {
+    setMenuOpen(false);
+    setHelpOpen(false);
+  };
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -294,24 +348,30 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ wrapPills = false }) => {
           </button>
 
           {settings.enableChatPanes &&
-            orderedVisibleSubtypes.map((s) => (
-              <button
-                key={s}
-                type="button"
-                role="tab"
-                aria-selected={activePane === s}
-                className={`${styles.chatPill} ${activePane === s ? styles.chatPillActive : ''}`}
-                onClick={() => setActivePane(s)}
-                draggable
-                onDragStart={onDragStartSubtype(s)}
-                onDragOver={onDragOverSubtype(s)}
-                onDrop={onDropSubtype(s)}
-                onDragEnd={onDragEnd}
-                title="Drag to reorder"
-              >
-                {s.toUpperCase()}
-              </button>
-            ))}
+            orderedVisibleSubtypes.map((s) => {
+              // The pane you are on is read, so it never shows a dot even for the moment before it is marked seen.
+              const isUnread = unread.has(s) && activePane !== s;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  role="tab"
+                  aria-selected={activePane === s}
+                  className={`${styles.chatPill} ${activePane === s ? styles.chatPillActive : ''}`}
+                  data-unread={isUnread ? 'true' : undefined}
+                  onClick={() => setActivePane(s)}
+                  draggable
+                  onDragStart={onDragStartSubtype(s)}
+                  onDragOver={onDragOverSubtype(s)}
+                  onDrop={onDropSubtype(s)}
+                  onDragEnd={onDragEnd}
+                  title="Drag to reorder"
+                >
+                  {s.toUpperCase()}
+                  {isUnread && <span className={styles.srOnly}> unread messages</span>}
+                </button>
+              );
+            })}
         </div>
 
         <button
@@ -355,42 +415,67 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ wrapPills = false }) => {
             }
             onMouseDown={(e) => e.stopPropagation()}
           >
-            <label className={styles.chatMenuRow}>
-              <input type="checkbox" checked={settings.strictChatFormat} onChange={toggleStrict} />
-              <span>Strict Chat Format</span>
-            </label>
+            <div className={styles.chatMenuHeader}>
+              <div className={styles.chatMenuSectionTitle}>Chat settings</div>
+              <HelpInfoButton topic="chat panes" open={helpOpen} onToggle={() => setHelpOpen((o) => !o)} />
+            </div>
 
-            <label className={styles.chatMenuRow}>
-              <input type="checkbox" checked={settings.enableChatPanes} onChange={togglePanes} />
-              <span>Enable Chat Panes</span>
-            </label>
+            {helpOpen && <ChatHelp onBack={() => setHelpOpen(false)} />}
 
-            <label className={styles.chatMenuRow}>
-              <input
-                type="checkbox"
-                checked={settings.showHiddenChatPanes}
-                onChange={toggleShowHidden}
-                disabled={!settings.enableChatPanes}
-              />
-              <span>Show Hidden Chat Panes</span>
-            </label>
+            {/* The rows stay mounted while the help is open and are only hidden, so nothing resets */}
+            <div hidden={helpOpen}>
+              <label className={styles.chatMenuRow}>
+                <input type="checkbox" checked={settings.strictChatFormat} onChange={toggleStrict} />
+                <span>Strict Chat Format</span>
+              </label>
 
-            <div className={styles.chatMenuDivider} />
+              <label className={styles.chatMenuRow}>
+                <input type="checkbox" checked={settings.enableChatPanes} onChange={togglePanes} />
+                <span>Enable Chat Panes</span>
+              </label>
 
-            <div className={styles.chatMenuSectionTitle}>Panes</div>
+              <label className={styles.chatMenuRow}>
+                <input
+                  type="checkbox"
+                  checked={settings.showHiddenChatPanes}
+                  onChange={toggleShowHidden}
+                  disabled={!settings.enableChatPanes}
+                />
+                <span>Show Hidden Chat Panes</span>
+              </label>
 
-            <div className={styles.chatMenuScroll}>
-              {KNOWN_CHAT_SUBTYPES.map((s) => (
-                <label key={s} className={styles.chatMenuRow}>
-                  <input
-                    type="checkbox"
-                    checked={settings.enabledPanes[s]}
-                    onChange={() => toggleSubtype(s)}
-                    disabled={!settings.enableChatPanes}
-                  />
-                  <span>Enable {s}</span>
-                </label>
-              ))}
+              <label className={styles.chatMenuRow}>
+                <input
+                  type="checkbox"
+                  checked={settings.unreadDots}
+                  onChange={toggleUnreadDots}
+                  disabled={!dotsPrereqsMet}
+                />
+                <span>Unread dot on pane tabs</span>
+              </label>
+              {!dotsPrereqsMet && (
+                <div className={styles.chatMenuHint} role="note">
+                  Needs {missingForDots}.
+                </div>
+              )}
+
+              <div className={styles.chatMenuDivider} />
+
+              <div className={styles.chatMenuSectionTitle}>Panes</div>
+
+              <div className={styles.chatMenuScroll}>
+                {KNOWN_CHAT_SUBTYPES.map((s) => (
+                  <label key={s} className={styles.chatMenuRow}>
+                    <input
+                      type="checkbox"
+                      checked={settings.enabledPanes[s]}
+                      onChange={() => toggleSubtype(s)}
+                      disabled={!settings.enableChatPanes}
+                    />
+                    <span>Enable {s}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
         </div>

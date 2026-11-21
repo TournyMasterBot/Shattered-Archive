@@ -44,31 +44,61 @@ Testable in one sentence per outcome: (1) a production build of the game client 
 - **JavaScript/MJS** (`docs/standards/javascript.md`): the guard script, the generator and their `node:test` suites.
 - **Data classification** (`docs/standards/data-classification.md`): committed fixtures use placeholder names and no address; nothing in this plan, the docs or the tests carries a character name, a LAN address or an access code.
 
-## Workflow diagrams
+## Workflows (before and after)
 
-### D1 — Who may see and use the panel
-Used by: Phases 1-3. Lands in: `docs/game/simulacrum-admin.md`.
+Five workflows change. W1 to W3 are the diagrams the plan first called D1 to D3 (they keep their text in `docs/game/simulacrum-admin.md` under those names); W4 and W5 were added by amendment A2 and A3. Before diagrams are drawn from the code at a565d53, except where noted (the Copilot lines of `main.tsx` and `MainMenuBar.tsx` were uncommitted in the working tree this plan was written against, so those Before lines are that working tree). After diagrams mark every new or changed step with NEW or CHANGED. None of the diagrams has been rendered yet: see box 14.11.
 
+### W1 — Who may see and use the panel        changed by: Phases 1, 2, 3
+Lands in: `docs/game/simulacrum-admin.md` (as D1).
+
+Before (build switch for Copilot only: `vite.config.ts:43-45`, `main.tsx:11-17`, `MainMenuBar.tsx:183-194`; connection events: `useGameConnection.ts:55-62`)
 ```mermaid
 flowchart TD
-  BUILD["SIMULACRUM_ADMIN_LOCAL=true in the process environment or a build ARG"] --> G1["Gate 1: vite define keeps the code in the bundle"]
-  G1 --> LOAD["main.tsx imports the feature; runtime starts and listens"]
-  OPEN["game:remote-server:open with host and port"] --> MATCH{"host and port in the accepted list?"}
-  MATCH -->|"no (the live DSL game, any other server)"| OFF["No menu entry, nothing captured, nothing sent"]
-  MATCH -->|"yes"| ON["Menu entry shown; capture on"]
-  CLOSE["game:remote-server:close or a different host"] --> CLEAR["Window closes; buffers cleared; capture off"]
-  STORE["localStorage simulacrumAdmin.hosts (additions only, validated)"] --> MATCH
-  NOFLAG["flag false (every production build)"] --> GONE["Branch and imports removed from the bundle"]
+  F1["COPILOT_LOCAL=true in the build environment (vite define)"] --> F2["main.tsx imports features/copilot when __COPILOT_LOCAL__ is true"]
+  F2 --> F3["MainMenuBar shows the Copilot item when the flag and the handler are set"]
+  C1["useGameConnection emits game:remote-server:open with host and port"] --> C2["No listener compares the host with a simulacrum list"]
+  C2 --> C3["Every connection looks the same to the menu"]
+  C3 --> C4["The owner reads raw logs and types immortal commands by hand"]
 ```
 
-### D2 — Sending a command and judging the reply
-Used by: Phases 7, 8, 9, 12, 13. Lands in: `docs/game/simulacrum-admin.md`.
+After
+```mermaid
+flowchart TD
+  BUILD["NEW: SIMULACRUM_ADMIN_LOCAL=true in the process environment or a build ARG"] --> G1["NEW: vite define keeps the code in the bundle"]
+  G1 --> LOAD["NEW: main.tsx imports the feature and the runtime starts and listens"]
+  OPEN["CHANGED: game:remote-server:open with host and port is now listened to"] --> MATCH{"NEW: host and port in the accepted list?"}
+  MATCH -->|"no (the live DSL game or any other server)"| OFF["No menu entry, nothing captured, nothing sent"]
+  MATCH -->|"yes"| ON["NEW: Menu entry shown and capture on"]
+  CLOSE["game:remote-server:close or a different host"] --> CLEAR["NEW: Window closes, buffers cleared, capture off"]
+  STORE["NEW: localStorage simulacrumAdmin.hosts (additions only, validated)"] --> MATCH
+  NOFLAG["flag false (every production build)"] --> GONE["NEW: Branch and imports removed from the bundle"]
+```
 
+### W2 — Sending an immortal command and judging the reply        changed by: Phases 7, 8, 9, 12, 13
+Lands in: `docs/game/simulacrum-admin.md` (as D2).
+
+Before (`useGameConnection.ts:146-152` the physical send point, `:166` the send-command bridge)
 ```mermaid
 sequenceDiagram
   participant U as Owner
-  participant F as Command form
-  participant S as sender.ts
+  participant I as Game command input
+  participant C as useGameConnection
+  participant M as merc-mud (simulacrum)
+  U->>I: types the immortal command by hand
+  I->>C: send (typed, aliased or the send-command event)
+  C->>M: websocket data message
+  C->>C: command-sent event fires once per real send
+  M-->>C: raw text chunks
+  C-->>U: written to the terminal
+  U->>U: reads the terminal and judges the result alone
+```
+
+After
+```mermaid
+sequenceDiagram
+  participant U as Owner
+  participant F as NEW Command form
+  participant S as NEW sender.ts
   participant E as Event bus
   participant M as merc-mud (simulacrum)
   U->>F: pick command, fill arguments
@@ -78,27 +108,82 @@ sequenceDiagram
     S->>U: confirmation naming the scope
     U->>S: confirm
   end
-  S->>E: shatteredarchive:send-command
-  E->>M: command line
-  M-->>E: game:remote-server:raw chunks
+  S->>E: send-command event (the only dispatcher in the feature)
+  E->>M: command line (unchanged bridge)
+  M-->>E: raw chunks
   S->>S: collect until quiet 600 ms or 4 s, strip colours, split lines
-  S->>F: verdict accepted / refused (Huh?) / unknown + the reply lines
+  S->>F: verdict accepted, refused (Huh?) or unknown, plus the reply lines
   F->>U: shown in the form and in the Activity tab
 ```
 
-### D3 — Teleport destination from the world index
-Used by: Phases 10-12. Lands in: `docs/game/simulacrum-admin.md`.
+### W3 — Choosing a teleport destination        changed by: Phases 10, 11, 12
+Lands in: `docs/game/simulacrum-admin.md` (as D3).
 
+Before (MUD Builder serves the area data at `apps/mud-builder-server/src/routes/map.ts:133` and `:177`; nothing in the game client reads it)
 ```mermaid
 flowchart LR
-  UI["World tab or Players tab picker"] -->|"GET /api/map, GET /api/map/file"| VH["simulacrum-admin vhost (read-only, private networks)"]
-  VH -->|"three GET routes only"| MB["mud-builder-server"]
-  MB --> AREAS[("area files on disk")]
-  UI --> FILTER["filter by area name, file, vnum range, room name"]
-  FILTER --> PICK["pick a room"]
-  PICK --> CMD["transfer target vnum, goto vnum, at vnum command"]
-  CMD --> SEND["sender.ts (D2)"]
+  N1["Owner needs a destination room"] --> N2["Looks up the area and vnum outside the game client"]
+  N2 --> N3["Types transfer target vnum into the game input"]
+  N3 --> N4["Send and read the reply by hand (W2 Before)"]
 ```
+
+After
+```mermaid
+flowchart LR
+  UI["NEW: World tab or Players tab picker"] -->|"GET /api/map, GET /api/map/file"| VH["NEW: simulacrum-admin vhost (read-only, private networks, dev stack only)"]
+  VH -->|"three GET routes only"| MB["mud-builder-server (unchanged)"]
+  MB --> AREAS[("area files on disk")]
+  UI --> FILTER["NEW: filter by area name, file, vnum range, room name"]
+  FILTER --> PICK["NEW: pick a room"]
+  PICK --> CMD["NEW: transfer target vnum, goto vnum, at vnum command"]
+  CMD --> SEND["sender.ts (W2 After)"]
+```
+
+### W4 — Debugging the GMCP the client receives        changed by: Phases 4, 5 (added by A2)
+Lands in: `docs/game/simulacrum-admin.md` and `docs/game/gmcp-parity.md`.
+
+Before (`useGameConnection.ts:84-90` the gmcp event, `features/gmcp/gmcpRouter.ts:23-30` the package map and `:36` `parseGmcpMessage`)
+```mermaid
+flowchart TD
+  G1["merc-mud sends a GMCP message"] --> G2["useGameConnection emits game:remote-server:gmcp"]
+  G2 --> G3["parseGmcpMessage"]
+  G3 -->|"package in the six-package map and a JSON object"| G4["Typed game event (char-data, room-data, tick, affects)"]
+  G3 -->|"unknown package, no space, bad JSON or not an object"| G5["Dropped (null), bad JSON also logs a console error"]
+  G6["Owner reads raw logs to see what was really sent"]
+```
+
+After
+```mermaid
+flowchart TD
+  G1["merc-mud sends a GMCP message"] --> G2["useGameConnection emits game:remote-server:gmcp (unchanged)"]
+  G2 --> G3["parseGmcpMessage and the typed events (unchanged)"]
+  G2 --> CAP["NEW: gmcpCapture keeps every message, capped at 1000, memory only, while the runtime is active"]
+  CAP --> TAB["NEW: GMCP tab (filter, search, pause, copy) and the Parity panel against the seven DSL packages"]
+  CAP --> LVL["NEW: characterInfo keeps the level and clan flag from login_data, never the name, shown in the title bar"]
+  CLOSE["connection closes or leaves the accepted set"] --> CLR["NEW: buffers and level cleared"]
+```
+
+### W5 — What merc-mud sends over GMCP when a player connects        changed by: Phase 4a (added by A2 and A3; sibling repo merc-mud)
+Lands in: `docs/game/gmcp-parity.md`.
+
+Before (`merc-mud/2.4/src/comm.c:892-893` and `copyover.c:133-134` the defaults, `act_wiz.c:4262-4269` the only `login_data` composer)
+```mermaid
+flowchart TD
+  D1["New descriptor and copyover descriptor start with gmcp_enabled and gmcp_send false"] --> D2{"Client sends DO GMCP or an immortal types gmcp?"}
+  D2 -->|"no (every ordinary connection)"| D3["No GMCP at all"]
+  D2 -->|"yes"| D4["char_data, room_data, tick and affect_data flow"]
+  D5["login_data exists only as a fixed-string test from admin test gmcp login, with a calendar date as its time"]
+```
+
+After
+```mermaid
+flowchart TD
+  D1["CHANGED: new and copyover descriptors start with GMCP on (gmcp off still switches it off)"] --> D2["NEW: login_data sent at login and at reconnect, after new-character setup and before the room look"]
+  D2 --> D3["affect_data, char_data, room_data in DSL's order"]
+  D3 --> D4["CHANGED: tick every half game hour, time in the half-hour form"]
+  D5["CHANGED: admin test gmcp login uses the real composer"]
+```
+
 
 ## Edit map
 
@@ -130,7 +215,10 @@ All lines are as of a565d53. "New" files have no line.
 | `scripts/generate-simulacrum-admin-commands.mjs` and `.test.mjs` | new | - | the generator and its tests | 6 |
 | `apps/game-client/src/features/simulacrumAdmin/commandTable.generated.ts` | new | - | generated rows | 6 |
 | `C:\Projects\merc-mud\2.4\src\interp.c`, `interp.h`, `merc.h` | 286-360; 34-43; 129-131 | the cmd_table, `#define L1 MAX_LEVEL - 1`, `LEVEL_HERO` | read only: the source of the generated table | 6 |
-| `docs/game/simulacrum-admin.md` | new | - | developer doc | 1-14 |
+| `C:\Projects\merc-mud\2.4\src\`: `merc.h`, `db.c`, `update.c`, `comm.c`, `copyover.c`, `act_info.c`, `act_wiz.c`, `gmcp_compose.c/.h`, `.annotated`, and `scripts/gmcp-compose-check/` (added by A2 and A3) | `comm.c` 892-893, `copyover.c` 133-134, `act_wiz.c` 4262-4269 as of the sibling repo's HEAD before the change | `gmcp_enabled = FALSE`, `if (!str_cmp(type, "login"))` | the half-hour clock, `login_data` composer and send, DSL stance and sector vocabularies, GMCP on from the first byte (W5); the sibling repo's own check script | 4a |
+| `apps/game-client/src/features/simulacrumAdmin/dslGmcpSchema.ts`, `gmcpParity.ts`, `characterInfo.ts` (added by A2) | new | - | the seven DSL packages with their fields and value sets, the parity report, the level and clan flag from `login_data` without the name (W4) | 4, 5 |
+| `docs/game/gmcp-parity.md` (added by A2) | new | - | developer doc: the DSL package and vocabulary table and what simulacrum does for each | 4a, 5 |
+| `docs/game/simulacrum-admin.md` | new | - | developer doc; carries W1 to W3 (as D1 to D3), W4 and W5 are still to be added | 1-14 |
 | `C:\Projects\DSL\docs\simulacrum-admin\user-guide.md` | new | - | end-user guide for the owner | 3-14 |
 | `docs/standards/edge-cases/` | - | `local-only-features.md`, `admin-tooling.md`, `live-stream-views.md`, `README.md` | the approved classifiers (already written when this plan was created) | - |
 | `.ai-context` / `.annotated` | - | `features/simulacrumAdmin`, `components`, `pages`, `src`, `deploy/nginx`, `deploy`, `scripts` | updated in the phase that changes the folder | per phase |
@@ -214,222 +302,282 @@ The owner rebuilds and restarts the game-client image of the experimental stack 
 ### [x] Phase 1 — The local-only boundary for a second feature
 Goal:        A second build switch exists, is off in every production artifact, and the guard proves it for both features.
 Depends on:  nothing
-Changes:
-- `apps/game-client/vite.config.ts:43-45` (`define`) — add `__SIMULACRUM_ADMIN_LOCAL__` from `process.env.SIMULACRUM_ADMIN_LOCAL === 'true'`, process environment only (LOCAL-01).
-- `apps/game-client/src/simulacrum-admin-local.d.ts` (new) — `declare const __SIMULACRUM_ADMIN_LOCAL__: boolean;`.
-- `jest.config.cjs:101` (`globals`) — add `__SIMULACRUM_ADMIN_LOCAL__: false`; `src/testing/simulacrumAdminFlagOn.ts` (new) sets the global true before import.
-- `deploy/game-client.Dockerfile:49,57` — `ARG`/`ENV SIMULACRUM_ADMIN_LOCAL` with a comment; `deploy/docker-compose.shattered-archive-experimental.yml:150` — `SIMULACRUM_ADMIN_LOCAL: "true"`.
-- `apps/game-client/src/features/simulacrumAdmin/marker.ts` (new) — `SIMULACRUM_ADMIN_BUNDLE_MARKER = 'sa-simulacrum-admin-local-v1'`; `index.ts` (new) — `startSimulacrumAdmin()` returns `undefined` when the constant is false, otherwise `import('./loader')`; `loader.ts` (new) — returns a runtime object holding the marker (and `dispose`).
-- `apps/game-client/src/main.tsx:11-17` — second branch `if (__SIMULACRUM_ADMIN_LOCAL__) { import('./features/simulacrumAdmin').then((m) => m.startSimulacrumAdmin()).catch(...) }`.
-- `scripts/check-local-only.mjs` — generalise to a list of features (name pattern, marker source, allowed Dockerfile lines, local nginx file pattern): add the `simulacrum[-_ ]?admin` pattern for production compose, Dockerfiles and nginx; allow `ARG|ENV SIMULACRUM_ADMIN_LOCAL` lines; read the second marker from `features/simulacrumAdmin/marker.ts`; `checkDist` fails on either marker. Existing exports keep their names.
-- `docs/game/simulacrum-admin.md` (new) — the gate (D1), the switch, the marker, how to enable it locally.
-Tests:       `scripts/check-local-only.test.mjs`: the second marker is read from the feature file, a missing constant is an error; a production compose, a shared Dockerfile line, a shared nginx file and a dist each carrying a Simulacrum Admin trace fail (LOCAL-04, E11, E15); the allowed `ARG`/`ENV` lines pass; real `vite build` of a tiny entry: flag in the process environment bundles the marker, flag only in `.env*` does not, no flag does not (LOCAL-01), each flag alone and both (E15). `features/simulacrumAdmin/index.test.ts`: with the constant false `startSimulacrumAdmin()` returns `undefined` and never loads the loader; with it true the loader loads once. `main.simulacrumAdmin.test.tsx`: importing `main` with the constant false never requires the feature (pattern of `main.copilot.test.tsx`).
-API check:   none
-UI check:    none
-Index/docs:  `features/simulacrumAdmin/.ai-context` and `.annotated` (create), `src/.annotated` (update); `docs/game/simulacrum-admin.md` (create); end-user doc: no user-visible effect yet, written in Phase 3.
-Exit gate:   build · typecheck · lint · all game-client tests · `pnpm test:guards` · `pnpm check:local-only` on a real production build · documentation.
+Workflow:    W1
+
+Work
+- [x] 1.1 `apps/game-client/vite.config.ts:43-45` (`define`) — add `__SIMULACRUM_ADMIN_LOCAL__` from `process.env.SIMULACRUM_ADMIN_LOCAL === 'true'`, process environment only (LOCAL-01).
+- [x] 1.2 `apps/game-client/src/simulacrum-admin-local.d.ts` (new) — `declare const __SIMULACRUM_ADMIN_LOCAL__: boolean;`.
+- [x] 1.3 `jest.config.cjs:101` (`globals`) — add `__SIMULACRUM_ADMIN_LOCAL__: false`; `src/testing/simulacrumAdminFlagOn.ts` (new) sets the global true before import.
+- [x] 1.4 `deploy/game-client.Dockerfile:49,57` — `ARG`/`ENV SIMULACRUM_ADMIN_LOCAL` with a comment; `deploy/docker-compose.shattered-archive-experimental.yml:150` — `SIMULACRUM_ADMIN_LOCAL: "true"`.
+- [x] 1.5 `apps/game-client/src/features/simulacrumAdmin/marker.ts` (new) — `SIMULACRUM_ADMIN_BUNDLE_MARKER = 'sa-simulacrum-admin-local-v1'`; `index.ts` (new) — `startSimulacrumAdmin()` returns `undefined` when the constant is false, otherwise `import('./loader')`; `loader.ts` (new) — returns a runtime object holding the marker (and `dispose`).
+- [x] 1.6 `apps/game-client/src/main.tsx:11-17` — second branch `if (__SIMULACRUM_ADMIN_LOCAL__) { import('./features/simulacrumAdmin').then((m) => m.startSimulacrumAdmin()).catch(...) }`.
+- [x] 1.7 `scripts/check-local-only.mjs` — generalise to a list of features (name pattern, marker source, allowed Dockerfile lines, local nginx file pattern): add the `simulacrum[-_ ]?admin` pattern for production compose, Dockerfiles and nginx; allow `ARG|ENV SIMULACRUM_ADMIN_LOCAL` lines; read the second marker from `features/simulacrumAdmin/marker.ts`; `checkDist` fails on either marker. Existing exports keep their names.
+- [x] 1.8 `docs/game/simulacrum-admin.md` (new) — the gate (D1), the switch, the marker, how to enable it locally.
+- [x] 1.9 Tests: `scripts/check-local-only.test.mjs`: the second marker is read from the feature file, a missing constant is an error; a production compose, a shared Dockerfile line, a shared nginx file and a dist each carrying a Simulacrum Admin trace fail (LOCAL-04, E11, E15); the allowed `ARG`/`ENV` lines pass; real `vite build` of a tiny entry: flag in the process environment bundles the marker, flag only in `.env*` does not, no flag does not (LOCAL-01), each flag alone and both (E15). `features/simulacrumAdmin/index.test.ts`: with the constant false `startSimulacrumAdmin()` returns `undefined` and never loads the loader; with it true the loader loads once. `main.simulacrumAdmin.test.tsx`: importing `main` with the constant false never requires the feature (pattern of `main.copilot.test.tsx`).
+- [x] 1.10 Docs and indexes: `features/simulacrumAdmin/.ai-context` and `.annotated` (create), `src/.annotated` (update); `docs/game/simulacrum-admin.md` (create); end-user doc: no user-visible effect yet, written in Phase 3.
+
+Sign-off
+- [x] 1.S Exit gate verified and recorded in test-results.md (2026-11-07): build · typecheck · lint · all game-client tests · `pnpm test:guards` · `pnpm check:local-only` on a real production build · documentation.
+
 State on exit: the switch and the guard exist; no window, no menu entry.
 
 ### [x] Phase 2 — The connection gate and the runtime  (amended: see A1)
 Goal:        The client knows, from the connection events alone, whether it is connected to simulacrum, and clears everything when it leaves.
 Depends on:  Phase 1
-Changes:
-- `features/simulacrumAdmin/connectionGate.ts` (new) — `DEFAULT_HOSTS`, `DEFAULT_PORTS`, `normalizeAdditions(raw: unknown)`, `isAllowedExtraHost(value)` (loopback, private ranges, `*.shatteredarchive.dev`, copied from `features/copilot/config.ts:8-22`, not imported: the two features share nothing), `readAdditions(storage)`, `isSimulacrumConnection(host, port, additions)`.
-- `features/simulacrumAdmin/runtime.ts` (new) — an external store (`subscribe`/`getSnapshot` for `useSyncExternalStore`) holding `{ connected, host, port, active }`; listens to `game:remote-server:open` (host and port in its payload, `useGameConnection.ts:55-62`) and `game:remote-server:close`; on a change out of the accepted set it calls the registered clear callbacks; `dispose()` unsubscribes everything.
-- `loader.ts` — builds the runtime and wires `dispose` to a `pagehide` listener.
-- `docs/game/simulacrum-admin.md` — the storage key, the accepted shapes, the console snippet that adds a LAN address (written with a placeholder), and why the address is not in source (LOCAL-05).
-Tests:       `connectionGate.test.ts`: E1 (case, trailing dot, whitespace, scheme, wildcard, string port, wrong port); E18 (a private-range value accepted, a public address refused); E19 (each wrong shape reads as no additions, duplicates collapse, over 20 entries trimmed, defaults always apply); SETTINGS-01 (writing no additions stores nothing). `runtime.test.ts`: open on an accepted pair -> active; open on the live DSL pair -> inactive and nothing is stored (E3); close and host change -> clear callbacks run once (E2); `dispose` removes the listeners (an event after dispose changes nothing).
-API check:   none
-UI check:    none
-Index/docs:  `features/simulacrumAdmin/.ai-context` and `.annotated` (update); `docs/game/simulacrum-admin.md` (update).
-Exit gate:   build · typecheck · lint · all game-client tests · documentation.
+Workflow:    W1
+
+Work
+- [x] 2.1 `features/simulacrumAdmin/connectionGate.ts` (new) — `DEFAULT_HOSTS`, `DEFAULT_PORTS`, `normalizeAdditions(raw: unknown)`, `isAllowedExtraHost(value)` (loopback, private ranges, `*.shatteredarchive.dev`, copied from `features/copilot/config.ts:8-22`, not imported: the two features share nothing), `readAdditions(storage)`, `isSimulacrumConnection(host, port, additions)`.
+- [x] 2.2 `features/simulacrumAdmin/runtime.ts` (new) — an external store (`subscribe`/`getSnapshot` for `useSyncExternalStore`) holding `{ connected, host, port, active }`; listens to `game:remote-server:open` (host and port in its payload, `useGameConnection.ts:55-62`) and `game:remote-server:close`; on a change out of the accepted set it calls the registered clear callbacks; `dispose()` unsubscribes everything.
+- [x] 2.3 `loader.ts` — builds the runtime and wires `dispose` to a `pagehide` listener.
+- [x] 2.4 `docs/game/simulacrum-admin.md` — the storage key, the accepted shapes, the console snippet that adds a LAN address (written with a placeholder), and why the address is not in source (LOCAL-05).
+- [x] 2.5 Tests: `connectionGate.test.ts`: E1 (case, trailing dot, whitespace, scheme, wildcard, string port, wrong port); E18 (a private-range value accepted, a public address refused); E19 (each wrong shape reads as no additions, duplicates collapse, over 20 entries trimmed, defaults always apply); SETTINGS-01 (writing no additions stores nothing). `runtime.test.ts`: open on an accepted pair -> active; open on the live DSL pair -> inactive and nothing is stored (E3); close and host change -> clear callbacks run once (E2); `dispose` removes the listeners (an event after dispose changes nothing).
+- [x] 2.6 Docs and indexes: `features/simulacrumAdmin/.ai-context` and `.annotated` (update); `docs/game/simulacrum-admin.md` (update).
+
+Sign-off
+- [x] 2.S Exit gate verified and recorded in test-results.md (2026-11-07): build · typecheck · lint · all game-client tests · documentation.
+
 State on exit: the gate works and is unreachable from the UI.
 
 ### [x] Phase 3 — The window shell, menu entry and user guide start
 Goal:        "Simulacrum Admin…" opens a movable, resizable window with empty tabs, only when the gate is true, and the page behind stays usable.
 Depends on:  Phase 2
-Changes:
-- `components/SimulacrumAdminWindow.tsx` (new) — `role="dialog"`, no `aria-modal`, no backdrop, no focus trap, `position: fixed`, `zIndex: 4800` (S7), header with title, connection badge, close button; tab buttons (`aria-pressed`, free navigation, every tab panel stays mounted and `hidden` when not shown); tabs `Players`, `World`, `Server`, `Commands`, `GMCP`, `Activity`, each an empty placeholder; geometry from `useFloatingPanel({ storageKey: 'simulacrumAdmin.window.v1', ... })` with limits wide enough for the header; Escape closes. A lazy `SimulacrumAdminHost` default export decides availability from the runtime store and calls `onAvailableChange`.
-- `styles/SimulacrumAdminWindow.module.scss` (new) — palette variables copied from `AutoLevelingWizard.module.scss`, `color-scheme: dark`, a comment on the `z-index`.
-- `MainMenuBar.tsx:22,183-194` — optional `onOpenSimulacrumAdmin`; the item renders only when `__SIMULACRUM_ADMIN_LOCAL__ && onOpenSimulacrumAdmin`.
-- `MainContainer.tsx:48,187-188,291,399-404` — `const SimulacrumAdminHost = __SIMULACRUM_ADMIN_LOCAL__ ? React.lazy(...) : null`, `isSimulacrumAdminOpen`, `simulacrumAdminAvailable` (set by the host's callback, false when the host is absent), the menu prop passed only when available, the lazy render block; when availability turns false the open state resets (E2).
-- `C:\Projects\DSL\docs\simulacrum-admin\user-guide.md` (new) — opening the window, moving and resizing it, the tabs by name; sections for later tabs are added by their phases.
-Tests:       `SimulacrumAdminWindow.test.tsx`: renders with all six tab buttons; switching tabs keeps every panel mounted (state survives a round trip); no `aria-modal`; Escape closes and calls `onClose`; a click on the page behind focuses the command input and typing reaches it, and typing in a panel field does not reach the command input (E17). `MainMenuBar.simulacrumAdmin.test.tsx`: absent when the constant is false even with a handler, absent without a handler, present and opens when both, and the Copilot and Autopilot items are unchanged with both switches on (E15). `MainContainer.simulacrumAdmin.test.tsx`: no entry before an accepted connection; the entry appears on an accepted open event; a close event removes it and closes an open window; the live DSL pair never shows it (E2, E3). `main.simulacrumAdmin.test.tsx` from Phase 1 still passes.
-API check:   none
-UI check:    flagged build with the game WebSocket mocked to the simulacrum pair, desktop 1440x900 and 900x600: window open over the game, text typed into the game input while it is open, the window dragged and resized, a tab strip with focus-visible and hover states, an open `select` if any is on the shell (TH-02, TH-03). Screenshots `phase-03_window-open.png`, `phase-03_input-behind.png`, `phase-03_tabs-states.png` (incremental).
-Index/docs:  `components/.annotated`, `pages/.annotated`, `src/.annotated` (update); `docs/game/simulacrum-admin.md` (update: window, z-index, menu wiring); DSL `user-guide.md` (created above).
-Exit gate:   build · typecheck · lint · all game-client tests · `pnpm check:local-only` on a real production build (no menu item) · screenshots taken · documentation.
+Workflow:    W1
+
+Work
+- [x] 3.1 `components/SimulacrumAdminWindow.tsx` (new) — `role="dialog"`, no `aria-modal`, no backdrop, no focus trap, `position: fixed`, `zIndex: 4800` (S7), header with title, connection badge, close button; tab buttons (`aria-pressed`, free navigation, every tab panel stays mounted and `hidden` when not shown); tabs `Players`, `World`, `Server`, `Commands`, `GMCP`, `Activity`, each an empty placeholder; geometry from `useFloatingPanel({ storageKey: 'simulacrumAdmin.window.v1', ... })` with limits wide enough for the header; Escape closes. A lazy `SimulacrumAdminHost` default export decides availability from the runtime store and calls `onAvailableChange`.
+- [x] 3.2 `styles/SimulacrumAdminWindow.module.scss` (new) — palette variables copied from `AutoLevelingWizard.module.scss`, `color-scheme: dark`, a comment on the `z-index`.
+- [x] 3.3 `MainMenuBar.tsx:22,183-194` — optional `onOpenSimulacrumAdmin`; the item renders only when `__SIMULACRUM_ADMIN_LOCAL__ && onOpenSimulacrumAdmin`.
+- [x] 3.4 `MainContainer.tsx:48,187-188,291,399-404` — `const SimulacrumAdminHost = __SIMULACRUM_ADMIN_LOCAL__ ? React.lazy(...) : null`, `isSimulacrumAdminOpen`, `simulacrumAdminAvailable` (set by the host's callback, false when the host is absent), the menu prop passed only when available, the lazy render block; when availability turns false the open state resets (E2).
+- [x] 3.5 `C:\Projects\DSL\docs\simulacrum-admin\user-guide.md` (new) — opening the window, moving and resizing it, the tabs by name; sections for later tabs are added by their phases.
+- [x] 3.6 Tests: `SimulacrumAdminWindow.test.tsx`: renders with all six tab buttons; switching tabs keeps every panel mounted (state survives a round trip); no `aria-modal`; Escape closes and calls `onClose`; a click on the page behind focuses the command input and typing reaches it, and typing in a panel field does not reach the command input (E17). `MainMenuBar.simulacrumAdmin.test.tsx`: absent when the constant is false even with a handler, absent without a handler, present and opens when both, and the Copilot and Autopilot items are unchanged with both switches on (E15). `MainContainer.simulacrumAdmin.test.tsx`: no entry before an accepted connection; the entry appears on an accepted open event; a close event removes it and closes an open window; the live DSL pair never shows it (E2, E3). `main.simulacrumAdmin.test.tsx` from Phase 1 still passes.
+- [x] 3.7 UI check: flagged build with the game WebSocket mocked to the simulacrum pair, desktop 1440x900 and 900x600: window open over the game, text typed into the game input while it is open, the window dragged and resized, a tab strip with focus-visible and hover states, an open `select` if any is on the shell (TH-02, TH-03). Screenshots `phase-03_window-open.png`, `phase-03_input-behind.png`, `phase-03_tabs-states.png` (incremental).
+- [x] 3.8 Docs and indexes: `components/.annotated`, `pages/.annotated`, `src/.annotated` (update); `docs/game/simulacrum-admin.md` (update: window, z-index, menu wiring); DSL `user-guide.md` (created above).
+
+Sign-off
+- [x] 3.S Exit gate verified and recorded in test-results.md (2026-11-07): build · typecheck · lint · all game-client tests · `pnpm check:local-only` on a real production build (no menu item) · screenshots taken · documentation.
+
 State on exit: the window exists with empty tabs behind both gates.
 
 ### [x] Phase 4a — GMCP parity in merc-mud  (added by amendment A2)
 Goal:        simulacrum sends exactly the seven GMCP packages DSL sends, with DSL's field shapes and vocabularies, on a half-hour game clock.
 Depends on:  nothing
-Changes:     `C:\Projects\merc-mud\2.4\src`: `merc.h` (`time_info.minute`, `format_game_time`), `db.c` (formatter; boot clock in half-hour units), `update.c` (`weather_update` advances half an hour per tick), `comm.c` (prompt `%t`; `gmcp_send_login_data` at login and on reconnect, before the affects true-up), `act_info.c` (`time` command), `gmcp_compose.c/.h` (`login_data` composer and sender, stance and sector vocabularies, tick uses the formatter), `act_wiz.c` (`admin test gmcp login` uses the real composer), `.annotated`; new `scripts/gmcp-compose-check/` (`run.mjs`, `test_gmcp.c`).
-Tests:       `node scripts/gmcp-compose-check/run.mjs` in merc-mud (Docker): 13 assertions on the boot clock, `login_data` keys, order and values (no clan, loner, real clan, JSON-escaped name, never a kingdom), the stance words, `language` unchanged, the 29 `char_data` keys, every sector name, and six half-hour ticks across midnight with one day rollover.
-Docs:        `docs/game/gmcp-parity.md` (the DSL package and vocabulary table, what simulacrum does for each, how the corpus was read).
-Exit gate:   the real server builds and links; the check passes; documentation. Owner step: rebuild the merc-mud image and restart simulacrum.
+Workflow:    W5
+
+Work
+- [x] 4a.1 `C:\Projects\merc-mud\2.4\src`: `merc.h` (`time_info.minute`, `format_game_time`), `db.c` (formatter; boot clock in half-hour units), `update.c` (`weather_update` advances half an hour per tick), `comm.c` (prompt `%t`; `gmcp_send_login_data` at login and on reconnect, before the affects true-up), `act_info.c` (`time` command), `gmcp_compose.c/.h` (`login_data` composer and sender, stance and sector vocabularies, tick uses the formatter), `act_wiz.c` (`admin test gmcp login` uses the real composer), `.annotated`; new `scripts/gmcp-compose-check/` (`run.mjs`, `test_gmcp.c`).
+- [x] 4a.2 Tests: `node scripts/gmcp-compose-check/run.mjs` in merc-mud (Docker): 13 assertions on the boot clock, `login_data` keys, order and values (no clan, loner, real clan, JSON-escaped name, never a kingdom), the stance words, `language` unchanged, the 29 `char_data` keys, every sector name, and six half-hour ticks across midnight with one day rollover.
+- [x] 4a.3 Docs and indexes: `docs/game/gmcp-parity.md` (the DSL package and vocabulary table, what simulacrum does for each, how the corpus was read).
+
+Sign-off
+- [x] 4a.S Exit gate verified and recorded in test-results.md (2026-11-07): the real server builds and links; the check passes; documentation. Owner step: rebuild the merc-mud image and restart simulacrum.
+
 State on exit: done 2026-11-07; takes effect when the owner restarts simulacrum.
 
 ### [x] Phase 4 — GMCP capture  (amended: see A2)
 Goal:        Every GMCP message received while on simulacrum is held in a capped, memory-only buffer.
 Depends on:  Phase 2
-Changes:
-- `features/simulacrumAdmin/gmcpCapture.ts` (new) — `createGmcpCapture({ cap })`: subscribes to `game:remote-server:gmcp` (`GameRemoteServerGmcp`, `types/event-types/game-remote-server-gmcp.ts`), parses `<package> <json>` tolerantly (not `features/gmcp/gmcpRouter.ts`, which drops unknown packages), keeps `{ id, receivedAt, pkg, size, data?, parseError?, mapped }` where `mapped` is true for the six packages the router knows (`gmcpRouter.ts:23-30`); payload over 64 KB is kept truncated in the list entry with the full text in `raw`; ignores messages while the runtime is inactive (E3); `clear()`, `pause()`, `resume()`, `subscribe()`; the runtime registers `clear` as a clear callback.
-- `loader.ts` — creates the capture and exposes it on the runtime; `dispose` removes the listener.
-Tests:       `gmcpCapture.test.ts`: well-formed message parsed; no space, invalid JSON, non-object JSON and an empty payload each produce an entry with a parse error and never throw (E23); an unknown package is kept with `mapped: false`; 1001 messages leave 1000 with the oldest gone (E16); a 100 KB payload is truncated in the entry and complete in `raw`; inactive runtime stores nothing (E3); pause stops storing and resume continues; connection change clears; after `dispose` an event adds nothing and no listener remains.
-API check:   none
-UI check:    none
-Index/docs:  `features/simulacrumAdmin/.ai-context`/`.annotated` (update); `docs/game/simulacrum-admin.md` (update: buffer, cap, privacy position, mapped vs unmapped).
-Exit gate:   build · typecheck · lint · all game-client tests · coverage of `gmcpCapture.ts` reviewed · documentation.
+Workflow:    W4
+
+Work
+- [x] 4.1 `features/simulacrumAdmin/gmcpCapture.ts` (new) — `createGmcpCapture({ cap })`: subscribes to `game:remote-server:gmcp` (`GameRemoteServerGmcp`, `types/event-types/game-remote-server-gmcp.ts`), parses `<package> <json>` tolerantly (not `features/gmcp/gmcpRouter.ts`, which drops unknown packages), keeps `{ id, receivedAt, pkg, size, data?, parseError?, mapped }` where `mapped` is true for the six packages the router knows (`gmcpRouter.ts:23-30`); payload over 64 KB is kept truncated in the list entry with the full text in `raw`; ignores messages while the runtime is inactive (E3); `clear()`, `pause()`, `resume()`, `subscribe()`; the runtime registers `clear` as a clear callback.
+- [x] 4.2 `loader.ts` — creates the capture and exposes it on the runtime; `dispose` removes the listener.
+- [x] 4.3 Tests: `gmcpCapture.test.ts`: well-formed message parsed; no space, invalid JSON, non-object JSON and an empty payload each produce an entry with a parse error and never throw (E23); an unknown package is kept with `mapped: false`; 1001 messages leave 1000 with the oldest gone (E16); a 100 KB payload is truncated in the entry and complete in `raw`; inactive runtime stores nothing (E3); pause stops storing and resume continues; connection change clears; after `dispose` an event adds nothing and no listener remains.
+- [x] 4.4 Docs and indexes: `features/simulacrumAdmin/.ai-context`/`.annotated` (update); `docs/game/simulacrum-admin.md` (update: buffer, cap, privacy position, mapped vs unmapped).
+
+Sign-off
+- [x] 4.S Exit gate verified and recorded in test-results.md (2026-11-07): build · typecheck · lint · all game-client tests · coverage of `gmcpCapture.ts` reviewed · documentation.
+
 State on exit: capture works and has no UI.
 
 ### [x] Phase 5 — The GMCP tab  (amended: see A2)
 Goal:        The owner can read, filter, pause and copy raw GMCP without looking at a log.
 Depends on:  Phases 3, 4
-Changes:
-- `components/simulacrumAdmin/GmcpTab.tsx` (new) — list of entries (time, package, size, badges `unmapped` and `parse error`), package filter (checkboxes built from packages seen), text search over the raw payload, pause/resume, clear, "copy entry" and "copy visible" (clipboard, user action only), a detail pane with the pretty-printed JSON; renders at most 200 rows with an "N more, narrow the filter" line; a count of stored vs shown.
-- `SimulacrumAdminWindow.tsx` — mount the tab; `styles/SimulacrumAdminWindow.module.scss` — list and detail styles with a dark scrollbar (TH-01).
-Tests:       `GmcpTab.test.tsx`: entries appear as messages arrive; the package filter and search narrow the list; pause stops new rows while the buffer keeps being read after resume; clear empties it; a parse-error entry shows its badge and its raw text; "copy visible" writes exactly the visible rows to the clipboard stub; more than 200 stored shows 200 rows and the "more" line (E16, E23); unmounting the tab does not stop capture (the history is there on reopening) but unmounting the window removes the tab's own subscriptions.
-API check:   none
-UI check:    mocked simulacrum session sending `char_data`, `room_data`, `tick`, `affect_data`, an unmapped package and a malformed line; overflowing list with the scrollbar visible (TH-01), selected row, paused state, empty state, copy confirmation. Screenshots `phase-05_gmcp-list.png`, `phase-05_gmcp-detail.png`, `phase-05_gmcp-overflow.png`.
-Index/docs:  `components/.annotated` (update); `docs/game/simulacrum-admin.md` (update); DSL `user-guide.md` (update: GMCP tab).
-Exit gate:   build · typecheck · lint · all game-client tests · screenshots · documentation.
+Workflow:    W4
+
+Work
+- [x] 5.1 `components/simulacrumAdmin/GmcpTab.tsx` (new) — list of entries (time, package, size, badges `unmapped` and `parse error`), package filter (checkboxes built from packages seen), text search over the raw payload, pause/resume, clear, "copy entry" and "copy visible" (clipboard, user action only), a detail pane with the pretty-printed JSON; renders at most 200 rows with an "N more, narrow the filter" line; a count of stored vs shown.
+- [x] 5.2 `SimulacrumAdminWindow.tsx` — mount the tab; `styles/SimulacrumAdminWindow.module.scss` — list and detail styles with a dark scrollbar (TH-01).
+- [x] 5.3 Tests: `GmcpTab.test.tsx`: entries appear as messages arrive; the package filter and search narrow the list; pause stops new rows while the buffer keeps being read after resume; clear empties it; a parse-error entry shows its badge and its raw text; "copy visible" writes exactly the visible rows to the clipboard stub; more than 200 stored shows 200 rows and the "more" line (E16, E23); unmounting the tab does not stop capture (the history is there on reopening) but unmounting the window removes the tab's own subscriptions.
+- [x] 5.4 UI check: mocked simulacrum session sending `char_data`, `room_data`, `tick`, `affect_data`, an unmapped package and a malformed line; overflowing list with the scrollbar visible (TH-01), selected row, paused state, empty state, copy confirmation. Screenshots `phase-05_gmcp-list.png`, `phase-05_gmcp-detail.png`, `phase-05_gmcp-overflow.png`.
+- [x] 5.5 Docs and indexes: `components/.annotated` (update); `docs/game/simulacrum-admin.md` (update); DSL `user-guide.md` (update: GMCP tab).
+
+Sign-off
+- [x] 5.S Exit gate verified and recorded in test-results.md (2026-11-07): build · typecheck · lint · all game-client tests · screenshots · documentation.
+
 State on exit: the GMCP tab is usable; other tabs are still empty.
 
 ### [x] Phase 6 — The command catalog (generated table plus syntax)  (amended: see A4)
 Goal:        Every privileged command of the simulacrum command table is known to the client, with its level, aliases and argument shape, and a test fails when the two drift.
 Depends on:  Phase 1
-Changes:
-- `scripts/generate-simulacrum-admin-commands.mjs` (new) — reads `interp.c` (path from `--source`, default `../merc-mud/2.4/src/interp.c`), resolves the level symbols from `interp.h:34-43` and `merc.h:129-131` by value (`ML` 60, `L1` 59 ... `L8` 52, `IM` 52; the macros are unparenthesised, so the script uses the symbol, never the expression), keeps the live rows whose level symbol is `IM`, `ML` or `L1`-`L8` (so the numeric-level mortal rows are left out), merges rows that share a handler into one command with aliases (`teleport`/`transfer`, `invis`/`wizinvis`, `immtalk`/`:`), records `show` (rows with `show=0` such as `reboo` and `shutdow` become hidden aliases that are never offered), and writes `commandTable.generated.ts` with a header naming the source file, a content hash and no date. Output is deterministic (sorted).
-- `features/simulacrumAdmin/commandTable.generated.ts` (new) — about 72 rows as of this commit (counts in the scope: 72 privileged rows, 18 `IM`, 12 `L4`, 10 `L5`, 10 `L1`, 5 `ML`, 4 each `L6`/`L3`/`L2`, 3 `L8`, 2 `L7`); the two numeric-level rows `shout` and `murder` are excluded.
-- `features/simulacrumAdmin/commandSyntax.ts` (new) — one entry per command: `group` (players, world, server, communication, inspection, settings), `summary`, `fields` (typed: `character`, `word`, `text`, `number`, `vnum`, `areaFile`, `choice`, `flags`), `forms` for commands with sub-forms (`stat`, `vnum`, `load`, `set`, `string`, `flag`, `wiznet`, `admin test gmcp`), `successPatterns`, `confirm` (S11) and `bulkForms` (E21). Each entry is written from the handler read in this phase; the ones whose handler was not located by name in the plan research (`ban`, `permban`, `penalty`, `imotd`) are read first. Known shapes already read: `transfer <whom|all> [room-vnum|character|object]` (`act_wiz.c:751`, `find_location` at `:734`), `copyover` then `copyover confirm`, `areload <area-file>`, `advance <char> <level>`, `trust <char> <level>`, `qpoints <char> set|add <amount>`, `pardon <char> <killer|thief>`, `guild <char> <clan>`, `load mob <vnum>` / `load obj <vnum> <level>`, `vnum obj|mob|skill <name>`, `admin test gmcp <login|char|room|tick|affects> [all|<player>]`, `gmcp [on|off|toggle]`.
-- `package.json:18` — add the generator test to `test:guards`.
-- At the end of the phase the owner approves the destructive set (AskUserQuestion with the S11 proposal; the answer is recorded in `docs/game/simulacrum-admin.md` and in the plan amendments).
-Tests:       `scripts/generate-simulacrum-admin-commands.test.mjs`: a fixture table with each level symbol, a commented-out row (ignored), a duplicate handler (merged), a `show=0` row (hidden alias), an unknown symbol (error naming the line); output identical on two runs (ADMIN-01); the real `interp.c` yields the 72 rows (skipped with a clear message when the sibling repo is absent). `commandCatalog.test.ts`: every generated command has a syntax entry and every syntax entry has a generated command (E20); every `confirm` command exists; every bulk form pattern is a valid pattern; `reboot`/`shutdown` forms use the full word and neither hidden alias is offered (E25).
-API check:   none
-UI check:    none
-Index/docs:  `features/simulacrumAdmin/.ai-context`/`.annotated` (update); `scripts/.annotated` if present (update); `docs/game/simulacrum-admin.md` (update: how to regenerate, where syntax lives, the approved destructive set).
-Exit gate:   build · typecheck · lint · all game-client tests · `pnpm test:guards` · documentation.
+Workflow:    none
+
+Work
+- [x] 6.1 `scripts/generate-simulacrum-admin-commands.mjs` (new) — reads `interp.c` (path from `--source`, default `../merc-mud/2.4/src/interp.c`), resolves the level symbols from `interp.h:34-43` and `merc.h:129-131` by value (`ML` 60, `L1` 59 ... `L8` 52, `IM` 52; the macros are unparenthesised, so the script uses the symbol, never the expression), keeps the live rows whose level symbol is `IM`, `ML` or `L1`-`L8` (so the numeric-level mortal rows are left out), merges rows that share a handler into one command with aliases (`teleport`/`transfer`, `invis`/`wizinvis`, `immtalk`/`:`), records `show` (rows with `show=0` such as `reboo` and `shutdow` become hidden aliases that are never offered), and writes `commandTable.generated.ts` with a header naming the source file, a content hash and no date. Output is deterministic (sorted).
+- [x] 6.2 `features/simulacrumAdmin/commandTable.generated.ts` (new) — about 72 rows as of this commit (counts in the scope: 72 privileged rows, 18 `IM`, 12 `L4`, 10 `L5`, 10 `L1`, 5 `ML`, 4 each `L6`/`L3`/`L2`, 3 `L8`, 2 `L7`); the two numeric-level rows `shout` and `murder` are excluded.
+- [x] 6.3 `features/simulacrumAdmin/commandSyntax.ts` (new) — one entry per command: `group` (players, world, server, communication, inspection, settings), `summary`, `fields` (typed: `character`, `word`, `text`, `number`, `vnum`, `areaFile`, `choice`, `flags`), `forms` for commands with sub-forms (`stat`, `vnum`, `load`, `set`, `string`, `flag`, `wiznet`, `admin test gmcp`), `successPatterns`, `confirm` (S11) and `bulkForms` (E21). Each entry is written from the handler read in this phase; the ones whose handler was not located by name in the plan research (`ban`, `permban`, `penalty`, `imotd`) are read first. Known shapes already read: `transfer <whom|all> [room-vnum|character|object]` (`act_wiz.c:751`, `find_location` at `:734`), `copyover` then `copyover confirm`, `areload <area-file>`, `advance <char> <level>`, `trust <char> <level>`, `qpoints <char> set|add <amount>`, `pardon <char> <killer|thief>`, `guild <char> <clan>`, `load mob <vnum>` / `load obj <vnum> <level>`, `vnum obj|mob|skill <name>`, `admin test gmcp <login|char|room|tick|affects> [all|<player>]`, `gmcp [on|off|toggle]`.
+- [x] 6.4 `package.json:18` — add the generator test to `test:guards`.
+- [x] 6.5 At the end of the phase the owner approves the destructive set (AskUserQuestion with the S11 proposal; the answer is recorded in `docs/game/simulacrum-admin.md` and in the plan amendments).
+- [x] 6.6 Tests: `scripts/generate-simulacrum-admin-commands.test.mjs`: a fixture table with each level symbol, a commented-out row (ignored), a duplicate handler (merged), a `show=0` row (hidden alias), an unknown symbol (error naming the line); output identical on two runs (ADMIN-01); the real `interp.c` yields the 72 rows (skipped with a clear message when the sibling repo is absent). `commandCatalog.test.ts`: every generated command has a syntax entry and every syntax entry has a generated command (E20); every `confirm` command exists; every bulk form pattern is a valid pattern; `reboot`/`shutdown` forms use the full word and neither hidden alias is offered (E25).
+- [x] 6.7 Docs and indexes: `features/simulacrumAdmin/.ai-context`/`.annotated` (update); `scripts/.annotated` if present (update); `docs/game/simulacrum-admin.md` (update: how to regenerate, where syntax lives, the approved destructive set).
+
+Sign-off
+- [x] 6.S Exit gate verified and recorded in test-results.md (2026-11-07): build · typecheck · lint · all game-client tests · `pnpm test:guards` · documentation.
+
 State on exit: the catalog exists as data; nothing renders it yet.
 
 ### [x] Phase 7 — The command builder, sender and reply collector
 Goal:        One module builds a safe command line, asks for confirmation where required, sends it, and returns the server's own reply with a verdict.
 Depends on:  Phases 2, 6
-Changes:
-- `features/simulacrumAdmin/commandBuilder.ts` (new) — `buildCommand(command, form, values)` validates each field by type, trims, rejects control characters and a space in a one-word field, caps the line at 255 characters (E4), and returns `{ line } | { error: { field, message } }`.
-- `features/simulacrumAdmin/confirmPolicy.ts` (new) — `needsConfirmation(command, form, values)` true for the approved destructive set and for any bulk form: `all`, an empty target where the server reads the whole room, a wildcard (E21); returns the scope text shown to the owner.
-- `features/simulacrumAdmin/replyCollector.ts` (new) — joins `game:remote-server:raw` chunks, rejoins split escape sequences, strips ANSI and DSL `{X` codes for display while keeping the raw text (E22), splits lines, ends on a 600 ms quiet period or 4 s, classifies: refused when a line is `Huh?`, accepted when a `successPatterns` entry matches, otherwise unknown (E6, E7).
-- `features/simulacrumAdmin/sender.ts` (new) — `run(commandId, formId, values, { confirm })`: refuses when the runtime is inactive (E3), builds, asks the confirmation callback, dispatches `shatteredarchive:send-command` (the only dispatcher in the feature; S6), queues a second send behind a running collection (E24), records the result in the activity store and returns it; `wizhelp` helper `refreshAvailable()` sends `wizhelp` and parses the names.
-- `features/simulacrumAdmin/activityLog.ts` (new) — capped (200), memory-only store of `{ id, at, line, verdict, replyLines, rawReply }`, cleared on connection change (S8), `subscribe`.
-Tests:       `commandBuilder.test.ts`: each field type; newline, carriage return, tab, NUL and escape rejected; a space in a `word` field rejected; a 300-character `text` rejected with the field named; a valid line equals the exact expected string for `transfer <char> <vnum>`, `copyover confirm`, `areload <file>`, `vnum obj <name>` (E4). `confirmPolicy.test.ts`: every command in the approved set asks; `transfer all` typed in a free-text field and picked from a list both ask; `purge` with no argument asks; `stat <char>` does not (E21). `replyCollector.test.ts`: chunks joined; an escape sequence split across two chunks; a refusal reply -> refused; a success reply -> accepted; an unrelated tell between lines is not attributed after the quiet period; no reply -> unknown; 4 s cap (fake timers) (E6, E22). `sender.test.ts`: inactive runtime refuses and dispatches nothing (E3); a declined confirmation dispatches nothing; the dispatched `cmd` equals the built string and reaches the socket's `data` message through `useGameConnection` unchanged (E5); two sends in a row are serialised (E24); `refreshAvailable` parses a six-column `wizhelp` reply and a zero-command reply (E7). `activityLog.test.ts`: cap 200 drops the oldest; connection change clears; no storage write happens.
-API check:   none
-UI check:    none
-Index/docs:  `features/simulacrumAdmin/.ai-context`/`.annotated` (update); `docs/game/simulacrum-admin.md` (update: D2, the verdicts, why the reply is the source of truth).
-Exit gate:   build · typecheck · lint · all game-client tests · coverage of the five new modules reviewed (every branch above) · documentation.
+Workflow:    W2
+
+Work
+- [x] 7.1 `features/simulacrumAdmin/commandBuilder.ts` (new) — `buildCommand(command, form, values)` validates each field by type, trims, rejects control characters and a space in a one-word field, caps the line at 255 characters (E4), and returns `{ line } | { error: { field, message } }`.
+- [x] 7.2 `features/simulacrumAdmin/confirmPolicy.ts` (new) — `needsConfirmation(command, form, values)` true for the approved destructive set and for any bulk form: `all`, an empty target where the server reads the whole room, a wildcard (E21); returns the scope text shown to the owner.
+- [x] 7.3 `features/simulacrumAdmin/replyCollector.ts` (new) — joins `game:remote-server:raw` chunks, rejoins split escape sequences, strips ANSI and DSL `{X` codes for display while keeping the raw text (E22), splits lines, ends on a 600 ms quiet period or 4 s, classifies: refused when a line is `Huh?`, accepted when a `successPatterns` entry matches, otherwise unknown (E6, E7).
+- [x] 7.4 `features/simulacrumAdmin/sender.ts` (new) — `run(commandId, formId, values, { confirm })`: refuses when the runtime is inactive (E3), builds, asks the confirmation callback, dispatches `shatteredarchive:send-command` (the only dispatcher in the feature; S6), queues a second send behind a running collection (E24), records the result in the activity store and returns it; `wizhelp` helper `refreshAvailable()` sends `wizhelp` and parses the names.
+- [x] 7.5 `features/simulacrumAdmin/activityLog.ts` (new) — capped (200), memory-only store of `{ id, at, line, verdict, replyLines, rawReply }`, cleared on connection change (S8), `subscribe`.
+- [x] 7.6 Tests: `commandBuilder.test.ts`: each field type; newline, carriage return, tab, NUL and escape rejected; a space in a `word` field rejected; a 300-character `text` rejected with the field named; a valid line equals the exact expected string for `transfer <char> <vnum>`, `copyover confirm`, `areload <file>`, `vnum obj <name>` (E4). `confirmPolicy.test.ts`: every command in the approved set asks; `transfer all` typed in a free-text field and picked from a list both ask; `purge` with no argument asks; `stat <char>` does not (E21). `replyCollector.test.ts`: chunks joined; an escape sequence split across two chunks; a refusal reply -> refused; a success reply -> accepted; an unrelated tell between lines is not attributed after the quiet period; no reply -> unknown; 4 s cap (fake timers) (E6, E22). `sender.test.ts`: inactive runtime refuses and dispatches nothing (E3); a declined confirmation dispatches nothing; the dispatched `cmd` equals the built string and reaches the socket's `data` message through `useGameConnection` unchanged (E5); two sends in a row are serialised (E24); `refreshAvailable` parses a six-column `wizhelp` reply and a zero-command reply (E7). `activityLog.test.ts`: cap 200 drops the oldest; connection change clears; no storage write happens.
+- [x] 7.7 Docs and indexes: `features/simulacrumAdmin/.ai-context`/`.annotated` (update); `docs/game/simulacrum-admin.md` (update: D2, the verdicts, why the reply is the source of truth).
+
+Sign-off
+- [x] 7.S Exit gate verified and recorded in test-results.md (2026-11-13): build · typecheck · lint · all game-client tests · coverage of the five new modules reviewed (every branch above) · documentation.
+
 State on exit: a command can be run programmatically; no tab uses it yet.
 
 ### [x] Phase 8 — The Commands tab and the Activity tab  (amended: see A2)
 Goal:        Every catalog command can be found, read, filled in and run from a form, and every reply is visible.
 Depends on:  Phases 3, 7
-Changes:
-- `components/simulacrumAdmin/CommandsTab.tsx` (new) — left list grouped by `group` with a text filter and a level filter, level badge and a "destructive" mark; selecting a command shows its summary, its forms (a radio per sub-form), its fields as typed inputs, the built line as a read-only preview, `Run`, and the verdict with the reply lines; a "Refresh available commands" button (`wizhelp`); commands above the known trust are dimmed with the level shown, still selectable; the confirmation is an inline dialog naming the scope, no `window.confirm`.
-- `components/simulacrumAdmin/ActivityTab.tsx` (new) — newest-first list of sent lines with time, verdict badge and the reply lines (display text, with "copy raw"), filter by verdict, clear.
-- `SimulacrumAdminWindow.tsx` and the stylesheet — mount both tabs.
-Tests:       `CommandsTab.test.tsx`: the list shows every catalog command under its group; the filter narrows by name and by level; selecting `transfer` shows both its forms; the preview line updates as fields change and shows the field error for a bad value; `Run` on a non-destructive command calls the sender once; `Run` on a destructive command and on `transfer all` opens the confirmation first and sends nothing until confirmed (E21); a refused reply shows the "refused (Huh?)" verdict and not "done" (ADMIN-03); dimming follows a `wizhelp` reply. `ActivityTab.test.tsx`: entries appear in order; verdict filter; clear; the list is capped at 200.
-API check:   none
-UI check:    mocked session, desktop 1440x900 and 900x600: the Commands tab with a selected command, a field error, an open confirmation, accepted/refused/unknown results; the Activity tab overflowing; every state of buttons and inputs, an open select, placeholder and selection colours (TH-01..TH-04). Screenshots `phase-08_commands-form.png`, `phase-08_confirm.png`, `phase-08_verdicts.png`, `phase-08_activity.png`.
-Index/docs:  `components/.annotated` (update); `docs/game/simulacrum-admin.md`; DSL `user-guide.md` (update: Commands and Activity tabs, what the verdicts mean).
-Exit gate:   build · typecheck · lint · all game-client tests · screenshots · documentation.
+Workflow:    W2
+
+Work
+- [x] 8.1 `components/simulacrumAdmin/CommandsTab.tsx` (new) — left list grouped by `group` with a text filter and a level filter, level badge and a "destructive" mark; selecting a command shows its summary, its forms (a radio per sub-form), its fields as typed inputs, the built line as a read-only preview, `Run`, and the verdict with the reply lines; a "Refresh available commands" button (`wizhelp`); commands above the known trust are dimmed with the level shown, still selectable; the confirmation is an inline dialog naming the scope, no `window.confirm`.
+- [x] 8.2 `components/simulacrumAdmin/ActivityTab.tsx` (new) — newest-first list of sent lines with time, verdict badge and the reply lines (display text, with "copy raw"), filter by verdict, clear.
+- [x] 8.3 `SimulacrumAdminWindow.tsx` and the stylesheet — mount both tabs.
+- [x] 8.4 Tests: `CommandsTab.test.tsx`: the list shows every catalog command under its group; the filter narrows by name and by level; selecting `transfer` shows both its forms; the preview line updates as fields change and shows the field error for a bad value; `Run` on a non-destructive command calls the sender once; `Run` on a destructive command and on `transfer all` opens the confirmation first and sends nothing until confirmed (E21); a refused reply shows the "refused (Huh?)" verdict and not "done" (ADMIN-03); dimming follows a `wizhelp` reply. `ActivityTab.test.tsx`: entries appear in order; verdict filter; clear; the list is capped at 200.
+- [x] 8.5 UI check: mocked session, desktop 1440x900 and 900x600: the Commands tab with a selected command, a field error, an open confirmation, accepted/refused/unknown results; the Activity tab overflowing; every state of buttons and inputs, an open select, placeholder and selection colours (TH-01..TH-04). Screenshots `phase-08_commands-form.png`, `phase-08_confirm.png`, `phase-08_verdicts.png`, `phase-08_activity.png`.
+- [x] 8.6 Docs and indexes: `components/.annotated` (update); `docs/game/simulacrum-admin.md`; DSL `user-guide.md` (update: Commands and Activity tabs, what the verdicts mean).
+
+Sign-off
+- [x] 8.S Exit gate verified and recorded in test-results.md (2026-11-13): build · typecheck · lint · all game-client tests · screenshots · documentation.
+
 State on exit: all privileged commands are runnable through the Commands tab.
 
 ### [x] Phase 9 — The Players tab
 Goal:        The owner targets a character once and runs any character-directed command with one click.
 Depends on:  Phase 8
-Changes:
-- `components/simulacrumAdmin/PlayersTab.tsx` (new) — a target field (a single word, validated like a `character` field) with recent targets from this session (memory only, cleared with the buffers); below it the commands whose first field is a `character` (derived from the catalog, not listed by hand) as selectable rows, grouped (inspect, restrict, punish, restore, move, advanced); selecting one shows only its remaining fields; `Run` uses the same sender and confirmation as the Commands tab; the verdict and reply appear beside the target; a destination slot is shown for `transfer`/`teleport` and filled by the picker in Phase 12 (until then a typed room vnum or name).
-- Stylesheet and window — mount the tab.
-Tests:       `PlayersTab.test.tsx`: the target is required and validated (a space or control character is refused); recent targets are offered but never written to storage; the command rows equal the catalog commands whose first field is `character`; running `stat` sends `stat <character>` with the target filled in; `freeze` and `deny` ask for confirmation; `transfer` with the target `all` asks for confirmation (E21); a refusal shows refused; changing the target does not carry the previous reply.
-API check:   none
-UI check:    mocked session: target entered, command list, a selected command with its optional argument, result shown. Screenshots `phase-09_players.png`, `phase-09_players-result.png`.
-Index/docs:  `components/.annotated` (update); `docs/game/simulacrum-admin.md`; DSL `user-guide.md` (update: Players tab).
-Exit gate:   build · typecheck · lint · all game-client tests · screenshots · documentation.
+Workflow:    W2
+
+Work
+- [x] 9.1 `components/simulacrumAdmin/PlayersTab.tsx` (new) — a target field (a single word, validated like a `character` field) with recent targets from this session (memory only, cleared with the buffers); below it the commands whose first field is a `character` (derived from the catalog, not listed by hand) as selectable rows, grouped (inspect, restrict, punish, restore, move, advanced); selecting one shows only its remaining fields; `Run` uses the same sender and confirmation as the Commands tab; the verdict and reply appear beside the target; a destination slot is shown for `transfer`/`teleport` and filled by the picker in Phase 12 (until then a typed room vnum or name).
+- [x] 9.2 Stylesheet and window — mount the tab.
+- [x] 9.3 Tests: `PlayersTab.test.tsx`: the target is required and validated (a space or control character is refused); recent targets are offered but never written to storage; the command rows equal the catalog commands whose first field is `character`; running `stat` sends `stat <character>` with the target filled in; `freeze` and `deny` ask for confirmation; `transfer` with the target `all` asks for confirmation (E21); a refusal shows refused; changing the target does not carry the previous reply.
+- [x] 9.4 UI check: mocked session: target entered, command list, a selected command with its optional argument, result shown. Screenshots `phase-09_players.png`, `phase-09_players-result.png`.
+- [x] 9.5 Docs and indexes: `components/.annotated` (update); `docs/game/simulacrum-admin.md`; DSL `user-guide.md` (update: Players tab).
+
+Sign-off
+- [x] 9.S Exit gate verified and recorded in test-results.md (2026-11-13): build · typecheck · lint · all game-client tests · screenshots · documentation.
+
 State on exit: Players tab works with a typed destination.
 
 ### [x] Phase 10 — The local-only read-only vhost for world data  (amended: see A5)
 Goal:        The owner's browser can read the area and room list from MUD Builder through a vhost that exists only in the dev stack and exposes nothing else.
 Depends on:  Phase 1
-Changes:
-- `deploy/nginx/edge-simulacrum-admin.conf` (new) — template for `simulacrum-admin.shatteredarchive.dev`, port 80 and 443 `server` blocks in the style of `edge-copilot.conf`: brotli guard, `security-headers-api.conf`, `allow` loopback and private ranges then `deny all` (E14), `map $http_origin` for the game-client origins (`https://game-client.shatteredarchive.dev`, `http://game-client.shatteredarchive.dev`, `http://localhost:30080`) with `add_header Access-Control-Allow-Origin ... always` and `Vary: Origin` at server level (E12), and exactly these locations, all `limit_except GET OPTIONS { deny all; }` and proxying to `mud-builder-server:61000`: `= /api/areas`, `= /api/map`, `~ ^/api/map/[A-Za-z0-9_][A-Za-z0-9_.-]*\.are$` (the file pattern of `area-store.ts:31`); `location /` returns 404 (E13).
-- `deploy/nginx/edge-copilot-csp.conf:8-9,12` — add `https://simulacrum-admin.shatteredarchive.dev` to `connect-src`; extend the header comment (S10).
-- `deploy/docker-compose.shattered-archive-experimental.yml:81,85,119` — mount `edge-simulacrum-admin.conf` as `/etc/nginx/templates/simulacrum-admin.conf.template:ro`; add the alias; update the CSP comment. `deploy/docker-compose.yml` is not touched.
-- `scripts/check-local-only.mjs` — the nginx allowance (`edge-simulacrum-admin*.conf`) and the shared-file scan from Phase 1 are used here; `scripts/check-local-only.test.mjs:227-240` — the CSP test now allows exactly the two local-only origins and nothing else.
-- `docs/game/simulacrum-admin.md` — D3, the routes, the CORS rule, how the name resolves on the owner's machine, the owner's rebuild step.
-Tests:       `check-local-only.test.mjs` (extended): the vhost proxies the three routes to the valid port 61000 and nothing else; every location denies methods other than GET/OPTIONS; the allow list matches the Copilot vhost's; the production compose, shared `edge-subdomains.conf` and `includes/tls-dev.conf` never mention the vhost (E11); the CSP override equals the shared dev CSP except for the two local-only origins; no `add_header` appears inside a `location` (E12).
-API check:   after the owner restarts the nginx container: `curl -i https://simulacrum-admin.shatteredarchive.dev/api/map` -> 200 JSON with `areas` and `links`, `Access-Control-Allow-Origin` equal to the request origin for a listed origin and absent for an unlisted one; `/api/map/<an existing .are file>` -> 200 with `rooms`; `/api/areas` -> 200 `{ areas }`; `curl -X POST .../api/areas` -> 403 or 404 and the MUD Builder audit log shows no request; `GET /api/state/live`, `/api/reload`, `/api/areas/<file>` -> 404; the 404 and a refusal also carry the CORS header (E12, E13).
-UI check:    none
-Index/docs:  `deploy/nginx/.annotated`, `deploy/.annotated` (update); `docs/game/simulacrum-admin.md`.
-Exit gate:   build · typecheck · lint · all game-client tests · `pnpm test:guards` · `pnpm check:local-only` · API check done · documentation.
+Workflow:    W3
+
+Work
+- [x] 10.1 `deploy/nginx/edge-simulacrum-admin.conf` (new) — template for `simulacrum-admin.shatteredarchive.dev`, port 80 and 443 `server` blocks in the style of `edge-copilot.conf`: brotli guard, `security-headers-api.conf`, `allow` loopback and private ranges then `deny all` (E14), `map $http_origin` for the game-client origins (`https://game-client.shatteredarchive.dev`, `http://game-client.shatteredarchive.dev`, `http://localhost:30080`) with `add_header Access-Control-Allow-Origin ... always` and `Vary: Origin` at server level (E12), and exactly these locations, all `limit_except GET OPTIONS { deny all; }` and proxying to `mud-builder-server:61000`: `= /api/areas`, `= /api/map`, `~ ^/api/map/[A-Za-z0-9_][A-Za-z0-9_.-]*\.are$` (the file pattern of `area-store.ts:31`); `location /` returns 404 (E13).
+- [x] 10.2 `deploy/nginx/edge-copilot-csp.conf:8-9,12` — add `https://simulacrum-admin.shatteredarchive.dev` to `connect-src`; extend the header comment (S10).
+- [x] 10.3 `deploy/docker-compose.shattered-archive-experimental.yml:81,85,119` — mount `edge-simulacrum-admin.conf` as `/etc/nginx/templates/simulacrum-admin.conf.template:ro`; add the alias; update the CSP comment. `deploy/docker-compose.yml` is not touched.
+- [x] 10.4 `scripts/check-local-only.mjs` — the nginx allowance (`edge-simulacrum-admin*.conf`) and the shared-file scan from Phase 1 are used here; `scripts/check-local-only.test.mjs:227-240` — the CSP test now allows exactly the two local-only origins and nothing else.
+- [x] 10.5 `docs/game/simulacrum-admin.md` — D3, the routes, the CORS rule, how the name resolves on the owner's machine, the owner's rebuild step.
+- [x] 10.6 Tests: `check-local-only.test.mjs` (extended): the vhost proxies the three routes to the valid port 61000 and nothing else; every location denies methods other than GET/OPTIONS; the allow list matches the Copilot vhost's; the production compose, shared `edge-subdomains.conf` and `includes/tls-dev.conf` never mention the vhost (E11); the CSP override equals the shared dev CSP except for the two local-only origins; no `add_header` appears inside a `location` (E12).
+- [x] 10.7 (amended: see A5) API check: after the owner restarts the nginx container: `curl -i https://simulacrum-admin.shatteredarchive.dev/api/map` -> 200 JSON with `areas` and `links`, `Access-Control-Allow-Origin` equal to the request origin for a listed origin and absent for an unlisted one; `/api/map/<an existing .are file>` -> 200 with `rooms`; `/api/areas` -> 200 `{ areas }`; `curl -X POST .../api/areas` -> 403 or 404 and the MUD Builder audit log shows no request; `GET /api/state/live`, `/api/reload`, `/api/areas/<file>` -> 404; the 404 and a refusal also carry the CORS header (E12, E13). — run on a throwaway nginx container carrying the same template, with the real MUD Builder behind it, every call of this check (test-results.md, Phase 10). The repeat on the real name is box 14.8.
+- [x] 10.8 Docs and indexes: `deploy/nginx/.annotated`, `deploy/.annotated` (update); `docs/game/simulacrum-admin.md`.
+
+Sign-off
+- [x] 10.S Exit gate verified and recorded in test-results.md (2026-11-13): build · typecheck · lint · all game-client tests · `pnpm test:guards` · `pnpm check:local-only` · API check done · documentation.
+
 State on exit: the vhost exists in the dev stack only and serves read-only world data; no client code calls it yet.
 
 ### [x] Phase 11 — The world index in the client
 Goal:        The client can fetch, hold and filter the area and room list.
 Depends on:  Phases 3, 10
-Changes:
-- `features/simulacrumAdmin/worldConfig.ts` (new) — the base `https://simulacrum-admin.shatteredarchive.dev`, overridable per browser through `simulacrumAdmin.world.base` (a bare origin on localhost, a private range or `*.shatteredarchive.dev`; same validation as the host list).
-- `features/simulacrumAdmin/worldApi.ts` (new) — `fetchAreas(signal)` (`GET /api/map` -> areas with name, file, min and max vnum, room count, `parseError`), `fetchRooms(file, signal)` (`GET /api/map/<file>` -> rooms with vnum and name; exits are dropped), hand-written validators for both shapes (unknown fields ignored, wrong types rejected), an offline state instead of an exception (E8).
-- `features/simulacrumAdmin/worldFilter.ts` (new) — pure `filterAreas(areas, query)` (name or file substring, vnum inside the range) and `filterRooms(rooms, query)` (vnum exact, prefix, `a-b` range; name substring), stable order, plus `describeFetch(time)`.
-- `features/simulacrumAdmin/useWorldIndex.ts` (new) — lazy loading per area with a session cache, refresh, `AbortSignal` aborted on unmount.
-Tests:       `worldApi.test.ts`: valid bodies parse; an `error` body, a non-JSON body, a network failure and an aborted request each give the offline or error state without throwing (E8); an area with `parseError` is kept and flagged; a room list with a missing vnum is rejected. `worldFilter.test.ts`: name, file, vnum exact/prefix/range cases, empty query, no match, 3,200 synthetic rooms filtered under a fixed time bound (E9). `useWorldIndex.test.tsx`: after unmount no request is made and none is left pending (typescript.md async rule); refresh refetches; the cache is used on a second read.
-API check:   a script call of `fetchAreas` and `fetchRooms` against the owner's running vhost from Phase 10 (a node one-off using the same validators): the first area list and one room list parse without error.
-UI check:    none
-Index/docs:  `features/simulacrumAdmin/.ai-context`/`.annotated` (update); `docs/game/simulacrum-admin.md` (update).
-Exit gate:   build · typecheck · lint · all game-client tests · coverage of the new modules reviewed · API check done · documentation.
+Workflow:    W3
+
+Work
+- [x] 11.1 `features/simulacrumAdmin/worldConfig.ts` (new) — the base `https://simulacrum-admin.shatteredarchive.dev`, overridable per browser through `simulacrumAdmin.world.base` (a bare origin on localhost, a private range or `*.shatteredarchive.dev`; same validation as the host list).
+- [x] 11.2 `features/simulacrumAdmin/worldApi.ts` (new) — `fetchAreas(signal)` (`GET /api/map` -> areas with name, file, min and max vnum, room count, `parseError`), `fetchRooms(file, signal)` (`GET /api/map/<file>` -> rooms with vnum and name; exits are dropped), hand-written validators for both shapes (unknown fields ignored, wrong types rejected), an offline state instead of an exception (E8).
+- [x] 11.3 `features/simulacrumAdmin/worldFilter.ts` (new) — pure `filterAreas(areas, query)` (name or file substring, vnum inside the range) and `filterRooms(rooms, query)` (vnum exact, prefix, `a-b` range; name substring), stable order, plus `describeFetch(time)`.
+- [x] 11.4 `features/simulacrumAdmin/useWorldIndex.ts` (new) — lazy loading per area with a session cache, refresh, `AbortSignal` aborted on unmount.
+- [x] 11.5 Tests: `worldApi.test.ts`: valid bodies parse; an `error` body, a non-JSON body, a network failure and an aborted request each give the offline or error state without throwing (E8); an area with `parseError` is kept and flagged; a room list with a missing vnum is rejected. `worldFilter.test.ts`: name, file, vnum exact/prefix/range cases, empty query, no match, 3,200 synthetic rooms filtered under a fixed time bound (E9). `useWorldIndex.test.tsx`: after unmount no request is made and none is left pending (typescript.md async rule); refresh refetches; the cache is used on a second read.
+- [x] 11.6 (amended: see A5) API check: a script call of `fetchAreas` and `fetchRooms` against the owner's running vhost from Phase 10 (a node one-off using the same validators): the first area list and one room list parse without error. — run through the same throwaway container (53 areas, 22 rooms in the first, parsed without error). The real name is box 14.8.
+- [x] 11.7 Docs and indexes: `features/simulacrumAdmin/.ai-context`/`.annotated` (update); `docs/game/simulacrum-admin.md` (update).
+
+Sign-off
+- [x] 11.S Exit gate verified and recorded in test-results.md (2026-11-13): build · typecheck · lint · all game-client tests · coverage of the new modules reviewed · API check done · documentation.
+
 State on exit: the world index is available to the UI; no tab shows it yet.
 
 ### [x] Phase 12 — The World tab and the teleport picker
 Goal:        The owner picks a destination by area and vnum, and uses it from the World tab and from the Players tab.
 Depends on:  Phases 9, 11
-Changes:
-- `components/simulacrumAdmin/RoomPicker.tsx` (new) — an area list with a filter box (name, file, vnum), a room list for the selected area (virtual cap of 200 rows with an "N more" line), a vnum box that accepts an exact vnum, a prefix or `a-b`, and the "global vnum search" across all loaded areas; fetch time and a refresh button; `onPick(vnum, roomName)`. Built on the filter pattern of `components/wizard/FilterableSelect.tsx` where its keyboard behaviour fits (that component is tied to `AutoLevelingWizard.module.scss`, so the picker has its own markup and reuses only its approach).
-- `components/simulacrumAdmin/WorldTab.tsx` (new) — the picker plus, for the picked room, the actions `goto <vnum>`, `at <vnum> <command>` (command from a free field), `transfer <target> <vnum>` (target from the Players tab's current target), and `violate <vnum>`; every action goes through `sender.ts` and shows its verdict; the room's name and area are shown with the picked vnum.
-- `components/simulacrumAdmin/PlayersTab.tsx` — the destination slot of `transfer`/`teleport` opens the picker and fills the vnum field.
-- `SimulacrumAdminWindow.tsx`, stylesheet — mount the tab.
-Tests:       `RoomPicker.test.tsx`: area filter by name, file and vnum; rooms load on selecting an area and an offline area shows a retry (E8); the vnum box handles exact, prefix and range; more than 200 matches show the "more" line (E9); picking calls `onPick` with the vnum and name. `WorldTab.test.tsx`: each action sends the exact line (`goto 3001`, `transfer <character> 3001`, `at 3001 look`); `transfer all` asks for confirmation (E21); a "No such location." reply shows refused and a refresh reloads the index (E10); unmounting aborts the pending fetch.
-API check:   the picker against the owner's running vhost: the first area loads its rooms; a vnum typed from a real area resolves to that room's name.
-UI check:    mocked session with the world endpoints answered by `page.route` fixtures (placeholder area and room names): area filter typed, rooms listed with overflow and visible scrollbar (TH-01), the vnum range box, a picked room with its actions, offline state, the Players tab with the destination filled. Screenshots `phase-12_world-areas.png`, `phase-12_world-rooms.png`, `phase-12_world-offline.png`, `phase-12_players-destination.png`.
-Index/docs:  `components/.annotated` (update); `docs/game/simulacrum-admin.md`; DSL `user-guide.md` (update: World tab, teleport from the Players tab, how fresh the data is).
-Exit gate:   build · typecheck · lint · all game-client tests · screenshots · API check done · documentation.
+Workflow:    W2, W3
+
+Work
+- [x] 12.1 `components/simulacrumAdmin/RoomPicker.tsx` (new) — an area list with a filter box (name, file, vnum), a room list for the selected area (virtual cap of 200 rows with an "N more" line), a vnum box that accepts an exact vnum, a prefix or `a-b`, and the "global vnum search" across all loaded areas; fetch time and a refresh button; `onPick(vnum, roomName)`. Built on the filter pattern of `components/wizard/FilterableSelect.tsx` where its keyboard behaviour fits (that component is tied to `AutoLevelingWizard.module.scss`, so the picker has its own markup and reuses only its approach).
+- [x] 12.2 `components/simulacrumAdmin/WorldTab.tsx` (new) — the picker plus, for the picked room, the actions `goto <vnum>`, `at <vnum> <command>` (command from a free field), `transfer <target> <vnum>` (target from the Players tab's current target), and `violate <vnum>`; every action goes through `sender.ts` and shows its verdict; the room's name and area are shown with the picked vnum.
+- [x] 12.3 `components/simulacrumAdmin/PlayersTab.tsx` — the destination slot of `transfer`/`teleport` opens the picker and fills the vnum field.
+- [x] 12.4 `SimulacrumAdminWindow.tsx`, stylesheet — mount the tab.
+- [x] 12.5 Tests: `RoomPicker.test.tsx`: area filter by name, file and vnum; rooms load on selecting an area and an offline area shows a retry (E8); the vnum box handles exact, prefix and range; more than 200 matches show the "more" line (E9); picking calls `onPick` with the vnum and name. `WorldTab.test.tsx`: each action sends the exact line (`goto 3001`, `transfer <character> 3001`, `at 3001 look`); `transfer all` asks for confirmation (E21); a "No such location." reply shows refused and a refresh reloads the index (E10); unmounting aborts the pending fetch.
+- [x] 12.6 (amended: see A5) API check: the picker against the owner's running vhost: the first area loads its rooms; a vnum typed from a real area resolves to that room's name. — verified against Playwright route fixtures and, where the real name is not live, the throwaway container (A5). The real name is box 14.8.
+- [x] 12.7 UI check: mocked session with the world endpoints answered by `page.route` fixtures (placeholder area and room names): area filter typed, rooms listed with overflow and visible scrollbar (TH-01), the vnum range box, a picked room with its actions, offline state, the Players tab with the destination filled. Screenshots `phase-12_world-areas.png`, `phase-12_world-rooms.png`, `phase-12_world-offline.png`, `phase-12_players-destination.png`.
+- [x] 12.8 Docs and indexes: `components/.annotated` (update); `docs/game/simulacrum-admin.md`; DSL `user-guide.md` (update: World tab, teleport from the Players tab, how fresh the data is).
+
+Sign-off
+- [x] 12.S Exit gate verified and recorded in test-results.md (2026-11-13): build · typecheck · lint · all game-client tests · screenshots · API check done · documentation.
+
 State on exit: teleport destinations can be picked; Server tab still empty.
 
 ### [x] Phase 13 — The Server tab
 Goal:        Server-wide commands are grouped, safe to find and clearly confirmed.
 Depends on:  Phases 8, 11
-Changes:
-- `components/simulacrumAdmin/ServerTab.tsx` (new) — cards for: reload an area (`areload <file>` with the file picked from the world index), `copyover` (the first click opens the confirmation; only after it is the line `copyover confirm` sent; E25), `reboot` and `shutdown` (full words only), `wizlock` and `newlock` (toggles, with the last reply shown), `log`, `memory`, `dump`, `sockets`, `ban`/`permban`/`allow` (site field), `wiznet`, `holylight`, `incognito`, `invis`; each card states its level, whether it is destructive, and shows its verdict and reply. The cards are derived from the catalog `group` so a new server command appears without a code change.
-- Stylesheet and window — mount the tab.
-Tests:       `ServerTab.test.tsx`: the cards equal the catalog's server group; `copyover` sends nothing before the confirmation and sends exactly `copyover confirm` after it (E25); `areload` offers the area files from the index and sends `areload <file>`; `shutdown` and `reboot` always send the full word; a refused reply is shown as refused; `ban` with an empty site is refused by the builder (E4).
-API check:   none
-UI check:    mocked session: the cards, an open confirmation for `copyover`, a refused result. Screenshots `phase-13_server.png`, `phase-13_server-confirm.png`.
-Index/docs:  `components/.annotated` (update); `docs/game/simulacrum-admin.md`; DSL `user-guide.md` (update: Server tab and what each confirmation protects).
-Exit gate:   build · typecheck · lint · all game-client tests · screenshots · documentation.
+Workflow:    W2
+
+Work
+- [x] 13.1 `components/simulacrumAdmin/ServerTab.tsx` (new) — cards for: reload an area (`areload <file>` with the file picked from the world index), `copyover` (the first click opens the confirmation; only after it is the line `copyover confirm` sent; E25), `reboot` and `shutdown` (full words only), `wizlock` and `newlock` (toggles, with the last reply shown), `log`, `memory`, `dump`, `sockets`, `ban`/`permban`/`allow` (site field), `wiznet`, `holylight`, `incognito`, `invis`; each card states its level, whether it is destructive, and shows its verdict and reply. The cards are derived from the catalog `group` so a new server command appears without a code change.
+- [x] 13.2 Stylesheet and window — mount the tab.
+- [x] 13.3 Tests: `ServerTab.test.tsx`: the cards equal the catalog's server group; `copyover` sends nothing before the confirmation and sends exactly `copyover confirm` after it (E25); `areload` offers the area files from the index and sends `areload <file>`; `shutdown` and `reboot` always send the full word; a refused reply is shown as refused; `ban` with an empty site is refused by the builder (E4).
+- [x] 13.4 UI check: mocked session: the cards, an open confirmation for `copyover`, a refused result. Screenshots `phase-13_server.png`, `phase-13_server-confirm.png`.
+- [x] 13.5 Docs and indexes: `components/.annotated` (update); `docs/game/simulacrum-admin.md`; DSL `user-guide.md` (update: Server tab and what each confirmation protects).
+
+Sign-off
+- [x] 13.S Exit gate verified and recorded in test-results.md (2026-11-13): build · typecheck · lint · all game-client tests · screenshots · documentation.
+
 State on exit: all six tabs work against a mocked session.
 
-### [x] Phase 14 — Final: full checks, documentation, indexes, showcase, owner run  (owner steps open: see test-results.md and A5)
+### [ ] Phase 14 — Final: full checks, documentation, indexes, showcase, owner run  (owner steps open: see test-results.md and A5)
 Goal:        Everything is green, documented, proven absent from production, and checked once against the real simulacrum by the owner.
 Depends on:  Phases 1-13
-Changes:
-- Full checks for every touched package and script: typecheck, lint, all game-client tests with coverage of `features/simulacrumAdmin/**` and `components/simulacrumAdmin/**` (every error path of Phases 2, 4, 7, 11 covered), `pnpm test:guards`, `pnpm check:manifests`.
-- A real production build with no flags, then `pnpm check:local-only` (neither marker, no vhost name in `dist`); a build with only `SIMULACRUM_ADMIN_LOCAL=true` (marker present, Copilot marker absent) and one with both (E15).
-- `pnpm check:private-names` on the owner's machine (PRIVNAME-01); a scan of the diff and new files for private IPv4 literals and for character-name patterns (E18).
-- Documentation read-through: `docs/game/simulacrum-admin.md` carries D1, D2, D3 rendered in the IDE preview (the diagrams were written without a renderer); the DSL `user-guide.md` covers all six tabs; `.ai-context` and `.annotated` of every touched folder are current.
-- Showcase screenshots with `saveShowcase`: `showcase_01_window-open.png`, `showcase_02_gmcp.png`, `showcase_03_players.png`, `showcase_04_world-picker.png`, `showcase_05_commands.png`, `showcase_06_server-confirm.png`, `showcase_07_activity.png`.
-- Owner step (cannot be done by the implementer): rebuild the flagged stack, connect to the real simulacrum with the access code, and confirm (a) the menu entry appears and, when connected to the live DSL game, does not; (b) the accepted hostname and port pair of Unknown 9, then add the LAN address through the documented storage entry and confirm it too; (c) the GMCP tab shows real traffic; (d) one harmless command from each of Players, World and Server returns an accepted or refused verdict that matches what the game says. The results are recorded in `test-results.md`.
-Tests:       the above; no new test files beyond gaps found by the coverage review.
-API check:   the Phase 10 and 11 calls repeated once on the final stack.
-UI check:    the showcase set above.
-Index/docs:  all of the above.
-Exit gate:   build · typecheck · lint · all tests of every touched package · `pnpm test:guards` · `pnpm check:local-only` on the real production build · coverage reviewed · API checks · showcase taken · documentation · owner step recorded.
-State on exit: ready for the owner's sign-off and `/pr-review`.
+Workflow:    W1-W5 (proved together)
+
+Work
+- [x] 14.1 Full checks for every touched package and script: typecheck, lint, all game-client tests with coverage of `features/simulacrumAdmin/**` and `components/simulacrumAdmin/**` (every error path of Phases 2, 4, 7, 11 covered), `pnpm test:guards`, `pnpm check:manifests`.
+- [x] 14.2 A real production build with no flags, then `pnpm check:local-only` (neither marker, no vhost name in `dist`); a build with only `SIMULACRUM_ADMIN_LOCAL=true` (marker present, Copilot marker absent) and one with both (E15).
+- [x] 14.3 `pnpm check:private-names` on the owner's machine (PRIVNAME-01); a scan of the diff and new files for private IPv4 literals and for character-name patterns (E18).
+- [x] 14.4 Documentation read-through: `docs/game/simulacrum-admin.md` carries D1, D2, D3 (W1, W2, W3 of this plan); the DSL `user-guide.md` covers all six tabs; `.ai-context` and `.annotated` of every touched folder are current.
+- [x] 14.5 Showcase screenshots with `saveShowcase`: `showcase_01_window-open.png`, `showcase_02_gmcp.png`, `showcase_03_players.png`, `showcase_04_world-picker.png`, `showcase_05_commands.png`, `showcase_06_server-confirm.png`, `showcase_07_activity.png`.
+- [ ] 14.6 Owner step (cannot be done by the implementer): rebuild the flagged stack, connect to the real simulacrum with the access code, and confirm (a) the menu entry appears and, when connected to the live DSL game, does not; (b) the accepted hostname and port pair of Unknown 9, then add the LAN address through the documented storage entry and confirm it too; (c) the GMCP tab shows real traffic; (d) one harmless command from each of Players, World and Server returns an accepted or refused verdict that matches what the game says. The results are recorded in `test-results.md`. — deferred: the owner. Steps (a) nginx recreate plus the hosts line, (b) a run on the real simulacrum through the relay (needs an access code) and (c) committing merc-mud and the allowlist decision are written out in test-results.md under "What is NOT done".
+- [x] 14.7 Tests: the above; no new test files beyond gaps found by the coverage review.
+- [ ] 14.8 API check: the Phase 10 and 11 calls repeated once on the final stack. — deferred: needs the real name live, which is owner step (a) of box 14.6. The same calls were proven on a throwaway container (A5).
+- [x] 14.9 UI check: the showcase set above.
+- [x] 14.10 Docs and indexes: all of the above.
+- [ ] 14.11 Render check: open `docs/game/simulacrum-admin.md` and `docs/game/gmcp-parity.md` in the editor preview and confirm D1, D2, D3 and the five diagrams of this plan (W1 to W5) render — deferred: no mermaid renderer was available when the diagrams were written, and none has been run on W4 and W5 (the reformat of 2026-11-19).
+
+Sign-off
+- [ ] 14.S Exit gate verified and recorded in test-results.md (pending the open boxes above): build · typecheck · lint · all tests of every touched package · `pnpm test:guards` · `pnpm check:local-only` on the real production build · coverage reviewed · API checks · showcase taken · documentation · owner step recorded. — deferred: everything the implementer can do is green (test-results.md, Phase 14, 2026-11-13); open are boxes 14.6, 14.8 and 14.11.
+
+State on exit: ready for the owner's sign-off and `/pr-review` once boxes 14.6, 14.8 and 14.11 are done.
 
 ## Risks and rollback
 
@@ -495,3 +643,13 @@ No decision needed: the throwaway container is a test, not a deployment.
 - 2026-11-13: Phase 12 done. Room picker (area and room filters, caps, all-areas search that opens the area holding a typed vnum), World tab (goto, violate, at, transfer with the shared target), the Players tab destination slot, a shared world index in the window; 44/44 live UI checks at two sizes with screenshots viewed. Deviation: the window owns the shared world index and the target (small prop additions to the Players tab) so the two tabs agree.
 - 2026-11-13: Phase 13 done. Server tab as cards derived from the catalog groups (with a reusable CommandCard), copyover and its confirm word, areload from the world index; 30/30 live UI checks. Deviations: the settings group is shown on the same tab (the plan lists wiznet, holylight, incognito and invis on it), `areload` moved to the server group, the tab placeholders were removed.
 - 2026-11-13: Phase 14 done for everything the implementer can do: full checks green, final showcase set captured and viewed, documentation sweep done. The owner steps (a) nginx recreate and hosts line, (b) a run on the real simulacrum through the relay, (c) committing merc-mud and the allowlist decision are open and written in test-results.md. Plan complete pending the owner's sign-off.
+- 2026-11-19: Plan reformatted into the current tech-plan format at the owner's request, with no change of scope or code. Each phase is now a goal, a numbered Work checklist and a Sign-off box, ticked from what test-results.md records; the old D1 to D3 became workflows W1 to W3 with a Before diagram drawn from the code at a565d53, and W4 and W5 were added for amendments A2 and A3. Boxes still open, each with a `deferred:` note: 14.6 (owner steps), 14.8 (API calls on the real vhost name), 14.11 (render the diagrams) and the Plan sign-off. Phases 1 to 13 were signed off under the previous exit gate, which did not include the `check-doc-impact` run or the After-diagram match; both are asserted once for the whole plan under Plan sign-off.
+
+## Plan sign-off
+
+Phases 1 to 13 were signed off under the previous exit gate (build, typecheck, lint, tests, coverage, API and UI checks, documentation). The two checks that gate did not contain are asserted once here, for the whole plan.
+
+- [ ] Every phase above is ticked (work, sign-off and heading boxes) — open: Phase 14
+- [ ] `node scripts/check-doc-impact.mjs <item folder>` reports 0 unresolved — not run clean: a run on 2026-11-19 listed 60 docs and 9 folder indexes, most of them hits on shared files (`game-client.Dockerfile`, `render.ts`) that the whole branch changed; each needs a stated `checked, still accurate` or an update in test-results.md
+- [ ] The After diagrams are in the developer doc(s) (`docs/game/...`) and match the built behaviour — W1, W2, W3 are there as D1, D2, D3; W4 and W5 are not yet
+- [ ] Owner sign-off recorded: Signed off by the user on <yyyy-mm-dd>

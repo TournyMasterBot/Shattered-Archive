@@ -25,6 +25,15 @@ describe('Autopilot to Copilot', () => {
     expect(seen).toHaveLength(1);
   });
 
+  it('passes a timeout reason through, so Copilot can tell a stalled run from an error', () => {
+    const link = createAutopilotLink();
+    const seen: unknown[] = [];
+    const off = link.onNeedHelp((h) => seen.push(h));
+    DispatchEvent('shatteredarchive:autopilot-need-help', { reason: 'timeout', message: 'no reply to "n"' });
+    off();
+    expect(seen).toEqual([{ reason: 'timeout', message: 'no reply to "n"' }]);
+  });
+
   it('fills in a reason and a message that are missing or not text', () => {
     const link = createAutopilotLink();
     const seen: unknown[] = [];

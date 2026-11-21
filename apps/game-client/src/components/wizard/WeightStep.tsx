@@ -33,7 +33,7 @@ export const WeightStep: React.FC<Props> = ({ weightAtOrAbovePct, weightCommands
       <p className={styles.fieldHint}>
         Out of combat only, same as Rest. When your carry weight crosses the threshold below, the
         drop sequence runs once — it won't fire again until you're back under it. Leave the
-        commands blank to turn this off.
+        commands blank to turn this off. What you set here is remembered for next time.
       </p>
 
       <div className={styles.field}>

@@ -339,7 +339,7 @@ is about consumers.
   visual pass reviewed against the C# site side-by-side (user's call on "comfortable").
 
 ### [x] B. (CLAUDE) C# identity replacement — clean cut, no migration (DSL repo: Server.Web.Public)
-- **Sub-plan: `.ai-plans-completed/closed-incomplete/20260727-1022-auth-rollout-phaseB-csharp-clean-cut.md`** —
+- **Sub-plan: `.ai-plans-completed/completed/20260727-1022-auth-rollout-phaseB-csharp-clean-cut.md`** —
   ownership split per user direction 2026-07-27: Fable executes the C# update + local
   certification (its steps 1-2); Sonnet 5 executes the rest (live registration, the
   one-time TABLE_USERS check + deploy + live E2E, docs/bookkeeping — its steps 3-5).
@@ -637,7 +637,7 @@ is about consumers.
   `tokenType sso`, anonymous regression clean, legacy endpoints dead, and a
   freshly-minted foreign-audience token is refused (audience isolation proven on
   production, not just locally). Full evidence:
-  `.ai-plans-completed/closed-incomplete/20260727-1022-auth-rollout-phaseB-csharp-clean-cut.md`. Docs
+  `.ai-plans-completed/completed/20260727-1022-auth-rollout-phaseB-csharp-clean-cut.md`. Docs
   (`docs/auth-server.md` gained the deploy-topology + dual-base-URL lesson) and
   `.annotated`/`.ai-context` refreshed. Residue (same accepted precedent as Phase
   A/A2): two throwaway hub accounts + one foreign-audience probe key. Umbrella now

@@ -16,7 +16,22 @@
 import { indexedDbKvStore, type KvStore } from './autoleveling-idb';
 import type { AutoPilotTarget } from './autoleveling-content-types';
 import type { UserBuiltPath } from './autoleveling-user-paths';
-import type { AutoLevelOnceKey, AutoLevelVitalsGate } from './autoleveling-types';
+import {
+  normalizeDeselected,
+  normalizeStepPrefs,
+  stepPrefsFrom,
+  stepValuesFrom,
+  type StepPrefs,
+  type StepValues,
+} from './autoleveling-step-prefs';
+import {
+  ENEMY_BAND_FLOORS,
+  type AutoLevelCombatState,
+  type AutoLevelEnemyBand,
+  type AutoLevelEnemyGate,
+  type AutoLevelOnceKey,
+  type AutoLevelVitalsGate,
+} from './autoleveling-types';
 import {
   diffAgainstDefault,
   isSafeTargetText,
@@ -25,8 +40,22 @@ import {
   type TargetOverrideData,
   type TargetOverridePatch,
 } from './autoleveling-target-overrides';
+import {
+  diffRouteAgainstDefault,
+  normalizeRouteOverrideData,
+  type RouteEditError,
+  type RouteOverrideData,
+} from './autoleveling-route-overrides';
 
-export type UserRecordKind = 'target' | 'buff' | 'fight' | 'path' | 'pref' | 'abilityTiming' | 'targetOverride';
+export type UserRecordKind =
+  | 'target'
+  | 'buff'
+  | 'fight'
+  | 'path'
+  | 'pref'
+  | 'abilityTiming'
+  | 'targetOverride'
+  | 'routeOverride';
 
 /**
  * Every record kind this store holds, and therefore every kind `exportAll()` can hand to Save to cloud.
@@ -41,6 +70,7 @@ export const SYNCED_RECORD_KINDS: readonly UserRecordKind[] = [
   'pref',
   'abilityTiming',
   'targetOverride',
+  'routeOverride',
 ];
 
 export interface UserRecord<T = unknown> {
@@ -90,6 +120,15 @@ export interface BuffRow {
   vitalsGate?: AutoLevelVitalsGate;
   /** Fire at most once per round/fight — see AutoLevelOnceKey. */
   onceKey?: AutoLevelOnceKey;
+  /** Only in (`in`) or only out of (`out`) combat. Absent = either. See AutoLevelCombatState. */
+  combatState?: AutoLevelCombatState;
+  /** Optional enemy-condition precondition — see AutoLevelEnemyGate. */
+  enemyGate?: AutoLevelEnemyGate;
+  /**
+   * Re-arm until the affect shows. Only ever stored as `false` (switched off): absent means on for an affect-gated row, so a
+   * later change of that default reaches every row the player left alone (SETTINGS-01).
+   */
+  retryUntilSet?: false;
 }
 export interface FightRow {
   cmd: string;
@@ -100,8 +139,13 @@ export interface FightRow {
   vitalsGate?: AutoLevelVitalsGate;
   /** Fire at most once per round/fight — see AutoLevelOnceKey. */
   onceKey?: AutoLevelOnceKey;
+  /** Only in (`in`) or only out of (`out`) combat. Absent = either. See AutoLevelCombatState. */
+  combatState?: AutoLevelCombatState;
+  /** Optional enemy-condition precondition — see AutoLevelEnemyGate. */
+  enemyGate?: AutoLevelEnemyGate;
 }
-export interface AutoLevelPrefs {
+/** The global preference record: the remembered class and alignment, plus the Rest, Weight and lap-wait values (only those that differ from the default). */
+export interface AutoLevelPrefs extends StepPrefs {
   playerClass?: string;
   /** 'good' | 'neutral' | 'evil' — a character property, so remembered globally like the class. */
   playerAlignment?: string;
@@ -173,11 +217,51 @@ export function normalizeRecord(rec: unknown): UserRecord | null {
     if (!data || typeof r.areaSlug !== 'string' || !r.areaSlug) return null;
     return { ...(r as UserRecord), updatedAt, data };
   }
+  if (r.kind === 'routeOverride') {
+    const data = normalizeRouteOverrideData(r.data);
+    if (!data || typeof r.areaSlug !== 'string' || !r.areaSlug) return null;
+    return { ...(r as UserRecord), updatedAt, data };
+  }
   if (r.kind === 'target') {
     const t = r.data as Partial<CustomTarget> | null;
     if (!t || !isSafeTargetText(t.lookName) || !isSafeTargetText(t.engageName)) return null;
   }
+  if (r.kind === 'pref') {
+    if (r.id === PREFS_ID) return { ...(r as UserRecord), updatedAt, data: cleanPrefsData(r.data) };
+    if (r.id.startsWith(TARGET_SELECTION_PREFIX)) {
+      const deselected = normalizeDeselected(r.data);
+      if (!deselected || typeof r.areaSlug !== 'string' || !r.areaSlug) return null;
+      return { ...(r as UserRecord), updatedAt, data: { deselected } };
+    }
+  }
+  if ((r.kind === 'buff' || r.kind === 'fight') && Array.isArray(r.data)) {
+    return { ...(r as UserRecord), updatedAt, data: r.data.map(normalizeRowOptions) };
+  }
   return { ...(r as UserRecord), updatedAt };
+}
+
+/**
+ * The options added to buff and fight rows on 2026-11-18 (combat state, enemy gate, retry switch), checked on the way in from
+ * the cloud or a file: a value that is not one of the known ones is dropped from the ROW (the row and its other fields stay).
+ * Returns a new object and never touches its input.
+ */
+export function normalizeRowOptions(row: unknown): unknown {
+  if (!row || typeof row !== 'object' || Array.isArray(row)) return row;
+  const { combatState, enemyGate, retryUntilSet, ...rest } = row as Record<string, unknown>;
+  const out: Record<string, unknown> = { ...rest };
+  if (combatState === 'in' || combatState === 'out') out.combatState = combatState;
+  const gate = cleanEnemyGate(enemyGate);
+  if (gate) out.enemyGate = gate;
+  if (retryUntilSet === false) out.retryUntilSet = false;
+  return out;
+}
+
+function cleanEnemyGate(v: unknown): AutoLevelEnemyGate | null {
+  if (!v || typeof v !== 'object') return null;
+  const g = v as { op?: unknown; band?: unknown };
+  if (g.op !== 'above' && g.op !== 'below') return null;
+  if (typeof g.band !== 'number' || !(ENEMY_BAND_FLOORS as readonly number[]).includes(g.band)) return null;
+  return { op: g.op, band: g.band as AutoLevelEnemyBand };
 }
 
 /** Merge in records from a profile sync (last-writer-wins by updatedAt). Malformed records are skipped. */
@@ -310,6 +394,70 @@ export async function deleteTargetOverride(recordId: string): Promise<void> {
   }
 }
 
+/* ------------------------- override of an area's route ------------------------- */
+// See autoleveling-route-overrides.ts. One record per area; the id is deterministic so two devices
+// editing the same area's route write the same record (last writer wins).
+
+const routeOverrideId = (areaSlug: string) => `routeOverride:${areaSlug}`;
+
+/** The player's route for one area, or null when they have none. Unreadable storage yields null, never throws. */
+export async function getRouteOverride(areaSlug: string): Promise<UserRecord<RouteOverrideData> | null> {
+  try {
+    await ensureMigrated();
+    let best: UserRecord<RouteOverrideData> | null = null;
+    for (const r of await allRecords()) {
+      if (r.kind !== 'routeOverride' || r.areaSlug !== areaSlug) continue;
+      const data = normalizeRouteOverrideData(r.data);
+      if (data && (!best || (r.updatedAt ?? 0) >= (best.updatedAt ?? 0))) best = { ...r, data };
+    }
+    return best;
+  } catch {
+    console.warn('[autoleveling] could not read the route override');
+    return null;
+  }
+}
+
+export type RouteSaveResult =
+  | { ok: true; record: UserRecord<RouteOverrideData> | null }
+  | { ok: false; error: RouteEditError | 'storage' };
+
+/**
+ * Saves the route the player wants for an area. A route equal to the served one deletes the override
+ * (an edit back to the default leaves no trace); an empty, over-long or unsafe route is refused.
+ */
+export async function setRouteOverride(
+  areaSlug: string,
+  defaultDirs: readonly string[],
+  wanted: readonly string[],
+): Promise<RouteSaveResult> {
+  const diff = diffRouteAgainstDefault(defaultDirs, wanted);
+  if (typeof diff === 'string') return { ok: false, error: diff };
+  try {
+    const existing = await getRouteOverride(areaSlug);
+    const id = existing?.id ?? routeOverrideId(areaSlug);
+    if (diff === null) {
+      await resetRouteOverride(areaSlug);
+      return { ok: true, record: null };
+    }
+    const saved = await putRecord({ id, kind: 'routeOverride', areaSlug, data: diff, updatedAt: 0 });
+    return { ok: true, record: saved as UserRecord<RouteOverrideData> };
+  } catch {
+    console.warn('[autoleveling] could not save the route override');
+    return { ok: false, error: 'storage' };
+  }
+}
+
+/** Back to the served route: removes the area's override (also an imported copy stored under another id). */
+export async function resetRouteOverride(areaSlug: string): Promise<void> {
+  try {
+    for (const r of await allRecords()) {
+      if (r.kind === 'routeOverride' && r.areaSlug === areaSlug) await deleteRecord(r.id);
+    }
+  } catch {
+    console.warn('[autoleveling] could not reset the route override');
+  }
+}
+
 /* -------------------------------- buffs -------------------------------- */
 
 export async function getBuffOverlay(areaSlug: string): Promise<BuffRow[]> {
@@ -424,15 +572,78 @@ export async function bumpLearnedCooldown(cmd: string, cooldownSec: number): Pro
 
 /* -------------------------------- prefs -------------------------------- */
 
+/** The global preference data with the step values checked: anything invalid is dropped, the class and alignment are kept as they are. */
+function cleanPrefsData(data: unknown): AutoLevelPrefs {
+  const raw = data && typeof data === 'object' && !Array.isArray(data) ? (data as Record<string, unknown>) : {};
+  const { rest: _rest, weight: _weight, lapWaitMin: _lap, ...other } = raw;
+  return { ...(other as AutoLevelPrefs), ...normalizeStepPrefs(raw) };
+}
+
 export async function getPrefs(): Promise<AutoLevelPrefs> {
   await ensureMigrated();
   const rec = await store.get<UserRecord<AutoLevelPrefs>>(PREFS_ID);
-  return rec?.data ?? {};
+  return cleanPrefsData(rec?.data);
 }
 
 export async function setPrefs(patch: Partial<AutoLevelPrefs>): Promise<void> {
   const current = await getPrefs();
   await putRecord({ id: PREFS_ID, kind: 'pref', data: { ...current, ...patch }, updatedAt: 0 });
+}
+
+/* ------------------- Rest, Weight and lap-wait values (live findings) ------------------- */
+
+/** The remembered Rest, Weight and lap-wait values, every missing piece the default. Unreadable storage gives the defaults and never throws. */
+export async function getStepValues(): Promise<StepValues> {
+  try {
+    return stepValuesFrom(await getPrefs());
+  } catch {
+    console.warn('[autoleveling] could not read the step values');
+    return stepValuesFrom(null);
+  }
+}
+
+/** Remembers the values, storing only what differs from the default (a draft that is all defaults leaves no step values behind). */
+export async function saveStepValues(values: StepValues): Promise<void> {
+  try {
+    const current = await getPrefs();
+    const { rest: _rest, weight: _weight, lapWaitMin: _lap, ...other } = current;
+    const next: AutoLevelPrefs = { ...other, ...stepPrefsFrom(values) };
+    if (Object.keys(next).length === 0) await deleteRecord(PREFS_ID);
+    else await putRecord({ id: PREFS_ID, kind: 'pref', data: next, updatedAt: 0 });
+  } catch {
+    console.warn('[autoleveling] could not save the step values');
+  }
+}
+
+/* ------------------------- targets the player unticked ------------------------ */
+
+const TARGET_SELECTION_PREFIX = 'pref:targets:';
+const targetSelectionId = (areaSlug: string) => `${TARGET_SELECTION_PREFIX}${areaSlug}`;
+
+/**
+ * The target rows (`targetRowId`s) the player unticked for an area. Rows that are not ticked off stay selected, so a target the server adds
+ * later starts ticked. Unreadable storage gives [] (everything ticked) and never throws.
+ */
+export async function getTargetSelection(areaSlug: string): Promise<string[]> {
+  try {
+    await ensureMigrated();
+    const rec = await store.get<UserRecord>(targetSelectionId(areaSlug));
+    return normalizeDeselected(rec?.data) ?? [];
+  } catch {
+    console.warn('[autoleveling] could not read the target selection');
+    return [];
+  }
+}
+
+/** Stores the unticked ids for an area; none unticked leaves no record at all. */
+export async function setTargetSelection(areaSlug: string, deselected: readonly string[]): Promise<void> {
+  try {
+    const ids = normalizeDeselected({ deselected }) ?? [];
+    if (ids.length === 0) await deleteRecord(targetSelectionId(areaSlug));
+    else await putRecord({ id: targetSelectionId(areaSlug), kind: 'pref', areaSlug, data: { deselected: ids }, updatedAt: 0 });
+  } catch {
+    console.warn('[autoleveling] could not save the target selection');
+  }
 }
 
 /* ------------------------------ custom paths ---------------------------- */

@@ -23,7 +23,7 @@
   JS-rendered application shells — and would need their assets un-blocked before Google could
   render them at all, at which point the SPA `try_files` fallback makes every invented path a
   200 HTML page. That trade is written up as a decision point in
-  .ai-plans-completed/closed-incomplete/20260805-1500-sitemaps-and-seo.md rather than settled here.
+  .ai-plans-completed/completed/20260805-1500-sitemaps-and-seo.md rather than settled here.
 
   Excluded on purpose, each for its own reason:
     auth.shatteredarchive.dev            login/signup/reset — must never be indexed

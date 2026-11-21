@@ -16,7 +16,9 @@ import { normalizeClass } from './autoleveling-content-types';
 import { indexedDbKvStore, type KvStore } from './autoleveling-idb';
 
 const CATALOG_URL = '/api/web/maps/autoleveling/classes';
-const CATALOG_KEY = 'autolevelingClasses.v2'; // v2 (2026-11-13): drops a cached 31-class list served from a stale offline snapshot
+// v2 (2026-11-13): drops a cached 31-class list served from a stale offline snapshot
+// v3 (2026-11-19): the feed gained durationTicks and lagMs; a list cached before that has neither, and would hide them for up to 7 days
+const CATALOG_KEY = 'autolevelingClasses.v3';
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // soft freshness hint
 
 type Cached<T> = { data: T; fetchedAt: number };

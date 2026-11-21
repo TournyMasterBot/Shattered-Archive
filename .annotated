@@ -43,7 +43,7 @@ Purpose: This file configures a Visual Studio Code workspace including multiple 
 Purpose: Configures ESLint rules and settings for a TypeScript/JavaScript project with client and server distinctions.
 
 /jest.config.cjs
-Purpose: Aggregates Jest projects — delegates to package-local jest.config.cjs files (mud-builder apps, merc-area) and keeps generic server/client projects for the rest, with those packages excluded to avoid double runs.
+Purpose: Aggregates Jest projects — delegates to package-local jest.config.cjs files (mud-builder apps, merc-area) and keeps generic server/client projects for the rest, with those packages excluded to avoid double runs. `maxWorkers: 4` caps a bare run: without it jest starts one worker per core (~31 here) at ~4 GB each, and one such run used 112 GB (2026-11-19). The package scripts add `--runInBand`; `scripts/check-jest-workers.mjs` and `.claude/hooks/jest-guard.js` enforce it.
 
 /package.json
 Purpose: This file manages project metadata, dependencies, and automation scripts for a multi-package Node.js application.

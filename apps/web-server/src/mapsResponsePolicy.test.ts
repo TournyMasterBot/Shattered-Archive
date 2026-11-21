@@ -56,7 +56,7 @@ describe('createFallbackNotifier (FALLBACK-01, E23)', () => {
 describe('offline autoleveling snapshot is complete (E7)', () => {
   const dir = path.resolve(__dirname, 'offline', 'autoleveling');
   const classes = (JSON.parse(fs.readFileSync(path.join(dir, 'classes.json'), 'utf8')) as {
-    classes: { name: string; isReclass: boolean; abilities: unknown[] }[];
+    classes: { name: string; isReclass: boolean; abilities: { name: string; durationTicks?: unknown; lagMs?: unknown }[] }[];
   }).classes;
 
   it('holds all 48 playable classes: 5 base and 43 reclasses', () => {
@@ -69,6 +69,22 @@ describe('offline autoleveling snapshot is complete (E7)', () => {
     const names = classes.map((c) => c.name.toLowerCase());
     expect(names.some((n) => n.includes('avenger'))).toBe(true);
     expect(names.some((n) => n.includes('chaos'))).toBe(true);
+  });
+
+  it('carries the durations and the measured lags of the live feed, so the fallback is not poorer than the service (L38, FALLBACK-01)', () => {
+    const abilities = classes.flatMap((c) => c.abilities);
+    const withDuration = abilities.filter((a) => a.durationTicks !== undefined);
+    const withLag = abilities.filter((a) => a.lagMs !== undefined);
+    expect(withDuration.length).toBeGreaterThan(500);
+    expect(withLag.length).toBeGreaterThan(10);
+    // every value that is there is a whole number from 0 up: unknown abilities have no key at all, never a null or a 0 standing in
+    for (const a of [...withDuration, ...withLag]) {
+      for (const v of [a.durationTicks, a.lagMs].filter((x) => x !== undefined)) {
+        expect(Number.isInteger(v) && (v as number) >= 0).toBe(true);
+      }
+    }
+    expect(abilities.some((a) => a.durationTicks === undefined && a.lagMs === undefined)).toBe(true);
+    expect(abilities.find((a) => a.name === 'Frenzy' && a.lagMs !== undefined)?.lagMs).toBeGreaterThan(1000);
   });
 
   it('has no class without abilities', () => {

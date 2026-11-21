@@ -96,7 +96,7 @@ sequenceDiagram
   Sig->>Bus: shatteredarchive:autopilot-status with the status
   Bus->>Link: remember the status
   Gate->>Link: status? on every send
-  alt run state becomes error
+  alt run state becomes error, or paused after a timeout
     Sig->>Bus: shatteredarchive:autopilot-need-help with reason and message, once
     Bus->>Co: the window may offer to look
   end
@@ -109,8 +109,10 @@ sequenceDiagram
 - Copilot to Autopilot: `start`, `pause`, `resume` and `stop` dispatch the existing `shatteredarchive:autoleveling-*` events, so Autopilot
   treats Copilot as a button press.
 - Autopilot to Copilot: `shatteredarchive:autopilot-status` `{ status }` on every status change, and `shatteredarchive:autopilot-need-help`
-  `{ reason, message }` when the run state **becomes** `error`. A repeat error while it is still in `error` does not emit again; leaving
-  `error` and entering it later does. The detector is `features/autoleveling/autopilot-signals.ts`, called by `hooks/useAutopilotSignals.ts`.
+  `{ reason, message }` when the run state **becomes** `error` (`reason: 'error'`), or **becomes** `paused` because the engine paused itself after a timeout it
+  could not resolve (`reason: 'timeout'`, `message` says what it waited for: a movement reply, the end of a fight, a wait action). A pause by the player or a flee
+  pause is not a call for help. A repeat error while it is still in `error` does not emit again; leaving `error` and entering it later does; a timeout pause
+  emits once per pause. The detector is `features/autoleveling/autopilot-signals.ts` (the same change as before, see `docs/game/autopilot.md`, "Pause and stop"). The detector is `features/autoleveling/autopilot-signals.ts`, called by `hooks/useAutopilotSignals.ts`.
 - The two new events are emitted in production builds too (the hooks are shared) and nothing listens there.
 
 ## The window

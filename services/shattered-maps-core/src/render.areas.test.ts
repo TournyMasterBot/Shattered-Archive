@@ -97,6 +97,15 @@ describe('the lines between the areas of a continent', () => {
     expect(out).toContain('<g data-area-link data-from="a" data-to="c" opacity="0.35"><line');
   });
 
+  it('on a big picture only a line over 15% of it is faint: a 200 px line fades on a small picture and stays strong on a wide one', () => {
+    // a to b: 3 cells of gap = 48 px less the box gap; a to c: 17 cells of gap, about 270 px. A far box at x=200 makes the picture 3,200 px wide (limit 480 px).
+    const links = [{ from: 'a', to: 'b', dir: 'E' as const, count: 1 }, { from: 'a', to: 'c', dir: 'E' as const, count: 1 }];
+    const small = draw([box('a', 'Alpha', 0, 0), box('b', 'Beta', 8, 0), box('c', 'Gamma', 25, 0)], links);
+    expect(small).toContain('<g data-area-link data-from="a" data-to="c" opacity="0.35">');
+    const wide = draw([box('a', 'Alpha', 0, 0), box('b', 'Beta', 8, 0), box('c', 'Gamma', 25, 0), box('z', 'Zed', 200, 0)], links);
+    expect(wide).toContain('<g data-area-link data-from="a" data-to="c"><line');
+  });
+
   it('lets a click on an area name reach its box (the name does not catch it), so tapping the middle of a box opens the area', () => {
     const out = draw(three);
     const names = [...out.matchAll(/<text [^>]*>(Alpha|Beta|Gamma)<\/text>/g)];

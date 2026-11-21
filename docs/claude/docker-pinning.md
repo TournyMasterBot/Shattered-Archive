@@ -46,7 +46,7 @@ in the package index but not yet baked into the upstream image layer.
 | Image | Digest prefix | Alpine layer (OSV, `apk info`) | Status |
 |-------|--------------|------------------|--------|
 | `node:26.12.1-alpine3.24` | `40cd011b` | not re-checked yet (the 26.10.0 image had 0 advisories on 18 packages, Alpine 3.24.2) | Replaces 26.10.0 for **CVE-2026-111497** (Brotli decoder out-of-bounds write, RCE via `node:zlib`; Node security release 2026-10-21). Fixed in 22.23.4 / 24.22.1 / **26.12.1**: a 26.x below 26.12.1 is vulnerable even though it is numerically above 24.22.1. Floor for every Node in these repos: 24.22.1 (24 line) or 26.12.1 (26 line); 25.x is EOL and unfixed. `apk upgrade` applied at build |
-| `nginx:1.31.6-alpine3.24` | `df221db8` | 1 advisory: `pcre2 10.48-r0` (ALPINE-CVE-2026-103111, severity not given by OSV); 71 packages, Alpine 3.24.2 | `apk upgrade` applied at build; the nginx binary itself is not covered by this check |
+| `nginx:1.31.9-alpine3.24` | `90b6bd2a` | Alpine 3.24.4; the OSV package check was not re-run for this bump | Replaces 1.31.6 for the five "NGINX2Root" CVEs (CVE-2026-123007 HTTP/2 flow control, -123633 HTTP/2 UAF, -123634 resolver UAF, -121810 HTTP/3 UAF, -113425 mail proxy UAF), all affecting up to 1.31.8; nginx.org: fixed in **1.31.9** (mainline) and **1.30.7** (stable). Pins in ShatteredArchive moved 2026-11-19 (nine files in `deploy/`). Our configs use no `http2`, `http3`/`quic`, `mail`, `ssi` or `mirror`, so none was reachable, but keep it that way until every deployed image is on the new pin. Rebuild and recreate: a running container keeps the old binary. `apk upgrade` applied at build |
 
 Update this table when new patched images are published.
 

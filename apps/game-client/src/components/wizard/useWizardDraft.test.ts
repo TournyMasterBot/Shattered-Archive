@@ -33,6 +33,43 @@ describe('targetRowId', () => {
   });
 });
 
+describe('useWizardDraft route', () => {
+  const setup = () => renderHook(() => useWizardDraft());
+  const areaWith = (dirs: string[]) => ({ slug: 'a', dirs, requiredActions: [] }) as never;
+
+  it('starts with no served route and no personal route', () => {
+    expect(emptyDraft().routeDefaultDirs).toEqual([]);
+    expect(emptyDraft().routeOverridden).toBe(false);
+  });
+
+  it('setArea remembers the area’s route as the served one and clears the personal-route flag', () => {
+    const { result } = setup();
+    act(() => result.current.patch({ routeOverridden: true }));
+    expect(result.current.draft.routeOverridden).toBe(true);
+
+    act(() => result.current.setArea('a', areaWith(['n', 'e']), []));
+    expect(result.current.draft.routeDefaultDirs).toEqual(['n', 'e']);
+    expect(result.current.draft.routeOverridden).toBe(false);
+  });
+
+  it('setArea with no area (loading, or the fetch failed) leaves an empty served route', () => {
+    const { result } = setup();
+    act(() => result.current.setArea('a', areaWith(['n']), []));
+    act(() => result.current.setArea('b', null, []));
+    expect(result.current.draft.routeDefaultDirs).toEqual([]);
+    expect(result.current.draft.routeOverridden).toBe(false);
+  });
+
+  it('patch can set the served route and the flag together, as the wizard does after loading a saved route', () => {
+    const { result } = setup();
+    act(() => result.current.setArea('a', areaWith(['n', 'e', 'w']), []));
+    act(() => result.current.patch({ routeDefaultDirs: ['n'], routeOverridden: true }));
+    expect(result.current.draft.routeDefaultDirs).toEqual(['n']);
+    expect(result.current.draft.routeOverridden).toBe(true);
+    expect(result.current.draft.areaSlug).toBe('a');
+  });
+});
+
 describe('useWizardDraft targets', () => {
   const setup = () => renderHook(() => useWizardDraft());
 

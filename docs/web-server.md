@@ -133,3 +133,10 @@ This is part of a separate **DSL** repository and is the authoritative data sour
 The contribute endpoints (`POST /contribute/identify`, `POST /contribute/creaturelore`) are called **directly** by the game client against `https://shatteredarchive.com` — they do **not** go through `apps/web-server`.
 
 See [game/contribute.md](./game/contribute.md) for the contribute feature documentation.
+
+### Autoleveling class snapshot (`src/offline/autoleveling/classes.json`)
+
+The fallback for `GET /maps/autoleveling/classes` is a snapshot of the C# service's answer, regenerated with
+`AUTOLEVELING_CLASSES_URL=http://localhost:5000/maps/autoleveling/classes pnpm --filter game-client extract:autoleveling-classes` (C# running). Since 2026-11-19 each ability can carry
+`durationTicks` and `lagMs` (omitted when unknown, 0 is a real value); the extract script keeps them and `mapsResponsePolicy.test.ts` fails if the snapshot has lost them. A response served from the snapshot is
+marked by `X-Maps-Source: offline`; the healthy value is `upstream`. Details: `docs/game/autopilot.md`, "Duration and lag in the class feed".

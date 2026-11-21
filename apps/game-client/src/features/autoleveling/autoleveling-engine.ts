@@ -52,6 +52,9 @@ import type {
   AutoLevelAlignment,
   AutoLevelConfig,
   AutoLevelCriticalBuff,
+  AutoLevelEnemyBand,
+  AutoLevelEnemyGate,
+  AutoLevelExtraGates,
   AutoLevelOnceKey,
   AutoLevelRestDuringRoundRule,
   AutoLevelRunState,
@@ -60,9 +63,14 @@ import type {
   AutoLevelXpProgress,
 } from './autoleveling-types';
 import { alignmentXpModifier } from './autoleveling-alignment';
+import { expandCommand, findUnresolvedPlaceholder, isItemAction } from './autoleveling-command-text';
+import { parseEnemyCondition } from './autoleveling-enemy-condition';
+import { BUFF_CATALOG, type BuffCatalogEntry } from './autoleveling-buff-catalog';
+import { classifyFailureLine, isSuccessLine, type CastOutcome } from './autoleveling-cast-outcome';
 import { DAMAGE_LINE_PATTERN } from '../plugins/core-plugins/combat-compression.plugin';
 import { classifyMovement, MOVE_DIRS } from '../movement/classifyMovement';
-import { movementTracker, type RoomSnapshot } from '../movement/movementTracker';
+import { HEAD_TIMEOUT_MS, movementTracker, type RoomSnapshot } from '../movement/movementTracker';
+import { DEFAULT_LAG_MS, effectiveLagMs, lagAllowanceMs, type SentCommand } from './autoleveling-lag';
 
 type EngineDeps = {
   getConfig: () => AutoLevelConfig;
@@ -82,6 +90,8 @@ type EngineDeps = {
    * re-discover the same lag from scratch — the real in-game lag doesn't change run to run.
    */
   getLearnedCooldown?: (cmd: string) => Promise<number | null>;
+  /** The server's measured lag of the ability a command uses, in ms, or null when unknown (from the class feed; see autoleveling-lag.ts). */
+  getServerLagMs?: (cmd: string) => number | null;
   /**
    * Routes `cmd` through the same alias/script "command processor" a manually-typed terminal
    * line goes through (RuntimeSingleton.Runtime.executeAlias), instead of a raw literal send —
@@ -204,6 +214,45 @@ const ROOM_SCAN_HARD_CAP_MS = 20_000;
 /** What counts as the server answering a `look`: the room block's Exits line, or the sightless replies that have none. */
 const ROOM_REPLY_RE = /\[Exits:|pitch black|you can't see|you cannot see|you are blind/i;
 
+/**
+ * Re-arming a buff or heal (live findings 2026-11-14): ONE command in flight at a time, so thirteen affects dropping in one tick (seen on both
+ * days) never queue thirteen casts behind the game's lag. A cast is confirmed by its GMCP affect or its success line within CAST_WINDOW_MS; a
+ * failure retries up to MAX_CAST_ATTEMPTS times, RETRY_GAP_MS apart (never less than the ability's learned cooldown), then the engine says it
+ * gave up once. Different commands in the queue are at least SEND_GAP_MS apart. A heal that worked but left HP under its gate is cast again
+ * up to MAX_HEAL_REPEATS times.
+ */
+/**
+ * The movement backstop (RUNLOOP-01). The shared tracker gives up on a hop after HEAD_TIMEOUT_MS (1200 ms) and calls it a non-fatal failure; this
+ * timer only exists for "the tracker itself never answered". It used to be `idleTimeoutMs`, 1000 ms by default, SHORTER than the tracker's own
+ * timeout, so a reply delayed by the casts queued just before it ended the run. Now it is a multiple of the tracker's timeout plus the lag the
+ * engine queued itself, and when it does fire the run pauses.
+ */
+const MOVEMENT_BACKSTOP_FACTOR = 4;
+
+const CAST_WINDOW_MS = 3000;
+const RETRY_GAP_MS = 3000;
+const SEND_GAP_MS = 1500;
+const MAX_CAST_ATTEMPTS = 3;
+const MAX_HEAL_REPEATS = 5;
+/** The lap wait checks for Stop and Pause this often: within a second, without a timer every quarter second for minutes. */
+const LAP_WAIT_SLICE_MS = 1000;
+
+/** One cast the engine wants confirmed: the command, how to tell it worked, and whether it is still worth sending. */
+interface CastSpec {
+  /** Dedupe key: the affect name, or the command for a heal. */
+  key: string;
+  label: string;
+  cmd: string;
+  /** GMCP affect (lowercase) that confirms it. */
+  affect?: string;
+  /** The game's own success line (lowercase, no final dot). */
+  successLine?: string;
+  /** Retry after a failure (and after silence, for a confirmable spell). */
+  retry: boolean;
+  /** False when the cast is no longer wanted: affect present, a gate no longer holds, wrong combat state. Read before every attempt. */
+  wanted: () => boolean;
+}
+
 /** Cooldown bump applied each time a fight-command re-fires within the same round. */
 const COOLDOWN_LEARN_BUMP_SEC = 0.5;
 
@@ -234,13 +283,8 @@ function reverseMovementCommand(cmd: string): string | null {
 }
 
 function applyInitiationTemplate(template: string, keyword: string): string {
-  const k = String(keyword ?? '');
-  const t = String(template ?? '');
-  // Support {name} (preferred), plus some back-compat placeholders.
-  return t
-    .replace(/\{name\}/g, k)
-    .replace(/\{target\}/g, k)
-    .replace(/\{keyword\}/g, k);
+  // {name} (preferred) plus the back-compat {target} / {keyword}; the same expander every other command goes through.
+  return expandCommand(String(template ?? ''), keyword);
 }
 
 function normCmd(cmd: string): string {
@@ -324,6 +368,24 @@ export class AutoLevelingEngine {
   // encounter gating
   private encounterLocked = false;
   private lastEncounterMatch: { targetCleanName: string; lookName: string; at: number } | null = null;
+  /** Kill keyword of the creature being engaged or fought; fills {name} in every command (CMDTPL-01). Null out of combat. */
+  private engagedKeyword: string | null = null;
+  /** Band floor (percent) of the enemy's last condition line this fight; null until one is seen. Never blocks a gate while null. */
+  private enemyBand: AutoLevelEnemyBand | null = null;
+  /** Re-arm machinery (RUNLOOP-03): a lock so one cast is in flight, the outcome being awaited, and the queue of drops to re-arm. */
+  /** Commands sent in the last half minute that are not moves or looks, with their expected lag (see autoleveling-lag.ts). */
+  private recentSends: SentCommand[] = [];
+  private castBusy = false;
+  private castWaiters: Array<() => void> = [];
+  private castWatch: { affect?: string; successLine?: string; resolve: (o: CastOutcome) => void } | null = null;
+  private rearmQueue: CastSpec[] = [];
+  private rearmPending = new Set<string>();
+  private rearmDraining = false;
+  /** Item commands that answered "you do not have that", and one-time notices, per run. */
+  private outOfItems = new Set<string>();
+  private castNotices = new Set<string>();
+  /** Unresolved-placeholder commands already announced this run, so a refused command prints one notice (CMDTPL-01). */
+  private refusedCommands = new Set<string>();
   // dry_run: track mobs already announced this room so we only fire once per mob per room
   private dryRunAnnouncedThisRoom = new Set<string>();
   // armed before a `look` is sent; resolves when the room block ("[Exits:") is answered, or on timeout
@@ -482,6 +544,12 @@ export class AutoLevelingEngine {
     // round-boundary tracking (once-per-round gates + queue-buildup detection)
     this.trackRoundBoundary(text);
 
+    // the enemy's condition phrase ("has quite a few wounds") for enemy-condition gates
+    this.trackEnemyCondition(text);
+
+    // the game's answer to a cast the engine is waiting on (success line or a failure)
+    this.observeCastText(text);
+
     // encounter detection
     if (!this.encounterLocked && !this.stopping) {
       this.tryDetectEncounter(text);
@@ -568,7 +636,7 @@ export class AutoLevelingEngine {
 
     const ce = ev;
     dbg('event:flee observed -> pausing engine', { detail: ce?.detail });
-    this.pause();
+    this.pause('flee');
   };
 
   private boundOnCreatureDeath = (ev: EngineEvent) => {
@@ -786,6 +854,36 @@ export class AutoLevelingEngine {
   }
 
   /** Fresh counters for a NEW encounter — called when isFighting transitions false -> true. */
+  /**
+   * Updates the tracked enemy's condition band from the condition lines in a chunk of game text. Only while fighting, and only a line
+   * whose subject is the creature being tracked (its name is the start of the room line the encounter matched, the same test
+   * boundOnCreatureDeath uses), so a pet's or a group member's condition never moves the gate (L10). No tracked target: nothing is read.
+   */
+  private trackEnemyCondition(text: string) {
+    if (!this.isFighting || !this.lastEncounterMatch) return;
+    const look = normMatch(this.lastEncounterMatch.lookName);
+    if (!look) return;
+    for (const c of parseEnemyCondition(text)) {
+      const subject = normMatch(c.subject);
+      if (!subject || !look.startsWith(subject)) continue;
+      this.enemyBand = c.floor;
+      dbg('enemy condition', { band: c.floor });
+    }
+  }
+
+  /** The action's combat-state gate (L8): decided from the live `is_fighting` when it is about to send. */
+  private combatStateAllows(a: AutoLevelExtraGates): boolean {
+    if (a.combatState === 'in') return this.isFighting;
+    if (a.combatState === 'out') return !this.isFighting;
+    return true;
+  }
+
+  /** The action's enemy-condition gate: bands compared by their floor; no condition seen yet this fight never blocks (L9). */
+  private enemyGateSatisfied(gate?: AutoLevelEnemyGate): boolean {
+    if (!gate || this.enemyBand === null) return true;
+    return gate.op === 'below' ? this.enemyBand < gate.band : this.enemyBand > gate.band;
+  }
+
   private resetEncounterTracking() {
     if (this.roundBoundaryTimer) {
       clearTimeout(this.roundBoundaryTimer);
@@ -798,6 +896,7 @@ export class AutoLevelingEngine {
     this.onceFiredThisFight.clear();
     this.perCommandSentSinceRound.clear();
     this.commandsWithQueueBuildup.clear();
+    this.enemyBand = null;
   }
 
   /**
@@ -1061,7 +1160,9 @@ export class AutoLevelingEngine {
           'game:affect-added',
           (payload) => {
             if (payload?.n) {
-              this.activeAffects.add(String(payload.n).trim().toLowerCase());
+              const added = String(payload.n).trim().toLowerCase();
+              this.activeAffects.add(added);
+              if (this.castWatch?.affect === added) this.castWatch.resolve('set');
               dbg('affect-added', { n: payload.n });
             }
           },
@@ -1148,18 +1249,31 @@ export class AutoLevelingEngine {
     // release encounter lock so future runs aren't stuck if stop occurs mid-encounter
     this.encounterLocked = false;
 
+    this.rearmQueue = [];
+    this.rearmPending.clear();
     this.rejectAllWaits(new Error('stopped'));
   }
 
-  pause() {
+  pause(reason: 'user' | 'flee' = 'user') {
     if (this.stopping) return;
     if (this.paused) return;
-    dbg('pause()');
+    dbg('pause()', { reason });
     this.paused = true;
-    // KNOWN TYPE GAP (not changed here): the paused variant of AutoLevelRunState also requires round/step/actionIndex,
-    // but this has always sent status only.
-    this.deps.setRunState({ status: 'paused' } as unknown as AutoLevelRunState);
+    this.deps.setRunState({ status: 'paused', reason });
     this.writeAutoLevelLine('paused');
+  }
+
+  /**
+   * The engine pauses itself because something it waited for never came (movement reply, end of a fight, a wait action). The player sees
+   * why and presses Resume; Copilot is told through the run state (autopilot-signals.ts). Already paused (by the player, a flee) or
+   * stopping: nothing more is said (L22).
+   */
+  private pauseForTimeout(what: string) {
+    if (this.stopping || this.paused) return;
+    dbg('pauseForTimeout()', { what });
+    this.paused = true;
+    this.deps.setRunState({ status: 'paused', reason: 'timeout', message: what });
+    this.writeAutoLevelLine(`paused: ${what}. Press Resume when you are ready; Stop ends the run.`);
   }
 
   resume() {
@@ -1188,7 +1302,8 @@ export class AutoLevelingEngine {
 
     if (sendActions.length > 0) {
       for (const a of sendActions) {
-        DispatchEvent('shatteredarchive:send-command', { cmd: a.cmd });
+        const cmd = this.outgoingText(a.cmd);
+        if (cmd) DispatchEvent('shatteredarchive:send-command', { cmd });
       }
     } else {
       // No identify actions configured — send look directly.
@@ -1297,6 +1412,12 @@ export class AutoLevelingEngine {
     this.injectedQueue = [];
     this.encounterLocked = false;
     this.lastEncounterMatch = null;
+    this.engagedKeyword = null;
+    this.refusedCommands.clear();
+    this.rearmQueue = [];
+    this.rearmPending.clear();
+    this.outOfItems.clear();
+    this.castNotices.clear();
     this.dryRunAnnouncedThisRoom.clear();
     this.sightseeWait = null;
     this.lastMovementCmd = null;
@@ -1403,12 +1524,11 @@ export class AutoLevelingEngine {
             const res = await gate;
 
             if (res.result === 'timeout') {
-              this.deps.setRunState({ status: 'error', message: res.reasonLine });
-              this.stopping = true;
-              break;
-            }
-
-            if (res.result === 'failed') {
+              // RUNLOOP-01: no reply at all pauses the run so the player can resume (or stop); it no longer ends it.
+              this.pauseForTimeout(`no reply to "${res.cmd}"`);
+              await this.waitWhilePausedOrStopped();
+              warn('movement got no reply; carried on after resume', { cmd: res.cmd });
+            } else if (res.result === 'failed') {
               warn('movement failed (non-fatal)', { cmd: res.cmd, reasonLine: res.reasonLine });
             } else {
               dbg('movement succeeded', { cmd: res.cmd, room: res.room });
@@ -1461,7 +1581,7 @@ export class AutoLevelingEngine {
         if ((this.cfg.steps.reset.wait ?? []).length > 0) {
           await this.runActions(this.cfg.steps.reset.wait, 'reset.wait', round);
         } else {
-          await this.delayMs(this.cfg.roundLoopTimeMs);
+          await this.waitBetweenLaps(this.cfg.roundLoopTimeMs);
         }
 
         this.trainingPathSteps = this.cfg.init.trainingPath.split(';').filter((x) => x?.trim()?.length > 0);
@@ -1536,7 +1656,16 @@ export class AutoLevelingEngine {
       this.deps.setRunState({ status: 'running', round, step: stepLabel, actionIndex: i });
       dbg('run action', { round, stepLabel, i, action: actions[i] });
 
-      await this.execAction(actions[i], round, stepLabel);
+      try {
+        await this.execAction(actions[i], round, stepLabel);
+      } catch (e) {
+        // A wait action that timed out (wait_text, wait_regex, wait_fighting) pauses the run and the action is skipped on resume; Stop and
+        // every other error still reach the round loop as before (RUNLOOP-01).
+        const msg = String((e as { message?: unknown } | null | undefined)?.message ?? e ?? '');
+        if (this.stopping || !/^wait_(text|regex|fighting) timeout/.test(msg)) throw e;
+        this.pauseForTimeout(msg.replace(/^wait_(\w+) timeout:?\s*/, 'waiting for $1 timed out: ').trim());
+        await this.waitWhilePausedOrStopped();
+      }
 
       await this.flushInjected(round);
 
@@ -1569,6 +1698,15 @@ export class AutoLevelingEngine {
       dbg('action skipped (vitals gate)', { gate, kind: a.kind });
       return;
     }
+    const extra: AutoLevelExtraGates = 'combatState' in a || 'enemyGate' in a ? (a as AutoLevelExtraGates) : {};
+    if (!this.combatStateAllows(extra)) {
+      dbg('action skipped (combat state)', { want: extra.combatState, fighting: this.isFighting, kind: a.kind });
+      return;
+    }
+    if (!this.enemyGateSatisfied(extra.enemyGate)) {
+      dbg('action skipped (enemy condition)', { gate: extra.enemyGate, band: this.enemyBand, kind: a.kind });
+      return;
+    }
 
     switch (a.kind) {
       case 'send': {
@@ -1578,6 +1716,8 @@ export class AutoLevelingEngine {
         }
         if (REST_STEP_LABELS.has(stepLabel)) {
           await this.sendViaCommandProcessor(a.cmd);
+        } else if (this.catalogEntryFor(a.cmd)?.successLine) {
+          await this.castHeal(a);
         } else {
           await this.sendCommand(a.cmd);
         }
@@ -1589,7 +1729,8 @@ export class AutoLevelingEngine {
         // The learned value (this run's cumulative bumps, seeded from what past runs
         // learned) only ever raises the effective cooldown above the configured one —
         // the config value is a floor, not a ceiling, on what we've since learned.
-        const effectiveCooldownSec = Math.max(a.cooldownSec ?? 0, this.learnedCooldownSec.get(key) ?? 0);
+        // (the server's measured lag is a floor too: the game will not run the command sooner than that anyway)
+        const effectiveCooldownSec = effectiveLagMs(a.cooldownSec, this.learnedCooldownSec.get(key), this.deps.getServerLagMs?.(a.cmd)) / 1000;
         const cdMs = Math.max(0, effectiveCooldownSec * 1000);
         const last = this.cooldownLastSent.get(key) ?? 0;
         const elapsed = now() - last;
@@ -1700,7 +1841,22 @@ export class AutoLevelingEngine {
             dbg('if_affect_missing skip (once-per-X already fired)', { cmd: a.cmd, onceKey: a.onceKey });
             return;
           }
-          await this.sendCommand(a.cmd);
+          // A re-arm for this affect is already queued or in flight (a drop reacted first): do not send it twice.
+          if (this.rearmPending.has(key)) return;
+          this.rearmPending.add(key);
+          try {
+            await this.castUntilSet({
+              key,
+              label: key,
+              cmd: a.cmd,
+              affect: key,
+              successLine: this.catalogEntryFor(a.cmd)?.successLine,
+              retry: a.retry !== false,
+              wanted: () => !this.activeAffects.has(key) && this.gatesHold(a),
+            });
+          } finally {
+            this.rearmPending.delete(key);
+          }
         }
         return;
       }
@@ -1711,9 +1867,36 @@ export class AutoLevelingEngine {
     }
   }
 
-  private async sendCommand(cmd: string): Promise<void> {
+  /**
+   * The text that may go to the game: the command with {name} filled in (or dropped when there is no target), or null when a
+   * placeholder is still unresolved (a seeded `quaff <potion>`, a typo). A refused command prints one notice per run (CMDTPL-01).
+   */
+  private outgoingText(cmd: string): string | null {
+    const text = expandCommand(String(cmd ?? ''), this.engagedKeyword);
+    const left = findUnresolvedPlaceholder(text);
+    if (left === null) return text;
+    if (!this.refusedCommands.has(text)) {
+      this.refusedCommands.add(text);
+      this.writeAutoLevelLine(`not sent: "${text}" still has ${left} to fill in`);
+    }
+    return null;
+  }
+
+  /** Remembers a send that will keep the game busy (not a move, not a look), so a wait for a later reply can allow for it. */
+  private noteSend(cmd: string) {
+    const text = normCmd(cmd);
+    if (classifyMovement(text).isMove || /^(look|l)$/i.test(text)) return;
+    const at = now();
+    const lagMs = effectiveLagMs(null, this.learnedCooldownSec.get(text.toLowerCase()), this.deps.getServerLagMs?.(text)) || DEFAULT_LAG_MS;
+    this.recentSends = this.recentSends.filter((s) => at - s.at <= 30_000);
+    this.recentSends.push({ at, lagMs });
+  }
+
+  private async sendCommand(rawCmd: string): Promise<void> {
     if (this.stopping) return;
-    if (!String(cmd ?? '').trim()) return; // never dispatch empty commands
+    const cmd = this.outgoingText(rawCmd);
+    if (cmd === null || !cmd.trim()) return; // never dispatch empty or unresolved commands
+    this.noteSend(cmd);
 
     // Queue-buildup signal (steps 4/5): every command sent WHILE fighting counts — movement/
     // look/engage attempts never land here with isFighting=true in normal operation, so this
@@ -1737,15 +1920,28 @@ export class AutoLevelingEngine {
    * movement/combat timing. Falls back to the plain event if no command processor is wired
    * (e.g. in tests, or a host that never provides the dep) — identical to the old behavior.
    */
-  private async sendViaCommandProcessor(cmd: string): Promise<void> {
+  private async sendViaCommandProcessor(rawCmd: string): Promise<void> {
     if (this.stopping) return;
-    if (!String(cmd ?? '').trim()) return;
+    const cmd = this.outgoingText(rawCmd);
+    if (cmd === null || !cmd.trim()) return;
 
     if (this.deps.sendThroughCommandProcessor) {
       this.deps.sendThroughCommandProcessor(cmd);
     } else {
       DispatchEvent('shatteredarchive:send-command', { cmd });
     }
+  }
+
+  /**
+   * The wait between laps (RUNLOOP-02): in slices, so Stop ends it within a slice instead of after minutes, and a pause freezes what is
+   * left of it. One terminal line says how long it will be (at 3 minutes the engine would otherwise look hung).
+   */
+  private async waitBetweenLaps(ms: number): Promise<void> {
+    if (ms >= 5000) {
+      const s = Math.round(ms / 1000);
+      this.writeAutoLevelLine(`waiting ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')} before the next lap, so the creatures can return`);
+    }
+    await this.sleepSliced(ms, undefined, LAP_WAIT_SLICE_MS);
   }
 
   private delayMs(ms: number): Promise<void> {
@@ -1834,7 +2030,7 @@ export class AutoLevelingEngine {
     // This much-larger timer should only ever fire if the tracker itself never resolves
     // at all (not bound, a dropped listener, etc.) — a genuine "stop the run" condition,
     // unlike a single slow hop.
-    const t = Math.max(1000, timeoutMs || 5000);
+    const t = Math.max(1000, timeoutMs || 5000, MOVEMENT_BACKSTOP_FACTOR * HEAD_TIMEOUT_MS) + lagAllowanceMs(this.recentSends, now());
 
     // expected dir for direction-only emitters (e.g. compass block)
     const mv = classifyMovement(cmd);
@@ -2049,6 +2245,11 @@ export class AutoLevelingEngine {
 
     // A brand-new encounter is starting — fresh round/queue-buildup/once-per-X tracking.
     if (!prev && next) this.resetEncounterTracking();
+    // Combat is over: out of combat there is no target keyword, so a {name} left in a heal or buff is dropped, not filled with the last mob.
+    if (prev && !next) {
+      this.engagedKeyword = null;
+      this.enemyBand = null;
+    }
 
     if (this.waitFighting && this.isFighting === this.waitFighting.value) {
       this.waitFighting.resolve();
@@ -2073,13 +2274,19 @@ export class AutoLevelingEngine {
    * which re-runs every affect-gated `start.pre` action when a fight ends.
    */
   private onCriticalBuffDropped(affectLower: string) {
-    if (this.stopping || !this.isFighting) return;
+    if (this.stopping) return;
 
     const buff = (this.deps.getConfig().criticalBuffs ?? []).find(
       (c) => c && String(c.affect ?? '').trim().toLowerCase() === affectLower,
     );
-    const inCombat = String(buff?.inCombatCmd ?? '').trim();
-    if (!buff || !inCombat) return;
+    if (!buff) return;
+
+    // In a fight: the player's in-combat item action, or the buff's own command when that already is an item (quaff, brandish, zap).
+    // Out of a fight (only while a run is going): an item is used at once, a spell waits for the post-fight recheck.
+    const inCombat = String(buff.inCombatCmd ?? '').trim();
+    const itemCmd = isItemAction(buff.cmd) ? buff.cmd : '';
+    const cmd = this.isFighting ? inCombat || itemCmd : this.running ? itemCmd : '';
+    if (!cmd) return;
 
     if (buff.holdNearLevel && this.nearLevelUp()) {
       dbg('criticalBuff drop ignored — holding near level-up', { affect: affectLower });
@@ -2093,9 +2300,201 @@ export class AutoLevelingEngine {
       return;
     }
 
-    dbg('criticalBuff drop — firing in-combat action', { affect: affectLower, cmd: inCombat });
+    dbg('criticalBuff drop — re-arming', { affect: affectLower, cmd });
     this.criticalBuffReactionAt.set(affectLower, now());
-    void this.sendCommand(inCombat);
+    this.enqueueRearm({
+      key: affectLower,
+      label: affectLower,
+      cmd,
+      affect: affectLower,
+      successLine: this.catalogEntryFor(buff.cmd)?.successLine,
+      retry: buff.retry !== false,
+      wanted: () => !this.activeAffects.has(affectLower),
+    });
+  }
+
+  /* ----------------------------- re-arming casts (RUNLOOP-03) --------------------------- */
+
+  private catalogEntryFor(cmd: string): BuffCatalogEntry | undefined {
+    const key = normCmd(cmd).toLowerCase();
+    return BUFF_CATALOG.find((c) => normCmd(c.cmd).toLowerCase() === key);
+  }
+
+  /** Every gate an action carries: own vitals, combat state, enemy condition. */
+  private gatesHold(a: AutoLevelAction): boolean {
+    const g = a as AutoLevelExtraGates & { vitalsGate?: AutoLevelVitalsGate };
+    return this.vitalsGateSatisfied(g.vitalsGate) && this.combatStateAllows(g) && this.enemyGateSatisfied(g.enemyGate);
+  }
+
+  private castNoticeOnce(key: string, text: string) {
+    if (this.castNotices.has(key)) return;
+    this.castNotices.add(key);
+    this.writeAutoLevelLine(text);
+  }
+
+  /** Gap before a retry: the retry gap, or the ability's learned cooldown when that is longer. */
+  private retryGapMs(cmd: string): number {
+    return Math.max(RETRY_GAP_MS, effectiveLagMs(null, this.learnedCooldownSec.get(normCmd(cmd).toLowerCase()), this.deps.getServerLagMs?.(cmd)));
+  }
+
+  /**
+   * Sleeps in short slices so Stop ends it within a slice and a pause freezes it (paused time does not count). `until` ends it early.
+   * Returns why it ended.
+   */
+  private async sleepSliced(ms: number, until?: () => boolean, sliceMs = 250): Promise<'done' | 'until' | 'stopped'> {
+    let left = Math.max(0, ms);
+    while (left > 0) {
+      if (this.stopping) return 'stopped';
+      if (until?.()) return 'until';
+      if (this.paused) {
+        await new Promise((r) => setTimeout(r, sliceMs));
+        continue;
+      }
+      const slice = Math.min(left, sliceMs);
+      await new Promise((r) => setTimeout(r, slice));
+      left -= slice;
+    }
+    if (this.stopping) return 'stopped';
+    return until?.() ? 'until' : 'done';
+  }
+
+  /** One cast in flight at a time: the happy path enters synchronously (no await before the first send). */
+  private async withCastLock<T>(fn: () => Promise<T>): Promise<T> {
+    while (this.castBusy) await new Promise<void>((r) => this.castWaiters.push(r));
+    this.castBusy = true;
+    try {
+      return await fn();
+    } finally {
+      this.castBusy = false;
+      this.castWaiters.shift()?.();
+    }
+  }
+
+  private castUntilSet(spec: CastSpec): Promise<CastOutcome | 'skipped'> {
+    return this.withCastLock(() => this.castLoop(spec));
+  }
+
+  /** Awaits the game's answer to the cast about to be sent: its affect, its success line, a failure line, or silence for the window. */
+  private armCastWatch(spec: CastSpec): Promise<CastOutcome> {
+    return new Promise<CastOutcome>((resolve) => {
+      const watch = {
+        affect: spec.affect,
+        successLine: spec.successLine,
+        resolve: (o: CastOutcome) => {
+          clearTimeout(timer);
+          if (this.castWatch === watch) this.castWatch = null;
+          resolve(o);
+        },
+      };
+      this.castWatch = watch;
+      const timer = setTimeout(() => watch.resolve('timeout'), CAST_WINDOW_MS);
+    });
+  }
+
+  private observeCastText(text: string) {
+    const watch = this.castWatch;
+    if (!watch) return;
+    for (const line of String(text ?? '').split(/\r?\n/)) {
+      if (isSuccessLine(line, watch.successLine)) return watch.resolve('set');
+      const failure = classifyFailureLine(line);
+      if (failure) return watch.resolve(failure);
+    }
+  }
+
+  private async castLoop(spec: CastSpec): Promise<CastOutcome | 'skipped'> {
+    const cmdKey = normCmd(spec.cmd).toLowerCase();
+    const item = isItemAction(spec.cmd);
+    const confirmable = !!spec.affect || !!spec.successLine;
+    const attempts = spec.retry ? MAX_CAST_ATTEMPTS : 1;
+    let last: CastOutcome = 'timeout';
+
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      while (this.paused && !this.stopping) await new Promise((r) => setTimeout(r, 250));
+      if (this.stopping) return 'stopped';
+      if (this.outOfItems.has(cmdKey)) return 'no-item';
+      if (attempt > 1) {
+        const slept = await this.sleepSliced(this.retryGapMs(spec.cmd), () => !spec.wanted());
+        if (slept === 'stopped') return 'stopped';
+        if (slept === 'until') return 'skipped';
+      }
+      if (!spec.wanted()) return 'skipped';
+      if (this.outgoingText(spec.cmd) === null) return 'skipped'; // an unresolved placeholder: refused once, never retried
+
+      if ((!confirmable || !spec.retry) && !item) {
+        // nothing to read the answer from, or retry switched off: send it once and go on (the next checkpoint asks again)
+        await this.sendCommand(spec.cmd);
+        return 'set';
+      }
+      const answer = this.armCastWatch(spec);
+      await this.sendCommand(spec.cmd);
+      const outcome = await answer;
+      last = outcome;
+
+      if (outcome === 'set' || outcome === 'stopped' || outcome === 'not-fighting') return outcome;
+      if (outcome === 'no-mana') {
+        this.castNoticeOnce(`mana:${cmdKey}`, `not enough mana for ${spec.label}`);
+        return outcome;
+      }
+      if (outcome === 'no-item') {
+        this.outOfItems.add(cmdKey);
+        this.castNoticeOnce(`item:${cmdKey}`, `${spec.label}: you have no item left for "${spec.cmd}"; not trying again this run`);
+        return outcome;
+      }
+      // 'failed', or silence: only a spell that has an affect or a success line to wait for treats silence as a failure
+      if (outcome === 'timeout' && item) return outcome;
+    }
+
+    if (spec.retry) this.castNoticeOnce(`gaveup:${cmdKey}`, `gave up on ${spec.label} after ${attempts} tries`);
+    return last;
+  }
+
+  /** A heal with a known success line: cast, and cast again while its gate still says HP is too low (bounded). */
+  private async castHeal(a: Extract<AutoLevelAction, { kind: 'send' }>): Promise<void> {
+    const entry = this.catalogEntryFor(a.cmd);
+    const key = normCmd(a.cmd).toLowerCase();
+    if (this.rearmPending.has(key)) return;
+    this.rearmPending.add(key);
+    try {
+      for (let i = 0; i < MAX_HEAL_REPEATS; i++) {
+        const outcome = await this.castUntilSet({
+          key,
+          label: entry?.label ?? a.cmd,
+          cmd: a.cmd,
+          successLine: entry?.successLine,
+          retry: true,
+          wanted: () => this.gatesHold(a),
+        });
+        if (outcome !== 'set') return;
+        await this.sleepSliced(SEND_GAP_MS);
+        if (!this.gatesHold(a)) return;
+      }
+    } finally {
+      this.rearmPending.delete(key);
+    }
+  }
+
+  private enqueueRearm(spec: CastSpec) {
+    if (this.stopping || this.rearmPending.has(spec.key)) return;
+    this.rearmPending.add(spec.key);
+    this.rearmQueue.push(spec);
+    if (!this.rearmDraining) void this.drainRearmQueue();
+  }
+
+  private async drainRearmQueue() {
+    this.rearmDraining = true;
+    try {
+      while (this.rearmQueue.length > 0 && !this.stopping) {
+        const spec = this.rearmQueue.shift()!;
+        try {
+          if (spec.wanted()) await this.castUntilSet(spec);
+        } finally {
+          this.rearmPending.delete(spec.key);
+        }
+        if (this.rearmQueue.length > 0) await this.sleepSliced(SEND_GAP_MS);
+      }
+    } finally {
+      this.rearmDraining = false;
+    }
   }
 
   /**
@@ -2108,7 +2507,14 @@ export class AutoLevelingEngine {
    */
   private async recheckBuffs(round: number, label: string) {
     const pre = this.deps.getConfig().steps.start.pre ?? [];
-    const gated = pre.filter((a) => a.kind === 'if_affect_missing' || a.kind === 'send_every_ticks');
+    // Buffs gated on an affect or on ticks, plus plain sends that carry a condition (a heal below some HP, out of combat only):
+    // those have a reason to be asked again after a fight. An ungated every-round buff still waits for the top of the round.
+    const gated = pre.filter(
+      (a) =>
+        a.kind === 'if_affect_missing' ||
+        a.kind === 'send_every_ticks' ||
+        (a.kind === 'send' && (!!a.vitalsGate || !!a.combatState || !!a.enemyGate)),
+    );
     if (gated.length === 0) return;
     dbg('recheckBuffs', { label, round, count: gated.length });
     await this.runActions(gated, label, round);
@@ -2248,6 +2654,7 @@ export class AutoLevelingEngine {
       await this.waitWhilePausedOrStopped();
 
       const keyword = uniqueKeywords[i];
+      this.engagedKeyword = keyword;
       const cmd = applyInitiationTemplate(initiation, keyword);
 
       this.deps.setRunState({ status: 'running', round, step: 'fight.engage', actionIndex: i });
@@ -2417,18 +2824,21 @@ export class AutoLevelingEngine {
         } else {
           // No fight actions — wait for combat to end without sending anything.
           dbg('fight loop skip (no exec actions), waiting for fight end', { target: eng.target.cleanName });
-          if (this.isFighting) {
+          // Loops so that, after a timeout pause and a Resume, a fight that is STILL on is waited for again instead of walking away from it.
+          while (this.isFighting && !this.stopping) {
             try {
               // This is a "something's actually stuck" backstop, not a fight-duration cap —
               // the "X is DEAD!!" text handler (boundOnCreatureDeath) is the normal way this
               // wait ends, the instant the mob dies, however long that takes (a tanky mob can
               // easily run past a minute). A short ceiling here would abort perfectly healthy
-              // long fights with a full engine stop, so give it a generous floor and still let
+              // long fights, so give it a generous floor and still let
               // cfg.idleTimeoutMs raise it further for anyone who needs more.
               await this.waitForFighting(false, Math.max(FIGHT_END_BACKSTOP_MS, cfg.idleTimeoutMs || 0));
             } catch {
-              this.deps.setRunState({ status: 'error', message: 'Timed out waiting for fight to end' });
-              this.stopping = true;
+              // The fight never ended within the backstop: pause for the player (resume resyncs); a Stop rejects this wait too and just ends.
+              if (this.stopping) break;
+              this.pauseForTimeout('the fight did not end');
+              await this.waitWhilePausedOrStopped();
             }
           }
         }
@@ -2498,6 +2908,7 @@ export class AutoLevelingEngine {
   }
 
   private rejectAllWaits(err: unknown) {
+    this.castWatch?.resolve('stopped');
     dbg('rejectAllWaits', { err: String((err as { message?: unknown } | null | undefined)?.message ?? err ?? err) });
 
     if (this.sightseeWait) {

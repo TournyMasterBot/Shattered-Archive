@@ -184,4 +184,110 @@ describe('layoutContinent', () => {
     const wide = rect(layoutContinent(two, { center: 'a', relations: [{ area: 'b', of: 'a', dir: 'E' }], gap: 4 }).placements.get('b'));
     expect(wide.x).toBe(8);
   });
+
+  describe('with an outline (the real silhouette of the continent)', () => {
+    // an L: a tall bar on the west and a foot along the south; the north-east corner is sea
+    const ell: [number, number][] = [[0, 0], [40, 0], [40, 60], [100, 60], [100, 100], [0, 100]];
+    const inEll = (r: Rect): boolean => {
+      const cx = r.x + r.w / 2;
+      const cy = r.y + r.h / 2;
+      return cx >= 0 && cy >= 0 && (cx <= 40 || cy >= 60) && cx <= 100 && cy <= 100;
+    };
+    const piles = (n: number): LayoutBox[] => Array.from({ length: n }, (_, i) => box(`a${i}`, i, i, 4, 4, 16));
+
+    it('keeps every box inside the silhouette, with no overlap, and in proportion to it', () => {
+      const result = layoutContinent(piles(20), { center: 'a0', relations: [], sizeBy: 'extent', outline: ell });
+      expect(result.overlapsAfter).toBe(0);
+      expect(result.outsideOutline).toBe(0);
+      expect(result.warnings).toEqual([]);
+      // the L has no north-east: no box centre lies in the empty corner of its frame
+      const rects = [...result.placements.values()];
+      const minX = Math.min(...rects.map((r) => r.x));
+      const minY = Math.min(...rects.map((r) => r.y));
+      const maxX = Math.max(...rects.map((r) => r.x + r.w));
+      const maxY = Math.max(...rects.map((r) => r.y + r.h));
+      const empty = rects.filter((r) => centre(r)[0] > minX + 0.7 * (maxX - minX) && centre(r)[1] < minY + 0.3 * (maxY - minY));
+      expect(empty).toEqual([]);
+    });
+
+    it('puts a hinted area where its hint says, in the units of the outline, and lets the hint win over a relation', () => {
+      const boxes = [box('mid', 0, 0, 4, 4, 16), box('far', 50, 50, 4, 4, 16), box('tip', 0, 0, 4, 4, 16), box('foot', 0, 0, 4, 4, 16)];
+      const result = layoutContinent(boxes, {
+        center: 'mid', sizeBy: 'extent', outline: [[0, 0], [100, 0], [100, 100], [0, 100]],
+        hints: { tip: [0, 0], foot: [100, 100] },
+        // the relation says tip is south-east of the middle; the hint (the top-left corner) wins, and no warning is made of it
+        relations: [{ area: 'tip', of: 'mid', dir: 'SE' }],
+      });
+      const rects = [...result.placements.values()];
+      const midX = (Math.min(...rects.map((r) => r.x)) + Math.max(...rects.map((r) => r.x + r.w))) / 2;
+      const midY = (Math.min(...rects.map((r) => r.y)) + Math.max(...rects.map((r) => r.y + r.h))) / 2;
+      const tip = centre(rect(result.placements.get('tip')));
+      const foot = centre(rect(result.placements.get('foot')));
+      expect(tip[0]).toBeLessThan(midX);
+      expect(tip[1]).toBeLessThan(midY); // top-left, against the relation
+      expect(foot[0]).toBeGreaterThan(midX);
+      expect(foot[1]).toBeGreaterThan(midY); // and the foot bottom-right
+      expect(result.warnings).toEqual([]);
+      expect(result.overlapsAfter).toBe(0);
+    });
+
+    it('squeezes the source picture into the silhouette for areas nothing else places, so west stays west', () => {
+      const boxes = [box('c', 0, 0, 4, 4, 16), box('w', -100, 0, 4, 4, 16), box('e', 100, 0, 4, 4, 16)];
+      const result = layoutContinent(boxes, { center: 'c', relations: [], sizeBy: 'extent', outline: [[0, 0], [100, 0], [100, 20], [0, 20]] });
+      expect(centre(rect(result.placements.get('w')))[0]).toBeLessThan(centre(rect(result.placements.get('c')))[0]);
+      expect(centre(rect(result.placements.get('e')))[0]).toBeGreaterThan(centre(rect(result.placements.get('c')))[0]);
+    });
+
+    it('says what it ignored: hints with no outline, an outline with no area, a hint for an unknown area', () => {
+      const two = [box('a', 0, 0, 4, 4), box('b', 0, 0, 4, 4)];
+      expect(layoutContinent(two, { center: 'a', relations: [], hints: { b: [1, 1] } }).warnings).toEqual(['hints need an outline to be placed against: ignored']);
+      expect(layoutContinent(two, { center: 'a', relations: [], outline: [[0, 0], [5, 5], [10, 10]] }).warnings).toEqual(['the outline is not a polygon with an area: ignored']);
+      const unknown = layoutContinent(two, { center: 'a', relations: [], outline: ell, hints: { nope: [1, 1] } });
+      expect(unknown.warnings).toEqual(['hint skipped: nope is not on this continent']);
+    });
+
+    it('places an area just outside when the silhouette cannot hold it, counts it and says so, without overlap', () => {
+      // a sliver 50 times wider than it is high is sized for the boxes' area, so a box twenty cells tall cannot stand inside it
+      const sliver: [number, number][] = [[0, 0], [100, 0], [100, 2], [0, 2]];
+      const small = [box('s0', 0, 0, 3, 1), box('s1', 1, 0, 3, 1), box('s2', 2, 0, 3, 1)];
+      const result = layoutContinent([...small, box('tall', 0, 0, 1, 20, 20)], { center: 's0', relations: [], sizeBy: 'extent', outline: sliver });
+      expect(result.outsideOutline).toBe(1);
+      expect(result.overlapsAfter).toBe(0);
+      expect(result.warnings).toEqual(['1 area(s) did not fit inside the outline and sit just outside it: lower outlineFill']);
+      expect(layoutContinent(small, { center: 's0', relations: [], sizeBy: 'extent', outline: sliver, outlineFill: 0.1 }).outsideOutline).toBe(0);
+    });
+
+    it('pulls linked areas together, keeps the others where the stretch put them, and returns the silhouette in cells', () => {
+      const square: [number, number][] = [[0, 0], [100, 0], [100, 100], [0, 100]];
+      const row = [box('a', 0, 0, 4, 4, 16), box('m1', 40, 0, 4, 4, 16), box('m2', 80, 0, 4, 4, 16), box('m3', 120, 0, 4, 4, 16), box('b', 160, 0, 4, 4, 16)];
+      const spec = { center: 'a', relations: [], sizeBy: 'extent' as const, outline: square };
+      const gapAB = (r: ReturnType<typeof layoutContinent>): number => Math.abs(centre(rect(r.placements.get('b')))[0] - centre(rect(r.placements.get('a')))[0]);
+      const plain = layoutContinent(row, spec);
+      const pulled = layoutContinent(row, { ...spec, links: [{ a: 'a', b: 'b', weight: 3 }, { a: 'a', b: 'nobody', weight: 1 }, { a: 'a', b: 'a', weight: 1 }] });
+      expect(gapAB(pulled)).toBeLessThan(gapAB(plain));
+      expect(pulled.overlapsAfter).toBe(0);
+      expect(pulled.outsideOutline).toBe(0);
+      expect(pulled.outlineCells).toHaveLength(4);
+      expect(layoutContinent(row, { center: 'a', relations: [] }).outlineCells).toBeUndefined();
+      // deterministic
+      expect([...layoutContinent(row, { ...spec, links: [{ a: 'a', b: 'b', weight: 3 }] }).placements]).toEqual([...layoutContinent(row, { ...spec, links: [{ a: 'a', b: 'b', weight: 3 }] }).placements]);
+    });
+
+    it('survives the degenerate cases: a column of boxes, two hints on one spot, a silhouette narrower than a box', () => {
+      const square: [number, number][] = [[0, 0], [100, 0], [100, 100], [0, 100]];
+      // a column (same x everywhere) with links between neighbours: no sideways offset to pull along, overlaps pushed along y
+      const column = [box('c0', 0, 0, 4, 4, 16), box('c1', 0, 1, 4, 4, 16), box('c2', 0, 40, 4, 4, 16)];
+      const stacked = layoutContinent(column, { center: 'c0', relations: [], sizeBy: 'extent', outline: square, links: [{ a: 'c0', b: 'c1', weight: 1 }, { a: 'c1', b: 'c2', weight: 2 }] });
+      expect(stacked.overlapsAfter).toBe(0);
+      // two areas hinted onto the same point never move in the relaxation, a link between them has no distance, and the placement still ends clear
+      const twins = layoutContinent([box('t0', 0, 0, 4, 4, 16), box('t1', 9, 9, 4, 4, 16), box('t2', 20, 20, 4, 4, 16)], {
+        center: 't0', relations: [], sizeBy: 'extent', outline: square, hints: { t0: [50, 50], t1: [50, 50] }, links: [{ a: 't0', b: 't1', weight: 1 }, { a: 't1', b: 't2', weight: 1 }],
+      });
+      expect(twins.overlapsAfter).toBe(0);
+      // a silhouette thinner than the box: the box is centred in it, counted as outside, and nothing overlaps
+      const thin = layoutContinent([box('w0', 0, 0, 4, 4, 16), box('w1', 5, 5, 4, 4, 16)], { center: 'w0', relations: [], sizeBy: 'extent', outline: [[0, 0], [1, 0], [1, 100], [0, 100]] });
+      expect(thin.overlapsAfter).toBe(0);
+      expect(thin.outsideOutline).toBeGreaterThan(0);
+    });
+  });
 });

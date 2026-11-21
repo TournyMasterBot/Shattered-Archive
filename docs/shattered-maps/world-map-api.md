@@ -65,7 +65,22 @@ A link the walk agreed with is a walked exit (`candidate` 0.6), or `confirmed` (
 a `conflict`; the rest keeps the imported candidate confidence. Nothing is added or removed (the method and the numbers are in
 [verification.md](verification.md)). `build-audited.mjs` refuses an output under a `wwwroot` folder, and `docker-compose-prod.yml` may not name
 `WORLD_MAP_DIR` or the folder (`verify-prod-output.mjs` fails if it does). **Publishing the map for production** (running `publish-audited.mjs`
-into the DSL repo's `wwwroot/data/world-map`, committing and deploying) is the owner's step.
+into the DSL repo's `Server/Server.Web.Public/wwwroot/data/world-map`, committing and deploying) is the owner's step.
+
+#### How production gets the map (2026-11-18)
+
+Production reads the map from one place only: `wwwroot/data/world-map` of its own build output. The production compose file mounts nothing for it and sets no
+`WORLD_MAP_DIR`, and the production image is a copy of the prebuilt `net8.0` folder (`Dockerfile-Prod`), so **the published slices must be in the repo's
+`wwwroot/data/world-map` when the output is built**. A production deploy made before that folder existed showed no map (the index answers `available: false`).
+The same command that fills the local folder fills this one; running it with the same input and `--date` gives the same `versionId`:
+
+```text
+node services/shattered-maps-core/scripts/publish-audited.mjs --in <audited-map.json> --out C:/Projects/DSL/Server/Server.Web.Public/wwwroot/data/world-map --date YYYY-MM-DD
+```
+
+A republish rewrites the slice files and `manifest.json` (the old files named by the previous manifest are removed). `Server/scripts/verify-prod-output.mjs` now **fails** when the
+production-shaped output has no audited `manifest.json` or lacks an area file it names (`scanPublishedMap`), so a deploy without the map is caught before it ships; the check
+also still fails on anything of the candidate layer or the Simulacrum's map. The local site is not affected: `WORLD_MAP_DIR` points it at the private folder, which wins over `wwwroot`.
 
 ## The publisher: audited file to slices
 

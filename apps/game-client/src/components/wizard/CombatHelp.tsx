@@ -53,6 +53,44 @@ const CombatHelp: React.FC<CombatHelpProps> = ({ onBack }) => (
       devices with Save to cloud.
     </p>
 
+    <h4>Only in or out of combat, and the enemy&apos;s condition</h4>
+    <p>
+      Each buff and fight command has a <strong>send</strong> choice: <em>any time</em>, <em>only in combat</em> or <em>only out of combat</em>.
+      Autopilot keeps to it itself, whatever the game would answer, so a heal you can only cast out of a fight (the shadow knight&apos;s dark
+      heal, for example) is never tried in one. A heal like that is also tried again after every fight while your HP is under its gate.
+    </p>
+    <p>
+      <strong>only when the enemy is</strong> below or above one of the game&apos;s condition phrases (&quot;has quite a few wounds&quot;, &quot;looks pretty
+      hurt&quot;, ...). The game only describes the enemy in words, so the percent after each phrase is <strong>approximate</strong>. It only applies
+      during a fight, and until the game has said how the enemy looks, it does not hold anything back. If you also set your own HP, MP or
+      stamina gate, <strong>both</strong> have to be true.
+    </p>
+
+    <h4>If a cast fails</h4>
+    <p>
+      For a buff that is checked by its affect, <strong>retry until the affect shows</strong> (on by default) makes autopilot try again when the cast
+      fails (&quot;You lost your concentration.&quot;) or the affect does not appear: up to 3 tries, a few seconds apart, one command at a time, then a line
+      in the terminal says it gave up. It does not retry when you are out of mana or the potion is gone. A potion, wand or staff
+      (<code>quaff</code>, <code>brandish</code>, <code>zap</code>) is used again whenever its affect drops, in or out of a fight.
+    </p>
+
+    <h4>When autopilot pauses itself</h4>
+    <p>
+      If the game does not answer in time (after a move, at the end of a fight, or during a wait) autopilot does <strong>not</strong> stop. It pauses,
+      and the status line says what it was waiting for, for example <em>Paused: no reply to &quot;n&quot;. Press Resume to continue.</em> Press{' '}
+      <strong>Resume</strong> and it carries on from where it was, or <strong>Stop</strong> to end the run. While it is paused you can also fix a
+      buff or a fight command and then resume.
+    </p>
+
+    <h4>What gets sent to the game</h4>
+    <p>
+      <code>{'{name}'}</code> in a command is replaced by the kill keyword of the creature you are fighting, so{' '}
+      <code>cast &apos;fire&apos; {'{name}'}</code> goes out as <code>cast &apos;fire&apos; elf</code>. Outside a fight there is no target,
+      so the <code>{'{name}'}</code> is simply left out. A command that still has something to fill in, such as{' '}
+      <code>quaff &lt;potion&gt;</code>, is <strong>not sent</strong>: autopilot prints one line in the terminal saying which command it
+      skipped. Replace the part in the brackets with the real item (for example <code>quaff haste</code>).
+    </p>
+
     <h4>What you keep</h4>
     <ul>
       <li>
@@ -64,6 +102,11 @@ const CombatHelp: React.FC<CombatHelpProps> = ({ onBack }) => (
         like.
       </li>
       <li>The picks are a best guess from the game&apos;s data. Check the commands against what you really cast and use.</li>
+      <li>
+        The <strong>reuse time</strong> a new fight command starts with and the <strong>recast interval</strong> of a new tick-based buff come from timing measured in the game
+        (how long an ability keeps you busy, and the longest its effect has been seen to last). An ability nobody has measured yet starts with the usual defaults. Change them freely;
+        a command you already saved is never changed by this.
+      </li>
     </ul>
   </article>
 );

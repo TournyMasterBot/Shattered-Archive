@@ -52,3 +52,10 @@ applies-when: "saved settings, user config, defaults merged with stored values, 
 - Required behaviour: read distinguishes "no record" from "an empty record"; only "no record" seeds, and seeded rows are not stored until the user edits.
 - Verify: a test that an absent record seeds, an empty stored record stays empty, and a seeded-but-untouched list writes nothing.
 - Origin: 2026-11-13_editable-autopilot-targets-synced
+
+### SETTINGS-07 A function that rebuilds a stored row from named fields drops the fields added later
+- Applies when: code rebuilds a stored or draft row from a list of named fields (a mode switch, a "reset to X") instead of copying the row.
+- Edge case: `setBuffGate` in the autopilot Combat step rebuilds a buff row from `label`, `cmd` and a short `keep` list, so `vitalsGate` and `onceKey` (which belong to every gate mode) are lost when the mode changes, and every field added later is lost the same way.
+- Required behaviour: rebuild by spreading the existing row and removing only the fields that belong to the old mode alone; a new field is carried by default.
+- Verify: a test per row field that switches every mode (and back) and asserts the field survives; adding a field to the row type makes the test list fail until the field is listed.
+- Origin: 2026-11-18_autopilot-live-test-findings

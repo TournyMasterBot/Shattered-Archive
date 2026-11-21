@@ -20,6 +20,7 @@ These instructions apply to all code generation, refactors, and code reviews in 
   - `pnpm install`
   - `pnpm -r run build`
   - `pnpm test -- --coverage`
+  - Run one package with `pnpm --filter <pkg> test`. Never call `jest` directly without `--runInBand` (one worker per core, ~4 GB each, can exhaust memory); `scripts/check-jest-workers.mjs` fails CI on an unbounded jest.
   - `pnpm lint` (if present) and `pnpm format` (prettier)
 - Prefer changes that keep the repo cross-platform (Windows/macOS/Linux).
 

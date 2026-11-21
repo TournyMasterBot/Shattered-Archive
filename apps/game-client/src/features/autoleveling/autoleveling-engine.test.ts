@@ -219,33 +219,8 @@ describe('movement gating (shared movementTracker)', () => {
     expect(runStates.some((s: any) => s.status === 'error')).toBe(false);
   }, 10000);
 
-  it("waitForMovement's own backstop fires (fatal) only when the tracker never resolves at all", async () => {
-    const { sent, off } = captureSends();
-    const { engine, runStates } = makeEngine(
-      makeConfig({
-        loopRounds: false,
-        idleTimeoutMs: 50, // tiny — this test wants the backstop to actually fire
-        moveSettleMs: 0,
-        lookSettleMs: 0,
-        postFightSettleMs: 0,
-        init: { ...createDefaultAutoLevelConfig().init, trainingPath: 'n', targets: [] },
-        steps: {
-          ...createDefaultAutoLevelConfig().steps,
-          move: { pre: [], exec: [], post: [mark('MARK_MOVEPOST')] },
-          reset: { endRound: [mark('MARK_RESET')], wait: [] },
-        },
-      }),
-    );
-    engine.bind();
-    const done = engine.start();
-
-    // Deliberately never emit movement-succeeded/-failed — only the backstop can resolve this.
-    await done;
-    off();
-
-    expect(sent.filter((c) => c.startsWith('MARK_'))).toEqual([]); // aborted before move.post
-    expect(runStates.some((s: any) => s.status === 'error')).toBe(true);
-  }, 10000);
+  // The backstop used to end the run (this test asserted status 'error'); since 2026-11-18 it pauses it, with a longer timer.
+  // See autoleveling-engine.pause.test.ts.
 });
 
 describe('waitForEngageOutcome (queue-depth-aware timeout, movement-tracking-fix Step 5)', () => {
@@ -957,11 +932,11 @@ describe('if_affect_missing gating', () => {
     engine.bind();
 
     emit('game:affects-trueup', [{ n: 'sanctuary' }]);
-    await engine.execAction({ kind: 'if_affect_missing', affectName: 'sanctuary', cmd: "cast 'sanctuary'" }, 1);
+    await engine.execAction({ kind: 'if_affect_missing', affectName: 'sanctuary', cmd: "cast 'sanctuary'", retry: false }, 1);
     expect(sent).not.toContain("cast 'sanctuary'");
 
     emit('game:affect-removed', { n: 'sanctuary' });
-    await engine.execAction({ kind: 'if_affect_missing', affectName: 'sanctuary', cmd: "cast 'sanctuary'" }, 1);
+    await engine.execAction({ kind: 'if_affect_missing', affectName: 'sanctuary', cmd: "cast 'sanctuary'", retry: false }, 1);
     expect(sent).toContain("cast 'sanctuary'");
     off();
   });
@@ -1137,6 +1112,7 @@ describe('round/fight tracking, once-per-X gates, and queue-buildup detection', 
       affectName: 'sanctuary',
       cmd: "cast 'sanctuary'",
       onceKey: 'fight',
+      retry: false,
     };
     emit('game:affects-trueup', [{ n: 'sanctuary' }]); // affect live -> gate skips the send
     await engine.execAction(act, 1);
@@ -1447,8 +1423,8 @@ describe('post-combat buff recheck', () => {
         ...createDefaultAutoLevelConfig().steps,
         start: {
           pre: [
-            { kind: 'if_affect_missing', affectName: 'sanctuary', cmd: "cast 'sanctuary'" },
-            { kind: 'if_affect_missing', affectName: 'armor', cmd: "cast 'armor'" },
+            { kind: 'if_affect_missing', affectName: 'sanctuary', cmd: "cast 'sanctuary'", retry: false },
+            { kind: 'if_affect_missing', affectName: 'armor', cmd: "cast 'armor'", retry: false },
             { kind: 'send_every_ticks', cmd: 'berserk', everyTicks: 0 },
             { kind: 'send', cmd: 'RALLY_CRY' }, // "every round" — must NOT re-fire post-combat
           ],
@@ -1523,11 +1499,11 @@ describe('holdNearLevel', () => {
     emit('game:char-data', { tnl: 300 }); // 300 <= est → near level-up
     expect(engine.nearLevelUp()).toBe(true);
 
-    await engine.execAction({ kind: 'if_affect_missing', affectName: 'haste', cmd: "cast 'haste'" }, 1);
+    await engine.execAction({ kind: 'if_affect_missing', affectName: 'haste', cmd: "cast 'haste'", retry: false }, 1);
     expect(sent).not.toContain("cast 'haste'");
 
     // a non-held buff is unaffected
-    await engine.execAction({ kind: 'if_affect_missing', affectName: 'sanctuary', cmd: "cast 'sanctuary'" }, 1);
+    await engine.execAction({ kind: 'if_affect_missing', affectName: 'sanctuary', cmd: "cast 'sanctuary'", retry: false }, 1);
     expect(sent).toContain("cast 'sanctuary'");
 
     // and recheckBuffs leaves a held buff alone while near level
@@ -1571,5 +1547,108 @@ describe('mob alignment from auras', () => {
     expect(engine.estKillXp).toBe(1000);
     expect(writes[0]).toContain('~9 kills to level');
     off();
+  });
+});
+
+describe('commands reach the game as real commands (live findings 2026-11-14, CMDTPL-01)', () => {
+  const noPlaceholder = (cmd: string) => !/\{[A-Za-z_]\w*\}|<[A-Za-z][A-Za-z _-]{0,30}>/.test(cmd);
+
+  it('L5: every send path expands {name} with the engaged keyword', async () => {
+    const { sent, off } = captureSends();
+    const cfg = makeConfig({
+      criticalBuffs: [{ affect: 'sanctuary', cmd: "cast 'sanctuary'", inCombatCmd: 'brandish {name}' }],
+    });
+    const { engine } = makeEngine(cfg);
+    engine.bind();
+    engine.cfg = cfg;
+    engine.engagedKeyword = 'elf';
+
+    await engine.execAction({ kind: 'send', cmd: "cast 'fire' {name}" }, 1);
+    await engine.execAction({ kind: 'send_cooldown', cmd: "cast 'frost' {name}", cooldownSec: 0 }, 1);
+    await engine.execAction({ kind: 'send_every_ticks', cmd: 'bash {name}', everyTicks: 0 }, 1);
+    await engine.execAction({ kind: 'if_affect_missing', affectName: 'bless', cmd: "cast 'bless' {name}", retry: false }, 1);
+    await engine.runActions([{ kind: 'send', cmd: 'rest {name}' }], 'rest.endOfRound', 1);
+    emit('game:char-data', { is_fighting: true });
+    emit('game:affect-removed', { n: 'sanctuary' });
+    off();
+
+    expect(sent).toEqual([
+      "cast 'fire' elf",
+      "cast 'frost' elf",
+      'bash elf',
+      "cast 'bless' elf",
+      'rest elf',
+      'brandish elf',
+    ]);
+    expect(sent.every(noPlaceholder)).toBe(true);
+  });
+
+  it('L1: with no target a {name} is dropped with its space, never sent literally', async () => {
+    const { sent, off } = captureSends();
+    const { engine } = makeEngine(makeConfig());
+    engine.bind();
+    await engine.execAction({ kind: 'send', cmd: "cast 'dark heal' {name}" }, 1);
+    off();
+    expect(sent).toEqual(["cast 'dark heal'"]);
+  });
+
+  it('the initiation command is expanded for the keyword it tries', async () => {
+    const { sent, off } = captureSends();
+    const cfg = makeConfig({ init: { ...createDefaultAutoLevelConfig().init, initiationCommand: 'kill {name}' } });
+    const { engine } = makeEngine(cfg);
+    engine.bind();
+    const target = { cleanName: 'an elf', name: 'an elf', lookName: 'an elf', keywords: ['elf'] };
+    const done = engine.engageTarget(target, 1);
+    await waitFor(() => sent.includes('kill elf'));
+    emit('game:char-data', { is_fighting: true });
+    expect(await done).toBe(true);
+    off();
+    expect(sent).toEqual(['kill elf']);
+  });
+
+  it('the keyword is forgotten when the fight ends, so a later heal does not target the last mob', async () => {
+    const { sent, off } = captureSends();
+    const { engine } = makeEngine(makeConfig());
+    engine.bind();
+    engine.engagedKeyword = 'elf';
+    emit('game:char-data', { is_fighting: true });
+    emit('game:char-data', { is_fighting: false });
+    await engine.execAction({ kind: 'send', cmd: "cast 'heal' {name}" }, 1);
+    off();
+    expect(sent).toEqual(["cast 'heal'"]);
+  });
+
+  it('L3/L4: an unresolved <placeholder> (a seeded quaff <potion>) is refused with one notice and the run goes on', async () => {
+    const { sent, off } = captureSends();
+    const term = captureTerminalWrites();
+    const cfg = makeConfig({
+      criticalBuffs: [{ affect: 'sanctuary', cmd: "cast 'sanctuary'", inCombatCmd: 'quaff <potion>' }],
+    });
+    const { engine } = makeEngine(cfg);
+    engine.bind();
+    engine.cfg = cfg;
+    emit('game:char-data', { is_fighting: true });
+    // the same drop twice: still one notice
+    emit('game:affect-removed', { n: 'sanctuary' });
+    emit('game:affect-removed', { n: 'sanctuary' });
+    await engine.execAction({ kind: 'send', cmd: 'cast x {typo}' }, 1);
+    await engine.execAction({ kind: 'send', cmd: 'kick' }, 1);
+    off();
+    term.off();
+
+    expect(sent).toEqual(['kick']);
+    const notices = term.writes.filter((w) => w.includes('not sent'));
+    expect(notices).toHaveLength(2); // one for <potion>, one for {typo}
+    expect(notices[0]).toContain('<potion>');
+    expect(notices[1]).toContain('{typo}');
+  });
+
+  it('a colour code in a say is not mistaken for a placeholder', async () => {
+    const { sent, off } = captureSends();
+    const { engine } = makeEngine(makeConfig());
+    engine.bind();
+    await engine.execAction({ kind: 'send', cmd: 'say {Rhello' }, 1);
+    off();
+    expect(sent).toEqual(['say {Rhello']);
   });
 });

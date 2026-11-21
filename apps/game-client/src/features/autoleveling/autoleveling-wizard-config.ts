@@ -25,12 +25,15 @@ import type {
   AutoLevelAlignment,
   AutoLevelConfig,
   AutoLevelCriticalBuff,
+  AutoLevelExtraGates,
   AutoLevelRestDuringRoundRule,
   AutoLevelTarget,
 } from './autoleveling-types';
 import { createDefaultAutoLevelConfig } from './autoleveling-defaults';
 import type { AutoPilotArea } from './autoleveling-content-types';
 import { fullRoute } from './autoleveling-content';
+import { LAP_WAIT_DEFAULT_MIN, LAP_WAIT_MAX, LAP_WAIT_MIN } from './autoleveling-step-prefs';
+import { isItemAction } from './autoleveling-command-text';
 import type { BuffRow, FightRow } from './autoleveling-user-data';
 
 /**
@@ -66,10 +69,19 @@ export interface ConfigDraft {
   /** Weight step (optional so WizardDraft stays structurally assignable). */
   weightAtOrAbovePct?: number;
   weightCommands?: string;
+  /** Minutes to wait between laps, so the creatures can return (optional like the fields above; absent = the default). */
+  lapWaitMin?: number;
 }
 
-/** Pause between laps for an active leveling run — the 5-min default is a sightsee pace. */
-const WIZARD_ROUND_LOOP_MS = 3_000;
+/**
+ * The wait between laps for an active leveling run, in milliseconds. It used to be a fixed 3 SECONDS (the 5-minute engine default is a
+ * sightsee pace), so the next lap started before the creatures had returned (live findings 2026-11-14, item 10). The player sets it in
+ * whole minutes in the Rest step; anything invalid is the default of 3.
+ */
+function lapWaitMs(minutes: number | undefined): number {
+  const m = typeof minutes === 'number' && Number.isInteger(minutes) && minutes >= LAP_WAIT_MIN && minutes <= LAP_WAIT_MAX ? minutes : LAP_WAIT_DEFAULT_MIN;
+  return m * 60_000;
+}
 
 function targetKey(t: ConfigDraftTarget): string {
   const base = (t.lookName || t.engageName || '')
@@ -94,12 +106,31 @@ function buffToStartAction(b: BuffRow): AutoLevelAction {
   const cmd = b.cmd.trim();
   const vitalsGate = b.vitalsGate;
   const onceKey = b.onceKey;
+  const extra = extraGates(b);
   if (b.refreshTicks != null) {
-    return { kind: 'send_every_ticks', cmd, everyTicks: Math.max(0, Math.floor(b.refreshTicks)), vitalsGate, onceKey };
+    return { kind: 'send_every_ticks', cmd, everyTicks: Math.max(0, Math.floor(b.refreshTicks)), vitalsGate, onceKey, ...extra };
   }
   const affect = b.affect?.trim();
-  if (affect) return { kind: 'if_affect_missing', affectName: affect, cmd, vitalsGate, onceKey };
-  return { kind: 'send', cmd, vitalsGate, onceKey };
+  if (affect) {
+    return {
+      kind: 'if_affect_missing',
+      affectName: affect,
+      cmd,
+      vitalsGate,
+      onceKey,
+      ...extra,
+      ...(b.retryUntilSet === false ? { retry: false } : {}),
+    };
+  }
+  return { kind: 'send', cmd, vitalsGate, onceKey, ...extra };
+}
+
+/** The combat-state and enemy-condition gates of a row, only the ones it carries (absent keys stay absent). */
+function extraGates(row: Pick<BuffRow, 'combatState' | 'enemyGate'>): AutoLevelExtraGates {
+  return {
+    ...(row.combatState ? { combatState: row.combatState } : {}),
+    ...(row.enemyGate ? { enemyGate: row.enemyGate } : {}),
+  };
 }
 
 /** "wake;stand" -> [{kind:'send',cmd:'wake'}, {kind:'send',cmd:'stand'}] — same split convention as fullRoute. */
@@ -115,9 +146,10 @@ function fightRowToAction(f: FightRow): AutoLevelAction {
   const cmd = f.cmd.trim();
   const vitalsGate = f.vitalsGate;
   const onceKey = f.onceKey;
+  const extra = extraGates(f);
   return f.cooldownSec > 0
-    ? { kind: 'send_cooldown', cmd, cooldownSec: f.cooldownSec, vitalsGate, onceKey }
-    : { kind: 'send', cmd, vitalsGate, onceKey };
+    ? { kind: 'send_cooldown', cmd, cooldownSec: f.cooldownSec, vitalsGate, onceKey, ...extra }
+    : { kind: 'send', cmd, vitalsGate, onceKey, ...extra };
 }
 
 function buffToCriticalBuff(b: BuffRow): AutoLevelCriticalBuff {
@@ -126,6 +158,7 @@ function buffToCriticalBuff(b: BuffRow): AutoLevelCriticalBuff {
     cmd: b.cmd.trim(),
     ...(b.inCombatCmd?.trim() ? { inCombatCmd: b.inCombatCmd.trim() } : {}),
     ...(b.holdNearLevel ? { holdNearLevel: true } : {}),
+    ...(b.retryUntilSet === false ? { retry: false } : {}),
   };
 }
 
@@ -149,7 +182,7 @@ export function draftToConfig(draft: ConfigDraft): AutoLevelConfig {
   const startPre: AutoLevelAction[] = activeBuffs.filter((b) => b.cmd.trim()).map(buffToStartAction);
 
   const criticalBuffs: AutoLevelCriticalBuff[] = activeBuffs
-    .filter((b) => b.cmd.trim() && b.affect?.trim() && (b.inCombatCmd?.trim() || b.holdNearLevel))
+    .filter((b) => b.cmd.trim() && b.affect?.trim() && (b.inCombatCmd?.trim() || b.holdNearLevel || isItemAction(b.cmd)))
     .map(buffToCriticalBuff);
 
   // A paused row (`disabled`) stays in the draft and in storage but never reaches the engine.
@@ -164,7 +197,7 @@ export function draftToConfig(draft: ConfigDraft): AutoLevelConfig {
     version: 3,
     mode,
     loopRounds: draft.loopRounds,
-    roundLoopTimeMs: mode === 'sightsee' ? def.roundLoopTimeMs : WIZARD_ROUND_LOOP_MS,
+    roundLoopTimeMs: mode === 'sightsee' ? def.roundLoopTimeMs : lapWaitMs(draft.lapWaitMin),
     criticalBuffs,
     // Only carry a non-neutral player alignment — neutral is the engine's default
     // (1× modifier). The mob's alignment is detected live from auras.

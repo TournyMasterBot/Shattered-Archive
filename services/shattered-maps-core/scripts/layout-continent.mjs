@@ -50,6 +50,15 @@ export function readSpec(raw) {
   });
   if (raw.gap !== undefined && !(Number.isInteger(raw.gap) && raw.gap >= 0 && raw.gap <= 20)) throw new Error('"gap" must be a whole number from 0 to 20');
   if (raw.sizeBy !== undefined && !['extent', 'rooms'].includes(raw.sizeBy)) throw new Error('"sizeBy" must be extent or rooms');
+  const isPoint = (p) => Array.isArray(p) && p.length === 2 && p.every((n) => typeof n === 'number' && Number.isFinite(n));
+  if (raw.outline !== undefined && !(Array.isArray(raw.outline) && raw.outline.length >= 3 && raw.outline.every(isPoint)))
+    throw new Error('"outline" must be a list of at least 3 [x, y] points');
+  if (raw.hints !== undefined) {
+    if (typeof raw.hints !== 'object' || raw.hints === null || Array.isArray(raw.hints) || !Object.values(raw.hints).every(isPoint))
+      throw new Error('"hints" must map an area id to an [x, y] point');
+    if (raw.outline === undefined) throw new Error('"hints" need an "outline": they are positions in its units');
+  }
+  if (raw.outlineFill !== undefined && !(typeof raw.outlineFill === 'number' && raw.outlineFill >= 0.1 && raw.outlineFill <= 0.9)) throw new Error('"outlineFill" must be a number from 0.1 to 0.9');
   return raw;
 }
 
@@ -63,7 +72,16 @@ export function applyLayout(map, spec, core) {
     .filter((a) => a.placement !== null)
     .map((a) => ({ id: a.id, x: a.placement.x, y: a.placement.y, w: a.placement.w ?? 1, h: a.placement.h ?? 1, rooms: roomCount(a) }));
   const unplaced = continent.areas.filter((a) => a.placement === null).map((a) => a.id);
-  const result = core.layoutContinent(boxes, spec);
+  // the exits between this continent's areas, one entry per pair: inside an outline they pull linked areas together so the arrows stay short
+  const ids = new Set(boxes.map((b) => b.id));
+  const weight = new Map();
+  for (const l of core.areaLinksOf(map)) {
+    if (!ids.has(l.from) || !ids.has(l.to)) continue;
+    const [a, b] = l.from < l.to ? [l.from, l.to] : [l.to, l.from];
+    weight.set(`${a}\u0000${b}`, (weight.get(`${a}\u0000${b}`) ?? 0) + l.count);
+  }
+  const links = [...weight].map(([key, w]) => ({ a: key.split('\u0000')[0], b: key.split('\u0000')[1], weight: w }));
+  const result = core.layoutContinent(boxes, spec.outline === undefined ? spec : { ...spec, links });
   const next = {
     ...map,
     continents: map.continents.map((c) =>
@@ -80,6 +98,7 @@ export function applyLayout(map, spec, core) {
     overlappingPairsBefore: result.overlapsBefore,
     overlappingPairsAfter: result.overlapsAfter,
     moved: result.moved,
+    outsideOutline: result.outsideOutline,
     warnings: result.warnings,
   };
   return { map: next, report };

@@ -2,10 +2,13 @@
 
 import type { AutoPilotAbility } from './autoleveling-content-types';
 import { BUFF_CATALOG } from './autoleveling-buff-catalog';
+import { findUnresolvedPlaceholder } from './autoleveling-command-text';
 import {
   DEFAULT_BUFF_LABELS,
   DEFAULT_FIGHT_ROWS,
   DEFAULT_REFRESH_TICKS,
+  NEVER_DEFAULT_BUFFS,
+  NEVER_DEFAULT_FIGHTS,
   buffRowFromCatalog,
   defaultBuffRows,
   defaultFightRows,
@@ -20,19 +23,36 @@ const ab = (name: string, type: AutoPilotAbility['type'], level: number, groups:
 });
 
 describe('buffRowFromCatalog', () => {
-  it('carries the verified command, the affect gate, the in-combat suggestion and the hold-near-level flag', () => {
+  it('carries the verified command, the affect gate and the hold-near-level flag, and seeds no placeholder in-combat command', () => {
     expect(buffRowFromCatalog(BUFF_CATALOG.find((c) => c.label === 'Sanctuary')!)).toEqual({
       label: 'Sanctuary',
       cmd: "cast 'sanctuary'",
       affect: 'sanctuary',
-      inCombatCmd: 'quaff <potion>',
     });
+    // CMDTPL-01: no catalog entry seeds a command that still has something to fill in.
+    expect(BUFF_CATALOG.filter((c) => c.suggestInCombat && findUnresolvedPlaceholder(c.suggestInCombat))).toEqual([]);
     expect(buffRowFromCatalog(BUFF_CATALOG.find((c) => c.label === 'Haste')!)).toEqual({
       label: 'Haste',
       cmd: "cast 'haste'",
       affect: 'haste',
       holdNearLevel: true,
     });
+  });
+
+  it('seeds Dark Heal as an out-of-combat heal below 70% hp, with no affect and no tick gate, and never pre-fills it (item 12)', () => {
+    const entry = BUFF_CATALOG.find((c) => c.label === 'Dark Heal')!;
+    expect(entry.successLine).toBe('a dark healing fills your body');
+    expect(buffRowFromCatalog(entry)).toEqual({
+      label: 'Dark Heal',
+      cmd: "cast 'dark heal'",
+      combatState: 'out',
+      vitalsGate: { stat: 'hp', op: 'below', pct: 70 },
+    });
+    expect(DEFAULT_BUFF_LABELS).not.toContain('Dark Heal');
+    // the row owns its gate: editing one row must not change the catalog
+    const row = buffRowFromCatalog(entry);
+    row.vitalsGate!.pct = 10;
+    expect(entry.suggestVitalsGate!.pct).toBe(70);
   });
 
   it('gates an affect-less buff (berserk) on game ticks instead', () => {
@@ -72,7 +92,8 @@ describe('defaultBuffRows (E9, E10)', () => {
     const rows = defaultBuffRows(cleric, 1);
     expect(rows.map((r) => r.label)).toEqual(['Sanctuary', 'Armor', 'Stone Skin', 'Bless']);
     expect(rows.every((r) => r.disabled === true)).toBe(true);
-    expect(rows.find((r) => r.label === 'Sanctuary')).toMatchObject({ cmd: "cast 'sanctuary'", affect: 'sanctuary', inCombatCmd: 'quaff <potion>' });
+    expect(rows.find((r) => r.label === 'Sanctuary')).toMatchObject({ cmd: "cast 'sanctuary'", affect: 'sanctuary' });
+    expect(rows.find((r) => r.label === 'Sanctuary')).not.toHaveProperty('inCombatCmd');
   });
 
   it('a buff available at exactly the character level is active, one level above is paused', () => {
@@ -118,6 +139,24 @@ describe('defaultBuffRows (E9, E10)', () => {
     }
   });
 
+  it('never pre-fills fog or dispel fog, even when a catalog entry and a default label for them exist (L4, D2)', () => {
+    const labels = DEFAULT_BUFF_LABELS as string[];
+    const added = [
+      { label: 'Fog', cmd: "cast 'fog'", affect: 'fog' },
+      { label: 'Dispel Fog', cmd: "cast 'dispel fog'", affect: '' },
+    ];
+    BUFF_CATALOG.push(...added);
+    labels.push('Fog', 'Dispel Fog');
+    try {
+      const rows = defaultBuffRows([ab('Fog', 'spell', 1), ab('Dispel Fog', 'spell', 1), ab('Armor', 'spell', 2)], null);
+      expect(rows.map((r) => r.label)).toEqual(['Armor']);
+    } finally {
+      labels.splice(labels.length - 2, 2);
+      BUFF_CATALOG.splice(BUFF_CATALOG.length - 2, 2);
+    }
+    expect(NEVER_DEFAULT_BUFFS).toEqual(['fog', 'dispel fog']);
+  });
+
   it('only ever offers labels that exist in the verified catalog', () => {
     for (const label of DEFAULT_BUFF_LABELS) expect(BUFF_CATALOG.some((c) => c.label === label)).toBe(true);
   });
@@ -128,6 +167,18 @@ describe('fightCommandFor', () => {
     expect(fightCommandFor(ab('Bash', 'skill', 1))).toBe('bash');
     expect(fightCommandFor(ab('Magic Missile', 'spell', 1))).toBe("cast 'magic missile' {name}");
     expect(fightCommandFor(ab('War Cry', 'song', 1))).toBe("cast 'war cry' {name}");
+  });
+});
+
+describe('defaultFightRows never pre-fills fog or dispel fog (L4, D2)', () => {
+  it('leaves them out, in any capitalisation, and fills the rows with the next abilities', () => {
+    const offense = [ab('Fog', 'spell', 40, ['Attack']), ab('DISPEL FOG', 'spell', 45, ['Attack']), ab('Magic Missile', 'spell', 1, ['Attack'])];
+    expect(defaultFightRows(offense, null).map((r) => r.cmd)).toEqual(["cast 'magic missile' {name}"]);
+  });
+
+  it('a class whose only offense is fog gets no rows, not fog', () => {
+    expect(defaultFightRows([ab('Fog', 'spell', 10, ['Attack']), ab('Dispel Fog', 'spell', 12, ['Attack'])], 51)).toEqual([]);
+    expect(NEVER_DEFAULT_FIGHTS).toEqual(['fog', 'dispel fog']);
   });
 });
 

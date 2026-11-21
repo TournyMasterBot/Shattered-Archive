@@ -23,3 +23,9 @@ Purpose: Must run PRE-edit (PreToolUse): it keeps the file as it was before the 
 
 /completion-gate.config.json
 Purpose: The only place that decides which folders are gated (include/exclude prefixes), the jest config and the showcase screenshot folder. Add a repo or an include prefix here to gate more than apps/game-client/src/.
+
+/emulator-guard.js
+Purpose: Denies an install or build of the mobile app (`adb ... install`, `expo run:android`, start-android, `pnpm start:android`, gradle installs, the old driver's build scripts) unless Shattered-AI's `tools/mobile-test/private/preflight.json` is fresh (30 minutes), names emulator-5554 and lists only safe origins; an `adb install` that does not pin `-s emulator-5554` is denied even then (the physical phone is usually attached). It reads the marker itself in plain CommonJS and does NOT recompute the origins: the session's `checkMarker` (ESM, in Shattered-AI) is the stricter twin, so change the marker shape in both. Unlike jest-guard it peels wrappers (`bash -c`, `cmd /c`, PowerShell, env prefixes) and ignores heredoc bodies, because it must catch a chained install but not a commit message that mentions one. The session's own commands (`session.mjs`) are never blocked. Self-test: emulator-guard.selftest.js (66 commands).
+
+/jest-guard.js
+Purpose: Denies a hand-run jest that has neither --runInBand nor --maxWorkers 1-4 (a bare run started ~31 workers of ~4 GB each and froze the machine on 2026-11-19). It matches a command that RUNS jest (start of a command, after exec/npx/cross-env, or a node_modules jest path), so a grep or ls that merely names a jest file passes, but an echo containing the words "exec jest" is denied. scripts/check-jest-workers.mjs imports verdict() from here so the Claude hook and the repo/CI check share one rule. Self-test: jest-guard.selftest.js.

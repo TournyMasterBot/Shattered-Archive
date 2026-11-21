@@ -34,6 +34,15 @@ test('readSpec accepts the documented shape and names the first thing wrong', ()
   assert.throws(() => readSpec({ continent: 'c', center: 'a', relations: [null] }), /relation 0/);
   assert.throws(() => readSpec({ continent: 'c', center: 'a', relations: [], gap: 99 }), /"gap"/);
   assert.throws(() => readSpec({ continent: 'c', center: 'a', relations: [], sizeBy: 'huge' }), /"sizeBy"/);
+  const base = { continent: 'c', center: 'a', relations: [] };
+  const tri = [[0, 0], [10, 0], [5, 8]];
+  assert.equal(readSpec({ ...base, outline: tri, hints: { b: [5, 2] }, outlineFill: 0.4 }).outline, tri);
+  assert.throws(() => readSpec({ ...base, outline: [[0, 0], [1, 1]] }), /"outline"/);
+  assert.throws(() => readSpec({ ...base, outline: [[0, 0], [1, 1], ['x', 2]] }), /"outline"/);
+  assert.throws(() => readSpec({ ...base, outline: tri, hints: { b: [1] } }), /"hints"/);
+  assert.throws(() => readSpec({ ...base, outline: tri, hints: [] }), /"hints"/);
+  assert.throws(() => readSpec({ ...base, hints: { b: [1, 1] } }), /need an "outline"/);
+  assert.throws(() => readSpec({ ...base, outline: tri, outlineFill: 1 }), /"outlineFill"/);
 });
 
 const room = (id) => ({ id, title: id, exits: {}, sources: [{ kind: 'azah', ref: id, credit: 'Azah', date: '2020-01-01' }] });

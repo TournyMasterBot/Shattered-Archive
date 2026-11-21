@@ -1083,6 +1083,27 @@ $accent: #8bc34a;
   display: block;
 }
 
+/* The Review step's route row: the "edited" badge sits off the step count, and the edit/reset/save/cancel actions get a gap. */
+.routeBadge {
+  margin-left: 6px;
+}
+
+.routeActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.routeEditText {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
 .reviewStepList {
   margin: 6px 0 0;
   padding-left: 4px;

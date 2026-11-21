@@ -794,7 +794,7 @@ bundle, not an outage).
 2026-07-27** — `shattered-web` is registered (key id `570aac0b4cbc`); the legacy
 JWT/password login was deleted outright, replaced by the SSO hand-off + JIT
 provisioning. Evidence trail:
-`.ai-plans-completed/closed-incomplete/20260727-1022-auth-rollout-phaseB-csharp-clean-cut.md`.
+`.ai-plans-completed/completed/20260727-1022-auth-rollout-phaseB-csharp-clean-cut.md`.
 
 **Deployment topology correction (2026-07-27, user-clarified):** the
 `shatteredarchive-csharp` container this repo can see and redeploy

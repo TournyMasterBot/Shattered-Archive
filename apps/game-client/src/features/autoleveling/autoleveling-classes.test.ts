@@ -82,6 +82,19 @@ describe('class catalog cache', () => {
     expect(await getClassCatalog({ force: true })).toHaveLength(3); // the live list replaces it
   });
 
+  it('ignores a list cached under the v2 key: it has no durationTicks or lagMs, and the live list brings them (L37)', async () => {
+    const store = memoryKvStore();
+    __setClassStoreForTests(store);
+    await store.set('autolevelingClasses.v2', { data: [CLERIC], fetchedAt: Date.now() });
+
+    expect(await getClassCatalogCached()).toEqual([]);
+
+    mockFetch(() => ({ classes: [{ name: 'Mage', abilities: [{ name: 'Frenzy', type: 'spell', level: 5, groups: [], durationTicks: 18, lagMs: 3800 }] }] }));
+    const [mage] = await getClassCatalog({ force: true });
+    expect(mage.abilities[0]).toMatchObject({ durationTicks: 18, lagMs: 3800 });
+    expect((await getClassCatalogCached())[0].abilities[0]).toMatchObject({ durationTicks: 18, lagMs: 3800 }); // and it is what is cached now
+  });
+
   it('drops malformed class rows', async () => {
     mockFetch(() => ({ classes: [...CATALOG, { mortalClass: 1 }, 42, null] }));
     expect(await getClassCatalog()).toHaveLength(3);

@@ -26,6 +26,8 @@ import {
 } from '../features/autoleveling/autoleveling-storage';
 import { AutoLevelingEngine } from '../features/autoleveling/autoleveling-engine';
 import { useAutopilotSignals } from './useAutopilotSignals';
+import { serverLagMsFor } from '../features/autoleveling/autoleveling-lag';
+import { useAbilityTimingIndex } from './useAbilityTimingIndex';
 import { bumpLearnedCooldown, getLearnedCooldown } from '../features/autoleveling/autoleveling-user-data';
 import { ListenEvent, DispatchEvent } from '../features/event-emitter/event-dispatcher';
 import { RuntimeSingleton } from '../features/userScripts/runtimeSingleton';
@@ -164,6 +166,9 @@ export function useAutoLeveling(connectionId: string, isConnectedInitial = false
 
   const engineRef = useRef<AutoLevelingEngine | null>(null);
 
+  // The server's ability timing (the class feed's lagMs), read from the catalog cached on this device; unknown until loaded (see useAbilityTimingIndex).
+  const timingIndexRef = useAbilityTimingIndex(connectionId);
+
   // (Re)create engine when connection changes
   useEffect(() => {
     hdbg('engine create/bind', { connectionId });
@@ -183,6 +188,8 @@ export function useAutoLeveling(connectionId: string, isConnectedInitial = false
         void bumpLearnedCooldown(cmd, cooldownSec);
       },
       getLearnedCooldown: (cmd) => getLearnedCooldown(cmd),
+      // the server's measured ability lag, from the class catalog cached on this device (loaded below; unknown until then)
+      getServerLagMs: (cmd) => serverLagMsFor(timingIndexRef.current, cmd),
       sendThroughCommandProcessor: (cmd) => {
         hdbg('engine sendThroughCommandProcessor', { cmd });
         // Same fallback useGameCommand.ts uses for a typed line: prefer the alias/script
@@ -293,7 +300,7 @@ export function useAutoLeveling(connectionId: string, isConnectedInitial = false
     eng.resume();
     setRunState((prev) =>
       prev.status === 'paused'
-        ? { status: 'running', round: prev.round, step: prev.step, actionIndex: prev.actionIndex }
+        ? { status: 'running', round: prev.round ?? 0, step: prev.step ?? '', actionIndex: prev.actionIndex ?? 0 }
         : prev,
     );
   }, [runState.status]);

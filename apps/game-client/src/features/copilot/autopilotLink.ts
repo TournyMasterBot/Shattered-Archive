@@ -23,7 +23,7 @@ export interface AutopilotLink {
  * The two-way link between Copilot and Autopilot, over the existing event bus. Copilot to Autopilot: the same
  * `shatteredarchive:autoleveling-*` events the toolbar buttons dispatch (so Autopilot treats Copilot like a button press). Autopilot to
  * Copilot: `shatteredarchive:autopilot-status` (every status change, which the command gate reads) and
- * `shatteredarchive:autopilot-need-help` (the run state became `error`).
+ * `shatteredarchive:autopilot-need-help` (the run state became `error`, or the engine paused itself after a timeout: `reason` says which).
  */
 export function createAutopilotLink(): AutopilotLink {
   let status = 'idle';
