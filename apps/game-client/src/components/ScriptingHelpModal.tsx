@@ -2012,7 +2012,7 @@ Jovar               — icewall_port start`}</pre>
               </li>
               <li>
                 <em>Speak communication lines</em>: anything the chat classifier recognizes as a channel — say,
-                tell, gtell, whisper, pray, yell, gossip/cgossip, OOC, clan/oclan, king/oking, ask-answer, radio,
+                tell, gtell, whisper, pray, yell, shout, gossip/cgossip, OOC, clan/oclan, king/oking, ask-answer, radio,
                 newbie, quest, bloodbath, auction, grats, community — tested before every other category, so chat
                 arriving mid-room-render still reads as chat
               </li>
