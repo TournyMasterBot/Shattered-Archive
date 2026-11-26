@@ -11,6 +11,7 @@ import { createCombatCompressionPlugin } from './core-plugins/combat-compression
 import { createStunHighlightPlugin } from './core-plugins/stun-highlight.plugin';
 import { createEnchantPlugin } from './core-plugins/enchant.plugin';
 import { createGourdPlugin } from './core-plugins/gourd.plugin';
+import { createAutoGroupPlugin } from './core-plugins/auto-group.plugin';
 import { createPeoplePlugin } from './core-plugins/people.plugin';
 import { createHighlighterPlugin } from './core-plugins/highlighter.plugin';
 import { createAffectEchoPlugin } from './core-plugins/affect-echo.plugin';
@@ -89,6 +90,11 @@ export const CORE_PLUGINS: CorePluginDefinition[] = [
     id: 'people',
     manifest: createPeoplePlugin().manifest,
     create: createPeoplePlugin,
+  },
+  {
+    id: 'auto-group',
+    manifest: createAutoGroupPlugin().manifest,
+    create: createAutoGroupPlugin,
   },
   {
     id: 'highlighter',

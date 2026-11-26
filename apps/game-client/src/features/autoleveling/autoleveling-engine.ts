@@ -67,6 +67,7 @@ import { expandCommand, findUnresolvedPlaceholder, isItemAction } from './autole
 import { parseEnemyCondition } from './autoleveling-enemy-condition';
 import { BUFF_CATALOG, type BuffCatalogEntry } from './autoleveling-buff-catalog';
 import { classifyFailureLine, isSuccessLine, type CastOutcome } from './autoleveling-cast-outcome';
+import { classifyStepLine, manualCommandKind, slowStepFor, type SlowStepRule } from './autoleveling-step-waits';
 import { DAMAGE_LINE_PATTERN } from '../plugins/core-plugins/combat-compression.plugin';
 import { classifyMovement, MOVE_DIRS } from '../movement/classifyMovement';
 import { HEAD_TIMEOUT_MS, movementTracker, type RoomSnapshot } from '../movement/movementTracker';
@@ -230,6 +231,11 @@ const ROOM_REPLY_RE = /\[Exits:|pitch black|you can't see|you cannot see|you are
 const MOVEMENT_BACKSTOP_FACTOR = 4;
 
 const CAST_WINDOW_MS = 3000;
+/** A cast the player typed keeps the game busy about this long (replies came 3.3-4.1 s after a cast in the logs of 2026-11-24/25). */
+const MANUAL_CAST_LAG_MS = 4000;
+/** The engine never holds for the player's command longer than this, and says so at most this often. */
+const MANUAL_HOLD_CAP_MS = 20_000;
+const MANUAL_NOTICE_GAP_MS = 30_000;
 const RETRY_GAP_MS = 3000;
 const SEND_GAP_MS = 1500;
 const MAX_CAST_ATTEMPTS = 3;
@@ -378,6 +384,13 @@ export class AutoLevelingEngine {
   private castBusy = false;
   private castWaiters: Array<() => void> = [];
   private castWatch: { affect?: string; successLine?: string; resolve: (o: CastOutcome) => void } | null = null;
+  /** The slow route step (heel, ride) the engine is waiting on: its rule and what to do with the answer. Lines feed it from the terminal. */
+  private stepWatch: { rule: SlowStepRule; resolve: (o: 'done' | 'failed' | 'timeout' | 'stopped') => void } | null = null;
+  /** Commands the engine itself just sent, so the command-sent signal for them is not mistaken for the player typing (see noteWireCommand). */
+  private ownSends: Array<{ text: string; at: number }> = [];
+  /** The player typed a slow command (a cast, heel, ride): the engine holds its next route step and buff until this time or until the game answers. */
+  private manualBusy: { until: number; label: string; rule: SlowStepRule | null } | null = null;
+  private manualNoticeAt = 0;
   private rearmQueue: CastSpec[] = [];
   private rearmPending = new Set<string>();
   private rearmDraining = false;
@@ -549,6 +562,9 @@ export class AutoLevelingEngine {
 
     // the game's answer to a cast the engine is waiting on (success line or a failure)
     this.observeCastText(text);
+
+    // the game's answer to a slow route step (heel, ride), or to a slow command the player typed
+    this.observeStepText(text);
 
     // encounter detection
     if (!this.encounterLocked && !this.stopping) {
@@ -1099,6 +1115,15 @@ export class AutoLevelingEngine {
           { key: 'AutoLevelingEngine:raw-data' },
         ),
 
+        // Every command that reaches the wire, from any source: the ones the engine did not send are the player typing.
+        ListenEvent<{ text?: string }>(
+          'shatteredarchive:command-sent',
+          (payload) => {
+            this.noteWireCommand(String(payload?.text ?? ''));
+          },
+          { key: 'AutoLevelingEngine:command-sent' },
+        ),
+
         // GMCP char-data — authoritative source for isFighting and vitals
         // Payload shape: { hp, max_hp, mana, max_mana, move, max_move, is_fighting, ... }
         ListenEvent<EventDetail>(
@@ -1416,6 +1441,10 @@ export class AutoLevelingEngine {
     this.refusedCommands.clear();
     this.rearmQueue = [];
     this.rearmPending.clear();
+    this.stepWatch = null;
+    this.ownSends = [];
+    this.manualBusy = null;
+    this.manualNoticeAt = 0;
     this.outOfItems.clear();
     this.castNotices.clear();
     this.dryRunAnnouncedThisRoom.clear();
@@ -1473,6 +1502,10 @@ export class AutoLevelingEngine {
           await this.checkWeightGate(round);
           if (this.stopping) break;
 
+          // The player is casting, mounting or calling the steed by hand: walking on now would queue the move behind it.
+          await this.yieldToManual();
+          if (this.stopping) break;
+
           const mv = classifyMovement(step);
 
           // Sightsee: pause before each movement and wait for manual advance.
@@ -1517,6 +1550,10 @@ export class AutoLevelingEngine {
             ? this.armRoomScanWait(this.cfg.lookSettleMs ?? 500, ROOM_SCAN_HARD_CAP_MS)
             : null;
 
+          // A step the game takes seconds to finish (heel, ride) waits for its own answer, not a fixed settle.
+          const slowRule = !mv.isMove && !lookScan ? slowStepFor(step) : null;
+          const stepAnswer = slowRule ? this.armStepWatch(slowRule) : null;
+
           await this.sendCommand(step);
           if (mv.isMove) this.lastMovementCmd = step;
 
@@ -1541,6 +1578,8 @@ export class AutoLevelingEngine {
             // arrive before checking for encounter detections.
             if (lookScan) {
               await lookScan;
+            } else if (slowRule && stepAnswer) {
+              await this.finishSlowStep(step, slowRule, stepAnswer);
             } else {
               const settleMs = this.cfg.lookSettleMs ?? 500;
               if (settleMs > 0) await this.delayMs(settleMs);
@@ -1652,6 +1691,10 @@ export class AutoLevelingEngine {
       if (this.stopping) return;
 
       await this.waitWhilePausedOrStopped();
+
+      // Buffs are the actions that double up on the player's own casting: wait for a spell the player is in the middle of, then decide.
+      if (!this.isFighting && /^(start\.|postFight\.buffs)/.test(stepLabel)) await this.yieldToManual();
+      if (this.stopping) return;
 
       this.deps.setRunState({ status: 'running', round, step: stepLabel, actionIndex: i });
       dbg('run action', { round, stepLabel, i, action: actions[i] });
@@ -1897,6 +1940,8 @@ export class AutoLevelingEngine {
     const cmd = this.outgoingText(rawCmd);
     if (cmd === null || !cmd.trim()) return; // never dispatch empty or unresolved commands
     this.noteSend(cmd);
+    this.ownSends.push({ text: normCmd(cmd), at: now() }); // so the command-sent signal for it is not taken for the player typing
+    if (this.ownSends.length > 100) this.ownSends.splice(0, this.ownSends.length - 100);
 
     // Queue-buildup signal (steps 4/5): every command sent WHILE fighting counts — movement/
     // look/engage attempts never land here with isFighting=true in normal operation, so this
@@ -1926,6 +1971,7 @@ export class AutoLevelingEngine {
     if (cmd === null || !cmd.trim()) return;
 
     if (this.deps.sendThroughCommandProcessor) {
+      this.ownSends.push({ text: '*', at: now() }); // an alias may expand this into other text on the wire
       this.deps.sendThroughCommandProcessor(cmd);
     } else {
       DispatchEvent('shatteredarchive:send-command', { cmd });
@@ -2401,6 +2447,101 @@ export class AutoLevelingEngine {
     }
   }
 
+  /* ----------------------------- slow route steps and the player's own commands ----------------------------- */
+
+  /** Arm BEFORE sending the step: resolves with the game's answer, `timeout` when none comes, `stopped` on Stop. */
+  private armStepWatch(rule: SlowStepRule): Promise<'done' | 'failed' | 'timeout' | 'stopped'> {
+    return new Promise((resolve) => {
+      const watch = {
+        rule,
+        resolve: (o: 'done' | 'failed' | 'timeout' | 'stopped') => {
+          clearTimeout(timer);
+          if (this.stepWatch === watch) this.stepWatch = null;
+          resolve(o);
+        },
+      };
+      this.stepWatch = watch;
+      const timer = setTimeout(() => watch.resolve('timeout'), rule.timeoutMs);
+    });
+  }
+
+  /** What to do with the answer to a slow step: go on, note it and go on, or pause for the player (a ride that did not happen). */
+  private async finishSlowStep(step: string, rule: SlowStepRule, answer: Promise<'done' | 'failed' | 'timeout' | 'stopped'>) {
+    const outcome = await answer;
+    if (outcome === 'stopped' || this.stopping) return;
+    if (outcome !== 'done') {
+      const what = outcome === 'failed' ? `"${step}" did not work` : `no answer to "${step}" after ${Math.round(rule.timeoutMs / 1000)}s`;
+      if (rule.onMiss === 'pause') {
+        this.pauseForTimeout(what);
+        await this.waitWhilePausedOrStopped();
+        return;
+      }
+      this.writeAutoLevelLine(`${what}; carrying on`);
+    }
+    const settleMs = this.cfg.lookSettleMs ?? 500;
+    if (settleMs > 0) await this.delayMs(settleMs);
+  }
+
+  /** Lines for the step being waited on, and for a slow command the player typed (its answer ends the engine's hold). */
+  private observeStepText(text: string) {
+    const watch = this.stepWatch;
+    const manualRule = this.manualBusy?.rule ?? null;
+    if (!watch && !manualRule) return;
+    for (const line of String(text ?? '').split(/\r?\n/)) {
+      if (manualRule && classifyStepLine(manualRule, line)) this.manualBusy = null;
+      if (watch) {
+        const verdict = classifyStepLine(watch.rule, line);
+        if (verdict) return watch.resolve(verdict);
+      }
+    }
+  }
+
+  /**
+   * Every command that reaches the wire passes here. The engine's own are matched against what it just sent and ignored; one it did not
+   * send is the player typing. Only a cast, `heel` or `ride` makes the engine hold its next route step and buff (a `look`, `who` or a
+   * chat line never does), for the game's own answer or the lag a cast is known to cost.
+   */
+  private noteWireCommand(raw: string) {
+    if (!this.running || this.stopping) return;
+    const text = normCmd(raw);
+    if (!text) return;
+    const at = now();
+    this.ownSends = this.ownSends.filter((s) => at - s.at <= 5000);
+    // `*` = a send through the command processor, whose alias may expand into any text for a moment
+    if (this.ownSends.some((s) => s.text === '*' && at - s.at <= 1500)) return;
+    const i = this.ownSends.findIndex((s) => s.text === text);
+    if (i >= 0) {
+      this.ownSends.splice(i, 1);
+      return;
+    }
+    const kind = manualCommandKind(text);
+    if (!kind) return;
+    if (kind.kind === 'rule') {
+      this.manualBusy = { until: at + kind.rule.timeoutMs, label: kind.rule.label, rule: kind.rule };
+    } else {
+      const lag = effectiveLagMs(null, this.learnedCooldownSec.get(text.toLowerCase()), this.deps.getServerLagMs?.(text));
+      this.manualBusy = { until: at + Math.max(lag, MANUAL_CAST_LAG_MS), label: 'spell', rule: null };
+    }
+    dbg('player command noticed', { text, label: this.manualBusy.label });
+  }
+
+  /** Holds the engine while the player's own slow command is still being answered. Stop ends it within a slice; a pause freezes it. */
+  private async yieldToManual() {
+    const busy = this.manualBusy;
+    if (!busy) return;
+    const at = now();
+    if (busy.until <= at) {
+      this.manualBusy = null;
+      return;
+    }
+    if (at - this.manualNoticeAt > MANUAL_NOTICE_GAP_MS) {
+      this.manualNoticeAt = at;
+      this.writeAutoLevelLine(`waiting for your ${busy.label} to finish`);
+    }
+    await this.sleepSliced(Math.min(busy.until - at, MANUAL_HOLD_CAP_MS), () => this.manualBusy !== busy || busy.until <= now());
+    if (this.manualBusy === busy && busy.until <= now()) this.manualBusy = null;
+  }
+
   private async castLoop(spec: CastSpec): Promise<CastOutcome | 'skipped'> {
     const cmdKey = normCmd(spec.cmd).toLowerCase();
     const item = isItemAction(spec.cmd);
@@ -2515,9 +2656,22 @@ export class AutoLevelingEngine {
         a.kind === 'send_every_ticks' ||
         (a.kind === 'send' && (!!a.vitalsGate || !!a.combatState || !!a.enemyGate)),
     );
-    if (gated.length === 0) return;
-    dbg('recheckBuffs', { label, round, count: gated.length });
-    await this.runActions(gated, label, round);
+    // A plain send of a buff the game reports as an affect (cast 'shield') has no affect check of its own, so asking again after every
+    // fight cast it again each time while it was up (2026-11-24/25: 61 recasts of shield with 54 ticks left). Skip it while the affect shows;
+    // a row that is gated on ticks is left alone, its whole point is to refresh before the affect runs out.
+    const due = gated.filter((a) => !this.isRedundantBuffRecast(a));
+    if (due.length === 0) return;
+    dbg('recheckBuffs', { label, round, count: due.length });
+    await this.runActions(due, label, round);
+  }
+
+  private isRedundantBuffRecast(a: AutoLevelAction): boolean {
+    if (a.kind !== 'send') return false;
+    const entry = this.catalogEntryFor(a.cmd);
+    const affect = entry?.affect.trim().toLowerCase();
+    if (!entry || !affect || entry.conditionGated || !this.activeAffects.has(affect)) return false;
+    this.castNoticeOnce(`up:${affect}`, `${entry.label} is still up; not casting it again after fights`);
+    return true;
   }
 
   /* ----------------------------- engagement helpers ------------------------- */
@@ -2909,6 +3063,7 @@ export class AutoLevelingEngine {
 
   private rejectAllWaits(err: unknown) {
     this.castWatch?.resolve('stopped');
+    this.stepWatch?.resolve('stopped');
     dbg('rejectAllWaits', { err: String((err as { message?: unknown } | null | undefined)?.message ?? err ?? err) });
 
     if (this.sightseeWait) {

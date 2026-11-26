@@ -25,6 +25,7 @@
 import type { IPluginModule, PluginRuntimeApi } from '@shatteredarchive/types-client';
 import { stripAnsi } from '../../autoleveling/autoleveling-text';
 import { getPerson, setPerson, findPeople, findByOrg, findByCraft, dbSize } from './peopleDb';
+import { parseWhoLine } from './who-line';
 
 // ── Known organizations ────────────────────────────────────────────────
 
@@ -89,21 +90,8 @@ const CRAFT_NAMES = new Set([
   'Lumberjack',
 ]);
 
-// ── Who-list regex patterns ────────────────────────────────────────────
-// Derived from DSL_PNP_People.lua trigger_patterns.
-
-// [lvl race class] [AFK?] [Quiet?] (WANTED?) (org) Name Rank...
-const RE_KINGDOM_ORG =
-  /^\[\s*(\d+)\s+([\w-]+)\s+(\w+)\]\s*(?:\[(?:AFK|Quiet)\]\s*)*(?:\(WANTED\)\s*)?\(([^)]+)\)\s+([\w\s'-]+)/;
-
-// [lvl race class] [AFK?] [ clan ] Name Rank... (no parentheses = clan)
-const RE_CLAN = /^\[\s*(\d+)\s+([\w-]+)\s+(\w+)\]\s*(?:\[(?:AFK|Quiet)\]\s*)*\[([^\]]+)\]\s+([\w\s'-]+)/;
-
-// [lvl  class] (WANTED?) (org) Name (level only + class, no race field)
-const RE_KINGDOM_SHORT = /^\[\s*(\d+)\s+()(\w+)\]\s*(?:\(\w+\)\s*)*\(([^)]+)\)\s+([\w\s']+)/;
-
-// [lvl  class] [clan] Name
-const RE_CLAN_SHORT = /^\[\s*(\d+)\s+()(\w+)\]\s*\[([^\]]+)\]\s+([\w']+)/;
+// ── Who-list patterns ────────────────────────────────────────────────────
+// Clan, kingdom and roster lines are read by the shared parser in who-line.ts (parseWhoLine).
 
 // Name - Rank Craft  (who craft output)
 const RE_CRAFT = new RegExp(
@@ -186,7 +174,7 @@ function normalizeKingdom(org: string): string {
 
 function gatherPerson(
   orgType: 'clan' | 'kingdom',
-  level: string,
+  lvl: number,
   race: string,
   cls: string,
   org: string,
@@ -194,16 +182,16 @@ function gatherPerson(
   debug: boolean,
   api: PluginRuntimeApi,
 ) {
-  const lvl = parseInt(level, 10);
   if (!Number.isFinite(lvl) || lvl >= 52) return; // skip immortals
 
-  if (orgType === 'clan' && !CLAN_LIST.has(org)) return;
-  if (orgType === 'kingdom' && org !== '' && !KINGDOM_LIST.has(org)) return;
+  // Normalize BEFORE checking the list: KINGDOM_LIST holds the short codes (VR, NT...), while the
+  // game also prints the long names (Verminasia, New Thalos) that normalizeKingdom maps to them.
+  const normalizedOrg = orgType === 'kingdom' ? normalizeKingdom(org) : org;
+  if (orgType === 'clan' && !CLAN_LIST.has(normalizedOrg)) return;
+  if (orgType === 'kingdom' && !KINGDOM_LIST.has(normalizedOrg)) return;
 
   const name = parseName(rawName);
   if (!name || name.length < 2) return;
-
-  const normalizedOrg = orgType === 'kingdom' ? normalizeKingdom(org) : org;
 
   const existing = getPerson(name);
   const update = {
@@ -238,32 +226,12 @@ function tryParseLine(line: string, debug: boolean, api: PluginRuntimeApi) {
     return;
   }
 
-  // Kingdom with org
-  const kOrg = line.match(RE_KINGDOM_ORG);
-  if (kOrg) {
-    gatherPerson('kingdom', kOrg[1], kOrg[2], kOrg[3], kOrg[4].trim(), kOrg[5], debug, api);
-    return;
-  }
-
-  // Clan
-  const clan = line.match(RE_CLAN);
-  if (clan) {
-    gatherPerson('clan', clan[1], clan[2], clan[3], clan[4].trim(), clan[5], debug, api);
-    return;
-  }
-
-  // Short kingdom
-  const kShort = line.match(RE_KINGDOM_SHORT);
-  if (kShort) {
-    gatherPerson('kingdom', kShort[1], kShort[2], kShort[3], kShort[4].trim(), kShort[5], debug, api);
-    return;
-  }
-
-  // Short clan
-  const cShort = line.match(RE_CLAN_SHORT);
-  if (cShort) {
-    gatherPerson('clan', cShort[1], cShort[2], cShort[3], cShort[4].trim(), cShort[5], debug, api);
-    return;
+  // Clan, kingdom and roster lines. A line with no clan or kingdom is not recorded.
+  const who = parseWhoLine(line);
+  if (who && who.orgType) {
+    // The name text runs up to the first comma/bracket: "Tiberius Caine, Acolyte..." -> "Tiberius Caine".
+    const rawName = /^[\w\s'-]+/.exec(who.rest)?.[0] ?? '';
+    gatherPerson(who.orgType, who.level, who.race, who.class, who.org, rawName, debug, api);
   }
 }
 

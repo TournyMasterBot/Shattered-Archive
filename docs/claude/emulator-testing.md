@@ -74,4 +74,12 @@ blocked), or run `node T/session.mjs preflight` and repeat. Self-test: `node .cl
 **The account:** `node T/accounts.mjs list | check <purpose>`; one entry per purpose in the tool's private registry; `create <purpose> --create` refuses when the
 purpose has an entry (rule 3).
 
+**A bundle that arrives damaged (found 2026-11-21, mobile autopilot port):** the dev bundle is about 15 MB. Through the emulator's own NAT (the `10.0.2.2:8081`
+address the dev launcher rewrites `localhost` to) single bytes can be lost near the end of it, and the app shows a red `Compiling JS failed` or a
+`Property 'x' doesn't exist` error with a different line each launch, while the same bundle fetched on the host is whole. The `adb reverse` tunnel
+(`127.0.0.1:8081` inside the emulator) delivers it intact. Check: stream the bundle through `adb exec-out` with `nc` and compare it byte for byte with a host
+fetch. Fix, for the emulator only and lost at its next reboot: `adb -s emulator-5554 shell iptables -t nat -A OUTPUT -d 10.0.2.2 -p tcp --dport 8081 -j
+DNAT --to-destination 127.0.0.1:8081` after `sysctl -w net.ipv4.conf.all.route_localnet=1` (the emulator is rooted). If the emulator process itself dies with
+`bad color buffer handle`, boot it again with `-gpu swiftshader_indirect`.
+
 Work item: `.ai-plans-completed/2026-11-20_mobile-emulator-test-harness` (plan, amendments A1 to A11, measurements).

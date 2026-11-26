@@ -22,6 +22,9 @@ export interface PersonInfo {
   craftRank?: string;
   status?: 'enemy' | 'ally' | 'neutral';
   team?: string; // Optional DSL-colored team label
+  // Unix ms of the last `whois` that settled org/orgType (Auto Group). With org '' it means "checked,
+  // no clan or kingdom". Separate from lastSeen, which any edit (status, team) bumps.
+  affiliationCheckedAt?: number;
   lastSeen?: number; // Unix ms
 }
 

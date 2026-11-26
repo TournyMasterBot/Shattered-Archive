@@ -224,6 +224,29 @@ item buff (a potion) was only used when a row had a separate in-combat command.
 
 Tests: `autoleveling-engine.rearm.test.ts` (fake timers), `autoleveling-cast-outcome.test.ts`.
 
+## Slow route steps, the player's own commands, and a buff that is already up
+
+Added 2026-11-25 after a review of the game-server logs of 2026-11-19..25.
+
+- **Slow route steps** (`autoleveling-step-waits.ts`). A non-move step used to wait a fixed `lookSettleMs` (0.5 s). `heel` is answered 0.1-10.9 s
+  later ("An unholy steed comes running in." / "gallops in.") and `ride st` 0.05-12.4 s later ("You mount an unholy steed."), so 16 of 99 mounts had a move
+  sent first and the character walked on without its steed (a route that does `pull flinger`, `heel`, `ride st` after the flinger throws the rider off).
+  Those two steps now wait for their own answer, up to 20 s. A `ride` that fails ("They're not here.", "You can't ride that.", "You can not ride anything
+  while flying.") or is never answered **pauses the run** (Resume continues; the player fixes the mount first). A `heel` that fails ("No way! You are
+  still fighting!") or is never answered is noted in the terminal and the route goes on; the `ride` after it has its own check. "Your already riding a
+  mount!" and "You are already riding your pet..." count as done. Any other step keeps the fixed settle.
+- **The player's own commands.** Every command that reaches the wire raises `shatteredarchive:command-sent`; the engine remembers what it sent itself and
+  treats the rest as the player typing. A cast typed by hand (`c ...`, `cast ...`) holds the engine's next route step and its next buff check for about
+  4 s (what casts cost in the logs), a typed `heel` or `ride` until the game answers; at most 20 s, one terminal line "waiting for your spell to finish"
+  per 30 s. Looks, `who`, chat, kills never hold it. Fights are not held: the player may cast mid-fight. The wait runs before the buff's affect check, so a
+  buff the player just cast by hand is seen as up and not cast again.
+- **A buff that is already up.** After a fight the engine asks again about rows that carry a condition. A plain `cast 'shield'` row (no affect gate) with a
+  condition was cast after every fight while the shield had 54 ticks left (61 times on 2026-11-24/25; every other buff 0 times, the logs show the cast
+  was not waited for, so the row had no affect to check). The post-fight check now skips a plain send of a catalog buff while its GMCP affect shows, and
+  says so once per run. A row gated on ticks is left alone (refreshing before the affect runs out is its purpose), and so is a heal.
+
+Tests: `autoleveling-step-waits.test.ts`, `autoleveling-engine.steps.test.ts`.
+
 ## Pause and stop
 
 Added 2026-11-18 (Phase 16). Before this, a movement that got no reply within the backstop, a fight that did not end, or a wait action that timed out set
@@ -436,3 +459,39 @@ flowchart LR
   G --> H["CHANGED: new fight rows start at the measured lag, tick buffs recast at duration minus one tick"]
   G --> I["NEW: the server lag is a floor for the engine's cooldown, retry gap and movement allowance"]
 ```
+
+## Worlds: the DSL and the Simulacrum
+
+The catalog (areas, one area's route and targets, classes) exists for two worlds, and a client is pointed at one of them when it is built, never at run time.
+
+- **The DSL world** is what this page described above: `GET /maps/autoleveling/areas`, `/areas/{slug}` and `/classes`, projected from the DSL's own area data. It is unchanged.
+- **The Simulacrum** (the owner's own experimental MUD, merc-mud) has a catalog of its own under `/maps/autoleveling/sandbox/areas`, `.../areas/{slug}` and `.../classes`, with the same shapes. It is **local only**: the controller is `Server.Web.Public/Controllers/Copilot/SandboxAutopilotController.cs`, which the csproj leaves out of every build except `CopilotLocal=true` (the local deploy), and the production verifier fails a build or compose that holds its name, its folder variable `SANDBOX_AUTOPILOT_DIR` or its route. With the variable unset or the folder missing, the three answers are an empty list and 404, never an error.
+
+```mermaid
+flowchart LR
+  AREA["merc-mud/2.4/area/*.are (area.lst)"] --> GEN["Server.Jobs --simulacrum-autopilot"]
+  SKILLS["merc-mud/2.4/src/const.c skill_table, magic.c"] --> GEN
+  GEN --> DATA["Server/Data/simulacrum-autopilot: areas.json, areas/slug.json, classes.json"]
+  DATA --> SERVE["SimulacrumCatalogFolder (Server.Dsl)"]
+  SERVE --> CTRL["SandboxAutopilotController (CopilotLocal build only)"]
+  CTRL --> APP["Phone: /maps/autoleveling/sandbox/*"]
+```
+
+**The generated catalog.** `dotnet run --project Server/Server.Jobs -- --simulacrum-autopilot` (`--dry-run` prints, `--check` exits 1 when the committed folder differs from a fresh run) reads the game's real area files and writes, per area that qualifies: a slug, the level range of its credits line, the start room, a closed route (every room that holds a target is visited and the walk comes back, closed doors opened once, locked doors never used, one-way regions handled by walking the region with the most targets), and the targets (the room line a `look` shows, the shortest kill keyword no other target in that room shares, the level). An area it cannot make a deterministic route or an unambiguous keyword list for is left out and the run says which mobile and room. Today 28 areas qualify, covering levels 1 to 51. A room an ordinary character cannot walk into (water that needs a boat, air, another class's guild, a private or reserved room) is never part of a route, and the walk was proved against the live game (see "Test characters on the Simulacrum"). The four classes (mage, cleric, thief, warrior) carry what the game's own skill table teaches at each level; an attack spell is one whose function really calls `damage(`, a buff is a spell that helps the caster or an ally, and an ability's lag is the game's beats at four pulses to the second.
+
+**Classes differ per world** (4 here, 48 on the DSL), so a client's class picker follows the catalog it was given and assumes no list. The phone reads the world and the server it is bundled for from `EXPO_PUBLIC_AUTOPILOT_WORLD` and `EXPO_PUBLIC_AUTOPILOT_API` (see `docs/features/autopilot.md` in the mobile repo).
+
+## Test characters on the Simulacrum
+
+A real run of the phone's autopilot against the Simulacrum needs characters of the four classes at more than one level. `merc-mud/scripts/simulacrum-test-characters.mjs` makes eight throwaway ones (two per class, one near level 8 and one near 35; placeholder names beginning `Zzap`), each standing in the start room of a generated training area:
+
+| Class | Level 8 | Level 35 |
+|-------|---------|----------|
+| mage | haon-dor | nirvana |
+| cleric | haon-dor | nirvana |
+| thief | smurfville | mega-city-one |
+| warrior | smurfville | mega-city-one |
+
+Each is created through the game's own prompts on the loopback connection, then raised by editing its own player file while it is logged out (level, hit points, mana, movement, armour, the skills and spells its class has at that level from the generated catalog, and the room it wakes up in). The script never uses an immortal's password, writes only the player directory and the git-ignored `scripts/private` file that holds the random passwords, and never touches a player file it holds no password for. Running it again does not duplicate; `--verify-only` logs each character in and checks its level, class, vitals, abilities and room; `--remove --yes` deletes them and their passwords (only with the owner's word).
+
+`merc-mud/scripts/simulacrum-walk-routes.mjs` is the check that the generated routes agree with the live game: it walks each area's route with one of those characters and reports, per area, whether every step moved (a room message and no refusal), whether the walk ended where it began and how many of the area's targets were met on the way.

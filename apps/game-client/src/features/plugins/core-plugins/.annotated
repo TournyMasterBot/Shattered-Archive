@@ -3,6 +3,21 @@ File Index
 /affect-echo.plugin.ts
 Purpose: Echoes affect gains and losses to the terminal with configurable colors.
 
+/auto-group.plugin.ts
+Purpose: Sends `group <name>` when a player starts following you, subject to allowed/excluded users and affiliations; decides in auto-group-logic.ts. Before each `group` it sends `gr` and groups only if the follower is not already listed, and it looks an affiliation up with `whois` only when an affiliation list could change the outcome and nothing fresh is remembered.
+Gotchas: A re-follow normally means the player left the group, but `group <name>` on a member is believed to TOGGLE them out (never captured), so the `gr` list, not a timer, decides; there is deliberately no long "already grouped" shield (group breakers and beckoning make any remembered state wrong). The only memory is a 5 s window after our own `group` until "joins your group" or "stops following you" clears it, so a doubled follow line cannot send `group` twice. If the `gr` reply never arrives (3 s) it groups anyway. Its own whois and gr go through api.sendCommand, which never reaches onAlias, so the People plugin's armed scan does not see the replies: this plugin reads them itself and writes the whois result into peopleDb (stamped affiliationCheckedAt), which is how People/Highlighter share it. Ships default-inert (everyone else = do not group) on purpose.
+Tests: auto-group.plugin.test.ts (fake host, fake timers, fresh peopleDb per test), auto-group-logic.test.ts.
+
+/auto-group-logic.ts
+Purpose: Pure parsing and decisions for auto-group: follow, stop-following, join, whois-miss and `gr` header/row lines, list parsing, memory age, and the allow/exclude order (excluded user, allowed user, excluded affiliation, allowed affiliation, default). The who-list parser it uses is who-line.ts.
+Gotchas: `gr` always prints a header, even when you are alone, and rows are "[51 Arm] Name  NN% hp NN% mana NN% mv" (mobs have class Mob), so a block ends at the first line that is not a row. Only a single capitalised word is a player: NPC followers print as "An earth elemental" or "Yan Luo". Verify patterns against the corpus with a scratch script that imports a copy of this file and who-line.ts with explicit .ts import specifiers (Node strips types but will not resolve './who-line').
+
+/who-line.ts
+Purpose: The one parser for who-list style lines (who, whoc, whois, clan rosters), shared by people.plugin.ts and auto-group-logic.ts so they cannot drift; import-free.
+Gotchas: Corpus-verified shapes that earlier patterns missed: the stat block is "[lvl race class]" or class only ("[51 Mtl]", clan rosters) and may have a space before the bracket; the `*` inside "[ Shadow*]" or "(Nordmaar*)" is the PRESTIGE marker (1000+ hours, +5% damage) and is not part of the name, while a `*` in the title ("[*]", "<<=*=>>") is decoration; some clans print in round brackets ("( Dragon )", Balanx, Angel, Demon); a rank can sit beside the kingdom in either order ("(Queen)(Verminasia)"); (WANTED)/(Hostile)/[AFK] can sit between the stat block and the name; a `gr` row and an area-list row ("[ 5 35] [ 0] ...") look similar and must NOT parse. A line it cannot read returns null, never "no affiliation".
+Tests: who-line.test.ts.
+Decision: no clan or kingdom whitelist lives here, on purpose; people.plugin.ts keeps its CLAN_LIST/KINGDOM_LIST because this parser also accepts non-player lines that merely start "[lvl ...] [x]" (area lists, shop rows). In the 2026-11-21 corpus survey (about 97,000 who lines) the only clan name the People lists still reject is "Conclave", which is title/area text and not a clan, so it was left out of the list.
+
 /brew.plugin.ts
 Purpose: This plugin enables users to define and execute custom item brewing recipes with letter mappings, symbol shortcuts, and persistent storage.
 
@@ -56,12 +71,14 @@ Purpose: Pins the parser against a verbatim `worth` capture, the exp-per-level m
 
 /people.plugin.ts
 Purpose: Parses player data from game commands into a shared database (peopleDb.ts) for tracking and annotation. The passive who-list/whois scan is armed by the player's own input, not a perpetual per-line scan (same "capture once, rearmed by evidence" family as world-time-and-identity.plugin.ts's score-sheet scan and level-progress.plugin.ts's worth fetch) — onAlias checks a plain `startsWith('who')` prefix (not an exact match like sc/score: who/whoc/whok/whocraft/whois/whoisd/whoisic/whoic/whos/whosi/whov/whoami are all real distinct commands confirmed against the live log corpus, all sharing that prefix), never consuming the command. Deliberately does NOT disarm on the first matching raw-data chunk the way the score-sheet scan does — corpus evidence shows a `who` reply on a populated server arrives as MANY separate single-player raw-data events, not one batched block, so disarm-on-first-match would silently truncate the list to one entry; the 5s window (PEOPLE_ARM_MS) closes only on timeout, restarted (not shortened) by a fresh who-family input.
+Gotchas: Clan, kingdom and roster lines are read by who-line.ts parseWhoLine (shared with auto-group), no longer by regexes here; that is what fixed clan members behind (WANTED)/(Hostile) flags, prestige-star clans ("[ Shadow*]"), clans printed in parentheses (Dragon, Balanx, Angel, Demon), rank-beside-kingdom lines, and class-only roster lines. gatherPerson still gates on CLAN_LIST and KINGDOM_LIST, and the kingdom name is normalized BEFORE that check (the list holds short codes; the game also prints Verminasia, New Thalos...). A brand-new clan or kingdom is dropped until it is added to those lists; races and classes are not whitelisted anywhere.
 
 /people.plugin.test.ts
 Purpose: Pins the arming behavior via real corpus who-list lines (GameLog-DSL_2026-09-24, real ANSI-coded clan/kingdom entries): unarmed scan is a no-op, every real who* command variant arms, non-who input does not arm, the command is never consumed (must still reach the server), multiple separate raw-data events within one window are ALL captured (no disarm-on-first-match, unlike score), the window expires on timeout and a later who-input re-arms, a fresh who-input mid-window restarts rather than shortens the timer, cleanup disarms and removes the listener, and existing command-bar behavior (show info) still works alongside the new arming. Uses jest.resetModules() + re-require for peopleDb isolation, matching peopleDb.test.ts's own convention.
 
 /peopleDb.ts
 Purpose: Manages persistent storage and retrieval of character data for the game client. Capped at MAX_PEOPLE=3000 (evicts oldest lastSeen down to TRIM_TO=2500) and persist is debounced (400ms trailing-edge) — without both, a `who`/`cinfo`/craft-hall burst calls the synchronous, blocking window.localStorage.setItem once per matched line, re-serializing the entire ever-growing map each time.
+Gotchas: affiliationCheckedAt is written only by auto-group.plugin.ts's whois (org '' plus the stamp = checked, no clan or kingdom); lastSeen is bumped by every setPerson, so it cannot age an affiliation. The DB is shared with auto-group.plugin.ts as well as people/highlighter.
 
 /questbot-stats-idb.ts
 Purpose: IndexedDB storage for QuestBot statistics with running aggregates and session management.
@@ -75,9 +92,6 @@ Purpose: Automatically recasts spells when they drop based on user-defined mappi
 /roller.plugin.ts
 Purpose: Automatically accepts or rejects stat rolls based on configurable thresholds and prompts.
 Also keeps per-enable roll stats (count/avg/median/max of stat TOTAL, counted once per answered prompt) shown in hud.rightColumn and a terminal line; stats are in memory only and reset on enable. Tests: roller.plugin.test.ts.
-
-/roller-stats.ts
-Purpose: Histogram-backed running count/average/median/max so a long reroll session stays bounded in memory.
 
 /speech-text.ts
 Purpose: Sanitizes text bound for a speech engine — strips the full escape-sequence set (any CSI final byte, private-mode toggles, OSC strings, a sequence cut off by a chunk boundary, stray control bytes), not just the SGR colors the other stripAnsi helpers remove, so the synthesizer never reads codes aloud.

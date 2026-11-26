@@ -3461,6 +3461,53 @@
       ]
     },
     {
+      "slug": "dreadwood-glade",
+      "areaName": "Dreadwood Glade",
+      "continent": "OceanSW",
+      "areaId": "DreadwoodGlade",
+      "levelRange": [
+        44,
+        51
+      ],
+      "startRoom": "Dreadwood Glade Entrance",
+      "speedwalkToStart": "",
+      "requiredActions": [],
+      "dirs": [
+        "n",
+        "w",
+        "nw",
+        "w",
+        "w",
+        "e",
+        "ne",
+        "sw",
+        "nw",
+        "w",
+        "w",
+        "w",
+        "e",
+        "e",
+        "e",
+        "se",
+        "e",
+        "se",
+        "e",
+        "s"
+      ],
+      "notes": "",
+      "isExcellentLevelingArea": false,
+      "recommendedTargets": [
+        {
+          "lookName": "Lumbering along before you is a large bipedal bear, snarling and growling at your presence.",
+          "engageName": "warrior"
+        },
+        {
+          "lookName": "An agile bipedal bear, sneaks about the forest, quietly watching and waiting.",
+          "engageName": "tracker"
+        }
+      ]
+    },
+    {
       "slug": "ghost-lake",
       "areaName": "Ghost Lake",
       "continent": "Althainia",
