@@ -1,4 +1,4 @@
-import { DAMAGE_VERBS, midDamage, parseBlowLine } from './damage.js';
+import { DAMAGE_VERBS, MAX_BLOW_LINE, midDamage, parseBlowLine } from './damage.js';
 
 describe('DAMAGE_VERBS', () => {
   it('are the verbs of dam_message with ranges that follow each other without a gap', () => {
@@ -44,6 +44,19 @@ describe('parseBlowLine', () => {
     expect(parseBlowLine('You say hello.')).toBeUndefined();
     expect(parseBlowLine('The goblin says hello to you.')).toBeUndefined();
     expect(parseBlowLine('')).toBeUndefined();
+    // immunity lines with an empty name or attack, or without their ending
+    expect(parseBlowLine('The goblin is unaffected by your !')).toBeUndefined();
+    expect(parseBlowLine('is unaffected by your fireball!')).toBeUndefined();
+    expect(parseBlowLine('The goblin is unaffected by your fireball.')).toBeUndefined();
+    expect(parseBlowLine("The goblin's  is powerless against you")).toBeUndefined();
+    expect(parseBlowLine("'s fireball is powerless against you.")).toBeUndefined();
+    // a long repetitive line, the shape that made the old patterns backtrack
+    expect(parseBlowLine(`a${" is unaffected by your a's a".repeat(20_000)}`)).toBeUndefined();
+    // the length limit: a blow of exactly MAX_BLOW_LINE characters is read (padding does not count), one more is not
+    const longest = `You hit ${'a'.repeat(MAX_BLOW_LINE - 'You hit .'.length)}.`;
+    expect(longest).toHaveLength(MAX_BLOW_LINE);
+    expect(parseBlowLine(`  ${longest}  `)).toMatchObject({ direction: 'dealt' });
+    expect(parseBlowLine(longest.replace('hit a', 'hit aa'))).toBeUndefined();
   });
 
   it('takes a doubled verb for the right range (hit and hits, miss and misses)', () => {

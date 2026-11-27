@@ -291,7 +291,7 @@ function octagon(x: number, y: number, size: number): string {
 
 function message(slice: MapSlice, text: string, view: RenderView): string {
   const title = escapeXml(slice.title);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120" width="420" height="120" role="img" aria-label="${title}" data-layout="${view.layout}" data-level="${escapeXml(slice.level)}"><title>${title}</title><text x="210" y="64" text-anchor="middle" font-size="14" font-family="sans-serif">${escapeXml(text)}</text></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120" width="420" height="120" role="img" aria-label="${title}" data-layout="${escapeXml(view.layout)}" data-level="${escapeXml(slice.level)}"><title>${title}</title><text x="210" y="64" text-anchor="middle" font-size="14" font-family="sans-serif">${escapeXml(text)}</text></svg>`;
 }
 
 const DIR_WORD: Readonly<Record<string, string>> = { N: 'north', NE: 'northeast', E: 'east', SE: 'southeast', S: 'south', SW: 'southwest', W: 'west', NW: 'northwest', U: 'up', D: 'down' };
@@ -335,7 +335,7 @@ function areaConnectors(slice: MapSlice, rects: ReadonlyMap<string, BoxRect>): s
     side.set(link.dir, (side.get(link.dir) ?? 0) + link.count);
   }
   const words = (m: Map<string, number>): string =>
-    [...m].sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0])).map(([dir, count]) => `${DIR_WORD[dir] ?? dir}${count > 1 ? ` (${count})` : ''}`).join(', ');
+    [...m].sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0])).map(([dir, count]) => `${escapeXml(DIR_WORD[dir] ?? dir)}${count > 1 ? ` (${count})` : ''}`).join(', ');
   const head = (px: number, py: number, ux: number, uy: number): string =>
     `<polygon points="${n(px)},${n(py)} ${n(px - ux * 9 - uy * 4.5)},${n(py - uy * 9 + ux * 4.5)} ${n(px - ux * 9 + uy * 4.5)},${n(py - uy * 9 - ux * 4.5)}" fill="${AREA_LINK_COLOR}"/>`;
   const all = [...rects.values()];
@@ -390,7 +390,7 @@ function continentSvg(slice: MapSlice, view: RenderView): string {
     // The area's place, sized by its rooms: hover names it with its room count, a click opens it.
     const attrs = `data-area="${escapeXml(area.id)}" fill="${DEFAULT_FILL}" stroke="#667"`;
     boxes.push(
-      `<rect ${attrs} x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="3"><title>${name} (${area.rooms} rooms)</title></rect>`,
+      `<rect ${attrs} x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="3"><title>${name} (${n(area.rooms)} rooms)</title></rect>`,
     );
     // The name grows with the box (9 px for a small one, up to 22 px for a big one) and wraps to as many lines as fit; a box too small to hold even a short
     // word of it goes without (its tooltip has the name), so a name never spills onto a neighbour.
@@ -419,7 +419,7 @@ function continentSvg(slice: MapSlice, view: RenderView): string {
   const width = Math.max(420, maxX + PAD);
   const height = Math.max(120, maxY + PAD + (note ? 24 : 0));
   const title = escapeXml(slice.title);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n(width)} ${n(height)}" width="${n(width)}" height="${n(height)}" role="img" aria-label="${title}" data-layout="${view.layout}" data-level="continent"><title>${title}</title>${boxes.join('')}${note}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n(width)} ${n(height)}" width="${n(width)}" height="${n(height)}" role="img" aria-label="${title}" data-layout="${escapeXml(view.layout)}" data-level="continent"><title>${title}</title>${boxes.join('')}${note}</svg>`;
 }
 
 export function renderSvg(slice: MapSlice, view: RenderView = { layout: 'grid' }): string {
@@ -736,5 +736,5 @@ export function renderSvg(slice: MapSlice, view: RenderView = { layout: 'grid' }
   const ghostAttr = ghostsSkipped ? ' data-ghosts="skipped"' : ghostCount > 0 ? ` data-ghosts="${ghostCount}"` : '';
   const sectorsAttr = sectorsSeen.size > 0 ? ` data-sectors="${TERRAIN.filter((t) => sectorsSeen.has(t.sector)).map((t) => t.sector).join(',')}"` : '';
   const title = escapeXml(slice.title);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n(width)} ${n(height)}" width="${n(width)}" height="${n(height)}" role="img" aria-label="${title}" data-layout="${view.layout}" data-level="${escapeXml(slice.level)}" data-floor="${n(z)}"${view.trace !== undefined ? ` data-trace="${escapeXml(view.trace)}"` : ''}${boundsAttr}${ghostAttr}${tangles > 0 ? ` data-tangles="${tangles}"` : ''}${sectorsAttr}><title>${title}</title>${ghostLayers.join('')}<g data-layer="links">${lines.join('')}</g><g data-layer="tiles">${tiles.join('')}</g>${traceLayer.length > 0 ? `<g data-layer="trace">${traceLayer.join('')}</g>` : ''}<g data-layer="labels">${texts.join('')}</g></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n(width)} ${n(height)}" width="${n(width)}" height="${n(height)}" role="img" aria-label="${title}" data-layout="${escapeXml(view.layout)}" data-level="${escapeXml(slice.level)}" data-floor="${n(z)}"${view.trace !== undefined ? ` data-trace="${escapeXml(view.trace)}"` : ''}${boundsAttr}${ghostAttr}${tangles > 0 ? ` data-tangles="${tangles}"` : ''}${sectorsAttr}><title>${title}</title>${ghostLayers.join('')}<g data-layer="links">${lines.join('')}</g><g data-layer="tiles">${tiles.join('')}</g>${traceLayer.length > 0 ? `<g data-layer="trace">${traceLayer.join('')}</g>` : ''}<g data-layer="labels">${texts.join('')}</g></svg>`;
 }

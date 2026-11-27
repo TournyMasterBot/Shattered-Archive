@@ -22,6 +22,7 @@
 
 import type { AreaFile, AreaHeaderSection, Room as MercRoom, RoomExit } from '@shatteredarchive/merc-area';
 import { layoutUnplaced } from '../layout.js';
+import { trimDashes } from '../trimDashes.js';
 import {
   LIMITS,
   MAP_SCHEMA_VERSION,
@@ -139,7 +140,7 @@ function countWarps(area: AreaFile): number {
 
 /** `ma-midgaard` from `midgaard.are`; characters the id pattern does not allow become dashes. */
 export function areaIdOf(file: string): string {
-  const stem = file.replace(/\.are$/i, '').toLowerCase().replace(/[^a-z0-9._:-]+/g, '-').replace(/^-+|-+$/g, '');
+  const stem = trimDashes(file.replace(/\.are$/i, '').toLowerCase().replace(/[^a-z0-9._:-]+/g, '-'));
   return `ma-${stem === '' ? 'area' : stem}`.slice(0, 62);
 }
 

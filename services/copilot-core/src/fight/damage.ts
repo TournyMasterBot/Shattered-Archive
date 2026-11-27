@@ -60,8 +60,24 @@ const YOU_PLAIN = new RegExp(`^You (${FIRST}) (.+?)([.!])$`);
 const YOU_SKILL = new RegExp(`^Your (.+?) (${THIRD}) (.+?)([.!])$`);
 const AT_YOU_SKILL = new RegExp(`^(.+?)'s (.+?) (${THIRD}) you([.!])$`);
 const AT_YOU_PLAIN = new RegExp(`^(.+?) (${THIRD}) you([.!])$`);
-const THEY_IMMUNE = /^(.+?) is unaffected by your (.+?)!$/;
-const YOU_IMMUNE = /^(.+?)'s (.+?) is powerless against you\.$/;
+
+/**
+ * `<head><middle><tail><end>` with a non-empty head and tail, split at the first `middle`. The immunity lines are cut with
+ * string searches because a regex with two open groups around fixed words backtracks quadratically on a hostile line.
+ */
+function splitAround(text: string, middle: string, end: string): [string, string] | undefined {
+  if (!text.endsWith(end)) return undefined;
+  const at = text.indexOf(middle, 1);
+  const from = at + middle.length;
+  const to = text.length - end.length;
+  return at < 0 || from >= to ? undefined : [text.slice(0, at), text.slice(from, to)];
+}
+
+/**
+ * A longer line is not read as a blow. A MUD line is around 80 columns, so this is far above any real one; it bounds the
+ * backtracking of the patterns above, which have open groups around the verbs.
+ */
+export const MAX_BLOW_LINE = 1024;
 
 export interface Blow {
   /** `dealt` is the character's blow, `taken` a blow at the character. */
@@ -86,6 +102,7 @@ export function midDamage(blow: Pick<Blow, 'min' | 'max'>): number {
 /** The blow in one line of game text (colour removed), or undefined when the line is not one the character takes part in. */
 export function parseBlowLine(line: string): Blow | undefined {
   const text = line.trim();
+  if (text.length > MAX_BLOW_LINE) return undefined;
   let m: RegExpExecArray | null;
   if ((m = YOU_PLAIN.exec(text))) {
     const verb = byFirst(m[1]);
@@ -104,7 +121,9 @@ export function parseBlowLine(line: string): Blow | undefined {
     const verb = byThird(m[2]);
     return { direction: 'taken', other: m[1], min: verb.min, max: verb.max };
   }
-  if ((m = THEY_IMMUNE.exec(text))) return { direction: 'dealt', other: m[1], attack: m[2], min: 0, max: 0 };
-  if ((m = YOU_IMMUNE.exec(text))) return { direction: 'taken', other: m[1], attack: m[2], min: 0, max: 0 };
+  const theyImmune = splitAround(text, ' is unaffected by your ', '!');
+  if (theyImmune) return { direction: 'dealt', other: theyImmune[0], attack: theyImmune[1], min: 0, max: 0 };
+  const youImmune = splitAround(text, "'s ", ' is powerless against you.');
+  if (youImmune) return { direction: 'taken', other: youImmune[0], attack: youImmune[1], min: 0, max: 0 };
   return undefined;
 }

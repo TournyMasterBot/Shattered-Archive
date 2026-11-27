@@ -11,6 +11,7 @@
 import { normalizeTitle, mintId } from '../identity.js';
 import { buildIndex } from '../hierarchy.js';
 import { layoutUnplaced } from '../layout.js';
+import { trimDashes } from '../trimDashes.js';
 import {
   cloneJson,
   DIRECTIONS,
@@ -56,12 +57,11 @@ export function emptyLayer(): MapFile {
 
 /** A name as an id: lower case, runs of other characters become one hyphen, at most 40 characters; `x` when nothing is left. */
 export function slugOf(name: string): string {
-  const slug = String(name ?? '')
+  const dashed = String(name ?? '')
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40)
-    .replace(/-+$/g, '');
+    .replace(/[^a-z0-9]+/g, '-');
+  // trimmed again after the cut, which can end on a hyphen
+  const slug = trimDashes(trimDashes(dashed).slice(0, 40));
   return slug === '' ? 'x' : slug;
 }
 

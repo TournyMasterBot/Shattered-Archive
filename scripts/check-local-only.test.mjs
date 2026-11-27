@@ -450,7 +450,7 @@ test('every proxied location is GET and OPTIONS only and goes to MUD Builder on 
 test("the vhost's file pattern is the area store's own, so nothing outside the area folder can be asked for", () => {
   const pattern = read('apps/mud-builder-server/src/area-store.ts').match(/AREA_FILE_RE = \/(.+)\/;/)?.[1];
   assert.ok(pattern);
-  assert.ok(vhost().includes(pattern.replace(/^\^/, '^/api/map/').replace(/\$$/, '$')), 'the vhost location uses the same expression');
+  assert.ok(vhost().includes(pattern.replace(/^\^/, '^/api/map/')),'the vhost location uses the same expression');
 });
 
 test('the allow list equals the Copilot vhost: loopback and private ranges, then deny all (E14)', () => {

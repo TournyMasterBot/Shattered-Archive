@@ -9,6 +9,20 @@ const lineOf = (out: string, from: string, to: string) => new RegExp(`<g data-ar
 // two boxes of 4 cells with 4 empty cells between them, side by side; a third one far to the south
 const three = [box('a', 'Alpha', 0, 0), box('b', 'Beta', 8, 0), box('c', 'Gamma', 0, 12)];
 
+describe('values the types call safe are escaped all the same', () => {
+  it('escapes the layout, the room count and an unknown direction when a caller passes markup', () => {
+    const bad = '"><script>' as never;
+    const areas = [{ ...three[0], rooms: bad }, three[1]];
+    const out = renderSvg(slice(areas, [{ from: 'a', to: 'b', dir: bad, count: 1 }]), { layout: bad });
+    expect(out).not.toContain('<script>');
+    expect(out).toContain('data-layout="&quot;&gt;&lt;script&gt;"');
+    expect(out).toContain('Alpha to Beta: &quot;&gt;&lt;script&gt;');
+    expect(out).toContain('Alpha (0 rooms)');
+    expect(renderSvg(slice([]), { layout: bad })).not.toContain('<script>');
+    expect(renderSvg({ ...slice([]), level: 'area' }, { layout: bad })).not.toContain('<script>');
+  });
+});
+
 describe('the lines between the areas of a continent', () => {
   it('draws no line when the slice has no area links', () => {
     expect(draw(three)).not.toContain('data-area-link');
