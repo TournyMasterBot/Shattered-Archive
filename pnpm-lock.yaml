@@ -523,8 +523,8 @@ importers:
   apps/psd-viewer-server:
     dependencies:
       ag-psd:
-        specifier: ^30.1.0
-        version: 30.2.0
+        specifier: ^31.0.1
+        version: 31.0.3
       cors:
         specifier: ^2.8.5
         version: 2.8.6
@@ -2539,8 +2539,8 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  ag-psd@30.2.0:
-    resolution: {integrity: sha512-tSAWfNzLl5brFqKEer7egxASZ1a0LwHnReM/D5VVpvrgdwdsa8OVfCQpysK7tGaOuE2tPEqp3mAuH7aIvPhcig==}
+  ag-psd@31.0.3:
+    resolution: {integrity: sha512-THDYK+WK1F5GOH4G0l4wkQRc0Cyq5tnxIwBezACKwa6idKygphnGgMISr4lmW6n0Q89ceoqpdPZQF3Y7TL1pgg==}
 
   agent-base@7.1.4:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
@@ -7406,7 +7406,7 @@ snapshots:
 
   acorn@8.17.0: {}
 
-  ag-psd@30.2.0:
+  ag-psd@31.0.3:
     dependencies:
       base64-js: 1.5.1
       pako: 2.1.0
