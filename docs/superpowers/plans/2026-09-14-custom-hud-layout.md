@@ -2461,7 +2461,7 @@ original implementation as submitted in community PR #151
 of that PR came back CHANGES_REQUESTED; hex337 gave an explicit go-ahead to take
 the branch over rather than iterate on it in place. That rework happened on
 `feature/hud-theme-engine`, tracked in its own plan document,
-`.ai-plans/20260920-0005-hud-theme-engine.md` — that doc's "Current State"
+`.ai-plans-completed/completed/20260920-0005-hud-theme-engine.md` — that doc's "Current State"
 section and Progress log are the authoritative, detailed history; this note is
 a summary pointer, not a replacement for it. The tasks above are left
 unedited/unchecked as a historical record of the original design — they do not

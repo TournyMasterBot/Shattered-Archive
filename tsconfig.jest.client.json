@@ -14,6 +14,9 @@
     "noEmit": true,
 
     "paths": {
+      "@shatteredarchive/copilot-core": ["./services/copilot-core/src/index.ts"],
+      "@shatteredarchive/shattered-maps-core": ["./services/shattered-maps-core/src/index.ts"],
+      "@shatteredarchive/merc-area": ["./services/merc-area/src/index.ts"],
       "@shatteredarchive/types-client": ["./types/types-client/src/index.ts"],
       "@shatteredarchive/types-global": ["./types/types-global/src/index.ts"],
       "@shatteredarchive/utils-client": ["./utils/utils-client/src/index.ts"],

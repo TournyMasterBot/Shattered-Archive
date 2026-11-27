@@ -95,7 +95,7 @@ export function DispatchEvent<T extends object>(name: string, payload: T) {
   }
 }
 
-export function RedispatchEvent<TIn extends object, TExtra extends object = {}>(
+export function RedispatchEvent<TIn extends object, TExtra extends object = object>(
   ev: Event,
   nextName: string,
   extra?: TExtra,
@@ -169,7 +169,7 @@ export function ListenEventAsync<T>(
  * Listen + Redispatch (no mapping)
  * Creates a passthrough listener for organizing workflows
  */
-export function ListenRedispatch<TIn extends object, TExtra extends object = {}>(
+export function ListenRedispatch<TIn extends object, TExtra extends object = object>(
   fromName: string,
   toName: string,
   extra?: TExtra,

@@ -1,0 +1,7 @@
+memoLast.ts and regexCache.ts exist for plugin code that runs on EVERY received line (standup, colorkit, text-to-speech). Both hand back SHARED objects, so callers must treat the result as read-only.
+
+memoLast keeps exactly ONE remembered argument. Two call sites that alternate with different inputs would thrash a single memo and never hit it, so each needs its own instance (text-to-speech builds one parser for include patterns and one for exclude patterns for that reason). It compares with Object.is, so an equal string built separately still hits.
+
+regexCache compiles each distinct pattern once, case-insensitive by default, and falls back to a literal substring test for text that is not a valid regex (an unbalanced paren must behave like plain text, not throw). Never pass the g or y flag: a cached RegExp carries lastIndex between calls and would silently skip matches. The cache is bounded and cleared wholesale when full, which only costs a recompile.
+
+Mirrors the mobile app's features/scripts/memo-last.ts and its compiledPattern cache; keep the behavior in step. Tests live beside each file.

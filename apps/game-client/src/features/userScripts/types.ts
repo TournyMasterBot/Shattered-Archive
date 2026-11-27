@@ -78,6 +78,19 @@ export interface TriggerContextEvent {
  * API exposed inside the sandboxed script.
  * We can grow this over time.
  */
+/**
+ * The outcome of calling a global script function, in the shape that lets a caller that cannot await (Lua, Python)
+ * still use the result when there is one to use at once.
+ *
+ *  - `settled: true`  the function finished before the call returned. `value` is what it returned as plain data,
+ *    or `error` says why it did not (already reported through api.error).
+ *  - `settled: false` it is still running (an async JS function, a Python script that sleeps). `promise`
+ *    resolves with the same `{ value }` / `{ error }` and never rejects.
+ */
+export type GlobalCall =
+  | { settled: true; value?: unknown; error?: string }
+  | { settled: false; promise: Promise<{ value?: unknown; error?: string }> };
+
 export interface ScriptSandboxApi {
   /**
    * Send a line of text as a game command.
@@ -138,6 +151,13 @@ export interface ScriptSandboxApi {
    * The "{thing}" portion is resolved inside the global file for that language.
    */
   runGlobal?: (globalId: string, args?: unknown) => Promise<unknown>;
+
+  /**
+   * runGlobal for callers that cannot await. Same identifiers and arguments, but the result comes back in a
+   * GlobalCall: usable immediately when the function finished at once, otherwise as a promise. The Lua and
+   * Python bridges use it so `local r = runGlobal(...)` keeps looking like an ordinary call.
+   */
+  runGlobalNow?: (globalId: string, args?: unknown) => GlobalCall;
 
   /**
    * Global key/value store (persisted to localStorage, cached in memory).

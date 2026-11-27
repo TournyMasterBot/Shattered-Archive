@@ -4,33 +4,32 @@ import type {
   AutoLevelConfig,
   AutoLevelMode,
   AutoLevelPhaseTriplet,
-  AutoLevelRunState,
   AutoLevelStepConfig,
 } from './autoleveling-types';
 import { createDefaultAutoLevelConfig } from './autoleveling-defaults';
 
 const VALID_MODES: AutoLevelMode[] = ['disabled', 'dry_run', 'auto_level', 'sightsee'];
 
-function isObj(x: unknown): x is Record<string, any> {
+function isObj(x: unknown): x is Record<string, unknown> {
   return !!x && typeof x === 'object';
 }
 
-function asBool(x: unknown, fallback: boolean): boolean {
+function _asBool(x: unknown, fallback: boolean): boolean {
   return typeof x === 'boolean' ? x : fallback;
 }
 
-function asNum(x: unknown, fallback: number): number {
+function _asNum(x: unknown, fallback: number): number {
   return typeof x === 'number' && Number.isFinite(x) ? x : fallback;
 }
 
-function asStrOrNull(x: unknown): string | null {
+function _asStrOrNull(x: unknown): string | null {
   if (x === null) return null;
   if (typeof x !== 'string') return null;
   const s = x.trim();
   return s.length ? s : null;
 }
 
-function newId(): string {
+function _newId(): string {
   try {
     return crypto.randomUUID();
   } catch {
@@ -53,7 +52,7 @@ function normalizeTriplet(x: unknown, fallback: AutoLevelPhaseTriplet): AutoLeve
   };
 }
 
-function normalizeSteps(x: unknown, fallback: AutoLevelStepConfig): AutoLevelStepConfig {
+function _normalizeSteps(x: unknown, fallback: AutoLevelStepConfig): AutoLevelStepConfig {
   if (!isObj(x)) return fallback;
 
   const start = normalizeTriplet(x.start, fallback.start);
@@ -73,7 +72,7 @@ function normalizeSteps(x: unknown, fallback: AutoLevelStepConfig): AutoLevelSte
   return { start, move, identify, fight, postFight, reset };
 }
 
-function normalizeEscapeCommands(x: unknown): string[] {
+function _normalizeEscapeCommands(x: unknown): string[] {
   if (!Array.isArray(x)) return [];
   return x.map((s) => (typeof s === 'string' ? s.trim() : '')).filter((s) => s.length > 0);
 }
@@ -83,7 +82,7 @@ function normalizeEscapeCommands(x: unknown): string[] {
  * `version: 3` and an empty `criticalBuffs`. Everything else is preserved so a
  * user's tuned timings / targets survive.
  */
-export function migrateAutoLevelConfigV2ToV3(v2: Record<string, any>): AutoLevelConfig {
+export function migrateAutoLevelConfigV2ToV3(v2: Record<string, unknown>): AutoLevelConfig {
   const def = createDefaultAutoLevelConfig();
   return {
     ...def,
@@ -100,13 +99,20 @@ export function migrateAutoLevelConfigV2ToV3(v2: Record<string, any>): AutoLevel
  * - Also supports older configs that accidentally placed fleePk/escapeCommands inside init.
  * - Migrates old `enabled: boolean` to the new `mode: AutoLevelMode` field.
  */
-function normalizeAutoLevelConfig(raw: AutoLevelConfig): AutoLevelConfig {
+function _normalizeAutoLevelConfig(raw: AutoLevelConfig): AutoLevelConfig {
   const def = createDefaultAutoLevelConfig();
 
   // Migrate: configs prior to mode used enabled:boolean — map to equivalent mode.
-  const rawMode = (raw as any).mode;
-  const rawEnabled = (raw as any).enabled;
-  const mode: AutoLevelMode = VALID_MODES.includes(rawMode)
+  // `raw` comes from storage and may predate typed fields (mode, ...): read it loosely.
+  const loose = raw as unknown as Record<string, unknown>;
+  // `abilityCooldowns` is a legacy field the current init type no longer declares; it is carried through as before.
+  const initLoose = loose.init as
+    | (Partial<AutoLevelConfig['init']> & { abilityCooldowns?: Record<string, unknown> })
+    | undefined;
+  const stepsLoose = loose.steps as Partial<AutoLevelConfig['steps']> | undefined;
+  const rawMode = loose.mode;
+  const rawEnabled = loose.enabled;
+  const mode: AutoLevelMode = VALID_MODES.includes(rawMode as AutoLevelMode)
     ? (rawMode as AutoLevelMode)
     : typeof rawEnabled === 'boolean'
       ? rawEnabled
@@ -119,23 +125,25 @@ function normalizeAutoLevelConfig(raw: AutoLevelConfig): AutoLevelConfig {
     ...raw,
     version: 3,
     mode,
-    criticalBuffs: Array.isArray((raw as any).criticalBuffs) ? (raw as any).criticalBuffs : def.criticalBuffs,
+    criticalBuffs: Array.isArray(loose.criticalBuffs)
+      ? (loose.criticalBuffs as AutoLevelConfig['criticalBuffs'])
+      : def.criticalBuffs,
     init: {
       ...def.init,
-      ...(raw as any).init,
+      ...initLoose,
       abilityCooldowns: {
-        ...((raw as any).init?.abilityCooldowns ?? {}),
+        ...(initLoose?.abilityCooldowns ?? {}),
       },
-    },
+    } as AutoLevelConfig['init'],
     steps: {
       ...def.steps,
-      ...(raw as any).steps,
-      start: { ...def.steps.start, ...(raw as any).steps?.start },
-      move: { ...def.steps.move, ...(raw as any).steps?.move },
-      identify: { ...def.steps.identify, ...(raw as any).steps?.identify },
-      fight: { ...def.steps.fight, ...(raw as any).steps?.fight },
-      postFight: { ...def.steps.postFight, ...(raw as any).steps?.postFight },
-      reset: { ...def.steps.reset, ...(raw as any).steps?.reset },
+      ...stepsLoose,
+      start: { ...def.steps.start, ...stepsLoose?.start },
+      move: { ...def.steps.move, ...stepsLoose?.move },
+      identify: { ...def.steps.identify, ...stepsLoose?.identify },
+      fight: { ...def.steps.fight, ...stepsLoose?.fight },
+      postFight: { ...def.steps.postFight, ...stepsLoose?.postFight },
+      reset: { ...def.steps.reset, ...stepsLoose?.reset },
     },
   };
 }

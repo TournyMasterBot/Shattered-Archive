@@ -27,11 +27,24 @@ export function useOpponentStatus(): {
   const [damageChunk, setDamageChunk] = useState<DamageChunk | null>(null);
   const chunkTimerRef = useRef<number | null>(null);
 
+  // `now` only exists to flip isEnemyActive off 5s after the last opponent line, so the 200 ms clock runs only
+  // while an enemy is active. An always-on clock re-rendered every enemy bar five times a second while idle.
   const [now, setNow] = useState(() => Date.now());
+  const lastSeenTs = enemyUi.lastSeenTs;
   useEffect(() => {
-    const t = window.setInterval(() => setNow(Date.now()), 200);
+    if (lastSeenTs <= 0) return;
+    // `now` is as old as the last tick, so refresh it before judging a line that may already be stale.
+    const start = Date.now();
+    setNow(start);
+    if (start - lastSeenTs > ENEMY_STALE_MS) return;
+
+    const t = window.setInterval(() => {
+      const tick = Date.now();
+      setNow(tick);
+      if (tick - lastSeenTs > ENEMY_STALE_MS) window.clearInterval(t);
+    }, 200);
     return () => window.clearInterval(t);
-  }, []);
+  }, [lastSeenTs]);
 
   useEffect(() => {
     const dispose = ListenEvent<OpponentStatusDetail>(

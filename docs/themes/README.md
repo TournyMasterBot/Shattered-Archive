@@ -12,7 +12,7 @@ not just its colors — so it was collapsed into one registry where each theme
 owns its shell component(s), its skin, and (optionally) which plugins it
 depends on. `slate-amber` is the first theme built on this engine, alongside
 the original `default` (classic) theme. Full build history:
-`.ai-plans/20260920-0005-hud-theme-engine.md`.
+`.ai-plans-completed/completed/20260920-0005-hud-theme-engine.md`.
 
 ## Start here
 

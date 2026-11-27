@@ -40,3 +40,14 @@ it is the COMMAND, but passes it through verbatim as a string ARGUMENT — so `n
 (node.exe, etc.) receives a path as data, give it the **`C:/…` form** (or prefix the call with
 `MSYS_NO_PATHCONV=1`). The dedicated Read/Glob/Grep tools take `/c/…` fine — this only bites native
 exes reading a path you passed as an argument/string.
+
+## Running tests (never a bare jest)
+
+Run tests through the package script: `pnpm --filter <pkg> test` (it passes `--runInBand`, and the game client's also scopes by path). Never call
+`jest` or `pnpm exec jest` by hand without `--runInBand` (or `--maxWorkers` 1-4): jest starts one worker per core, a worker on this suite holds
+about 4 GB, and on 2026-11-19 one bare run used 112 GB and froze the machine. An interrupted tool call does NOT stop the processes it started:
+after an interrupt, check for leftover `jest-worker` processes and free memory before anything else.
+
+Guards, in layers: `maxWorkers: 4` in `jest.config.cjs` (a bare run by anyone); `.claude/hooks/jest-guard.js` (denies the command for the
+agent); `scripts/check-jest-workers.mjs` (fails a package script, workflow step or Dockerfile line that runs jest unbounded; a step in
+`.github/workflows/ci-test-coverage.yml` and part of `pnpm test:guards`).

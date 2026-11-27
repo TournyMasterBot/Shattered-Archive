@@ -1,0 +1,579 @@
+/* apps/game-client/src/styles/WorldMapWindow.module.scss
+   The map window: position: fixed with no backdrop, so the game behind it stays usable. Dark chrome that follows the HUD theme tokens
+   (--sa-panel-bg, --sa-panel-border, --sa-accent) with the default theme's values as fallbacks; the picture card is deliberately LIGHT because the
+   shared renderer draws light tiles with dark labels. Every control sits on the picture or in a slim bar and stays out of the way. */
+$text: #f0f0f0;
+$text-dim: #a8a8a8;
+$chrome: rgba(24, 26, 29, 0.82);
+$chrome-border: rgba(255, 255, 255, 0.22);
+
+.window {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: var(--sa-panel-bg, #121212);
+  color: $text;
+  color-scheme: dark;
+  border: 1px solid var(--sa-panel-border, #2b2b2b);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  font-size: 0.82rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px 3px 10px;
+  min-height: 26px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--sa-panel-border, #2b2b2b);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.title {
+  flex: none;
+  font-weight: 700;
+}
+
+.areaName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: $text-dim;
+}
+
+.iconButton {
+  flex: none;
+  width: 24px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  color: $text;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  &:active {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--sa-accent, #8bc34a);
+    outline-offset: 1px;
+  }
+
+  &[aria-expanded='true'] {
+    background: rgba(255, 255, 255, 0.18);
+  }
+}
+
+.body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #f4f5f7;
+  color: #222;
+  color-scheme: light;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--sa-accent, #8bc34a);
+    outline-offset: -2px;
+  }
+}
+
+.stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+
+  svg {
+    display: block;
+    max-width: none;
+  }
+
+  // exits into another area, and floors drawn behind this one, can be clicked
+  :global([data-offpage-to]),
+  :global([data-ghost-floor]) {
+    cursor: pointer;
+  }
+
+  :global([data-ghost-floor]:hover) {
+    stroke: var(--sa-accent, #e0a94a);
+    stroke-width: 2;
+  }
+
+  :global([data-offpage-to]:hover) {
+    fill: rgba(31, 95, 191, 0.25);
+  }
+
+  // the player's room (set after the picture is drawn)
+  :global([data-current='true']) {
+    stroke: var(--sa-accent, #e0a94a);
+    stroke-width: 4;
+    fill: #fff3c4;
+  }
+}
+
+.empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 16px;
+  text-align: center;
+  color: #4a5059;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* ---- overlays on the picture: small, translucent, and out of the way ---- */
+
+.controls {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.control,
+.floor,
+.back {
+  background: $chrome;
+  color: $text;
+  border: 1px solid $chrome-border;
+  border-radius: 5px;
+  font: inherit;
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+
+  &:hover:not(:disabled) {
+    background: rgba(60, 66, 74, 0.92);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  &:active:not(:disabled) {
+    background: rgba(84, 92, 102, 0.95);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--sa-accent, #8bc34a);
+    outline-offset: 1px;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.control {
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  font-size: 1rem;
+  line-height: 1;
+
+  // a toggle that is on (Show where I am): a red edge, like its dot
+  &[aria-pressed='true'] {
+    border-color: #e5252a;
+  }
+}
+
+.floors {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: calc(100% - 20px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.floor {
+  min-width: 26px;
+  height: 22px;
+  padding: 0 4px;
+  font-size: 0.75rem;
+
+  &[aria-pressed='true'] {
+    background: var(--sa-accent, #8bc34a);
+    border-color: var(--sa-accent, #8bc34a);
+    color: #101010;
+    font-weight: 700;
+  }
+}
+
+.back {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100% - 80px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 3px 10px;
+  font-size: 0.78rem;
+}
+
+.menu {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  min-width: 200px;
+  padding: 8px 10px;
+  background: rgba(24, 26, 29, 0.96);
+  border: 1px solid $chrome-border;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  font-size: 0.8rem;
+
+  fieldset {
+    margin: 0 0 6px;
+    padding: 0;
+    border: 0;
+  }
+
+  legend {
+    padding: 0;
+    margin-bottom: 2px;
+    color: $text-dim;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 0;
+    cursor: pointer;
+  }
+
+  input:focus-visible {
+    outline: 2px solid var(--sa-accent, #8bc34a);
+    outline-offset: 1px;
+  }
+
+  input {
+    accent-color: var(--sa-accent, #8bc34a);
+  }
+}
+
+.check {
+  margin-top: 2px;
+}
+
+.status {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 10px 3px;
+  min-height: 18px;
+  border-top: 1px solid var(--sa-panel-border, #2b2b2b);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.74rem;
+  color: $text-dim;
+}
+
+.statusText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.credit {
+  flex: none;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.75;
+}
+
+.resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  touch-action: none;
+  background: linear-gradient(
+    135deg,
+    transparent 50%,
+    rgba(255, 255, 255, 0.35) 50%,
+    rgba(255, 255, 255, 0.35) 56%,
+    transparent 56%,
+    transparent 70%,
+    rgba(255, 255, 255, 0.35) 70%,
+    rgba(255, 255, 255, 0.35) 76%,
+    transparent 76%
+  );
+}
+
+/* ---- the add-a-room panel: lies over the picture inside the window (no extra dialog), scrolls when the window is small ---- */
+.addPanel {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: auto;
+  padding: 8px 10px 10px;
+  background: rgba(18, 20, 23, 0.98);
+  color: $text;
+  font-size: 0.78rem;
+
+  h3 {
+    margin: 0 0 2px;
+    font-size: 0.9rem;
+  }
+
+  p {
+    margin: 0 0 6px;
+    color: $text-dim;
+  }
+
+  fieldset {
+    margin: 0 0 8px;
+    padding: 0;
+    border: 0;
+  }
+
+  legend {
+    padding: 0;
+    margin-bottom: 3px;
+    color: $text-dim;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  input[type='text'],
+  select {
+    box-sizing: border-box;
+    min-width: 0;
+    padding: 2px 4px;
+    color: $text;
+    background: #1d2024;
+    border: 1px solid $chrome-border;
+    border-radius: 4px;
+    font: inherit;
+  }
+
+  input:focus-visible,
+  select:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--sa-accent, #8bc34a);
+    outline-offset: 1px;
+  }
+
+  button {
+    padding: 2px 8px;
+    color: $text;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid $chrome-border;
+    border-radius: 4px;
+    font: inherit;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+  }
+}
+
+.addRow {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  align-items: center;
+  gap: 4px 6px;
+  margin-bottom: 3px;
+
+  > :nth-child(even) {
+    min-width: 0;
+  }
+}
+
+.addExit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+
+  select {
+    max-width: 14rem;
+  }
+
+  input[type='text'] {
+    width: 7rem;
+  }
+}
+
+/* Save and Cancel stay in view at the bottom of the panel while the form scrolls (the window is small) */
+.addActions {
+  position: sticky;
+  bottom: -10px;
+  display: flex;
+  gap: 6px;
+  margin: 8px -10px 6px;
+  padding: 6px 10px;
+  background: rgba(18, 20, 23, 0.98);
+  border-top: 1px solid $chrome-border;
+}
+
+.addError {
+  color: #ff9a8a;
+}
+
+.addMine {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid $chrome-border;
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 1px 0;
+  }
+}
+
+.addButton {
+  flex: none;
+  margin-left: 6px;
+  padding: 0 8px;
+  color: $text;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid $chrome-border;
+  border-radius: 4px;
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--sa-accent, #8bc34a);
+    outline-offset: 1px;
+  }
+}
+
+.menuAction {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 2px 6px;
+  color: $text;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid $chrome-border;
+  border-radius: 4px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--sa-accent, #8bc34a);
+    outline-offset: 1px;
+  }
+}
+
+/* the help (the blue i) lies over the picture, like the add-a-room panel */
+.helpOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: rgba(18, 20, 23, 0.98);
+}
+
+// The cloud backup section of the gear popover: a short note, two buttons and the result of the last press.
+.backupNote,
+.backupResult {
+  max-width: 240px;
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: $text-dim;
+}
+
+.backupResult {
+  color: $text;
+}
+
+// `.menu fieldset` sets the margins of every group, so this must be as specific to win
+.menu .backup {
+  margin-top: 10px;
+}
+
+// The small Map choice at the top of the gear (drawn only when the build knows more than one world).
+.worldPick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid $chrome-border;
+  color: $text-dim;
+  font-size: 0.72rem;
+
+  select {
+    flex: 1;
+    min-width: 0;
+    color: $text;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid $chrome-border;
+    border-radius: 4px;
+    font: inherit;
+    color-scheme: dark;
+  }
+}

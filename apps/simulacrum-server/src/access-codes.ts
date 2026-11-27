@@ -5,7 +5,7 @@ import path from 'path';
 /**
  * AI-ANNOTATION
  * @ai-summary Single-use, short-lived access codes gating every simulacrum connection
- *   (.ai-plans/20260816-0701-simulacrum-mud-wiring.md Step 1). Plain `key: value` text
+ *   (.ai-plans-completed/completed/20260816-0701-simulacrum-mud-wiring.md Step 1). Plain `key: value` text
  *   files, one per code, mirroring merc-mud's own state_snapshot.c file-handshake
  *   convention (tmp-then-rename atomic write) even though nothing on the C side reads
  *   these — kept consistent since the follow-on plan's preamble mechanism lives right

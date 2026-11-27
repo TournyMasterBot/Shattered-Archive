@@ -5,8 +5,9 @@ as a plain, ANSI-colorized transcript side-by-side with the file you're
 looking at — a lightweight sibling to the full
 [DslLogViewer](../../../DslLogViewer) web app, with none of its damage
 parsing, playback controls, or other analysis. Just the game text, colored,
-in a panel you can search with the browser's own Find (`Ctrl+F` while the
-preview has focus).
+in a panel you can search with VS Code's webview Find widget (`Ctrl+F` while
+the preview has focus; the panel opts in with `enableFindWidget: true`, since
+webviews have no Find otherwise).
 
 ## What it renders
 

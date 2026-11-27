@@ -1,0 +1,10 @@
+/* Page base for the neutral viewer (the one global rule file it has): the window is dark all the way to its edges, and the type does not
+   depend on the classic editor's global styles having loaded first. */
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  background: #121212;
+  color-scheme: dark;
+}

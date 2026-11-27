@@ -1,5 +1,6 @@
 // apps\game-client\src\features\plugins\core-plugins\respell.plugin.ts
 import type { IPluginModule, PluginRuntimeApi } from '@shatteredarchive/types-client';
+import { scheduleDroppable } from '../../connection/sessionGate';
 
 /**
  * A spell entry defines what command to use when an affect drops.
@@ -178,7 +179,8 @@ export function createRespellPlugin(): IPluginModule {
         if (cfg.debug) api.log(`"${affectName}" dropped → "${match.command}" (delay: ${delayMs}ms)`);
 
         if (delayMs > 0) {
-          window.setTimeout(() => api.sendCommand(match.command), delayMs);
+          // a dropped connection cancels the waiting recast
+          scheduleDroppable(() => api.sendCommand(match.command), delayMs);
         } else {
           api.sendCommand(match.command);
         }
@@ -204,9 +206,17 @@ export function createRespellPlugin(): IPluginModule {
         lastTrueupNames = current;
       });
 
+      // What was up belonged to the session that ended: without this, whatever wore off while away (or every spell, after logging in
+      // another character) would be recast at the first list of the next session.
+      const offClose = api.onEvent('game:remote-server:close', () => {
+        lastTrueupNames = null;
+        lastRecast.clear();
+      });
+
       return () => {
         offRemoved();
         offTrueup();
+        offClose();
       };
     },
   };

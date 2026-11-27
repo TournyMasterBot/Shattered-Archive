@@ -1,0 +1,13 @@
+File Index
+
+/azahIndex.ts
+Purpose: Matches what the game printed to rooms of the community map. A room is NEVER identified by its title (3,273 of the first 4,350 walked rooms shared a title with several Azah rooms): the match is title AND description (exact, then the first 100 normalized characters), the title alone only for a view with no description, then narrowed to the rooms whose exits fit best. Shared by the tracer and the layer comparison so both match the same way.
+
+/trace.ts
+Purpose: Verifies Azah against a WALK by keeping the SET of Azah rooms the player could be in; it is the verification the map build uses, because a layer of walked rooms duplicates rooms whenever a view fits several known ones (about 10,000 walked rooms tied uniquely to only 1,100 Azah rooms). A step is evidence for a link only when the room it left was known exactly (one candidate, or only one candidate had a matching exit); a step from several possible rooms is counted ambiguous and blames no link. After a step that cannot be followed the player is placed again from the view alone. A dark view loses the position. Same call shape as WorldMemory (apply, endSession, noteRefused) so the log replay drives both.
+
+/verify.ts
+Purpose: The weaker check: compares a layer of WALKED rooms (Copilot world memory) with Azah, narrowing ambiguous rooms by neighbours. Keep it for what the world memory itself holds; judge Azah with trace.ts. `walked-conflict` can only arise here (a layer records that one exit led to several places); the tracer never raises it.
+
+/slices.ts
+Purpose: Joins per-area slices (the layout the importer and the publisher write) into one map; the first copy of an area or link wins.

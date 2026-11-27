@@ -1,0 +1,833 @@
+/* apps/game-client/src/styles/SimulacrumAdminWindow.module.scss
+   Local-only Simulacrum Admin window. Dark palette shared with the Autopilot wizard and the Copilot window. The window is
+   position: fixed with no backdrop; only the window takes pointer events, so the game behind it stays clickable. */
+$bg: #121212;
+$bg-raised: #181818;
+$bg-inset: #101010;
+$border: #2b2b2b;
+$text: #f0f0f0;
+$text-dim: #a8a8a8;
+$accent: #8bc34a;
+$warn: #e0b341;
+$bad: #e57373;
+
+.window {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: $bg;
+  color: $text;
+  color-scheme: dark;
+  border: 1px solid $border;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  font-size: 0.86rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: $bg-raised;
+  border-bottom: 1px solid $border;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.title {
+  flex: none;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.connection {
+  /* the only part of the header that gives way when the window is narrow */
+  min-width: 0;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: $accent;
+  white-space: nowrap;
+}
+
+.connectionText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* never shrinks: it is short, and it is the one thing the host name must not push out of a narrow title bar */
+.level {
+  flex: none;
+  font-size: 0.78rem;
+  color: $text;
+  white-space: nowrap;
+}
+
+.dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.close {
+  flex: none;
+  background: transparent;
+  color: $text-dim;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    color: $text;
+    border-color: $border;
+  }
+  &:focus-visible {
+    outline: 2px solid $accent;
+    outline-offset: 1px;
+  }
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.tabs {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 10px 0;
+  border-bottom: 1px solid $border;
+  background: $bg;
+}
+
+.tab {
+  background: transparent;
+  color: $text-dim;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  padding: 5px 12px;
+  font: inherit;
+  cursor: pointer;
+
+  &:hover {
+    color: $text;
+    background: $bg-raised;
+  }
+  &:focus-visible {
+    outline: 2px solid $accent;
+    outline-offset: -2px;
+  }
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  &[aria-selected='true'] {
+    color: $text;
+    background: $bg-raised;
+    border-color: $border;
+    box-shadow: inset 0 2px 0 $accent;
+  }
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+  scrollbar-color: #3a3a3a $bg-inset;
+  scrollbar-width: thin;
+
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  &::-webkit-scrollbar-track {
+    background: $bg-inset;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #3a3a3a;
+    border-radius: 5px;
+  }
+}
+
+.panel[hidden] {
+  display: none;
+}
+
+.empty {
+  margin: 0;
+  color: $text-dim;
+}
+
+.resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+  touch-action: none;
+  background: linear-gradient(135deg, transparent 50%, #4a4a4a 50%, #4a4a4a 60%, transparent 60%, transparent 72%, #4a4a4a 72%, #4a4a4a 82%, transparent 82%);
+}
+
+/* ---- GMCP tab (Phase 5) ---- */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.gmcp {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.smallButton {
+  background: $bg-raised;
+  color: $text;
+  border: 1px solid $border;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font: inherit;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    border-color: #4a4a4a;
+  }
+  &:focus-visible {
+    outline: 2px solid $accent;
+    outline-offset: 1px;
+  }
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  &[aria-pressed="true"] {
+    border-color: $accent;
+    color: $accent;
+  }
+}
+
+.field {
+  display: inline-flex;
+}
+
+.select,
+.input {
+  background: $bg-inset;
+  color: $text;
+  color-scheme: dark;
+  border: 1px solid $border;
+  border-radius: 6px;
+  padding: 3px 6px;
+  font: inherit;
+  caret-color: $accent;
+
+  &::placeholder {
+    color: $text-dim;
+    opacity: 1;
+  }
+  &::selection {
+    background: rgba(139, 195, 74, 0.35);
+    color: $text;
+  }
+  &:focus-visible {
+    outline: 2px solid $accent;
+    outline-offset: 1px;
+  }
+  &:disabled {
+    opacity: 0.45;
+  }
+  &:invalid {
+    border-color: $bad;
+  }
+}
+
+.input {
+  flex: 1;
+  min-width: 120px;
+}
+
+.notice {
+  margin: 0;
+  padding: 6px 8px;
+  border: 1px solid $warn;
+  border-radius: 6px;
+  color: $warn;
+}
+
+.counts {
+  margin: 0;
+  color: $text-dim;
+  font-size: 0.78rem;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(180px, 2fr) minmax(0, 3fr);
+  gap: 8px;
+  min-height: 180px;
+}
+
+.messageList,
+.detail {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 340px;
+  overflow: auto;
+  background: $bg-inset;
+  border: 1px solid $border;
+  border-radius: 6px;
+  scrollbar-color: #3a3a3a $bg-inset;
+  scrollbar-width: thin;
+
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  &::-webkit-scrollbar-track {
+    background: $bg-inset;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #3a3a3a;
+    border-radius: 5px;
+  }
+}
+
+.detail {
+  padding: 6px;
+}
+
+.messageRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  color: $text;
+  border: 0;
+  border-bottom: 1px solid $border;
+  padding: 4px 8px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: $bg-raised;
+  }
+  &:focus-visible {
+    outline: 2px solid $accent;
+    outline-offset: -2px;
+  }
+  &[aria-pressed="true"] {
+    background: $bg-raised;
+    box-shadow: inset 3px 0 0 $accent;
+  }
+}
+
+.time,
+.size {
+  color: $text-dim;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.pkg {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badgeBad,
+.badgeWarn {
+  border-radius: 4px;
+  padding: 0 6px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+.badgeBad {
+  border: 1px solid $bad;
+  color: $bad;
+}
+.badgeWarn {
+  border: 1px solid $warn;
+  color: $warn;
+}
+
+.json {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  color: $text;
+
+  &::selection {
+    background: rgba(139, 195, 74, 0.35);
+  }
+}
+
+.parity {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.packageList,
+.findings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.packageCard {
+  padding: 8px 10px;
+  background: $bg-raised;
+  border: 1px solid $border;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  &[data-status="match"] {
+    border-left: 3px solid $accent;
+  }
+  &[data-status="noted"] {
+    border-left: 3px solid #6fa8dc;
+  }
+  &[data-status="differs"] {
+    border-left: 3px solid $bad;
+  }
+  &[data-status="not-seen"] {
+    border-left: 3px solid #555;
+  }
+}
+
+.packageHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.statusText {
+  color: $text-dim;
+  font-size: 0.78rem;
+}
+
+.findings li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.82rem;
+
+  &[data-severity="error"] .severity {
+    color: $bad;
+  }
+  &[data-severity="warn"] .severity {
+    color: $warn;
+  }
+  &[data-severity="info"] .severity {
+    color: #6fa8dc;
+  }
+}
+
+.severity {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* ---- Commands tab ---- */
+.commands {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.commandsSplit {
+  display: grid;
+  grid-template-columns: minmax(150px, 2fr) minmax(0, 3fr);
+  gap: 8px;
+  min-height: 200px;
+}
+
+.commandList,
+.commandForm,
+.activityList,
+.reply {
+  background: $bg-inset;
+  border: 1px solid $border;
+  border-radius: 6px;
+  scrollbar-color: #3a3a3a $bg-inset;
+  scrollbar-width: thin;
+
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  &::-webkit-scrollbar-track {
+    background: $bg-inset;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #3a3a3a;
+    border-radius: 5px;
+  }
+}
+
+.commandList {
+  max-height: 360px;
+  overflow: auto;
+  padding: 4px;
+}
+
+.commandForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  max-height: 360px;
+  overflow: auto;
+  min-width: 0;
+}
+
+.groupHeading {
+  margin: 6px 4px 2px;
+  color: $text-dim;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.commandButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: transparent;
+  color: $text;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  padding: 3px 6px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: $bg-raised;
+  }
+  &:focus-visible {
+    outline: 2px solid $accent;
+    outline-offset: 1px;
+  }
+  &[aria-selected="true"],
+  &[aria-pressed="true"] {
+    border-color: $accent;
+    color: $accent;
+  }
+  &[data-dimmed="true"] {
+    opacity: 0.5;
+  }
+}
+
+.commandName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary {
+  margin: 0;
+  color: $text-dim;
+}
+
+.radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  accent-color: $accent;
+}
+
+.fieldRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.fieldLabel {
+  flex: 0 0 9em;
+  color: $text-dim;
+  font-size: 0.8rem;
+}
+
+.fieldError {
+  flex-basis: 100%;
+  margin-left: 9.4em;
+  color: $bad;
+  font-size: 0.78rem;
+}
+
+.previewRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.preview {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: 3px 6px;
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 6px;
+  color: $accent;
+}
+
+.runButton {
+  background: $accent;
+  color: #121212;
+  border: 1px solid $accent;
+  border-radius: 6px;
+  padding: 4px 14px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.1);
+  }
+  &:focus-visible {
+    outline: 2px solid $text;
+    outline-offset: 2px;
+  }
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.confirm {
+  padding: 8px;
+  border: 1px solid $warn;
+  border-radius: 6px;
+  background: rgba(224, 179, 65, 0.08);
+}
+
+.confirmText {
+  margin: 0 0 6px;
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1px solid $border;
+  border-left-width: 3px;
+  border-radius: 6px;
+
+  &[data-tone="accepted"] {
+    border-left-color: $accent;
+  }
+  &[data-tone="refused"] {
+    border-left-color: $bad;
+  }
+  &[data-tone="unknown"] {
+    border-left-color: $warn;
+  }
+  &[data-tone="info"] {
+    border-left-color: #6fa8dc;
+  }
+}
+
+.reply {
+  margin: 0;
+  padding: 6px;
+  max-height: 160px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+  color: $text;
+
+  &::selection {
+    background: rgba(139, 195, 74, 0.35);
+    color: $text;
+  }
+}
+
+/* ---- Activity tab ---- */
+.activityList {
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  max-height: 380px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.activityItem {
+  padding: 6px;
+  border: 1px solid $border;
+  border-left-width: 3px;
+  border-radius: 6px;
+  background: $bg;
+
+  &[data-verdict="accepted"] {
+    border-left-color: $accent;
+  }
+  &[data-verdict="refused"] {
+    border-left-color: $bad;
+  }
+  &[data-verdict="unknown"] {
+    border-left-color: $warn;
+  }
+}
+
+.verdictBadge {
+  padding: 0 6px;
+  border: 1px solid $border;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+
+  &[data-verdict="accepted"] {
+    color: $accent;
+  }
+  &[data-verdict="refused"] {
+    color: $bad;
+  }
+  &[data-verdict="unknown"] {
+    color: $warn;
+  }
+}
+
+.sentLine {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ---- World tab and room picker ---- */
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pickerColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+
+  /* the lists inside a column are the scrolling areas */
+  ul {
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    max-height: 220px;
+    overflow: auto;
+  }
+}
+
+.vnum {
+  flex: none;
+  min-width: 4.5em;
+  color: $accent;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Server tab cards ---- */
+.card {
+  border: 1px solid $border;
+  border-radius: 8px;
+  background: $bg-raised;
+  overflow: hidden;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  background: transparent;
+  color: $text;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: #1e1e1e;
+  }
+  &:focus-visible {
+    outline: 2px solid $accent;
+    outline-offset: -2px;
+  }
+  &[aria-expanded="true"] {
+    border-bottom: 1px solid $border;
+    color: $accent;
+  }
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+}

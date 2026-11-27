@@ -1,0 +1,26 @@
+{
+  "name": "@shatteredarchive/copilot-server",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "jest --config ./jest.config.cjs --runInBand --passWithNoTests",
+    "format": "prettier --write \"src/**/*.{ts,json}\"",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "replay:world": "tsx src/world/replayMain.ts",
+    "replay:trace": "tsx src/world/traceMain.ts",
+    "export:bundle": "cross-env NODE_USE_SYSTEM_CA=1 tsx src/teacher/main.ts export",
+    "import:finding": "cross-env NODE_USE_SYSTEM_CA=1 tsx src/teacher/main.ts import",
+    "accept:ticket": "cross-env NODE_USE_SYSTEM_CA=1 tsx src/teacher/main.ts accept",
+    "persona:feedback": "cross-env NODE_USE_SYSTEM_CA=1 tsx src/teacher/main.ts persona-feedback",
+    "training:metrics": "cross-env NODE_USE_SYSTEM_CA=1 tsx src/teacher/main.ts metrics"
+  },
+  "dependencies": {
+    "@shatteredarchive/copilot-core": "workspace:*",
+    "@shatteredarchive/shattered-maps-core": "workspace:*",
+    "express": "^5.2.1"
+  }
+}

@@ -1,0 +1,3 @@
+Archive of work that left .ai-plans/. Nothing here is scanned by the plan hook, the qplan skill or qwen `/plan`.
+- `<yyyy-mm-dd_slug>/`: a work item the user signed off, waiting for /pr-review and /pr-package. /pr-package moves its documentation and `screenshots/showcase/` to ../.pr/<slug>/; only the git-ignored `screenshots/incremental/` stays behind.
+- `completed/` and `closed-incomplete/`: older flat plans, kept at their original file names, so `.ai-plans-completed/<sub>/<name>.md` is the old path with the folder swapped. `completed/` = every step done; `closed-incomplete/` = marked COMPLETE with steps never executed (play-tests, device checks, deferred work); read the progress log before assuming the feature was verified.

@@ -2,19 +2,33 @@
 
 import { memoryKvStore } from './autoleveling-idb';
 import {
+  SYNCED_RECORD_KINDS,
   __setUserDataStoreForTests,
   addCustomTarget,
   bumpLearnedCooldown,
+  deleteTargetOverride,
   exportAll,
   getBuffOverlay,
+  getBuffOverlayOrNull,
   getCustomTargets,
   getFightOverlay,
+  getFightOverlayOrNull,
   getLearnedCooldown,
   getPrefs,
+  getRouteOverride,
+  getTargetOverrides,
   importRecords,
+  normalizeRecord,
+  removeCustomTarget,
+  resetRouteOverride,
+  resetTargetOverride,
   setBuffOverlay,
   setFightOverlay,
   setPrefs,
+  setRouteOverride,
+  setTargetOverride,
+  updateCustomTarget,
+  upsertCustomPath,
 } from './autoleveling-user-data';
 
 // ensureMigrated() memoizes its promise per module instance — reset the module
@@ -163,5 +177,427 @@ describe('autoleveling-user-data', () => {
     expect(again).toHaveLength(1);
 
     localStorage.clear();
+  });
+});
+
+describe('every exported kind is one the server accepts (E20, CLOUDSYNC-01)', () => {
+  // Mirror of the server's AutolevelUserRecords.Kinds (DSL repo); the C# test pins the same literal.
+  const SERVER_KINDS = ['target', 'buff', 'fight', 'path', 'pref', 'abilityTiming', 'targetOverride', 'routeOverride'];
+
+  it('SYNCED_RECORD_KINDS equals the server list', () => {
+    expect([...SYNCED_RECORD_KINDS]).toEqual(SERVER_KINDS);
+  });
+
+  it('exportAll after using every feature only ever yields kinds in that list', async () => {
+    __setUserDataStoreForTests(memoryKvStore());
+    await addCustomTarget('a', { lookName: 'A scout.', engageName: 'scout' });
+    await setBuffOverlay('a', [{ label: 'Sanc', cmd: 'cast sanctuary' }]);
+    await setFightOverlay('a', 'Warrior', [{ cmd: 'bash', cooldownSec: 1 }]);
+    await setPrefs({ playerClass: 'warrior' });
+    await upsertCustomPath({ id: 'p', name: 'p', continentName: 'c', areaName: 'a', mode: 'auto_level', steps: [], raw: '' } as any);
+    await bumpLearnedCooldown('bash', 2);
+    await setTargetOverride('a', RANGER, { engageName: 'rng' });
+    await setRouteOverride('a', ['n'], ['n', 'e']);
+
+    const kinds = new Set((await exportAll()).map((r) => r.kind));
+    expect([...kinds].sort()).toEqual([...SERVER_KINDS].sort());
+    for (const k of kinds) expect(SERVER_KINDS).toContain(k);
+  });
+});
+
+const RANGER = { lookName: 'A centaur ranger eyes you warily.', engageName: 'ranger' };
+const RANGER_KEY = 'a centaur ranger eyes you warily.';
+
+describe('target overrides (E1, E6, E15, E16, E22)', () => {
+  beforeEach(() => __setUserDataStoreForTests(memoryKvStore()));
+
+  it('stores only what differs and reads it back for the right area only', async () => {
+    const res = await setTargetOverride('centaur-village', RANGER, { engageName: 'rng' });
+    expect(res.ok).toBe(true);
+
+    const mine = await getTargetOverrides('centaur-village');
+    expect(mine).toHaveLength(1);
+    expect(mine[0]).toMatchObject({ kind: 'targetOverride', areaSlug: 'centaur-village', data: { key: RANGER_KEY, engageName: 'rng' } });
+    expect(mine[0].data).not.toHaveProperty('lookName');
+    expect(await getTargetOverrides('gahboom-factory')).toEqual([]);
+  });
+
+  it('writes nothing for a save with no edits (SETTINGS-01)', async () => {
+    const res = await setTargetOverride('centaur-village', RANGER, { lookName: RANGER.lookName, engageName: 'ranger' });
+    expect(res).toEqual({ ok: true, record: null });
+    expect((await exportAll()).filter((r) => r.kind === 'targetOverride')).toEqual([]);
+  });
+
+  it('an edit back to the default deletes the record, an edit of another field keeps it', async () => {
+    await setTargetOverride('centaur-village', RANGER, { engageName: 'rng' });
+    await setTargetOverride('centaur-village', RANGER, { hidden: true });
+    expect((await getTargetOverrides('centaur-village'))[0].data).toEqual({ key: RANGER_KEY, engageName: 'rng', hidden: true });
+
+    await setTargetOverride('centaur-village', RANGER, { engageName: 'ranger' });
+    expect((await getTargetOverrides('centaur-village'))[0].data).toEqual({ key: RANGER_KEY, hidden: true });
+
+    await setTargetOverride('centaur-village', RANGER, { hidden: false });
+    expect(await getTargetOverrides('centaur-village')).toEqual([]);
+  });
+
+  it('uses one deterministic record per (area, target), so a second edit updates it instead of adding one', async () => {
+    await setTargetOverride('centaur-village', RANGER, { engageName: 'a' });
+    await setTargetOverride('centaur-village', RANGER, { engageName: 'b' });
+    const recs = await getTargetOverrides('centaur-village');
+    expect(recs).toHaveLength(1);
+    expect(recs[0].id).toBe(`targetOverride:centaur-village:${RANGER_KEY}`);
+    expect(recs[0].data.engageName).toBe('b');
+  });
+
+  it('refuses an unsafe edit and stores nothing', async () => {
+    expect(await setTargetOverride('centaur-village', RANGER, { engageName: 'x;quit' })).toEqual({ ok: false, error: 'unsafe' });
+    expect(await setTargetOverride('centaur-village', RANGER, { lookName: '' })).toEqual({ ok: false, error: 'unsafe' });
+    expect(await getTargetOverrides('centaur-village')).toEqual([]);
+  });
+
+  it('reset removes both the edit and the hidden flag (E6)', async () => {
+    await setTargetOverride('centaur-village', RANGER, { engageName: 'rng', hidden: true });
+    await resetTargetOverride('centaur-village', RANGER_KEY);
+    expect(await getTargetOverrides('centaur-village')).toEqual([]);
+  });
+
+  it('reset also removes an imported record that carries a different id for the same key', async () => {
+    await importRecords([
+      { id: 'targetOverride:other-device-id', kind: 'targetOverride', areaSlug: 'centaur-village', data: { key: RANGER_KEY, hidden: true }, updatedAt: 5 },
+    ]);
+    expect(await getTargetOverrides('centaur-village')).toHaveLength(1);
+    await resetTargetOverride('centaur-village', RANGER_KEY);
+    expect(await getTargetOverrides('centaur-village')).toEqual([]);
+  });
+
+  it('an unmatched override stays stored and exported until the player deletes it (E22)', async () => {
+    await setTargetOverride('centaur-village', RANGER, { engageName: 'rng' });
+    // the server list no longer has RANGER: nothing here removes the record
+    expect((await exportAll()).filter((r) => r.kind === 'targetOverride')).toHaveLength(1);
+    const [rec] = await getTargetOverrides('centaur-village');
+    await deleteTargetOverride(rec.id);
+    expect(await getTargetOverrides('centaur-village')).toEqual([]);
+  });
+
+  it('deleteTargetOverride ignores an id that is not an override record', async () => {
+    const t = await addCustomTarget('centaur-village', { lookName: 'A scout.', engageName: 'scout' });
+    await deleteTargetOverride(t.id);
+    expect(await getCustomTargets('centaur-village')).toHaveLength(1);
+  });
+
+  it('a throwing store leaves readers with nothing and writers with a storage error, never throwing (E12)', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const broken = memoryKvStore();
+    broken.keys = async () => {
+      throw new Error('storage unavailable');
+    };
+    broken.set = async () => {
+      throw new Error('storage unavailable');
+    };
+    broken.delete = async () => {
+      throw new Error('storage unavailable');
+    };
+    __setUserDataStoreForTests(broken);
+
+    expect(await getTargetOverrides('centaur-village')).toEqual([]);
+    expect(await setTargetOverride('centaur-village', RANGER, { engageName: 'rng' })).toEqual({ ok: false, error: 'storage' });
+    await expect(resetTargetOverride('centaur-village', RANGER_KEY)).resolves.toBeUndefined();
+    await expect(deleteTargetOverride('x')).resolves.toBeUndefined();
+    warn.mockRestore();
+  });
+
+  it('round-trips through export, the wire and a fresh store (E13, E18)', async () => {
+    await setTargetOverride('centaur-village', RANGER, { engageName: 'rng', hidden: true });
+    const wire = JSON.parse(JSON.stringify(await exportAll()));
+    __setUserDataStoreForTests(memoryKvStore());
+    await importRecords(wire);
+    expect((await getTargetOverrides('centaur-village'))[0].data).toEqual({ key: RANGER_KEY, engageName: 'rng', hidden: true });
+  });
+
+  it('on import the newest updatedAt wins per override record (E13)', async () => {
+    const base = { id: 'targetOverride:centaur-village:' + RANGER_KEY, kind: 'targetOverride' as const, areaSlug: 'centaur-village' };
+    await importRecords([{ ...base, data: { key: RANGER_KEY, engageName: 'newer' }, updatedAt: 20 }]);
+    await importRecords([{ ...base, data: { key: RANGER_KEY, engageName: 'older' }, updatedAt: 10 }]);
+    expect((await getTargetOverrides('centaur-village'))[0].data.engageName).toBe('newer');
+  });
+});
+
+describe('route overrides (one whole-route record per area)', () => {
+  beforeEach(() => __setUserDataStoreForTests(memoryKvStore()));
+  const SERVED = ['e', 'se', 'w'];
+
+  it('has no override until the player saves one', async () => {
+    expect(await getRouteOverride('algoron-threadworks')).toBeNull();
+  });
+
+  it('saves the whole route under a deterministic per-area id and reads it back', async () => {
+    const res = await setRouteOverride('algoron-threadworks', SERVED, [' e ', 'se', 'w', 'w']);
+    expect(res.ok && res.record?.id).toBe('routeOverride:algoron-threadworks');
+    expect((await getRouteOverride('algoron-threadworks'))?.data).toEqual({ dirs: ['e', 'se', 'w', 'w'] });
+    expect(await getRouteOverride('other-area')).toBeNull();
+  });
+
+  it('a second save updates the same record instead of adding another', async () => {
+    await setRouteOverride('a', SERVED, ['e', 'n']);
+    await setRouteOverride('a', SERVED, ['e', 's']);
+    const records = (await exportAll()).filter((r) => r.kind === 'routeOverride');
+    expect(records).toHaveLength(1);
+    expect((records[0].data as { dirs: string[] }).dirs).toEqual(['e', 's']);
+  });
+
+  it('saving the served route again removes the override (an edit back to default leaves no trace)', async () => {
+    await setRouteOverride('a', SERVED, ['e', 'n']);
+    expect(await setRouteOverride('a', SERVED, [...SERVED])).toEqual({ ok: true, record: null });
+    expect(await getRouteOverride('a')).toBeNull();
+  });
+
+  it.each([
+    ['an empty route', [], 'empty'],
+    ['a step with a ;', ['e', 'n;quit'], 'unsafe'],
+    ['a blank step', ['e', '  '], 'unsafe'],
+    ['a step over 200 characters', ['x'.repeat(201)], 'unsafe'],
+    ['more than 1000 steps', Array(1001).fill('e'), 'too-long'],
+  ])('refuses %s and keeps the stored route', async (_name, wanted, error) => {
+    await setRouteOverride('a', SERVED, ['e', 'n']);
+    expect(await setRouteOverride('a', SERVED, wanted as string[])).toEqual({ ok: false, error });
+    expect((await getRouteOverride('a'))?.data.dirs).toEqual(['e', 'n']);
+  });
+
+  it('reset removes the override, including an imported copy stored under another id', async () => {
+    await importRecords([{ id: 'routeOverride:copy', kind: 'routeOverride', areaSlug: 'a', data: { dirs: ['n'] }, updatedAt: 5 }]);
+    expect((await getRouteOverride('a'))?.data.dirs).toEqual(['n']);
+    await resetRouteOverride('a');
+    expect(await getRouteOverride('a')).toBeNull();
+  });
+
+  it('round-trips through export, the wire and a fresh store', async () => {
+    await setRouteOverride('a', SERVED, ['e', 'w', 'w']);
+    const wire = JSON.parse(JSON.stringify(await exportAll()));
+    __setUserDataStoreForTests(memoryKvStore());
+    await importRecords(wire);
+    expect((await getRouteOverride('a'))?.data.dirs).toEqual(['e', 'w', 'w']);
+  });
+
+  it('on import the newest updatedAt wins', async () => {
+    const base = { id: 'routeOverride:a', kind: 'routeOverride' as const, areaSlug: 'a' };
+    await importRecords([{ ...base, data: { dirs: ['n'] }, updatedAt: 20 }]);
+    await importRecords([{ ...base, data: { dirs: ['s'] }, updatedAt: 10 }]);
+    expect((await getRouteOverride('a'))?.data.dirs).toEqual(['n']);
+  });
+
+  describe('when several stored records exist for one area (imported under other ids)', () => {
+    const rec = (id: string, dirs: unknown, updatedAt?: number) => ({
+      id,
+      kind: 'routeOverride',
+      areaSlug: 'a',
+      data: { dirs },
+      ...(updatedAt === undefined ? {} : { updatedAt }),
+    });
+
+    it('the newest updatedAt wins whichever order they are stored in', async () => {
+      __setUserDataStoreForTests(memoryKvStore({ 'routeOverride:new': rec('routeOverride:new', ['n'], 9), 'routeOverride:old': rec('routeOverride:old', ['s'], 5) }));
+      expect((await getRouteOverride('a'))?.data.dirs).toEqual(['n']);
+      __setUserDataStoreForTests(memoryKvStore({ 'routeOverride:old': rec('routeOverride:old', ['s'], 5), 'routeOverride:new': rec('routeOverride:new', ['n'], 9) }));
+      expect((await getRouteOverride('a'))?.data.dirs).toEqual(['n']);
+    });
+
+    it('a record with no updatedAt counts as oldest, whichever order they are stored in', async () => {
+      __setUserDataStoreForTests(memoryKvStore({ 'routeOverride:x': rec('routeOverride:x', ['s']), 'routeOverride:y': rec('routeOverride:y', ['n'], 3) }));
+      expect((await getRouteOverride('a'))?.data.dirs).toEqual(['n']);
+      __setUserDataStoreForTests(memoryKvStore({ 'routeOverride:y': rec('routeOverride:y', ['n'], 3), 'routeOverride:x': rec('routeOverride:x', ['s']) }));
+      expect((await getRouteOverride('a'))?.data.dirs).toEqual(['n']);
+    });
+
+    it('a malformed record is ignored, even when it is the newest', async () => {
+      __setUserDataStoreForTests(memoryKvStore({ 'routeOverride:bad': rec('routeOverride:bad', [], 99), 'routeOverride:ok': rec('routeOverride:ok', ['w'], 1) }));
+      expect((await getRouteOverride('a'))?.data.dirs).toEqual(['w']);
+    });
+
+    it('only a malformed record means no override', async () => {
+      __setUserDataStoreForTests(memoryKvStore({ 'routeOverride:bad': rec('routeOverride:bad', ['e;quit'], 99) }));
+      expect(await getRouteOverride('a')).toBeNull();
+    });
+  });
+
+  it('normalizeRecord refuses a malformed route record from the cloud', () => {
+    const ok = { id: 'r', kind: 'routeOverride', areaSlug: 'a', data: { dirs: ['e'] }, updatedAt: 1 };
+    expect(normalizeRecord(ok)).not.toBeNull();
+    expect(normalizeRecord({ ...ok, areaSlug: undefined })).toBeNull();
+    expect(normalizeRecord({ ...ok, data: { dirs: [] } })).toBeNull();
+    expect(normalizeRecord({ ...ok, data: { dirs: ['e;quit'] } })).toBeNull();
+    expect(normalizeRecord({ ...ok, data: { dirs: [5] } })).toBeNull();
+    expect(normalizeRecord({ ...ok, data: { dirs: ['e'], extra: 1 } })).toBeNull();
+    expect(normalizeRecord({ ...ok, data: ['e'] })).toBeNull();
+  });
+
+  it('a throwing store gives a storage error on save and nothing on read, never throwing', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const broken = memoryKvStore();
+    broken.keys = async () => {
+      throw new Error('storage unavailable');
+    };
+    broken.set = async () => {
+      throw new Error('storage unavailable');
+    };
+    broken.delete = async () => {
+      throw new Error('storage unavailable');
+    };
+    __setUserDataStoreForTests(broken);
+    expect(await getRouteOverride('a')).toBeNull();
+    expect(await setRouteOverride('a', SERVED, ['n'])).toEqual({ ok: false, error: 'storage' });
+    await expect(resetRouteOverride('a')).resolves.toBeUndefined();
+    warn.mockRestore();
+  });
+});
+
+describe('normalizeRecord and importRecords drop what must not be stored (E3, E5, E18)', () => {
+  beforeEach(() => __setUserDataStoreForTests(memoryKvStore()));
+
+  it.each([
+    ['null', null],
+    ['no id', { kind: 'pref', data: {}, updatedAt: 1 }],
+    ['an unknown kind', { id: 'x', kind: 'nope', data: {}, updatedAt: 1 }],
+    ['no data', { id: 'x', kind: 'pref', updatedAt: 1 }],
+    ['an override with no areaSlug', { id: 'x', kind: 'targetOverride', data: { key: 'k' }, updatedAt: 1 }],
+    ['an override with unsafe data', { id: 'x', kind: 'targetOverride', areaSlug: 'a', data: { key: 'k', engageName: 'a;b' }, updatedAt: 1 }],
+    ['a custom target with a stacked command', { id: 'x', kind: 'target', areaSlug: 'a', data: { lookName: 'A scout.', engageName: 'scout;quit' }, updatedAt: 1 }],
+    ['a custom target with no keyword', { id: 'x', kind: 'target', areaSlug: 'a', data: { lookName: 'A scout.' }, updatedAt: 1 }],
+  ])('refuses %s', (_label, rec) => {
+    expect(normalizeRecord(rec)).toBeNull();
+  });
+
+  it('an incoming record replaces a stored one that has no updatedAt (it counts as oldest)', async () => {
+    const store = memoryKvStore({ 'pref:global': { id: 'pref:global', kind: 'pref', data: { playerClass: 'old' } } });
+    __setUserDataStoreForTests(store);
+    await importRecords([{ id: 'pref:global', kind: 'pref', data: { playerClass: 'new' }, updatedAt: 1 }]);
+    expect((await getPrefs()).playerClass).toBe('new');
+  });
+
+  it('updateCustomTarget treats a target with missing fields as unsafe rather than throwing', async () => {
+    const t = await addCustomTarget('centaur-village', { lookName: 'A scout.', engageName: 'scout' });
+    expect(await updateCustomTarget(t.id, {} as never)).toEqual({ ok: false, error: 'unsafe' });
+    expect(await updateCustomTarget(t.id, undefined as never)).toEqual({ ok: false, error: 'unsafe' });
+  });
+
+  it('coerces a missing or non-numeric updatedAt to 0 and keeps the record', () => {
+    expect(normalizeRecord({ id: 'pref:global', kind: 'pref', data: { playerClass: 'x' }, updatedAt: 'soon' })).toMatchObject({ updatedAt: 0 });
+  });
+
+  it('a malformed record in a cloud load does not stop the valid ones', async () => {
+    await importRecords([
+      { id: 'x', kind: 'nope', data: {}, updatedAt: 1 } as any,
+      { id: 'targetOverride:a:k', kind: 'targetOverride', areaSlug: 'a', data: { key: 'k;', hidden: true }, updatedAt: 1 } as any,
+      { id: 'pref:global', kind: 'pref', data: { playerClass: 'mage' }, updatedAt: 1 },
+    ]);
+    expect((await getPrefs()).playerClass).toBe('mage');
+    expect((await exportAll()).map((r) => r.id)).toEqual(['pref:global']);
+  });
+});
+
+describe('overlay readers that tell "never saved" from "saved empty" (E19, SETTINGS-06)', () => {
+  beforeEach(() => __setUserDataStoreForTests(memoryKvStore()));
+
+  it('answers null for an area or class that was never saved, [] for one saved empty, and the rows for one saved', async () => {
+    expect(await getBuffOverlayOrNull('a')).toBeNull();
+    expect(await getFightOverlayOrNull('a', 'Warrior')).toBeNull();
+
+    await setBuffOverlay('a', []);
+    await setFightOverlay('a', 'Warrior', []);
+    expect(await getBuffOverlayOrNull('a')).toEqual([]);
+    expect(await getFightOverlayOrNull('a', 'Warrior')).toEqual([]);
+
+    await setBuffOverlay('a', [{ label: 'Sanc', cmd: 'cast sanctuary' }]);
+    await setFightOverlay('a', 'Warrior', [{ cmd: 'bash', cooldownSec: 8 }]);
+    expect(await getBuffOverlayOrNull('a')).toEqual([{ label: 'Sanc', cmd: 'cast sanctuary' }]);
+    expect(await getFightOverlayOrNull('a', 'warrior')).toEqual([{ cmd: 'bash', cooldownSec: 8 }]); // class is case-insensitive
+  });
+
+  it('a paused fight command stays paused through the store and through a cloud round trip', async () => {
+    const rows = [
+      { cmd: 'bash', cooldownSec: 8 },
+      { cmd: 'kick', cooldownSec: 2, disabled: true },
+    ];
+    await setFightOverlay('a', 'Warrior', rows);
+    expect(await getFightOverlayOrNull('a', 'Warrior')).toEqual(rows);
+
+    const wire = JSON.parse(JSON.stringify(await exportAll()));
+    __setUserDataStoreForTests(memoryKvStore());
+    await importRecords(wire);
+    expect(await getFightOverlayOrNull('a', 'Warrior')).toEqual(rows);
+  });
+
+  it('keeps areas and classes apart', async () => {
+    await setFightOverlay('a', 'Warrior', [{ cmd: 'bash', cooldownSec: 1 }]);
+    expect(await getFightOverlayOrNull('a', 'Mage')).toBeNull();
+    expect(await getFightOverlayOrNull('b', 'Warrior')).toBeNull();
+    expect(await getBuffOverlayOrNull('b')).toBeNull();
+  });
+
+  it('treats a record whose data is not a list as saved-empty rather than never-saved', async () => {
+    await importRecords([
+      { id: 'buff:a', kind: 'buff', areaSlug: 'a', data: { not: 'a list' }, updatedAt: 1 },
+      { id: 'fight:a:mage', kind: 'fight', areaSlug: 'a', className: 'mage', data: 'junk', updatedAt: 1 },
+    ]);
+    expect(await getBuffOverlayOrNull('a')).toEqual([]);
+    expect(await getFightOverlayOrNull('a', 'Mage')).toEqual([]);
+  });
+
+  it('unreadable storage answers [] (so nothing is seeded over data that may exist) and warns, never throws', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const broken = memoryKvStore();
+    broken.keys = async () => {
+      throw new Error('storage unavailable');
+    };
+    __setUserDataStoreForTests(broken);
+
+    expect(await getBuffOverlayOrNull('a')).toEqual([]);
+    expect(await getFightOverlayOrNull('a', 'Warrior')).toEqual([]);
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+});
+
+describe('custom targets can be edited and removed for good', () => {
+  beforeEach(() => __setUserDataStoreForTests(memoryKvStore()));
+
+  it('updateCustomTarget keeps the record id and changes the text', async () => {
+    const t = await addCustomTarget('centaur-village', { lookName: 'A scout.', engageName: 'scout' });
+    const res = await updateCustomTarget(t.id, { lookName: '  A tall scout.  ', engageName: ' tall ' });
+    expect(res.ok).toBe(true);
+    const [saved] = await getCustomTargets('centaur-village');
+    expect(saved.id).toBe(t.id);
+    expect(saved.data).toMatchObject({ lookName: 'A tall scout.', engageName: 'tall' });
+  });
+
+  it('updateCustomTarget refuses unsafe text and an unknown id', async () => {
+    const t = await addCustomTarget('centaur-village', { lookName: 'A scout.', engageName: 'scout' });
+    expect(await updateCustomTarget(t.id, { lookName: 'A scout.', engageName: 'a;b' })).toEqual({ ok: false, error: 'unsafe' });
+    expect(await updateCustomTarget('target:nope', { lookName: 'A.', engageName: 'a' })).toEqual({ ok: false, error: 'missing' });
+    expect((await getCustomTargets('centaur-village'))[0].data.engageName).toBe('scout');
+  });
+
+  it('removeCustomTarget deletes the record, so it does not come back on the next seed', async () => {
+    const t = await addCustomTarget('centaur-village', { lookName: 'A scout.', engageName: 'scout' });
+    await removeCustomTarget(t.id);
+    expect(await getCustomTargets('centaur-village')).toEqual([]);
+  });
+
+  it('removeCustomTarget leaves records that are not custom targets alone', async () => {
+    await setPrefs({ playerClass: 'mage' });
+    await removeCustomTarget('pref:global');
+    expect((await getPrefs()).playerClass).toBe('mage');
+  });
+
+  it('storage failures in update/remove are reported or swallowed, never thrown', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const t = await addCustomTarget('centaur-village', { lookName: 'A scout.', engageName: 'scout' });
+    const broken = memoryKvStore();
+    broken.keys = async () => {
+      throw new Error('storage unavailable');
+    };
+    __setUserDataStoreForTests(broken);
+    expect(await updateCustomTarget(t.id, { lookName: 'A scout.', engageName: 'x' })).toEqual({ ok: false, error: 'storage' });
+    await expect(removeCustomTarget(t.id)).resolves.toBeUndefined();
+    warn.mockRestore();
   });
 });

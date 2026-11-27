@@ -83,7 +83,7 @@ function isAutoLevelingDebugEnabled(): boolean {
 
 function mdbg(...args: any[]) {
   if (!isAutoLevelingDebugEnabled()) return;
-  // eslint-disable-next-line no-console
+
   console.debug(MAPS_LOG_PREFIX, ...args);
 }
 

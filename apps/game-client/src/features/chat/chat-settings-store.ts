@@ -56,6 +56,10 @@ export interface ChatSettings {
   // NEW: show panes even if they have no messages
   showHiddenChatPanes: boolean;
 
+  // A dot on a pane tab that has unread messages. Only works with strictChatFormat and enableChatPanes on.
+  // Stored only when on (see toStored), so it follows a future default for anyone who never turned it on.
+  unreadDots: boolean;
+
   // Which panes are enabled (regardless of whether they have messages yet)
   enabledPanes: Record<ChatSubtype, boolean>;
 
@@ -69,6 +73,7 @@ const DEFAULT_SETTINGS: ChatSettings = {
   strictChatFormat: false,
   enableChatPanes: false,
   showHiddenChatPanes: false,
+  unreadDots: false,
   enabledPanes: KNOWN_CHAT_SUBTYPES.reduce(
     (acc, k) => {
       acc[k] = true;
@@ -116,12 +121,15 @@ function normalizeOrder(rawOrder: any): ChatSubtype[] {
 }
 
 function normalizeSettings(raw: any): ChatSettings {
-  const base: ChatSettings = { ...DEFAULT_SETTINGS };
+  // enabledPanes is copied: a shallow spread would hand out the shared defaults object, the stored flags below would
+  // overwrite it in place, and ChatPane (which memoises on this object's identity) would never see a change.
+  const base: ChatSettings = { ...DEFAULT_SETTINGS, enabledPanes: { ...DEFAULT_SETTINGS.enabledPanes } };
 
   if (raw && typeof raw === 'object') {
     if (typeof raw.strictChatFormat === 'boolean') base.strictChatFormat = raw.strictChatFormat;
     if (typeof raw.enableChatPanes === 'boolean') base.enableChatPanes = raw.enableChatPanes;
     if (typeof raw.showHiddenChatPanes === 'boolean') base.showHiddenChatPanes = raw.showHiddenChatPanes;
+    if (typeof raw.unreadDots === 'boolean') base.unreadDots = raw.unreadDots;
 
     if (raw.enabledPanes && typeof raw.enabledPanes === 'object') {
       for (const k of KNOWN_CHAT_SUBTYPES) {
@@ -145,9 +153,21 @@ export function getChatSettings(): ChatSettings {
   return settingsCache;
 }
 
+// What goes into storage: the settings as they are, except `unreadDots`, which is written only when it is on.
+// A value the user never turned on stays absent and reads as the current default (SETTINGS-01).
+function toStored(settings: ChatSettings): Record<string, unknown> {
+  const { unreadDots, ...rest } = settings;
+  return unreadDots ? { ...rest, unreadDots: true } : { ...rest };
+}
+
 export function setChatSettings(next: ChatSettings) {
   settingsCache = normalizeSettings(next);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settingsCache));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toStored(settingsCache)));
+  } catch {
+    // Storage full or blocked: keep the in-memory settings and carry on (typescript.md: storage fails safe).
+    console.warn('chat settings could not be saved');
+  }
   subscribers.forEach((fn) => fn(settingsCache!));
 }
 

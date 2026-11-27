@@ -1,6 +1,9 @@
 // apps\game-client\src\components\AudioSettingsModal.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import styles from '../styles/AudioSettingsModal.module.scss';
+import { useWindowLayer } from '../hooks/useWindowLayer';
+import { useResizableModal } from '../hooks/useResizableModal';
+import { ResizeGrip } from './ResizeGrip';
 import {
   getAudioSettings,
   setAudioSettings,
@@ -66,6 +69,8 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({ isOpen, 
 
   const excludeText = useMemo(() => (draft.excludePatterns ?? []).join('\n'), [draft.excludePatterns]);
 
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => onClose() });
+  const { attach: resizeAttach, style: resizeStyle, gripProps: resizeGrip } = useResizableModal({ storageKey: 'shatteredarchive:modal-size:AudioSettingsModal:v1', centered: true });
   if (!isOpen) return null;
 
   const save = () => {
@@ -111,8 +116,8 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({ isOpen, 
   const defaultOsc = ensureOsc(draft.defaultBeep);
 
   return (
-    <div className={styles.backdrop}>
-      <div className={styles.modal}>
+    <div className={styles.backdrop} style={{ zIndex: layer.zIndex }}>
+      <div ref={resizeAttach} className={styles.modal} style={resizeStyle}>
         <div className={styles.header}>
           <div className={styles.title}>Audio Settings</div>
           <button type="button" className={styles.closeButton} onClick={onClose}>
@@ -445,6 +450,7 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({ isOpen, 
             Save
           </button>
         </div>
+        <ResizeGrip {...resizeGrip} />
       </div>
     </div>
   );

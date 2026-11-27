@@ -1,0 +1,64 @@
+/**
+ * The terrain palette: the colour of each sector (a room's terrain), and folding the words the game and the files write for it.
+ *
+ * Kept apart from terrain.ts (mining the sector out of GMCP logs) because the browser bundle of the renderer carries only this part.
+ */
+
+/** One terrain: the word the game uses, a name for the key, and the tile colour. The palette is the owner's original DslMapper one. */
+export interface TerrainInfo {
+  sector: string;
+  label: string;
+  fill: string;
+}
+
+/**
+ * Every sector word seen in the DSL's GMCP (543,309 `room_data` messages) plus the Simulacrum's Merc sectors that have no DSL word.
+ * Order is the order of the key on the page.
+ */
+export const TERRAIN: readonly TerrainInfo[] = [
+  { sector: 'inside', label: 'Inside', fill: '#6F6BA8' },
+  { sector: 'city', label: 'City', fill: '#7E8796' },
+  { sector: 'field', label: 'Fields', fill: '#9FC25E' },
+  { sector: 'hills', label: 'Hills', fill: '#7BA76C' },
+  { sector: 'forest', label: 'Forest', fill: '#2E6B4F' },
+  { sector: 'mountain', label: 'Mountain', fill: '#8D8076' },
+  { sector: 'desert', label: 'Desert', fill: '#C8A15A' },
+  { sector: 'tundra', label: 'Tundra', fill: '#77B5A9' },
+  { sector: 'ice', label: 'Ice', fill: '#6FB6D6' },
+  { sector: 'swim', label: 'Water (swim)', fill: '#0041C2' },
+  { sector: 'noswim', label: 'Water (boat or fly)', fill: '#26418F' },
+  { sector: 'ocean', label: 'Ocean', fill: '#151B54' },
+  { sector: 'underwater', label: 'Underwater', fill: '#0C2766' },
+  { sector: 'underground', label: 'Underground', fill: '#4B3300' },
+  { sector: 'air', label: 'Air', fill: '#BFD8EC' },
+  { sector: 'swamp', label: 'Swamp', fill: '#6E8B5E' },
+];
+
+/** Other spellings of a terrain, as the logs and the Merc files write them. */
+const ALIASES: Readonly<Record<string, string>> = {
+  fields: 'field',
+  indoors: 'inside',
+  water: 'swim',
+  deepwater: 'noswim',
+  'water swim': 'swim',
+  'water noswim': 'noswim',
+  'water_swim': 'swim',
+  'water_noswim': 'noswim',
+  'very icy': 'ice',
+  'very_icy': 'ice',
+};
+
+/** A sector word as the palette knows it: trimmed, lower case, one space between words, aliases folded. `null` for nothing usable. */
+export function canonicalSector(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const word = raw.trim().replace(/\s+/g, ' ').toLowerCase();
+  if (word === '') return null;
+  return Object.hasOwn(ALIASES, word) ? ALIASES[word] : word;
+}
+
+/** The tile colour for a sector word, or `null` when the palette has no such terrain. */
+export function terrainFill(sector: unknown): string | null {
+  const word = canonicalSector(sector);
+  return TERRAIN.find((t) => t.sector === word)?.fill ?? null;
+}
+

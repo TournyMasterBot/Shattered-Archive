@@ -8,16 +8,22 @@
  * a reminder only — nothing here validates it against where the player actually is.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 
 import styles from '../../styles/AutoLevelingWizard.module.scss';
 import { fullRoute } from '../../features/autoleveling/autoleveling-content';
+import { routeToText } from '../../features/autoleveling/autoleveling-route-overrides';
+import { describeRowOptions } from '../../features/autoleveling/autoleveling-row-text';
 import type { BuffRow } from '../../features/autoleveling/autoleveling-user-data';
 import type { WizardDraft, WizardMode } from './useWizardDraft';
 
 interface Props {
   draft: WizardDraft;
   onPatch: (p: Partial<WizardDraft>) => void;
+  /** Saves the player's edited route (steps separated by `;` or new lines); resolves with a message when refused. */
+  onSaveRoute?: (text: string) => Promise<string | null>;
+  /** Drops the player's route for this area and goes back to the shared one. */
+  onResetRoute?: () => Promise<void>;
 }
 
 const MODE_LABEL: Record<WizardMode, string> = {
@@ -35,7 +41,12 @@ function describeBuffGate(b: BuffRow): string {
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-export const ReviewStep: React.FC<Props> = ({ draft, onPatch }) => {
+export const ReviewStep: React.FC<Props> = ({ draft, onPatch, onSaveRoute, onResetRoute }) => {
+  const [routeEditing, setRouteEditing] = useState(false);
+  const [routeText, setRouteText] = useState('');
+  const [routeError, setRouteError] = useState<string | null>(null);
+  const [routeSaving, setRouteSaving] = useState(false);
+
   const {
     area,
     targets,
@@ -52,6 +63,8 @@ export const ReviewStep: React.FC<Props> = ({ draft, onPatch }) => {
     restDuringRound,
     weightAtOrAbovePct,
     weightCommands,
+    routeDefaultDirs,
+    routeOverridden,
   } = draft;
 
   if (!area) {
@@ -61,6 +74,32 @@ export const ReviewStep: React.FC<Props> = ({ draft, onPatch }) => {
   const routeStepList = fullRoute(area).split(';').filter(Boolean);
   const routeSteps = routeStepList.length;
   const enabled = targets.filter((t) => t.enabled);
+
+  const startRouteEdit = () => {
+    setRouteText(routeToText(area.dirs));
+    setRouteError(null);
+    setRouteEditing(true);
+  };
+  const cancelRouteEdit = () => {
+    setRouteEditing(false);
+    setRouteError(null);
+  };
+  const saveRouteEdit = async () => {
+    if (!onSaveRoute || routeSaving) return;
+    setRouteSaving(true);
+    try {
+      const message = await onSaveRoute(routeText);
+      if (message) setRouteError(message);
+      else cancelRouteEdit();
+    } finally {
+      setRouteSaving(false);
+    }
+  };
+  const resetRoute = async () => {
+    if (!onResetRoute) return;
+    await onResetRoute();
+    cancelRouteEdit();
+  };
 
   return (
     <div className={styles.stepPanel}>
@@ -100,7 +139,68 @@ export const ReviewStep: React.FC<Props> = ({ draft, onPatch }) => {
           <dt>Route</dt>
           <dd>
             {routeSteps} step{routeSteps === 1 ? '' : 's'} per round
+            {routeOverridden && <span className={`${styles.editedBadge} ${styles.routeBadge}`}>edited</span>}
             {area.speedwalkToStart ? ' (approach speedwalk not yet wired in — start already at the area entrance)' : ''}
+            {onSaveRoute && !routeEditing && (
+              <div className={styles.routeActions}>
+                <button
+                  type="button"
+                  className={`${styles.linkButton} ${styles.linkAction}`}
+                  onClick={startRouteEdit}
+                  aria-label="Edit route"
+                >
+                  edit route
+                </button>
+                {routeOverridden && onResetRoute && (
+                  <button
+                    type="button"
+                    className={`${styles.linkButton} ${styles.linkAction}`}
+                    onClick={() => void resetRoute()}
+                    aria-label="Reset route to default"
+                  >
+                    reset to default
+                  </button>
+                )}
+              </div>
+            )}
+            {routeEditing && (
+              <div role="group" aria-label="Edit route">
+                <textarea
+                  className={`${styles.input} ${styles.routeEditText}`}
+                  aria-label="Route steps"
+                  value={routeText}
+                  rows={5}
+                  spellCheck={false}
+                  onChange={(e) => setRouteText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      e.stopPropagation(); // cancels the route edit only; the window around it stays
+                      cancelRouteEdit();
+                    }
+                  }}
+                />
+                <div className={styles.fieldHint}>
+                  One command per step, separated by <code>;</code> or a new line, e.g. <code>e;se;n</code>. Saved for
+                  you only{area.requiredActions.length > 0 ? '; the area’s required actions still run first' : ''}.
+                </div>
+                <div className={styles.routeActions}>
+                  <button type="button" className={styles.button} onClick={() => void saveRouteEdit()} disabled={routeSaving}>
+                    Save route
+                  </button>
+                  <button type="button" className={styles.button} onClick={cancelRouteEdit} disabled={routeSaving}>
+                    Cancel
+                  </button>
+                </div>
+                {routeError && (
+                  <div className={styles.fieldError} role="alert">
+                    {routeError}
+                  </div>
+                )}
+              </div>
+            )}
+            {routeOverridden && !routeEditing && (
+              <div className={styles.fieldHint}>Shared route: {routeDefaultDirs.length} steps</div>
+            )}
             {routeSteps > 0 && (
               <details className={styles.reviewDisclosure}>
                 <summary>Show steps</summary>
@@ -181,6 +281,7 @@ export const ReviewStep: React.FC<Props> = ({ draft, onPatch }) => {
                     <code>{b.cmd || '(empty)'}</code>
                     <span className={styles.reviewDim}> — {describeBuffGate(b)}</span>
                     {b.unverified ? <span className={styles.reviewWarn}> · unverified</span> : null}
+                    {b.disabled ? <span className={styles.reviewWarn}> · paused: will not be used</span> : null}
                     {b.inCombatCmd ? (
                       <span className={styles.reviewDim}>
                         {' '}
@@ -188,6 +289,9 @@ export const ReviewStep: React.FC<Props> = ({ draft, onPatch }) => {
                       </span>
                     ) : null}
                     {b.holdNearLevel ? <span className={styles.reviewDim}> · holds near level-up</span> : null}
+                    {describeRowOptions(b).map((t) => (
+                      <span key={t} className={styles.reviewDim}> · {t}</span>
+                    ))}
                   </li>
                 ))}
               </ul>
@@ -205,7 +309,13 @@ export const ReviewStep: React.FC<Props> = ({ draft, onPatch }) => {
                 {fightCommands.map((f, i) => (
                   <li key={i}>
                     <code>{f.cmd || '(empty)'}</code>
-                    <span className={styles.reviewDim}> {f.cooldownSec > 0 ? `every ${f.cooldownSec}s` : 'every tick'}</span>
+                    <span className={styles.reviewDim}>
+                      {' '}
+                      {f.disabled ? 'paused: will not be used' : f.cooldownSec > 0 ? `every ${f.cooldownSec}s` : 'every tick'}
+                    </span>
+                    {describeRowOptions(f).map((t) => (
+                      <span key={t} className={styles.reviewDim}> · {t}</span>
+                    ))}
                   </li>
                 ))}
               </ul>

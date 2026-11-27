@@ -24,6 +24,10 @@ apps/auth-server: 62000
 apps/scrum-poker-client: 63080
 apps/scrum-poker-server: 63000
 
+# Shattered-Maps (the 22000/22080 pair is reserved for it; only the client exists so far, a dev tool run with `vite`)
+apps/shattered-maps-client: 22080 (the Vite dev server, `pnpm dev`)
+apps/shattered-maps-client container, published on 127.0.0.1 only: 22081 (reaches the same app as https://maps.shatteredarchive.dev/ through the edge)
+
 # Soulsteel
 apps/soulsteel-client: 64080
 apps/soulsteel-server: 64000
@@ -83,7 +87,7 @@ shattered_mcp_media MCP/SSE, image tools only, ON DEMAND via `--profile media` (
 #              that the scheme is exhausted at 65 — new apps use the lower range below.
 #  20000-29999  NEW APPS, same scheme: 2N000 server / 2N080 client. TAKEN: 20 (psd-viewer), 21 (shattered-story: 21000 edge,
 #              21010 server; 21080 stays unused, there is no web client).
-#              Next free: 22000/22080, 23000/23080, ... 29000/29080. Verify each pair is free
+#              22 (shattered-maps: 22080 client; 22000 reserved for its server) is TAKEN. Next free: 23000/23080, ... 29000/29080. Verify each pair is free
 #              first; occupied by other software on this host today: 22112, 27339 (Windows-
 #              reserved), 28385, 28390.
 #  10000-10999  LOCAL AI / DEV TOOLING and internal sidecars (egress allowlists, brokers, MCP

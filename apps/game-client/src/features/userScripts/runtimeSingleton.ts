@@ -2,11 +2,13 @@
 
 import { AccessibilitySettings, getAccessibilitySettings } from '../accessibility/accessibility-settings-store';
 import { STORAGE_KEY_PREFIX_USERSCRIPTS, UserScriptRuntime } from './userScriptRuntime';
+import { canonicalConnectionId } from '../connection/connectionId';
+import { getSessionState, startSessionGate, subscribeSession, SessionChange } from '../connection/sessionGate';
 import { pluginHost } from '../plugins/pluginHost';
 import { ListenDomEvent, ListenEvent, ListenRedispatchMap, DispatchEvent } from '../event-emitter/event-dispatcher';
 import { dslToAnsi } from '../chat/dsl-to-ansi';
 import { ShatteredArchiveChatLine } from '../../types/chat-types/chat-line';
-import { appendChatLine, appendChatRaw } from '../chat/chat-store';
+import { appendChatLine } from '../chat/chat-store';
 import { GameRemoteServerRaw } from '../../types/event-types/game-remote-server-raw';
 import { GameRemoteServerGmcp } from '../../types/event-types/game-remote-server-gmcp';
 import { GameRemoteServerError } from '../../types/event-types/game-remote-server-error';
@@ -18,15 +20,17 @@ import { ShatteredArchiveServerClosed } from '../../types/event-types/shattered-
 import { getGlobalVarsSnapshot } from './globalScriptsStore';
 import { getChatSettings } from '../chat/chat-settings-store';
 import { classifyStrictChatSubtype } from '../chat/strict-chat-classifier';
+import type { AnyUserScript } from './types';
 
 declare global {
   interface Window {
+    __SA_USERSCRIPTS_TIMER_TICK__?: number;
     __SA_RUNTIME__?: {
       runtime: UserScriptRuntime;
-      getScripts: () => any[];
-      getTriggers: () => any[];
-      getAliases: () => any[];
-      getTimers: () => any[];
+      getScripts: () => AnyUserScript[];
+      getTriggers: () => AnyUserScript[];
+      getAliases: () => AnyUserScript[];
+      getTimers: () => AnyUserScript[];
       reload: (connectionId?: string) => void;
       rebuildTriggers: () => void;
       dump: () => void;
@@ -45,8 +49,7 @@ type NamedVarDeleteEvent = { name: string; connectionId?: string };
 type NamedVarClearEvent = { connectionId?: string };
 
 function safeConnId(v: unknown): string {
-  const s = String(v ?? '').trim();
-  return s.length > 0 ? s : 'default';
+  return canonicalConnectionId(String(v ?? ''));
 }
 
 function normalizeVarName(name: unknown): string {
@@ -81,7 +84,13 @@ export class RuntimeSingleton {
 
   private lastAfkState: boolean | null = null;
 
+  // the session that dropped had timers, and no "resumed" line has answered for them yet
+  private timersHeld = false;
+
   private constructor() {
+    // before hydrateRuntime, so the gate hears connection events ahead of any user trigger on them
+    startSessionGate();
+
     this.userScriptRuntime = new UserScriptRuntime({
       aliasSplitChar: this.settings.commandSplitChar,
 
@@ -132,6 +141,51 @@ export class RuntimeSingleton {
 
   private clearNamedVars(connectionId?: string): void {
     this.getNamedVarMap(connectionId).clear();
+  }
+
+  private writeNotice(msg: string): void {
+    try {
+      DispatchEvent('shatteredarchive:write-terminal', {
+        rawText: dslToAnsi(msg),
+        fromUserScript: true,
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  private onSessionChange({ state, dropped }: SessionChange): void {
+    if (state === 'down') {
+      // Only here are the loaded scripts certainly those of this session: a custom server has its own set,
+      // and it is swapped in or out just after the connection events.
+      const hasTimers = this.userScriptRuntime.getAllScripts().some((s) => s.kind === 'timer' && s.enabled);
+      this.timersHeld = hasTimers;
+
+      // AFK was learned from the session that just ended
+      this.lastAfkState = null;
+      this.userScriptRuntime.setAfkMode(false);
+
+      const effects: string[] = [];
+      if (hasTimers) effects.push('timers paused');
+      if (dropped > 0) effects.push(`${dropped} delayed command${dropped === 1 ? '' : 's'} cancelled`);
+      if (effects.length === 0) return;
+
+      this.writeNotice(`{Y[Timers] Disconnected — ${effects.join(', ')}{x\n`);
+      return;
+    }
+
+    if (state === 'awaiting-login') {
+      if (!this.timersHeld) return;
+      this.writeNotice('{Y[Timers] Connected — timers wait until your character is in the game{x\n');
+      return;
+    }
+
+    // live: every timer starts again with a full interval
+    this.userScriptRuntime.rebuildTimers();
+    if (!this.timersHeld) return;
+
+    this.timersHeld = false;
+    this.writeNotice('{G[Timers] Timers resumed{x\n');
   }
 
   private hydrateRuntime(connectionId?: string | null) {
@@ -265,22 +319,16 @@ export class RuntimeSingleton {
           this.lastAfkState = isAfk;
           this.userScriptRuntime.setAfkMode(isAfk);
 
-          const msg = isAfk
-            ? '{Y[Timers] AFK detected — timers suspended{x\n'
-            : '{G[Timers] AFK cleared — timers resumed{x\n';
-
-          try {
-            DispatchEvent('shatteredarchive:write-terminal', {
-              rawText: dslToAnsi(msg),
-              fromUserScript: true,
-            });
-          } catch {
-            // ignore
-          }
+          this.writeNotice(
+            isAfk ? '{Y[Timers] AFK detected — timers suspended{x\n' : '{G[Timers] AFK cleared — timers resumed{x\n',
+          );
         },
         { key: 'runtimeSingleton::afk::char-data' },
       ),
     );
+
+    // Dropped or restored connection -> pause and restart the timers
+    this.disposers.push(subscribeSession((change) => this.onSessionChange(change)));
 
     // Chat lines -> chat store (global, always-on)
     this.disposers.push(
@@ -326,7 +374,7 @@ export class RuntimeSingleton {
             return;
           }
 
-          const connectionId = e.key.slice(STORAGE_KEY_PREFIX_USERSCRIPTS.length) || 'default';
+          const connectionId = e.key.slice(STORAGE_KEY_PREFIX_USERSCRIPTS.length);
           this.hydrateRuntime(connectionId);
         },
         { key: 'runtimeSingleton::window::storage' },
@@ -377,10 +425,10 @@ export class RuntimeSingleton {
 
     // Timers should run even when the user script editor/modal isn't mounted.
     // Use a single global tick (HMR-safe) to drive UserScriptRuntime.tickTimers().
-    const w = window as any;
-    if (!w.__SA_USERSCRIPTS_TIMER_TICK__) {
-      w.__SA_USERSCRIPTS_TIMER_TICK__ = window.setInterval(() => {
+    if (!window.__SA_USERSCRIPTS_TIMER_TICK__) {
+      window.__SA_USERSCRIPTS_TIMER_TICK__ = window.setInterval(() => {
         try {
+          if (getSessionState() !== 'live') return;
           this.userScriptRuntime.tickTimers();
         } catch (err) {
           console.error('[RuntimeSingleton] tickTimers failed', err);
@@ -391,24 +439,24 @@ export class RuntimeSingleton {
     window.__SA_RUNTIME__ = {
       runtime: this.userScriptRuntime,
       getScripts: () => this.userScriptRuntime.getAllScripts(),
-      getTriggers: () => this.userScriptRuntime.getAllScripts().filter((s: any) => s.kind === 'trigger'),
-      getAliases: () => this.userScriptRuntime.getAllScripts().filter((s: any) => s.kind === 'alias'),
-      getTimers: () => this.userScriptRuntime.getAllScripts().filter((s: any) => s.kind === 'timer'),
+      getTriggers: () => this.userScriptRuntime.getAllScripts().filter((s) => s.kind === 'trigger'),
+      getAliases: () => this.userScriptRuntime.getAllScripts().filter((s) => s.kind === 'alias'),
+      getTimers: () => this.userScriptRuntime.getAllScripts().filter((s) => s.kind === 'timer'),
 
       reload: (connectionId?: string) => {
-        const id = connectionId ?? 'default';
+        const id = canonicalConnectionId(connectionId);
         this.hydrateRuntime(id);
         console.log('[__SA_RUNTIME__] reloaded', { connectionId: id });
       },
 
       rebuildTriggers: () => {
-        (this.userScriptRuntime as any).rebuildTriggerListeners?.();
+        (this.userScriptRuntime as unknown as { rebuildTriggerListeners?: () => void }).rebuildTriggerListeners?.();
         console.log('[__SA_RUNTIME__] rebuildTriggers called');
       },
 
       dump: () => {
         const all = this.userScriptRuntime.getAllScripts();
-        const byKind = all.reduce((acc: any, s: any) => {
+        const byKind = all.reduce<Record<string, AnyUserScript[]>>((acc, s) => {
           acc[s.kind] = acc[s.kind] ?? [];
           acc[s.kind].push(s);
           return acc;
@@ -416,9 +464,9 @@ export class RuntimeSingleton {
 
         console.group('[__SA_RUNTIME__] scripts');
         console.log('count:', all.length);
-        console.log('byKind:', Object.fromEntries(Object.entries(byKind).map(([k, v]: any) => [k, v.length])));
+        console.log('byKind:', Object.fromEntries(Object.entries(byKind).map(([k, v]) => [k, v.length])));
         console.table(
-          all.map((s: any) => ({
+          all.map((s) => ({
             id: s.id,
             name: s.name,
             kind: s.kind,

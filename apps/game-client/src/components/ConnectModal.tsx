@@ -1,6 +1,9 @@
 // apps/game-client/src/components/ConnectModal.tsx
 import React from 'react';
 import styles from '../styles/ConnectModal.module.scss';
+import { useWindowLayer } from '../hooks/useWindowLayer';
+import { useResizableModal } from '../hooks/useResizableModal';
+import { ResizeGrip } from './ResizeGrip';
 import { useConnectModal } from '../hooks/useConnectModal';
 import { ConnectModalProps } from '../types/connection-types/connect-modal-props';
 
@@ -40,11 +43,13 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
     onClose,
   });
 
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => handleClose() });
+  const { attach: resizeAttach, style: resizeStyle, gripProps: resizeGrip } = useResizableModal({ storageKey: 'shatteredarchive:modal-size:ConnectModal:v1', centered: true });
   if (!isOpen) return null;
 
   return (
-    <div className={styles.backdrop}>
-      <div className={styles.modal} role="dialog" aria-modal="true" aria-label="Connect to server">
+    <div className={styles.backdrop} style={{ zIndex: layer.zIndex }}>
+      <div ref={resizeAttach} className={styles.modal} role="dialog" aria-modal="true" aria-label="Connect to server" style={resizeStyle}>
         {/* Header */}
         <header className={styles.header}>
           <div className={styles.headerTitle}>Connect</div>
@@ -168,6 +173,7 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
             </div>
           </section>
         </div>
+        <ResizeGrip {...resizeGrip} />
       </div>
     </div>
   );

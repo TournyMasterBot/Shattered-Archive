@@ -1,0 +1,5 @@
+copilot-core is the pure half of Copilot: contracts, parsers, policy, ledger, scrubbing. It runs unchanged in the browser (game-client) and in Node (copilot-server), so nothing here may touch the file system, the network, a timer or the clock; callers inject them (same rule as services/scrum-poker-core, and the tsconfig sets `types: []` to enforce it).
+
+Local-only: no production build may contain this package. scripts/check-local-only.mjs greps production artifacts for COPILOT_BUNDLE_MARKER (contracts.ts), so the marker must stay in the compiled output of this package and nowhere else. The game-client reaches it only through code gated by the `__COPILOT_LOCAL__` build constant, which Vite replaces by a literal so the dead branch (and its imports) is dropped from a production bundle.
+
+Characters appear only as codenames. A real character name must never be added to a type, a fixture or a test here; the privacy scrubber (src/privacy) works from a registry that the server supplies at runtime.

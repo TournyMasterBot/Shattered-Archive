@@ -734,7 +734,7 @@ export default function MapPage({
     if (!initialFocus) return;
     setMode('area');
     setFile(initialFocus.file);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [initialFocus]);
 
   useEffect(() => {

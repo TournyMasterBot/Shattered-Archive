@@ -1,6 +1,7 @@
 // apps/game-server/src/index.ts
 import fs from 'fs';
 import path from 'path';
+import { randomUUID } from 'node:crypto';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -22,7 +23,8 @@ const log = new Logger({
   maxSize: process.env.LOG_MAX_FILE_SIZE ?? undefined,
   maxFiles: process.env.LOG_MAX_FILES ?? undefined,
   datePartitioned: Boolean(process.env.LOG_DATE_PARTITIONED ?? 'false'),
-  diskToggleOnSoh: Boolean(process.env.LOG_RESPECT_SOH ?? 'true'),
+  // Boolean('false') is true, so compare the text: LOG_RESPECT_SOH=false really turns the SOH switch off.
+  diskToggleOnSoh: (process.env.LOG_RESPECT_SOH ?? 'true').trim().toLowerCase() !== 'false',
   sohToggleEventTypes: ['game:remote-server:raw', 'game:client:input'],
 });
 /**
@@ -191,7 +193,11 @@ function setupGameWebSocketGateway(server: http.Server | https.Server) {
   });
 
   wss.on('connection', (ws: WebSocket) => {
-    log.info('[game-server] /ws/game client connected');
+    // Every record of this socket goes through `clog`, so a SOH (hidden password echo) on one connection can only
+    // hide that connection's records, never another player's or a Simulacrum/Copilot test session's.
+    const connectionId = randomUUID();
+    const clog = log.forConnection(connectionId);
+    clog.info('[game-server] /ws/game client connected');
 
     let mudApp: MudClientApp | null = null;
     let closed = false;
@@ -199,7 +205,7 @@ function setupGameWebSocketGateway(server: http.Server | https.Server) {
     const sendToClient = (origin: string, msg: ServerMessage) => {
       if (closed) return;
       if (ws.readyState === WebSocket.OPEN) {
-        log.debug(origin, msg);
+        clog.debug(origin, msg);
         ws.send(JSON.stringify(msg));
       }
     };
@@ -226,7 +232,7 @@ function setupGameWebSocketGateway(server: http.Server | https.Server) {
       let msg: ClientMessage;
       try {
         const remoteRaw = raw.toString('utf-8');
-        log.debug('game:client:input', remoteRaw);
+        clog.debug('game:client:input', remoteRaw);
         msg = JSON.parse(remoteRaw) as ClientMessage;
       } catch {
         sendToClient('game:client:input:error', { type: 'error', message: 'Invalid JSON payload' });
@@ -256,7 +262,7 @@ function setupGameWebSocketGateway(server: http.Server | https.Server) {
           ws.close(1008, 'Forbidden target: Mud has not been approved by application administrator');
           return;
         }
-        log.debug('[game-server] Creating MudClientApp', {
+        clog.debug('[game-server] Creating MudClientApp', {
           host,
           port,
         });
@@ -297,7 +303,7 @@ function setupGameWebSocketGateway(server: http.Server | https.Server) {
 
         try {
           await telnet.Connect();
-          log.info('game:remote-server:connect', {
+          clog.info('game:remote-server:connect', {
             host,
             port,
           });
@@ -328,7 +334,9 @@ function setupGameWebSocketGateway(server: http.Server | https.Server) {
 
     ws.on('close', (code: number, reasonBuf: Buffer) => {
       const reason = reasonBuf.toString('utf8');
-      log.info('game:server:connection:client-closed', {
+      // The connection is over, so nothing secret can follow: forget its SOH state first so this record is always kept.
+      log.endConnection(connectionId);
+      clog.info('game:server:connection:client-closed', {
         code,
         reason,
       });
@@ -336,7 +344,7 @@ function setupGameWebSocketGateway(server: http.Server | https.Server) {
     });
 
     ws.on('error', (err: unknown) => {
-      log.error('game:server:connection:error', {
+      clog.error('game:server:connection:error', {
         err: getErrorMessage(err),
       });
       closeBoth('ws-error');

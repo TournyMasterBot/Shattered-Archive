@@ -6,7 +6,7 @@
 // codebase used to carry (useCompassBlock.ts, autoleveling-engine.ts).
 //
 // Design is corpus-validated against real DSL MUD play (35,362 real moves across 229
-// game-server log files) — see .ai-plans/20260813-1325-movement-tracking-fix.md for the
+// game-server log files) — see .ai-plans-completed/closed-incomplete/20260813-1325-movement-tracking-fix.md for the
 // full research. The two load-bearing findings that shape this file:
 //   - A room diff must include `exits`, not just `room`/`sector` — 13.4% of real moves land
 //     in a same-name/same-sector room with a different exit set.
@@ -21,6 +21,7 @@
 // until they're migrated onto this module instead.
 
 import { DispatchEvent, ListenEvent } from '../event-emitter/event-dispatcher';
+import { setRoomData } from '../room/roomDataStore';
 import { classifyMovement } from './classifyMovement';
 
 export type RoomSnapshot = { room?: string; sector?: string; exits?: string[] };
@@ -32,7 +33,7 @@ type PendingEntry = {
 };
 
 /** Head-of-queue-relative timeout — corpus-validated, see file header. */
-const HEAD_TIMEOUT_MS = 1200;
+export const HEAD_TIMEOUT_MS = 1200;
 const TIMEOUT_POLL_MS = 100;
 
 const ANSI_CSI_RE = /\[[0-9;]*m/g;
@@ -100,7 +101,12 @@ class MovementTracker {
     );
     const offRoom = ListenEvent<RoomSnapshot>(
       'game:room-data',
-      (payload) => this.onRoomData(payload ?? {}),
+      (payload) => {
+        // this listener is bound at app scope, so it also keeps the shared "where am I" cache: the HUD widgets that used to fill it are not
+        // always on screen, and a window opened later (the map) must still know the room the player is standing in
+        setRoomData(payload ?? {});
+        this.onRoomData(payload ?? {});
+      },
       { key: 'movementTracker::game-room-data' },
     );
     const offRaw = ListenEvent<{ text?: string }>(

@@ -7,7 +7,7 @@ import type { RoleStore } from './role-store.js';
 
 /**
  * AI-ANNOTATION
- * @ai-summary The gated TCP relay (.ai-plans/20260816-0701-simulacrum-mud-wiring.md Step 1,
+ * @ai-summary The gated TCP relay (.ai-plans-completed/completed/20260816-0701-simulacrum-mud-wiring.md Step 1,
  *   correction 5): on connect, prompts for a trusted+-minted access code, reads exactly one
  *   line, and validates it BEFORE ever dialing merc-mud — an anonymous or under-tier attempt
  *   never reaches the engine. `admit()` is deliberately isolated (not inlined in the
@@ -82,7 +82,7 @@ export function createRelay(deps: RelayDeps): RelayHandle {
     upstream.on('error', () => socket.destroy());
     socket.on('error', () => upstream.destroy());
     upstream.once('connect', () => {
-      // Follow-on plan (.ai-plans/20260816-0724-simulacrum-master-account-characters.md Step 1):
+      // Follow-on plan (.ai-plans-completed/completed/20260816-0724-simulacrum-master-account-characters.md Step 1):
       // a private, internal-only preamble merc-mud's C side peeks at before dispatching to
       // CON_GET_NAME — merc-mud's port is never reachable from outside sa-shared/loopback (the
       // sibling plan's Step 4), so this is safe to trust. Sent BEFORE the pipe starts, so it

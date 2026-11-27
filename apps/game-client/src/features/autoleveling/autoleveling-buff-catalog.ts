@@ -11,22 +11,36 @@
  * ticks" instead.
  */
 
+import type { AutoLevelCombatState, AutoLevelVitalsGate } from './autoleveling-types';
+
 export interface BuffCatalogEntry {
   label: string;
   cmd: string;
   /** GMCP affect name, or '' for buffs the game never reports (berserk). */
   affect: string;
   /**
-   * Seed for the row's in-combat action — sanctuary et al. cannot be recast in
-   * combat, only quaffed/brandished. `<potion>` is a placeholder the user fills.
+   * Seed for the row's in-combat action — a COMPLETE command only. No catalog entry uses it today: sanctuary et al. cannot be
+   * recast in combat, only quaffed/brandished, but which item the player carries is theirs to say, and a seeded `quaff <potion>`
+   * was sent to the game literally 23 times on 2026-11-14 (CMDTPL-01). The in-combat box shows a hint instead.
    */
   suggestInCombat?: string;
   /** Pre-check "let fall near level-up" — haste suppresses mana regen. */
   suggestHoldNearLevel?: boolean;
+  /** The ability can only be used out of (`out`) or in (`in`) combat; seeds the row's combat state. */
+  combatState?: AutoLevelCombatState;
+  /** A vitals threshold the row starts with (a heal that is only worth casting when hurt); the player edits it. */
+  suggestVitalsGate?: AutoLevelVitalsGate;
+  /**
+   * A heal or other condition-gated cast: no affect to wait for and no tick gate; it is sent whenever its conditions hold
+   * (checked at the top of a round and after every fight). Without this an affect-less entry gets the tick gate (berserk).
+   */
+  conditionGated?: boolean;
+  /** The game's own success line (lowercase, no final dot) for an ability with no GMCP affect to confirm it. */
+  successLine?: string;
 }
 
 export const BUFF_CATALOG: BuffCatalogEntry[] = [
-  { label: 'Sanctuary', cmd: "cast 'sanctuary'", affect: 'sanctuary', suggestInCombat: 'quaff <potion>' },
+  { label: 'Sanctuary', cmd: "cast 'sanctuary'", affect: 'sanctuary' },
   { label: 'Haste', cmd: "cast 'haste'", affect: 'haste', suggestHoldNearLevel: true },
   { label: 'Frenzy', cmd: "cast 'frenzy'", affect: 'frenzy' },
   { label: 'Bless', cmd: "cast 'bless'", affect: 'bless' },
@@ -50,4 +64,15 @@ export const BUFF_CATALOG: BuffCatalogEntry[] = [
   { label: 'Protection Evil', cmd: "cast 'protection evil'", affect: 'protection evil' },
   { label: 'Protection Neutral', cmd: "cast 'protection neutral'", affect: 'protection neutral' },
   { label: 'Berserk', cmd: 'berserk', affect: '' },
+  // A heal, not an affect. Out of combat only (owner, 2026-11-14, decision D3: the engine enforces it whatever the game answers);
+  // the success line is in the game-server logs of 2026-11-14 and 2026-11-18. Catalog only: never pre-filled.
+  {
+    label: 'Dark Heal',
+    cmd: "cast 'dark heal'",
+    affect: '',
+    combatState: 'out',
+    suggestVitalsGate: { stat: 'hp', op: 'below', pct: 70 },
+    conditionGated: true,
+    successLine: 'a dark healing fills your body',
+  },
 ];

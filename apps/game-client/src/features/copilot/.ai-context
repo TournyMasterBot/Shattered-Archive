@@ -1,0 +1,5 @@
+Copilot client plumbing: the flag-gated, local-only half of Copilot in the game client (docs/copilot/client.md, the plan .ai-plans/active/2026-11-05_copilot-ai-training-sibling-to-autopilot). EVERYTHING here is reached only through index.ts behind `__COPILOT_LOCAL__`, which main.tsx imports dynamically inside `if (__COPILOT_LOCAL__)`: a production build must contain none of it, and scripts/check-local-only.mjs (pnpm check:local-only, run after a real production build) fails if the bundle marker is found. Never import a file from this folder from code outside it, and never reference it from a shared module.
+
+The address of the server is NOT a build variable: the shared game-client Dockerfile may carry only the COPILOT_LOCAL switch (LOCAL-02). config.ts fixes it to the dev vhost, overridable per browser through localStorage `copilot.api.base` (local or *.shatteredarchive.dev origins only).
+
+The gate (gate.ts) is the only place Copilot may send a command to the game. Nothing else in this folder dispatches shatteredarchive:send-command.

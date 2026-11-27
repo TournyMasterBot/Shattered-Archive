@@ -20,6 +20,8 @@ type ExtendedLoggerProps = LoggerProps & {
 
   diskToggleOnSoh?: boolean;
   sohToggleEventTypes?: string[];
+  /** How long a SOH may hide a connection's records; capped at 5 minutes (also the default). */
+  sohMaxSuppressMs?: number;
 };
 
 // ---- helpers to avoid `any` ----------------------------------------------
@@ -162,54 +164,89 @@ function containsSoh(payload: unknown): boolean {
   return false;
 }
 
+/** The longest a SOH can keep a connection's records out of the log (the MUD hides password echo this way). */
+export const SOH_MAX_SUPPRESS_MS = 5 * 60 * 1000;
+
+/** Key used for records that carry no connection id (server-level records). */
+const NO_CONNECTION = '';
+
 /**
- * Exported for unit tests.
- * Returns a *format factory* (call it like `sohGate()` inside format.combine).
+ * Decides, once per record, whether the SOH switch hides it. Exported for unit tests.
  *
- * Behavior:
- * - If a line contains SOH and (optionally) eventType is allowlisted => toggle and DROP that SOH line.
- * - If logging is disabled => DROP ALL logs.
+ * - A record that contains SOH (and whose event type may toggle, when an allowlist is given) flips the switch for ITS
+ *   connection and is itself dropped. SOH normally comes in pairs: the first hides a password prompt, the second ends it.
+ * - While a connection's switch is off, every record of THAT connection is dropped; other connections are untouched.
+ * - A switch left off (an unpaired SOH, a connection that ended mid-prompt) turns itself back on once
+ *   `maxSuppressMs` (never more than {@link SOH_MAX_SUPPRESS_MS}) has passed since it went off. The check runs on the next
+ *   record of that connection, which is the only moment it could be observed. A SOH that arrives after that point
+ *   starts a new suppression.
+ * - `endConnection` forgets a connection, so its state can never outlive it.
  */
-export function createSohGateFormat(args: {
-  enabled: boolean;
-  sohToggleEventTypes?: string[];
-  containsSohFn?: (payload: unknown) => boolean;
-  getEventType?: (info: winston.Logform.TransformableInfo) => string;
-  getPayload?: (info: winston.Logform.TransformableInfo) => unknown;
-}): winston.Logform.FormatWrap {
-  const {
-    enabled,
-    sohToggleEventTypes,
-    containsSohFn = containsSoh,
-    getEventType = (info) => String(info.message ?? ''),
-    getPayload = (info) => getInfoPayload(info),
-  } = args;
+export class SohGate {
+  private readonly enabled: boolean;
+  private readonly sohTypes: Set<string> | undefined;
+  private readonly maxSuppressMs: number;
+  private readonly now: () => number;
+  private readonly containsSohFn: (payload: unknown) => boolean;
+  /** connection id -> time its switch went off; a connection that is absent is logging normally. */
+  private readonly offSince = new Map<string, number>();
 
-  const sohTypes = sohToggleEventTypes?.length ? new Set(sohToggleEventTypes) : undefined;
+  constructor(args: {
+    enabled: boolean;
+    sohToggleEventTypes?: string[];
+    maxSuppressMs?: number;
+    now?: () => number;
+    containsSohFn?: (payload: unknown) => boolean;
+  }) {
+    this.enabled = args.enabled;
+    this.sohTypes = args.sohToggleEventTypes?.length ? new Set(args.sohToggleEventTypes) : undefined;
+    const requested = args.maxSuppressMs;
+    this.maxSuppressMs =
+      typeof requested === 'number' && Number.isFinite(requested) && requested > 0
+        ? Math.min(requested, SOH_MAX_SUPPRESS_MS)
+        : SOH_MAX_SUPPRESS_MS;
+    this.now = args.now ?? (() => Date.now());
+    this.containsSohFn = args.containsSohFn ?? containsSoh;
+  }
 
-  let loggingEnabled = true;
+  /** True when the record must NOT be written. Call exactly once per record. */
+  shouldDrop(eventType: string, payload: unknown, connectionId?: string): boolean {
+    if (!this.enabled) return false;
 
-  return winston.format((info) => {
-    if (!enabled) return info;
+    const key = connectionId ?? NO_CONNECTION;
+    const now = this.now();
 
-    const eventType = getEventType(info);
-    const payload = getPayload(info);
-
-    const canToggle = !sohTypes || sohTypes.has(eventType);
-    if (canToggle && containsSohFn(payload)) {
-      loggingEnabled = !loggingEnabled;
-      return false;
+    const since = this.offSince.get(key);
+    if (since !== undefined && now - since >= this.maxSuppressMs) {
+      this.offSince.delete(key);
     }
 
-    if (!loggingEnabled) return false;
+    const canToggle = !this.sohTypes || this.sohTypes.has(eventType);
+    if (canToggle && this.containsSohFn(payload)) {
+      if (this.offSince.has(key)) this.offSince.delete(key);
+      else this.offSince.set(key, now);
+      return true;
+    }
 
-    return info;
-  });
+    return this.offSince.has(key);
+  }
+
+  /** Forget a finished connection: its next record (if any) is logged normally. */
+  endConnection(connectionId: string): void {
+    this.offSince.delete(connectionId);
+  }
 }
+
+/** The logging calls a single connection needs; every record it writes is tagged with that connection. */
+export type ConnectionLogger = Pick<ILogger, 'debug' | 'info' | 'warn' | 'error' | 'fatal'>;
+
+const LEVEL_ORDER: Record<string, number> = { fatal: 0, error: 1, warn: 2, info: 3, debug: 4 };
 
 export class Logger implements ILogger {
   private level: LogLevel;
   private logger: winston.Logger;
+  /** Decides once per record, BEFORE winston fans it out to the transports (each transport gets its own copy). */
+  private readonly sohGate: SohGate;
 
   // ── AI-METHOD ── regenerated by annotate_methods — do not hand-edit
   // @ai-method: constructor — Initializes a logger with console, file, and JSONL transports based on provided properties.
@@ -220,9 +257,10 @@ export class Logger implements ILogger {
 
     const transports: winston.transport[] = [];
 
-    const sohGate = createSohGateFormat({
+    this.sohGate = new SohGate({
       enabled: !!props.diskToggleOnSoh,
       sohToggleEventTypes: props.sohToggleEventTypes,
+      maxSuppressMs: props.sohMaxSuppressMs,
     });
 
     // Console transport (GATED)
@@ -232,7 +270,6 @@ export class Logger implements ILogger {
       new winston.transports.Console({
         level: consoleLevel,
         format: winston.format.combine(
-          sohGate(),
           winston.format.timestamp(),
           winston.format.colorize(),
           winston.format.printf((info) => {
@@ -266,7 +303,6 @@ export class Logger implements ILogger {
           level: fileLevel,
           auditFile: undefined,
           format: winston.format.combine(
-            sohGate(),
             winston.format.timestamp(),
             winston.format.printf((info) => {
               const type = String(info.message ?? '');
@@ -300,7 +336,6 @@ export class Logger implements ILogger {
           level: diskJsonLevel,
           auditFile: undefined,
           format: winston.format.combine(
-            sohGate(),
             winston.format.timestamp(),
             winston.format.printf((info) => {
               const type = String(info.message ?? '');
@@ -367,35 +402,62 @@ export class Logger implements ILogger {
   // @ai-hash: d07062f3
   // ── END AI-METHOD ──
   debug(message: string, meta?: unknown): void {
-    this.logger.log({ level: 'debug', message, payload: meta });
+    this.write('debug', message, meta);
   }
   // ── AI-METHOD ── regenerated by annotate_methods — do not hand-edit
   // @ai-method: info — Logs informational messages with optional metadata payload.
   // @ai-hash: 423ff7f1
   // ── END AI-METHOD ──
   info(message: string, meta?: unknown): void {
-    this.logger.log({ level: 'info', message, payload: meta });
+    this.write('info', message, meta);
   }
   // ── AI-METHOD ── regenerated by annotate_methods — do not hand-edit
   // @ai-method: warn — Logs warning messages with optional metadata to the console.
   // @ai-hash: 3c5afecb
   // ── END AI-METHOD ──
   warn(message: string, meta?: unknown): void {
-    this.logger.log({ level: 'warn', message, payload: meta });
+    this.write('warn', message, meta);
   }
   // ── AI-METHOD ── regenerated by annotate_methods — do not hand-edit
   // @ai-method: error — Logs error messages with optional metadata to the console.
   // @ai-hash: c762ffc9
   // ── END AI-METHOD ──
   error(message: string, meta?: unknown): void {
-    this.logger.log({ level: 'error', message, payload: meta });
+    this.write('error', message, meta);
   }
   // ── AI-METHOD ── regenerated by annotate_methods — do not hand-edit
   // @ai-method: fatal — Logs a fatal error message and optional metadata then terminates execution.
   // @ai-hash: 0e07db64
   // ── END AI-METHOD ──
   fatal(message: string, meta?: unknown): void {
-    this.logger.log({ level: 'fatal', message, payload: meta });
+    this.write('fatal', message, meta);
+  }
+
+  /**
+   * A logger whose records belong to one connection. The SOH switch is kept per connection, so a SOH on one
+   * connection can never hide the records of another. Call {@link endConnection} when the connection is over.
+   */
+  forConnection(connectionId: string): ConnectionLogger {
+    return {
+      debug: (message, meta) => this.write('debug', message, meta, connectionId),
+      info: (message, meta) => this.write('info', message, meta, connectionId),
+      warn: (message, meta) => this.write('warn', message, meta, connectionId),
+      error: (message, meta) => this.write('error', message, meta, connectionId),
+      fatal: (message, meta) => this.write('fatal', message, meta, connectionId),
+    };
+  }
+
+  /** Forget the connection's SOH state; call it before logging the connection's final record so that record is kept. */
+  endConnection(connectionId: string): void {
+    this.sohGate.endConnection(connectionId);
+  }
+
+  private write(level: string, message: string, meta: unknown, connectionId?: string): void {
+    // Only a record winston would actually write may move the switch (same as when each transport gated its own copy).
+    const wanted = (LEVEL_ORDER[level] ?? 0) <= (LEVEL_ORDER[this.level] ?? LEVEL_ORDER.debug);
+    if (wanted && this.sohGate.shouldDrop(message, meta, connectionId)) return;
+
+    this.logger.log({ level, message, payload: meta });
   }
 }
 

@@ -92,8 +92,27 @@ Full rule: `docs/claude/ai-indexes-and-completion-gate.md`.
   a hang. If the MCP stack is down, read directly and say so once.
 - **No bare `cd`** in Bash/PowerShell (a hook denies it): use absolute paths or `bash -c 'cd <dir> && <cmd>'`. A native
   Windows exe given a path as an argument needs the `C:/…` form (or `MSYS_NO_PATHCONV=1`).
+- **Tests run through the package script**: `pnpm --filter <pkg> test` (`--runInBand`). A hook denies a hand-run jest without `--runInBand` or
+  `--maxWorkers` 1-4 (a bare run used 112 GB on 2026-11-19); after an interrupted run, check for leftover `jest-worker` processes. `docs/claude/working-posture.md`.
 - **Game questions** (classes, items, areas, routes, prices, AGL): `archive_ask`, not C# or HTML scraping. **Library
   docs** newer than your training: `lookup_docs` (docs-hub) before writing code. Every tool: `../Shattered-AI/doc/tooling.md`.
+
+## Emulator and device tests of the mobile app
+
+When asked to run the mobile app on the emulator, "emulation tests", or a live device check, open `docs/claude/emulator-testing.md` FIRST and follow it:
+`emulator-5554` only (you may boot it; never the physical phone); every origin resolves to the local dev stack (`*.shatteredarchive.dev` or loopback), never
+`shatteredarchive.com`, checked and printed before the first sign-in or Save (a build as it stands defaults to production); sign in through the real full auth
+flow with the ONE reusable local test account from its git-ignored registry, never a new account while one exists; no credential or token printed or photographed.
+Use the tool, not hand-run `adb`/`expo` steps: `node C:/Projects/Shattered-AI/tools/mobile-test/session.mjs up --planned-phase | signin | down --reset` (Metro only
+inside a planned `/implement-plan` phase, and only if the owner has not started it). A hook (`.claude/hooks/emulator-guard.js`) blocks an install or build of the app
+without a fresh preflight; if it blocks something harmless, rephrase it or run `session.mjs preflight`.
+
+## Work items (bugs, proposals, tech debt)
+
+Tracked work lives in `.ai-plans/{proposed,active}/<yyyy-mm-dd_slug>/` and moves as a folder: `/report-bug`, `/propose-work`,
+`/tech-debt` capture; `/scope-work` scopes (never sizes, follows `docs/standards/data-classification.md`); `/tech-plan` plans in
+testable phases (language standards in `docs/standards/`, edge-case classifiers in `docs/standards/edge-cases/`); `/implement-plan` builds and verifies each phase (a phase never ends
+unbuildable or red); then `/pr-review` and `/pr-package` (`.pr/<slug>/`). Contract: `docs/claude/work-item-workflow.md`.
 
 ## `docs/claude/`
 
@@ -105,6 +124,8 @@ Full rule: `docs/claude/ai-indexes-and-completion-gate.md`.
 | `ai-indexes-and-completion-gate.md` | index rules and enforcement, the gate's kinds, markers and logging |
 | `tool-lookup.md` | docs-hub `lookup_docs`, the single tool list, `archive_ask` |
 | `working-posture.md` | edit-heavy posture and the shell / path rules, in full |
+| `work-item-workflow.md` | the work-item folders and states, `item.md` format, file and screenshot naming, the skills' shared rules |
+| `emulator-testing.md` | mobile emulator and device tests: dev stack only, the one reusable test account, the real auth flow, the usage pattern |
 
 See `.github/copilot-instructions.md` for full project structure, branching policy, coding standards, test requirements,
 and licensing constraints.

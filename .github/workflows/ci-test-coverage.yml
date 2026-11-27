@@ -44,6 +44,9 @@ jobs:
       - name: Install dependencies (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
+      - name: Guard - every jest invocation bounds its workers
+        run: node scripts/check-jest-workers.mjs
+
       - name: Build
         run: pnpm -r run build
 

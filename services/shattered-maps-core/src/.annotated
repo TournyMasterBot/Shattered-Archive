@@ -1,0 +1,25 @@
+File Index
+
+/identity.ts
+Purpose: A room id is minted at random and is never built from the title or the vnum (titles repeat across the world). matchRoom looks only inside the SAME area and treats nested exit sets as one room, so a hidden exit appearing does not split a room; where it cannot tell it says `ambiguous` and the caller keeps rooms apart (an extra room is merged later by the owner, a wrong merge shows up as a link conflict). Only a walk can contradict a link: not seeing an exit again is never evidence. undoMerge must be applied newest merge first, because an older undo image would put back link states a newer merge rewrote.
+
+/baseline.ts
+Purpose: The P5 fixture rule as a pure function (5 visits, 3 play days, ratio 0.8, demote after 3 misses; all four are config). A demoted fixture goes to `was` instead of being deleted, so a wrong demotion is reversible. `player` entries never enter a baseline. The ratio is seen/observed where observed counts visits since the thing was FIRST seen, not since the room was first visited.
+
+/validate.ts
+Purpose: The only way a map from outside (file, import, request body) becomes a typed MapFile. Unknown fields are errors, so a new field on a type must be added here as well or it is rejected. Reports at most 20 errors with paths and never throws. The reference checks (link ends, exit slots, aliases, vnum uniqueness among live rooms) use maps, not scans: keep them linear for 60,000-room files.
+
+/render.ts
+Purpose: Every string written into the SVG goes through escapeXml, in content and in attributes; the Mapper's own escapeText only escaped `&` and `<`, which is not enough once an SVG is inlined into a page. Numbers go through n() so a NaN or an exponent can never reach an attribute. Link and room geometry are derived from the DslMapper's hexMath/octMath/svgExport (MIT, same author). The continent picture's lines between areas come from `slice.areaLinks` (hierarchy.areaLinksOf; the site gets them from manifest.json); the viewers that build the continent slice themselves must pass them or draw no lines. publish-map-renderer.mjs reads dist, so rebuild the package before regenerating the site bundle.
+
+/export.ts
+Purpose: The output must be byte-stable (cells sorted by floor, row, column, id; fixed key order) because other tools diff it. In the hex layout x/y are axial q/r and E/W exits are reported in unsupportedExits rather than bent into the layout. Keep history, sources and undo images out of it.
+
+/terrainPalette.ts
+Purpose: The terrain colours (the owner's original DslMapper palette) and the folding of sector spellings (indoors to inside, water to swim, deepwater to noswim). Object.hasOwn on the alias table: a sector named __proto__ must not read a prototype. It joins the browser bundle, so it imports nothing at run time.
+
+/terrain.ts
+Purpose: Mining the sector out of GMCP room_data (a log record or a bare line), tallying title to sector, deciding what a title means (the dominant sector at 90% by default, a shared title is left alone) and giving it to the rooms of a map without a sector. Pure; scripts/mine-terrain.mjs reads the logs. Titles are compared without case or spacing.
+
+/autoLayout.ts
+Purpose: A LayoutSpec derived from the cross-area links (an exit east into B puts B east of A; up and down count as north and south), walked outward from the biggest connected area, strongest link first. Areas nothing joins are left out and keep their place. Run by scripts/layout-auto.mjs for every continent without an owner spec; with `base` (an owner spec, `--extend`) the owner's relations are kept verbatim and the areas the spec leaves out are related by their links, outward from the areas it placed (an owner spec with a few relations used to leave the rest packed with no link to their neighbours).

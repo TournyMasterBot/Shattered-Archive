@@ -1,3 +1,4 @@
+import { canonicalConnectionId } from '../features/connection/connectionId';
 import { useEffect, useState } from 'react';
 
 const PLUGIN_CSS_KEY_PREFIX = 'shatteredArchive.pluginCssOverride.';
@@ -8,7 +9,7 @@ const PLUGIN_CSS_STYLE_ID_PREFIX = 'plugin-css-override-style-';
 // @ai-hash: 86a22d81
 // ── END AI-METHOD ──
 function getStorageKey(connectionId: string, pluginId: string) {
-  const c = connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
+  const c = canonicalConnectionId(connectionId);
   return `${PLUGIN_CSS_KEY_PREFIX}${c}.${pluginId}`;
 }
 
@@ -17,7 +18,7 @@ function getStorageKey(connectionId: string, pluginId: string) {
 // @ai-hash: 64fe995b
 // ── END AI-METHOD ──
 function getStyleId(connectionId: string, pluginId: string) {
-  const c = connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
+  const c = canonicalConnectionId(connectionId);
   return `${PLUGIN_CSS_STYLE_ID_PREFIX}${c}-${pluginId}`;
 }
 

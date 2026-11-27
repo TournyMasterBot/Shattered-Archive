@@ -113,7 +113,7 @@ export function createEnchantPlugin(): IPluginModule {
   let activeItem: EnchantItem | null = null;
   let currentLevel = 0;
   let enchanting = false;
-  let apiRef: PluginRuntimeApi | null = null;
+  let _apiRef: PluginRuntimeApi | null = null;
 
   // ── Shared logic ─────────────────────────────────────────────────────────
 
@@ -180,7 +180,7 @@ export function createEnchantPlugin(): IPluginModule {
   // ── onEnable ──────────────────────────────────────────────────────────────
 
   function onEnable(api: PluginRuntimeApi): () => void {
-    apiRef = api;
+    _apiRef = api;
 
     const offRaw = api.onEvent('shatteredarchive:raw-data', (payload: any) => {
       if (!activeItem) return;
@@ -207,7 +207,7 @@ export function createEnchantPlugin(): IPluginModule {
       activeItem = null;
       currentLevel = 0;
       enchanting = false;
-      apiRef = null;
+      _apiRef = null;
     };
   }
 

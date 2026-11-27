@@ -2,7 +2,7 @@
 //
 // Verifies the head-of-queue-relative FIFO tracker against the exact scenarios the
 // plan's corpus research flagged as load-bearing (see movementTracker.ts's header and
-// .ai-plans/20260813-1325-movement-tracking-fix.md Step 2). Uses fake timers — the
+// .ai-plans-completed/closed-incomplete/20260813-1325-movement-tracking-fix.md Step 2). Uses fake timers — the
 // 1200ms head timeout and the deep-burst pacing case both need precise, fast-forwardable
 // time control, unlike autoleveling-engine.test.ts's real-timer style.
 

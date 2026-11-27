@@ -164,6 +164,9 @@ export function useGameConnection(): UseGameConnectionResult {
   // -----------------------------------------------------------------------
   useEffect(() => {
     const unbind = ListenEvent<{ cmd: string }>('shatteredarchive:send-command', (payload) => {
+      // A command that cannot be sent is not echoed either: the echo would claim it was.
+      if (wsRef.current?.readyState !== WebSocket.OPEN) return;
+
       const cmd = payload?.cmd ?? '';
       const ansi = dslToAnsi(`{D> ${cmd}{x\n\n`);
       DispatchEvent('shatteredarchive:write-terminal', {
@@ -183,7 +186,12 @@ export function useGameConnection(): UseGameConnectionResult {
 
   const bindSocketHandlers = useCallback(
     (ws: WebSocket) => {
+      // A socket that has been replaced or closed on purpose can still report late; its events would
+      // mark the new connection as down.
+      const isCurrent = () => wsRef.current === ws;
+
       const onOpen = () => {
+        if (!isCurrent()) return;
         setIsConnected(true);
         setCurrentHost(lastHostRef.current);
         setCurrentPort(lastPortRef.current);
@@ -191,6 +199,7 @@ export function useGameConnection(): UseGameConnectionResult {
       };
 
       const onClose = () => {
+        if (!isCurrent()) return;
         setIsConnected(false);
         setCurrentHost(undefined);
         setCurrentPort(undefined);
@@ -198,6 +207,7 @@ export function useGameConnection(): UseGameConnectionResult {
       };
 
       const onError = () => {
+        if (!isCurrent()) return;
         setLastError('WebSocket error');
         DispatchEvent('game:socket-error', {
           host: lastHostRef.current,
@@ -207,6 +217,7 @@ export function useGameConnection(): UseGameConnectionResult {
       };
 
       const onMessage = (ev: MessageEvent) => {
+        if (!isCurrent()) return;
         let msg: ServerMessage;
 
         try {

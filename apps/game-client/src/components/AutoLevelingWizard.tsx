@@ -20,6 +20,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import styles from '../styles/AutoLevelingWizard.module.scss';
+import { useWindowLayer } from '../hooks/useWindowLayer';
+import { useResizableModal } from '../hooks/useResizableModal';
+import { ResizeGrip } from './ResizeGrip';
 import type {
   AutoLevelConfig,
   AutoLevelRunState,
@@ -28,12 +31,32 @@ import type {
 import { getAreaDetail } from '../features/autoleveling/autoleveling-content';
 import {
   addCustomTarget as persistCustomTarget,
+  deleteTargetOverride,
   getBuffOverlay,
   getCustomTargets,
   getFightOverlay,
   getPrefs,
+  getRouteOverride,
+  getStepValues,
+  getTargetOverrides,
+  getTargetSelection,
+  removeCustomTarget as deleteCustomTarget,
+  resetRouteOverride,
+  resetTargetOverride,
+  saveStepValues,
+  setRouteOverride,
+  setTargetOverride,
+  setTargetSelection,
+  updateCustomTarget,
   type FightRow,
+  type TargetEditResult,
 } from '../features/autoleveling/autoleveling-user-data';
+import { applyRouteOverride, parseRouteText } from '../features/autoleveling/autoleveling-route-overrides';
+import {
+  applyTargetOverrides,
+  targetOverrideKey,
+  type TargetOverridePatch,
+} from '../features/autoleveling/autoleveling-target-overrides';
 import { draftToConfig } from '../features/autoleveling/autoleveling-wizard-config';
 import { AreaStep } from './wizard/AreaStep';
 import { CombatStep } from './wizard/CombatStep';
@@ -41,7 +64,7 @@ import { RestStep } from './wizard/RestStep';
 import { ReviewStep } from './wizard/ReviewStep';
 import { TargetsStep } from './wizard/TargetsStep';
 import { useCharacterLogin } from './wizard/useCharacterLevel';
-import { useWizardDraft, type DraftTarget } from './wizard/useWizardDraft';
+import { targetRowId, useWizardDraft, type DraftTarget } from './wizard/useWizardDraft';
 import { WeightStep } from './wizard/WeightStep';
 
 /* ------------------------------------------------------------------------- */
@@ -67,6 +90,28 @@ export interface AutoLevelingWizardProps {
   rescanRoom: () => void;
 }
 
+const TARGET_STORAGE_MESSAGE = 'Could not save that change. Your browser storage may be unavailable.';
+const TARGET_UNSAFE_MESSAGE = 'That text is not allowed: use 1-200 characters, with no ";" or line breaks.';
+
+/** Words for the player when a target edit was refused or could not be stored. */
+function targetFailureMessage(res: Extract<TargetEditResult<unknown>, { ok: false }>): string {
+  return res.error === 'unsafe' ? TARGET_UNSAFE_MESSAGE : TARGET_STORAGE_MESSAGE;
+}
+
+/** Words for the player when a route edit was refused or could not be stored. */
+function routeFailureMessage(error: 'empty' | 'unsafe' | 'too-long' | 'storage'): string {
+  switch (error) {
+    case 'empty':
+      return 'The route needs at least one step.';
+    case 'too-long':
+      return 'That route is too long: use at most 1000 steps.';
+    case 'unsafe':
+      return 'A step is not allowed: each step must be 1-200 characters, with no control characters. Separate steps with ";" or a new line.';
+    default:
+      return TARGET_STORAGE_MESSAGE;
+  }
+}
+
 type StepId = 'area' | 'targets' | 'combat' | 'rest' | 'weight' | 'review' | 'start';
 
 const STEPS: { id: StepId; label: string; blurb: string }[] = [
@@ -79,8 +124,11 @@ const STEPS: { id: StepId; label: string; blurb: string }[] = [
   { id: 'start', label: 'Start', blurb: 'Run & monitor' },
 ];
 
+/** The Rest, Weight and lap-wait values are written this long after the last change. */
+const STEP_SAVE_DEBOUNCE_MS = 400;
+
 // ── run-state → short label (mirrors AutoLevelingModal.toRunStateText) ──
-function toRunStateText(runState: AutoLevelRunState): string {
+export function toRunStateText(runState: AutoLevelRunState): string {
   switch (runState.status) {
     case 'idle':
     case 'stopping':
@@ -97,7 +145,11 @@ function toRunStateText(runState: AutoLevelRunState): string {
       return `Running (round ${runState.round})`;
     }
     case 'paused':
-      return `Paused (round ${runState.round})`;
+      if (runState.reason === 'timeout') {
+        const what = (runState.message ?? 'no reply from the game').replace(/[.\s]+$/, '');
+        return `Paused: ${what}. Press Resume to continue.`;
+      }
+      return runState.round != null ? `Paused (round ${runState.round})` : 'Paused';
     case 'error':
       return `Error: ${runState.message}`;
     default:
@@ -123,7 +175,7 @@ function formatXpProgress(p: AutoLevelXpProgress): string {
 export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
   isOpen,
   onClose,
-  config,
+  config: _config,
   setConfig,
   runState,
   xpProgress,
@@ -140,10 +192,24 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
   const [stepIx, setStepIx] = useState(0);
 
   const { level: charLevel, name: charName } = useCharacterLogin();
-  const { draft, patch, setArea, toggleTarget, addCustomTarget, removeCustomTarget, reset } = useWizardDraft();
+  const {
+    draft,
+    patch,
+    setArea,
+    toggleTarget,
+    editTarget,
+    addCustomTarget,
+    removeCustomTarget,
+    deleteUnmatched,
+    reset,
+  } = useWizardDraft();
   const [customChosen, setCustomChosen] = useState(false);
   const [targetsLoading, setTargetsLoading] = useState(false);
 
+  const stepsLoaded = useRef(false);
+  const savedStepsJson = useRef('');
+  /** The unticked ids loaded for the area now shown, and the list last written, so seeding never writes (SETTINGS-01). */
+  const selectionSeed = useRef<{ slug: string; stored: string[]; written: string } | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const dragOffsetRef = useRef<{ x: number; y: number } | null>(null);
   const [pos, setPos] = useState({ x: 0, y: 0 });
@@ -164,9 +230,68 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
     if (!isRunning) {
       reset();
       setCustomChosen(false);
+      // The Rest and Weight values and the lap wait are remembered: load them over the empty draft (live findings 2026-11-14, item 4).
+      stepsLoaded.current = false;
+      void getStepValues().then((values) => {
+        savedStepsJson.current = JSON.stringify(values);
+        patch(values);
+        stepsLoaded.current = true;
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
+
+  // ...and written back, debounced, only once they were loaded and only when they changed. The latest unsaved values are written at once
+  // when the wizard closes or unmounts, so closing it right after a keystroke loses nothing.
+  const stepValues = useMemo(
+    () => ({
+      restStartOfRound: draft.restStartOfRound,
+      restEndOfRound: draft.restEndOfRound,
+      restDuringRound: draft.restDuringRound,
+      weightAtOrAbovePct: draft.weightAtOrAbovePct,
+      weightCommands: draft.weightCommands,
+      lapWaitMin: draft.lapWaitMin,
+    }),
+    [draft.restStartOfRound, draft.restEndOfRound, draft.restDuringRound, draft.weightAtOrAbovePct, draft.weightCommands, draft.lapWaitMin],
+  );
+  const pendingSteps = useRef<typeof stepValues | null>(null);
+  const flushSteps = useCallback(() => {
+    const values = pendingSteps.current;
+    pendingSteps.current = null;
+    if (!values) return;
+    savedStepsJson.current = JSON.stringify(values);
+    void saveStepValues(values);
+  }, []);
+  useEffect(() => {
+    if (!isOpen || !stepsLoaded.current) return;
+    if (JSON.stringify(stepValues) === savedStepsJson.current) {
+      pendingSteps.current = null;
+      return;
+    }
+    pendingSteps.current = stepValues;
+    const t = setTimeout(flushSteps, STEP_SAVE_DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [isOpen, stepValues, flushSteps]);
+  useEffect(() => {
+    if (!isOpen) flushSteps();
+  }, [isOpen, flushSteps]);
+  useEffect(() => flushSteps, [flushSteps]);
+
+  // The targets the player unticked, per area: written when a ticked box changes (after the area is seeded), never on the seeding itself.
+  useEffect(() => {
+    const slug = draft.areaSlug;
+    const seed = selectionSeed.current;
+    if (!isOpen || !slug || targetsLoading || customChosen || !seed || seed.slug !== slug) return;
+    const present = new Set(draft.targets.map(targetRowId));
+    // Ids that match no row now (the server renamed or dropped the target) are kept, not applied: they come back if the row does.
+    const kept = seed.stored.filter((id) => !present.has(id));
+    const unticked = draft.targets.filter((t) => !t.enabled && !(t.origin === 'area' && t.hidden)).map(targetRowId);
+    const next = [...kept, ...unticked];
+    const json = JSON.stringify(next);
+    if (json === seed.written) return;
+    seed.written = json;
+    void setTargetSelection(slug, next);
+  }, [isOpen, draft.areaSlug, draft.targets, targetsLoading, customChosen]);
 
   // Build the engine config from the draft while the user sits on the Start step
   // (and isn't mid-run). By the time they click Start it's committed + persisted.
@@ -175,6 +300,18 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
     if (!draft.area || customChosen) return;
     setConfig(draftToConfig(draft));
   }, [isOpen, step.id, isRunning, draft, customChosen, setConfig]);
+
+  // Pause -> edit -> Resume: the engine re-reads the SAVED config on resume (refreshRunSnapshot), so edits made while
+  // paused (an unchecked target, a changed buff) must reach it. Nothing else writes the draft while a run is active,
+  // so without this an unchecked target is still attacked after Resume. Only while paused (the engine ignores config
+  // changes to targets mid-round anyway), and only with an area chosen in THIS wizard instance, so a reopened wizard
+  // with an empty draft can never overwrite the running config.
+  const isPaused = runState.status === 'paused';
+  useEffect(() => {
+    if (!isOpen || !isPaused) return;
+    if (!draft.area || customChosen) return;
+    setConfig(draftToConfig(draft));
+  }, [isOpen, isPaused, draft, customChosen, setConfig]);
 
   // Combat fight-commands, Rest during-round rules, and the Weight gate all re-fetch config
   // fresh on their own next check (see autoleveling-engine.ts) — no pause needed for these
@@ -227,29 +364,63 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
         const prefs = await getPrefs();
         const cls = prefs.playerClass ?? null;
         const playerAlignment = (prefs.playerAlignment as 'good' | 'neutral' | 'evil' | undefined) ?? 'neutral';
-        const [detail, saved, buffs, fightCommands] = await Promise.all([
+        const [served, saved, overrides, routeRec, buffs, fightCommands, unticked] = await Promise.all([
           getAreaDetail(slug, opts),
           getCustomTargets(slug),
+          getTargetOverrides(slug),
+          getRouteOverride(slug),
           getBuffOverlay(slug),
           cls ? getFightOverlay(slug, cls) : Promise.resolve<FightRow[]>([]),
+          getTargetSelection(slug),
         ]);
+        const deselected = new Set(unticked);
+        // The player's own route (if saved) replaces the served `dirs`; the served route is kept in the draft
+        // so the editor can show it and "Reset to default" can restore it.
+        const route = served ? applyRouteOverride(served, routeRec?.data ?? null) : null;
+        const detail = route?.area ?? served;
+        // The served list with the player's own overrides applied; an override whose target left the list
+        // comes back as `unmatched` (kept, not applied).
+        const { rows, unmatched } = applyTargetOverrides(detail?.recommendedTargets ?? [], overrides);
         const seen = new Set<string>();
         const seed: DraftTarget[] = [];
-        for (const t of detail?.recommendedTargets ?? []) {
-          const key = t.lookName.toLowerCase();
-          if (seen.has(key)) continue;
-          seen.add(key);
-          seed.push({ ...t, enabled: true, origin: 'area' });
+        for (const row of rows) {
+          seen.add(row.key);
+          seed.push({
+            lookName: row.lookName,
+            engageName: row.engageName,
+            level: row.level,
+            enabled: !row.hidden && !deselected.has(`a:${row.key}`),
+            origin: 'area',
+            key: row.key,
+            defaultLookName: row.defaultLookName,
+            defaultEngageName: row.defaultEngageName,
+            overridden: row.overridden,
+            hidden: row.hidden,
+          });
         }
         for (const rec of saved) {
           const t = rec.data;
-          const key = String(t?.lookName ?? '').toLowerCase();
+          const key = targetOverrideKey(String(t?.lookName ?? ''));
           if (!key || seen.has(key)) continue;
           seen.add(key);
-          seed.push({ lookName: t.lookName, engageName: t.engageName, level: t.level, enabled: true, origin: 'custom' });
+          seed.push({
+            lookName: t.lookName,
+            engageName: t.engageName,
+            level: t.level,
+            enabled: !deselected.has(`c:${rec.id}`),
+            origin: 'custom',
+            id: rec.id,
+          });
         }
-        setArea(slug, detail, seed);
+        // What was loaded is also what is "written" now: nothing is stored until the player changes a box.
+        const presentIds = new Set(seed.map(targetRowId));
+        const stored = unticked.filter((id) => !presentIds.has(id));
+        const initial = [...stored, ...seed.filter((t) => !t.enabled && !(t.origin === 'area' && t.hidden)).map(targetRowId)];
+        selectionSeed.current = { slug, stored, written: JSON.stringify(initial) };
+        setArea(slug, detail, seed, unmatched);
         patch({
+          routeDefaultDirs: served?.dirs ?? [],
+          routeOverridden: route?.overridden === true,
           playerClass: cls,
           buffs,
           fightCommands,
@@ -269,13 +440,140 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
     if (draft.areaSlug) void onSelectArea(draft.areaSlug, { force: true });
   }, [draft.areaSlug, onSelectArea]);
 
+  // A custom target is saved first so its draft row carries the stored record's id (needed to edit or
+  // delete it later); with no area chosen, or when storage fails, the row lives in the draft only.
   const onAddCustomTarget = useCallback(
-    (t: { lookName: string; engageName: string }) => {
-      addCustomTarget(t);
-      if (draft.areaSlug) void persistCustomTarget(draft.areaSlug, t);
+    async (t: { lookName: string; engageName: string }) => {
+      if (!draft.areaSlug) {
+        addCustomTarget(t);
+        return;
+      }
+      try {
+        const saved = await persistCustomTarget(draft.areaSlug, t);
+        addCustomTarget({ ...t, id: saved.id });
+      } catch {
+        console.warn('[autoleveling] could not save the target');
+        addCustomTarget(t);
+      }
     },
     [addCustomTarget, draft.areaSlug],
   );
+
+  // The player's edit of a pre-loaded target is stored as an override (only what differs from the shared
+  // list); an edit of their own target updates it in place. Resolves with a message when it was not saved.
+  const onEditTarget = useCallback(
+    async (rid: string, next: TargetOverridePatch & { lookName: string; engageName: string }): Promise<string | null> => {
+      const row = draft.targets.find((t) => targetRowId(t) === rid);
+      if (!row) return 'That target is no longer in the list.';
+      if (row.origin === 'area') {
+        if (!draft.areaSlug || !row.defaultLookName || !row.defaultEngageName) return TARGET_STORAGE_MESSAGE;
+        const res = await setTargetOverride(
+          draft.areaSlug,
+          { lookName: row.defaultLookName, engageName: row.defaultEngageName },
+          next,
+        );
+        if (!res.ok) return targetFailureMessage(res);
+        const d = res.record?.data;
+        editTarget(rid, {
+          lookName: d?.lookName ?? row.defaultLookName,
+          engageName: d?.engageName ?? row.defaultEngageName,
+          overridden: res.record !== null,
+          hidden: d?.hidden === true,
+        });
+        return null;
+      }
+      if (row.id) {
+        const res = await updateCustomTarget(row.id, next);
+        if (!res.ok) return targetFailureMessage(res);
+      }
+      editTarget(rid, { lookName: next.lookName.trim(), engageName: next.engageName.trim() });
+      return null;
+    },
+    [draft.targets, draft.areaSlug, editTarget],
+  );
+
+  const onSetTargetHidden = useCallback(
+    async (rid: string, hidden: boolean) => {
+      const row = draft.targets.find((t) => targetRowId(t) === rid);
+      if (!row || row.origin !== 'area' || !draft.areaSlug || !row.defaultLookName || !row.defaultEngageName) return;
+      const res = await setTargetOverride(
+        draft.areaSlug,
+        { lookName: row.defaultLookName, engageName: row.defaultEngageName },
+        { hidden },
+      );
+      if (!res.ok) return;
+      const d = res.record?.data;
+      editTarget(rid, {
+        hidden: d?.hidden === true,
+        enabled: d?.hidden !== true,
+        overridden: res.record !== null,
+        lookName: d?.lookName ?? row.defaultLookName,
+        engageName: d?.engageName ?? row.defaultEngageName,
+      });
+    },
+    [draft.targets, draft.areaSlug, editTarget],
+  );
+  const onHideTarget = useCallback((rid: string) => void onSetTargetHidden(rid, true), [onSetTargetHidden]);
+  const onRestoreTarget = useCallback((rid: string) => void onSetTargetHidden(rid, false), [onSetTargetHidden]);
+
+  // Reset to default: the row is rebuilt from the shared values, not merged over what the player had.
+  const onResetTarget = useCallback(
+    async (rid: string) => {
+      const row = draft.targets.find((t) => targetRowId(t) === rid);
+      if (!row || row.origin !== 'area' || !draft.areaSlug || !row.key) return;
+      await resetTargetOverride(draft.areaSlug, row.key);
+      editTarget(rid, {
+        lookName: row.defaultLookName ?? row.lookName,
+        engageName: row.defaultEngageName ?? row.engageName,
+        overridden: false,
+        hidden: false,
+        enabled: true,
+      });
+    },
+    [draft.targets, draft.areaSlug, editTarget],
+  );
+
+  // The player's edit of the area's route is stored whole (one record per area) and applied to the draft's
+  // area, so the Review step and Start use it. Resolves with a message when it was not saved.
+  const onSaveRoute = useCallback(
+    async (text: string): Promise<string | null> => {
+      if (!draft.areaSlug || !draft.area) return TARGET_STORAGE_MESSAGE;
+      const res = await setRouteOverride(draft.areaSlug, draft.routeDefaultDirs, parseRouteText(text));
+      if (!res.ok) return routeFailureMessage(res.error);
+      patch({
+        area: { ...draft.area, dirs: res.record ? res.record.data.dirs : draft.routeDefaultDirs },
+        routeOverridden: res.record !== null,
+      });
+      return null;
+    },
+    [draft.areaSlug, draft.area, draft.routeDefaultDirs, patch],
+  );
+
+  const onResetRoute = useCallback(async () => {
+    if (!draft.areaSlug || !draft.area) return;
+    await resetRouteOverride(draft.areaSlug);
+    patch({ area: { ...draft.area, dirs: draft.routeDefaultDirs }, routeOverridden: false });
+  }, [draft.areaSlug, draft.area, draft.routeDefaultDirs, patch]);
+
+  const onDeleteUnmatched = useCallback(
+    async (recordId: string) => {
+      await deleteTargetOverride(recordId);
+      deleteUnmatched(recordId);
+    },
+    [deleteUnmatched],
+  );
+
+  const onRemoveCustomTarget = useCallback(
+    async (rid: string) => {
+      const row = draft.targets.find((t) => targetRowId(t) === rid);
+      if (row?.id) await deleteCustomTarget(row.id);
+      removeCustomTarget(rid);
+    },
+    [draft.targets, removeCustomTarget],
+  );
+
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => onClose() });
+  const { attach: resizeAttach, style: resizeStyle, gripProps: resizeGrip } = useResizableModal({ storageKey: 'shatteredarchive:modal-size:AutoLevelingWizard:v1', centered: false, limits: { minWidth: 480, minHeight: 360 } });
 
   if (!isOpen) return null;
 
@@ -288,12 +586,16 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
 
   return (
     <div
-      ref={modalRef}
+      ref={(el) => {
+        modalRef.current = el;
+        resizeAttach(el);
+      }}
       className={styles.modal}
       role="dialog"
       aria-modal="true"
       aria-label="Auto-leveling wizard"
-      style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: 5000 }}
+      onPointerDownCapture={layer.bringToFront}
+      style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: layer.zIndex, ...resizeStyle }}
     >
       <div className={styles.header} onMouseDown={onHeaderMouseDown}>
         <div className={styles.title}>Autopilot</div>
@@ -376,10 +678,16 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
               <TargetsStep
                 areaName={draft.area?.areaName ?? (draft.areaSlug ? draft.areaSlug : null)}
                 targets={draft.targets}
+                unmatched={draft.unmatchedOverrides}
                 loading={targetsLoading}
                 onToggle={toggleTarget}
                 onAddCustom={onAddCustomTarget}
-                onRemoveCustom={removeCustomTarget}
+                onRemoveCustom={onRemoveCustomTarget}
+                onEdit={onEditTarget}
+                onHide={onHideTarget}
+                onRestore={onRestoreTarget}
+                onReset={onResetTarget}
+                onDeleteUnmatched={onDeleteUnmatched}
               />
             ))}
 
@@ -416,6 +724,7 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
                 restStartOfRound={draft.restStartOfRound}
                 restEndOfRound={draft.restEndOfRound}
                 restDuringRound={draft.restDuringRound}
+                lapWaitMin={draft.lapWaitMin}
                 onPatch={patch}
               />
             ))}
@@ -443,7 +752,7 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
                 </p>
               </div>
             ) : (
-              <ReviewStep draft={draft} onPatch={patch} />
+              <ReviewStep draft={draft} onPatch={patch} onSaveRoute={onSaveRoute} onResetRoute={onResetRoute} />
             ))}
 
           {step.id === 'start' && (
@@ -538,6 +847,7 @@ export const AutoLevelingWizard: React.FC<AutoLevelingWizardProps> = ({
           </button>
         )}
       </div>
+      <ResizeGrip {...resizeGrip} />
     </div>
   );
 };

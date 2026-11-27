@@ -58,7 +58,8 @@ async function showPreview(context: vscode.ExtensionContext, uri?: vscode.Uri): 
     'dslLogPreview',
     'DSL Log Preview',
     { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
-    { enableScripts: false, retainContextWhenHidden: true },
+    // enableFindWidget: a VS Code webview has no Ctrl+F unless the panel opts in.
+    { enableScripts: false, enableFindWidget: true, retainContextWhenHidden: true },
   );
 
   panel.onDidDispose(

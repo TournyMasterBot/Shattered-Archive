@@ -2,8 +2,6 @@
 import type { AudioSettings, BeepSound, InclusionRule } from './audio-settings-store';
 import { getAudioAssetBlob } from './audio-asset-store';
 
-const BEL = 7;
-
 function lineHasBellChar(line: string): boolean {
   return line.indexOf('\u0007') !== -1;
 }

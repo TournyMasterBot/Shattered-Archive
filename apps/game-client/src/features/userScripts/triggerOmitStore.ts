@@ -15,6 +15,8 @@ type Compiled = {
   id: string;
   eventName: string;
   needle: string; // may be ''
+  /** needle lowercased once at compile time — shouldOmitLine runs on every received line. */
+  needleLower: string;
   regex?: RegExp;
   caseInsensitive: boolean;
   omitAll: boolean;
@@ -48,6 +50,7 @@ export function setPluginOmitRules(pluginId: string, rules: PluginOmitRuleInput[
           id: `plugin::${pluginId}::regex::${r.pattern}`,
           eventName,
           needle: '',
+          needleLower: '',
           regex,
           caseInsensitive: false,
           omitAll: false,
@@ -65,6 +68,7 @@ export function setPluginOmitRules(pluginId: string, rules: PluginOmitRuleInput[
       id: `plugin::${pluginId}::${needle}`,
       eventName,
       needle,
+      needleLower: needle.toLowerCase(),
       caseInsensitive: (r as { caseInsensitive?: boolean }).caseInsensitive !== false,
       omitAll: false,
     });
@@ -92,6 +96,7 @@ export function setOmitRules(rules: OmitRule[], connectionId: string) {
         id: r.id,
         eventName,
         needle: '',
+        needleLower: '',
         caseInsensitive: r.caseInsensitive === true,
         omitAll: true,
       });
@@ -109,6 +114,7 @@ export function setOmitRules(rules: OmitRule[], connectionId: string) {
       id: r.id,
       eventName,
       needle,
+      needleLower: needle.toLowerCase(),
       caseInsensitive: r.caseInsensitive === true,
       omitAll: false,
     });
@@ -117,7 +123,21 @@ export function setOmitRules(rules: OmitRule[], connectionId: string) {
   compiled = next;
 }
 
-function checkRules(rules: Compiled[], ev: string, line: string, lower: () => string): boolean {
+// The lowercased form of the line being checked, computed at most once per line (not once per
+// case-insensitive rule) and only when a case-insensitive text rule actually needs it. Kept at
+// module level so no closure is allocated per received line.
+let lowerForLine = '';
+let lowerValue = '';
+
+function lowerOf(line: string): string {
+  if (lowerForLine !== line) {
+    lowerValue = line.toLowerCase();
+    lowerForLine = line;
+  }
+  return lowerValue;
+}
+
+function checkRules(rules: Compiled[], ev: string, line: string): boolean {
   for (const r of rules) {
     if (r.eventName !== ev) continue;
     if (r.omitAll) return true;
@@ -128,7 +148,7 @@ function checkRules(rules: Compiled[], ev: string, line: string, lower: () => st
     }
     if (!r.needle) continue;
     if (r.caseInsensitive) {
-      if (lower().includes(r.needle.toLowerCase())) return true;
+      if (lowerOf(line).includes(r.needleLower)) return true;
     } else {
       if (line.includes(r.needle)) return true;
     }
@@ -142,16 +162,10 @@ export function shouldOmitLine(eventName: string, line: string): boolean {
   const ev = safeTrim(eventName);
   if (!ev) return false;
 
-  let _lower: string | null = null;
-  const lower = () => {
-    if (_lower === null) _lower = line.toLowerCase();
-    return _lower;
-  };
-
-  if (checkRules(compiled, ev, line, lower)) return true;
+  if (checkRules(compiled, ev, line)) return true;
 
   for (const rules of pluginCompiled.values()) {
-    if (checkRules(rules, ev, line, lower)) return true;
+    if (checkRules(rules, ev, line)) return true;
   }
 
   return false;

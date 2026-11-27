@@ -1,0 +1,19 @@
+File Index
+
+/GmcpTab.tsx
+Purpose: The GMCP tab of the Simulacrum Admin window (Messages and Parity with DSL views). It stays mounted when another tab is showing but renders nothing and skips its memos (visible=false), so incoming messages do not redraw 200 hidden rows; its filter and selection live in component state and survive the switch. Copy goes through an injectable copyText so tests need no clipboard. Display limits and the detail text live in features/simulacrumAdmin/gmcpView.ts, not here, because the lint rule react-refresh/only-export-components wants component files to export only components.
+
+/GmcpTab.test.tsx
+Purpose: Covers every branch of GmcpTab. A new tab for the window goes in this folder as its own component and test, and is mounted by replacing that tab's placeholder line in ../SimulacrumAdminWindow.tsx (tab ids and labels come from features/simulacrumAdmin/tabs.ts).
+
+/ConfirmDialog.tsx
+Purpose: (decision) Escape in the question stops propagation and answers no; the window's own Escape closes the whole window, so letting it through would close the panel instead of cancelling a command. Tested in ConfirmDialog.test.tsx with a parent keydown spy.
+
+/useConfirmation.ts
+Purpose: (gotcha) the open question is resolved false in an unmount effect through a ref, not through state, because state is already gone when the cleanup runs; without it a closed window would leave `sender.run` waiting forever.
+
+/FieldInput.tsx
+Purpose: (gotcha for tests) a text <input> removes newlines from a value set by fireEvent.change, so a control-character test must use another character (for example \u001b).
+
+/CommandCard.tsx
+Purpose: (decision) the form index is state, not the form id, so the first form is always valid and there is no "unknown form" fallback to keep alive; typed values are keyed by form id so switching forms and back keeps them. It deliberately duplicates the form pane of CommandsTab, which must keep values per command across a whole catalog; the two behave differently on purpose.

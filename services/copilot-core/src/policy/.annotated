@@ -1,0 +1,16 @@
+File Index
+
+/classify.ts
+Purpose: Safety-critical. Every verb the MUD could match must be in TABLE, even as `unknown`: an abbreviation resolves to the MOST restrictive match, so a missing verb can make `gr` look safe. Aliases are only for forms that are not prefixes (single letters, bs, gt); adding one that IS a prefix would weaken the rule. Consuming an item (quaff, eat, recite...) is deliberately spend-or-lose. Lines with ; | or control characters are unknown. Changing RISK_ORDER changes which abbreviation wins.
+
+/decide.ts
+Purpose: The ONLY place that decides auto-approval. Re-classifies the command and takes the stricter of its answer and the producer's claimed kind, so a mislabelled suggestion can never loosen anything. The check order is a contract (docs/copilot/trust-and-approval.md, D5): stale, floor, unknown, fight-start-unknown, confidence, rule, samples, threshold. A change here needs the mutation check (remove each check, a test must fail).
+
+/settings.ts
+Purpose: normalizeSettings is the one function every write route goes through (SETTINGS-04); it drops never-auto kinds so a stored blob cannot enable the floor. `rules` is a map keyed sphere:kind (not a list) so rule order can never matter (SETTINGS-02). A rule with an unreadable threshold is dropped (off), never repaired to the default.
+
+/confidence.ts
+Purpose: MIN_BUCKET_SAMPLES (20) is a constant, not a setting. 20 of 20 approvals is only ~0.84 (Wilson, 95%), so a 0.9 threshold needs ~50+ decisions: confidence is earned slowly on purpose.
+
+/buckets.ts
+Purpose: The one place the owner history per (sphere, kind) is counted, from the ledger, so it survives a server restart. Only approved, corrected and rejected count: auto and refused are not the owner judgement, and a line without sphere/kind (older lines) is skipped. readBucketTable is what the client trusts of a server answer.

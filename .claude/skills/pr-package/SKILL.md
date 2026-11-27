@@ -1,11 +1,14 @@
 ---
 name: pr-package
-description: Package the current work into a pull request draft. Collects branch, commits, changed files, tests, completion-gate overrides, index decisions and showcase screenshots, fills .github/PULL_REQUEST_TEMPLATE.md with only the boxes the evidence supports, and stages the screenshots for attaching. Never creates or pushes a PR unless explicitly asked.
+description: Package the current work into a pull request draft. For a work item from the /scope-work -> /implement-plan flow it moves the item's documentation (scope, tech plan, test results, review, final showcase screenshots) into .pr/<yyyy-mm-dd_scoped-work>/ and writes a summary of test results and coverage there. Collects branch, commits, changed files, tests, completion-gate overrides, index decisions and showcase screenshots, fills .github/PULL_REQUEST_TEMPLATE.md with only the boxes the evidence supports, and stages the screenshots for attaching. Never creates or pushes a PR unless explicitly asked.
 ---
 
 # pr-package — turn the work into a traceable PR draft
 
-Output: `C:/Projects/ShatteredArchive/.pr-drafts/<branch-slug>/PR_BODY.md` plus `screenshots/` (renamed, ordered). The reader is a **reviewer**
+Output, with a work item (`.ai-plans-completed/<slug>/`, see `docs/claude/work-item-workflow.md`): `C:/Projects/ShatteredArchive/.pr/<slug>/`, where `<slug>` is the
+item's `yyyy-mm-dd_scoped-work` folder name, holding the item's documentation, `summary.md`, `PR_BODY.md` and `screenshots/showcase/`.
+Without an item (ad-hoc branch): `C:/Projects/ShatteredArchive/.pr-drafts/<branch-slug>/PR_BODY.md` plus `screenshots/`, as before, and skip step 0.
+The reader is a **reviewer**
 of the pull request, so write the body for them (what changed, why, how it was verified), not for the person running the skill.
 Start your final message with one line naming that audience ("Written for: reviewers of the PR"), then say what is ticked, what is not, and what the user must still do.
 
@@ -15,6 +18,27 @@ Start your final message with one line naming that audience ("Written for: revie
 - Never put secrets, tokens, tracebacks with user paths, or personal data in the body.
 - The template headings stay exactly as in `.github/PULL_REQUEST_TEMPLATE.md`. Read the file each time; do not work from memory.
 
+## 0. Work item (skip when there is none)
+
+1. **Find it.** An argument is a slug or fragment. Otherwise list `.ai-plans-completed/*/item.md` (skip the legacy `completed/` and
+   `closed-incomplete/` folders), pick the one whose title or `tech-plan.md` matches the branch or the changed areas, and confirm it with
+   the user (AskUserQuestion) if more than one fits. None fits: continue as an ad-hoc branch.
+2. **Check it is ready.** `pr-review.md` exists with `Verdict: READY` and is newer than the last commit/change; if not, offer `/pr-review`
+   first. Never package an item whose `tech-plan.md` has an unchecked phase.
+3. **Move the documentation.** Create `.pr/<slug>/` and move (git mv if tracked, else mv) from `.ai-plans-completed/<slug>/`: `item.md`,
+   `scope.md`, `tech-plan.md`, `test-results.md`, `pr-review.md`, `evidence/` if present, and `screenshots/showcase/` (files named
+   `showcase_NN_<name>.png`). **Do not move `screenshots/incremental/`**: those progress shots are git-ignored and stay where they are.
+   If nothing but `screenshots/incremental/` remains in the completed folder, leave it; if it is empty, remove it.
+4. **Write `.pr/<slug>/summary.md`** (for reviewers, from `test-results.md` and `pr-review.md`, not from memory):
+   - what was built, in the plan's words, and the phases with their exit-gate results;
+   - **Test results:** per package, the commands and pass/total counts from the review run, and the tests added;
+   - **Coverage:** per changed source file, statements/branches/lines, and the added branches that are uncovered (none, or listed);
+   - **Final showcase screenshots:** one line per file in `screenshots/showcase/` with its caption. Incremental shots are not listed;
+   - skipped verification (doc-only or trivial) and why; and the open items from `pr-review.md`.
+   Everything in `.pr/` is committed and public: re-check it against `docs/standards/data-classification.md` before finishing.
+5. Treat `.pr/<slug>/` as the draft folder in the rest of this skill (`PR_BODY.md` goes there, screenshots are the ones already in
+   `screenshots/showcase/`; skip the copy-and-rename in step 3 of "Screenshots").
+
 ## 1. Collect (parallel, bounded output)
 
 Repo `C:/Projects/ShatteredArchive`, base branch `release/dev` (the template says PRs target it). Use `git -C` and absolute paths; no bare `cd`.
@@ -23,8 +47,10 @@ Repo `C:/Projects/ShatteredArchive`, base branch `release/dev` (the template say
 2. **Commits and files.** `git log --oneline <base>..HEAD | head -30` and `git diff --stat <base>...HEAD | tail -40` (plus the working tree if dirty). Group the files: UI (`components/`, `*.tsx`), logic (`features/`, `hooks/`), tests (`*.test.*`), docs (`*.md`), config/deploy (`deploy/`, `*.json`, `pnpm-workspace.yaml`), dependencies (`package.json`, lockfiles).
 3. **Tests and gate log.** Test files changed. Read `C:/Projects/ShatteredArchive/.claude/state/gate-log.jsonl` (JSONL, may not exist) and keep entries since the first commit of the branch (or the last 14 days): `pass` (logic/tests/index/ui lists), `override` (check + reason), `needs-user` (a test, run or coverage item the agent asked the user about: an OPEN decision), `released` (the gate gave up after 3 blocks: say so).
 4. **Decisions recorded in the AI indexes.** `git diff <base> -- '*.annotated' '*.ai-context'`: the ADDED lines are decisions, relations and gotchas written during this work. They answer "why" for the reviewer.
-5. **Plan document.** If a `.ai-plans/*.md` matches the branch or the changed areas, take its Goal for the Motivation section.
-6. **Screenshots.** The showcase manifests: `node --input-type=module -e "import {recentShowcase} from 'file:///C:/Projects/Shattered-AI/tools/browser-test/lib/showcase.mjs'; console.log(JSON.stringify(recentShowcase(Date.parse(process.argv[1]))))" <ISO date of the first commit>`. Each entry has feature, file, abs path, caption (`description`), date, branch, commit. Prefer features whose slug appears in a changed path; list the rest and ask which to include when there are more than 6. If the change is UI and there are none, say so: the completion gate should have caught it.
+5. **Plan document.** With a work item: its `tech-plan.md` Goal and `scope.md` for the Motivation section. Otherwise, if a legacy
+   `.ai-plans/{proposed,active}/*/tech-plan.md` or `.ai-plans-completed/**/*.md` matches the branch or the changed areas, take its Goal.
+6. **Screenshots.** With a work item they are the files in `.pr/<slug>/screenshots/showcase/`; use their `summary.md` captions and skip the
+   manifest lookup. Without one, the showcase manifests: `node --input-type=module -e "import {recentShowcase} from 'file:///C:/Projects/Shattered-AI/tools/browser-test/lib/showcase.mjs'; console.log(JSON.stringify(recentShowcase(Date.parse(process.argv[1]))))" <ISO date of the first commit>`. Each entry has feature, file, abs path, caption (`description`), date, branch, commit. Prefer features whose slug appears in a changed path; list the rest and ask which to include when there are more than 6. If the change is UI and there are none, say so: the completion gate should have caught it.
 7. **Verification evidence.** Which of `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm typecheck` were run, and with what result? Only count runs you can point to in this conversation or run now. Offer (AskUserQuestion) to run them scoped to the changed packages (`pnpm --filter <pkg> …`, bounded with `| tail`/`grep`, or through `qdigest.sh` for a full workspace run). Never tick without a result.
 
 ## 2. Fill the template
@@ -56,4 +82,6 @@ GitHub has no API for attaching images to a PR description, so prepare them and 
 - Show the final `PR_BODY.md` text (it is meant to be pasted) and the path of the folder.
 - List every unticked box with the one thing that would justify ticking it.
 - If the user asks to create the PR: confirm the title, base and that the branch is pushed; then `gh pr create --base release/dev --title "<title>" --body-file <PR_BODY.md>`; remind them the screenshots still need dragging in.
-- Append a line to the plan document's progress log if one was used.
+- Append a line to the plan document's progress log if one was used (with a work item: `.pr/<slug>/tech-plan.md`, "packaged for PR on <date>").
+- With a work item, tell the user the folder `.pr/<slug>/` is tracked and goes into the PR with the code (their commit, not yours), that
+  `screenshots/incremental/` stays local, and which documents moved out of `.ai-plans-completed/`.

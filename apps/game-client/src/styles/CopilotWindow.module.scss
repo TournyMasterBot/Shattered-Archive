@@ -1,0 +1,633 @@
+/* apps/game-client/src/styles/CopilotWindow.module.scss
+   Dark palette shared with the Autopilot wizard. The window is position: fixed with no backdrop; only the window takes pointer
+   events, so the game behind it stays clickable. */
+$bg: #121212;
+$bg-raised: #181818;
+$bg-inset: #101010;
+$border: #2b2b2b;
+$text: #f0f0f0;
+$text-dim: #a8a8a8;
+$accent: #8bc34a;
+$warn: #e0b341;
+$bad: #e57373;
+
+.window {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: $bg;
+  color: $text;
+  color-scheme: dark;
+  border: 1px solid $border;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  font-size: 0.86rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: $bg-raised;
+  border-bottom: 1px solid $border;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.title {
+  flex: none;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.modeLabel {
+  flex: none;
+}
+
+.modeSelect {
+  background: $bg-inset;
+  color: $text;
+  color-scheme: dark;
+  border: 1px solid $border;
+  border-radius: 6px;
+  padding: 3px 6px;
+  font: inherit;
+
+  &:focus-visible {
+    outline: 2px solid $accent;
+    outline-offset: 1px;
+  }
+}
+
+.status {
+  /* the only part of the header that gives way when the window is narrow */
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: $text-dim;
+  white-space: nowrap;
+
+  &[data-status='online'] {
+    color: $accent;
+  }
+  &[data-status='stale'] {
+    color: $warn;
+  }
+  &[data-status='off'] {
+    color: $text-dim;
+  }
+  &[data-status='offline'] {
+    color: $bad;
+  }
+}
+
+.statusText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.close {
+  flex: none;
+  background: transparent;
+  color: $text-dim;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    color: $text;
+    border-color: $border;
+  }
+  &:focus-visible {
+    outline: 2px solid $accent;
+    outline-offset: 1px;
+  }
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+  scrollbar-color: #3a3a3a $bg-inset;
+  scrollbar-width: thin;
+
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  &::-webkit-scrollbar-track {
+    background: $bg-inset;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #3a3a3a;
+    border-radius: 5px;
+  }
+}
+
+.empty {
+  margin: 0;
+  color: $text-dim;
+}
+
+.resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+  touch-action: none;
+  background: linear-gradient(135deg, transparent 50%, #4a4a4a 50%, #4a4a4a 60%, transparent 60%, transparent 72%, #4a4a4a 72%, #4a4a4a 82%, transparent 82%);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---- review list (Phase 13) ---- */
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notice {
+  margin: 0;
+  padding: 6px 8px;
+  border: 1px solid $warn;
+  border-radius: 6px;
+  color: $warn;
+}
+
+.tickets {
+  margin: 0;
+  color: $text-dim;
+  font-size: 0.78rem;
+}
+
+.cards,
+.logList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: $bg-raised;
+  border: 1px solid $border;
+  border-radius: 8px;
+}
+
+.cardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip {
+  padding: 1px 7px;
+  border: 1px solid $border;
+  border-radius: 10px;
+  background: $bg-inset;
+  color: $text-dim;
+  font-size: 0.74rem;
+}
+
+.confidence {
+  margin-left: auto;
+  color: $text-dim;
+  font-size: 0.74rem;
+}
+
+.command {
+  display: block;
+  padding: 6px 8px;
+  background: $bg-inset;
+  border: 1px solid $border;
+  border-radius: 6px;
+  color: $accent;
+  font-family: Consolas, 'Courier New', monospace;
+  overflow-wrap: anywhere;
+}
+
+.rationale {
+  margin: 0;
+  color: $text;
+}
+
+.evidence {
+  color: $text-dim;
+  font-size: 0.76rem;
+
+  summary {
+    cursor: pointer;
+    &:focus-visible {
+      outline: 2px solid $accent;
+      outline-offset: 1px;
+    }
+  }
+  span {
+    display: block;
+    margin-top: 3px;
+    overflow-wrap: anywhere;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.primary,
+.secondary {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid $accent;
+    outline-offset: 1px;
+  }
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.primary {
+  background: $accent;
+  color: #101010;
+  border: 1px solid $accent;
+  font-weight: 600;
+}
+
+.secondary {
+  background: transparent;
+  color: $text;
+  border: 1px solid $border;
+
+  &:hover:not(:disabled) {
+    border-color: $text-dim;
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: $text-dim;
+  font-size: 0.78rem;
+}
+
+.input,
+.textarea {
+  box-sizing: border-box;
+  width: 100%;
+  background: $bg-inset;
+  color: $text;
+  caret-color: $text;
+  color-scheme: dark;
+  border: 1px solid $border;
+  border-radius: 6px;
+  padding: 5px 7px;
+  font: inherit;
+
+  &::placeholder {
+    color: #8a8a8a;
+    opacity: 1;
+  }
+  &::selection {
+    background: #3f5f1f;
+    color: #ffffff;
+  }
+  &:focus-visible {
+    outline: 2px solid $accent;
+    outline-offset: 1px;
+  }
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 3.2em;
+  max-height: 10em;
+}
+
+.counter {
+  color: $text-dim;
+  font-size: 0.74rem;
+
+  &[data-over] {
+    color: $bad;
+  }
+  span {
+    color: $warn;
+  }
+}
+
+.cardNote {
+  margin: 0;
+  color: $warn;
+}
+
+.log {
+  border-top: 1px solid $border;
+  padding-top: 8px;
+}
+
+.logTitle {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  color: $text-dim;
+  font-weight: 600;
+}
+
+.logList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 9em;
+  overflow: auto;
+  font-size: 0.78rem;
+  color: $text-dim;
+  overflow-wrap: anywhere;
+  scrollbar-color: #3a3a3a $bg-inset;
+  scrollbar-width: thin;
+
+  time {
+    color: $text-dim;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ---- tabs and settings (Phase 14) ---- */
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.tab {
+  background: transparent;
+  color: $text-dim;
+  border: 1px solid $border;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font: inherit;
+  cursor: pointer;
+
+  &[aria-pressed='true'] {
+    color: $text;
+    border-color: $accent;
+  }
+  &:focus-visible {
+    outline: 2px solid $accent;
+    outline-offset: 1px;
+  }
+}
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color-scheme: dark;
+  accent-color: $accent;
+}
+
+.intro {
+  margin: 0;
+  color: $text-dim;
+  font-size: 0.78rem;
+}
+
+.problem {
+  color: $warn;
+}
+
+.sphere {
+  border: 1px solid $border;
+  border-radius: 8px;
+  background: $bg-raised;
+
+  > summary {
+    padding: 6px 10px;
+    cursor: pointer;
+    font-weight: 600;
+
+    &:focus-visible {
+      outline: 2px solid $accent;
+      outline-offset: -2px;
+    }
+  }
+}
+
+.rules {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0 10px 6px;
+  list-style: none;
+}
+
+.rule {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 10px;
+  align-items: center;
+  padding: 6px 0;
+  border-top: 1px solid $border;
+}
+
+.ruleToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.check,
+.range {
+  accent-color: $accent;
+  color-scheme: dark;
+}
+
+.range {
+  width: 110px;
+
+  &:disabled {
+    opacity: 0.45;
+  }
+}
+
+.check:focus-visible,
+.range:focus-visible {
+  outline: 2px solid $accent;
+  outline-offset: 2px;
+}
+
+.threshold {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.readout {
+  min-width: 2.6em;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.earned,
+.ruleNote {
+  grid-column: 1 / -1;
+  color: $text-dim;
+  font-size: 0.74rem;
+}
+
+/* Claude training: a quiet section in the settings, and a banner that is always visible while it is on (never hidden: the owner watches). */
+.trainingSection {
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.trainingBanner {
+  margin: 0;
+  padding: 6px 10px;
+  border-bottom: 1px solid $accent;
+  background: rgba(255, 255, 255, 0.05);
+  color: $text;
+  font-size: 0.78rem;
+}
+
+.floor {
+  border: 1px dashed $border;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.floorTitle {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.floorIntro {
+  margin: 2px 0 6px;
+  color: $text-dim;
+  font-size: 0.74rem;
+}
+
+.floorList {
+  margin: 0;
+  padding-left: 1.1em;
+  color: $text-dim;
+  font-size: 0.78rem;
+
+  strong {
+    color: $text;
+  }
+}
+
+.confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The on/off switch: a native button with role="switch" (keyboard and screen readers get the state), drawn as a track and a knob. */
+.switch {
+  flex: none;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: $bg-inset;
+  color: $text-dim;
+  border: 1px solid $border;
+  border-radius: 999px;
+  padding: 2px 10px 2px 3px;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+
+  &[aria-checked="true"] {
+    color: $accent;
+    border-color: $accent;
+  }
+  &:focus-visible {
+    outline: 2px solid $accent;
+    outline-offset: 1px;
+  }
+}
+
+.knob {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: currentColor;
+  transition: transform 0.12s;
+}
+
+.switch[aria-checked="true"] .knob {
+  transform: translateX(1px);
+}
+
+.offBody {
+  display: grid;
+  gap: 8px;
+  color: $text-dim;
+
+  p {
+    margin: 0;
+  }
+}

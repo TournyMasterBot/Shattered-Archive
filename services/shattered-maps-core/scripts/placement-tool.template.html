@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Place the areas: __TITLE__</title>
+<style>
+  html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; background: #1b2530; color: #e8eef4; }
+  #app { display: flex; height: 100%; }
+  #mapwrap { flex: 1; overflow: auto; position: relative; background: #0d1620; }
+  #panel { width: 340px; display: flex; flex-direction: column; background: #f4f6f8; color: #14202b; border-left: 2px solid #345; }
+  #panel h1 { font-size: 15px; margin: 10px 12px 2px; }
+  #panel p { font-size: 12px; margin: 2px 12px 6px; color: #3a4a58; }
+  #panel .row { margin: 4px 12px; font-size: 13px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  button { font: inherit; font-size: 13px; padding: 4px 9px; border: 1px solid #8aa; background: #fff; border-radius: 4px; cursor: pointer; }
+  button:hover { background: #e6f0f8; }
+  #filter { width: calc(100% - 24px); margin: 6px 12px; padding: 5px; font-size: 13px; box-sizing: border-box; }
+  #tray { flex: 1; overflow: auto; margin: 0 12px 8px; border: 1px solid #b8c4ce; background: #fff; }
+  .item { padding: 4px 8px; font-size: 13px; border-bottom: 1px solid #e3e9ee; cursor: grab; display: flex; justify-content: space-between; user-select: none; }
+  .item:hover { background: #fff4c9; }
+  .item small { color: #6a7a88; }
+  #info { font-size: 12px; margin: 0 12px 8px; min-height: 64px; max-height: 150px; overflow: auto; background: #fff; border: 1px solid #b8c4ce; padding: 4px 6px; }
+  #status { position: fixed; left: 8px; bottom: 6px; font: 13px monospace; background: #000b; color: #fff; padding: 3px 8px; border-radius: 4px; pointer-events: none; }
+  #ghost { position: fixed; pointer-events: none; display: none; padding: 3px 9px; background: #fff7c8; border: 2px solid #c80; border-radius: 12px; font-size: 13px; font-weight: bold; z-index: 9; }
+  .token rect { stroke-width: 2.2; }
+  .token text { font: bold 13px sans-serif; pointer-events: none; paint-order: stroke; stroke: #fff; stroke-width: 3.5px; }
+  .token { cursor: grab; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="mapwrap"><svg id="map" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  <aside id="panel">
+    <h1>Place the areas of __TITLE__</h1>
+    <p>Drag an area from the list onto the map, or drag a placed one to move it. Double-click a placed area to send it back to the list. Click an area to see the exits between it and its neighbours.</p>
+    <div class="row"><span id="count"></span></div>
+    <div class="row">
+      <button id="save">Save to file…</button><button id="download">Download</button><button id="load">Load…</button><button id="confirm">Confirm all</button><button id="reset">Reset</button>
+    </div>
+    <div class="row"><label><input type="checkbox" id="grid" checked> grid</label><label><input type="checkbox" id="exits"> all exits</label><label>map <input type="range" id="dim" min="0" max="80" value="15"></label></div>
+    <input id="filter" placeholder="filter the list...">
+    <div id="tray"></div>
+    <div id="info">Nothing selected.</div>
+    <input type="file" id="file" accept=".json" style="display:none">
+  </aside>
+</div>
+<div id="status">-</div>
+<div id="ghost"></div>
+<script>
+const DATA = __DATA__;
+const NS = 'http://www.w3.org/2000/svg';
+const { crop, zoom, port, sx, sy, image, grid, units } = DATA.frame;
+const W = crop.w * zoom, H = crop.h * zoom;
+const toSvg = ([rx, ry]) => [(port.px[0] + rx * sx - crop.x) * zoom, (port.px[1] + ry * sy - crop.y) * zoom];
+const fromSvg = ([x, y]) => [(x / zoom + crop.x - port.px[0]) / sx, (y / zoom + crop.y - port.px[1]) / sy];
+const toPx = ([rx, ry]) => [port.px[0] + rx * sx, port.px[1] + ry * sy];
+const KEY = 'placement:' + DATA.scope.id;
+const byId = new Map(DATA.areas.map((a) => [a.id, a]));
+const nbrs = new Map();
+for (const l of DATA.links) {
+  for (const [a, b, d] of [[l.a, l.b, l.ab], [l.b, l.a, l.ba]]) {
+    (nbrs.get(a) ?? nbrs.set(a, new Map()).get(a)).set(b, d);
+  }
+}
+/** areaId -> { x, y (rooms from the port), confirmed } */
+let placed = new Map();
+function initial() {
+  const m = new Map();
+  for (const a of DATA.areas) if (a.guess) m.set(a.id, { x: a.guess[0], y: a.guess[1], confirmed: false });
+  return m;
+}
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY) ?? 'null');
+    if (s && Array.isArray(s.placements)) return new Map(s.placements.filter((p) => byId.has(p.areaId)).map((p) => [p.areaId, { x: p.at[0], y: p.at[1], confirmed: p.confirmed !== false }]));
+  } catch { /* fall through */ }
+  return initial();
+}
+placed = load();
+
+const svg = document.getElementById('map');
+svg.setAttribute('width', W); svg.setAttribute('height', H); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+const el = (n, a = {}, p = svg) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); p.appendChild(e); return e; };
+el('image', { href: image.href, x: -crop.x * zoom, y: -crop.y * zoom, width: image.w * zoom, height: image.h * zoom });
+const dim = el('rect', { width: W, height: H, fill: '#fff', 'fill-opacity': 0.15 });
+const gridG = el('g'), linkG = el('g'), tokenG = el('g');
+// grid: every 5 rooms from the port, heavier every 10
+const xmin = Math.ceil((crop.x - port.px[0]) / sx), xmax = Math.floor((crop.x + crop.w - port.px[0]) / sx);
+const ymin = Math.ceil((crop.y - port.px[1]) / sy), ymax = Math.floor((crop.y + crop.h - port.px[1]) / sy);
+const lab = (t, x, y) => { const e = el('text', { x, y, 'font-size': 13, 'font-family': 'monospace', 'font-weight': 'bold', fill: '#fff', stroke: '#000', 'stroke-width': 3, 'paint-order': 'stroke' }, gridG); e.textContent = t; };
+for (let x = Math.ceil(xmin / grid.step) * grid.step; x <= xmax; x += grid.step) { const [px] = toSvg([x, 0]); el('line', { x1: px, y1: 0, x2: px, y2: H, stroke: '#fff', 'stroke-opacity': x % grid.major ? 0.3 : 0.65, 'stroke-width': x === 0 ? 3 : x % grid.major ? 0.8 : 1.5 }, gridG); lab(x, px + 3, 14); lab(x, px + 3, H - 6); }
+for (let y = Math.ceil(ymin / grid.step) * grid.step; y <= ymax; y += grid.step) { const [, py] = toSvg([0, y]); el('line', { x1: 0, y1: py, x2: W, y2: py, stroke: '#fff', 'stroke-opacity': y % grid.major ? 0.3 : 0.65, 'stroke-width': y === 0 ? 3 : y % grid.major ? 0.8 : 1.5 }, gridG); lab(y, 4, py - 3); lab(y, W - 28, py - 3); }
+if (port.label) { const [px, py] = toSvg([0, 0]); el('rect', { x: px - 8, y: py - 8, width: 16, height: 16, fill: '#1565c0', stroke: '#000', 'stroke-width': 2.5 }, gridG); const t = el('text', { x: px - 12, y: py - 12, 'font-size': 14, 'font-weight': 'bold', 'text-anchor': 'end', fill: '#fff', stroke: '#000', 'stroke-width': 3.5, 'paint-order': 'stroke', 'font-family': 'sans-serif' }, gridG); t.textContent = port.label + ' (0,0)'; }
+
+const COLORS = ['#e53935', '#8e24aa', '#3949ab', '#00897b', '#7cb342', '#fb8c00', '#6d4c41', '#00acc1', '#d81b60', '#5e35b1', '#43a047', '#f4511e', '#039be5', '#c0ca33'];
+const colorOf = (id) => COLORS[DATA.areas.findIndex((a) => a.id === id) % COLORS.length];
+const shortName = (n) => n.replace(/^The /, '').replace(/, The$/, '');
+let selected = null;
+const fmt = (v) => (Math.round(v * 10) / 10).toFixed(1);
+
+function save() { localStorage.setItem(KEY, JSON.stringify(doc())); }
+function doc() {
+  const placements = [...placed].map(([id, p]) => ({ areaId: id, name: byId.get(id).name, kind: byId.get(id).kind, at: [Math.round(p.x * 10) / 10, Math.round(p.y * 10) / 10], px: toPx([p.x, p.y]).map((v) => Math.round(v * 10) / 10), confirmed: p.confirmed }));
+  return { version: 1, kind: 'owner-placement', level: DATA.scope.level, savedAt: new Date().toISOString(), scope: { id: DATA.scope.id, name: DATA.scope.name }, frame: { image: image.name, units: units.name, origin: { px: port.px, label: port.label, areaId: port.areaId ?? null }, xEast: true, ySouth: true, pxPerUnit: [sx, sy] }, placements, unplaced: DATA.areas.filter((a) => !placed.has(a.id)).map((a) => a.id) };
+}
+function draw() {
+  tokenG.replaceChildren(); linkG.replaceChildren();
+  const showAll = document.getElementById('exits').checked;
+  const line = (a, b, strong, text) => {
+    const pa = placed.get(a), pb = placed.get(b); if (!pa || !pb) return;
+    const [x1, y1] = toSvg([pa.x, pa.y]), [x2, y2] = toSvg([pb.x, pb.y]);
+    el('line', { x1, y1, x2, y2, stroke: strong ? '#ffe600' : '#fff', 'stroke-width': strong ? 3 : 1.2, 'stroke-opacity': strong ? 0.95 : 0.35 }, linkG);
+    if (text) { const t = el('text', { x: (x1 + x2) / 2, y: (y1 + y2) / 2, 'font-size': 12, 'font-weight': 'bold', 'text-anchor': 'middle', fill: '#000', stroke: '#ffe600', 'stroke-width': 4, 'paint-order': 'stroke', 'font-family': 'sans-serif' }, linkG); t.textContent = text; }
+  };
+  if (showAll) for (const l of DATA.links) line(l.a, l.b, false);
+  if (selected) for (const [o, d] of nbrs.get(selected) ?? []) line(selected, o, true, Object.entries(d).map(([k, v]) => k + (v > 1 ? v : '')).join(' '));
+  for (const [id, p] of placed) {
+    const a = byId.get(id), [x, y] = toSvg([p.x, p.y]), name = shortName(a.name);
+    const w = name.length * 7.3 + 14, c = colorOf(id), linked = selected && (nbrs.get(selected)?.has(id) || selected === id);
+    const g = el('g', { class: 'token', transform: `translate(${x},${y})`, 'data-id': id }, tokenG);
+    el('rect', { x: -w / 2, y: -11, width: w, height: 22, rx: 11, fill: c, 'fill-opacity': p.confirmed ? 0.92 : 0.6, stroke: selected === id ? '#ffe600' : linked ? '#fff' : '#111', 'stroke-dasharray': p.confirmed ? '' : '4 3' }, g);
+    const t = el('text', { x: 0, y: 4.5, 'text-anchor': 'middle', fill: '#000' }, g); t.textContent = name;
+    const title = el('title', {}, g); title.textContent = `${a.name} (${a.rooms} rooms) at ${fmt(p.x)},${fmt(p.y)}`;
+  }
+  tray(); counts(); info();
+}
+function tray() {
+  const f = document.getElementById('filter').value.toLowerCase();
+  const box = document.getElementById('tray'); box.replaceChildren();
+  for (const a of [...DATA.areas].filter((a) => !placed.has(a.id) && a.name.toLowerCase().includes(f)).sort((a, b) => b.rooms - a.rooms || a.name.localeCompare(b.name))) {
+    const d = document.createElement('div'); d.className = 'item'; d.innerHTML = '<span></span><small></small>';
+    d.firstChild.textContent = a.name; d.lastChild.textContent = a.rooms + ' rooms';
+    d.addEventListener('pointerdown', (e) => { e.preventDefault(); startNew(a.id, e); });
+    box.appendChild(d);
+  }
+}
+function counts() {
+  const done = [...placed.values()].filter((p) => p.confirmed).length;
+  document.getElementById('count').textContent = `${placed.size} of ${DATA.areas.length} on the map, ${done} confirmed by you`;
+}
+function info() {
+  const box = document.getElementById('info');
+  if (!selected) { box.textContent = 'Nothing selected.'; return; }
+  const a = byId.get(selected), p = placed.get(selected);
+  const rows = [...(nbrs.get(selected) ?? [])].sort((x, y) => Object.values(y[1]).reduce((s, n) => s + n, 0) - Object.values(x[1]).reduce((s, n) => s + n, 0));
+  box.innerHTML = '';
+  const h = document.createElement('div'); h.innerHTML = '<b></b>'; h.firstChild.textContent = a.name + ` (${a.rooms} rooms)` + (p ? ` at ${fmt(p.x)},${fmt(p.y)}` : ' (not placed)'); box.appendChild(h);
+  const ul = document.createElement('div'); ul.textContent = 'Exits from here into: ' + (rows.map(([o, d]) => byId.get(o).name + ' (' + Object.entries(d).map(([k, v]) => k + (v > 1 ? v : '')).join(' ') + ')').join('; ') || 'nothing on this continent'); box.appendChild(ul);
+}
+// ---- dragging ----
+const clientToSvg = (e) => { const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const m = svg.getScreenCTM().inverse(); const r = pt.matrixTransform(m); return [r.x, r.y]; };
+let drag = null;
+svg.addEventListener('pointerdown', (e) => {
+  const g = e.target.closest('.token'); if (!g) { selected = null; draw(); return; }
+  const id = g.getAttribute('data-id'); const p = placed.get(id);
+  drag = { id, moved: false, start: [e.clientX, e.clientY], off: (() => { const [x, y] = clientToSvg(e); const [px, py] = toSvg([p.x, p.y]); return [px - x, py - y]; })() };
+  svg.setPointerCapture(e.pointerId); e.preventDefault();
+});
+svg.addEventListener('pointermove', (e) => {
+  const [sx_, sy_] = clientToSvg(e); const [rx, ry] = fromSvg([sx_, sy_]); const [ix, iy] = toPx([rx, ry]);
+  document.getElementById('status').textContent = `x ${fmt(rx)} east, y ${fmt(ry)} south ${units.from}   (${units.name}; world picture px ${Math.round(ix)}, ${Math.round(iy)})`;
+  if (!drag) return;
+  if (Math.hypot(e.clientX - drag.start[0], e.clientY - drag.start[1]) > 3) drag.moved = true;
+  if (!drag.moved) return;
+  const [x, y] = fromSvg([sx_ + drag.off[0], sy_ + drag.off[1]]);
+  const p = placed.get(drag.id); p.x = x; p.y = y; p.confirmed = true; draw();
+});
+svg.addEventListener('pointerup', () => { if (!drag) return; if (!drag.moved) selected = drag.id; drag = null; save(); draw(); });
+svg.addEventListener('dblclick', (e) => { const g = e.target.closest('.token'); if (!g) return; placed.delete(g.getAttribute('data-id')); if (selected === g.getAttribute('data-id')) selected = null; save(); draw(); });
+const ghost = document.getElementById('ghost');
+function startNew(id, e) {
+  ghost.textContent = byId.get(id).name; ghost.style.display = 'block';
+  const mv = (ev) => { ghost.style.left = ev.clientX + 8 + 'px'; ghost.style.top = ev.clientY + 8 + 'px'; };
+  mv(e);
+  const up = (ev) => {
+    document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); ghost.style.display = 'none';
+    const r = svg.getBoundingClientRect();
+    if (ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom && ev.clientX < document.getElementById('panel').getBoundingClientRect().left) {
+      const [x, y] = fromSvg(clientToSvg(ev)); placed.set(id, { x, y, confirmed: true }); selected = id; save(); draw();
+    }
+  };
+  document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);
+}
+// ---- controls ----
+document.getElementById('filter').addEventListener('input', tray);
+document.getElementById('grid').addEventListener('change', (e) => { gridG.style.display = e.target.checked ? '' : 'none'; });
+document.getElementById('exits').addEventListener('change', draw);
+document.getElementById('dim').addEventListener('input', (e) => dim.setAttribute('fill-opacity', e.target.value / 100));
+document.getElementById('confirm').addEventListener('click', () => { for (const p of placed.values()) p.confirmed = true; save(); draw(); });
+document.getElementById('reset').addEventListener('click', () => { if (confirm('Put every area back to the starting guess?')) { placed = initial(); selected = null; save(); draw(); } });
+const fileName = () => `placements-${DATA.scope.level}-${DATA.scope.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json`;
+document.getElementById('download').addEventListener('click', () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(doc(), null, 1)], { type: 'application/json' })); a.download = fileName(); a.click(); });
+document.getElementById('save').addEventListener('click', async () => {
+  if (!window.showSaveFilePicker) { document.getElementById('download').click(); return; }
+  try { const h = await window.showSaveFilePicker({ suggestedName: fileName(), types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }] }); const w = await h.createWritable(); await w.write(JSON.stringify(doc(), null, 1)); await w.close(); }
+  catch (err) { if (err && err.name !== 'AbortError') alert('Could not save: ' + err.message); }
+});
+document.getElementById('load').addEventListener('click', () => document.getElementById('file').click());
+document.getElementById('file').addEventListener('change', async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  try { const s = JSON.parse(await f.text()); placed = new Map((s.placements ?? []).filter((p) => byId.has(p.areaId)).map((p) => [p.areaId, { x: p.at[0], y: p.at[1], confirmed: p.confirmed !== false }])); save(); draw(); }
+  catch (err) { alert('Not a placement file: ' + err.message); }
+});
+window.__placement = { doc, placed: () => placed, toSvg, fromSvg };
+draw();
+</script>
+</body>
+</html>

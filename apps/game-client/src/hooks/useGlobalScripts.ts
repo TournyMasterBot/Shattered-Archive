@@ -1,4 +1,5 @@
 // apps/game-client/src/hooks/useGlobalScripts.ts
+import { canonicalConnectionId } from '../features/connection/connectionId';
 import { useEffect, useState, useCallback } from 'react';
 import type { GlobalScriptLanguage } from '../features/userScripts/globalScriptsStore';
 import {
@@ -25,7 +26,7 @@ export function useGlobalScripts(connectionId?: string | null) {
   }, [connectionId]);
 
   useEffect(() => {
-    const safeId = connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
+    const safeId = canonicalConnectionId(connectionId);
 
     const disposeScripts = ListenEvent<any>(
       'shatteredarchive:globalScripts-updated',

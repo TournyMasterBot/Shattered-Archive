@@ -1080,7 +1080,7 @@ const QUEST_AREAS: Record<string, QuestArea> = {
 //     }
 //   }
 
-type CustomAreaDef = {
+type _CustomAreaDef = {
   name: string;
   startPoint: string;
   startToArea: string[];
@@ -1442,6 +1442,38 @@ export function createQuestBotPlugin(): IPluginModule {
     api.sendCommand('worth');
   }
 
+  function stopBot(api: PluginRuntimeApi): void {
+    running = false;
+    state = 'idle';
+    combatBreakPending = false;
+    if (combatResumeTimerId !== null) {
+      clearTimeout(combatResumeTimerId);
+      combatResumeTimerId = null;
+    }
+    if (navRetryTimerId !== null) {
+      clearTimeout(navRetryTimerId);
+      navRetryTimerId = null;
+    }
+    if (currentSession && currentSession.questCount > 0) {
+      currentSession.endedAt = Date.now();
+      finalizeSession({ ...currentSession }).catch(() => {});
+    }
+    currentSession = null;
+    resetQuest();
+    questAttemptCount = 0;
+    pendingEggBuy = false;
+    restoreKnockdownTriggers(api);
+  }
+
+  /** The bot cannot know where the character is after a reconnect, so a dropped connection stops it. */
+  function onConnectionClosed(api: PluginRuntimeApi): void {
+    const active = running || combatBreakPending || navRetryTimerId !== null || combatResumeTimerId !== null;
+    lastIsFighting = false;
+    if (!active) return;
+    stopBot(api);
+    api.writeTerminal?.(`{Y[QuestBot] Connection lost — stopped{x\n`);
+  }
+
   function handleLine(api: PluginRuntimeApi, raw: string): void {
     const line = stripAnsi(raw);
 
@@ -1702,6 +1734,8 @@ export function createQuestBotPlugin(): IPluginModule {
       ],
     },
 
+    onEnable: (api: PluginRuntimeApi) => api.onEvent('game:remote-server:close', () => onConnectionClosed(api)),
+
     onEvent: (api: PluginRuntimeApi, evt) => {
       if (evt?.name === 'game:char-data') {
         const p = evt.payload as any;
@@ -1795,26 +1829,7 @@ export function createQuestBotPlugin(): IPluginModule {
       }
 
       if (cmd === 'pq stop') {
-        running = false;
-        state = 'idle';
-        combatBreakPending = false;
-        if (combatResumeTimerId !== null) {
-          clearTimeout(combatResumeTimerId);
-          combatResumeTimerId = null;
-        }
-        if (navRetryTimerId !== null) {
-          clearTimeout(navRetryTimerId);
-          navRetryTimerId = null;
-        }
-        if (currentSession && currentSession.questCount > 0) {
-          currentSession.endedAt = Date.now();
-          finalizeSession({ ...currentSession }).catch(() => {});
-        }
-        currentSession = null;
-        resetQuest();
-        questAttemptCount = 0;
-        pendingEggBuy = false;
-        restoreKnockdownTriggers(api);
+        stopBot(api);
         api.writeTerminal?.(`{Y[QuestBot] Stopped{x\n`);
         return true;
       }

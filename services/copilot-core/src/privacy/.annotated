@@ -1,0 +1,4 @@
+File Index
+
+/scrub.ts
+Purpose: Over-scrubs on purpose (privacy beats fidelity): registered names match inside longer words, and name-shaped words in player-name positions become `<name>` even when unregistered. The case-fold fallback exists because /iu matches look-alikes (long s) whose lower-case differs from the registered key; it returns `<name>`, never the original. Idempotent, which matters when a real name equals its own codename base. Every export to a teaching bundle goes through it; check-private-names.mjs is the independent proof.

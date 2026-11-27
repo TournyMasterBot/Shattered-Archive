@@ -65,7 +65,7 @@ function recipesKey(connectionId: string) {
 
 // ── Persistence ────────────────────────────────────────────────────────────
 
-function loadLetterMap(connectionId: string): LetterMap {
+function _loadLetterMap(connectionId: string): LetterMap {
   try {
     const raw = localStorage.getItem(letterMapKey(connectionId));
     return raw ? (JSON.parse(raw) as LetterMap) : {};
@@ -74,11 +74,11 @@ function loadLetterMap(connectionId: string): LetterMap {
   }
 }
 
-function saveLetterMap(connectionId: string, map: LetterMap) {
+function _saveLetterMap(connectionId: string, map: LetterMap) {
   localStorage.setItem(letterMapKey(connectionId), JSON.stringify(map));
 }
 
-function loadRecipes(connectionId: string): RecipeMap {
+function _loadRecipes(connectionId: string): RecipeMap {
   try {
     const raw = localStorage.getItem(recipesKey(connectionId));
     return raw ? (JSON.parse(raw) as RecipeMap) : {};
@@ -87,7 +87,7 @@ function loadRecipes(connectionId: string): RecipeMap {
   }
 }
 
-function saveRecipes(connectionId: string, map: RecipeMap) {
+function _saveRecipes(connectionId: string, map: RecipeMap) {
   localStorage.setItem(recipesKey(connectionId), JSON.stringify(map));
 }
 

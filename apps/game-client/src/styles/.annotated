@@ -11,3 +11,6 @@ Purpose: Phase D — AccountModal.tsx's CSS module. Visual language mirrors Conn
 
 /LibraryModal.module.scss
 Purpose: LibraryModal.tsx's CSS module (tabs, list/editor split, tree grouping, scribe panel). Phase E added tagRow/tagInput (the new tag field), bodyStats/bodyStatsWarn/bodyStatsOver (line/char-limit warning text), and treeSubGroupHeader (nested tag sub-groups within a spool group on the Notes tab) — reused the existing treeGroup/treeGroupHeader classes for parchment/books tag headers rather than adding parallel ones.
+
+/WorldMapWindow.module.scss
+Purpose: The map window. Chrome follows the HUD theme tokens (--sa-panel-bg, --sa-panel-border, --sa-accent) with the default theme's values as fallbacks; the picture card is deliberately LIGHT with color-scheme light (the renderer draws light tiles and dark labels). Overlay controls are translucent and small; the player's room is styled through the data-current attribute the window sets on the SVG (:global), and clickable exits and ghost floors through data-offpage-to and data-ghost-floor.

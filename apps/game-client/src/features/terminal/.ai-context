@@ -1,1 +1,3 @@
 The terminal folder handles all terminal-related functionality for the Shattered Archive application, managing rendering, scrolling, and event-based text output. It contains modules that extract printable text from various terminal data shapes and handle the display logic for terminal interfaces. This folder serves as the core component for terminal-based user interaction within the larger project.
+
+The write handler caches the xterm scroll container (scrollableFor) instead of querying the DOM on every received line while auto-scroll is off; the cache is dropped on detach() and re-queried if xterm replaces the element. Tests: shatteredArchiveTerminal.test.ts drives it with fake term objects through the real window event.

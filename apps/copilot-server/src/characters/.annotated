@@ -1,0 +1,19 @@
+File Index
+
+/service.ts
+Purpose: The character registry. Fail closed: with no readable test matrix it registers nobody, because a test character would otherwise be filed as a real one with a constellation codename that can never be undone. A real name enters at onLogin or onWhoisic and from then on lives only in names.jsonl (and in memory for the active character, to build the whoisic command). Calls are serialised; copilot-core's registry assumes one writer. The index is a cache rebuilt from names.jsonl at start. getDescription scrubs registered names from its answer, the stored copy stays verbatim.
+
+/whoisicWatcher.ts
+Purpose: A whoisic block has no end marker in the log; it is closed by the game prompt line, a non-text feed event, a second header, 200 lines, or silence (settle). The prompt regex is the DSL default prompt; a customised prompt falls back to the other endings. The open block is kept between calls because a poll can cut a block in two. Block time is the header's log time: it decides which description is newer.
+
+/records.ts
+Purpose: Strict validators for the three private files. An unknown field rejects the record rather than dropping it silently. A real character has ONE id (`real:<base>`) while its gender goes from U to M or F; a test character is one id per (codename, gender).
+
+/feed.ts
+Purpose: The only place a login's real name leaves the pipeline: straight to CharacterService.onLogin. Order matters: logins and session ends are handled before the whoisic records found in the same batch.
+
+/namesStore.ts
+Purpose: copilot-core's CharacterStore over a JsonlStore (one whole line per change, so a failed write changes nothing). names() exists only for scrubbing.
+
+/matrixFile.ts
+Purpose: Never throws and never reports a path, a name or a parse message; a missing or bad file just means "no matrix".

@@ -443,7 +443,6 @@ export function useUserCssOverrides() {
     } catch {
       // ignore localStorage errors
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // keep refs in sync with state

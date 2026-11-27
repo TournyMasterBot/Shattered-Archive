@@ -1,0 +1,13 @@
+File Index
+
+/watch.ts
+Purpose: Everything Copilot learns about fights from the log feed in one object (what consider answered, the fight in progress). Fed by the pipeline with the same batches the world memory and the character registry see; it costs no model call and answers from memory, so a slow model never holds it up.
+
+/monsterLookup.ts
+Purpose: The archive's bestiary for ONE monster by the word a player types. Identified only when a result names the word in its own name or keywords: a stranger in the list is not an identification, and an empty answer, an error or a late one is "not identified" (never an error).
+
+/gate.ts
+Purpose: The rule in practice for each command the model proposes: ask the archive, record the answer, then replace a fight with a consider or hold it back. The archive is the DSL's: in the Simulacrum's world (another game) the lookup is never made, because a shared name would give the wrong level.
+
+/urgent.ts
+Purpose: The one thing that cannot wait for a model: flee a fight that is being lost, from the monitor's numbers. Finishing and healing are left to the usual suggestion.

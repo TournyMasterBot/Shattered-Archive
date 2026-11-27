@@ -2,6 +2,9 @@
 
 import React from 'react';
 import styles from '../styles/LibraryModal.module.scss';
+import { useWindowLayer } from '../hooks/useWindowLayer';
+import { useResizableModal } from '../hooks/useResizableModal';
+import { ResizeGrip } from './ResizeGrip';
 import useLibrary from '../hooks/useLibrary';
 import { renderDslToHtml } from '../features/library/renderDslColorPreviewHtml';
 import type {
@@ -18,6 +21,13 @@ import type {
 import { getLineStats, getWarnings } from '../features/library/library-types';
 import { DispatchEvent } from '../features/event-emitter/event-dispatcher';
 import OrganizationsPane from './OrganizationsPane';
+import { useBeforeUnloadGuard } from '../hooks/useBeforeUnloadGuard';
+import {
+  discardMessage,
+  isBookPageDirty,
+  isParchmentDirty,
+  isUserNoteDirty,
+} from '../features/library/unsavedChanges';
 
 interface LibraryModalProps {
   isOpen: boolean;
@@ -190,17 +200,37 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   const [scratchBody, setScratchBody] = React.useState('');
   const [scratchSuffix, setScratchSuffix] = React.useState('');
 
-  // --- Unsaved changes guard (books only) -----------------------------
+  // --- Unsaved changes guard (parchment, notes, books, organizations) ----
 
-  const savedBookTitle = activeBook?.title ?? '';
-  const savedBookPageBody = getPageBody(activeBook, activeBookPage);
+  // The Organizations tab owns its own draft and reports whether it is dirty (and the item's title) through
+  // onDirtyChange; the other three tabs are judged here against what is saved.
+  const [orgDirty, setOrgDirty] = React.useState<{ title: string } | null>(null);
+  const handleOrgDirtyChange = React.useCallback(
+    (dirty: boolean, title: string) => setOrgDirty(dirty ? { title } : null),
+    [],
+  );
 
-  const isBookContext = tab === 'books' && !!activeBook;
-  const isBookDirty = isBookContext && (draftTitle !== savedBookTitle || draftBody !== (savedBookPageBody ?? ''));
+  const draft = { title: draftTitle, body: draftBody, tag: draftTag };
+  const parchmentDirty = tab === 'parchment' && isParchmentDirty(activeParchment, draft);
+  const userNoteDirty = tab === 'notes' && isUserNoteDirty(activeUserNote, { ...draft, spool: noteSpool });
+  const bookPageDirty = tab === 'books' && isBookPageDirty(activeBook, getPageBody(activeBook, activeBookPage), draft);
+  const orgItemDirty = tab === 'organizations' && orgDirty !== null;
+  const hasUnsavedChanges = parchmentDirty || userNoteDirty || bookPageDirty || orgItemDirty;
 
-  const confirmLoseBookChanges = (): boolean => {
-    if (!isBookDirty) return true;
-    return window.confirm('You have unsaved changes on this book page. Discard changes?');
+  // Closing or reloading the browser tab would lose the draft too.
+  useBeforeUnloadGuard(isOpen && hasUnsavedChanges);
+
+  /** True when it is fine to carry on: nothing is unsaved, or the user agreed to discard it. */
+  const confirmLoseChanges = (): boolean => {
+    if (!hasUnsavedChanges) return true;
+    const message = parchmentDirty
+      ? discardMessage('parchment', draftTitle)
+      : userNoteDirty
+        ? discardMessage('note', draftTitle)
+        : bookPageDirty
+          ? discardMessage('book page', draftTitle)
+          : discardMessage('organization item', orgDirty?.title ?? '');
+    return window.confirm(message);
   };
 
   const confirmDelete = (message: string): boolean => {
@@ -296,6 +326,8 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   };
 
   const handleImportJsonClick = () => {
+    // The import reloads the library, which resets the editor to what is saved.
+    if (!confirmLoseChanges()) return;
     importFileInputRef.current?.click();
   };
 
@@ -362,7 +394,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   };
 
   const handleRequestClose = () => {
-    if (!confirmLoseBookChanges()) return;
+    if (!confirmLoseChanges()) return;
     onClose();
   };
 
@@ -436,12 +468,14 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   // -------------------------------------------------------------------
 
   const handleNewParchment = async () => {
+    if (!confirmLoseChanges()) return;
     const created = await lib.createNote('New Parchment');
     setTab('parchment');
     setActiveParchmentId(created.id);
   };
 
   const handleNewUserNote = async () => {
+    if (!confirmLoseChanges()) return;
     const created = await lib.createUserNote(noteSpool, 'New Note');
     setTab('notes');
     setActiveUserNoteId(created.id);
@@ -453,6 +487,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   };
 
   const handleNewBook = async () => {
+    if (!confirmLoseChanges()) return;
     const created = await lib.createBook('New Book');
     setTab('books');
     setActiveBookId(created.id);
@@ -528,7 +563,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
     }
 
     if (tab === 'books' && activeBook) {
-      if (!confirmLoseBookChanges()) return;
+      if (!confirmLoseChanges()) return;
       if (!confirmDeleteBook(activeBook)) return;
 
       await lib.deleteBook(activeBook.id);
@@ -541,7 +576,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
 
   const trySetBookPage = (next: number) => {
     if (tab !== 'books') return;
-    if (!confirmLoseBookChanges()) return;
+    if (!confirmLoseChanges()) return;
     setActiveBookPage(Math.max(1, Math.floor(next)));
   };
 
@@ -550,7 +585,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
 
   const handleAddNextPage = async () => {
     if (!activeBook) return;
-    if (!confirmLoseBookChanges()) return;
+    if (!confirmLoseChanges()) return;
     const next = getMaxPage(activeBook.pages) + 1;
     await lib.addBookPage(activeBook, next);
     setActiveBookPage(next);
@@ -558,7 +593,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
 
   const handleTearOutPage = async () => {
     if (!activeBook) return;
-    if (!confirmLoseBookChanges()) return;
+    if (!confirmLoseChanges()) return;
 
     await lib.tearOutBookPage(activeBook, activeBookPage);
 
@@ -582,7 +617,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
     if (!activeBook) return;
 
     // if they have unsaved edits on this page, ask first
-    if (!confirmLoseBookChanges()) return;
+    if (!confirmLoseChanges()) return;
 
     // only makes sense if the page actually exists
     if (!hasPage(activeBook, activeBookPage)) return;
@@ -608,7 +643,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
 
   const handleRestorePage = async () => {
     if (!activeBook) return;
-    if (!confirmLoseBookChanges()) return;
+    if (!confirmLoseChanges()) return;
     await lib.addBookPage(activeBook, activeBookPage);
     setDraftBody('');
   };
@@ -618,10 +653,8 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   const handleSetTab = (next: TabId) => {
     if (tab === next) return;
 
-    // leaving books? prompt if dirty
-    if (tab === 'books' && next !== 'books') {
-      if (!confirmLoseBookChanges()) return;
-    }
+    // leaving a tab with unsaved changes? ask first
+    if (!confirmLoseChanges()) return;
 
     setTab(next);
   };
@@ -629,12 +662,23 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   // ----- guarded book selection -------------------------------------
 
   const handleSelectBook = (id: string) => {
-    if (tab !== 'books') {
-      setActiveBookId(id);
-      return;
-    }
-    if (!confirmLoseBookChanges()) return;
+    if (id === activeBookId) return;
+    if (!confirmLoseChanges()) return;
     setActiveBookId(id);
+  };
+
+  // ----- guarded parchment / note selection -------------------------
+
+  const handleSelectParchment = (id: string) => {
+    if (id === activeParchmentId) return;
+    if (!confirmLoseChanges()) return;
+    setActiveParchmentId(id);
+  };
+
+  const handleSelectUserNote = (id: string) => {
+    if (id === activeUserNoteId) return;
+    if (!confirmLoseChanges()) return;
+    setActiveUserNoteId(id);
   };
 
   // ------------------------------------------------------------------
@@ -716,13 +760,14 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   };
 
   const closeScribe = () => {
-    if (tab === 'books' && !confirmLoseBookChanges()) return;
+    if (tab === 'books' && !confirmLoseChanges()) return;
     setIsScribeOpen(false);
   };
 
   // parchment select helper (existing)
   const handleSelectParchmentForScribe = (id: string) => {
     if (tab !== 'parchment') return;
+    if (id !== activeParchmentId && !confirmLoseChanges()) return;
     setActiveParchmentId(id);
     const n = lib.notesById.get(id);
     if (n) setScribeTitle(n.title ?? '');
@@ -731,6 +776,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   // notes select helper
   const handleSelectUserNoteForScribe = (id: string) => {
     if (tab !== 'notes') return;
+    if (id !== activeUserNoteId && !confirmLoseChanges()) return;
     setActiveUserNoteId(id);
     const n = lib.userNotesById.get(id);
     if (n) {
@@ -742,6 +788,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   // books select helper (new)
   const handleSelectBookForScribe = (id: string) => {
     if (tab !== 'books') return;
+    if (id !== activeBookId && !confirmLoseChanges()) return;
     setActiveBookId(id);
     const b = lib.booksById.get(id);
     if (b) {
@@ -970,6 +1017,8 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   }, [lib.userNotes]);
 
   // IMPORTANT: return null ONLY AFTER ALL HOOKS HAVE RUN
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => handleRequestClose() });
+  const { attach: resizeAttach, style: resizeStyle, gripProps: resizeGrip } = useResizableModal({ storageKey: 'shatteredarchive:modal-size:LibraryModal:v1', centered: true, limits: { minWidth: 560, minHeight: 360 } });
   if (!isOpen) return null;
 
   const showList = tab === 'parchment' || tab === 'notes' || tab === 'books';
@@ -977,8 +1026,8 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
   const leftTitle = tab === 'parchment' ? 'Parchment' : tab === 'notes' ? 'Notes' : tab === 'books' ? 'Books' : '';
 
   return (
-    <div className={styles.backdrop}>
-      <div className={styles.modal}>
+    <div className={styles.backdrop} style={{ zIndex: layer.zIndex }}>
+      <div ref={resizeAttach} className={styles.modal} style={resizeStyle}>
         <div className={styles.header}>
           <div className={styles.title}>Library</div>
           <button type="button" className={styles.closeButton} onClick={handleRequestClose}>
@@ -1241,7 +1290,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
                               type="button"
                               key={item.id}
                               className={`${styles.listItem} ${activeParchmentId === item.id ? styles.listItemActive : ''}`}
-                              onClick={() => setActiveParchmentId(item.id)}
+                              onClick={() => handleSelectParchment(item.id)}
                             >
                               <div className={styles.listItemTitle}>{item.title || '(untitled)'}</div>
                               <div className={styles.listItemMeta}>{new Date(item.updatedAt).toLocaleString()}</div>
@@ -1285,7 +1334,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
                                   type="button"
                                   key={n.id}
                                   className={`${styles.listItem} ${activeUserNoteId === n.id ? styles.listItemActive : ''}`}
-                                  onClick={() => setActiveUserNoteId(n.id)}
+                                  onClick={() => handleSelectUserNote(n.id)}
                                 >
                                   <div className={styles.listItemTitle}>{n.subject || '(untitled)'}</div>
                                   <div className={styles.listItemMeta}>{new Date(n.updatedAt).toLocaleString()}</div>
@@ -1613,7 +1662,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
             </div>
           )}
 
-          {tab === 'organizations' && <OrganizationsPane />}
+          {tab === 'organizations' && <OrganizationsPane onDirtyChange={handleOrgDirtyChange} />}
 
           {tab === 'colors' && (
             <div className={styles.colorsPane}>
@@ -1698,6 +1747,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, con
             </div>
           )}
         </div>
+        <ResizeGrip {...resizeGrip} />
       </div>
     </div>
   );

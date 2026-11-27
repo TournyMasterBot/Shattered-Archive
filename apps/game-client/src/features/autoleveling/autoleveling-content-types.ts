@@ -84,6 +84,8 @@ export interface AutoPilotAreaIndexResponse {
  * IAbility.AbilityUsage / Duration / Group, so the C# side projects the
  * IAbilityGroup taxonomy instead. Per-class Basics/Default groups and raw
  * help-file text are stripped server-side to keep the payload small.
+ * `durationTicks` and `lagMs` are the two timing facts the server knows (see below); both are
+ * OMITTED from the JSON when unknown, and 0 is a real value, so a reader checks for `undefined`.
  * --------------------------------------------------------------------- */
 
 /** One skill / spell / song a class learns, with the level it becomes available. */
@@ -94,6 +96,10 @@ export interface AutoPilotAbility {
   level: number;
   /** Semantic ability-group names, e.g. ["Protective"] or ["Attack","Maladictions"]. */
   groups: string[];
+  /** How long the affect lasts, in game ticks (about 41 s each; the highest value ever seen in play). Absent = unknown; 0 = under a tick. */
+  durationTicks?: number;
+  /** How long the ability keeps the game busy with the NEXT command, in milliseconds, measured from play. Absent = unknown; 0 = no lag worth measuring. */
+  lagMs?: number;
 }
 
 /** One playable DSL class and every ability it learns. */
@@ -163,12 +169,26 @@ export function normalizeAbility(x: unknown): AutoPilotAbility | null {
   const name = str(a.name);
   if (!name) return null;
   const type = typeof a.type === 'string' && ABILITY_TYPES.has(a.type) ? (a.type as AutoPilotAbility['type']) : 'skill';
+  const durationTicks = timingValue(a.durationTicks, MAX_DURATION_TICKS);
+  const lagMs = timingValue(a.lagMs, MAX_LAG_MS);
   return {
     name,
     type,
     level: typeof a.level === 'number' && Number.isFinite(a.level) ? Math.max(0, Math.floor(a.level)) : 0,
     groups: semanticGroups(a.groups),
+    // absent stays absent: the readers tell "unknown" from a real 0
+    ...(durationTicks !== undefined ? { durationTicks } : {}),
+    ...(lagMs !== undefined ? { lagMs } : {}),
   };
+}
+
+/** The largest duration and lag the server can send meaningfully; anything bigger is damage, not data. */
+export const MAX_DURATION_TICKS = 1000;
+export const MAX_LAG_MS = 60_000;
+
+/** A whole number from 0 up to `max`, or undefined: a string, a negative, a fraction, NaN and an absurd value are all "unknown". */
+function timingValue(v: unknown, max: number): number | undefined {
+  return typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= max ? v : undefined;
 }
 
 /** Coerce a raw class row, or null if it has no name. */

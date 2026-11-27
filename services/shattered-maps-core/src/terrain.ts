@@ -1,0 +1,161 @@
+/**
+ * Mining the terrain (a room's `sector`) out of the game's GMCP `room_data` messages. The palette itself is terrainPalette.ts.
+ *
+ * The DSL sends `room_data {"room": "<title>", "sector": "<word>", "exits": [...]}` before every prompt. The audited map came from a source
+ * with no sector at all, so the terrain comes from the logs: every message is tallied (title -> sector -> count), a title that one sector
+ * clearly dominates is accepted, and the rooms of the map with that title get the sector. Nothing is guessed: a title that several sectors
+ * share ("darkness", "A Darkened Hallway") is listed and left alone, and a room that already has a sector keeps it.
+ *
+ * Pure: no files, no clock. The scripts (`mine-terrain.mjs`) read the logs and the map.
+ */
+import type { MapFile } from './schema.js';
+import { canonicalSector, terrainFill } from './terrainPalette.js';
+
+/** A room title as it is compared: trimmed, one space between words, lower case. */
+export function titleKey(title: string): string {
+  return title.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+export interface RoomData {
+  room: string;
+  /** Exactly as the game sent it (the tally folds the spelling). */
+  sector: string;
+  exits: string[];
+}
+
+/**
+ * The `room_data` message in one log line, or `null` when the line holds none. Reads a JSON log record whose `payload.data` is
+ * `room_data {...}` (the game-server logs), and a bare `room_data {...}` line.
+ */
+export function parseRoomData(line: string): RoomData | null {
+  if (!line.includes('room_data')) return null;
+  let data = line.trim();
+  if (data.startsWith('{')) {
+    try {
+      const record = JSON.parse(data) as { payload?: { data?: unknown } };
+      if (typeof record.payload?.data !== 'string') return null;
+      data = record.payload.data;
+    } catch {
+      return null;
+    }
+  }
+  if (!data.startsWith('room_data ')) return null;
+  try {
+    const body = JSON.parse(data.slice('room_data '.length)) as { room?: unknown; sector?: unknown; exits?: unknown };
+    if (typeof body.room !== 'string' || typeof body.sector !== 'string') return null;
+    return { room: body.room, sector: body.sector, exits: Array.isArray(body.exits) ? body.exits.filter((e): e is string => typeof e === 'string') : [] };
+  } catch {
+    return null;
+  }
+}
+
+/** What the logs said: how often each sector word came up, and for each room title (as written) how often with which sector. */
+export interface TerrainTally {
+  /** `room_data` messages read. */
+  records: number;
+  /** Sector word (folded) to count. */
+  sectors: Record<string, number>;
+  /** Title key (see `titleKey`) to sector to count. */
+  titles: Record<string, Record<string, number>>;
+}
+
+export function emptyTally(): TerrainTally {
+  return { records: 0, sectors: {}, titles: {} };
+}
+
+/** Adds one message to a tally. A message without a usable sector or title is not counted. Returns whether it was. */
+export function tallyRoomData(tally: TerrainTally, data: RoomData): boolean {
+  const sector = canonicalSector(data.sector);
+  const key = titleKey(data.room);
+  if (sector === null || key === '') return false;
+  tally.records += 1;
+  tally.sectors[sector] = (tally.sectors[sector] ?? 0) + 1;
+  const row = (tally.titles[key] ??= {});
+  row[sector] = (row[sector] ?? 0) + 1;
+  return true;
+}
+
+/** Folds a second tally (another log folder) into the first. */
+export function mergeTallies(into: TerrainTally, from: TerrainTally): TerrainTally {
+  into.records += from.records;
+  for (const [sector, n] of Object.entries(from.sectors)) into.sectors[sector] = (into.sectors[sector] ?? 0) + n;
+  for (const [key, row] of Object.entries(from.titles)) {
+    const target = (into.titles[key] ??= {});
+    for (const [sector, n] of Object.entries(row)) target[sector] = (target[sector] ?? 0) + n;
+  }
+  return into;
+}
+
+export interface DecideOptions {
+  /** Smallest share of a title's messages the winning sector must hold. Default 0.9. */
+  minShare?: number;
+  /** Fewest messages for a title to be believed. Default 1. */
+  minCount?: number;
+}
+
+export interface TerrainDecision {
+  /** Title key to the sector accepted for it. */
+  byTitle: Record<string, string>;
+  /** Titles that several sectors share (or too few messages), with their counts, most messages first. */
+  ambiguous: { title: string; counts: Record<string, number> }[];
+  /** Sector words in the logs the palette has no colour for, with their counts. */
+  unknownSectors: Record<string, number>;
+}
+
+/** Which title gets which sector. */
+export function decideTerrain(tally: TerrainTally, options: DecideOptions = {}): TerrainDecision {
+  const minShare = options.minShare ?? 0.9;
+  const minCount = options.minCount ?? 1;
+  const byTitle: Record<string, string> = {};
+  const ambiguous: TerrainDecision['ambiguous'] = [];
+  for (const [title, counts] of Object.entries(tally.titles)) {
+    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const total = entries.reduce((sum, [, n]) => sum + n, 0);
+    const [top, topCount] = entries[0];
+    if (total >= minCount && topCount / total >= minShare) byTitle[title] = top;
+    else ambiguous.push({ title, counts });
+  }
+  ambiguous.sort((a, b) => Object.values(b.counts).reduce((s, n) => s + n, 0) - Object.values(a.counts).reduce((s, n) => s + n, 0));
+  const unknownSectors: Record<string, number> = {};
+  for (const [sector, n] of Object.entries(tally.sectors)) if (terrainFill(sector) === null) unknownSectors[sector] = n;
+  return { byTitle, ambiguous, unknownSectors };
+}
+
+export interface ApplyReport {
+  rooms: number;
+  /** Rooms that got a sector now. */
+  assigned: number;
+  /** Rooms that already had one (kept). */
+  kept: number;
+  /** Rooms whose title the logs never showed. */
+  unseen: number;
+  /** Rooms whose title the logs showed but several sectors share. */
+  ambiguous: number;
+  /** Rooms given each sector. */
+  bySector: Record<string, number>;
+}
+
+/** A copy of the map in which every room without a sector gets the one the logs agree on for its title. The input is not changed. */
+export function applyTerrain(map: MapFile, decision: TerrainDecision, tally: TerrainTally): { map: MapFile; report: ApplyReport } {
+  const report: ApplyReport = { rooms: 0, assigned: 0, kept: 0, unseen: 0, ambiguous: 0, bySector: {} };
+  const copy = JSON.parse(JSON.stringify(map)) as MapFile;
+  for (const continent of copy.continents)
+    for (const area of continent.areas)
+      for (const subzone of area.subzones)
+        for (const room of subzone.rooms) {
+          report.rooms += 1;
+          if (room.sector !== undefined && room.sector !== '') {
+            report.kept += 1;
+            continue;
+          }
+          const key = titleKey(room.title);
+          const sector = decision.byTitle[key];
+          if (sector !== undefined) {
+            room.sector = sector;
+            report.assigned += 1;
+            report.bySector[sector] = (report.bySector[sector] ?? 0) + 1;
+          } else if (tally.titles[key] !== undefined) report.ambiguous += 1;
+          else report.unseen += 1;
+        }
+  return { map: copy, report };
+}

@@ -10,16 +10,19 @@
  * AutoLevelRestConfig in autoleveling-types.ts.
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import styles from '../../styles/AutoLevelingWizard.module.scss';
 import type { AutoLevelRestDuringRoundRule } from '../../features/autoleveling/autoleveling-types';
+import { LAP_WAIT_DEFAULT_MIN, LAP_WAIT_MAX, LAP_WAIT_MIN } from '../../features/autoleveling/autoleveling-step-prefs';
 import type { WizardDraft } from './useWizardDraft';
 
 interface Props {
   restStartOfRound: string;
   restEndOfRound: string;
   restDuringRound: AutoLevelRestDuringRoundRule[];
+  /** Whole minutes to wait between laps (default 3). */
+  lapWaitMin?: number;
   onPatch: (p: Partial<WizardDraft>) => void;
 }
 
@@ -38,7 +41,22 @@ function parsePct(raw: string): number | undefined {
   return Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : undefined;
 }
 
-export const RestStep: React.FC<Props> = ({ restStartOfRound, restEndOfRound, restDuringRound, onPatch }) => {
+export const RestStep: React.FC<Props> = ({
+  restStartOfRound,
+  restEndOfRound,
+  restDuringRound,
+  lapWaitMin = LAP_WAIT_DEFAULT_MIN,
+  onPatch,
+}) => {
+  // The box keeps what is being typed; only a whole number of minutes in range reaches the draft, and leaving the box shows the real value.
+  const [lapText, setLapText] = useState(String(lapWaitMin));
+  useEffect(() => setLapText(String(lapWaitMin)), [lapWaitMin]);
+  const typeLapWait = (raw: string) => {
+    setLapText(raw);
+    const n = Number(raw);
+    if (raw.trim() !== '' && Number.isInteger(n) && n >= LAP_WAIT_MIN && n <= LAP_WAIT_MAX) onPatch({ lapWaitMin: n });
+  };
+
   const updateRule = (i: number, patch: Partial<AutoLevelRestDuringRoundRule>) =>
     onPatch({ restDuringRound: restDuringRound.map((r, ix) => (ix === i ? { ...r, ...patch } : r)) });
 
@@ -54,7 +72,8 @@ export const RestStep: React.FC<Props> = ({ restStartOfRound, restEndOfRound, re
     <div className={styles.stepPanel}>
       <p className={styles.fieldHint}>
         All rest behavior is <strong>out of combat only</strong>. Start/end-of-round commands run
-        every lap automatically; during-round rules step in mid-route if your vitals drop too low.
+        every lap automatically; during-round rules step in mid-route if your vitals drop too low. What you set
+        here is remembered for next time.
       </p>
 
       <div className={styles.field}>
@@ -87,6 +106,28 @@ export const RestStep: React.FC<Props> = ({ restStartOfRound, restEndOfRound, re
           Runs at the end of every lap. Also reused as the "go rest" action for the during-round
           rules below. Goes through your own aliases/scripts, same as typing it yourself — a
           rest macro you've already built will actually expand here, not just get sent literally.
+        </span>
+      </div>
+
+      <div className={styles.field}>
+        <span className={styles.fieldLabel}>Wait between laps</span>
+        <span className={styles.inlineField}>
+          <input
+            className={styles.levelInput}
+            type="number"
+            min={LAP_WAIT_MIN}
+            max={LAP_WAIT_MAX}
+            step={1}
+            value={lapText}
+            onChange={(e) => typeLapWait(e.target.value)}
+            onBlur={() => setLapText(String(lapWaitMin))}
+            aria-label="Minutes to wait between laps"
+          />
+          minutes
+        </span>
+        <span className={styles.fieldHint}>
+          After the last step of a lap, autopilot waits this long before starting the next one, so the creatures you cleared can come back.
+          Whole minutes, {LAP_WAIT_MIN} to {LAP_WAIT_MAX}; the default is {LAP_WAIT_DEFAULT_MIN}. It is remembered with the rest and weight settings.
         </span>
       </div>
 

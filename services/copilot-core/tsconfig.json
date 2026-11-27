@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    "lib": ["ES2023"],
+
+    // Pure/isomorphic, same guard as scrum-poker-core: NO ambient node/DOM types in shipped
+    // code. The browser client and the Node server run byte-identical policy and parsing; the
+    // clock and the file system are always passed in.
+    "types": [],
+
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "dist", "node_modules"]
+}

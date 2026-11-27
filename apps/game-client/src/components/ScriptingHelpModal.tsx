@@ -1,6 +1,9 @@
 // apps/game-client/src/components/ScriptingHelpModal.tsx
 import React from 'react';
 import styles from '../styles/ScriptingHelpModal.module.scss';
+import { useWindowLayer } from '../hooks/useWindowLayer';
+import { useResizableModal } from '../hooks/useResizableModal';
+import { ResizeGrip } from './ResizeGrip';
 
 interface ScriptingHelpModalProps {
   isOpen: boolean;
@@ -15,6 +18,7 @@ type SectionId =
   | 'aliases'
   | 'timers'
   | 'variables'
+  | 'globals'
   | 'examples'
   | 'plugins'
   | 'autoleveling'
@@ -33,6 +37,7 @@ const NAV_SECTIONS: NavSection[] = [
   { id: 'aliases', label: 'Aliases' },
   { id: 'timers', label: 'Timers' },
   { id: 'variables', label: 'Variables' },
+  { id: 'globals', label: 'Global Scripts' },
   { id: 'examples', label: 'Practical Examples' },
   { id: 'plugins', label: 'Plugins' },
   { id: 'autoleveling', label: 'Auto Leveling' },
@@ -120,10 +125,21 @@ const ScriptingHelpModal: React.FC<ScriptingHelpModalProps> = ({ isOpen, onClose
     return () => observer.disconnect();
   }, [isOpen]);
 
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => onClose() });
+  const { attach: resizeAttach, style: resizeStyle, gripProps: resizeGrip } = useResizableModal({ storageKey: 'shatteredarchive:modal-size:ScriptingHelpModal:v1', centered: false, limits: { minWidth: 480, minHeight: 360 } });
+
   if (!isOpen) return null;
 
   return (
-    <div ref={modalRef} className={styles.modal} style={{ left: initialPos.x, top: initialPos.y }}>
+    <div
+      ref={(el) => {
+        modalRef.current = el;
+        resizeAttach(el);
+      }}
+      className={styles.modal}
+      style={{ left: initialPos.x, top: initialPos.y, zIndex: layer.zIndex, ...resizeStyle }}
+      onPointerDownCapture={layer.bringToFront}
+    >
       {/* Header */}
       <div ref={headerRef} className={styles.header} onMouseDown={onHeaderMouseDown}>
         <h2 className={styles.title}>Scripting Help</h2>
@@ -359,6 +375,12 @@ doAfter(10000, "alias", "ks")`}</pre>
             <div className={styles.callout}>
               <strong>Multiple doAfter timers stack independently.</strong> Each one runs its own countdown in parallel
               — scheduling two <code>doAfter</code> calls doesn't make them queue behind each other.
+            </div>
+
+            <div className={styles.callout}>
+              <strong>A dropped connection cancels every waiting doAfter.</strong> They are not sent after you reconnect,
+              and the terminal says how many were cancelled. A <code>doAfter</code> made while you are not connected
+              does nothing.
             </div>
 
             {/* ── Tilde / cancel ── */}
@@ -609,6 +631,17 @@ sendCommand("stand");`}</pre>
               <li>Write your script</li>
             </ol>
 
+            <h4 className={styles.subHeading}>When the connection drops</h4>
+            <p>
+              Timers pause while you are not connected. After you reconnect they start again once your character is in
+              the game, and each one waits its full interval first. If the game never sent character data (GMCP is off),
+              they start as soon as you are connected. The terminal tells you when timers pause, wait and resume.
+            </p>
+            <p>
+              This covers script timers and <code>doAfter</code>. A <code>setTimeout</code> or <code>setInterval</code>{' '}
+              that your script starts itself keeps running.
+            </p>
+
             <h4 className={styles.subHeading}>Timer example: periodic check</h4>
             <pre className={styles.code}>{`// Timer: runs every 30000ms (30 seconds)
 // Sends the "score" command to update your stats.
@@ -686,6 +719,110 @@ deleteGlobalVar("killCount");`}</pre>
                 </li>
               </ul>
             </div>
+          </section>
+
+          {/* ── GLOBAL SCRIPTS ──────────────────────────────── */}
+          <section data-section="globals" className={styles.section}>
+            <h3 className={styles.sectionHeading}>Global Scripts</h3>
+
+            <p>
+              The <strong>Globals</strong> tab holds one file for each of JavaScript, TypeScript, Lua and Python. Put
+              the functions you use in many places there, instead of copying them into a dozen scripts. A global
+              written in <em>any</em> language can be called from a script in <em>any</em> language.
+            </p>
+
+            <h4 className={styles.subHeading}>Writing a global</h4>
+            <ul className={styles.list}>
+              <li>
+                <strong>JavaScript / TypeScript</strong> — assign to <code>exports</code>. A plain{' '}
+                <code>function foo() {'{}'}</code> is local to the file and cannot be called.
+              </li>
+              <li>
+                <strong>Lua</strong> — a top-level function. A dotted name uses an underscore, so{' '}
+                <code>global.lua.combat.flee</code> calls <code>combat_flee</code>. A Lua global receives its arguments
+                as JSON text.
+              </li>
+              <li>
+                <strong>Python</strong> — a top-level function, <code>def combat_flee(args):</code>, with the same
+                underscore rule. A Python global receives the value itself.
+              </li>
+            </ul>
+            <pre className={styles.code}>{`// Globals → JavaScript
+exports.state = { kills: 0 };
+exports.double = (args) => args.n * 2;
+exports.hit = (api, args) => {
+  api.sendCommand("kill " + args.target);
+  return ++exports.state.kills;
+};`}</pre>
+
+            <h4 className={styles.subHeading}>JavaScript and TypeScript: call it by name</h4>
+            <p>
+              Everything the JavaScript and TypeScript Globals files export is available in your JavaScript and
+              TypeScript scripts by name. No <code>runGlobal</code> is needed, and you pass just the arguments:
+            </p>
+            <pre className={styles.code}>{`sendCommand("say " + double({ n: 21 }));   // say 42
+const kills = hit({ target: "goblin" });    // the number it returned
+state.kills = 0;                            // the Globals file's own object
+
+const later = await someAsyncGlobal();      // top-level await works`}</pre>
+
+            <h4 className={styles.subHeading}>Lua and Python: one shared program</h4>
+            <p>
+              Lua and Python each run as <strong>one program</strong>. The Globals file is run first, then every trigger,
+              alias and timer in that language runs in the same place, so anything defined in one is visible to the
+              others:
+            </p>
+            <pre className={styles.code}>{`-- Globals → Lua
+counter = 0
+function bump() counter = counter + 1 end
+
+-- any Lua trigger, alias or timer
+bump()
+writeTerminal("counter is " .. counter .. "\\n")
+kills = (kills or 0) + 1      -- still there for the next script (use local to keep it private)`}</pre>
+            <div className={styles.callout}>
+              <strong>Saving the Globals file for a language restarts it.</strong> Whatever your scripts had stored in
+              that language's program starts over. Use <code>setGlobalVar</code> for values that must survive.
+            </div>
+
+            <h4 className={styles.subHeading}>Calling a global in another language</h4>
+            <p>
+              Use <code>runGlobal("global.&lt;language&gt;.&lt;name&gt;", args)</code>. What the function returns comes
+              back to you:
+            </p>
+            <pre className={styles.code}>{`// JavaScript / TypeScript: await it
+const sum = await runGlobal("global.lua.core.add", { a: 40, b: 2 });
+
+-- Lua: it is an ordinary call
+local info = runGlobal("global.python.core.info", { who = "orc" })
+writeTerminal(info.name .. "\\n")
+
+# Python: the same
+total = runGlobal("global.javascript.double", {"n": 21})`}</pre>
+            <p>
+              In Lua and Python the value is returned when the global finished at once (any Lua function, any
+              JavaScript function that is not <code>async</code>, any Python function that does not sleep). For one that
+              takes time, pass a function as a third argument. It is always called afterwards, with the result and any
+              error, once your script has finished:
+            </p>
+            <pre className={styles.code}>{`-- Lua
+runGlobal("global.javascript.later", { n = 7 }, function(result, err)
+  writeTerminal(tostring(result) .. "\\n")
+end)
+
+# Python
+def got(result, err):
+    writeTerminal("%s\\n" % result)
+runGlobal("global.javascript.later", {"n": 7}, got)`}</pre>
+            <div className={styles.callout}>
+              <strong>Plain data only.</strong> Arguments and results are text, numbers, true/false, nothing, lists and
+              dictionaries. A function, or something that contains itself, comes back as nothing. A global that fails is
+              reported in the script log and gives nothing back.
+            </div>
+            <p>
+              A <strong>Plain Text</strong> script can run a global by putting its name alone on a line:{' '}
+              <code>global.lua.heal</code>.
+            </p>
           </section>
 
           {/* ── PRACTICAL EXAMPLES ──────────────────────────── */}
@@ -847,6 +984,11 @@ if (cmd) {
               Click <strong>Install</strong> to add one, then toggle it on. Installed plugins that are toggled off
               appear dimmed — they won't run until enabled.
             </p>
+            <p>
+              Click <strong>Configure</strong> to change a plugin's settings, then <strong>Save</strong>. Settings you
+              leave alone keep following the plugin's own defaults, so improvements to a default reach you
+              automatically. <strong>Reset to defaults</strong> puts every setting back, and takes effect when you Save.
+            </p>
 
             {/* ── Plugin index ── */}
             <div className={styles.pluginIndex}>
@@ -949,6 +1091,10 @@ You slip and fall`}</pre>
                 <em>Recast delay (ms)</em> — pause before recasting to avoid flooding (default 500 ms)
               </li>
               <li>A shared cooldown prevents double-casting when multiple sources detect the same drop</li>
+              <li>
+                A dropped connection cancels a waiting recast. Spells that wore off while you were away are not recast;
+                the plugin watches again from the first affect list after you reconnect
+              </li>
             </ul>
             <pre className={styles.code}>{`# affect name | cast command
 # Omit command to default to: cast '<affect name>'
@@ -1648,7 +1794,8 @@ orange  = an orange`}</pre>
               Automates the full quest cycle: runs a start alias, walks to the quest master, requests a quest, parses
               the assignment, navigates to the area, collects the item, turns it in, optionally buys a gem, rests, and
               repeats. Stops automatically on combat and can auto-resume after combat clears. Per-quest and per-area
-              stats are tracked in IndexedDB and viewable any time with <code>pq stats</code>.
+              stats are tracked in IndexedDB and viewable any time with <code>pq stats</code>. A dropped connection stops
+              the bot; type <code>pq start</code> again once you are back in the game.
             </p>
             <ul className={styles.list}>
               <li>
@@ -2473,6 +2620,13 @@ Jovar               — icewall_port start`}</pre>
                   Pause suspends execution mid-step; Resume continues from where it stopped.
                 </span>
               </div>
+              <div className={styles.tableRow}>
+                <span className={styles.tableKey}>Dropped connection</span>
+                <span>
+                  A run that was going or paused stops and says so in the terminal. It does not start again by itself:
+                  press Start once you are back in the game.
+                </span>
+              </div>
             </div>
 
             <div className={styles.callout}>
@@ -2907,6 +3061,7 @@ if (hp && maxHp && (hp / maxHp) < 0.20) {
           </section>
         </div>
       </div>
+      <ResizeGrip {...resizeGrip} />
     </div>
   );
 };

@@ -82,6 +82,31 @@ try {
 
 ---
 
+## Calling the Globals by name
+
+The exports of **Globals → JavaScript** and **Globals → TypeScript** are available in every JS / TS script as plain
+names, so `core.echo({ text })` just works, with no `runGlobal` and no `api` argument. The calling convention below is
+applied for you, and what the function returns is returned to you untouched: a value for an ordinary function, a
+promise for an `async` one.
+
+```js
+sendCommand("kill " + pick({ list: ["rat", "orc"] }));   // exports.pick = (args) => ...
+const later = await core.later({ n: 5 });                // exports.core.later returns a promise
+state.kills++;                                           // exports.state = { kills: 0 } is the Globals file's own object
+```
+
+- A method keeps `this` (it is the object it hangs off), so it can use the Globals file's own state.
+- Objects and arrays are shared, not copied; a number or string export is its value at the moment the script started.
+- A script can still declare its own `const core = ...`.
+- The Globals file of the script's own language wins a name that both files export; names the script already has
+  (`log`, `sendCommand`, `event`, ...), keywords and non-identifiers (`my-fn`) are not bound.
+- Scripts run in an `async` function, so top-level `await` works; a script that never awaits runs to the end in the
+  same turn it was triggered in, as it always did.
+- To call a Lua or Python global, use `await runGlobal("global.lua.core.add", { a: 1, b: 2 })`: it resolves with the
+  value the function returned.
+
+---
+
 ## Global script calling conventions (JS)
 
 When `runGlobal("global.javascript.some.path", args)` is called, the JS global runtime:

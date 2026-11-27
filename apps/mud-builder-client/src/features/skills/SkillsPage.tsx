@@ -85,7 +85,7 @@ export default function SkillsPage() {
       .then((c) => setWriteEnabled(c.writeEnabled))
       .catch(() => setWriteEnabled(false));
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   const model = useMemo(() => (skills ? { skills } : null), [skills]);

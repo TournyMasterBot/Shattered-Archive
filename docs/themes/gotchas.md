@@ -1,7 +1,7 @@
 # Theme-engine gotchas
 
 Real bugs hit while building the theme-registry engine and the `slate-amber`
-theme (full history: `.ai-plans/20260920-0005-hud-theme-engine.md`). Each
+theme (full history: `.ai-plans-completed/completed/20260920-0005-hud-theme-engine.md`). Each
 entry is a symptom you might actually see, why it happens, the fix, and how
 it was actually caught — several of these looked completely fine in a
 screenshot or a passing test suite and were only caught by measuring the real

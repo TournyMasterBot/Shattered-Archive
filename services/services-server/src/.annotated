@@ -23,6 +23,11 @@ Purpose: This file re-exports all services to simplify imports throughout the ap
 
 /logger-service.ts
 Purpose: Provides structured logging with file rotation, JSON formatting, and SOH detection for server applications.
+Gotcha: the SOH switch (SohGate) is per connection and decided ONCE per record in Logger.write, before winston runs: winston
+gives every transport its own copy of a record, so a gate inside the transports flips once per transport (it only worked
+because there were exactly three). A switch left off self-heals after 5 minutes (SOH_MAX_SUPPRESS_MS). Callers with several
+connections use forConnection(id) and call endConnection(id) when one closes. Before 2026-11-08 the flag was process-wide
+and a Simulacrum session left it off for a day. Tests: __tests__/logger-service.test.ts.
 
 /mud-client-service.ts
 Purpose: Manages MUD client connections and sessions with unique identifiers.

@@ -1,5 +1,5 @@
 // apps/game-client/src/hooks/useBeforeUnloadGuard.ts
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 
 /**
  * Prompts the browser's native "Leave site?" confirmation when the tab/window
@@ -17,7 +17,10 @@ import { useEffect, useRef } from 'react';
  */
 export function useBeforeUnloadGuard(active: boolean): void {
   const activeRef = useRef(active);
-  activeRef.current = active;
+  // Layout effect, not a render-time write: the ref is current before the browser can paint or unload.
+  useLayoutEffect(() => {
+    activeRef.current = active;
+  }, [active]);
 
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {

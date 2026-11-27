@@ -112,7 +112,7 @@ export const PluginsPage: React.FC<{ connectionId: string }> = ({ connectionId }
           isEnabled={plugins.find((p) => p.id === configPluginId)?.enabled}
           onSave={(id, config) => {
             updatePluginConfig(id, config);
-            pluginHost.updateEnabledPluginConfig(id, config);
+            pluginHost.replaceEnabledPluginConfig(id, config);
           }}
         />
       ) : null}

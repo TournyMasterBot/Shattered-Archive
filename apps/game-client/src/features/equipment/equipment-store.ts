@@ -1,4 +1,5 @@
 // apps/game-client/src/features/equipment/equipment-store.ts
+import { canonicalConnectionId } from '../connection/connectionId';
 import type {
   EquipmentPreferences,
   EquipmentSlot,
@@ -261,7 +262,7 @@ function normalizeState(input: EquipmentState): EquipmentState {
   };
 
   return {
-    connectionId: String(input.connectionId ?? 'default'),
+    connectionId: canonicalConnectionId(String(input.connectionId ?? '')),
     lastEqAt: Number.isFinite(input.lastEqAt) ? Number(input.lastEqAt) : undefined,
     slots: {
       wielded: normSlot('wielded'),
@@ -277,14 +278,14 @@ function normalizePrefs(input: EquipmentPreferences): EquipmentPreferences {
   const hotbarDockMode: HotbarDockMode = mode === 'floating' ? 'floating' : 'docked';
 
   return {
-    connectionId: String(input.connectionId ?? 'default'),
+    connectionId: canonicalConnectionId(String(input.connectionId ?? '')),
     hotbarDockMode,
   };
 }
 
 function normalizeProfile(input: EquipmentProfile): EquipmentProfile {
   return {
-    connectionId: String(input.connectionId ?? 'default'),
+    connectionId: canonicalConnectionId(String(input.connectionId ?? '')),
     aliases: isRecord(input.aliases) ? (input.aliases as Record<string, string>) : {},
     sets: Array.isArray(input.sets) ? input.sets : [],
     snapshot: isRecord(input.snapshot) ? (input.snapshot as unknown as EquipmentSnapshot) : undefined,

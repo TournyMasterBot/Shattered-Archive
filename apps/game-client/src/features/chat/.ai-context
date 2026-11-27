@@ -1,1 +1,3 @@
 The chat folder handles all chat-related functionality within the application, managing message parsing, storage, and display. It processes raw chat input through classification and formatting pipelines before storing user preferences and distributing real-time messages with ANSI color support. The folder serves as the central hub for chat detection, extraction, and presentation throughout the project.
+
+A chat message keeps two forms on purpose: `rawText` exactly as the game sent it (the audio beep-on-bell setting and the classifiers read its BEL), and `html` for the bubble, built from a cleaned copy (chat-display-text.ts). Clean at display time, never at the source. The whole path from raw line to pane is in docs/game/chat-panes.md.

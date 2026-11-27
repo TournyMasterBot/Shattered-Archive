@@ -73,11 +73,11 @@ export const FilterableSelect: React.FC<FilterableSelectProps> = ({
       e.preventDefault();
       if (open && filtered[activeIx]) commit(filtered[activeIx]);
     } else if (e.key === 'Escape') {
+      // an open list takes the key: the first Escape closes it, and only the next one reaches the window around it
+      if (open) e.stopPropagation();
       setOpen(false);
     }
   };
-
-  let lastGroup: string | undefined;
 
   return (
     <div className={`${styles.filterableSelect} ${className ?? ''}`} ref={rootRef}>
@@ -97,8 +97,7 @@ export const FilterableSelect: React.FC<FilterableSelectProps> = ({
       {open && filtered.length > 0 && (
         <ul className={styles.filterableSelectList} role="listbox">
           {filtered.map((o, ix) => {
-            const showHeader = !!o.group && o.group !== lastGroup;
-            lastGroup = o.group;
+            const showHeader = !!o.group && o.group !== filtered[ix - 1]?.group;
             return (
               <React.Fragment key={o.value}>
                 {showHeader && (

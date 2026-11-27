@@ -12,6 +12,7 @@ COPY apps/auth-client ./apps/auth-client
 
 # pnpm 11.28+ and 12 refuse a frozen install when pnpm-lock.yaml lists a workspace project whose package.json is missing: manifests of the projects this stage does not copy in full.
 COPY apps/auth-server/package.json ./apps/auth-server/package.json
+COPY apps/copilot-server/package.json ./apps/copilot-server/package.json
 COPY apps/dsl-color-preview/package.json ./apps/dsl-color-preview/package.json
 COPY apps/dsl-log-preview/package.json ./apps/dsl-log-preview/package.json
 COPY apps/game-client/package.json ./apps/game-client/package.json
@@ -22,6 +23,7 @@ COPY apps/psd-viewer-client/package.json ./apps/psd-viewer-client/package.json
 COPY apps/psd-viewer-server/package.json ./apps/psd-viewer-server/package.json
 COPY apps/scrum-poker-client/package.json ./apps/scrum-poker-client/package.json
 COPY apps/scrum-poker-server/package.json ./apps/scrum-poker-server/package.json
+COPY apps/shattered-maps-client/package.json ./apps/shattered-maps-client/package.json
 COPY apps/simulacrum-server/package.json ./apps/simulacrum-server/package.json
 COPY apps/soulsteel-client/package.json ./apps/soulsteel-client/package.json
 COPY apps/soulsteel-server/package.json ./apps/soulsteel-server/package.json
@@ -29,8 +31,10 @@ COPY apps/web-client/package.json ./apps/web-client/package.json
 COPY apps/web-server/package.json ./apps/web-server/package.json
 COPY sdks/sdks-client/package.json ./sdks/sdks-client/package.json
 COPY sdks/sdks-server/package.json ./sdks/sdks-server/package.json
+COPY services/copilot-core/package.json ./services/copilot-core/package.json
 COPY services/merc-area/package.json ./services/merc-area/package.json
 COPY services/scrum-poker-core/package.json ./services/scrum-poker-core/package.json
+COPY services/shattered-maps-core/package.json ./services/shattered-maps-core/package.json
 COPY services/services-server/package.json ./services/services-server/package.json
 COPY types/types-client/package.json ./types/types-client/package.json
 COPY types/types-global/package.json ./types/types-global/package.json
@@ -45,8 +49,8 @@ RUN pnpm install --frozen-lockfile
 # is dev-only), so no VITE_* build args are needed — the edge nginx routes them.
 RUN pnpm --filter @shatteredarchive/auth-client build
 
-# nginx 1.31.6-alpine3.24
-FROM nginx:1.31.6-alpine@sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2 AS runtime
+# nginx 1.31.9-alpine3.24
+FROM nginx:1.31.9-alpine@sha256:90b6bd2aec278b16b98221d64deb1d6d35d164567f507ab0716e6053878315aa AS runtime
 RUN apk --no-cache upgrade
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY deploy/nginx/auth-client.conf /etc/nginx/conf.d/default.conf

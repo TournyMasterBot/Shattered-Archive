@@ -40,7 +40,6 @@ describe('ContentPage (Phase G)', () => {
   it('renames a snippet', async () => {
     let saved: { name: string }[] = [];
     globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
       if (!init?.method || init.method === 'GET') return json({ snippets: saved.length ? saved : [ROOM_SNIPPET] });
       const body = JSON.parse(String(init.body)) as { snippets: { name: string }[] };
       saved = body.snippets;
@@ -58,7 +57,6 @@ describe('ContentPage (Phase G)', () => {
   it('deletes a snippet behind a confirm', async () => {
     let deleted = false;
     globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
       if (!init?.method || init.method === 'GET') return json({ snippets: deleted ? [] : [ROOM_SNIPPET] });
       const body = JSON.parse(String(init.body)) as { snippets: unknown[] };
       deleted = body.snippets.length === 0;

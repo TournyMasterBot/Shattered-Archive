@@ -41,7 +41,11 @@ function coerceAbility(a) {
         .filter((g) => typeof g === 'string' && g.trim())
         .filter((g) => !/(Basics|Default)$/i.test(g.trim()) && g.trim().toLowerCase() !== 'none')
     : [];
-  return { name, type, level, groups };
+  // durationTicks and lagMs are omitted by the server when unknown, and 0 is a real value: keep a whole number from 0 up, drop anything else
+  const timing = (v, max) => (Number.isInteger(v) && v >= 0 && v <= max ? v : undefined);
+  const durationTicks = timing(a.durationTicks, 1000);
+  const lagMs = timing(a.lagMs, 60000);
+  return { name, type, level, groups, ...(durationTicks !== undefined ? { durationTicks } : {}), ...(lagMs !== undefined ? { lagMs } : {}) };
 }
 
 function coerceClass(c) {

@@ -20,10 +20,16 @@ BLOCK=$(cat <<'EOF'
 127.0.0.1 web-client.shatteredarchive.dev
 127.0.0.1 web-server.shatteredarchive.dev
 127.0.0.1 build.shatteredarchive.dev
+127.0.0.1 build-client.shatteredarchive.dev
+127.0.0.1 build-server.shatteredarchive.dev
 127.0.0.1 auth.shatteredarchive.dev
 127.0.0.1 scrum-poker.shatteredarchive.dev
 127.0.0.1 soulsteel.shatteredarchive.dev
 127.0.0.1 simulacrum.shatteredarchive.dev
+127.0.0.1 simulacrum-server.shatteredarchive.dev
+127.0.0.1 simulacrum-admin.shatteredarchive.dev
+127.0.0.1 copilot.shatteredarchive.dev
+127.0.0.1 maps.shatteredarchive.dev
 # END ShatteredArchive
 EOF
 )

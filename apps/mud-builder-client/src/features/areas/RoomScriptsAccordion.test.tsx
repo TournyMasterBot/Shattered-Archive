@@ -65,7 +65,7 @@ function room(wb: AreaWorkbench, vnum: number): Room {
   return section.rooms.find((r) => r.vnum === vnum)!;
 }
 
-function Harness({ vnum, render: renderFn }: { vnum: number; render: (wb: AreaWorkbench) => React.ReactNode }) {
+function Harness({ vnum: _vnum, render: renderFn }: { vnum: number; render: (wb: AreaWorkbench) => React.ReactNode }) {
   const wb = useAreaWorkbench();
   useEffect(() => {
     void wb.openArea('tiny.are');

@@ -507,6 +507,8 @@ first, and *can* hot-reload. Imports are mutations: they need a builder token
 and appear in the audit log (previews do not — they never write). Uploads are
 capped at 2 MB and must be plain text.
 
+A map curated in Shattered Maps reaches this page the same way: its Export to the Builder panel makes an .are file (and the request body this import takes) from an area or a subzone of the audited map; see [docs/shattered-maps/builder-export.md](../shattered-maps/builder-export.md). Validate and Commit stay here, and are the owner's.
+
 The Access tab (master key only) also gains an **Audit log** panel: the most
 recent entries from `backups/audit.log`, newest first, via `GET /api/audit`
 (read-only — the API never truncates or rewrites the log file).
@@ -567,6 +569,11 @@ render dashed red so a broken file is visible at a glance.
 Everything map-related is **read-only**: two GET endpoints
 (`/api/map/:file`, `/api/map`), no writes, nothing audited, and clicking
 never mutates — editing stays on the editing tabs.
+
+The same files also give the Simulacrum's map in the game client (Shattered Maps, world `sandbox`, local only). The Builder stays the renderer of
+the files and an independent reader of them: `services/shattered-maps-core/scripts/check-against-builder.mjs` feeds the Builder's own
+`mapRooms` (exported from `routes/map.ts` for this) and the map import the same area folder and fails on any difference in rooms, titles,
+exits or cross-file flags. See [docs/shattered-maps/worlds.md](../shattered-maps/worlds.md).
 
 The skills/groups overlays also gained the areas' conflict safety: GET
 carries a `baseHash` (`null` while the game still runs its compiled stock

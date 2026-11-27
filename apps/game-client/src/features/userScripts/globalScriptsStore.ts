@@ -1,6 +1,8 @@
 // apps/game-client/src/features/userScripts/globalScriptsStore.ts
 
 import { DispatchEvent } from '../event-emitter/event-dispatcher';
+import { canonicalConnectionId, SHARED_CONNECTION_ID } from '../connection/connectionId';
+import { mergeGlobalSources } from '../connection/connectionIdMigration';
 
 export type GlobalScriptLanguage = 'javascript' | 'lua' | 'python' | 'typescript';
 
@@ -18,7 +20,7 @@ type GlobalVarsPayloadV1 = {
 };
 
 function safeConnectionId(connectionId?: string | null) {
-  return connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
+  return canonicalConnectionId(connectionId);
 }
 
 export function getGlobalScriptsStorageKey(connectionId?: string | null) {
@@ -233,27 +235,68 @@ export function getAllGlobalScriptBuckets(): GlobalScriptBucket[] {
   return buckets;
 }
 
+/** True when any language holds source. */
+function hasAnySource(sources: Record<GlobalScriptLanguage, string>): boolean {
+  return Object.values(sources).some((s) => typeof s === 'string' && s.length > 0);
+}
+
+/**
+ * Cloud buckets as this client files them: ids canonicalized, buckets that name the
+ * same local bucket merged, and buckets with no source at all dropped.
+ *
+ * Older clients uploaded the DSL game's globals as `dsl-mud` and the not-connected
+ * ones as `default`; both now name the same local bucket. When the cloud holds both,
+ * they are merged (per language, `dsl-mud` wins a conflict) instead of letting whichever
+ * came last overwrite the other. An empty bucket is dropped because an empty cloud must
+ * never wipe a local one.
+ */
+export function normalizeGlobalBuckets(buckets: GlobalScriptBucket[]): GlobalScriptBucket[] {
+  const byId = new Map<string, Record<GlobalScriptLanguage, string>>();
+
+  for (const bucket of buckets) {
+    if (!bucket?.connectionId) continue;
+
+    const id = canonicalConnectionId(bucket.connectionId);
+    const incoming = coerceSources({ schema: 'shatteredArchive.globalScripts.v1', sources: bucket.sources }).sources;
+    const existing = byId.get(id);
+
+    if (!existing) {
+      byId.set(id, incoming);
+      continue;
+    }
+
+    const sharedIsIncoming = bucket.connectionId.trim() === SHARED_CONNECTION_ID;
+    const preferred = sharedIsIncoming ? incoming : existing;
+    const other = sharedIsIncoming ? existing : incoming;
+    byId.set(id, mergeGlobalSources(preferred, other));
+  }
+
+  return [...byId]
+    .filter(([, sources]) => hasAnySource(sources))
+    .map(([connectionId, sources]) => ({ connectionId, sources }));
+}
+
+/** Languages that hold source in a bucket (stable order). */
+export function languagesWithSource(sources: Record<GlobalScriptLanguage, string>): GlobalScriptLanguage[] {
+  return (Object.keys(sources) as GlobalScriptLanguage[]).filter((lang) => (sources[lang] ?? '').length > 0);
+}
+
 /**
  * Replaces the stored globals with a downloaded set.
  *
- * Only buckets present in `buckets` are touched; a connection that exists
+ * Only buckets present (and non-empty) in `buckets` are touched; a connection that exists
  * locally but not in the cloud keeps its globals rather than being wiped, which
  * matches how a "load" behaves for every other synced collection.
  */
 export function replaceGlobalScriptBuckets(buckets: GlobalScriptBucket[]): void {
-  for (const bucket of buckets) {
-    if (!bucket?.connectionId) continue;
+  for (const { connectionId: id, sources } of normalizeGlobalBuckets(buckets)) {
+    const payload: GlobalScriptsPayloadV1 = { schema: 'shatteredArchive.globalScripts.v1', sources };
 
-    const payload = coerceSources({
-      schema: 'shatteredArchive.globalScripts.v1',
-      sources: bucket.sources,
-    });
-
-    const key = getGlobalScriptsStorageKey(bucket.connectionId);
+    const key = getGlobalScriptsStorageKey(id);
     scriptCache.set(key, payload);
     try {
       writeJson(key, payload);
-      DispatchEvent('shatteredarchive:globalScripts-updated', { connectionId: bucket.connectionId });
+      DispatchEvent('shatteredarchive:globalScripts-updated', { connectionId: id });
     } catch {
       // ignore
     }
@@ -295,9 +338,6 @@ export function getGlobalVarsSnapshot(connectionId?: string | null): Record<stri
     raw
       ? (() => {
           try {
-            console.log('Preparing to return getGlobalVarsSnapshot', {
-              raw,
-            });
             return JSON.parse(raw);
           } catch {
             return null;

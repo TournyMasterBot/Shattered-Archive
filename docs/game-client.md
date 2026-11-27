@@ -79,6 +79,20 @@ The client is a Vite/React/TypeScript single-page application. All user-visible 
 
 ---
 
+# Map window
+
+Game > Map… opens the world map window (`components/WorldMapWindow.tsx`, `features/worldmap/`): a floating, movable, resizable window beside the terminal that shows the published
+map of the area the player is in from the C# site's `/api/world-map/*` API and follows `game:room-data`. It has floors (a strip, and dimmed ghost floors behind the chosen one), pan and
+zoom, clickable exits into neighbouring areas with a Reset view button, and a small settings popover. It is a production feature with no flag, mounted only while open. The way it places
+the player, its freshness rule, the vertical display and its safety notes are in [docs/shattered-maps/surfaces.md](shattered-maps/surfaces.md); what a player sees is in
+[docs/shattered-maps/user-guide.md](shattered-maps/user-guide.md).
+
+A production build shows one world, the DSL's, and has no world picker. In a local development build (`SIMULACRUM_ADMIN_LOCAL`) the window follows the
+connection instead: while the client is connected to the Simulacrum it shows the Simulacrum's map (title `Map · Simulacrum`) from `/api/world-map/sandbox`, and the
+DSL's map otherwise. That code is `features/worldmap/localWorld.ts`, imported only behind the flag, so a production bundle has neither it nor the route
+(`scripts/check-local-only.mjs`). See [docs/shattered-maps/worlds.md](shattered-maps/worlds.md).
+
+---
 # Scripting Language Support
 
 ## JS Bridge Supported Commands
@@ -92,7 +106,7 @@ The client is a Vite/React/TypeScript single-page application. All user-visible 
 
 **Status**: Fully Supported
 
-Supported via native browser. This includes external requests (`fetch`, `httpGetJson`) and all browser APIs.
+Supported via native browser. This includes external requests (`fetch`, `httpGetJson`) and all browser APIs. A script body runs inside an `async` function, so top-level `await` works, and it starts running in the same turn it was triggered in (up to its first `await`). The api's members are bound as plain names (`sendCommand(...)`) as well as on `api`, and so are the exports of the Globals JS / TS files (see [Script engines and the invoke contract](#script-engines-and-the-invoke-contract)).
 
 ## Typescript
 
@@ -102,15 +116,35 @@ On-the-fly transpilation using the TypeScript compiler API bundled into the clie
 
 ## LUA
 
-**Status**: Best Effort
+**Status**: Fully Supported
 
-Supported via `fengari-web`. No file system, no HTTP, no WebSocket. Only the JS bridge API is available.
+Supported via `fengari-web` (Lua 5.3). No file system, no HTTP, no WebSocket. Only the JS bridge API is available. One shared Lua state per connection: the Globals Lua file and every Lua trigger, alias and timer run in it.
 
 ## Python
 
-**Status**: Best Effort
+**Status**: Fully Supported
 
-Supported via `skulpt`. Core language features only — no sockets, HTTP, or OS access. Only the JS bridge API is available.
+Supported via `skulpt`. Core language features and Skulpt's bundled standard library only — no sockets, HTTP, or OS access. Only the JS bridge API is available. One shared module namespace per connection, like Lua.
+
+## Script engines and the invoke contract
+
+Source: `apps/game-client/src/features/userScripts/` (`runtime.ts`, `globalRuntime.ts`, `luaRuntime.ts`, `pythonRuntime.ts`, `plainData.ts`). Player-facing description: [scripting-and-sharing](./game/scripting-and-sharing.md) and [scripting-summary](./scripting/scripting-summary.md).
+
+**Engines.** `runUserScript(script, api, connectionId?)` dispatches by language.
+
+| Language | With a `connectionId` | Without (plugin-bundled scripts) |
+|---|---|---|
+| Lua | the connection's Lua state in `globalRuntime` (`luaCache`): Globals Lua is run into it, then every script | a Lua state of its own, closed afterwards |
+| Python | the connection's module namespace (`pyCache`, `engines` in `pythonRuntime`) | a throwaway namespace |
+| JavaScript / TypeScript | each script is its own function, with the Globals JS / TS exports bound by name | no Globals |
+
+Saving the Globals source for a language closes/forgets that engine (`invalidateGlobalRuntime`); the next use starts fresh. Every call site must pass the connection id, or the script silently loses the shared scope. Skulpt is configured once and scripts run through `Sk.compile` plus the module function against the shared globals dict; the compiled function is cached by source.
+
+**One invoke contract.** `invokeGlobalSync(connectionId, "global.<language>.<path>", api, args)` is the only implementation. It returns a `GlobalCall` (`types.ts`): `{ settled: true, value | error }` when the function finished before the call returned (every Lua function, every non-async JS/TS function, a Python function that does not suspend), otherwise `{ settled: false, promise }`. `invokeGlobalById` is its awaitable form and resolves `undefined` on failure. Results pass through `toPlainData`. The sandbox api carries both `runGlobal` (Promise) and `runGlobalNow` (GlobalCall); every api builder (`useUserScriptSandbox`, `UserScriptRuntime`) sets both. The Lua and Python `runGlobal` bridges use `runGlobalNow`: they return the value when settled and accept a callback that is always called later.
+
+**Timing is part of the contract.** A script starts running in the turn it was triggered in: no `await` before a script body, and `getJsGlobalScope` / `ensureJsModule` are synchronous. Skulpt already runs synchronously until it suspends, which is what makes a Python call settle at once.
+
+**Mobile** mirrors all of it in `features/scripts` (`global-runtime.ts`, `lua-runtime.ts`, `python-runtime.ts`, `script-runtime.ts`); keep the two in step.
 
 ---
 
@@ -129,13 +163,43 @@ Key fields:
 
 ## Alias
 
-Aliases intercept user-typed commands before they are sent to the MUD. If the typed text matches an alias pattern (including capture variable syntax like `{TARGET}`), the alias script executes instead of the raw command being sent. Captured variables are injected as local constants in the script scope.
+Aliases intercept user-typed commands before they are sent to the MUD. If the typed text matches an alias pattern (including capture variable syntax like `{TARGET}`), the alias script executes instead of the raw command being sent. Captured variables are injected as local constants in a JavaScript / TypeScript script's scope (they take priority over a Globals export of the same name) and are readable with `getNamedVar("TARGET")` in every language.
 
 The command separator character (default `;`) is configurable via Accessibility Settings and propagated via `shatteredarchive:accessibility-updated`.
 
 ## Timers
 
 Timers run a script on a repeating interval (in milliseconds). The timer system is driven by a global 250ms tick (`window.__SA_USERSCRIPTS_TIMER_TICK__`). Timer state is per-script-id and persists across HMR reloads within a session.
+
+### Timers and a dropped connection
+
+`features/connection/sessionGate.ts` holds one of three states, and anything that acts on a delay asks it.
+
+| State | Means | Script and plugin timers | `doAfter` |
+|---|---|---|---|
+| `down` | no connection, also before the first connect | do not run | nothing is scheduled; what was waiting is cancelled |
+| `awaiting-login` | reconnected to a server that has sent login data; the character is not in the game yet | do not run | runs, so login scripts work |
+| `live` | the character is in the game, or the server never sent login data | run, each from a full interval | runs |
+
+- "In the game" is the first `game:character-login`, `game:char-data` or `game:room-data` of the session. The gate remembers per host and port, for the life of the page, that a server sends them; if GMCP is switched off after that, timers stay waiting until the page is reloaded.
+- `RuntimeSingleton` starts the gate before it loads scripts, skips the 250 ms tick unless live, resets timer intervals on going live, forgets the AFK flag at a drop and writes the `[Timers]` lines.
+- A delayed action that must not outlive its connection uses `scheduleDroppable()`; a repeating one follows `subscribeSession()` (as `pluginScriptRunner` does).
+- With no open socket, `shatteredarchive:send-command` is neither echoed nor sent. Events of a replaced socket are ignored.
+- At a drop the autopilot run and the quest bot stop, a waiting Auto Respell recast is cancelled (and its memory of what was up forgotten), and Auto Group forgets lookups in flight (`docs/game/autopilot.md`, `docs/scripting/plugins.md`).
+- A user script's own `setTimeout` / `setInterval` is not paused.
+- Tests: `sessionGate.test.ts`, `runtimeSingleton.test.ts`, `userScriptRuntime.doAfter.test.ts`, `pluginScriptRunner.test.ts`, `useGameConnection.test.ts`.
+
+```mermaid
+flowchart TD
+  A["socket closes"] --> B["session gate goes down"]
+  B --> C["repeating timers pause"]
+  B --> D["delayed commands cancelled, one line says how many"]
+  B --> E["autopilot run and quest bot stop"]
+  F["socket opens again"] --> G{"did this server send login data before?"}
+  G -- "no" --> H["timers restart with a full interval"]
+  G -- "yes" --> I["wait until the character is in the game"]
+  I --> H
+```
 
 ---
 
@@ -242,7 +306,7 @@ An error from the game server or the WebSocket layer.
 ### `game:remote-server:close`
 
 **Emitted by:** `useGameConnection` → `emitSocketClosed` or `emitServerClose`
-**Listened by:** `RuntimeSingleton` → redispatched as `shatteredarchive:server-closed`
+**Listened by:** `RuntimeSingleton` → redispatched as `shatteredarchive:server-closed`; `sessionGate` (see [Timers and a dropped connection](#timers-and-a-dropped-connection))
 
 The connection to the game server was closed. `type` distinguishes client-initiated (`socket-closed`) vs server-initiated (`server-closed`) closes.
 
@@ -640,7 +704,7 @@ These events are parsed from `shatteredarchive:gmcp-data` inside `UserScriptRunt
 ### `game:room-data`
 
 **Emitted by:** `UserScriptRuntime` on GMCP `room_data` packets
-**Listened by:** `useCompassBlock`, `useRoomHeader`, autoleveling engine, movement hooks
+**Listened by:** `useCompassBlock`, `useRoomHeader`, autoleveling engine, movement hooks, `useWorldMap` (the map pane)
 
 ```ts
 {

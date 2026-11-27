@@ -1,0 +1,5 @@
+copilot-server is the LOCAL-ONLY half of Copilot: it exists in the dev docker stack (experimental compose, profile `copilot`, vhost copilot.shatteredarchive.dev) and in no production artifact. Never add it to deploy/docker-compose.yml, never publish its port, never let a production Dockerfile or nginx file mention it: scripts/check-local-only.mjs (pnpm check:local-only) fails the build if any does. It refuses to start unless COPILOT_ENABLED=true.
+
+It deliberately does NOT use services-server's createExpressService: that wires request logging and shared auth, and Copilot must log nothing from a request but method, route pattern and status (game text and character names pass through it). Port 65100, because 66000 is not a TCP port. The pure logic (validators, ledger, policy) lives in services/copilot-core; this app owns files, HTTP and the clock.
+
+Its data directory (/data, host side C:/Projects/DSL/GameLogs/ShatteredArchive/Docker/copilot-server) holds real character names and corrections. The DSL repo git-ignores that folder; never copy anything from it into this repo. Developer docs: docs/copilot/server-api.md.

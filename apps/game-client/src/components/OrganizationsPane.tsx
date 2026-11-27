@@ -46,6 +46,8 @@ import type {
 } from '../features/library/org-content-types';
 import { getLineStats, getWarnings } from '../features/library/library-types';
 import { renderDslToHtml } from '../features/library/renderDslColorPreviewHtml';
+import { discardMessage, isOrgDraftDirty } from '../features/library/unsavedChanges';
+import { useBeforeUnloadGuard } from '../hooks/useBeforeUnloadGuard';
 
 const ADMIN_CAPACITY = '__admin__';
 
@@ -100,7 +102,12 @@ const CategoryNodeView: React.FC<CategoryNodeViewProps> = ({ node, selectedItemI
   );
 };
 
-const OrganizationsPane: React.FC = () => {
+interface OrganizationsPaneProps {
+  /** Told whenever the draft gains or loses unsaved changes, with the draft's title, so the Library can guard its own exits. */
+  onDirtyChange?: (dirty: boolean, title: string) => void;
+}
+
+const OrganizationsPane: React.FC<OrganizationsPaneProps> = ({ onDirtyChange }) => {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
 
   const [orgs, setOrgs] = React.useState<OrgSummary[]>([]);
@@ -272,6 +279,8 @@ const OrganizationsPane: React.FC = () => {
   const categoryTree = React.useMemo(() => buildCategoryTree(items), [items]);
 
   const handleSelectItem = (item: OrgContentItem) => {
+    if (item.id === selectedItemId) return;
+    if (!confirmLoseChanges()) return;
     setSelectedItemId(item.id);
     setDraftTitle(item.title ?? '');
     setDraftCategoryPath((item.categoryPath ?? []).join(', '));
@@ -287,6 +296,24 @@ const OrganizationsPane: React.FC = () => {
     setDraftBody('');
     setDraftSpool('note');
     setStatus(null);
+  };
+
+  // Every way of leaving the item being edited goes through these, so none of them drops a draft unasked.
+  const requestNewItem = () => {
+    if (!confirmLoseChanges()) return;
+    handleNewItem();
+  };
+
+  const requestContentType = (next: OrgContentType) => {
+    if (next === contentType) return;
+    if (!confirmLoseChanges()) return;
+    setContentType(next);
+  };
+
+  const requestOrg = (next: string | null) => {
+    if (next === selectedOrgId) return;
+    if (!confirmLoseChanges()) return;
+    setSelectedOrgId(next);
   };
 
   const handleSave = async () => {
@@ -359,6 +386,26 @@ const OrganizationsPane: React.FC = () => {
   const bodyWarnings = React.useMemo(() => getWarnings(bodyStats), [bodyStats]);
   const previewHtml = React.useMemo(() => renderDslToHtml(draftBody), [draftBody]);
 
+  const selectedItem = selectedItemId ? (items.find((i) => i.id === selectedItemId) ?? null) : null;
+  // Right after a save the item is selected before the reloaded list contains it; that is not unsaved work.
+  const awaitingReload = selectedItemId !== null && selectedItem === null;
+  const dirty =
+    !awaitingReload &&
+    isOrgDraftDirty(
+      selectedItem,
+      { title: draftTitle, categoryPath: draftCategoryPath, body: draftBody, spool: draftSpool },
+      contentType,
+    );
+
+  React.useEffect(() => {
+    onDirtyChange?.(dirty, draftTitle);
+  }, [dirty, draftTitle, onDirtyChange]);
+  // Leaving the tab unmounts this pane, and with it the draft.
+  React.useEffect(() => () => onDirtyChange?.(false, ''), [onDirtyChange]);
+  useBeforeUnloadGuard(dirty);
+
+  const confirmLoseChanges = (): boolean => !dirty || window.confirm(discardMessage('organization item', draftTitle));
+
   // ---------------------------------------------------------------- render
   if (!isLoggedIn) {
     return <div className={styles.orgEmptyState}>Log in to view and manage your organizations.</div>;
@@ -383,7 +430,7 @@ const OrganizationsPane: React.FC = () => {
             <select
               className={styles.scribeSelect}
               value={selectedOrgId ?? ''}
-              onChange={(e) => setSelectedOrgId(e.target.value || null)}
+              onChange={(e) => requestOrg(e.target.value || null)}
             >
               {uniqueOrgs.map((o) => (
                 <option key={o.id} value={o.id}>
@@ -416,7 +463,7 @@ const OrganizationsPane: React.FC = () => {
               type="button"
               key={ct.id}
               className={`${styles.tabButton} ${contentType === ct.id ? styles.tabButtonActive : ''}`}
-              onClick={() => setContentType(ct.id)}
+              onClick={() => requestContentType(ct.id)}
             >
               {ct.label}
             </button>
@@ -429,7 +476,7 @@ const OrganizationsPane: React.FC = () => {
       <div className={styles.splitHeader}>
         <div className={styles.listHeader}>
           <div className={styles.listTitle}>Content</div>
-          <button type="button" className={styles.secondaryButton} onClick={handleNewItem}>
+          <button type="button" className={styles.secondaryButton} onClick={requestNewItem}>
             + New
           </button>
         </div>

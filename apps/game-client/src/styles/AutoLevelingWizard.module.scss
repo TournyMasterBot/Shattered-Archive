@@ -596,6 +596,74 @@ $accent: #8bc34a;
   }
 }
 
+/* A non-destructive link action (edit, hide, restore, reset): hover is the accent, not the warning red. Used together with .linkButton. */
+.linkAction {
+  &:hover:not(:disabled) {
+    color: $accent;
+  }
+  &:focus-visible {
+    outline: 1px solid $accent;
+    outline-offset: 2px;
+    color: $accent;
+  }
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.targetItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.editedBadge {
+  flex: none;
+  border: 1px solid #5d7a3a;
+  border-radius: 4px;
+  padding: 0 5px;
+  font-size: 0.66rem;
+  color: #b7d98a;
+}
+
+/* A paused fight command: dashed card, its fields dimmed; the pause/resume and remove buttons stay at full strength. */
+.rowPaused {
+  border-style: dashed;
+
+  input {
+    opacity: 0.55;
+  }
+}
+
+.targetDefault {
+  padding: 0 8px 2px;
+  font-size: 0.7rem;
+  color: #8a8a8a;
+
+  code {
+    color: #8aa56a;
+  }
+}
+
+.editRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border: 1px solid #3a4a2a;
+  border-radius: 5px;
+  background: $bg-inset;
+}
+
+.fieldError {
+  flex: 1 0 100%;
+  color: #ef9a9a;
+  font-size: 0.74rem;
+  padding-top: 2px;
+}
+
 .addTargetRow {
   display: flex;
   gap: 6px;
@@ -1013,6 +1081,27 @@ $accent: #8bc34a;
   width: 100%;
   max-width: 360px;
   display: block;
+}
+
+/* The Review step's route row: the "edited" badge sits off the step count, and the edit/reset/save/cancel actions get a gap. */
+.routeBadge {
+  margin-left: 6px;
+}
+
+.routeActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.routeEditText {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 .reviewStepList {

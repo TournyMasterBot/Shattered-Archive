@@ -18,6 +18,14 @@ interface MainMenuBarProps {
   onOpenIdentifyObject: () => void;
   onOpenCreatureLore: () => void;
   onOpenScriptingHelp: () => void;
+  /** The world map window (a production feature: always given by the page; without it there is no menu item). */
+  onOpenMap?: () => void;
+  /** Local-only Copilot. Given only in a flagged build; without it (and always in production) there is no menu item. */
+  onOpenCopilot?: () => void;
+  /** Local-only Copilot: true while its switch is off, so the menu says so (Copilot starts off). */
+  copilotOff?: boolean;
+  /** Local-only Simulacrum Admin. Given only in a flagged build while connected to the simulacrum; without it (and always in production) there is no menu item. */
+  onOpenSimulacrumAdmin?: () => void;
 }
 
 export const MainMenuBar: React.FC<MainMenuBarProps> = ({
@@ -32,6 +40,10 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
   onOpenIdentifyObject,
   onOpenCreatureLore,
   onOpenScriptingHelp,
+  onOpenMap,
+  onOpenCopilot,
+  copilotOff,
+  onOpenSimulacrumAdmin,
 }) => {
   const {
     openRootMenu,
@@ -166,6 +178,19 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
               Equipment…
             </div>
 
+            {onOpenMap && (
+              <div
+                className={styles.subMenuItem}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeAllMenus();
+                  onOpenMap();
+                }}
+              >
+                Map…
+              </div>
+            )}
+
             <div
               className={styles.subMenuItem}
               onClick={(e) => {
@@ -176,6 +201,33 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
             >
               Autopilot…
             </div>
+
+            {__COPILOT_LOCAL__ && onOpenCopilot && (
+              <div
+                className={styles.subMenuItem}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeAllMenus();
+                  onOpenCopilot();
+                }}
+              >
+                Copilot…
+                {copilotOff && <span className={styles.offHint}> (off)</span>}
+              </div>
+            )}
+
+            {__SIMULACRUM_ADMIN_LOCAL__ && onOpenSimulacrumAdmin && (
+              <div
+                className={styles.subMenuItem}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeAllMenus();
+                  onOpenSimulacrumAdmin();
+                }}
+              >
+                Simulacrum Admin…
+              </div>
+            )}
           </div>
         </div>
 

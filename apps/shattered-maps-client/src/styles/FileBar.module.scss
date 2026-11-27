@@ -1,0 +1,78 @@
+@use 'neutral-controls' as c;
+
+$bg-raised: #181818;
+$bg-inset: #101010;
+$border: #2b2b2b;
+$border-soft: #242424;
+$text: #f0f0f0;
+$text-dim: #a8a8a8;
+$accent: #8bc34a;
+$info: #64b5f6;
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: $text;
+  @include c.controls($bg-inset, $bg-raised, $border, $text, $text-dim, $accent, $info);
+}
+
+/* A file control looks like a button; the real input covers it so a click and the keyboard both reach it. */
+.file {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid $border;
+  border-radius: 6px;
+  background: $bg-inset;
+  cursor: pointer;
+  position: relative;
+
+  &:hover {
+    border-color: $accent;
+  }
+
+  &:focus-within {
+    outline: 2px solid $info;
+    outline-offset: 1px;
+  }
+
+  input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+  }
+}
+
+.views {
+  display: flex;
+  gap: 12px;
+  border: 1px solid $border-soft;
+  border-radius: 6px;
+  padding: 2px 10px;
+  margin: 0;
+
+  legend {
+    color: $text-dim;
+    font-size: 0.7rem;
+    padding: 0 4px;
+  }
+
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  input[type='radio'] {
+    accent-color: $accent;
+  }
+}
+
+.classic {
+  margin-left: auto;
+  color: $info;
+}

@@ -5,17 +5,41 @@ import { useCallback, useState } from 'react';
 import type { AutoLevelAlignment, AutoLevelRestDuringRoundRule } from '../../features/autoleveling/autoleveling-types';
 import type { AutoPilotArea } from '../../features/autoleveling/autoleveling-content-types';
 import type { BuffRow, FightRow } from '../../features/autoleveling/autoleveling-user-data';
+import {
+  targetOverrideKey,
+  type UnmatchedOverride,
+} from '../../features/autoleveling/autoleveling-target-overrides';
 
 export type WizardMode = 'auto_level' | 'dry_run' | 'sightsee';
 
 /** A target row as shown in the Targets step. */
 export interface DraftTarget {
+  /** Current room line: the server value, or the player's override of it. */
   lookName: string;
+  /** Current kill keyword: the server value, or the player's override of it. */
   engageName: string;
   level?: number;
+  /** Per-run on/off (the checkbox); not persisted. A hidden area target is never enabled. */
   enabled: boolean;
   /** 'area' = from the API, 'custom' = user-added (persisted to user-data). */
   origin: 'area' | 'custom';
+  /** Custom targets: the stored record's id (absent until saved, or when no area is chosen). */
+  id?: string;
+  /** Area targets: the normalized ORIGINAL room line, the key a personal override is stored under. */
+  key?: string;
+  /** Area targets: the server's values, shown beside an edit and restored by "Reset to default". */
+  defaultLookName?: string;
+  defaultEngageName?: string;
+  /** Area targets: the player has an override on this row (an edit and/or hidden). */
+  overridden?: boolean;
+  /** Area targets: the player hid this row (persisted; shown under "Hidden by you"). */
+  hidden?: boolean;
+}
+
+/** Stable identity of a row across edits (the room line itself changes when the player edits it). */
+export function targetRowId(t: Pick<DraftTarget, 'origin' | 'key' | 'id' | 'lookName'>): string {
+  if (t.origin === 'area') return `a:${t.key ?? targetOverrideKey(t.lookName)}`;
+  return `c:${t.id ?? `draft:${targetOverrideKey(t.lookName)}`}`;
 }
 
 export interface WizardDraft {
@@ -23,6 +47,12 @@ export interface WizardDraft {
   /** Full detail for the chosen area (route + targets), fetched on selection. */
   area: AutoPilotArea | null;
   targets: DraftTarget[];
+  /** The player's overrides whose area target is no longer in the served list (kept, not applied). */
+  unmatchedOverrides: UnmatchedOverride[];
+  /** The route as the server serves it (`area.dirs` holds the player's own route when `routeOverridden`). */
+  routeDefaultDirs: string[];
+  /** The player saved their own route for this area (shown in the Review step, restored by "Reset to default"). */
+  routeOverridden: boolean;
 
   mode: WizardMode;
   loopRounds: boolean;
@@ -63,6 +93,9 @@ export interface WizardDraft {
    */
   weightAtOrAbovePct: number;
   weightCommands: string;
+
+  /** Whole minutes to wait between laps (1-60, default 3) so the creatures can return. Remembered with the Rest and Weight values. */
+  lapWaitMin: number;
 }
 
 export function emptyDraft(): WizardDraft {
@@ -70,6 +103,9 @@ export function emptyDraft(): WizardDraft {
     areaSlug: null,
     area: null,
     targets: [],
+    unmatchedOverrides: [],
+    routeDefaultDirs: [],
+    routeOverridden: false,
     mode: 'auto_level',
     loopRounds: true,
     playerClass: null,
@@ -83,6 +119,7 @@ export function emptyDraft(): WizardDraft {
     restDuringRound: [],
     weightAtOrAbovePct: 90,
     weightCommands: '',
+    lapWaitMin: 3,
   };
 }
 
@@ -92,20 +129,41 @@ export function useWizardDraft() {
   const patch = useCallback((p: Partial<WizardDraft>) => setDraft((d) => ({ ...d, ...p })), []);
   const reset = useCallback(() => setDraft(emptyDraft()), []);
 
-  const setArea = useCallback((slug: string, area: AutoPilotArea | null, seedTargets: DraftTarget[]) => {
-    setDraft((d) => ({ ...d, areaSlug: slug, area, targets: seedTargets }));
-  }, []);
+  const setArea = useCallback(
+    (slug: string, area: AutoPilotArea | null, seedTargets: DraftTarget[], unmatched: UnmatchedOverride[] = []) => {
+      setDraft((d) => ({
+        ...d,
+        areaSlug: slug,
+        area,
+        targets: seedTargets,
+        unmatchedOverrides: unmatched,
+        routeDefaultDirs: area?.dirs ?? [],
+        routeOverridden: false,
+      }));
+    },
+    [],
+  );
 
-  const toggleTarget = useCallback((lookName: string, enabled: boolean) => {
+  /** `rid` is a row's `targetRowId`; the room line is not a stable identity once it can be edited. */
+  const toggleTarget = useCallback((rid: string, enabled: boolean) => {
     setDraft((d) => ({
       ...d,
-      targets: d.targets.map((t) => (t.lookName === lookName ? { ...t, enabled } : t)),
+      targets: d.targets.map((t) => (targetRowId(t) === rid ? { ...t, enabled } : t)),
     }));
   }, []);
 
-  const addCustomTarget = useCallback((t: { lookName: string; engageName: string }) => {
+  /** Replaces fields of one row (an edit, a hide/restore, a reset); identity (`key`/`id`) never changes. */
+  const editTarget = useCallback((rid: string, change: Partial<DraftTarget>) => {
+    setDraft((d) => ({
+      ...d,
+      targets: d.targets.map((t) => (targetRowId(t) === rid ? { ...t, ...change } : t)),
+    }));
+  }, []);
+
+  const addCustomTarget = useCallback((t: { lookName: string; engageName: string; id?: string }) => {
     setDraft((d) => {
-      if (d.targets.some((x) => x.lookName.toLowerCase() === t.lookName.toLowerCase())) return d;
+      const key = targetOverrideKey(t.lookName);
+      if (d.targets.some((x) => targetOverrideKey(x.lookName) === key || x.key === key)) return d;
       return {
         ...d,
         targets: [...d.targets, { ...t, enabled: true, origin: 'custom' as const }],
@@ -113,11 +171,15 @@ export function useWizardDraft() {
     });
   }, []);
 
-  const removeCustomTarget = useCallback((lookName: string) => {
+  const removeCustomTarget = useCallback((rid: string) => {
     setDraft((d) => ({
       ...d,
-      targets: d.targets.filter((t) => !(t.origin === 'custom' && t.lookName === lookName)),
+      targets: d.targets.filter((t) => !(t.origin === 'custom' && targetRowId(t) === rid)),
     }));
+  }, []);
+
+  const deleteUnmatched = useCallback((recordId: string) => {
+    setDraft((d) => ({ ...d, unmatchedOverrides: d.unmatchedOverrides.filter((u) => u.id !== recordId) }));
   }, []);
 
   return {
@@ -127,7 +189,9 @@ export function useWizardDraft() {
     reset,
     setArea,
     toggleTarget,
+    editTarget,
     addCustomTarget,
     removeCustomTarget,
+    deleteUnmatched,
   };
 }

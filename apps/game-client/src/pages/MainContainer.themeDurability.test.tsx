@@ -41,6 +41,7 @@ jest.mock('../hooks/useVisualViewportHeight', () => ({
 }));
 
 jest.mock('../hooks/useGameConnection', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock factories are hoisted above imports, so they must require()
   const { useEffect } = require('react');
   return {
     useGameConnection: () => {

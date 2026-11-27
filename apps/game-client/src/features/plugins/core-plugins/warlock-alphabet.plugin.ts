@@ -1005,7 +1005,7 @@ export function createWarlockAlphabetPlugin(): IPluginModule {
       const alpha = getAlphabet(state);
 
       const labelMap = Object.fromEntries(items.map((i) => [i.label, i]));
-      const letterToItem = Object.fromEntries(items.map((i) => [i.letter, i]));
+      const _letterToItem = Object.fromEntries(items.map((i) => [i.letter, i]));
 
       // ── wa solve ────────────────────────────────────────────────────────────
       if (sub === 'solve') {

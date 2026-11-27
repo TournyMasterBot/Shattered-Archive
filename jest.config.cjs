@@ -17,34 +17,47 @@
 const LOCAL_CONFIG_PACKAGES = [
   '<rootDir>/apps/auth-client',
   '<rootDir>/apps/auth-server',
+  '<rootDir>/apps/copilot-server',
   '<rootDir>/apps/mud-builder-client',
   '<rootDir>/apps/mud-builder-server',
   '<rootDir>/apps/scrum-poker-client',
   '<rootDir>/apps/scrum-poker-server',
+  '<rootDir>/apps/shattered-maps-client',
   '<rootDir>/apps/simulacrum-server',
   '<rootDir>/apps/soulsteel-client',
   '<rootDir>/apps/soulsteel-server',
   '<rootDir>/sdks/sdks-client',
+  '<rootDir>/services/copilot-core',
   '<rootDir>/services/merc-area',
   '<rootDir>/services/scrum-poker-core',
+  '<rootDir>/services/shattered-maps-core',
 ];
 
 const LOCAL_CONFIG_IGNORES = [
   '/apps/auth-client/',
   '/apps/auth-server/',
+  '/apps/copilot-server/',
   '/apps/mud-builder-client/',
   '/apps/mud-builder-server/',
   '/apps/scrum-poker-client/',
   '/apps/scrum-poker-server/',
+  '/apps/shattered-maps-client/',
   '/apps/simulacrum-server/',
   '/apps/soulsteel-client/',
   '/apps/soulsteel-server/',
   '/sdks/sdks-client/',
+  '/services/copilot-core/',
   '/services/merc-area/',
   '/services/scrum-poker-core/',
+  '/services/shattered-maps-core/',
 ];
 
 module.exports = {
+  // Hard cap on parallel workers for any run of this config. Without it jest starts one worker per core
+  // (~31 on a 32-core machine) and a worker on this suite holds ~4 GB: a bare `jest` run once used 112 GB
+  // and froze the machine (2026-11-19). `--runInBand` (the package scripts) still runs in-process, and a
+  // CLI --maxWorkers overrides this, but .claude/hooks/jest-guard.js denies a CLI value above 4.
+  maxWorkers: 4,
   projects: [
     ...LOCAL_CONFIG_PACKAGES,
 
@@ -93,6 +106,8 @@ module.exports = {
       displayName: 'client',
       preset: 'ts-jest/presets/default-esm',
       testEnvironment: 'jsdom',
+      // The vite `define` that production builds set from COPILOT_LOCAL: false unless a test says otherwise.
+      globals: { __COPILOT_LOCAL__: false, __SIMULACRUM_ADMIN_LOCAL__: false },
 
       testMatch: [
         '<rootDir>/**/**-client/**/*.test.ts',
@@ -120,6 +135,9 @@ module.exports = {
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 
       moduleNameMapper: {
+        '^@shatteredarchive/copilot-core$': '<rootDir>/services/copilot-core/src/index.ts',
+        '^@shatteredarchive/shattered-maps-core$': '<rootDir>/services/shattered-maps-core/src/index.ts',
+        '^@shatteredarchive/merc-area$': '<rootDir>/services/merc-area/src/index.ts',
         '^@shatteredarchive/types-client$': '<rootDir>/types/types-client/src/index.ts',
         '^@shatteredarchive/types-global$': '<rootDir>/types/types-global/src/index.ts',
         '^@shatteredarchive/utils-client/(.+)$': '<rootDir>/utils/utils-client/src/$1.ts',

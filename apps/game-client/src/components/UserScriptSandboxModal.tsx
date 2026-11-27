@@ -1,5 +1,7 @@
+import { canonicalConnectionId } from '../features/connection/connectionId';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useUserScriptSandbox, getUserScriptStorageKey } from '../hooks/useUserScriptSandbox';
+import { useWindowLayer } from '../hooks/useWindowLayer';
 import {
   AnyUserScript,
   TimerScript,
@@ -18,7 +20,6 @@ import {
 } from '../features/userScripts/globalScriptsStore';
 import { PLUGINS_STORAGE_KEY, readInstalledPlugins, writeInstalledPlugins } from '../hooks/usePlugins';
 import {
-  EXPORT_SCHEMA,
   extractGlobalsItem,
   extractPluginConfigsItem,
   isValidUserScript,
@@ -138,7 +139,7 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
       .filter((s) => {
         if (!q) return true;
         const hay =
-          `${s.name} ${s.kind} ${s.id} ${(s as any).group ?? ''} ${s.kind === 'alias' ? (s as AliasScript).alias : ''}`.toLowerCase();
+          `${s.name} ${s.kind} ${s.id} ${s.group ?? ''} ${s.kind === 'alias' ? (s as AliasScript).alias : ''}`.toLowerCase();
         return hay.includes(q);
       })
       .slice()
@@ -193,6 +194,9 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
     setImportItemEnabled(enabledMap);
     setImportResult(null);
   }, [importText, mode]);
+
+  // registered only for the Escape key (it is drawn inside the sandbox modal, so Escape closes this first and the sandbox on the next press)
+  useWindowLayer({ open: isOpen, onEscape: () => onClose() });
 
   if (!isOpen) return null;
 
@@ -275,7 +279,7 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
   // ── END AI-METHOD ──
   const handleExportDownload = () => {
     const json = buildExport();
-    const fname = `shatteredArchive-userScripts-${connectionId || 'default'}-${safeFileStamp()}.json`;
+    const fname = `shatteredArchive-userScripts-${canonicalConnectionId(connectionId)}-${safeFileStamp()}.json`;
     downloadJson(fname, json);
   };
 
@@ -418,9 +422,9 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
                       {!s.enabled && <span className={styles.ieRowDisabled}>disabled</span>}
                     </div>
 
-                    {(s as any).group && (
+                    {s.group && (
                       <div className={styles.ieRowSub}>
-                        group: <span className={styles.ieMono}>{String((s as any).group)}</span>
+                        group: <span className={styles.ieMono}>{String(s.group)}</span>
                       </div>
                     )}
 
@@ -744,11 +748,15 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
     setDraggingScriptId(null);
   }, [activeTab]);
 
-  // Keep global draft synced to chosen language (only when switching language)
+  // Keep global draft synced to chosen language (only when switching language).
+  // `isOpen` is a dependency because closing resets the language to JavaScript and
+  // the draft to ''; reopening with a saved JavaScript source changes neither the
+  // language nor `sources`, so without it this effect never re-ran and the editor
+  // came back blank ("Unsaved changes") with the saved script still in storage.
   useEffect(() => {
     const src = globalMgr.sources?.[globalLanguage] ?? '';
     setGlobalDraft(src);
-  }, [globalLanguage, globalMgr.sources]);
+  }, [globalLanguage, globalMgr.sources, isOpen]);
 
   // ------------- Derived values -------------
 
@@ -843,7 +851,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
         source: s.source,
         eventName: 'grouping-only',
         matchText: '',
-        group: (s as any).group ?? '',
+        group: s.group ?? '',
       };
       return asTriggerLike;
     });
@@ -970,7 +978,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       if (!script || script.kind !== kind) return;
 
       const normalizedGroup = targetGroupPath === 'Ungrouped' ? '' : targetGroupPath;
-      const updated = { ...(script as any), group: normalizedGroup } as AnyUserScript;
+      const updated = { ...script, group: normalizedGroup } as AnyUserScript;
 
       current[idx] = updated;
       replaceAllScripts(current);
@@ -992,7 +1000,7 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
       if (!dragged || !target) return;
       if (dragged.kind !== kind || target.kind !== kind) return;
 
-      const targetGroup = ((target as any).group ?? '') as string;
+      const targetGroup = (target.group ?? '');
       moveNonTriggerToGroup(draggedId, kind, targetGroup || 'Ungrouped');
       moveScriptInArray(draggedId, targetId);
     },
@@ -1005,6 +1013,8 @@ export const UserScriptSandboxModal: React.FC<UserScriptSandboxModalProps> = ({ 
   const sortTreeNodesAlpha = useCallback((nodes: TriggerTreeNode[]): TriggerTreeNode[] => {
     return [...nodes].sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
   }, []);
+
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => onClose() });
 
   if (!isOpen) {
     return null;
@@ -1327,7 +1337,7 @@ look`,
 
     return (
       <div className={styles.body} style={{ flexDirection: 'column' }}>
-        <div className={styles.editorPane} style={{ borderRight: 'none' as any }}>
+        <div className={styles.editorPane} style={{ borderRight: 'none' }}>
           <div className={styles.editorHeader}>
             <div className={styles.title} style={{ marginRight: 10 }}>
               Global Scripts
@@ -1337,7 +1347,7 @@ look`,
               <select
                 className={styles.languageSelect}
                 value={globalLanguage}
-                onChange={(e) => setGlobalLanguage(e.target.value as any)}
+                onChange={(e) => setGlobalLanguage(e.target.value as 'javascript' | 'lua' | 'python' | 'typescript')}
               >
                 <option value="javascript">JavaScript</option>
                 <option value="typescript">TypeScript</option>
@@ -1409,7 +1419,7 @@ look`,
                 if (!k) return;
 
                 // Store JSON when valid, otherwise store raw string
-                let v: any = globalVarValue;
+                let v: unknown = globalVarValue;
                 try {
                   v = JSON.parse(globalVarValue);
                 } catch {
@@ -1452,7 +1462,7 @@ look`,
 
     return (
       <div className={styles.body} style={{ flexDirection: 'column' }}>
-        <div className={styles.editorPane} style={{ borderRight: 'none' as any }}>
+        <div className={styles.editorPane} style={{ borderRight: 'none' }}>
           <div className={styles.editorHeader}>
             <div className={styles.title} style={{ marginRight: 10 }}>
               Named Variables
@@ -1725,7 +1735,7 @@ look`,
   };
 
   return (
-    <div className={styles.backdrop}>
+    <div className={styles.backdrop} style={{ zIndex: layer.zIndex }}>
       <div className={styles.modal} style={modalStyle}>
         <div className={styles.header}>
           <div className={styles.title}>User Script Sandbox</div>

@@ -1,0 +1,122 @@
+@use 'neutral-controls' as c;
+
+$bg: #121212;
+$bg-raised: #181818;
+$bg-inset: #101010;
+$border: #2b2b2b;
+$border-soft: #242424;
+$text: #f0f0f0;
+$text-dim: #a8a8a8;
+$accent: #8bc34a;
+$danger: #ef5350;
+$info: #64b5f6;
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: $bg;
+  color: $text;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.9rem;
+  @include c.controls($bg-inset, $bg-raised, $border, $text, $text-dim, $accent, $info);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 12px;
+  background: $bg-raised;
+  border-bottom: 1px solid $border;
+
+  h1 {
+    font-size: 1.1rem;
+    margin: 0;
+  }
+}
+
+.notice {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  background: rgba(139, 195, 74, 0.12);
+  border-bottom: 1px solid $accent;
+
+  button {
+    background: transparent;
+    border: none;
+    font-size: 1.1rem;
+  }
+}
+
+.error {
+  background: rgba(239, 83, 80, 0.14);
+  border-bottom-color: $danger;
+}
+
+.report {
+  padding: 6px 12px;
+  background: $bg-inset;
+  border-bottom: 1px solid $border-soft;
+
+  summary {
+    cursor: pointer;
+  }
+
+  ul {
+    margin: 6px 0 0;
+    padding-left: 20px;
+    color: $text-dim;
+  }
+}
+
+.main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  gap: 12px;
+  padding: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Both columns scroll on their own, so a long review queue or a big drawing never pushes the other off the screen (TH-01: their
+   scrollbars follow color-scheme: dark). */
+.map {
+  min-width: 0;
+  overflow: auto;
+  max-height: calc(100vh - 150px);
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  max-height: calc(100vh - 150px);
+}
+
+.empty {
+  padding: 48px 24px;
+  max-width: 640px;
+  margin: 0 auto;
+  color: $text-dim;
+
+  h2 {
+    color: $text;
+  }
+}
+
+@media (max-width: 900px) {
+  .main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .map,
+  .side {
+    max-height: none;
+  }
+}

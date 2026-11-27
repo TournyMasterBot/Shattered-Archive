@@ -119,7 +119,7 @@ export function useVitalsState(): VitalsState {
   const keyRef = useRef<string>(makeInstanceKey('useVitalsState::game:char-data'));
 
   useEffect(() => {
-    const disposeChar = ListenEvent<any>(
+    const disposeChar = ListenEvent<unknown>(
       'game:char-data',
       (payload) => {
         setVitals((prev) => applyVitalsPatch(prev, payload));
@@ -163,10 +163,10 @@ export function useEnemyHudState(): EnemyHudState {
   useEffect(() => {
     const STALE_MS = 10000; // no opponent line for this long → hide the enemy HUD
 
-    const dispose = ListenEvent<any>(
+    const dispose = ListenEvent<unknown>(
       'event:fighting:opponent',
       (payload) => {
-        const d = isRecord(payload) ? payload : {};
+        const d: AnyRecord = isRecord(payload) ? payload : {};
 
         const pctRaw = toNum(d.pct);
         if (pctRaw === undefined) return; // ignore lines without a usable pct
@@ -234,18 +234,18 @@ export function useAffectsState(): AffectEntry[] {
     // Map a GMCP affect object → AffectEntry. Accepts the affect directly or wrapped
     // in { affect: {...} }. Name comes from `n` (fallback `name`); id is the lc name.
     const toEntry = (raw: unknown): AffectEntry | null => {
-      const outer = isRecord(raw) ? raw : {};
-      const src = isRecord((outer as any).affect) ? ((outer as any).affect as AnyRecord) : outer;
-      const name = String((src as any).n ?? (src as any).name ?? '').trim();
+      const outer: AnyRecord = isRecord(raw) ? raw : {};
+      const src: AnyRecord = isRecord(outer.affect) ? outer.affect : outer;
+      const name = String(src.n ?? src.name ?? '').trim();
       if (!name) return null;
       return { id: name.toLowerCase(), name };
     };
 
-    const disposeSync = ListenEvent<any>(
+    const disposeSync = ListenEvent<unknown>(
       'game:affects-trueup',
       (payload) => {
-        const d = isRecord(payload) ? payload : {};
-        const raw = (d as any).affects;
+        const d: AnyRecord = isRecord(payload) ? payload : {};
+        const raw = d.affects;
 
         const byId = new Map<string, AffectEntry>();
         if (Array.isArray(raw)) {
@@ -260,7 +260,7 @@ export function useAffectsState(): AffectEntry[] {
       { key: trueupKeyRef.current },
     );
 
-    const disposeAdd = ListenEvent<any>(
+    const disposeAdd = ListenEvent<unknown>(
       'game:affect-added',
       (payload) => {
         const a = toEntry(payload);
@@ -277,11 +277,11 @@ export function useAffectsState(): AffectEntry[] {
       { key: addKeyRef.current },
     );
 
-    const disposeRemove = ListenEvent<any>(
+    const disposeRemove = ListenEvent<unknown>(
       'game:affect-removed',
       (payload) => {
-        const d = isRecord(payload) ? payload : {};
-        const name = String((d as any).n ?? (d as any).name ?? '')
+        const d: AnyRecord = isRecord(payload) ? payload : {};
+        const name = String(d.n ?? d.name ?? '')
           .trim()
           .toLowerCase();
         if (!name) return;
@@ -294,13 +294,19 @@ export function useAffectsState(): AffectEntry[] {
     return () => {
       try {
         disposeSync?.();
-      } catch {}
+      } catch {
+        // best-effort cleanup: a failing dispose must not skip the others
+      }
       try {
         disposeAdd?.();
-      } catch {}
+      } catch {
+        // best-effort cleanup: a failing dispose must not skip the others
+      }
       try {
         disposeRemove?.();
-      } catch {}
+      } catch {
+        // best-effort cleanup: a failing dispose must not skip the others
+      }
     };
   }, []);
 
@@ -323,11 +329,11 @@ export function useCompassState(): CompassState {
   const keyRef = useRef<string>(makeInstanceKey('useCompassState::dsl:room-exits'));
 
   useEffect(() => {
-    const dispose = ListenEvent<any>(
+    const dispose = ListenEvent<unknown>(
       'dsl:room-exits',
       (payload) => {
-        const d = isRecord(payload) ? payload : {};
-        const raw = (d as any).exits;
+        const d: AnyRecord = isRecord(payload) ? payload : {};
+        const raw = d.exits;
 
         if (!Array.isArray(raw)) {
           setExits(new Set());

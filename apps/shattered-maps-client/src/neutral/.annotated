@@ -1,0 +1,34 @@
+File Index
+
+/adapter.ts
+Purpose: Reads a DslMapper document into a MapFile and counts, by name, everything the neutral file has no field for (world, doors, one-way flags, room flags, objects, interactions). Never silent: the notes are shown to the person importing. Two rules a reader would not guess: a room that names an area the catalog does not list keeps its continent in a placeholder "Unlisted area" (13 such rooms in the seed), and a stretched grid (the seed steps 4 across and 2 down) is divided to one unit per step, with a room moved to the nearest free cell where rounding would stack two.
+
+/review.ts
+Purpose: Candidate review as pure functions over two map files and a log. Accepting a link needs only its starting room (accepted first if missing); a link to a room that is not accepted is marked offPage, which the strict validator allows, so the audited file stays valid at every step. Every record keeps its own sources and gains a `manual`/`review` source and (rooms) a history line with the note. Bulk accept uses one working copy: a copy per item would be quadratic on a thousand rooms.
+
+/store.ts
+Purpose: The reducer and the state shape. Split from state.tsx so the provider file exports only components (the lint rule that keeps fast refresh working). A refused operation becomes an error notice and changes nothing else.
+
+/state.tsx
+Purpose: Provider and hook; saves the audited file and the log to localStorage (`shatteredmaps.*`) after every change, never the candidates (they can be large and are opened again from their file). The classic editor's key `dslmapper.autosave` is separate and untouched.
+
+/fileio.ts
+Purpose: Decides what an opened file is. Anything that looks like a map file (version, continents or links) is validated strictly so the curator gets the real reasons; a DslMapper document needs only meta and rooms. Gzip is recognised by its first two bytes, not the file name. The browser gunzip (DecompressionStream) cannot run under jsdom: it is covered by the Playwright check.
+
+/zoom.ts
+Purpose: Pure selectors for the four levels (breadcrumb, one step in or out, children, floors). Areas that hold rooms come before empty ones: a catalog lists hundreds nobody has mapped.
+
+/persist.ts
+Purpose: localStorage read and write. A damaged or invalid stored map starts an empty one instead of refusing to open; a failed write returns false so the page can tell the curator to download the file.
+
+/components/SliceView.tsx
+Purpose: The picture is the core's own renderSvg (escaped text, no script or external reference) injected as markup, so the exporter and the viewer draw the same thing; clicks are read from its data-room and data-area attributes. The drawing cannot be tabbed through, so the rooms are also listed as buttons. An area with several subzones shows a chooser, not their rooms on top of each other (each subzone has its own grid).
+
+/components/ZoomControl.tsx
+Purpose: A toolbar in the ARIA sense: one tab stop, arrow keys, Home and End between the levels that exist.
+
+/builderExport.ts
+Purpose: The pure half of the Builder export panel (default file name from an id, the number range as typed text, the `{ file, text }` request body, the remembered range under `shatteredmaps.export`). The typed range stays text until the export is made so a half-typed number is never rejected mid-keystroke; `exportMerc` in the core gives the reasons. The Mapper never calls the Builder (its preview needs a bearer, the page rules allow no other origin, the commit is the owner's): the file is downloaded and imported in the Builder.
+
+/components/ExportPanel.tsx
+Purpose: Shown only for the audited map at an area or subzone. The inner form is keyed by the focus so the file name follows the area and an old report never stays on screen for another one. A downloaded .are goes out as text/plain; the import request as JSON.

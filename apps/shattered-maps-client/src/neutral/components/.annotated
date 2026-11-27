@@ -1,0 +1,2 @@
+
+SliceView.tsx: the legend lists the round and square chips, the maze labels, the terrain colour and the amber/purple tiles only when the drawn picture contains them (it looks for data-tangled, data-pill, data-sectors and data-kind in the SVG text); the symbols are drawn by the core renderer, not here.

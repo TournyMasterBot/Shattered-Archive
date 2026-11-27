@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import styles from '../styles/GraphicsSettingsModal.module.scss';
+import { useWindowLayer } from '../hooks/useWindowLayer';
+import { useResizableModal } from '../hooks/useResizableModal';
+import { ResizeGrip } from './ResizeGrip';
 import { DispatchEvent, ListenDomEvent } from '../features/event-emitter/event-dispatcher';
 import { getHudThemeId, setHudThemeId, type HudThemeId } from '../features/hudLayout/hudThemeStore';
 
@@ -130,6 +133,8 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
     return JSON.stringify(config) !== JSON.stringify(draft);
   }, [config, draft]);
 
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => onClose() });
+  const { attach: resizeAttach, style: resizeStyle, gripProps: resizeGrip } = useResizableModal({ storageKey: 'shatteredarchive:modal-size:GraphicsSettingsModal:v1', centered: true });
   if (!isOpen) return null;
 
   const handleSave = () => {
@@ -156,7 +161,7 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
   };
 
   const handleResetDefaults = () => {
-    const defaults = loadConfig(); // loadConfig() returns defaults if nothing stored; but we want hard defaults
+    const _defaults = loadConfig(); // loadConfig() returns defaults if nothing stored; but we want hard defaults
     // If you want a truly "factory reset", clear storage first:
     try {
       window.localStorage.removeItem(STORAGE_KEY);
@@ -177,8 +182,8 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
   ];
 
   return (
-    <div className={styles.backdrop}>
-      <div className={styles.modal}>
+    <div className={styles.backdrop} style={{ zIndex: layer.zIndex }}>
+      <div ref={resizeAttach} className={styles.modal} style={resizeStyle}>
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.title}>Graphics</div>
@@ -305,6 +310,7 @@ export const GraphicsSettingsModal: React.FC<GraphicsSettingsModalProps> = ({ is
         {isSmallScreen && (
           <div className={styles.mobileFooterHint}>Tip: swipe/scroll the settings pane if it’s long.</div>
         )}
+        <ResizeGrip {...resizeGrip} />
       </div>
     </div>
   );

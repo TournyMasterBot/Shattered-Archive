@@ -1,5 +1,8 @@
 import React from 'react';
 import styles from '../styles/ContributeLoreModal.module.scss';
+import { useWindowLayer } from '../hooks/useWindowLayer';
+import { useResizableModal } from '../hooks/useResizableModal';
+import { ResizeGrip } from './ResizeGrip';
 import { DispatchEvent, ListenEvent } from '../features/event-emitter/event-dispatcher';
 import { siteApiBase } from '../features/auth/siteApi';
 
@@ -346,6 +349,9 @@ export const ContributeCreatureLoreModal: React.FC<ContributeCreatureLoreModalPr
     };
   }, [isOpen, stopAll, fetchContinentsAndAreas]);
 
+  const layer = useWindowLayer({ open: isOpen, onEscape: () => onClose() });
+  const { attach: resizeAttach, style: resizeStyle, gripProps: resizeGrip } = useResizableModal({ storageKey: 'shatteredarchive:modal-size:ContributeCreatureLoreModal:v1', centered: false, limits: { minWidth: 480, minHeight: 360 } });
+
   if (!isOpen) return null;
 
   const deleteLoreLine = (idx: number) => setLoreLines((prev) => prev.filter((_, i) => i !== idx));
@@ -454,11 +460,15 @@ export const ContributeCreatureLoreModal: React.FC<ContributeCreatureLoreModalPr
 
   return (
     <div
-      ref={modalRef}
+      ref={(el) => {
+        modalRef.current = el;
+        resizeAttach(el);
+      }}
       className={styles.modal}
       role="dialog"
       aria-modal="true"
-      style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: 9999 }}
+      onPointerDownCapture={layer.bringToFront}
+      style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: layer.zIndex, ...resizeStyle }}
     >
       <div className={styles.header} onMouseDown={onHeaderMouseDown}>
         <div className={styles.title}>Contribute · Creature Lore</div>
@@ -711,6 +721,7 @@ export const ContributeCreatureLoreModal: React.FC<ContributeCreatureLoreModalPr
           </button>
         </div>
       </div>
+      <ResizeGrip {...resizeGrip} />
     </div>
   );
 };

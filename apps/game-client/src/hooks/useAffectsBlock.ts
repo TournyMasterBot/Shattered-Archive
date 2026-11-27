@@ -47,8 +47,9 @@ function isAffectData(x: any): x is AffectData {
 function normalizeAffects(list: unknown): AffectData[] {
   const arr: any[] = Array.isArray(list) ? list : [];
 
-  // Remove any with d <= 0, validate shape
-  const filtered = arr.filter((x) => isAffectData(x) && x.d > 0) as AffectData[];
+  // Validate shape only. An affect stays listed at d = 0 (the server holds it
+  // there for its last tick) until the server sends remove_affect.
+  const filtered = arr.filter((x) => isAffectData(x)) as AffectData[];
 
   // Deduplicate by (n, lc, m) — some spells (e.g. ghost) send multiple identical
   // modifier lines. Keep the entry with the highest remaining duration.
@@ -143,7 +144,8 @@ export function useAffectsBlock() {
     const offTick = ListenEvent<any>(
       'game:tick',
       () => {
-        updateAffects((prev) => normalizeAffects(prev.map((a) => ({ ...a, d: a.d - 1 }))));
+        // Floor at 0: only remove_affect takes an affect off the list.
+        updateAffects((prev) => normalizeAffects(prev.map((a) => ({ ...a, d: Math.max(0, a.d - 1) }))));
       },
       { key: 'useAffectsBlock:shatteredarchive:tick' },
     );

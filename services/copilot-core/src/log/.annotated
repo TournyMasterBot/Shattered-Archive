@@ -1,0 +1,13 @@
+File Index
+
+/events.ts
+Purpose: The game-server writes `game:client:input` payloads as a JSON STRING and the raw/gmcp payloads as objects; GMCP data is `<package> {json}` text, not an object. `login_data` carries a REAL character name (the event is documented as such). Oversize lines are skipped without parsing so a hostile or runaway line cannot stall the tailer.
+
+/reducer.ts
+Purpose: Collapses identical room_data/char_data because the game sends both before EVERY prompt (only ~9% of room_data follows a room render). Raw payloads are not line-aligned, so the unfinished tail is carried in ReducerState.partial. Equal-millisecond records must keep file order (the sort is stable and the room/char events rely on it).
+
+/state.ts
+Purpose: isStale looks at the TEXT clock (lastTextAt), not at lastEventAt: the game-server's SOH gate stops raw text and input while GMCP continues, so GMCP alone must not make the state look live (LOGTAIL-02). Never-seen is stale.
+
+/events.ts
+Purpose: `connect` carries the target (host:port) when the record has a usable host and port, and the `session` feed event repeats it: that is the only way the world feed learns which game (DSL or Simulacrum) the next views are from. The names are public game addresses, never a person's data.

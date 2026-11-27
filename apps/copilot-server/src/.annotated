@@ -1,0 +1,31 @@
+File Index
+
+/app.ts
+Purpose: Nothing from a request may reach the logger except method, route pattern and status (the matched pattern, or `unmatched`/`origin-guard`): game text and character names pass through this service. The origin guard runs BEFORE the body parser, so a foreign origin never reaches a handler, and the preflight is answered there too. Body-parser client mistakes carry a 4xx `status`; only 413 has its own answer, the rest are "invalid json".
+
+/learning.ts
+Purpose: The server half of the owner's Copilot switch: whether the tailer reads the game logs at all. In-memory only and OFF at every start on purpose (a restart must never learn by itself, and a stored on would be one more thing to forget); the game client tells the server when the owner flips the switch, on page load when it is on, and when GET /state says learning false. validateControl accepts exactly { enabled: boolean }. bootstrap.ts wires it to Tailer.setPaused.
+
+/config.ts
+Purpose: Every refusal here is a safety property, not validation fluff: COPILOT_ENABLED must be exactly "true" (a production process that gets started by mistake does nothing), the listen host must be private, the data and log paths absolute (a relative one could land inside a repository), and allowed origins local or *.shatteredarchive.dev (no wildcard). The port is 65100 because 66000 > 65535.
+
+/bootstrap.ts
+Purpose: Express 5 passes a listen failure (port in use) to the app.listen callback instead of throwing, so the callback must reject; index.ts is only a stub around this so the start-up path is testable. The Copilot switch (`learning`) is also guarded here, not only in the tailer: a log pass already running when it goes off still ends afterwards, so `onPollEnd` pokes the suggestion service only while on (else a model call starts after the switch-off); `GET /suggestions` is empty while off; every change calls `service.reset()`. The model is warmed at start (six tries, the model server may still be starting) and at each switch-on.
+
+/fs.ts
+Purpose: The real-file side of copilot-core's LedgerFs. A missing file or folder reads as absent; append creates the folder. Used for the private data directory only.
+
+/routes/state.ts
+Purpose: The only place that decides what GET /state may say. It copies fields one by one from GameState (room title, vitals, counters, ages), so a new field on the game state, raw text, a command or a character name cannot reach the response by accident; the test feeds a secret line, a command and a login name and asserts none appears.
+
+/world/
+Purpose: The walked-evidence layer (Phase 20): room views from the log become a candidate Shattered-Maps file and the confidence of movement suggestions. Entry points are `createWorldFeed` (bootstrap, after the character registry has seen the same batch) and `WorldMemory.edgeEvidence` (the producer's `mapEvidence`). See docs/copilot/world-memory.md.
+
+/training.ts
+Purpose: Claude training mode as an in-memory flag (a restart is off). It is on only while Copilot is on AND the connection the log feed saw is the Simulacrum (world sandbox, chosen by the connection); reading it after a condition failed turns it off for good, it never resumes by itself. The client adds its own gates, this is the one a wrong client cannot get around. While on, app.ts stores decisions in the trainer ledger (training/ folder, stamped trainer claude), never the owners, and bootstrap skips the scenario occurrence for them.
+
+/hints/
+Purpose: The hint tiers (Phase 42, docs/copilot/hints.md): learned rules (a ledger the owner and Claude write), the instant word list on the DSL site, the local model (off unless COPILOT_HINTS_LOCAL=1: never start a model silently), and an escalation ticket. The tier functions are plain, so order, stopping and escalation are tested without a server. A hint is a FACT for the prompt, never a command; rules only come from the owner or Claude (Copilot never teaches itself). The learned tier is exact-by-room-name only.
+
+/suggest/hintFacts.ts
+Purpose: How Copilot uses the hint tiers: the room of a situation (the description is read from the recent lines, which are trimmed, so a five-space object line cannot be seen: description-only, like the evaluation in docs/userscripts/room-hints) and the facts block for the prompt. routeSituation asks it for every situation outside a fight, whatever sphere the model is in.

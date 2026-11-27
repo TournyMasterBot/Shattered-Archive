@@ -2,6 +2,7 @@ import ts from 'typescript';
 import { AnyUserScript, AliasScript, TimerScript, TriggerScript, ScriptSandboxApi, UserScriptLanguage } from './types';
 import { runLuaSourceInBrowser } from './luaRuntime';
 import { runPythonSourceInBrowser } from './pythonRuntime';
+import { runLuaInEngine, runPythonInEngine, getJsGlobalScope } from './globalRuntime';
 import { ScriptErrorInfo } from '../../types/userscript-types/script-error-info';
 
 function isGlobalIdentifierLine(line: string): boolean {
@@ -49,15 +50,53 @@ function buildAliasVarsPrelude(api: ScriptSandboxApi): string {
   return lines.join('\n') + '\n';
 }
 
+// A function that may `await`. A script body used to be a plain function, so the `await runGlobal(...)` /
+// `await httpGetJson(...)` the docs show was a syntax error; it runs synchronously up to its first `await`, so a
+// script that never awaits behaves exactly as it did.
+const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor as new (
+  ...args: string[]
+) => (...callArgs: unknown[]) => Promise<unknown>;
+
+// Names the script wrapper binds from the api itself. A Globals export called one of these is not also bound.
+const BRIDGE_NAMES: ReadonlySet<string> = new Set([
+  'api',
+  '__globals',
+  'sendCommand',
+  'doAfter',
+  'log',
+  'error',
+  'event',
+  'writeTerminal',
+  'httpGetJson',
+  'runGlobal',
+  'getGlobalVar',
+  'setGlobalVar',
+  'setGlobalVar2',
+  'deleteGlobalVar',
+  'getNamedVar',
+]);
+
 /**
  * Core JS sandbox runner.
+ *
+ * With a `connectionId` the exports of the connection's Globals JavaScript / TypeScript files are bound as names, so
+ * `core.echo({ text })` just works (see getJsGlobalScope). The script body sits in a function of its own inside
+ * the wrapper, so it can still declare a `const` with the same name as one of them.
  */
-async function runJavascript(source: string, api: ScriptSandboxApi): Promise<void> {
+async function runJavascript(
+  source: string,
+  api: ScriptSandboxApi,
+  connectionId?: string | null,
+  language: 'javascript' | 'typescript' = 'javascript',
+): Promise<void> {
   try {
     const varPrelude = buildAliasVarsPrelude(api);
+    const globals = connectionId === undefined ? {} : getJsGlobalScope(connectionId, api, language, BRIDGE_NAMES);
+    const globalNames = Object.keys(globals);
 
-    const fn = new Function(
+    const fn = new AsyncFunction(
       'api',
+      '__globals',
       `"use strict";
 const {
   sendCommand,
@@ -74,9 +113,12 @@ const {
   getNamedVar,
   setGlobalVar: setGlobalVar2, // (harmless if duplicated by bundler transforms)
 } = api;
+${globalNames.length ? `const { ${globalNames.join(', ')} } = __globals;` : ''}
 try {
+  await (async function () {
 ${varPrelude}
 ${source}
+  })();
 } catch (err) {
   error(
     "[UserScript:JS] Runtime error",
@@ -85,7 +127,7 @@ ${source}
 }`,
     );
 
-    await fn(api);
+    await fn(api, globals);
   } catch (err: any) {
     api.error?.('[UserScript:JS] Failed to compile or execute script', err?.message ?? String(err));
   }
@@ -94,7 +136,7 @@ ${source}
 /**
  * TypeScript runner: transpile TS -> JS, then reuse runJavascript.
  */
-async function runTypescript(source: string, api: ScriptSandboxApi): Promise<void> {
+async function runTypescript(source: string, api: ScriptSandboxApi, connectionId?: string | null): Promise<void> {
   try {
     const { outputText } = ts.transpileModule(source, {
       compilerOptions: {
@@ -104,7 +146,7 @@ async function runTypescript(source: string, api: ScriptSandboxApi): Promise<voi
       },
     });
 
-    await runJavascript(outputText, api);
+    await runJavascript(outputText, api, connectionId, 'typescript');
   } catch (err: any) {
     api.error?.('[UserScript:TS] Failed to transpile or execute script', err?.message ?? String(err));
   }
@@ -136,8 +178,18 @@ async function runPlainText(source: string, api: ScriptSandboxApi): Promise<void
 
 /**
  * Dispatch to the correct language runner.
+ *
+ * Lua and Python are one engine per language per connection: with a `connectionId` the script runs in that
+ * engine, sharing every global with the Globals source and with all the user's other scripts. Without one (the
+ * plugin-bundled scripts) it runs isolated and leaves nothing behind. JavaScript / TypeScript scripts are
+ * always isolated from one another, but with a `connectionId` they can call the exports of the Globals JS / TS
+ * files by name.
  */
-export async function runUserScript(script: AnyUserScript, api: ScriptSandboxApi): Promise<void> {
+export async function runUserScript(
+  script: AnyUserScript,
+  api: ScriptSandboxApi,
+  connectionId?: string | null,
+): Promise<void> {
   const lang: UserScriptLanguage = script.language;
 
   if (!script.enabled) {
@@ -156,22 +208,24 @@ export async function runUserScript(script: AnyUserScript, api: ScriptSandboxApi
 
   switch (lang) {
     case 'javascript': {
-      await runJavascript(script.source, api);
+      await runJavascript(script.source, api, connectionId);
       return;
     }
 
     case 'lua': {
-      await runLuaSourceInBrowser(script.source, api);
+      if (connectionId === undefined) runLuaSourceInBrowser(script.source, api);
+      else runLuaInEngine(connectionId, script.source, api);
       return;
     }
 
     case 'python': {
-      await runPythonSourceInBrowser(script.source, api);
+      if (connectionId === undefined) await runPythonSourceInBrowser(script.source, api);
+      else await runPythonInEngine(connectionId, script.source, api);
       return;
     }
 
     case 'typescript': {
-      await runTypescript(script.source, api);
+      await runTypescript(script.source, api, connectionId);
       return;
     }
 
@@ -196,6 +250,7 @@ export async function runTriggerScript(
   eventName: string,
   payload: unknown,
   baseApi: ScriptSandboxApi,
+  connectionId?: string | null,
 ): Promise<void> {
   if (!script.enabled) return;
 
@@ -211,10 +266,15 @@ export async function runTriggerScript(
     },
   };
 
-  await runUserScript(script, api);
+  await runUserScript(script, api, connectionId);
 }
 
-export async function runAliasScript(script: AliasScript, inputText: string, baseApi: ScriptSandboxApi): Promise<void> {
+export async function runAliasScript(
+  script: AliasScript,
+  inputText: string,
+  baseApi: ScriptSandboxApi,
+  connectionId?: string | null,
+): Promise<void> {
   if (!script.enabled) return;
 
   const api: ScriptSandboxApi = {
@@ -225,10 +285,14 @@ export async function runAliasScript(script: AliasScript, inputText: string, bas
     },
   };
 
-  await runUserScript(script, api);
+  await runUserScript(script, api, connectionId);
 }
 
-export async function runTimerScript(script: TimerScript, baseApi: ScriptSandboxApi): Promise<void> {
+export async function runTimerScript(
+  script: TimerScript,
+  baseApi: ScriptSandboxApi,
+  connectionId?: string | null,
+): Promise<void> {
   if (!script.enabled) return;
 
   const api: ScriptSandboxApi = {
@@ -239,7 +303,7 @@ export async function runTimerScript(script: TimerScript, baseApi: ScriptSandbox
     },
   };
 
-  await runUserScript(script, api);
+  await runUserScript(script, api, connectionId);
 }
 
 /**

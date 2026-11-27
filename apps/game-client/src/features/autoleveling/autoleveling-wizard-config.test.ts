@@ -50,7 +50,7 @@ describe('draftToConfig', () => {
     expect(cfg.version).toBe(3);
     expect(cfg.mode).toBe('auto_level');
     expect(cfg.loopRounds).toBe(true);
-    expect(cfg.roundLoopTimeMs).toBe(3_000); // active-leveling pace, not the 5-min sightsee default
+    expect(cfg.roundLoopTimeMs).toBe(180_000); // the default wait between laps is 3 minutes (it was a fixed 3 SECONDS before 2026-11-18)
   });
 
   it('joins required actions + dirs into init.trainingPath, skipping speedwalkToStart for now', () => {
@@ -84,6 +84,49 @@ describe('draftToConfig', () => {
     draft.targets[1].enabled = false;
     const cfg = draftToConfig(draft);
     expect(cfg.init.targets.map((t) => t.keywords[0])).toEqual(['ranger', 'scout']);
+  });
+
+  it('a paused (disabled) fight command stays in the draft but never reaches the engine; the others keep their order', () => {
+    const draft = baseDraft({
+      fightCommands: [
+        { cmd: 'bash', cooldownSec: 8 },
+        { cmd: 'kick', cooldownSec: 0, disabled: true },
+        { cmd: 'trip', cooldownSec: 4 },
+      ],
+    });
+    const cfg = draftToConfig(draft);
+    expect(cfg.steps.fight.exec.map((a: any) => a.cmd)).toEqual(['bash', 'trip']);
+    expect(draft.fightCommands).toHaveLength(3); // nothing was removed
+  });
+
+  it('a paused buff stays in the draft but reaches neither the pre-round actions nor the critical buffs', () => {
+    const draft = baseDraft({
+      buffs: [
+        { label: 'Sanctuary', cmd: "cast 'sanctuary'", affect: 'sanctuary', inCombatCmd: 'quaff divine', disabled: true },
+        { label: 'Armor', cmd: "cast 'armor'", affect: 'armor' },
+        { label: 'Haste', cmd: "cast 'haste'", affect: 'haste', holdNearLevel: true, disabled: true },
+      ],
+    });
+    const cfg = draftToConfig(draft);
+    expect(cfg.steps.start.pre.map((a: any) => a.cmd)).toEqual(["cast 'armor'"]);
+    expect(cfg.criticalBuffs).toEqual([]);
+    expect(draft.buffs).toHaveLength(3);
+  });
+
+  it('every fight command paused leaves no fight actions (autopilot just auto-attacks)', () => {
+    const cfg = draftToConfig(baseDraft({ fightCommands: [{ cmd: 'bash', cooldownSec: 8, disabled: true }] }));
+    expect(cfg.steps.fight.exec).toEqual([]);
+  });
+
+  it('an edited pre-loaded target reaches the engine with its edited room line and keyword (personal override)', () => {
+    const draft = baseDraft();
+    draft.targets[0] = {
+      ...draft.targets[0],
+      lookName: 'A tall centaur ranger eyes you.',
+      engageName: 'rng',
+    };
+    const cfg = draftToConfig(draft);
+    expect(cfg.init.targets[0]).toMatchObject({ lookName: 'A tall centaur ranger eyes you.', keywords: ['rng'] });
   });
 
   it('maps each buff to its start-step action by gate', () => {
@@ -139,6 +182,45 @@ describe('draftToConfig', () => {
   it('a null area yields an empty route (engine will refuse to start)', () => {
     const cfg = draftToConfig(baseDraft({ area: null }));
     expect(cfg.init.trainingPath).toBeNull();
+  });
+
+  it('a buff with no affect and no tick gate becomes a plain send every round; weight commands undefined means no weight actions', () => {
+    const cfg = draftToConfig(
+      baseDraft({ buffs: [{ label: 'Bless', cmd: 'cast bless' }], weightCommands: undefined, weightAtOrAbovePct: undefined } as never),
+    );
+    expect(cfg.steps.start.pre).toEqual([{ kind: 'send', cmd: 'cast bless', vitalsGate: undefined, onceKey: undefined }]);
+    expect(cfg.weight.commands).toEqual([]);
+  });
+
+  it('an area whose route is empty also yields a null route, not an empty string', () => {
+    const cfg = draftToConfig(baseDraft({ area: { ...centaurVillage, requiredActions: [], dirs: [] } }));
+    expect(cfg.init.trainingPath).toBeNull();
+  });
+
+  it('a draft with no mode runs auto-level, and missing rest commands mean no rest actions', () => {
+    const cfg = draftToConfig(baseDraft({ mode: undefined as never, restStartOfRound: undefined, restEndOfRound: undefined }));
+    expect(cfg.mode).toBe('auto_level');
+    expect(cfg.rest.startOfRound).toEqual([]);
+    expect(cfg.rest.endOfRound).toEqual([]);
+  });
+});
+
+describe('the wait between laps (live findings 2026-11-14, item 10; L26)', () => {
+  it('follows the minutes the player set, in every active mode', () => {
+    expect(draftToConfig(baseDraft({ lapWaitMin: 5 })).roundLoopTimeMs).toBe(300_000);
+    expect(draftToConfig(baseDraft({ lapWaitMin: 1 })).roundLoopTimeMs).toBe(60_000);
+    expect(draftToConfig(baseDraft({ lapWaitMin: 60, mode: 'dry_run' })).roundLoopTimeMs).toBe(3_600_000);
+  });
+
+  it('falls back to 3 minutes for anything that is not a whole number of minutes from 1 to 60', () => {
+    for (const bad of [0, 61, -2, 2.5, Number.NaN, Number.POSITIVE_INFINITY, '4' as unknown as number]) {
+      expect(draftToConfig(baseDraft({ lapWaitMin: bad })).roundLoopTimeMs).toBe(180_000);
+    }
+    expect(draftToConfig(baseDraft({ lapWaitMin: undefined })).roundLoopTimeMs).toBe(180_000);
+  });
+
+  it('sightsee keeps the engine default whatever the draft says', () => {
+    expect(draftToConfig(baseDraft({ mode: 'sightsee', lapWaitMin: 9 })).roundLoopTimeMs).toBe(createDefaultAutoLevelConfig().roundLoopTimeMs);
   });
 });
 

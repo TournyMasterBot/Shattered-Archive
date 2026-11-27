@@ -1,4 +1,5 @@
 // apps/game-client/src/features/plugins/pluginHost.ts
+import { canonicalConnectionId } from '../connection/connectionId';
 import {
   type HudSlotId,
   type HudWidgetContent,
@@ -104,15 +105,26 @@ function makeDefaultApi(
   const defaults = module.configSchema?.defaults ?? {};
   const baseConfig: Record<string, unknown> = { ...defaults };
 
-  const getConfig = () => ({ ...baseConfig });
+  // getConfig() runs from per-line handlers, and copying the config on every call allocated a
+  // config-sized object per plugin per line. The copy is kept until the config changes; the
+  // only writers are setConfig/updateConfig below, and each drops it. Callers must treat the
+  // result as read-only (use updateConfig to change settings) — it is shared between calls.
+  let configSnapshot: Record<string, unknown> | null = null;
+
+  const getConfig = () => {
+    if (configSnapshot === null) configSnapshot = { ...baseConfig };
+    return configSnapshot;
+  };
 
   const setConfig = (next: Record<string, unknown>) => {
     for (const k of Object.keys(baseConfig)) delete baseConfig[k];
     Object.assign(baseConfig, next ?? {});
+    configSnapshot = null;
   };
 
   const updateConfig = (patch: Record<string, unknown>) => {
     Object.assign(baseConfig, patch ?? {});
+    configSnapshot = null;
   };
 
   const emitTerminalText = (text: string, kind: 'log' | 'error') => {
@@ -206,7 +218,7 @@ export class PluginHost {
   private state: HostState | null = null;
 
   setConnection(connectionId: string) {
-    const next = connectionId && connectionId.trim().length > 0 ? connectionId.trim() : 'default';
+    const next = canonicalConnectionId(connectionId);
     if (this.state && this.state.connectionId === next) return;
 
     this.shutdown();
@@ -219,7 +231,7 @@ export class PluginHost {
   }
 
   getConnectionId(): string {
-    return this.state?.connectionId ?? 'default';
+    return this.state?.connectionId ?? canonicalConnectionId();
   }
 
   /**
@@ -427,6 +439,20 @@ export class PluginHost {
     const c = this.state.cleanups.get(pluginId);
     if (!c?.api) return;
     c.api.updateConfig(patch);
+  }
+
+  /**
+   * Set an enabled plugin's live config to exactly what a reload would give it: the plugin's defaults with the saved
+   * overrides on top (the merge enable() and syncInstalled() apply). updateEnabledPluginConfig only MERGES a patch, so after
+   * a Save that drops keys (a value set back to its default, or Reset to defaults) it would leave the old runtime values in
+   * place until something else re-synced.
+   */
+  replaceEnabledPluginConfig(pluginId: PluginId, userConfig: Record<string, unknown>) {
+    if (!this.state) return;
+    const c = this.state.cleanups.get(pluginId);
+    if (!c?.api) return;
+    const defaults = c.module?.configSchema?.defaults ?? {};
+    c.api.setConfig({ ...defaults, ...userConfig });
   }
 
   /**

@@ -110,6 +110,31 @@ describe('PluginHost.syncInstalled', () => {
     });
   });
 
+  it('hands out one shared config object until the config changes, then a fresh one', () => {
+    const host = new PluginHost();
+    const probe = makeProbe('p-config');
+    host.setConnection('dsl-mud');
+    host.registerModule(probe.module);
+    host.syncInstalled([{ id: 'p-config', enabled: true, userConfig: { alpha: 'one' } }]);
+    const api = probe.api!;
+
+    const first = api.getConfig();
+    expect(api.getConfig()).toBe(first);
+
+    api.updateConfig({ alpha: 'two' });
+    const second = api.getConfig();
+    expect(second).not.toBe(first);
+    expect(second).toEqual({ alpha: 'two', beta: 'default-beta' });
+    expect(api.getConfig()).toBe(second);
+    // The earlier snapshot is untouched by the later update.
+    expect(first.alpha).toBe('one');
+
+    api.setConfig({ alpha: 'three' });
+    const third = api.getConfig();
+    expect(third).not.toBe(second);
+    expect(third).toEqual({ alpha: 'three' });
+  });
+
   it('still disables a plugin that was turned off, and re-enabling builds a fresh instance', () => {
     const host = new PluginHost();
     const tts = makeProbe('text-to-speech');
@@ -338,5 +363,83 @@ describe('PluginHost.tryExecuteAlias — every core plugin that defines onAlias 
     expect(host.tryExecuteAlias('zz unmatched input')).toBe(true);
     expect(onAlias).toHaveBeenCalledWith(expect.anything(), 'zz unmatched input');
     host.shutdown();
+  });
+});
+
+// SETTINGS-03: after a Save that drops keys (a setting set back to its default, or Reset to defaults) the RUNNING plugin
+// must match what a reload would give it. updateEnabledPluginConfig only merges a patch, so it cannot take a key away.
+describe('PluginHost.replaceEnabledPluginConfig', () => {
+  function enabledHost(userConfig?: Record<string, unknown>) {
+    const host = new PluginHost();
+    const probe = makeProbe('p-replace');
+    host.setConnection('dsl-mud');
+    host.registerModule(probe.module);
+    host.syncInstalled([{ id: 'p-replace', enabled: true, userConfig }]);
+    return { host, probe };
+  }
+
+  it('makes the live config the defaults plus the given overrides, with no reload', () => {
+    const { host, probe } = enabledHost({ alpha: 'mine', beta: 'also mine' });
+    expect(probe.api?.getConfig()).toEqual({ alpha: 'mine', beta: 'also mine' });
+
+    host.replaceEnabledPluginConfig('p-replace', { alpha: 'only alpha' });
+
+    expect(probe.api?.getConfig()).toEqual({ alpha: 'only alpha', beta: 'default-beta' });
+  });
+
+  it('puts every setting back to its default when nothing is overridden any more', () => {
+    const { host, probe } = enabledHost({ alpha: 'mine', beta: 'also mine' });
+
+    host.replaceEnabledPluginConfig('p-replace', {});
+
+    expect(probe.api?.getConfig()).toEqual({ alpha: 'default-alpha', beta: 'default-beta' });
+  });
+
+  it('does nothing, and does not throw, for a plugin that is not enabled, not known, or a host with no state (E6)', () => {
+    const host = new PluginHost();
+    const probe = makeProbe('p-off');
+    host.setConnection('dsl-mud');
+    host.registerModule(probe.module);
+    host.syncInstalled([{ id: 'p-off', enabled: false }]);
+
+    expect(() => host.replaceEnabledPluginConfig('p-off', { alpha: 'x' })).not.toThrow();
+    expect(() => host.replaceEnabledPluginConfig('no-such-plugin', {})).not.toThrow();
+    expect(() => new PluginHost().replaceEnabledPluginConfig('p-off', {})).not.toThrow();
+    expect(probe.api).toBeNull();
+  });
+
+  it('forgets a setting that has no default once it is no longer saved (an optional field the user cleared)', () => {
+    const { host, probe } = enabledHost({ alpha: 'mine', note: 'typed by the user' });
+    expect(probe.api?.getConfig()).toEqual({ alpha: 'mine', beta: 'default-beta', note: 'typed by the user' });
+
+    host.replaceEnabledPluginConfig('p-replace', { alpha: 'mine' });
+
+    // A merge would keep `note`; the running plugin must match what a reload would give it.
+    expect(probe.api?.getConfig()).toEqual({ alpha: 'mine', beta: 'default-beta' });
+  });
+
+  it('works for a plugin whose schema declares no defaults: the live config is just the saved settings', () => {
+    const host = new PluginHost();
+    const probe = makeProbe('p-nodefaults');
+    (probe.module as { configSchema: unknown }).configSchema = { fields: [] };
+    host.setConnection('dsl-mud');
+    host.registerModule(probe.module);
+    host.syncInstalled([{ id: 'p-nodefaults', enabled: true, userConfig: { x: 1 } }]);
+
+    host.replaceEnabledPluginConfig('p-nodefaults', { y: 2 });
+
+    expect(probe.api?.getConfig()).toEqual({ y: 2 });
+  });
+
+  it('keeps handing out the same snapshot until the config actually changes (E8)', () => {
+    const { host, probe } = enabledHost();
+    const before = probe.api?.getConfig();
+    expect(probe.api?.getConfig()).toBe(before);
+
+    host.replaceEnabledPluginConfig('p-replace', { alpha: 'changed' });
+
+    const after = probe.api?.getConfig();
+    expect(after).not.toBe(before);
+    expect(probe.api?.getConfig()).toBe(after);
   });
 });
