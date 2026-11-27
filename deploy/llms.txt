@@ -5,8 +5,8 @@
 ## Start here
 
 - [ShatteredArchive home](https://shatteredarchive.dev/): hub page that describes and links every live service and the self-hosting steps
-- [Source code on GitHub](https://github.com/TournyMasterBot/Shattered-Archive): the full repository, including both Docker Compose files
-- [Docker setup guide](https://github.com/TournyMasterBot/Shattered-Archive/blob/main/docs/docker.md): how to run the whole stack yourself
+- [Source code on GitHub](https://github.com/ShatteredArchive/Shattered-Archive): the full repository, including both Docker Compose files
+- [Docker setup guide](https://github.com/ShatteredArchive/Shattered-Archive/blob/main/docs/docker.md): how to run the whole stack yourself
 - [Privacy notice](https://shatteredarchive.dev/privacy): what the landing page and demos collect
 
 ## Live demos

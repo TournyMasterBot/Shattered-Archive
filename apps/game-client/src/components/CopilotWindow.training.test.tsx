@@ -37,6 +37,7 @@ describe('CopilotWindow: Claude training', () => {
     await settle();
     expect(screen.queryByLabelText('Claude training is on')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    await settle(); // the settings tab starts its own poll when it mounts
     expect(screen.getByLabelText('Claude training')).not.toBeChecked();
   });
 
@@ -59,6 +60,7 @@ describe('CopilotWindow: Claude training', () => {
     await act(async () => void (await new Promise((resolve) => setTimeout(resolve, 3100))));
     expect(screen.queryByLabelText('Claude training is on')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    await settle();
     expect(screen.queryByLabelText('Claude training')).toBeNull(); // no switch against the production game
   }, 10_000);
 

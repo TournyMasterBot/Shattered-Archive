@@ -1,6 +1,6 @@
 # PR #160 — Crafting Helper (copyover auto-recraft) — deep review
 
-- **PR:** https://github.com/TournyMasterBot/Shattered-Archive/pull/160
+- **PR:** https://github.com/ShatteredArchive/Shattered-Archive/pull/160
 - **Head:** `8561e03098444c22814d63f7f9ef6e6a4147c1ec` ("feat(crafting-helper): auto-recraft after a copyover interrupts crafting")
 - **Base:** `release/dev` @ merge-base `ad565a6d4f2159b1d3d0a7cce61a04e1dc08a6d2`
 - **Size:** 55 commits, 15 files, +8148 / −14 (≈1,930-line plugin, ≈245-line storage, ≈2,330 lines of tests, ≈3,430 lines of plan/spec docs)

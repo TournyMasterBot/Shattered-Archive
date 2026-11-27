@@ -291,7 +291,7 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
             </a>
             <a
               className={`${styles.subMenuItem} ${styles.subMenuLink}`}
-              href="https://github.com/TournyMasterBot/Shattered-Archive"
+              href="https://github.com/ShatteredArchive/Shattered-Archive"
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
@@ -326,7 +326,7 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
             </a>
             <a
               className={`${styles.subMenuItem} ${styles.subMenuLink}`}
-              href="https://github.com/TournyMasterBot/Shattered-Archive/issues"
+              href="https://github.com/ShatteredArchive/Shattered-Archive/issues"
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
@@ -335,7 +335,7 @@ export const MainMenuBar: React.FC<MainMenuBarProps> = ({
             </a>
             <a
               className={`${styles.subMenuItem} ${styles.subMenuLink}`}
-              href="https://github.com/TournyMasterBot/Shattered-Archive/issues"
+              href="https://github.com/ShatteredArchive/Shattered-Archive/issues"
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}

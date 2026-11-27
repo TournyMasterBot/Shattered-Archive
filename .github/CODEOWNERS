@@ -1,1 +1,3 @@
-@TournyMasterBot
+# Every file. An approval from any one owner satisfies "require code owner review". Each owner needs write access to the
+# repository, and the team must be visible, or GitHub ignores it.
+* @TournyMasterBot @melchaleve @ShatteredArchive/code-reviewers

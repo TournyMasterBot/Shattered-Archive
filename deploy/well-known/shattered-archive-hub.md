@@ -33,7 +33,7 @@ description: Find the right ShatteredArchive demo service for a MUD player or bu
 
 ## Where to read more
 
-- Source and compose files: https://github.com/TournyMasterBot/Shattered-Archive
-- Docker guide: https://github.com/TournyMasterBot/Shattered-Archive/blob/main/docs/docker.md
+- Source and compose files: https://github.com/ShatteredArchive/Shattered-Archive
+- Docker guide: https://github.com/ShatteredArchive/Shattered-Archive/blob/main/docs/docker.md
 - Machine-readable index: https://shatteredarchive.dev/llms.txt
 - Privacy notice: https://shatteredarchive.dev/privacy
