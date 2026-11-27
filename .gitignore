@@ -46,6 +46,9 @@ coverage/*
 # but the file itself had zero git history — the blanket rule ate it from the very first commit,
 # so nothing ever flagged it as missing until a live 404 in production surfaced it.
 !apps/simulacrum-server/src/public/app.js
+# CI's scripts/check-jest-workers.mjs loads the rule from this hook, so it has to exist in a clean checkout. The other
+# hooks stay local.
+!.claude/hooks/jest-guard.js
 jwt-secret.dat
 
 # auth-server: per-app encrypted JSON stores, and the private key files that
@@ -68,6 +71,9 @@ apps/scrum-poker-server/data/*
 **/logs/*
 **/log/
 **/log/*
+# Source, not logs: the rules above kept Copilot's event log module out of git, so a clean checkout could not build.
+!services/copilot-core/src/log/
+!services/copilot-core/src/log/*
 *.log
 npm-debug.log*
 yarn-debug.log*
