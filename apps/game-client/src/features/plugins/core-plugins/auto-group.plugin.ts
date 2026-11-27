@@ -256,8 +256,7 @@ export function createAutoGroupPlugin(): IPluginModule {
       }
     });
 
-    return () => {
-      off();
+    const forgetInFlight = () => {
       for (const entry of pendingWhois.values()) clearTimeout(entry.timer);
       for (const check of pendingChecks) clearTimeout(check.timer);
       pendingWhois.clear();
@@ -265,6 +264,15 @@ export function createAutoGroupPlugin(): IPluginModule {
       grMembers = null;
       groupSentAt.clear();
       lastWhois.clear();
+    };
+
+    // No reply to a command of the dropped session will come, and its timeout must not group anyone after a reconnect.
+    const offClose = api.onEvent('game:remote-server:close', forgetInFlight);
+
+    return () => {
+      off();
+      offClose();
+      forgetInFlight();
     };
   }
 

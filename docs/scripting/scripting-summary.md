@@ -28,6 +28,8 @@ Runs when you type a matching command (e.g., typing `gtest` runs your alias scri
 ### Timer
 Runs on a schedule (e.g., every 5 seconds).
 
+Timers run only while connected. In the web client a dropped connection pauses them and cancels waiting `doAfter` commands; they start again, from a full interval, once your character is back in the game.
+
 ---
 
 ## 2) The Script API (available in all languages)

@@ -52,3 +52,9 @@ Purpose: The corner-grip resize for modals that are not floating panels (useFloa
 
 useAbilityTimingIndex.ts
 Purpose: the server's ability timing (the class feed's lagMs and durationTicks) as an index by ability name, read from the class catalog cached on this device and held in a ref for the autopilot engine (deps.getServerLagMs in useAutoLeveling.ts). Null until the catalog is read, and when it is empty or unreadable: every lag is then unknown and the engine keeps what it learns itself. Kept in its own file because useAutoLeveling.ts uses import.meta, which jest cannot compile (no test has ever imported that hook). Tests: useAbilityTimingIndex.test.tsx.
+
+/useGameConnection.ts (replaced sockets)
+Purpose: (gotcha) connect() closes the old socket, whose close event arrives after the new socket exists; every handler ignores a socket that is no longer wsRef.current. (why) a command with no open socket is not echoed, so the terminal never claims a send that did not happen.
+
+/useAutoLeveling.ts (listener keys)
+Purpose: (gotcha) its socket listeners need keys of their own: the dispatcher keeps ONE listener per key, and sharing the sandbox hook’s keys silently left one of the two deaf. Test: useAutoLeveling.socket.test.tsx.

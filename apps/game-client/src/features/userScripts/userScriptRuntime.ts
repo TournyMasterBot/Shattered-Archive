@@ -1,6 +1,7 @@
 // apps/game-client/src/features/userScripts/userScriptRuntime.ts
 
 import { AnyUserScript, ScriptSandboxApi, TriggerContextEvent } from './types';
+import { scheduleDroppable } from '../connection/sessionGate';
 import { runUserScript } from './runtime';
 import { DispatchEvent, ListenEvent } from '../event-emitter/event-dispatcher';
 import { canonicalConnectionId } from '../connection/connectionId';
@@ -352,7 +353,7 @@ export class UserScriptRuntime {
   private timerNextFireAt: Map<string, number> = new Map();
   private timerIntervalById: Map<string, number> = new Map();
   private aliasFallback?: (input: string) => boolean;
-  private doAfterTimers: Set<ReturnType<typeof setTimeout>> = new Set();
+  private doAfterCancels: Set<() => void> = new Set();
   private afkMode = false;
 
   constructor(options: UserScriptRuntimeOptions = {}) {
@@ -492,22 +493,29 @@ export class UserScriptRuntime {
   }
 
   public cancelDoAfterTimers(): void {
-    for (const id of this.doAfterTimers) {
-      clearTimeout(id);
+    for (const cancel of this.doAfterCancels) {
+      cancel();
     }
-    this.doAfterTimers.clear();
+    this.doAfterCancels.clear();
   }
 
   public scheduleDoAfter(delayMs: number, type: 'world' | 'alias', command: string): void {
-    const timerId = setTimeout(() => {
-      this.doAfterTimers.delete(timerId);
-      if (type === 'alias') {
-        this.executeAlias(command);
-      } else {
-        this.sendCommand(command);
-      }
-    }, delayMs);
-    this.doAfterTimers.add(timerId);
+    // only ever called for a command that was scheduled, so `cancel` is set by then
+    const forget = () => this.doAfterCancels.delete(cancel as () => void);
+    // droppable: a dropped connection cancels it, and nothing is scheduled while there is none
+    const cancel: (() => void) | null = scheduleDroppable(
+      () => {
+        forget();
+        if (type === 'alias') {
+          this.executeAlias(command);
+        } else {
+          this.sendCommand(command);
+        }
+      },
+      delayMs,
+      forget,
+    );
+    if (cancel) this.doAfterCancels.add(cancel);
   }
 
   public rebuildTriggerListeners(): void {

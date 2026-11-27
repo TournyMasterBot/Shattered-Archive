@@ -25,7 +25,7 @@ Purpose: Executes user scripts in multiple languages within a sandboxed runtime 
 Purpose: Tests the runtime singleton instance creation and script loading behavior.
 
 /runtimeSingleton.ts
-Purpose: Centralized runtime singleton for managing user scripts and named variables.
+Purpose: Centralized runtime singleton for managing user scripts and named variables. (invariant) its constructor starts features/connection/sessionGate before hydrating scripts, and the 250 ms tick runs only while the session is live.
 
 /safeTrim.ts
 Purpose: Converts any value to a trimmed string safely.

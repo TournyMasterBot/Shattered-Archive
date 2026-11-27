@@ -1233,6 +1233,13 @@ export class AutoLevelingEngine {
           },
           { key: 'AutoLevelingEngine:event:flee:failed' },
         ),
+        ListenEvent<unknown>(
+          'game:remote-server:close',
+          () => {
+            this.onDisconnected();
+          },
+          { key: 'AutoLevelingEngine:remote-server-close' },
+        ),
       ];
 
       this.isBound = true;
@@ -1277,6 +1284,17 @@ export class AutoLevelingEngine {
     this.rearmQueue = [];
     this.rearmPending.clear();
     this.rejectAllWaits(new Error('stopped'));
+  }
+
+  /**
+   * The connection dropped. A run that was going stops at once and says why; it is never resumed by itself, because a reconnect is a
+   * fresh login and a run that started again on its own would walk a character nobody is watching. The mobile engine does the same.
+   */
+  private onDisconnected() {
+    if (!this.running || this.stopping) return;
+    dbg('connection lost: stopping the run');
+    this.writeAutoLevelLine('connection lost: the run was stopped. Start it again once you are back in the game.');
+    this.stop();
   }
 
   pause(reason: 'user' | 'flee' = 'user') {

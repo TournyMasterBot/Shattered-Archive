@@ -263,7 +263,8 @@ the run state to `error` and ended the run ("timeouts during levelling are annoy
   `paused` with `reason: 'timeout'` and a `message`; the terminal prints `paused: <what>. Press Resume when you are ready; Stop ends the run.`; the wizard
   header shows "Paused: <what>. Press Resume to continue." (`toRunStateText` in `AutoLevelingWizard.tsx`; the Combat help has a section "When autopilot
   pauses itself" for the player). Resume re-scans the room and carries on; a failed hop is treated as non-fatal.
-- **Still ends the run**: Stop, a disabled mode, a missing route, and any other error. A player who is already paused (or a flee pause) gets no second pause or line.
+- **Still ends the run**: Stop, a disabled mode, a missing route, a dropped connection, and any other error. A player who is already paused (or a flee pause) gets no second pause or line.
+- **A dropped connection stops the run** (`onDisconnected`, on `game:remote-server:close`), running or paused: the terminal prints `connection lost: the run was stopped. Start it again once you are back in the game.` It is never resumed by itself, because a reconnect is a fresh login. The mobile engine behaves the same. Test: `autoleveling-engine.disconnect.test.ts`.
 - **Copilot** receives `shatteredarchive:autopilot-need-help` `{ reason: 'timeout', message }` once per timeout pause (`autopilot-signals.ts`), as it does for
   `error`; a user pause or a flee pause is not a call for help. It still cannot send commands while the run is `running`.
 - `pause(reason)` is `'user'` (the button) or `'flee'`; the paused state no longer claims a round, step or action index it did not have.
@@ -408,6 +409,8 @@ stateDiagram-v2
   running --> paused_timeout : CHANGED - backstop is the larger of idle and 4 x 1200 ms, plus queued-lag allowance
   paused_timeout --> running : NEW - Resume re-scans the room and carries on
   paused_timeout --> stopped : NEW - Stop
+  running --> stopped : connection lost
+  paused --> stopped : connection lost
   running --> paused : player pause or flee
   paused --> running : Resume
   running --> error : other errors only

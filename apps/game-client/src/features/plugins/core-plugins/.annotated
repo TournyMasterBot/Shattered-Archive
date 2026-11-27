@@ -134,3 +134,12 @@ Purpose: the Roller's running statistics (count, average, median, min, max of th
 
 /roller.plugin.ts (stats, added with roller-stats.ts)
 Purpose: the stats are recorded only for a roll the plugin ANSWERS (inside the decision-prompt branch, after the recent-roll and clock checks, before the Y/N is sent), and the HUD widget (slot hud.rightColumn) is cleared on enable and disable; a prompt ignored for age or a backwards clock records nothing. roller.plugin.test.ts covers each minimum on its own, unreadable stats, the five-second window and the clock stepping back.
+
+/auto-group.plugin.ts (dropped connection)
+Purpose: (invariant) a close forgets every `gr` check, whois and unconfirmed `group` in flight and the whois spacing, so a timeout from the old session never groups anyone in the next.
+
+/questbot.plugin.ts (dropped connection)
+Purpose: (relation) `pq stop` and a close share stopBot(); the close also clears lastIsFighting so the first fight of the next session counts. Test: questbot.plugin.drop.test.ts.
+
+/respell.plugin.ts (dropped connection)
+Purpose: (decision) a close forgets the last affect list and the recast spacing (owner, 2026-11-26): a spell that wore off while disconnected is NOT recast, which also keeps one character’s spells off the next.

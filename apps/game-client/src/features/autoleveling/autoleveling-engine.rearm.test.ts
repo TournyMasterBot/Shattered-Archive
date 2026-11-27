@@ -421,9 +421,9 @@ describe('a heal that is only worth casting when hurt (item 12)', () => {
   });
 });
 
-describe('subscriptions (EVENTBUS-01: one listener added, the wire command-sent signal that tells the player typing from the engine)', () => {
+describe('subscriptions (EVENTBUS-01: the wire command-sent signal and the connection close each have their own listener)', () => {
   it('bind() registers its listeners and no more', () => {
     const engine = makeEngine();
-    expect(engine.offListeners).toHaveLength(12);
+    expect(engine.offListeners).toHaveLength(13);
   });
 });

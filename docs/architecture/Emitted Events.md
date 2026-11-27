@@ -88,8 +88,10 @@ graph LR
 
   UI["User types command<br/>or script calls sendCommand()"]
   UI --> EV_SEND["shatteredarchive:send-command<br/>(cmd: string)"]
-  EV_SEND --> ECHO["Echo to terminal<br/>(green DSL color)"]
-  EV_SEND -->|useGameConnection| WS["WebSocket<br/>(type: data, cmd)"]
+  EV_SEND --> OPEN{"socket open?"}
+  OPEN -- "no" --> NONE["dropped: no echo, nothing sent"]
+  OPEN -- "yes" --> ECHO["Echo to terminal<br/>(green DSL color)"]
+  OPEN -->|useGameConnection| WS["WebSocket<br/>(type: data, cmd)"]
   WS --> GS["apps/game-server"]
   GS -->|Telnet| MUD["dsl-mud.org"]
 ```

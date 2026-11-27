@@ -10,3 +10,10 @@ applies-when: "React Native Modal, full-screen page, header action, Save or Done
 - Required behaviour: every edge control sits inside the safe area (insets from `react-native-safe-area-context`, read inside the Modal's own tree), is above the keyboard when the keyboard is up, and works in portrait and landscape; a primary action is not placed in a corner the system UI can cover.
 - Verify: a component test with the insets mocked to a tall top inset, a cutout and a bottom inset asserts the control's container applies them and the control is not inside the header row; an Android emulator capture with the keyboard open and closed, in both orientations, with the control tapped and its effect seen.
 - Origin: 2026-09-12_autoleveling-mobile-port (the Save button of the alias, trigger and timer editor)
+
+### INSET-02 A vertical control rail on a screen edge overflows short screens and competes with system edge gestures
+- Applies when: a column of controls, a drawer handle or a dock is placed along the left or right edge of an app screen.
+- Edge case: in landscape or with the keyboard up the column is taller than the space, so the last controls cannot be reached; and a swipe that starts at the edge is Android's back gesture, so swipe-to-open leaves the screen instead.
+- Required behaviour: the rail scrolls when it does not fit, respects the side insets, and opens by tap and press-and-hold (with an accessibility action for the hold), never by an edge swipe.
+- Verify: a component test at a short height asserts the rail is scrollable and every item is rendered; an emulator capture in landscape with the keyboard open and gesture navigation on, with the last item tapped.
+- Origin: 2026-11-26_mobile-crafting-helper-port-and-hud-docks

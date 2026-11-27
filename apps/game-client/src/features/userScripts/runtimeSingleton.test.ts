@@ -54,6 +54,22 @@ const rebuildTriggerListenersMock = jest.fn();
 const rebuildAliasIndexMock = jest.fn();
 const rebuildTimersMock = jest.fn();
 const tickTimersMock = jest.fn();
+const setAfkModeMock = jest.fn();
+const getAllScriptsMock = jest.fn((): unknown[] => []);
+
+// the session gate is driven by hand here; its own rules are in sessionGate.test.ts
+let sessionState = 'down';
+const sessionListeners: Array<(change: { state: string; previous: string; dropped: number }) => void> = [];
+const startSessionGateMock = jest.fn(() => () => {});
+
+jest.mock('../connection/sessionGate', () => ({
+  startSessionGate: () => startSessionGateMock(),
+  getSessionState: () => sessionState,
+  subscribeSession: (listener: (change: { state: string; previous: string; dropped: number }) => void) => {
+    sessionListeners.push(listener);
+    return () => {};
+  },
+}));
 
 jest.mock('./userScriptRuntime', () => {
   return {
@@ -72,6 +88,8 @@ jest.mock('./userScriptRuntime', () => {
         rebuildAliasIndex: rebuildAliasIndexMock,
         rebuildTimers: rebuildTimersMock,
         tickTimers: tickTimersMock,
+        setAfkMode: setAfkModeMock,
+        getAllScripts: getAllScriptsMock,
       };
     }),
   };
@@ -101,6 +119,7 @@ jest.mock('../event-emitter/event-dispatcher', () => {
 
     // in case runtimeSingleton imports these too
     ListenRedispatch: jest.fn(() => () => {}),
+    DispatchEvent: jest.fn(),
   };
 });
 
@@ -119,6 +138,9 @@ describe('RuntimeSingleton', () => {
     redispatchCalls.length = 0;
     listenEventCalls.length = 0;
     listenDomEventCalls.length = 0;
+    sessionListeners.length = 0;
+    sessionState = 'down';
+    getAllScriptsMock.mockReturnValue([]);
 
     loadScriptsFromStorageMock.mockReturnValue([
       { id: 's1', name: 'script1', code: 'echo 1' },
@@ -358,5 +380,133 @@ describe('RuntimeSingleton', () => {
 
     expect(keys).toContain('runtimeSingleton::window::accessibility-updated');
     expect(keys).toContain('runtimeSingleton::chat::shatteredarchive:chat-line');
+  });
+  describe('a dropped and restored connection', () => {
+    const timerScripts = [{ kind: 'timer', enabled: true }];
+
+    function boot(scripts: unknown[] = timerScripts) {
+      getAllScriptsMock.mockReturnValue(scripts);
+      const { RuntimeSingleton } = importSingleton();
+      void RuntimeSingleton.Instance;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { DispatchEvent } = require('../event-emitter/event-dispatcher') as { DispatchEvent: jest.Mock };
+      const lines = () =>
+        DispatchEvent.mock.calls
+          .filter(([name]) => name === 'shatteredarchive:write-terminal')
+          .map(([, p]) => String(p.rawText).replace(/[[0-9;]*m/g, '').trim());
+      return { lines };
+    }
+
+    function change(state: string, dropped = 0) {
+      const previous = sessionState;
+      sessionState = state;
+      for (const listener of sessionListeners) listener({ state, previous, dropped });
+    }
+
+    test('starts the gate before it loads any script, so no trigger hears an open ahead of it', () => {
+      boot();
+      expect(startSessionGateMock).toHaveBeenCalledTimes(1);
+      expect(startSessionGateMock.mock.invocationCallOrder[0]).toBeLessThan(replaceAllScriptsMock.mock.invocationCallOrder[0]);
+    });
+
+    test('ticks the timers only while the session is live', () => {
+      boot();
+      const tick = (window.setInterval as unknown as jest.Mock).mock.calls[0][0] as () => void;
+
+      tick();
+      sessionState = 'awaiting-login';
+      tick();
+      expect(tickTimersMock).not.toHaveBeenCalled();
+
+      sessionState = 'live';
+      tick();
+      expect(tickTimersMock).toHaveBeenCalledTimes(1);
+    });
+
+    test('restarts every timer on going live, without a line on the first connection', () => {
+      const { lines } = boot();
+      rebuildTimersMock.mockClear();
+
+      change('live');
+
+      expect(rebuildTimersMock).toHaveBeenCalledTimes(1);
+      expect(lines()).toEqual([]);
+    });
+
+    test('says that timers paused, wait for the login and resumed', () => {
+      const { lines } = boot();
+      change('live');
+
+      change('down', 2);
+      change('awaiting-login');
+      change('live');
+      change('down', 1);
+
+      expect(lines()).toEqual([
+        '[Timers] Disconnected — timers paused, 2 delayed commands cancelled',
+        '[Timers] Connected — timers wait until your character is in the game',
+        '[Timers] Timers resumed',
+        '[Timers] Disconnected — timers paused, 1 delayed command cancelled',
+      ]);
+    });
+
+    test('with no enabled timer, speaks only of cancelled delayed commands', () => {
+      const { lines } = boot([{ kind: 'timer', enabled: false }, { kind: 'trigger', enabled: true }]);
+      change('live');
+
+      change('down');
+      change('awaiting-login');
+      change('live');
+      expect(lines()).toEqual([]);
+
+      change('down', 3);
+      change('live');
+      expect(lines()).toEqual(['[Timers] Disconnected — 3 delayed commands cancelled']);
+    });
+
+    test('answers for the timers of the session that dropped, whatever scripts are loaded at the reconnect', () => {
+      // a custom server has its own scripts, swapped in just after the connection events
+      const { lines } = boot();
+      change('live');
+      change('down');
+      getAllScriptsMock.mockReturnValue([]);
+      change('awaiting-login');
+      change('live');
+
+      expect(lines()).toEqual([
+        '[Timers] Disconnected — timers paused',
+        '[Timers] Connected — timers wait until your character is in the game',
+        '[Timers] Timers resumed',
+      ]);
+    });
+
+    test('says nothing at a reconnect when only the scripts loaded afterwards have timers', () => {
+      const { lines } = boot([]);
+      change('live');
+      change('down');
+      getAllScriptsMock.mockReturnValue(timerScripts);
+      change('awaiting-login');
+      change('live');
+
+      expect(lines()).toEqual([]);
+    });
+
+    test('forgets the AFK state of the session that ended', () => {
+      const { lines } = boot([]);
+      emitWindowEvent('game:char-data', { is_afk: true });
+      expect(setAfkModeMock).toHaveBeenLastCalledWith(true);
+
+      change('down');
+      expect(setAfkModeMock).toHaveBeenLastCalledWith(false);
+
+      // the next session's AFK flag is news again, not a repeat of the old one
+      emitWindowEvent('game:char-data', { is_afk: true });
+      expect(setAfkModeMock).toHaveBeenLastCalledWith(true);
+      expect(lines().filter((l) => l.includes('AFK detected'))).toHaveLength(2);
+
+      emitWindowEvent('game:char-data', { is_afk: false });
+      expect(setAfkModeMock).toHaveBeenLastCalledWith(false);
+      expect(lines().at(-1)).toBe('[Timers] AFK cleared — timers resumed');
+    });
   });
 });

@@ -91,6 +91,7 @@ stone skin
 **Notes:**
 - Matching is case-insensitive substring match against the affect name from the server event.
 - The cooldown delay prevents recasting the same spell multiple times in rapid succession if several affects drop at once.
+- A dropped connection cancels a recast that was waiting, and the plugin forgets which spells were up: nothing is recast just because it wore off while you were away. It watches again from the first affect list after you reconnect.
 
 ---
 
@@ -686,6 +687,8 @@ haste | {B | {Y
 | `pq areas` | List all known areas (built-in and custom) with their start point and room names. |
 | `pq stats` | Print current session, all-time, and per-area stats. |
 | `pq stats reset` | Wipe all stored stats and start fresh. |
+
+**Dropped connection:** the bot stops as `pq stop` does and says `Connection lost — stopped`, because it cannot know where the character is afterwards. Type `pq start` again once you are back in the game.
 
 **Combat break and resume:** GMCP `is_fighting: true` stops the bot immediately. Once fighting clears, a 30-second resume timer starts; typing `flee` during combat cancels it and leaves the bot stopped. Otherwise the bot resumes based on what it was doing when combat began — resuming a turn-in, re-sending remaining comb steps, or recalling and re-navigating to the quest area.
 

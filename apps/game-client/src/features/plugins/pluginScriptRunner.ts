@@ -2,6 +2,7 @@
 import type { PluginBundledScript, PluginRuntimeApi, PluginId } from '@shatteredarchive/types-client';
 import type { AnyUserScript, UserScriptLanguage } from '../userScripts/types';
 import { runUserScript } from '../userScripts/runtime';
+import { getSessionState, subscribeSession, SessionState } from '../connection/sessionGate';
 
 type TimerMap = Record<string, number>;
 
@@ -58,6 +59,7 @@ export function startPluginBundledScripts(
 ) {
   const timers: TimerMap = {};
   const disposers: Array<() => void> = [];
+  const intervalScripts: Array<{ id: string; script: AnyUserScript; intervalMs: number }> = [];
 
   const runNow = async (s: AnyUserScript, api: PluginRuntimeApi) => {
     await runUserScript(s, {
@@ -95,11 +97,7 @@ export function startPluginBundledScripts(
       const intervalMs = Number(any.intervalMs ?? 0);
       if (!Number.isFinite(intervalMs) || intervalMs <= 0) continue;
 
-      const id = stableId(pluginId, s);
-
-      timers[id] = window.setInterval(() => {
-        void runNow(any, pluginApi);
-      }, intervalMs);
+      intervalScripts.push({ id: stableId(pluginId, s), script: any, intervalMs });
     } else if (any.kind === 'alias') {
       // Aliases are hooked up by the app's command input handling.
       // We expose handlers in getAliasScripts().
@@ -107,9 +105,33 @@ export function startPluginBundledScripts(
     }
   }
 
+  const clearTimers = () => {
+    for (const k of Object.keys(timers)) {
+      window.clearInterval(timers[k]);
+      delete timers[k];
+    }
+  };
+
+  // Intervals exist only while the session is live, so a restart begins with a full interval.
+  const syncTimers = (state: SessionState) => {
+    clearTimers();
+    if (state !== 'live') return;
+
+    for (const { id, script, intervalMs } of intervalScripts) {
+      timers[id] = window.setInterval(() => {
+        void runNow(script, pluginApi);
+      }, intervalMs);
+    }
+  };
+
+  if (intervalScripts.length > 0) {
+    disposers.push(subscribeSession((change) => syncTimers(change.state)));
+    syncTimers(getSessionState());
+  }
+
   const stop = () => {
     for (const d of disposers) d();
-    for (const k of Object.keys(timers)) window.clearInterval(timers[k]);
+    clearTimers();
   };
 
   const getAliasScripts = (): Array<{ alias: string; run: (inputText: string) => void }> => {

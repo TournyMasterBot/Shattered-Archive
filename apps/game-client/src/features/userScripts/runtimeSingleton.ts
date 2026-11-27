@@ -3,6 +3,7 @@
 import { AccessibilitySettings, getAccessibilitySettings } from '../accessibility/accessibility-settings-store';
 import { STORAGE_KEY_PREFIX_USERSCRIPTS, UserScriptRuntime } from './userScriptRuntime';
 import { canonicalConnectionId } from '../connection/connectionId';
+import { getSessionState, startSessionGate, subscribeSession, SessionChange } from '../connection/sessionGate';
 import { pluginHost } from '../plugins/pluginHost';
 import { ListenDomEvent, ListenEvent, ListenRedispatchMap, DispatchEvent } from '../event-emitter/event-dispatcher';
 import { dslToAnsi } from '../chat/dsl-to-ansi';
@@ -83,7 +84,13 @@ export class RuntimeSingleton {
 
   private lastAfkState: boolean | null = null;
 
+  // the session that dropped had timers, and no "resumed" line has answered for them yet
+  private timersHeld = false;
+
   private constructor() {
+    // before hydrateRuntime, so the gate hears connection events ahead of any user trigger on them
+    startSessionGate();
+
     this.userScriptRuntime = new UserScriptRuntime({
       aliasSplitChar: this.settings.commandSplitChar,
 
@@ -134,6 +141,51 @@ export class RuntimeSingleton {
 
   private clearNamedVars(connectionId?: string): void {
     this.getNamedVarMap(connectionId).clear();
+  }
+
+  private writeNotice(msg: string): void {
+    try {
+      DispatchEvent('shatteredarchive:write-terminal', {
+        rawText: dslToAnsi(msg),
+        fromUserScript: true,
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  private onSessionChange({ state, dropped }: SessionChange): void {
+    if (state === 'down') {
+      // Only here are the loaded scripts certainly those of this session: a custom server has its own set,
+      // and it is swapped in or out just after the connection events.
+      const hasTimers = this.userScriptRuntime.getAllScripts().some((s) => s.kind === 'timer' && s.enabled);
+      this.timersHeld = hasTimers;
+
+      // AFK was learned from the session that just ended
+      this.lastAfkState = null;
+      this.userScriptRuntime.setAfkMode(false);
+
+      const effects: string[] = [];
+      if (hasTimers) effects.push('timers paused');
+      if (dropped > 0) effects.push(`${dropped} delayed command${dropped === 1 ? '' : 's'} cancelled`);
+      if (effects.length === 0) return;
+
+      this.writeNotice(`{Y[Timers] Disconnected — ${effects.join(', ')}{x\n`);
+      return;
+    }
+
+    if (state === 'awaiting-login') {
+      if (!this.timersHeld) return;
+      this.writeNotice('{Y[Timers] Connected — timers wait until your character is in the game{x\n');
+      return;
+    }
+
+    // live: every timer starts again with a full interval
+    this.userScriptRuntime.rebuildTimers();
+    if (!this.timersHeld) return;
+
+    this.timersHeld = false;
+    this.writeNotice('{G[Timers] Timers resumed{x\n');
   }
 
   private hydrateRuntime(connectionId?: string | null) {
@@ -267,22 +319,16 @@ export class RuntimeSingleton {
           this.lastAfkState = isAfk;
           this.userScriptRuntime.setAfkMode(isAfk);
 
-          const msg = isAfk
-            ? '{Y[Timers] AFK detected — timers suspended{x\n'
-            : '{G[Timers] AFK cleared — timers resumed{x\n';
-
-          try {
-            DispatchEvent('shatteredarchive:write-terminal', {
-              rawText: dslToAnsi(msg),
-              fromUserScript: true,
-            });
-          } catch {
-            // ignore
-          }
+          this.writeNotice(
+            isAfk ? '{Y[Timers] AFK detected — timers suspended{x\n' : '{G[Timers] AFK cleared — timers resumed{x\n',
+          );
         },
         { key: 'runtimeSingleton::afk::char-data' },
       ),
     );
+
+    // Dropped or restored connection -> pause and restart the timers
+    this.disposers.push(subscribeSession((change) => this.onSessionChange(change)));
 
     // Chat lines -> chat store (global, always-on)
     this.disposers.push(
@@ -382,6 +428,7 @@ export class RuntimeSingleton {
     if (!window.__SA_USERSCRIPTS_TIMER_TICK__) {
       window.__SA_USERSCRIPTS_TIMER_TICK__ = window.setInterval(() => {
         try {
+          if (getSessionState() !== 'live') return;
           this.userScriptRuntime.tickTimers();
         } catch (err) {
           console.error('[RuntimeSingleton] tickTimers failed', err);

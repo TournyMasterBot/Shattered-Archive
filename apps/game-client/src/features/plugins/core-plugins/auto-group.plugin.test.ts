@@ -37,6 +37,8 @@ function setup(config: Record<string, unknown> = {}, autoGr = true) {
   const cfg: Record<string, unknown> = { ...plugin.configSchema!.defaults, ...config };
 
   const handlers = new Set<(payload: unknown) => void>();
+  const closeHandlers = new Set<(payload: unknown) => void>();
+  const drop = () => closeHandlers.forEach((h) => h({}));
   const emit = (rawText: unknown) => handlers.forEach((h) => h(rawText === null ? null : { rawText }));
   const sendCommand = jest.fn((cmd: string) => {
     if (autoGr && cmd === 'gr') emit(GR([]));
@@ -50,6 +52,10 @@ function setup(config: Record<string, unknown> = {}, autoGr = true) {
     sendCommand,
     writeTerminal,
     onEvent: (name: string, handler: (payload: unknown) => void) => {
+      if (name === 'game:remote-server:close') {
+        closeHandlers.add(handler);
+        return () => closeHandlers.delete(handler);
+      }
       if (name !== 'shatteredarchive:raw-data') return () => undefined;
       handlers.add(handler);
       return () => handlers.delete(handler);
@@ -61,7 +67,7 @@ function setup(config: Record<string, unknown> = {}, autoGr = true) {
   /** Commands other than the `gr` checks. */
   const cmds = () => sent().filter((c) => c !== 'gr');
 
-  return { plugin, db, cfg, emit, sendCommand, sent, cmds, writeTerminal, cleanup, handlers };
+  return { drop, closeHandlers, plugin, db, cfg, emit, sendCommand, sent, cmds, writeTerminal, cleanup, handlers };
 }
 
 const announced = (writeTerminal: jest.Mock) => writeTerminal.mock.calls.map((c) => String(c[0]));
@@ -533,5 +539,50 @@ describe('auto-group plugin', () => {
       const keys = plugin.configSchema!.fields.map((f) => f.key).sort();
       expect(keys).toEqual(Object.keys(plugin.configSchema!.defaults!).sort());
     });
+  });
+});
+
+describe('a dropped connection', () => {
+  const grCount = (sent: () => string[]) => sent().filter((c) => c === 'gr').length;
+
+  it('forgets a group check in flight, so its timeout groups nobody afterwards', () => {
+    jest.useFakeTimers();
+    const g = setup({ allowedUsers: 'Pellam' }, false);
+    g.emit(FOLLOW('Pellam'));
+    expect(grCount(g.sent)).toBe(1);
+
+    g.drop();
+    jest.advanceTimersByTime(DAY);
+
+    expect(g.sent().filter((c) => c.startsWith('group '))).toEqual([]);
+
+    // the same follower is checked afresh in the next session
+    g.emit(FOLLOW('Pellam'));
+    expect(grCount(g.sent)).toBe(2);
+    g.cleanup();
+    jest.useRealTimers();
+  });
+
+  it('forgets a whois in flight, and asks again in the next session', () => {
+    jest.useFakeTimers();
+    const g = setup({ allowedAffiliations: 'Shadow' }, false);
+    g.emit(FOLLOW('Tiberius'));
+    expect(g.sent()).toEqual(['whois Tiberius']);
+
+    g.drop();
+    jest.advanceTimersByTime(DAY);
+    expect(g.sent()).toEqual(['whois Tiberius']);
+
+    g.emit(FOLLOW('Tiberius'));
+    expect(g.sent()).toEqual(['whois Tiberius', 'whois Tiberius']);
+    g.cleanup();
+    jest.useRealTimers();
+  });
+
+  it('stops listening for the drop when it is disabled', () => {
+    const g = setup();
+    expect(g.closeHandlers.size).toBe(1);
+    g.cleanup();
+    expect(g.closeHandlers.size).toBe(0);
   });
 });

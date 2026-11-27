@@ -377,6 +377,12 @@ doAfter(10000, "alias", "ks")`}</pre>
               — scheduling two <code>doAfter</code> calls doesn't make them queue behind each other.
             </div>
 
+            <div className={styles.callout}>
+              <strong>A dropped connection cancels every waiting doAfter.</strong> They are not sent after you reconnect,
+              and the terminal says how many were cancelled. A <code>doAfter</code> made while you are not connected
+              does nothing.
+            </div>
+
             {/* ── Tilde / cancel ── */}
             <h4 className={styles.subHeading}>
               Cancelling pending timers — <code>~</code>
@@ -624,6 +630,17 @@ sendCommand("stand");`}</pre>
               </li>
               <li>Write your script</li>
             </ol>
+
+            <h4 className={styles.subHeading}>When the connection drops</h4>
+            <p>
+              Timers pause while you are not connected. After you reconnect they start again once your character is in
+              the game, and each one waits its full interval first. If the game never sent character data (GMCP is off),
+              they start as soon as you are connected. The terminal tells you when timers pause, wait and resume.
+            </p>
+            <p>
+              This covers script timers and <code>doAfter</code>. A <code>setTimeout</code> or <code>setInterval</code>{' '}
+              that your script starts itself keeps running.
+            </p>
 
             <h4 className={styles.subHeading}>Timer example: periodic check</h4>
             <pre className={styles.code}>{`// Timer: runs every 30000ms (30 seconds)
@@ -1074,6 +1091,10 @@ You slip and fall`}</pre>
                 <em>Recast delay (ms)</em> — pause before recasting to avoid flooding (default 500 ms)
               </li>
               <li>A shared cooldown prevents double-casting when multiple sources detect the same drop</li>
+              <li>
+                A dropped connection cancels a waiting recast. Spells that wore off while you were away are not recast;
+                the plugin watches again from the first affect list after you reconnect
+              </li>
             </ul>
             <pre className={styles.code}>{`# affect name | cast command
 # Omit command to default to: cast '<affect name>'
@@ -1773,7 +1794,8 @@ orange  = an orange`}</pre>
               Automates the full quest cycle: runs a start alias, walks to the quest master, requests a quest, parses
               the assignment, navigates to the area, collects the item, turns it in, optionally buys a gem, rests, and
               repeats. Stops automatically on combat and can auto-resume after combat clears. Per-quest and per-area
-              stats are tracked in IndexedDB and viewable any time with <code>pq stats</code>.
+              stats are tracked in IndexedDB and viewable any time with <code>pq stats</code>. A dropped connection stops
+              the bot; type <code>pq start</code> again once you are back in the game.
             </p>
             <ul className={styles.list}>
               <li>
@@ -2596,6 +2618,13 @@ Jovar               — icewall_port start`}</pre>
                 <span>
                   <strong>Start</strong> uses the <em>saved</em> config (not any unsaved draft). Save first, then start.
                   Pause suspends execution mid-step; Resume continues from where it stopped.
+                </span>
+              </div>
+              <div className={styles.tableRow}>
+                <span className={styles.tableKey}>Dropped connection</span>
+                <span>
+                  A run that was going or paused stops and says so in the terminal. It does not start again by itself:
+                  press Start once you are back in the game.
                 </span>
               </div>
             </div>

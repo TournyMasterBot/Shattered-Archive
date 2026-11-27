@@ -48,3 +48,15 @@ Decided 2026-11-06 (`2026-11-05_copilot-ai-training-sibling-to-autopilot`).
 ## shatteredarchive-mobile
 Kebab-case modules in `dsl-client/features/<area>/` (`plugin-config-storage.ts`); tests live in `__tests__/*-test.ts(x)` (46 of 46);
 storage helpers in `plugin-config-storage.ts` also `try`/`catch` and fall back. The Types, Errors and Testing decisions above apply there too.
+
+Formatting and lint: the app's own `lint` script and ESLint config are the rule.
+
+Async and state (decided 2026-11-26, `2026-11-26_mobile-crafting-helper-port-and-hud-docks`): the "Async and state" decision above applies, plus one
+requirement in the user's words: timers and loops of autopilot, crafting, user scripts and other plugins "need to continue running for the play
+terminal while [it] isn't the active window. While the game is loaded and connected, once initiated, we want to maintain the running state regardless
+of which screen the user is looking at."
+- Run state and its timers belong to app-lifetime objects (the script engine, plugin host, autopilot controller), never to a screen or component. A
+  component's unmount or loss of focus stops only what that component itself started for display.
+- "Stop on cleanup" therefore means: on disable, disconnect, character change or an explicit stop. Not on navigation.
+- Settings and data stores keep the load / get / save / subscribe shape (`features/autoleveling/autopilot-display-settings.ts`).
+- A test proves both halves: the run continues after the screen unmounts, and nothing fires after disable or disconnect.

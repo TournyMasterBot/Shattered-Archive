@@ -171,6 +171,36 @@ The command separator character (default `;`) is configurable via Accessibility 
 
 Timers run a script on a repeating interval (in milliseconds). The timer system is driven by a global 250ms tick (`window.__SA_USERSCRIPTS_TIMER_TICK__`). Timer state is per-script-id and persists across HMR reloads within a session.
 
+### Timers and a dropped connection
+
+`features/connection/sessionGate.ts` holds one of three states, and anything that acts on a delay asks it.
+
+| State | Means | Script and plugin timers | `doAfter` |
+|---|---|---|---|
+| `down` | no connection, also before the first connect | do not run | nothing is scheduled; what was waiting is cancelled |
+| `awaiting-login` | reconnected to a server that has sent login data; the character is not in the game yet | do not run | runs, so login scripts work |
+| `live` | the character is in the game, or the server never sent login data | run, each from a full interval | runs |
+
+- "In the game" is the first `game:character-login`, `game:char-data` or `game:room-data` of the session. The gate remembers per host and port, for the life of the page, that a server sends them; if GMCP is switched off after that, timers stay waiting until the page is reloaded.
+- `RuntimeSingleton` starts the gate before it loads scripts, skips the 250 ms tick unless live, resets timer intervals on going live, forgets the AFK flag at a drop and writes the `[Timers]` lines.
+- A delayed action that must not outlive its connection uses `scheduleDroppable()`; a repeating one follows `subscribeSession()` (as `pluginScriptRunner` does).
+- With no open socket, `shatteredarchive:send-command` is neither echoed nor sent. Events of a replaced socket are ignored.
+- At a drop the autopilot run and the quest bot stop, a waiting Auto Respell recast is cancelled (and its memory of what was up forgotten), and Auto Group forgets lookups in flight (`docs/game/autopilot.md`, `docs/scripting/plugins.md`).
+- A user script's own `setTimeout` / `setInterval` is not paused.
+- Tests: `sessionGate.test.ts`, `runtimeSingleton.test.ts`, `userScriptRuntime.doAfter.test.ts`, `pluginScriptRunner.test.ts`, `useGameConnection.test.ts`.
+
+```mermaid
+flowchart TD
+  A["socket closes"] --> B["session gate goes down"]
+  B --> C["repeating timers pause"]
+  B --> D["delayed commands cancelled, one line says how many"]
+  B --> E["autopilot run and quest bot stop"]
+  F["socket opens again"] --> G{"did this server send login data before?"}
+  G -- "no" --> H["timers restart with a full interval"]
+  G -- "yes" --> I["wait until the character is in the game"]
+  I --> H
+```
+
 ---
 
 # Event Bus Reference
@@ -276,7 +306,7 @@ An error from the game server or the WebSocket layer.
 ### `game:remote-server:close`
 
 **Emitted by:** `useGameConnection` → `emitSocketClosed` or `emitServerClose`
-**Listened by:** `RuntimeSingleton` → redispatched as `shatteredarchive:server-closed`
+**Listened by:** `RuntimeSingleton` → redispatched as `shatteredarchive:server-closed`; `sessionGate` (see [Timers and a dropped connection](#timers-and-a-dropped-connection))
 
 The connection to the game server was closed. `type` distinguishes client-initiated (`socket-closed`) vs server-initiated (`server-closed`) closes.
 
