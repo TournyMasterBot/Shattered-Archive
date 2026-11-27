@@ -7,7 +7,7 @@
   "publisher": "shatteredarchive",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TournyMasterBot/Shattered-Archive.git",
+    "url": "https://github.com/ShatteredArchive/Shattered-Archive.git",
     "directory": "apps/dsl-color-preview"
   },
   "engines": {

@@ -47,7 +47,7 @@ This downloads the Shattered Archive source code.
 sudo apt-get install -y git
 mkdir -p ~/src
 cd ~/src
-git clone https://github.com/TournyMasterBot/Shattered-Archive shatteredarchive
+git clone https://github.com/ShatteredArchive/Shattered-Archive shatteredarchive
 cd shatteredarchive
 git status
 ```
