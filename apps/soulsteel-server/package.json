@@ -15,6 +15,6 @@
     "@shatteredarchive/services-server": "workspace:*",
     "@shatteredarchive/types-server": "workspace:*",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "express": "^5.3.0"
   }
 }
