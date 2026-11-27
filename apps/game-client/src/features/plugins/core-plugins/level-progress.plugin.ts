@@ -65,6 +65,13 @@ import { MAX_LEVEL, getLevelProgress, subscribeLevelProgress } from '../../charD
 const STORAGE_KEY = 'shatteredarchive:exp-per-level:v2';
 const FETCH_TIMEOUT_MS = 20_000;
 
+/**
+ * The server's exp-per-level ceiling. Fleeing adds a little exp, so a character
+ * sitting at the ceiling can report tnl (or exp) above it; that is not a sign
+ * of a retrain, and re-asking `worth` would loop forever.
+ */
+export const MAX_EXP_PER_LEVEL = 1_000_000;
+
 // Line-anchored so chat that merely quotes "Exp Total : 5" can't match.
 // Only ever executed while a fetch is in flight (see parseWorth's callers).
 const EXP_TOTAL_RE = /^\s*Exp Total\s*:\s*([\d,]+)/im;
@@ -89,6 +96,7 @@ export function computeExpPerLevel(level: number, expTotal: number, tnl: number)
 
   const sum = expTotal + tnl;
   const divisor = level + 1;
+  if (sum >= MAX_EXP_PER_LEVEL * divisor) return MAX_EXP_PER_LEVEL; // flee bonus can break divisibility
   if (sum % divisor !== 0) return null; // the linear model doesn't hold here — don't guess
 
   return sum / divisor;
@@ -384,7 +392,7 @@ export function createLevelProgressPlugin(): IPluginModule {
 
         if (stored === null) {
           tryAutoFetch();
-        } else if (tnl > stored.expPerLevel) {
+        } else if (tnl > stored.expPerLevel && stored.expPerLevel < MAX_EXP_PER_LEVEL) {
           // Impossible if `stored` were still right: a level can't cost more
           // exp than the value we confirmed it at. A live retrain (no
           // relogin needed in DSL) is the expected cause.

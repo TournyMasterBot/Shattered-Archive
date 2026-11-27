@@ -33,7 +33,7 @@ jest.mock('../hooks/useChatPane', () => ({
 }));
 
 // A handful of subtypes is enough to exercise the pill strip without pinning
-// the full 21-subtype list.
+// the full subtype list.
 const SOME_SUBTYPES = KNOWN_CHAT_SUBTYPES.slice(0, 4);
 
 function fullSettings(overrides: Partial<ChatSettings>): ChatSettings {

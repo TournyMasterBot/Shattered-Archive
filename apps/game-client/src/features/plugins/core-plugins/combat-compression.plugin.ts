@@ -583,6 +583,20 @@ export const PATTERNS: LinePattern[] = [
     defaultSquelch: true,
   },
 
+  // Chain lightning bounces back at the caster; with anti-magic shell up the
+  // caster gets this pair after EVERY hit on the target. User-reported
+  // (2026-11-17), not corpus-mined. Opt-in: without the shell, "struck by your
+  // own lightning" is a real self-hit worth seeing. Own category on purpose —
+  // text-to-speech's arena filter selects by categoryLabel and must not pick
+  // this up.
+  {
+    configKey: 'squelchSelfLightningEcho',
+    categoryLabel: 'Self Spell Echo',
+    variantLabel: '"Your lightning misses you." / "You are struck by your own lightning!" lines (chain lightning rebound)',
+    pattern: `^(?:Your lightning misses you\\.|You are struck by your own lightning!)$`,
+    defaultSquelch: false,
+  },
+
   // UI Noise — command echoes/errors, scan/where/group listings, and score-
   // adjacent block dumps. None of this is combat-relevant; it's ordinary
   // client noise that happens to occur while standing in an arena room.
@@ -681,7 +695,7 @@ export function createCombatCompressionPlugin(): IPluginModule {
       name: 'Combat Compression',
       version: '0.1.0',
       description:
-        'Suppresses selected combat-log line classes (Damage, Avoidance, Condition, Death, Flee/Rescue, Disarm, Ambient, Item Use, Status, Incapacitation, Attack Flavor, UI Noise) to reduce scroll volume during fights. Avoidance, failed-disarm/escape, item-use (quaff/wield/wear/stop-using/get-from-container), Attack Flavor (named special-attack cast flavor), and UI Noise (command echoes, scan/group/affects listings) lines are squelched by default (no info beyond "nothing happened", or redundant with a following effect line); the rest are opt-in.',
+        'Suppresses selected combat-log line classes (Damage, Avoidance, Condition, Death, Flee/Rescue, Disarm, Ambient, Item Use, Status, Incapacitation, Attack Flavor, Self Spell Echo, UI Noise) to reduce scroll volume during fights. Avoidance, failed-disarm/escape, item-use (quaff/wield/wear/stop-using/get-from-container), Attack Flavor (named special-attack cast flavor), and UI Noise (command echoes, scan/group/affects listings) lines are squelched by default (no info beyond "nothing happened", or redundant with a following effect line); the rest are opt-in.',
     },
 
     configSchema: {

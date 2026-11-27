@@ -132,6 +132,11 @@ describe('computeExpPerLevel', () => {
     expect(computeExpPerLevel(48, 645556, 4444)).toBeNull(); // 650000 / 49
   });
 
+  it('caps at 1,000,000 when exp overshoots the ceiling (flee bonus), even if not divisible', () => {
+    expect(computeExpPerLevel(25, 25153728 + 846272 + 10, 1)).toBe(1_000_000);
+    expect(computeExpPerLevel(1, 2_000_010, 5)).toBe(1_000_000);
+  });
+
   it('refuses nonsense inputs', () => {
     expect(computeExpPerLevel(0, 645556, 4444)).toBeNull();
     expect(computeExpPerLevel(NaN, 645556, 4444)).toBeNull();
@@ -214,6 +219,17 @@ describe('level-progress plugin', () => {
     expect(t.announced).toEqual([{ name: 'Tester', expPerLevel: 13000 }]);
     expect(t.sendCommand).not.toHaveBeenCalled();
     expect(t.hasRawListener()).toBe(false);
+  });
+
+  it('does not re-ask worth when tnl exceeds a value already at the 1,000,000 ceiling', () => {
+    seed('Tester', 1_000_000, 49);
+    const t = start();
+    login();
+
+    charData(1_000_010);
+    charData(1_000_020);
+
+    expect(t.sendCommand).not.toHaveBeenCalled();
   });
 
   it('picks up a stored value when enabled mid-session (login already happened)', () => {

@@ -759,7 +759,7 @@ Valid `startPoint` values: `justice_bind` (Arkane justice bind point), `icewall_
 | Include the time in tick alerts | Boolean | Adds the in-game time to the tick alert |
 | Speak exploration lines | Boolean | Room names, descriptions, and contents |
 | Speak battle lines | Boolean | Combat via a "game caster" pipeline — afflictions, status effects, stuns, disarms, deaths, flees; drops plain damage/avoidance/movement/item-use/cast-flavor/weapon-flag-procs as noise |
-| Speak communication lines | Boolean | Chat channels — say, tell, gtell, whisper, pray, yell, gossip, OOC, clan, king, etc. |
+| Speak communication lines | Boolean | Chat channels — say, tell, gtell, whisper, pray, yell, shout, gossip, OOC, clan, king, etc. |
 | Speak incidental lines | Boolean | Catch-all: ambient flavor, skill improvements, level-ups, quest text, and anything matching none of the three categories above |
 | Arena caster (overrides the switches above) | Boolean | Exclusive Coliseum/Bloodbath spectator-or-participant mode that replaces the four switches above entirely while on |
 | Announce afflictions on others | Boolean | Short callout when a fight-changing debuff/knockdown lands on someone else |
