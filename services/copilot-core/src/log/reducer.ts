@@ -27,6 +27,13 @@ export function initialReducerState(): ReducerState {
   return { game: { ...INITIAL_GAME_STATE }, partial: '' };
 }
 
+/** `text` without its trailing line ends, in one pass: `/[\r\n]+$/` backtracks quadratically on a long run of newlines. */
+function withoutLineEnd(text: string): string {
+  let end = text.length;
+  while (end > 0 && (text[end - 1] === '\n' || text[end - 1] === '\r')) end -= 1;
+  return text.slice(0, end);
+}
+
 /**
  * Fold a batch of events into the state and return the compact feed.
  *
@@ -110,7 +117,7 @@ export function reduceEvents(
       case 'input': {
         touch(event.at, true);
         flushLines();
-        out.push({ type: 'command', at: event.at, command: event.data.replace(/[\r\n]+$/, '') });
+        out.push({ type: 'command', at: event.at, command: withoutLineEnd(event.data) });
         break;
       }
 

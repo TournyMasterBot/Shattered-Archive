@@ -101,6 +101,14 @@ describe('reduceEvents: commands, login and the session', () => {
     expect(run([{ kind: 'input', at: 1, data: 'look\r\n' }]).out).toEqual([{ type: 'command', at: 1, command: 'look' }]);
   });
 
+  it('removes only the trailing line ends, in one pass over a long run of them', () => {
+    const command = (data: string) => run([{ kind: 'input', at: 1, data }]).out[0];
+    expect(command('say a\nb\r\n\n')).toMatchObject({ command: 'say a\nb' });
+    expect(command('\r\n')).toMatchObject({ command: '' });
+    // newlines that do not end the text: the shape that made the old pattern backtrack
+    expect(command(`${'\n'.repeat(200_000)}a`)).toMatchObject({ command: `${'\n'.repeat(200_000)}a` });
+  });
+
   it('emits the login with the level when known and without it otherwise', () => {
     expect(run([{ kind: 'login', at: 1, name: 'Agate', level: 51 }]).out).toEqual([
       { type: 'login', at: 1, name: 'Agate', level: 51 },
